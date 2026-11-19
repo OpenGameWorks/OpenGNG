@@ -14,6 +14,11 @@ public:
     };
 
     int IsPauseDisabled();
+    int IsPlayerOnAnimNode(unsigned int arg0);
+    int ReleaseCheck();
+    void PumpkinGrabMove();
+    void ResurrectionMove();
+    int SetPowerupMotion(int arg0);
     unsigned char IsHanging();
     unsigned char Ready2Clear();
     int CheckAbility(int arg0);
@@ -22,6 +27,8 @@ public:
     void ForceDie(int arg0);
     void GetBoxer(int arg0);
     void GameVarSet(unsigned int arg0, int arg1);
+    int GameVarSub(unsigned int arg0, int arg1);
+    int MightyBlowCheck(unsigned int arg0);
     void AirSliceMove();
     void GuardHitMove();
     int CancelAttack(unsigned int arg0);
@@ -71,7 +78,10 @@ public:
     int m_unk1D0;           // 0x1D0
     char _pad1D4[0x1DC - 0x1D4];
     int m_unk1DC;           // 0x1DC index into MaximoArmor, read by BackToMaximo
-    char _pad1E0[0x210 - 0x1E0];
+    char _pad1E0[0x1FC - 0x1E0];
+    int m_unk1FC;           // 0x1FC compared with 2 by MightyBlowCheck
+    char _pad200[0x20C - 0x200];
+    int m_unk20C;           // 0x20C compared with the MightyCost value by MightyBlowCheck
     int m_unk210;           // 0x210 state, IsMidasActive requires it to equal 1
     int m_unk214;           // 0x214 ground action code, read by GetShieldPass
     char _pad218[0x21C - 0x218];
@@ -101,7 +111,9 @@ public:
     int m_unk324;           // 0x324
     char _pad328[0x32C - 0x328];
     PlingEffect *m_unk32C;  // 0x32C pling effect object, Slot00(1) called by ResetPling
-    char _pad330[0x33B - 0x330];
+    char _pad330[0x335 - 0x330];
+    signed char m_unk335;   // 0x335 flag, tested by SetPowerupMotion
+    char _pad336[0x33B - 0x336];
     unsigned char m_unk33B; // 0x33B set to (arg0 == 0) by ShowPlayer
     char _pad33C[0x23D0 - 0x33C];
     signed char m_unk23D0;  // 0x23D0 cleared by InitAttachableJoints

@@ -36,6 +36,8 @@ public:
     void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
     void EnableFx(bool arg0, bool arg1);
     float GetFrameTime();
+    PMNode *FindAnimNode(unsigned int arg0);
+    int Find(PMNode *arg0);
 };
 class FreeJoint {
 public:
@@ -66,6 +68,12 @@ public:
     void PlaySoundApparition(unsigned int arg0, unsigned int arg1);
 };
 extern PSound gSound;
+class EffectAPI {
+public:
+    char _pad000[20];
+    void CreateOneshot(unsigned int, unsigned int, float (*)[4], float (*)[4], EntityBaseClass *, float, bool, int, bool);
+};
+extern EffectAPI mEffectAPI__13EntityManager;
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 extern "C" long long fptodp(float arg0);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
@@ -82,6 +90,24 @@ unsigned char Player::Ready2Clear() {
             r = (m_unk38[0x42] & 1) != 0;
         }
         return r & 0xFF;
+    }
+    return 0;
+}
+
+// FUNCTION: 0x00158FA0 IsPlayerOnAnimNode__6PlayerFUi
+int Player::IsPlayerOnAnimNode(unsigned int arg0) {
+    if (m_unk1D0 & 4) {
+        PMNode *node = (PMNode *)m_unk38[0x33];
+        if (node != 0) {
+            int *p = *(int **)((char *)node + 0x24);
+            if (p != 0) {
+                return arg0 == (unsigned int)p[1];
+            }
+            PMNode *found = (*(PMNode **)gEng)->FindAnimNode(arg0);
+            if (found != 0) {
+                return found->Find(node);
+            }
+        }
     }
     return 0;
 }
@@ -131,6 +157,18 @@ void Player::GetKeyMove() {
         m_unk250 = 1;
         UpdateKey();
         ((EntityBaseClass *)this)->PlaySound(0x1A);
+    }
+}
+
+// FUNCTION: 0x00159E40 PumpkinGrabMove__6PlayerFv
+void Player::PumpkinGrabMove() {
+    if (!(((float *)m_unk38)[0x3E] <= 2.0f)) {
+        SetAction(6);
+        return;
+    }
+    if (ReleaseCheck() != 0) {
+        m_unk1C4 = ((Physics *)m_unk38)->m_unk11C;
+        SetAction(0x78);
     }
 }
 
@@ -207,10 +245,33 @@ int Player::CheckHammer(bool arg0) {
     return 0;
 }
 
+// DRAFT: 0x0015AE60 SetPowerupMotion__6PlayerFi
+// note: original keeps 0x3D in v0 and uses a shared jr-ra exit (size 0x80); ours uses v1/a2 and separate epilogues (size 0x6c). Tried separate returns (28 words), goto exit (27), nested with result (27), reversed compare (27).
+int Player::SetPowerupMotion(int arg0) {
+    int result = 0;
+    if (m_unk260 != 0x3D && m_unk229 < 4) {
+        if (m_unk335 != 0 || (m_unk264 & 0x30)) {
+            if (m_unk38[0x42] & 1) {
+                result = SetAction(arg0);
+            }
+        }
+    }
+    return result;
+}
+
 // FUNCTION: 0x0015AEE0 GetBoxer__6PlayerFi
 void Player::GetBoxer(int arg0) {
     GameVarSet(0x11, arg0 - 0x15);
     gInterface.AddAbility(arg0);
+}
+
+// DRAFT: 0x0015B2A0 ResurrectionMove__6PlayerFv
+// note: 23 words, size 0x64 vs 0x6c; original uses beqz with addiu v1,2 in delay slot and a shared b exit; if-body, if/else-return, goto and early-return forms all stay at 23 (bnez + nop).
+void Player::ResurrectionMove() {
+    if (m_unk250 == 0) {
+        m_unk250 = 2;
+        mEffectAPI__13EntityManager.CreateOneshot(0x81000038, 0x8200006D, (float (*)[4])((char *)m_unk3C + 0x80), (float (*)[4])((char *)m_unk3C + 0x90), 0, 0.5f, false, 0, false);
+    }
 }
 
 // FUNCTION: 0x0015C090 ResetShield__6PlayerFv
@@ -348,6 +409,24 @@ void Player::BackToMaximo() {
         SetMaximo(MaximoArmor[m_unk1DC], false);
         ((EntityBaseClass *)this)->PlaySound(0x119);
     }
+}
+
+// FUNCTION: 0x00163F10 MightyBlowCheck__6PlayerFUi
+int Player::MightyBlowCheck(unsigned int arg0) {
+    static const int MightyCost[4] = {128, 128, 192, 192};
+    int idx = 0;
+    if (arg0 & 0x200) {
+        idx = 1;
+    }
+    if (m_unk1FC >= 2) {
+        idx += 2;
+    }
+    int cost = MightyCost[idx];
+    if (m_unk20C >= cost) {
+        GameVarSub(0xE, cost);
+        return 1;
+    }
+    return 0;
 }
 
 // FUNCTION: 0x00163F80 ShowPlayer__6PlayerFb
