@@ -34,6 +34,12 @@ extern unsigned char m_bSuckingActive__19ClockworkSoulsucker;
 extern unsigned char m_bSuckingSemaphoreBusy__19ClockworkSoulsucker;
 extern int m_SuckerRef__19ClockworkSoulsucker;
 void CdsAssert(char *, int, char *);
+extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
+extern "C" void __dl__FPv(void *);
+extern "C" void DestroyDamageFx__15EntityBaseClassFUi(void *, unsigned int);
+extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, void *);
+extern "C" void RotateTo__15EntityBaseClassFff(void *, float, float);
+extern unsigned char __vt__19ClockworkSoulsucker[0x10];
 
 // FUNCTION: 0x00204570 AttachDamageEffect__19ClockworkSoulsuckerFP6PMNodeUifff
 void ClockworkSoulsucker::AttachDamageEffect(PMNode *pNode, unsigned int nId, float fA, float fB, float fC) {
@@ -75,6 +81,33 @@ void ClockworkSoulsucker::SetRiseAndAttack(float (*pVec)[4], float fA, float fB)
     m_unk1D0 = pVec[0][2];
     m_unk1C4 = fA;
     m_unk1D4 = fB;
+}
+
+// FUNCTION: 0x002048B0 SetSpawnedFromEntity__19ClockworkSoulsuckerFPfPfi
+void ClockworkSoulsucker::SetSpawnedFromEntity(float *pPos, float *pAlt, int nType) {
+    m_unk1C8 = pPos[0];
+    m_unk1CC = pPos[1];
+    m_unk1D0 = pPos[2];
+    m_unk1D4 = 150.0f;
+    m_unk1C4 = 75.0f;
+    m_unk1E0 = 0;
+    m_unk1B0 = nType;
+    u_long128 *pDst;
+
+    if (m_unk3C != 0) {
+        pDst = (u_long128 *)(m_unk3C + 0x80);
+    } else {
+        pDst = (u_long128 *)((char *)this + 0x190);
+    }
+    *pDst = *(u_long128 *)pPos;
+    if (pAlt != 0) {
+        if (m_unk3C != 0) {
+            pDst = (u_long128 *)(m_unk3C + 0x90);
+        } else {
+            pDst = (u_long128 *)((char *)this + 0x1A0);
+        }
+        *pDst = *(u_long128 *)pAlt;
+    }
 }
 
 // FUNCTION: 0x00204930 ResetAttackTimer__19ClockworkSoulsuckerFv
@@ -140,6 +173,21 @@ void ClockworkSoulsucker::DeleteTimers() {
     m_unk244 = 0;
 }
 
+// FUNCTION: 0x002053F0 FaceTarget__19ClockworkSoulsuckerFf
+void ClockworkSoulsucker::FaceTarget(float fArg) {
+    void *pTarget;
+    int nOwner;
+    char *pPos;
+
+    pTarget = GetTarget();
+    nOwner = *(int *)((char *)pTarget + 0x3C);
+    pPos = (char *)pTarget + 0x190;
+    if (nOwner != 0) {
+        pPos = (char *)nOwner + 0x80;
+    }
+    RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, pPos), fArg);
+}
+
 // FUNCTION: 0x002054E0 GetSuckingSucker__19ClockworkSoulsuckerFv
 int ClockworkSoulsucker::GetSuckingSucker() {
     if (m_bSuckingSemaphoreBusy__19ClockworkSoulsucker == 0) {
@@ -149,6 +197,21 @@ int ClockworkSoulsucker::GetSuckingSucker() {
         CdsAssert("ClockworkSoulsucker.cpp", 0x817, "m_SuckerRef");
     }
     return m_SuckerRef__19ClockworkSoulsucker;
+}
+
+// FUNCTION: 0x00205530 AddSoulValue__19ClockworkSoulsuckerFi
+void ClockworkSoulsucker::AddSoulValue(int nValue) {
+    m_unk258 += nValue;
+    m_unk22C += nValue * 150;
+    if (m_unk22C > 800) {
+        m_unk22C = 800;
+    }
+    if (m_unk258 > 15) {
+        m_unk258 = 15;
+    }
+    if (m_unk258 >= 6) {
+        m_unk2B8 = 1;
+    }
 }
 
 // FUNCTION: 0x002056A0 SetDefaultVars__19ClockworkSoulsuckerFv
@@ -165,4 +228,32 @@ void ClockworkSoulsucker::SetDefaultVars() {
     m_unk1EC = 0;
     m_unk1F4 = 0;
     m_unk1D8 = 0;
+}
+
+// FUNCTION: 0x00205BC0 OnWakeEvent__19ClockworkSoulsuckerFv
+void ClockworkSoulsucker::OnWakeEvent() {
+    if (m_unk3C != 0) {
+        SetupType();
+        UpdateDamageFx();
+        if (m_unk2B0 != 0) {
+            AttachSmokeEffect();
+        }
+    }
+    AdjustPhysicsForEweedCheck();
+}
+
+// FUNCTION: 0x00208980 __dt__19ClockworkSoulsuckerFv
+extern "C" void *__dt__19ClockworkSoulsuckerFv(void *pThis, short nFlag) {
+    if (pThis != 0) {
+        ClockworkSoulsucker *pSelf = (ClockworkSoulsucker *)pThis;
+        *(void **)pThis = __vt__19ClockworkSoulsucker;
+        pSelf->ReleaseSemaphoreIfOwned();
+        DestroyDamageFx__15EntityBaseClassFUi(pThis, pSelf->m_unk238);
+        pSelf->m_unk238 = 0;
+        __dt__15EntityBaseClassFv(pThis, 0);
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
 }

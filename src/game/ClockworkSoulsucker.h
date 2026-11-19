@@ -15,6 +15,15 @@ public:
     void ReleaseSemaphoreIfOwned();
     void DeleteEffects();
     void SetDefaultVars();
+    void SetSpawnedFromEntity(float *pPos, float *pAlt, int nType);
+    void FaceTarget(float fArg);
+    void AddSoulValue(int nValue);
+    void OnWakeEvent();
+    void *GetTarget();
+    void SetupType();
+    void UpdateDamageFx();
+    void AttachSmokeEffect();
+    void AdjustPhysicsForEweedCheck();
 
     char _pad000[0x4];
     unsigned int m_unk4;    // 0x004 owner id, compared with m_SuckerRef
@@ -40,13 +49,22 @@ public:
     int m_unk1EC;           // 0x1EC
     char _pad1F0[0x1F4 - 0x1F0];
     int m_unk1F4;           // 0x1F4
-    char _pad1F8[0x240 - 0x1F8];
+    char _pad1F8[0x22C - 0x1F8];
+    int m_unk22C;           // 0x22C soul value, capped at 800 by AddSoulValue
+    char _pad230[0x238 - 0x230];
+    unsigned int m_unk238;  // 0x238 handle passed to DestroyDamageFx in the destructor
+    char _pad23C[0x240 - 0x23C];
     unsigned int m_unk240;  // 0x240 timer handle, killed by DeleteTimers
     unsigned int m_unk244;  // 0x244 timer handle, killed by DeleteTimers
-    char _pad248[0x25C - 0x248];
+    char _pad248[0x258 - 0x248];
+    int m_unk258;           // 0x258 counter, capped at 15 by AddSoulValue
     int m_unk25C;           // 0x25C timer handle from TimerAPI::CreateTimer
     char _pad260[0x2A4 - 0x260];
     unsigned int m_unk2A4;  // 0x2A4 effect handle, 0 when none
+    char _pad2A8[0x2B0 - 0x2A8];
+    unsigned char m_unk2B0; // 0x2B0 flag, read by OnWakeEvent
+    char _pad2B1[0x2B8 - 0x2B1];
+    unsigned char m_unk2B8; // 0x2B8 set to 1 by AddSoulValue once m_unk258 reaches 6
 };
 
 #endif
