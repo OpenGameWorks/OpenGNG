@@ -9,6 +9,9 @@ extern "C" void __dla__FPv(void *pMem);
 extern "C" void __dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
+extern "C" void memset(void *, int, unsigned int);
+extern "C" void __ct__6PArrayFv(void *pThis);
+extern "C" void Allocate__6PArrayFUi(void *pThis, unsigned int nSize);
 
 // DRAFT: 0x001894D0 DecodeTextureHandle__15PTextureManagerFiRbRQ28PTexture12eTextureTypeRi
 // note: 2 lines differ: original shifts a1 directly (dsll32 8/dsrl32 8), mine zero-extends nHandle first (dsll32 0/dsrl32 0); tried signed (long long) intermediate, unsigned int store cast, 64-bit local
@@ -80,6 +83,26 @@ int PTexture::InitRendered(tagPs2TexDataHeader *pTexHeader, tagGsTextureEnvironm
     return 1;
 }
 
+// FUNCTION: 0x0018A990 DestroyRenderedTexture__15PTextureManagerFi
+void PTextureManager::DestroyRenderedTexture(int nHandle) {
+    bool bFlag;
+    PTexture::eTextureType eType;
+    int nIndex = -1;
+    DecodeTextureHandle(nHandle, bFlag, eType, nIndex);
+    if (!bFlag && nIndex >= 0 && eType == 2) {
+        PTexture *p = 0;
+        if ((unsigned int)nIndex < (unsigned int)m_nRenderedCount) {
+            p = m_apRendered[nIndex];
+        }
+        if (p != 0) {
+            delete p;
+            if ((unsigned int)nIndex < (unsigned int)m_unk25C) {
+                m_apRendered[nIndex] = 0;
+            }
+        }
+    }
+}
+
 // DRAFT: 0x0018AA60 UnloadAllRenderedTextures__15PTextureManagerFv
 // note: 32 words differ: frame 0x40 vs 0x50 (original keeps this in s3 and a byte-offset induction in s2, needing a 4th saved reg); tried while-loop, outer nCount>0 guard removed, 0<nCount guard (kept, 44->32 words), i declared outside for
 void PTextureManager::UnloadAllRenderedTextures() {
@@ -101,6 +124,50 @@ void PTextureManager::UnloadAllRenderedTextures() {
     }
 }
 
+// FUNCTION: 0x0018AB10 UnloadDynamicTexture__15PTextureManagerFi
+void PTextureManager::UnloadDynamicTexture(int nHandle) {
+    bool bFlag;
+    PTexture::eTextureType eType;
+    int nIndex = -1;
+    DecodeTextureHandle(nHandle, bFlag, eType, nIndex);
+    if (!bFlag && nIndex >= 0 && eType == 1) {
+        PTexture *p = 0;
+        if ((unsigned int)nIndex < (unsigned int)m_nDynCount) {
+            p = m_apDyn[nIndex];
+        }
+        if (p != 0) {
+            delete p;
+            if ((unsigned int)nIndex < (unsigned int)m_unk1E8) {
+                m_apDyn[nIndex] = 0;
+            }
+        }
+    }
+}
+
+// FUNCTION: 0x0018ABE0 UnloadAllDynamicTextures__15PTextureManagerFv
+void PTextureManager::UnloadAllDynamicTextures() {
+    int i = 0;
+    int nCount = m_nDynCount;
+    if (0 < nCount) {
+        int nOff = 0;
+        do {
+            PTexture *p = 0;
+            if ((unsigned int)i < (unsigned int)m_nDynCount) {
+                p = *(PTexture **)((char *)m_apDyn + nOff);
+            }
+            if (p != 0) {
+                delete p;
+            }
+            i++;
+            nOff += 4;
+        } while (i < nCount);
+    }
+    if (m_apDyn != 0) {
+        m_nDynCount = 0;
+        m_unk1E0 = 0;
+    }
+}
+
 // FUNCTION: 0x0018AFE0 UnloadStaticTextures__15PTextureManagerFv
 void PTextureManager::UnloadStaticTextures() {
     if (m_unk1D0 != 0) {
@@ -110,6 +177,40 @@ void PTextureManager::UnloadStaticTextures() {
     m_unk1D4 = 0;
     m_unk10 = 0;
     m_unk1D8 = 0;
+}
+
+// DRAFT: 0x0018B410 ResetDynamicBuffers__15PTextureManagerFv
+// note: 41 lines differ: extra nop after each sb and loop tail offset by one slot; tried indexed for loops (40+), do-while with byte offset (41), p hoisted out of loops (41), nOff+=4 before i++ (41); kept the byte-offset do-while
+void PTextureManager::ResetDynamicBuffers() {
+    int i = 0;
+    int nOff = 0;
+    do {
+        PTexture *p = *(PTexture **)((char *)this + nOff + 0x2C);
+        if (p != 0) {
+            p->m_unkA8 = 0;
+        }
+        i++;
+        nOff += 4;
+    } while (i < 0x30);
+    i = 0;
+    nOff = 0;
+    do {
+        PTexture *p = *(PTexture **)((char *)this + nOff + 0x108);
+        if (p != 0) {
+            p->m_unkA8 = 0;
+        }
+        i++;
+        nOff += 4;
+    } while (i < 0x30);
+    memset(m_aBuf0.m_apTex, 0, 0xC0);
+    memset(m_aBuf1.m_apTex, 0, 0xC0);
+    m_aBuf0.m_unkD8 = 0;
+    m_aBuf1.m_unkD8 = 0;
+    m_aBuf0.m_unk8 = m_aBuf0.m_unk0;
+    m_aBuf0.m_unk14 = m_aBuf0.m_unkC;
+    m_aBuf1.m_unk8 = m_aBuf1.m_unk0;
+    m_aBuf1.m_unk14 = m_aBuf1.m_unkC;
+    m_pCurBuf = &m_aBuf0;
 }
 
 // FUNCTION: 0x0018C4E0 Shutdown__15PTextureManagerFv
@@ -128,4 +229,24 @@ PTextureManager::~PTextureManager() {
     Shutdown();
     __dt__6PArrayFv((char *)this + 0x250, -1);
     __dt__6PArrayFv((char *)this + 0x1DC, -1);
+}
+
+// DRAFT: 0x0018C720 __ct__15PTextureManagerFv
+// note: 48 words differ: this spilled to 0x1C(sp) and frame is 0x20 vs 0x40 (only s0 kept, orig s0..s2); member-address and pointer-local variants both 48 words
+PTextureManager::PTextureManager() {
+    __ct__6PArrayFv(&m_nDynCount);
+    __ct__6PArrayFv(&m_nRenderedCount);
+    m_unk4 = 0;
+    m_unk8 = 0;
+    m_unkC = 0;
+    memset(&m_aBuf0, 0, 0xDC);
+    memset(&m_aBuf1, 0, 0xDC);
+    m_pCurBuf = 0;
+    m_unk1D0 = 0;
+    m_unk1D4 = 0;
+    m_unk1D8 = 0;
+    m_unk0 = 0;
+    Allocate__6PArrayFUi(&m_nDynCount, 0x180);
+    Allocate__6PArrayFUi(&m_nRenderedCount, 0x40);
+    m_unk260 = 1;
 }

@@ -48,6 +48,7 @@ public:
 
 class PTextureManager {
 public:
+    PTextureManager();
     ~PTextureManager();
 
     void DecodeTextureHandle(int nHandle, bool &bFlag, PTexture::eTextureType &eType, int &nIndex);
@@ -56,7 +57,10 @@ public:
     void UnloadStaticTextures();
     void Shutdown();
     void FlipTextureBuffers();
+    void ResetDynamicBuffers();
 
+    void DestroyRenderedTexture(int nHandle);
+    void UnloadDynamicTexture(int nHandle);
     void UnloadAllDynamicTextures();
     void UnloadAllRenderedTextures();
 
@@ -71,10 +75,16 @@ public:
     void *m_unk1D0;             // 0x1D0
     int m_unk1D4;               // 0x1D4
     int m_unk1D8;               // 0x1D8
-    char m_unk1DC[0x250 - 0x1DC]; // 0x1DC PArray (placeholder)
+    int m_nDynCount;            // 0x1DC PArray element count
+    int m_unk1E0;               // 0x1E0 PArray unknown
+    PTexture **m_apDyn;         // 0x1E4 PArray element storage
+    int m_unk1E8;               // 0x1E8 PArray capacity
+    char m_unk1EC[0x250 - 0x1EC];
     int m_nRenderedCount;       // 0x250 PArray element count
     int m_unk254;               // 0x254
     PTexture **m_apRendered;    // 0x258 PArray element storage
+    int m_unk25C;               // 0x25C PArray capacity
+    char m_unk260;              // 0x260 set to 1 by the constructor
 };
 
 #endif
