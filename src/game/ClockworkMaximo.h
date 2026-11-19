@@ -30,16 +30,30 @@ public:
     void OnTimerEvent(unsigned int arg0);
     void OnAttackEvent(EntityBaseClass *arg0, int arg1);
     void AttachWeapon(WEAPON_TYPE arg0);
+    bool IsMoving();
+    bool StopMoving();
+    ClockworkMaximo *GetTarget();
+    bool FaceTarget(float arg0);
+    bool InBlockableState();
 
-    char _pad000[0x20];
+    char _pad000[0x1B];
+    unsigned char m_unk1B;          // 0x01B
+    char _pad01C[0x20 - 0x1C];
     int m_unk20;                    // 0x020
     char _pad024[0x38 - 0x24];
     ClockworkMaximoState *m_unk38;  // 0x038
     int m_unk3C;                    // 0x03C
-    char _pad040[0x1E4 - 0x40];
+    char _pad040[0x140 - 0x40];
+    int m_unk140;                   // 0x140
+    char _pad144[0x1E4 - 0x144];
     int m_unk1E4;                   // 0x1E4
     int m_unk1E8;                   // 0x1E8
-    char _pad1EC[0x274 - 0x1EC];
+    char _pad1EC[0x250 - 0x1EC];
+    unsigned int m_unk250;          // 0x250
+    int m_unk254;                   // 0x254
+    char _pad258[0x260 - 0x258];
+    unsigned char m_unk260;         // 0x260
+    char _pad261[0x274 - 0x261];
     int m_unk274;                   // 0x274
     int m_unk278;                   // 0x278
     char m_unk27C;                  // 0x27C
