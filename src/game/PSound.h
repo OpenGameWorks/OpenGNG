@@ -30,6 +30,24 @@ public:
     public:
         OneShotChannelState();
         void Init();
+
+        char _pad00[0x10];
+        int m_unk10;        // 0x10, Init sets 0x3FFF
+        short m_unk14;      // 0x14
+        short m_unk16;      // 0x16
+        int m_unk18;        // 0x18
+        int m_unk1C;        // 0x1C
+        int m_unk20;        // 0x20
+        int m_unk24;        // 0x24
+        int m_unk28;        // 0x28
+        int m_unk2C;        // 0x2C
+    };
+
+    class AmbientEntry {
+    public:
+        char _pad00[0x50];
+        AmbientEntry *m_unk50;  // 0x50
+        AmbientEntry *m_unk54;  // 0x54
     };
 
     class SpotInfo {
@@ -44,6 +62,10 @@ public:
     int SetStandardSecondaryMusicFileID(unsigned int id);
     void PSoundReInitTriglets();
     void EnableLevelProcessing(bool bEnable);
+    void LinkAmbientEntry(AmbientEntry *pEntry, AmbientEntry *pNext);
+    void SetProposedReverbParams(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3, unsigned int p4);
+    void SetMonoOut(bool bMono);
+    void SetMainMusicRelVolume(unsigned int nVolume);
 
     char _pad000[0x024];
     unsigned int m_unk024;  // 0x024
@@ -56,7 +78,9 @@ public:
     char _pad044[0x0EC - 0x044];
     int m_unk0EC;           // 0x0EC
     int m_unk0F0;           // 0x0F0
-    char _pad0F4[0x79E0 - 0x0F4];
+    char _pad0F4[0x5438 - 0x0F4];
+    unsigned int m_unk5438; // 0x5438, SetProposedReverbParams arg 0
+    char _pad543C[0x79E0 - 0x543C];
     int m_unk79E0[6];       // 0x79E0
 };
 
