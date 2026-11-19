@@ -2,8 +2,6 @@
 #include "BGCollision.h"
 
 // TODO(header): foreign declarations
-extern "C" void *__ct__6PArrayFv(void *);
-extern "C" void Allocate__6PArrayFUi(void *, unsigned int);
 extern "C" void __dl__FPv(void *);
 extern float vUp_1253[4];
 extern "C" void sceVu0SubVector(float *, float *, float *);
@@ -277,19 +275,17 @@ void BGCollision::Destroy()
         m_unk4C = 0;
         m_unk40 = 0;
     }
-    if (m_unk78 != 0) {
-        m_unk70 = 0;
-        m_unk74 = 0;
+    if (m_unk70.m_unk8 != 0) {
+        m_unk70.m_unk0 = 0;
+        m_unk70.m_unk4 = 0;
     }
 }
 
-// DRAFT: 0x00170E20 __ct__11BGCollisionFv
-// note: 18 words differ; original spills this to 0x1C(sp) and reloads it per store, stores m_unk44 before Allocate, and uses no s0.
+// FUNCTION: 0x00170E20 __ct__11BGCollisionFv
 BGCollision::BGCollision()
 {
-    __ct__6PArrayFv(&m_unk70);
     m_unk4C = 0;
     m_unk40 = 0;
     m_unk44 = 0;
-    Allocate__6PArrayFUi(&m_unk70, 0x80);
+    m_unk70.Allocate(0x80);
 }

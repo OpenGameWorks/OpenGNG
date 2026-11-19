@@ -2,6 +2,7 @@
 #define BGCOLLISION_H
 
 #include "types.h"
+#include "PArray.h"
 
 // TODO(header): foreign declarations
 class PVec3;
@@ -41,9 +42,7 @@ public:
     char _pad54[0x4];
     float m_unk58;          // 0x058
     char _pad5C[0x14];
-    int m_unk70;            // 0x070 PArray base (size not recovered), set up by ctor
-    int m_unk74;            // 0x074 cleared by Destroy
-    int m_unk78;            // 0x078 flag checked by Destroy
+    PArray m_unk70;         // 0x070 allocated with 0x80 slots by the ctor
 };
 
 #endif
