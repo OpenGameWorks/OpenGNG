@@ -3,14 +3,19 @@
 
 #include "types.h"
 
+class PMNode;
+
 // ClockworkPuncher derives from EntityBaseClass; the base is not declared here,
 // so every member is named by its offset from the object start.
 class ClockworkPuncher {
 public:
+    ClockworkPuncher();
+    void AttachSparkEffect();
     void AttachDamageEffect(class PMNode *pNode, unsigned int nId, float fA, float fB, float fC);
     int Stalled(float fDist);
     int PlayerFacingUs();
     int InBlockableState();
+    void CheckBlockAttack();
     void SetRiseAndAttack(float (*arg0)[4], float arg1, float arg2);
     void SetEditableVars(char *arg0);
     void SetDefaultVars();
@@ -20,16 +25,25 @@ public:
     void OnAttackEvent(class EntityBaseClass *pEntity, int nEvent);
     void DeleteEffects();
     void DeleteTimers();
+    void FaceHit();
     void SetSpawnedFromEntity(float *pPos, float *pAlt, int nType);
     void LoadCorrectMesh();
 
-    char _pad000[0x20];
+    void *m_unk0;            // 0x000 vtable pointer
+    int m_unk4;             // 0x004 compared with the player's +0x1CC link by CheckBlockAttack
+    char _pad008[0x20 - 0x08];
     int m_unk20;             // 0x020 state
-    char _pad024[0x3C - 0x24];
+    char _pad024[0x38 - 0x24];
+    char *m_unk38;           // 0x038 object whose +0x11C float is set by FaceHit
     char *m_unk3C;           // 0x03C target entity pointer; +0x80 used when non-null
-    char _pad040[0x163 - 0x40];
+    char _pad040[0xF8 - 0x40];
+    float m_unkF8;           // 0x0F8 set to 1.5f by the constructor
+    float m_unkFC;           // 0x0FC set to 2.0f by the constructor
+    char _pad100[0x163 - 0x100];
     unsigned char m_unk163;  // 0x163
-    char _pad164[0x190 - 0x164];
+    char _pad164[0x166 - 0x164];
+    char m_unk166;           // 0x166 set to 1 by the constructor
+    char _pad167[0x190 - 0x167];
     char m_unk190;           // 0x190 start of the embedded EntityBaseClass block, address taken
     char _pad191[0x1B4 - 0x191];
     int m_unk1B4;            // 0x1B4
@@ -51,29 +65,43 @@ public:
     char _pad200[0x210 - 0x200];
     int m_unk210;            // 0x210
     unsigned int m_unk214;   // 0x214 timer handle, killed by DeleteTimers
-    char _pad218[0x250 - 0x218];
+    char _pad218[0x224 - 0x218];
+    int m_unk224;            // 0x224 set to 0 by the constructor
+    char _pad228[0x250 - 0x228];
     char m_unk250[0x270 - 0x250]; // 0x250 MathAPI object, passed as this to DistanceXZ
     unsigned char m_unk270;  // 0x270
-    char _pad271;
+    unsigned char m_unk271;  // 0x271
     unsigned char m_unk272;  // 0x272
-    char _pad273[0x27C - 0x273];
+    char _pad273[0x274 - 0x273];
+    char m_unk274;           // 0x274
+    char _pad275[0x277 - 0x275];
+    char m_unk277;           // 0x277 set to 1 by the constructor
+    char _pad278[0x27C - 0x278];
     unsigned int m_unk27C;   // 0x27C timer handle, killed by DeleteTimers
-    char _pad280[0x288 - 0x280];
+    int m_unk280;            // 0x280
+    char _pad284[0x288 - 0x284];
     unsigned int m_unk288;   // 0x288 timer handle, killed by DeleteTimers
     unsigned int m_unk28C;   // 0x28C timer handle, killed by DeleteTimers
-    char _pad290[0x298 - 0x290];
+    char _pad290[0x294 - 0x290];
+    float m_unk294;          // 0x294 set to 7.0f by the constructor
     int m_unk298;            // 0x298 effect handle, cleared by OnEffectDelete
     int m_unk29C;            // 0x29C effect handle, cleared by OnEffectDelete
     int m_unk2A0;            // 0x2A0 effect handle, cleared by OnEffectDelete
     int m_unk2A4;            // 0x2A4 effect handle, cleared by OnEffectDelete
     int m_unk2A8;            // 0x2A8 effect handle, cleared by OnEffectDelete
     int m_unk2AC;            // 0x2AC effect handle, cleared by OnEffectDelete
-    char _pad2B0[0x2B4 - 0x2B0];
-    int m_unk2B4;            // 0x2B4
-    char _pad2B8[0x2BD - 0x2B8];
+    int m_unk2B0;            // 0x2B0
+    PMNode *m_unk2B4;        // 0x2B4 PMNode pointer, used by AttachSparkEffect and AttachDamageEffect
+    int m_unk2B8;            // 0x2B8
+    char m_unk2BC;           // 0x2BC
     unsigned char m_unk2BD;  // 0x2BD
-    char _pad2BE[0x2C4 - 0x2BE];
+    char _pad2BE[0x2C0 - 0x2BE];
+    int m_unk2C0;            // 0x2C0
     int m_unk2C4;            // 0x2C4 damage fx handle, destroyed by the destructor
+    int m_unk2C8;            // 0x2C8
+    int m_unk2CC;            // 0x2CC
+    int m_unk2D0;            // 0x2D0
+    unsigned char m_unk2D4;  // 0x2D4
 };
 
 #endif
