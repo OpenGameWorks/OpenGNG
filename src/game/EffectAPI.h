@@ -4,6 +4,7 @@
 #include "types.h"
 
 class EntityBaseClass;
+class EffectNode;
 class PLightManager;
 
 // EffectAPI derives from PArray at offset 0; the base is not declared here,
@@ -13,12 +14,14 @@ public:
     EffectAPI();
     void CreatePling(EntityBaseClass *arg0, float arg1, unsigned int arg2, unsigned int arg3, bool arg4);
     void CreatePling(EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4);
+    void DeleteEffect(EffectNode *arg0);
 };
 
 class EffectNode {
 public:
     virtual ~EffectNode();
     void SendDeleteEvent(int arg0);
+    int Update(float arg0);
     int Render(PLightManager *arg0);
 
     int m_unk4;                 // 0x004 object whose virtual slot 3 draws the node
@@ -29,6 +32,16 @@ public:
 class PlingEffect : public EffectNode {
 public:
     virtual ~PlingEffect();
+};
+
+class GhostEffect : public EffectNode {
+public:
+    virtual ~GhostEffect();
+};
+
+class OneshotEffect : public EffectNode {
+public:
+    virtual ~OneshotEffect();
 };
 
 #endif

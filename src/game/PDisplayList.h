@@ -8,7 +8,11 @@ public:
     PDisplayList();
     ~PDisplayList();
     int AllocEntries(int nCount);
+    void *AllocParticles(int nCount, int nSize);
     void DeAllocEntries(int nCount);
+    void SetTexSyncPacket();
+    void BeginMesh(unsigned int nTag);
+    void SetVifCodes(unsigned int nCode0, unsigned int nCode1);
     void BeginMatrixList();
     void Reset();
 

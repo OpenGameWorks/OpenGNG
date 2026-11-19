@@ -8,9 +8,19 @@ public:
     void AddAbility(int arg0);
 };
 extern Interface gInterface;
+extern signed char AbilityTable[];
 class EntityBaseClass {
 public:
     int ProcessHitBack();
+    void SetState(int arg0);
+};
+class Shield {
+public:
+    void DeleteShield();
+};
+class PlingEffect {
+public:
+    virtual void Slot00(int arg0);
 };
 class PMat4;
 class PMNode {
@@ -64,10 +74,35 @@ int Player::ValidateItem(int arg0) {
     return result;
 }
 
+// FUNCTION: 0x0015A830 CheckDuplicate__6PlayerFi
+int Player::CheckDuplicate(int arg0) {
+    int i = 0;
+    char *p = (char *)this + AbilityTable[arg0 * 16 + 5] * 8 + 0x22B;
+    do {
+        int c = *p;
+        p++;
+        if (c == arg0) {
+            return 1;
+        }
+        i++;
+    } while (i < 8);
+    return 0;
+}
+
 // FUNCTION: 0x0015AEE0 GetBoxer__6PlayerFi
 void Player::GetBoxer(int arg0) {
     GameVarSet(0x11, arg0 - 0x15);
     gInterface.AddAbility(arg0);
+}
+
+// FUNCTION: 0x0015C090 ResetShield__6PlayerFv
+void Player::ResetShield() {
+    if (m_unk2A4 != 0) {
+        m_unk2A4->DeleteShield();
+        ((EntityBaseClass *)m_unk2A4)->SetState(-2);
+        m_unk2A4 = 0;
+        SetShield(true);
+    }
 }
 
 // note: 12 words differ: original tests m_unk250 with beqz into the body and exits via b with ld ra in the delay slot; compiled code emits bnez to the shared exit. Tried nested if, inner early return and && forms, all 12 words.
@@ -78,6 +113,21 @@ void Player::GuardHitMove() {
     }
     if (((EntityBaseClass *)this)->ProcessHitBack() == 0) {
         m_unk250 = 1;
+    }
+}
+
+// FUNCTION: 0x0015DA80 HammerDSlashMove__6PlayerFv
+void Player::HammerDSlashMove() {
+    if (m_unk250 == 0 && (int)m_unk3C[13] > 0x14) {
+        m_unk250 = 1;
+        SetShockwave(10);
+    }
+}
+
+// FUNCTION: 0x0015DC20 CancelMove__6PlayerFv
+void Player::CancelMove() {
+    if ((int)m_unk3C[13] >= ((unsigned char *)m_unk254)[4]) {
+        CancelAttack(0x30);
     }
 }
 
@@ -103,6 +153,18 @@ void Player::UpdatePlayerFx() {
     PMNode *temp_a1 = (PMNode *)m_unk288;
     if (temp_a1 != 0) {
         temp_a1->ProcessFxTriggers(1.0f, (PMat4 *)(m_unk284 + 0x40), false, false);
+    }
+}
+
+// FUNCTION: 0x00164770 ResetPling__6PlayerFv
+void Player::ResetPling() {
+    m_unk324 = 0;
+    PlingEffect *t = m_unk32C;
+    if (t != 0) {
+        if (t != 0) {
+            t->Slot00(1);
+        }
+        m_unk32C = 0;
     }
 }
 
