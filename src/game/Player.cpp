@@ -13,6 +13,13 @@ class EntityBaseClass {
 public:
     int ProcessHitBack();
     void SetState(int arg0);
+    void PlaySound(unsigned int arg0);
+};
+extern signed char MaximoArmor[8];
+class CutSceneObject {
+public:
+    virtual void Slot00();
+    virtual void Slot04(int arg0, int arg1, int arg2);
 };
 class Shield {
 public:
@@ -26,6 +33,7 @@ class PMat4;
 class PMNode {
 public:
     void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
+    void EnableFx(bool arg0, bool arg1);
 };
 
 // FUNCTION: 0x00158F60 Ready2Clear__6PlayerFv
@@ -147,6 +155,31 @@ void Player::GrimSlash2Move() {
     }
 }
 
+// note: 2 words differ: the move of this into a0 lands in the beq delay slot instead of the jal delay slot. Tried nested ifs, early return, reordered operands and swapped != form (3 lines).
+// DRAFT: 0x0015F770 LandingMove__6PlayerFv
+void Player::LandingMove() {
+    int action = GetGroundAction();
+    if (action != 0xA && action != 0 && action != m_unk260) {
+        SetAction(action);
+    }
+}
+
+// note: 16 words differ: original keeps the constant 1 in v0 for the 0x9F path and loads 2/0 into v0 for the others; compiled code uses a2. Tried if/else chain (16 lines), int idx = 1 (about 14, branch layout differs).
+// DRAFT: 0x00160090 GetShieldPass__6PlayerFPb
+void Player::GetShieldPass(bool *arg0) {
+    arg0[0] = 0;
+    arg0[1] = 0;
+    arg0[2] = 0;
+    arg0[3] = 1;
+    int idx = 0;
+    if (m_unk214 == 0x6A) {
+        idx = 2;
+    } else if (m_unk214 == 0x9F) {
+        idx = 1;
+    }
+    arg0[idx] = 1;
+}
+
 // note: 4 words differ: original keeps the loaded pointer in a1 and passes it as a0 for the call; compiled code keeps it in t0. Tried void * and int locals; int does not compile, void * still 4 words.
 // DRAFT: 0x001601F0 UpdatePlayerFx__6PlayerFv
 void Player::UpdatePlayerFx() {
@@ -154,6 +187,30 @@ void Player::UpdatePlayerFx() {
     if (temp_a1 != 0) {
         temp_a1->ProcessFxTriggers(1.0f, (PMat4 *)(m_unk284 + 0x40), false, false);
     }
+}
+
+// FUNCTION: 0x00163930 BackToMaximo__6PlayerFv
+void Player::BackToMaximo() {
+    if (m_unk229 == 4) {
+        SetMaximo(MaximoArmor[m_unk1DC], false);
+        ((EntityBaseClass *)this)->PlaySound(0x119);
+    }
+}
+
+// FUNCTION: 0x00163F80 ShowPlayer__6PlayerFb
+void Player::ShowPlayer(bool arg0) {
+    m_unk33B = !arg0;
+    EnablePlayerShadow(arg0);
+    PMNode *temp = (PMNode *)m_unk288;
+    if (temp != 0) {
+        temp->EnableFx(arg0, true);
+    }
+}
+
+// FUNCTION: 0x00164050 RenderCutScene__6PlayerFv
+void Player::RenderCutScene() {
+    ((CutSceneObject *)m_unk28C)->Slot04(0, 0x80, 0);
+    ((CutSceneObject *)m_unk284)->Slot04(0, 0x80, 0);
 }
 
 // FUNCTION: 0x00164770 ResetPling__6PlayerFv
