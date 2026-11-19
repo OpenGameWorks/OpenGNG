@@ -1,0 +1,34 @@
+#ifndef EFFECTAPI_H
+#define EFFECTAPI_H
+
+#include "types.h"
+
+class EntityBaseClass;
+class PLightManager;
+
+// EffectAPI derives from PArray at offset 0; the base is not declared here,
+// so the constructor reaches it through the .cpp foreign declarations.
+class EffectAPI {
+public:
+    EffectAPI();
+    void CreatePling(EntityBaseClass *arg0, float arg1, unsigned int arg2, unsigned int arg3, bool arg4);
+    void CreatePling(EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4);
+};
+
+class EffectNode {
+public:
+    virtual ~EffectNode();
+    void SendDeleteEvent(int arg0);
+    int Render(PLightManager *arg0);
+
+    int m_unk4;                 // 0x004 object whose virtual slot 3 draws the node
+    int m_unk8;                 // 0x008 argument forwarded to SendDeleteEvent
+    unsigned char m_unkC;       // 0x00C flag; gates the light pointer in Render
+};
+
+class PlingEffect : public EffectNode {
+public:
+    virtual ~PlingEffect();
+};
+
+#endif
