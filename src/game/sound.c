@@ -4,6 +4,7 @@
 extern short IOPCommandData[64];
 extern int gSOUND_EEControlReq;
 extern int gSOUND_EEControlReqCallCnt;
+extern char SOUND_SPUKeyStatus[0x40];
 void SetIOPCommand(int cmd, int count);
 
 static int fst_uEECallCnt;
@@ -83,6 +84,60 @@ void SOUND_EnableFeatures(unsigned int arg0, unsigned int arg1) {
     SetIOPCommand(0x2A, 4);
 }
 
+// DRAFT: 0x001ADC60 SOUND_LevelRestart
+// note: 23 differing lines; frame and call match, but first-loop base is lui $a0 vs original lui $v1 (+addiu 0x3E50), pointer in $a2 vs $a0, loop test in $v1 vs $at, and second loop stores before addiu. Tried indexed stores (23), p = &arr[i] with mid-block increment (23 with reordered tail), and i += 1 ahead of the store.
+void SOUND_LevelRestart(void) {
+    int i;
+    char *p;
+    SetIOPCommand(0x24, 0);
+    i = 6;
+    do {
+        SOUND_SPUKeyStatus[i + 0] = 0;
+        SOUND_SPUKeyStatus[i + 1] = 0;
+        SOUND_SPUKeyStatus[i + 2] = 0;
+        SOUND_SPUKeyStatus[i + 3] = 0;
+        SOUND_SPUKeyStatus[i + 4] = 0;
+        SOUND_SPUKeyStatus[i + 5] = 0;
+        SOUND_SPUKeyStatus[i + 6] = 0;
+        SOUND_SPUKeyStatus[i + 7] = 0;
+        i += 8;
+    } while (i < 8);
+    if (i < 0x10) {
+        do {
+            p = &SOUND_SPUKeyStatus[i];
+            i += 1;
+            *p = 0;
+        } while (i < 0x10);
+    }
+}
+
+// DRAFT: 0x001ADCF0 SOUND_StopAllSounds
+// note: 23 differing lines; same loop shape and same register-allocation gap as SOUND_LevelRestart (base in $a0 vs $v1, pointer in $a2 vs $a0).
+void SOUND_StopAllSounds(void) {
+    int i;
+    char *p;
+    SetIOPCommand(0x1E, 0);
+    i = 6;
+    do {
+        SOUND_SPUKeyStatus[i + 0] = 0;
+        SOUND_SPUKeyStatus[i + 1] = 0;
+        SOUND_SPUKeyStatus[i + 2] = 0;
+        SOUND_SPUKeyStatus[i + 3] = 0;
+        SOUND_SPUKeyStatus[i + 4] = 0;
+        SOUND_SPUKeyStatus[i + 5] = 0;
+        SOUND_SPUKeyStatus[i + 6] = 0;
+        SOUND_SPUKeyStatus[i + 7] = 0;
+        i += 8;
+    } while (i < 8);
+    if (i < 0x10) {
+        do {
+            p = &SOUND_SPUKeyStatus[i];
+            i += 1;
+            *p = 0;
+        } while (i < 0x10);
+    }
+}
+
 // FUNCTION: 0x001ADD80 SOUND_FadeMusicStream
 void SOUND_FadeMusicStream(short arg0, short arg1, short arg2) {
     IOPCommandData[2] = arg2;
@@ -118,6 +173,28 @@ void SOUND_ChangeReverbCore(short arg0, short arg1, short arg2, short arg3, shor
     IOPCommandData[0] = arg0;
     IOPCommandData[1] = arg1;
     SetIOPCommand(0x4D, 6);
+}
+
+// DRAFT: 0x001AE060 SOUND_CountFreeSPUChannels
+// note: loop and lbu match; still differs in early-return scheduling (second compare sits in a branch delay slot with v0 vs at, and lui placement). Tried: split returns, reordered ||, arg0 >= vs > 0x2F.
+int SOUND_CountFreeSPUChannels(unsigned int arg0, unsigned int arg1) {
+    int count;
+    unsigned int i;
+    i = arg0;
+    if (i > 0x2FU) {
+        return -2;
+    }
+    if ((arg1 < i) || (arg1 >= 0x30U)) {
+        return -3;
+    }
+    count = 0;
+    while (arg1 >= i) {
+        if (*(unsigned char *)&SOUND_SPUKeyStatus[i] == 0) {
+            count += 1;
+        }
+        i += 1;
+    }
+    return count;
 }
 
 // FUNCTION: 0x001AE3A0 SOUND_SetSPUWriteAddress
@@ -161,6 +238,22 @@ int SOUND_SetChanRelVol(unsigned int arg0, short arg1, short arg2) {
     return 0;
 }
 
+// FUNCTION: 0x001AE680 SOUND_PlaySFXRelVol
+int SOUND_PlaySFXRelVol(short arg0, unsigned int arg1, short arg2, short arg3, unsigned int arg4) {
+    if (arg1 > 0x2FU) {
+        return -1;
+    }
+    SOUND_SPUKeyStatus[arg1] = 3;
+    IOPCommandData[2] = arg2;
+    IOPCommandData[3] = arg3;
+    IOPCommandData[4] = (short)(arg4 >> 16);
+    IOPCommandData[5] = (short)arg4;
+    IOPCommandData[0] = arg0;
+    IOPCommandData[1] = arg1;
+    SetIOPCommand(0x3C, 6);
+    return 0;
+}
+
 // DRAFT: 0x001AE4B0 SOUND_ResumeMultipleSounds
 // note: 12 differing words; compiler drops the original's ori $v1,0xFFFF + and mask on index 1 (sh truncates) and the stored size is 0x34 vs 0x3c. Tried signed int, unsigned short cast, mask local, unsigned long args; 12 best.
 void SOUND_ResumeMultipleSounds(unsigned int arg0, unsigned int arg1) {
@@ -199,6 +292,25 @@ int SOUND_StopStream(unsigned int arg0) {
     IOPCommandData[0] = (short)arg0;
     SetIOPCommand(5, 1);
     return 0;
+}
+
+// DRAFT: 0x001AE8B0 SOUND_StreamAfterFlags
+// note: masked [2] store (x & 0xFFFF) is folded to plain sh; store order of [2]/[3]/[5]/[6] and early-branch offset differ; 25 lines
+void SOUND_StreamAfterFlags(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4, unsigned int arg5) {
+    if (arg0 < 4U) {
+        IOPCommandData[0] = arg0;
+        IOPCommandData[1] = (short)(arg1 >> 16);
+        IOPCommandData[4] = arg2;
+        IOPCommandData[2] = (short)(arg1 & 0xFFFF);
+        IOPCommandData[3] = (short)(arg2 >> 16);
+        IOPCommandData[5] = (short)(arg3 >> 16);
+        IOPCommandData[6] = arg3;
+        IOPCommandData[7] = (short)(arg4 >> 16);
+        IOPCommandData[8] = arg4;
+        IOPCommandData[9] = (short)(arg5 >> 16);
+        IOPCommandData[10] = arg5;
+        SetIOPCommand(0x42, 0xB);
+    }
 }
 
 // DRAFT: 0x001AEA90 SOUND_TransferSFX
