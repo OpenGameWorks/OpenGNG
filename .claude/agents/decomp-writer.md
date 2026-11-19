@@ -38,6 +38,7 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4`) that `tool
 - MW inlines builtin `abs()`; where the original calls libc `abs` (`jal 0x122520`), a block-scope `int abs(int);` declaration inside the function keeps the call.
 - A void callee declaration where the original reads v0 (or the reverse) shifts registers: callee return types follow their own asm.
 - A constructor that stores `this` to `0x1C(sp)` and reloads it before each store has a member subobject whose type declares a destructor; CodeWarrior keeps `this` in `s0` when no member type has one. Such members are embedded as real classes (`#include "PArray.h"`, `PArray m_unk70;`) so the compiler constructs them implicitly; a manual `__ct__6PArrayFv(...)` call reproduces neither the spill nor the call order.
+- `lw t9,0(a0); lw t9,N(t9); jalr t9` is a C++ virtual call; a cast function-pointer call loads `v0` instead. CodeWarrior vtables start with an 8-byte header, so slot `N` is virtual number `(N - 8) / 4` in declaration order, the virtual destructor taking one slot. A class declaring virtuals up to that slot (`.venv/bin/python tools/vtable.py CLASS < /dev/null` lists each slot's target) and a cast `((View *)this)->Method(args)` reproduce it; `src/game/ClockworkMaximo.cpp` shows one.
 - A callee defined in no source still links: `tools/link.py` resolves it by name from the original symbol table, so its declaration under `TODO(header)` is enough.
 - `src/game/PWorld.cpp` holds the first match and serves as a model.
 
