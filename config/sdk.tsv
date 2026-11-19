@@ -78,6 +78,8 @@ start	end	archive	member
 0011D358	0011D370	libm.a	wf_atan2.o
 0011D370	0011D388	libm.a	wf_fmod.o
 00122508	00122520	libc.a	abort.o
+00122520	00122534	libc.a	abs.o
+00122538	00122560	libc.a	atoi.o
 001255B8	00125698	libc.a	memchr.o
 00125698	0012572C	libc.a	memcmp.o
 00125730	001257E0	libc.a	memcpy.o

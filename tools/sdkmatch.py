@@ -90,7 +90,7 @@ def exe_words() -> list[int]:
 def main() -> int:
     sdk = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "ext/sce"
     libs = sorted((sdk / "x252").rglob("ee/lib/*.a")) + sorted((sdk / "x250").glob("sce/ee/lib/*.a"))
-    # ee-gcc toolchain runtime (newlib libc/libm, libgcc); first directory wins per archive name
+    # ee-gcc toolchain runtime (newlib libc/libm, libgcc); every toolchain version is tried
     libs += sorted(sdk.glob("toolchain*/*.a"))
     if not libs:
         print(f"no SCE archives under {sdk}", file=sys.stderr)
@@ -103,9 +103,10 @@ def main() -> int:
     placed: dict[int, tuple[int, str, str]] = {}
     seen_libs: set[str] = set()
     for lib in libs:
-        if lib.name in seen_libs:
-            continue  # the 2.5.2 copy of a library supersedes the 2.5.0 one
-        seen_libs.add(lib.name)
+        if "toolchain" not in lib.parent.name:
+            if lib.name in seen_libs:
+                continue  # the 2.5.2 copy of an SCE library supersedes the 2.5.0 one
+            seen_libs.add(lib.name)
         for name, obj in members(lib):
             try:
                 w = text_words(obj)
