@@ -7,6 +7,9 @@ extern "C" void __dt__5PMeshFv(void *, short);
 extern "C" void *__nw__FUi(unsigned int);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
+extern "C" PObjectDisplayList *__ct__18PObjectDisplayListFv(PObjectDisplayList *);
+extern "C" void __dt__18PObjectDisplayListFv(PObjectDisplayList *, short);
+extern "C" int Create__18PObjectDisplayListFP6PMNodePb(PObjectDisplayList *, PMNode *, bool *);
 
 class PArray {
 public:
@@ -34,6 +37,48 @@ public:
     virtual void Slot16();
     virtual float GetFrameRate();
 };
+
+// FUNCTION: 0x001919E0 CreateObjectDisplayList__6PMNodeFv
+int PMNode::CreateObjectDisplayList() {
+    PObjectDisplayList *p = m_pObjDisplayList;
+    if (p != 0) {
+        __dt__18PObjectDisplayListFv(p, 1);
+        m_pObjDisplayList = 0;
+    }
+    p = (PObjectDisplayList *)__nw__FUi(0x1F0);
+    if (p != 0) {
+        p = __ct__18PObjectDisplayListFv(p);
+    }
+    m_pObjDisplayList = p;
+    if (m_pObjDisplayList == 0) {
+        CdsAssert__FPciPc("PMNode.cpp", 0x99E, "mpObjDisplayList");
+    }
+    if (Create__18PObjectDisplayListFP6PMNodePb(m_pObjDisplayList, this, &m_unkD4) == 0) {
+        __dt__18PObjectDisplayListFv(m_pObjDisplayList, 1);
+        m_pObjDisplayList = 0;
+        return 0;
+    }
+    return 1;
+}
+
+// DRAFT: 0x00192CC0 CopyFxTriggers__6PMNodeFR6PMNode
+// note: 32 lines differ in the current form (count>0 guard, do-while). Earlier 26 for for/while/do-while variants not reproduced; count!=0 guard also 32.
+void PMNode::CopyFxTriggers(PMNode &src) {
+    unsigned int count = src.m_unkD8;
+    unsigned int idx = 0;
+    if (count > 0) {
+        do {
+            tagParticleFxTrigger *pTrig = 0;
+            if (idx < src.m_unkD8) {
+                pTrig = src.m_unkE0[idx];
+            }
+            if (pTrig != 0 && !(*(int *)((char *)pTrig + 0x24) & 4)) {
+                AddFxTrigger(pTrig, false);
+            }
+            idx++;
+        } while (idx < count);
+    }
+}
 
 // FUNCTION: 0x00192E30 AddFxTrigger__6PMNodeFP20tagParticleFxTriggerb
 int PMNode::AddFxTrigger(tagParticleFxTrigger *pTrigger, bool bFlag) {
@@ -83,6 +128,33 @@ float PMNode::GetFrameRate() {
     return 0.0f;
 }
 
+// FUNCTION: 0x00193540 BuildDispList__6PMNodeFP6PArray
+void PMNode::BuildDispList(PArray *pArr) {
+    PMNode *pChild;
+    unsigned int idx;
+    if (m_unk10 != 0 || m_unkD0 >= 0) {
+        pArr->Add(this);
+    }
+    m_unk18 = 0;
+    if (m_unk14 != 0) {
+        pChild = *m_unk1C;
+    } else {
+        pChild = 0;
+    }
+    if (pChild != 0) {
+        do {
+            pChild->BuildDispList(pArr);
+            idx = m_unk18 + 1;
+            m_unk18 = idx;
+            if (idx < m_unk14) {
+                pChild = m_unk1C[m_unk18];
+            } else {
+                pChild = 0;
+            }
+        } while (pChild != 0);
+    }
+}
+
 // FUNCTION: 0x00193B10 GetWorldMeshCenter__6PMNodeFPf
 int PMNode::GetWorldMeshCenter(float *pOut) {
     u_long128 tmp;
@@ -120,6 +192,67 @@ void PMNode::DisableAllHitBox() {
                 pChild = 0;
             }
         } while (pChild != 0);
+    }
+}
+
+// DRAFT: 0x00194AD0 GetFirstMesh__6PMNodeFv
+// note: 2 lines differ; zero-v0 move sits in the delay slot of the pChild guard beqz, original branches to a separate zero move with nop delay. Tried: pResult+break (larger), early return 0 with duplicated tail (26).
+void *PMNode::GetFirstMesh() {
+    PMNode *pChild;
+    unsigned int idx;
+    void *pMesh = m_unk10;
+    if (pMesh != 0) {
+        return pMesh;
+    }
+    m_unk18 = 0;
+    if (m_unk14 != 0) {
+        pChild = *m_unk1C;
+    } else {
+        pChild = 0;
+    }
+    if (pChild != 0) {
+        do {
+            void *pFound = pChild->GetFirstMesh();
+            if (pFound != 0) {
+                return pFound;
+            }
+            idx = m_unk18 + 1;
+            m_unk18 = idx;
+            if (idx < m_unk14) {
+                pChild = m_unk1C[m_unk18];
+            } else {
+                pChild = 0;
+            }
+        } while (pChild != 0);
+    }
+    return 0;
+}
+
+// DRAFT: 0x00194B80 SetAllFrustrumTest__6PMNodeF13eBoxIntersect
+// note: 7 lines differ; beq offset 0x1C vs 0x1B at 0x24 and missing join nop at 0x94 before epilogue (rest is shift). Tried: early return on m_unk04==2 (also 7, reverted).
+void PMNode::SetAllFrustrumTest(eBoxIntersect eMode) {
+    PMNode *pChild;
+    unsigned int idx;
+    m_unk0C = (int)eMode;
+    if (m_unk04 != 2) {
+        m_unk18 = 0;
+        if (m_unk14 != 0) {
+            pChild = *m_unk1C;
+        } else {
+            pChild = 0;
+        }
+        if (pChild != 0) {
+            do {
+                pChild->SetAllFrustrumTest(eMode);
+                idx = m_unk18 + 1;
+                m_unk18 = idx;
+                if (idx < m_unk14) {
+                    pChild = m_unk1C[m_unk18];
+                } else {
+                    pChild = 0;
+                }
+            } while (pChild != 0);
+        }
     }
 }
 
