@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 
 // TODO(header): foreign declarations
@@ -7,7 +8,11 @@ extern char vu_clip_microcode_dma_packet[];
 extern char vu_shadow_microcode_dma_packet[];
 extern char vu_fx_microcode_dma_packet[];
 extern char vu_debug_microcode_dma_packet[];
+extern char vu_noclip_microcode_dma_packet[];
+extern char clip_unlit_spline_patch_init[];
 extern char dbg_display_init[];
+extern "C" void CdsAssert__FPciPc(char *, int, char *);
+extern "C" void memcpy(void *, const void *, unsigned int);
 extern int gCDSVBlankCount[1];
 extern float GAME_FPS;
 extern float gUnitMatrix[16];
@@ -22,9 +27,10 @@ public:
     void SetClipMatrix(PMat4 *pMat);
     void SetScreenMatrix(PMat4 *pMat);
     void SetVifCodes(unsigned int nA, unsigned int nB);
-    void SetGsRegisters(int *pData);
+    void SetGsRegisters(u_long128 *pRegData, int nNumRegs);
     void SetWorldMatrix(PMat4 *pMat);
     void BeginMesh(unsigned int nFlags);
+    void SetTexSyncPacket();
 
     char _pad000[0xA3348];
     int m_unkA3348;                     // 0xA3348
@@ -35,7 +41,25 @@ public:
     void Enable(bool bEnable);
 };
 
+class PTextureDmaChain {
+public:
+    void NextBatch();
+};
+
+class PTextureManager {
+public:
+    void SetTexture(int nIndex, PDisplayList *pDisplayList, struct tagGsTextureEnvironment **ppEnv, bool &bFlag);
+};
+
 #include "PGfxEngine.h"
+
+// TODO(header): foreign declarations (GS helpers and globals, placed after the class header for eGsContext)
+struct tagGsTextureEnvironment;
+void GsInitTexEnv(tagGsTextureEnvironment *pEnv, unsigned int nA, unsigned int nB, unsigned int nC, bool bFlag, eGsContext eCtx);
+void GsSetTexBaseAddr(tagGsTextureEnvironment *pEnv, unsigned int nAddr);
+unsigned int GsGetBufferWidth(unsigned int nWidth, unsigned int nDepth);
+extern int SCREEN_WIDTH;
+extern int SCREEN_HEIGHT;
 
 // FUNCTION: 0x00184640 ComputeDistanceSq__FPfPfPA4_A4_fPA4_A4_fPfPf
 void ComputeDistanceSq(float *pA, float *pB, float (*pMatA)[4][4], float (*pMatB)[4][4], float *pSrc, float *pDst)
@@ -109,8 +133,17 @@ int VBlankEndInterruptHandler(int nIrq) {
     return 0;
 }
 
-// DRAFT: 0x184F40 EndShadowRender__10PGfxEngineFv
-// note: original tail-calls SetVu1Microcode with j and no frame; this compiler emits jal plus a frame for every tail-position call (20 words differ).
+// FUNCTION: 0x1849A0 BeginSplinePatch__10PGfxEngineFv
+void PGfxEngine::BeginSplinePatch() {
+    if (m_unk158E1C != &vu_noclip_microcode_dma_packet) {
+        m_unk154C80->m_unkA3348 = 1;
+        m_unk158E1C = &vu_noclip_microcode_dma_packet;
+        m_unk154C80->SetVu1Microcode(m_unk158E1C);
+    }
+    m_unk154C80->BeginMesh((unsigned int)(clip_unlit_spline_patch_init + 0x1880) >> 3);
+}
+
+// FUNCTION: 0x184F40 EndShadowRender__10PGfxEngineFv
 void PGfxEngine::EndShadowRender() {
     m_unk154C80->m_unkA3348 = 1;
     m_unk158E1C = &vu_clip_microcode_dma_packet;
@@ -127,8 +160,7 @@ void PGfxEngine::BeginShadowRender() {
     }
 }
 
-// DRAFT: 0x1851B0 DrawFxLines__10PGfxEngineFP11tagVuFxLineiffb
-// note: original tail-calls DrawParticles with j and no frame; this compiler emits jal plus a frame for every tail-position call (13 words differ).
+// FUNCTION: 0x1851B0 DrawFxLines__10PGfxEngineFP11tagVuFxLineiffb
 void PGfxEngine::DrawFxLines(struct tagVuFxLine *pLines, int nCount, float fA, float fB, bool bFlag) {
     m_unk154C80->DrawParticles((struct tagVuParticle *)pLines, nCount, fB, fA, bFlag, 0x23);
 }
@@ -167,8 +199,7 @@ void PGfxEngine::SetGlowSizeAndColor(float fA, float fB, float *pColor) {
     m_unk154C80->WriteToVu1Mem(0x3C3, (u_long128 *)aData, 2);
 }
 
-// DRAFT: 0x185460 EndFxRender__10PGfxEngineFv
-// note: original tail-calls SetVu1Microcode with j and no frame; this compiler emits jal plus a frame for every tail-position call.
+// FUNCTION: 0x185460 EndFxRender__10PGfxEngineFv
 void PGfxEngine::EndFxRender() {
     m_unk154C80->m_unkA3348 = 1;
     m_unk158E1C = &vu_clip_microcode_dma_packet;
@@ -213,6 +244,23 @@ void PGfxEngine::UpdateLights(struct tagVuLightingInfo *pInfo) {
     m_unk154C80->WriteToVu1Mem(0x35E, (u_long128 *)pInfo, 9);
 }
 
+// FUNCTION: 0x185940 CopyVuLightingInfo__10PGfxEngineFP17tagVuLightingInfoP17tagVuLightingInfo
+void PGfxEngine::CopyVuLightingInfo(struct tagVuLightingInfo *pDst, struct tagVuLightingInfo *pSrc) {
+    if (pDst == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x6AC, "pDest");
+    }
+    if (pSrc == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x6AD, "pSrc");
+    }
+    memcpy(pDst, pSrc, 0x40);
+    memcpy((char *)pDst + 0x40, (char *)pSrc + 0x40, 0x40);
+    *(u_long128 *)((char *)pDst + 0x80) = *(u_long128 *)((char *)pSrc + 0x80);
+    *(u_long128 *)((char *)pDst + 0x90) = *(u_long128 *)((char *)pSrc + 0x90);
+    *(u_long128 *)((char *)pDst + 0xA0) = *(u_long128 *)((char *)pSrc + 0xA0);
+    *(u_long128 *)((char *)pDst + 0xB0) = *(u_long128 *)((char *)pSrc + 0xB0);
+    *(u_long128 *)((char *)pDst + 0xC0) = *(u_long128 *)((char *)pSrc + 0xC0);
+}
+
 // FUNCTION: 0x185CF0 UpdateLights__10PGfxEngineFv
 void PGfxEngine::UpdateLights() {
     if (m_unk158E23 != 0) {
@@ -234,6 +282,18 @@ void PGfxEngine::SetFullAmbientLight() {
 void PGfxEngine::SetAmbientLight(float *pVec) {
     sceVu0ScaleVector(m_unk158EB0, pVec, 128.0f);
     m_unk158EB0[3] = 0.0f;
+}
+
+// DRAFT: 0x185F60 SetDirLight__10PGfxEngineFiPfPf
+// note: 38 diff lines; original keeps this+0x158E30 as lui 0x15/ori base per array and orders index*4 and scale-call pointer differently; tried plain array index, explicit (char*) and (int) casts, unsigned consts, float/int member split, local offset var
+void PGfxEngine::SetDirLight(int nIndex, float *pDir, float *pScale) {
+    if ((nIndex < 4) && (nIndex >= 0)) {
+        *(float *)((int)this + 0x158E30 + nIndex * 4) = -pDir[0];
+        *(float *)((int)this + 0x158E40 + nIndex * 4) = -pDir[1];
+        *(float *)((int)this + 0x158E50 + nIndex * 4) = -pDir[2];
+        *(int *)((int)this + 0x158E60 + nIndex * 4) = 0x3F800000;
+        sceVu0ScaleVector((float *)&m_unk158E70[nIndex], pScale, 128.0f);
+    }
 }
 
 // DRAFT: 0x185EE0 SetDirLightColor__10PGfxEngineFifff
@@ -294,7 +354,7 @@ void PGfxEngine::BeginMesh(eBoxIntersect eBox) {
 }
 
 // DRAFT: 0x186FA0 SetZBufferUpdate__10PGfxEngineFb10eGsContext
-// note: 18 words differ: original selects 0x4E/0x4F with movn and builds flag<<32 before the select; ours uses beqz and computes flag<<32 after it. Tried: unsigned int nData (26), ternary select (22), reordered OR (18), hoisted flag shift (23), int flag (24).
+// note: 24 words differ (current form, re-measured): original selects 0x4E/0x4F with movn and builds flag<<32 before the select; ours uses beqz. Tried: unsigned int nData (26), ternary select (22), reordered OR (24), hoisted flag shift (23), int flag (24). An earlier note cited 18 for the reordered OR; re-measuring did not reproduce it.
 void PGfxEngine::SetZBufferUpdate(bool bEnable, eGsContext eCtx) {
     unsigned long long aGs[2];
     unsigned long long nData = m_unk158E04;
@@ -305,7 +365,7 @@ void PGfxEngine::SetZBufferUpdate(bool bEnable, eGsContext eCtx) {
     }
     aGs[1] = nCtx;
     aGs[0] = ((unsigned long long)cFlag << 32) | (nData | ((unsigned long long)m_unk158E02 << 24));
-    m_unk154C80->SetGsRegisters((int *)aGs);
+    m_unk154C80->SetGsRegisters((u_long128 *)aGs, 1);
 }
 
 // FUNCTION: 0x187020 SetMaterial__10PGfxEngineFiPfbUlUl
@@ -315,6 +375,46 @@ void PGfxEngine::SetMaterial(int nIndex, float *pVec, bool bFlag, unsigned long 
     m_unk158F00 = bFlag;
     SetMaterial(nUse, pVec, nA, nB, 0, 0, 0);
     m_unk158F00 = cSaved;
+}
+
+// FUNCTION: 0x1872C0 SetPrevFrameBufferAsTexture__10PGfxEngineFv
+void PGfxEngine::SetPrevFrameBufferAsTexture() {
+    u_long128 aTexEnv[6];
+    unsigned int nSize;
+
+    GsInitTexEnv((tagGsTextureEnvironment *)&aTexEnv[0], 0xA, 8, 1, false, (eGsContext)0);
+    *(unsigned long long *)&aTexEnv[3] = ((unsigned long long)GsGetBufferWidth(SCREEN_WIDTH, 1) << 14) | 0x2000000228100000ULL;
+    nSize = 0;
+    if (m_unk158DF0 != 0) {
+        nSize = 0;
+    } else {
+        nSize = SCREEN_WIDTH * SCREEN_HEIGHT * 4;
+    }
+    GsSetTexBaseAddr((tagGsTextureEnvironment *)&aTexEnv[0], nSize);
+    m_unk154C80->SetGsRegisters(&aTexEnv[1], 5);
+}
+
+// DRAFT: 0x187380 SetTexture__10PGfxEngineFi
+// note: 35 lines differ. pEnv sits at sp+0x28 (original sp+0x20), and the original's no-op v0/a1 swap after the nIndex compare is not reproduced. Tried: nTex override in a register, with and without the nTex local, combined and nested conditions.
+void PGfxEngine::SetTexture(int nIndex) {
+    tagGsTextureEnvironment *pEnv;
+    bool bFlag;
+    int nTex;
+
+    bFlag = false;
+    pEnv = 0;
+    nTex = nIndex;
+    if (m_unk16D408 != 0) {
+        if (nIndex != m_unk16D408) {
+            nTex = m_unk16D408;
+        }
+    }
+    ((PTextureManager *)m_unk154C90)->SetTexture(nTex, m_unk154C80, &pEnv, bFlag);
+    if (bFlag) {
+        ((PTextureDmaChain *)((char *)m_unk154C80 + 0xA3380))->NextBatch();
+        m_unk154C80->SetTexSyncPacket();
+    }
+    m_unk154C80->SetGsRegisters((u_long128 *)((char *)pEnv + 0x10), 5);
 }
 
 // FUNCTION: 0x187880 EnableFullScreenFx__10PGfxEngineFb

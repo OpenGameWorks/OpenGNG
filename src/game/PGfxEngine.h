@@ -36,6 +36,8 @@ public:
     void BeginDebugRender();
     void UpdateLights(struct tagVuLightingInfo *pInfo);
     void UpdateLights();
+    void CopyVuLightingInfo(struct tagVuLightingInfo *pDst, struct tagVuLightingInfo *pSrc);
+    void BeginSplinePatch();
     void SetScreenMatrix(PMat4 *pMat);
     void SetViewMatrix(PMat4 *pMat);
     void SetClipMatrix(PMat4 *pMat);
@@ -46,14 +48,20 @@ public:
     void BeginSharedMesh(eBoxIntersect eBox, PMNode *pNode);
     void BeginMesh(eBoxIntersect eBox);
     void *ComputeMicrocodeOffset(eBoxIntersect eBox, unsigned int &nOffset);
+    void SetDirLight(int nIndex, float *pDir, float *pScale);
     void SetDirLightColor(int nIndex, float fR, float fG, float fB);
     void SetMaterial(int nIndex, float *pVec, bool bFlag, unsigned long nA, unsigned long nB);
     void SetMaterial(int nIndex, float *pVec, unsigned long nA, unsigned long nB, unsigned int *pC, unsigned int *pD, float (*pMat)[4][4]);
+    void SetPrevFrameBufferAsTexture();
+    void SetTexture(int nIndex);
 
     char _pad000[0x154C80];
     struct PDisplayList *m_unk154C80;   // 0x154C80
-    char _pad154C84[0x158E02 - 0x154C84];
-    short m_unk158E02;                  // 0x158E02
+    char _pad154C84[0x154C90 - 0x154C84];
+    char m_unk154C90[0x158DF0 - 0x154C90]; // 0x154C90, PTextureManager (SetTexture)
+    int m_unk158DF0;                    // 0x158DF0, non-zero skips the frame-buffer size term in SetPrevFrameBufferAsTexture
+    char _pad158DF4[0x158E02 - 0x158DF4];
+    short m_unk158E02;                 // 0x158E02
     unsigned int m_unk158E04;           // 0x158E04
     char _pad158E08[0x158E1C - 0x158E08];
     void *m_unk158E1C;                  // 0x158E1C
@@ -63,7 +71,10 @@ public:
     unsigned char m_unk158E23;          // 0x158E23
     unsigned char m_unk158E24;          // 0x158E24
     char _pad158E25[0x158E30 - 0x158E25];
-    char m_unk158E30[0x158E70 - 0x158E30]; // 0x158E30, VU lighting block (DMA source address only)
+    float m_unk158E30[4];               // 0x158E30, VU lighting block (DMA source address only)
+    float m_unk158E40[4];               // 0x158E40
+    float m_unk158E50[4];               // 0x158E50
+    int m_unk158E60[4];                 // 0x158E60
     tagDirLightColor m_unk158E70[4];    // 0x158E70, per-light colour (4 lights of 0x10 bytes)
     float m_unk158EB0[4];               // 0x158EB0
     char _pad158EC0[0x158F00 - 0x158EC0];
