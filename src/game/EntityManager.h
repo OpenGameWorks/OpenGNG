@@ -3,6 +3,13 @@
 
 #include "types.h"
 
+class PMNode;
+
+struct BGAnimNode {
+    int m_unk00;                // 0x00 animation id, 0 ends the list
+    BGAnimNode *m_unk04;        // 0x04 next node
+};
+
 class EntityManager {
 public:
     enum ItemCounterType {
@@ -44,6 +51,10 @@ public:
     void Reset(bool arg0);
     void LoadResource(char *arg0, bool arg1);
     void RemoveFromRenderList(struct EntityBaseClass *arg0);
+    int BGAnimIsReset(int arg0);
+    void UpdateSwordBGAnim();
+    void SaveApparitionData(int arg0);
+    void SetEifPosition(unsigned int arg0, unsigned int arg1, float (*arg2)[4]);
 
     static void *mCameraAPI;    // MathAPI instance read by EntityBaseClass::CameraLookingAtMe
 
@@ -60,11 +71,19 @@ public:
     char _pad53A0[0x53A1 - 0x53A0];
     char m_unk53A1[0x5B24 - 0x53A1];    // 0x53A1 per-entry flag bytes, indexed by value*4
     TallyEntry m_unk5B24[5];    // 0x5B24 tally counters, indexed by type (0..4)
-    char _pad5B4C[0x5B60 - 0x5B4C];
+    char _pad5B4C[0x5B50 - 0x5B4C];
+    int m_unk5B50;              // 0x5B50 PArray count of sword BG animations
+    int m_unk5B54;              // 0x5B54 PArray index
+    PMNode **m_unk5B58;         // 0x5B58 PArray entries
+    char _pad5B5C[0x5B60 - 0x5B5C];
     int m_unk5B60;              // 0x5B60 trigger count
     int m_unk5B64;              // 0x5B64 trigger scan index
     void **m_unk5B68;           // 0x5B68 trigger list, TriggerEntry pointers
-    char _pad5B6C[0x5D48 - 0x5B6C];
+    char _pad5B6C[0x5B84 - 0x5B6C];
+    BGAnimNode *m_unk5B84;      // 0x5B84 BG animation list head
+    char _pad5B88[4];
+    BGAnimNode *m_unk5B8C;      // 0x5B8C BG animation list cursor
+    char _pad5B90[0x5D48 - 0x5B90];
     int m_unk5D48;              // 0x5D48 countdown, decremented by ProcessApparitions
     int m_unk5D4C;              // 0x5D4C cleared by LoadOverlay
     char _pad5D50[0x5F74 - 0x5D50];

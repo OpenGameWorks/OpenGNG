@@ -10,6 +10,12 @@ public:
 class PArray {
 public:
     void Remove(void *pItem);
+    void RemoveCurrent();
+};
+
+class PMNode {
+public:
+    int CheckAnimated();
 };
 
 class OverlayManager {
@@ -60,6 +66,19 @@ public:
 };
 
 void CdsAssert(char *pFile, int nLine, char *pExpr);
+extern "C" int printf(const char *fmt, ...);
+extern "C" int sprintf(char *pBuf, const char *fmt, ...);
+
+class PResourceManager {
+public:
+    int LoadGlobalResource(const char *pName, bool bFlag);
+    int LoadLocalResource(const char *pName, bool bFlag);
+};
+
+class Pickup {
+public:
+    void AdjustPickupBox();
+};
 
 class MathAPI {
 public:
@@ -82,6 +101,67 @@ public:
     char _pad040[0x190 - 0x40];
     float m_unk190[4];          // 0x190
 };
+
+// DRAFT: 0x001460D0 BGAnimIsReset__13EntityManagerFi
+// note: 21 diffs; entry beqz targets differ (orig +0x1F to shared return-0, ours +0x1B); tried guard form, while form (34), local cursor (21), flipped cursor order (25), early return (30+)
+int EntityManager::BGAnimIsReset(int arg0) {
+    m_unk5B8C = m_unk5B84;
+    int v;
+    if (m_unk5B84 != 0) {
+        v = m_unk5B84->m_unk00;
+    } else {
+        v = 0;
+    }
+    if (v != 0) {
+        do {
+            if (v == arg0) {
+                return 1;
+            }
+            if (m_unk5B8C == 0) {
+                m_unk5B8C = m_unk5B84;
+                if (m_unk5B84 != 0) {
+                    v = m_unk5B84->m_unk00;
+                } else {
+                    v = 0;
+                }
+            } else {
+                BGAnimNode *next = m_unk5B8C->m_unk04;
+                if (next != 0) {
+                    m_unk5B8C = next;
+                    v = m_unk5B8C->m_unk00;
+                } else {
+                    v = 0;
+                }
+            }
+        } while (v != 0);
+    }
+    return 0;
+}
+
+// DRAFT: 0x00146310 UpdateSwordBGAnim__13EntityManagerFv
+// note: 22 diffs; counter lives in a1 not a0 (orig reuses a0), extra nop after RemoveCurrent call shifts branch offsets; unsigned counter tried, no change
+void EntityManager::UpdateSwordBGAnim() {
+    m_unk5B54 = 0;
+    PMNode *node;
+    if (m_unk5B50 != 0) {
+        node = *m_unk5B58;
+    } else {
+        node = 0;
+    }
+    if (node != 0) {
+        do {
+            if (node->CheckAnimated() != 0) {
+                ((PArray *)&m_unk5B50)->RemoveCurrent();
+            }
+            unsigned int idx = m_unk5B54 + 1;
+            m_unk5B54 = idx;
+            node = 0;
+            if (idx < (unsigned int)m_unk5B50) {
+                node = m_unk5B58[m_unk5B54];
+            }
+        } while (node != 0);
+    }
+}
 
 // FUNCTION: 0x00146F50 ProcessApparitions__13EntityManagerFv
 void EntityManager::ProcessApparitions() {
@@ -187,6 +267,39 @@ void EntityManager::Add2DependencyList(unsigned int arg0, unsigned int arg1) {
     e->m_unk04 = arg1;
 }
 
+// DRAFT: 0x00147AA0 SaveApparitionData__13EntityManagerFi
+// note: 23 diffs; register allocation (pointer, offset, mask, counter), beqz target 0x24 vs 0x23, loop tail order. Tried unsigned char b (25), unsigned int b (23), p declared after i (worse), inner check removed (39).
+void EntityManager::SaveApparitionData(int arg0) {
+    if (arg0 < 0x15) {
+        unsigned char *p = 0;
+        if (arg0 < 0x15) {
+            p = &gMC[arg0 * 0x31];
+            p = p + 0x2B1;
+        }
+        unsigned int b = 0x80;
+        unsigned int mask = 0x40;
+        int i = 1;
+        int off = 4;
+        do {
+            if (*(signed char *)((char *)this + 0x53A0 + off) > 0) {
+                b |= mask;
+            }
+            mask = mask >> 1;
+            if (mask == 0) {
+                *p = b;
+                mask = 0x80;
+                p = p + 1;
+                b = 0;
+            }
+            i = i + 1;
+            off = off + 4;
+        } while (i < 0x180);
+        if (i & 7) {
+            *p = b;
+        }
+    }
+}
+
 // DRAFT: 0x00147B40 LoadApparitionData__13EntityManagerFi
 // note: 22 lines differ; branch offset 0x1D vs 0x1C, p=0 in t1 (orig v1), addiu 0x2B1 placement, b/mask/i/off/q registers (orig a2/a3/t0/t1/t2), loop tail order. Tried gMC[idx+0x2B1] (27), two-pointer q (22), single pointer p (22), counters before byte load (23).
 void EntityManager::LoadApparitionData(int arg0) {
@@ -216,6 +329,34 @@ void EntityManager::LoadApparitionData(int arg0) {
     }
 }
 
+struct EifEntry {
+    float m_unk00;
+    float m_unk04;
+    float m_unk08;
+    short m_unk0C;
+    short m_unk0E;
+};
+
+// DRAFT: 0x00147BC0 SetEifPosition__13EntityManagerFUiUiPA4_f
+// note: 35 diffs; original keeps count+1 in a1 and the entry offset in v1, ours swaps them and stores count+1 early (not in the delay slot). Tried store placement, pointer-indexed entry, direct member test (slti, 36).
+void EntityManager::SetEifPosition(unsigned int arg0, unsigned int arg1, float (*arg2)[4]) {
+    unsigned int count = m_unk5D4C;
+    if (count < 0x20) {
+        EifEntry *entry = (EifEntry *)((char *)this + 0x5D50 + count * 0x10);
+        m_unk5D4C = count + 1;
+        if (arg0 >= 0x10000) {
+            CdsAssert("EntityManager.cpp", 0x44E, "iInstance < 0x10000");
+        }
+        entry->m_unk0C = (short)arg0;
+        entry->m_unk0E = (short)arg1;
+        entry->m_unk00 = arg2[0][0];
+        entry->m_unk04 = arg2[0][1];
+        entry->m_unk08 = arg2[0][2];
+        return;
+    }
+    printf("Too many SetEifPosition() call\n");
+}
+
 // FUNCTION: 0x00148960 GetPtrToInstance__13EntityManagerFUi
 void *EntityManager::GetPtrToInstance(unsigned int arg0) {
     void *pValue;
@@ -232,6 +373,25 @@ void *EntityManager::GetPtrToApparition(unsigned int arg0) {
         return pValue;
     }
     return 0;
+}
+
+// DRAFT: 0x00148F40 LoadResource__13EntityManagerFPcb
+// note: 45 words, frame 0x130 vs 0x120 (saves s1 for arg0, buffer at sp+0x30); original saves arg0 in s0 and never spills this, a0 reaches AdjustPickupBox unreloaded; local name pointer variant also 45.
+void EntityManager::LoadResource(char *arg0, bool arg1) {
+    char buf[0x100];
+
+    if (arg1) {
+        if (((PResourceManager *)((char *)this + 0x50C4))->LoadGlobalResource(arg0, false) == 0) {
+            sprintf(buf, "Error loading resource file ( %s )", arg0);
+            CdsAssert("EntityManager.cpp", 0x221, buf);
+        }
+        ((Pickup *)((char *)this + 0x50C4))->AdjustPickupBox();
+        return;
+    }
+    if (((PResourceManager *)((char *)this + 0x50C4))->LoadLocalResource(arg0, true) == 0) {
+        sprintf(buf, "Error loading resource file ( %s )", arg0);
+        CdsAssert("EntityManager.cpp", 0x228, buf);
+    }
 }
 
 // DRAFT: 0x001490F0 SetItemCounter__13EntityManagerFQ213EntityManager15ItemCounterTypef
