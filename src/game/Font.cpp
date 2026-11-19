@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "Font.h"
 
 // TODO(header): foreign declarations
@@ -5,6 +6,7 @@ class PArray {
 public:
     int Remove(void *pItem);
     void Add(void *pItem);
+    void RemoveCurrent();
 };
 
 class PMovieOverlayEngine {
@@ -18,6 +20,7 @@ extern unsigned char FontColors[176];
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void __dla__FPv(void *pMem);
 extern "C" int printf(const char *fmt, ...);
+extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 class Innocent {
 public:
     static int BuildDialogTable();
@@ -26,6 +29,9 @@ extern int LanguageTable[6];
 void CdsAssert(char *pszFile, int nLine, char *pszExpr);
 extern "C" void *__ct__6PArrayFv(void *pThis);
 extern "C" void *__ct__16PResourceManagerFv(void *pThis);
+extern "C" void *__dt__6PArrayFv(void *pThis, short nFlag);
+extern "C" void *__dt__16PResourceManagerFv(void *pThis, short nFlag);
+extern "C" float FastMath_Fabs__Ff(float f);
 
 // FUNCTION: 0x132F30 InitSubTitle__11FontManagerFi
 void FontManager::InitSubTitle(int arg0) {
@@ -36,6 +42,25 @@ void FontManager::InitSubTitle(int arg0) {
     m_unk12C = var;
     m_unk134 = 0;
     m_unk130 = 0xFFFF;
+}
+
+// DRAFT: 0x132F70 Scroll__8FontNodeFf
+// note: this while form measures 22 differing words (fncmp counts words, not lines); the original tests the loop bound after the offset update with a different branch layout and shared return-0 tail; an earlier 2-diff variant does not reproduce, and for-loop and flag-break forms were worse.
+int FontNode::Scroll(float arg0) {
+    int nIndex = 0;
+    int nOffset = 0;
+    while (nIndex < m_unk4) {
+        *(float *)(m_unk0 + nOffset + 4) += arg0;
+        if (!(*(float *)(m_unk0 + nOffset + 4) <= 30.0f)) {
+            return 0;
+        }
+        nOffset += 0x40;
+        nIndex++;
+    }
+    if (m_unk4 != 0) {
+        m_unk8 = (30.0f - FastMath_Fabs__Ff(*(float *)(m_unk0 + 4))) / 30.0f;
+    }
+    return 1;
 }
 
 // FUNCTION: 0x133030 EnableAllText__11FontManagerFb
@@ -66,6 +91,28 @@ void FontManager::EnableAllText(bool arg0) {
 void FontManager::RemoveText(FontNode *pNode) {
     if (((PArray *)this)->Remove(pNode) != 0) {
         ((PArray *)((char *)this + 0x1C))->Add(pNode);
+    }
+}
+
+// DRAFT: 0x133290 RemoveText__11FontManagerFUs
+// note: original keeps an extra nop after the RemoveCurrent call and another before the loop-exit epilogue (23 differing lines); swapping the id compare operands gave more.
+void FontManager::RemoveText(unsigned short nId) {
+    m_unk4 = 0;
+    FontNode *pNode = (m_unk0 != 0) ? m_unk8[0] : 0;
+    if (pNode != 0) {
+        do {
+            if (nId == pNode->m_unk6) {
+                ((PArray *)((char *)this + 0x1C))->Add(pNode);
+                ((PArray *)this)->RemoveCurrent();
+            }
+            int nIndex = m_unk4 + 1;
+            m_unk4 = nIndex;
+            if ((unsigned int)nIndex < (unsigned int)m_unk0) {
+                pNode = m_unk8[m_unk4];
+            } else {
+                pNode = 0;
+            }
+        } while (pNode != 0);
     }
 }
 
@@ -100,6 +147,46 @@ int FontManager::GetTextCount(int arg0) {
     return count;
 }
 
+// FUNCTION: 0x133410 JapanAddNumber__11FontManagerFPUsPUsi
+unsigned short *FontManager::JapanAddNumber(unsigned short *pStr, unsigned short *pNum, int nUnused) {
+    unsigned short *pDst = (unsigned short *)this;
+    unsigned short *pSrc = pStr;
+    unsigned short c;
+    char buf[8];
+    for (;;) {
+        c = *pSrc;
+        pSrc++;
+        if (c == 0) {
+            break;
+        }
+        *pDst = c;
+        pDst++;
+    }
+    if ((int)pNum >= 0) {
+        *pDst = 0x20;
+        pDst++;
+        sprintf(buf, "%d", (int)pNum);
+        char *pBuf;
+        int i;
+        i = 0;
+        pBuf = buf;
+        for (;;) {
+            c = (unsigned short)pBuf[i];
+            if (c == 0) {
+                break;
+            }
+            *pDst = c;
+            i++;
+            pDst++;
+            if (i >= 8) {
+                break;
+            }
+        }
+    }
+    *pDst = 0;
+    return pDst;
+}
+
 // FUNCTION: 0x133E00 __dt__8FontNodeFv
 extern "C" void *__dt__8FontNodeFv(FontNode *pThis, short nFlag) {
     if (pThis != 0) {
@@ -112,6 +199,31 @@ extern "C" void *__dt__8FontNodeFv(FontNode *pThis, short nFlag) {
         }
     }
     return pThis;
+}
+
+// FUNCTION: 0x133E70 ResetWarning__11FontManagerFv
+void FontManager::ResetWarning() {
+    m_unk114 = 0;
+    FontNode *pNode = (m_unk110 != 0) ? m_unk118[0] : 0;
+    if (pNode != 0) {
+        do {
+            ((PArray *)((char *)this + 0x1C))->Add(pNode);
+            int nIndex = m_unk114 + 1;
+            m_unk114 = nIndex;
+            if ((unsigned int)nIndex < (unsigned int)m_unk110) {
+                pNode = m_unk118[m_unk114];
+            } else {
+                pNode = 0;
+            }
+        } while (pNode != 0);
+    }
+    if (m_unk118 != 0) {
+        m_unk110 = 0;
+        m_unk114 = 0;
+    }
+    m_unk122 = 0;
+    m_unk124 = 0;
+    m_unk121 = 1;
 }
 
 // DRAFT: 0x1340E0 AdvanceText__8FontNodeFv
@@ -140,6 +252,23 @@ void FontManager::SetLanguage(char arg0) {
     m_unk13 = arg0;
     m_unk100 = LanguageTable[nLang];
     m_unkFC = Innocent::BuildDialogTable();
+}
+
+// FUNCTION: 0x134820 __dt__11FontManagerFv
+extern "C" void *__dt__11FontManagerFv(FontManager *pThis, short nFlag) {
+    if (pThis != 0) {
+        pThis->RemoveAll(1);
+        pThis->InitFrame();
+        pThis->ResetWarning();
+        __dt__6PArrayFv((char *)pThis + 0x110, -1);
+        __dt__16PResourceManagerFv((char *)pThis + 0x2C, -1);
+        __dt__6PArrayFv((char *)pThis + 0x1C, -1);
+        __dt__6PArrayFv(pThis, -1);
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
 }
 
 // FUNCTION: 0x1348C0 __ct__11FontManagerFv
