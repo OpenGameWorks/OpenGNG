@@ -60,6 +60,9 @@ extern unsigned char __vt__12HudInventory[];
 extern unsigned char __vt__7HudGrim[];
 extern unsigned char __vt__8HudCombo[];
 extern unsigned char __vt__12HudBossMeter[];
+extern unsigned char __vt__8HudSuper[];
+extern unsigned char __vt__9HudHealth[];
+class HudHealth;
 extern "C" void __dl__FPv(void *pMem);
 
 class PArray {
@@ -75,6 +78,7 @@ class FontManager {
 public:
     void Init();
     void RemoveText(FontNode *pNode);
+    void RemoveText(unsigned short arg0);
     int DisplayString(int arg0, int arg1, int arg2, bool arg3);
 };
 
@@ -84,6 +88,18 @@ extern char MemMgr[908];
 extern "C" void FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(void *, float, float, bool, int);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern Interface gInterface;
+// HintTable is 120 bytes (symbols.tsv); element size taken from the lw/sll 2 indexing.
+extern int HintTable[30];
+// gEng is 105360 bytes; the array size keeps it out of small data. InitRender reads gEng + 0x50.
+extern char gEng[105360];
+extern "C" void sceVu0CopyVector(float *dst, float *src);
+extern "C" void sceVu0ScaleVectorXYZ(float *dst, float *src, float scale);
+extern "C" void RenderBlendedFragments__10PGfxEngineFPf(void *pThis, float *pBuf);
+extern "C" void vu1ZBufferUpdate__Fb(bool bEnable);
+extern "C" void vu1ClearZBuffer__Fv(void);
+extern "C" void vu1SetScreenMatrix__FP5PMat4(void *pMat);
+extern "C" void vu1SetViewMatrix__FP5PMat4(void *pMat);
+extern "C" void vu1SetClipMatrix__FP5PMat4(void *pMat);
 
 // FUNCTION: 0x13F800 __dt__7HudGrimFv
 extern "C" HudGrim *__dt__7HudGrimFv(HudGrim *pThis, short nFlag) {
@@ -204,6 +220,22 @@ void HudBossMeter::SetValue(short value) {
     }
 }
 
+// DRAFT: 0x141630 SetFace__12HudBossMeterFv
+// note: byte-offset do-while matches body; differs at FaceID lui/addiu (reloc) and missing join nop at 0x54. Tried: index loop, pointer walk, for loop, precomputed value, empty else, if-form value.
+void HudBossMeter::SetFace() {
+    static unsigned int FaceID[3] = {0x00000000, 0x902DF890, 0x4B01E2EE};
+    int i = 0;
+    int off = 0;
+    do {
+        PMNode *node = ((PMNode *)m_unk4)->Find(*(unsigned int *)((char *)FaceID + off));
+        if (node != 0) {
+            *(int *)((char *)node + 0xC) = (i == m_unk16) ? 1 : 0;
+        }
+        i++;
+        off += 4;
+    } while (i < 3);
+}
+
 // FUNCTION: 0x1416B0 Reset__12HudBossMeterFv
 void HudBossMeter::Reset() {
     *(int *)((char *)m_unk4 + 0xC) = 0;
@@ -251,6 +283,14 @@ HudInventory::HudInventory() {
 GameHud::~GameHud() {
     m_unk0 = __vt__7GameHud;
     ((PVirtObj *)this)->Slot01();
+}
+
+// DRAFT: 0x143D40 WriteHint__7HudHintFv
+// note: 20 differing lines; index load goes to v1 where original uses a1 (addiu v1,s1,0x38 precedes the index scale). Tried: local idx, base pointer m_unk38, pointer arithmetic, pointer-offset form; codegen identical in all four.
+void HudHint::WriteHint() {
+    FontManager *fm = (FontManager *)((char *)&gInterface + 0x80);
+    fm->RemoveText((unsigned short)0x14);
+    fm->DisplayString(HintTable[m_unk38[m_unkC]] + 1, 0, 10, false);
 }
 
 // FUNCTION: 0x144180 Init__7HudHintFUi
@@ -332,6 +372,20 @@ void Interface::DisplayLevelName(int arg0, int arg1) {
     }
 }
 
+// FUNCTION: 0x145820 InitRender__9InterfaceFv
+void Interface::InitRender() {
+    float v[4];
+    sceVu0CopyVector(v, (float *)((char *)this + 0x70));
+    sceVu0ScaleVectorXYZ(v, v, -1.0f);
+    RenderBlendedFragments__10PGfxEngineFPf(gGfxEng, v);
+    vu1ZBufferUpdate__Fb(true);
+    vu1ClearZBuffer__Fv();
+    vu1SetScreenMatrix__FP5PMat4(this);
+    vu1SetViewMatrix__FP5PMat4((char *)this + 0x40);
+    vu1SetClipMatrix__FP5PMat4(gEng + 0x50);
+    gGfxEng[0x158E22] = 0;
+}
+
 // FUNCTION: 0x1459D0 Init__9InterfaceFv
 void Interface::Init() {
     ((FontManager *)((char *)this + 0x80))->Init();
@@ -373,6 +427,36 @@ extern "C" HudCombo *__dt__8HudComboFv(HudCombo *pThis, short nFlag) {
 extern "C" HudBossMeter *__dt__12HudBossMeterFv(HudBossMeter *pThis, short nFlag) {
     if (pThis != 0) {
         *(unsigned char **)pThis = __vt__12HudBossMeter;
+        if (pThis != 0) {
+            *(unsigned char **)pThis = __vt__7GameHud;
+            ((PVirtObj *)pThis)->Slot01();
+        }
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
+}
+
+// FUNCTION: 0x145FC0 __dt__8HudSuperFv
+extern "C" HudSuper *__dt__8HudSuperFv(HudSuper *pThis, short nFlag) {
+    if (pThis != 0) {
+        *(unsigned char **)pThis = __vt__8HudSuper;
+        if (pThis != 0) {
+            *(unsigned char **)pThis = __vt__7GameHud;
+            ((PVirtObj *)pThis)->Slot01();
+        }
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
+}
+
+// FUNCTION: 0x146040 __dt__9HudHealthFv
+extern "C" HudHealth *__dt__9HudHealthFv(HudHealth *pThis, short nFlag) {
+    if (pThis != 0) {
+        *(unsigned char **)pThis = __vt__9HudHealth;
         if (pThis != 0) {
             *(unsigned char **)pThis = __vt__7GameHud;
             ((PVirtObj *)pThis)->Slot01();

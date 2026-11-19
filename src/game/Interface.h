@@ -29,6 +29,7 @@ class HudBossMeter {
 public:
     void Reset();
     void SetValue(short value);
+    void SetFace();
 
     char _pad000[0x4];
     void *m_unk4;               // 0x004 pointer to a HUD element (fields at 0x0C, 0x2C, 0x84)
@@ -38,7 +39,7 @@ public:
     signed char m_unkF;         // 0x00F
     int m_unk10;                // 0x010
     short m_unk14;              // 0x014
-    char _pad016[0x1];
+    signed char m_unk16;        // 0x016
     signed char m_unk17;        // 0x017
     void *m_unk18;              // 0x018 element with field at 0xA0
     void *m_unk1C;              // 0x01C element with field at 0xA0
@@ -57,10 +58,14 @@ public:
 class HudHint {
 public:
     void Init(unsigned int arg0);
+    void WriteHint();
 
     int m_unk0;                 // 0x000
     int m_unk4;                 // 0x004
     unsigned int m_unk8;        // 0x008
+    int m_unkC;                 // 0x00C index into m_unk38
+    char _pad010[0x28];
+    int m_unk38[1];             // 0x038 indexed by m_unkC, values index HintTable
 };
 
 class GameHud {
@@ -89,6 +94,7 @@ public:
     void DisplayLevelName(int arg0, int arg1);
     void Init();
     void InitMatrices();
+    void InitRender();
     void DeleteMeshLayer(PMNode *node);
     void AddMeshLayer(PMNode *node);
 
