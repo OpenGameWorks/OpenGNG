@@ -27,6 +27,10 @@ import srcmeta  # noqa: E402
 # First time each address was seen matched; feeds the page's "Recent matches".
 SEEN = ROOT / "build/match_times.json"
 CAT = {"game": "Game", "sdk": "SDK", "unknown": "Unattributed"}
+# Only code with no obtainable original source or object is decompiled; the treemap and
+# headline totals cover it alone. SDK code comes from library objects, and unattributed
+# runs join a category once evidence assigns them.
+DECOMP = {"game"}
 
 
 def pretty(mangled: str, addr: int) -> str:
@@ -91,6 +95,8 @@ def main() -> int:
         fe["matched"] += st == "matched"
         fe["matched_bytes"] += size if st == "matched" else 0
         fe["draft"] += st == "draft"
+        if cat not in DECOMP:
+            continue
         groups.setdefault(f, {"name": Path(f).stem, "cat": CAT[cat], "size": 0, "fns": []})
         groups[f]["size"] += size
         groups[f]["fns"].append([pretty(n, a), size, st == "matched"])
@@ -100,11 +106,10 @@ def main() -> int:
     okf, binf = ROOT / "build/SLUS_207.22.ok", ROOT / "build/main.bin"
     ok = okf.exists() and binf.exists() and okf.stat().st_mtime >= binf.stat().st_mtime
     g = cats.get("game", {"funcs": 0, "bytes": 0, "matched_funcs": 0, "matched_bytes": 0})
-    tot = {k: sum(c[k] for c in cats.values()) for k in ("funcs", "bytes", "matched_funcs", "matched_bytes")}
+    tot = {k: sum(c[k] for n, c in cats.items() if n in DECOMP) for k in ("funcs", "bytes", "matched_funcs", "matched_bytes")}
     pf = 100 * g["matched_funcs"] / g["funcs"] if g["funcs"] else 0
-    build = [f"SLUS_207.22 SHA-1: {'OK' if ok else 'NOT VERIFIED'}"] + [
-        f"{k}: {c['matched_funcs']}/{c['funcs']} fn, {c['matched_bytes']}/{c['bytes']} B, {c['draft_funcs']} drafts"
-        for k, c in sorted(cats.items())]
+    build = [f"SLUS_207.22 SHA-1: {'OK' if ok else 'NOT VERIFIED'}",
+             f"game drafts: {g.get('draft_funcs', 0)}"]
     doc = {"title": f"Maximo: {pf:.2f}% ({g['matched_funcs']}/{g['funcs']} game functions)",
            "updated": now, "build_ok": ok, "build": build,
            "functions": {"matched": tot["matched_funcs"], "total": tot["funcs"]},
