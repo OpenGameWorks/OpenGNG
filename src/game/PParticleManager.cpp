@@ -1,13 +1,33 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "PParticleManager.h"
 
 // TODO(header): foreign declarations
+struct tagParticleRainParams;
+class PFlashScreen;
+
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" PParticleRain *__ct__13PParticleRainFv(PParticleRain *pThis);
+extern "C" void *__dt__12PParticleFogFv(PParticleFog *pThis, short nFlags);
+
 class PParticleRain {
 public:
+    virtual void Slot00();
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual void Slot04();
+    virtual void Slot05();
+    virtual void Slot06();
+    virtual void Slot07();
+    virtual void Slot08();
     void SetLightningDensity(float fDensity);
     void SetDensity(float fDensity, bool bFlag);
-    char _pad000[0xC];
+    void Create(tagParticleRainParams *pParams, float (*pA)[4], float (*pB)[4], PFlashScreen *pScreen);
+    char _pad000[0x8];
     int m_unkC;                 // 0x0C
+    char _pad010[0xC4];
+    int m_unkD4;                // 0xD4
 };
 
 class PArray {
@@ -28,7 +48,7 @@ public:
 class PParticleSystem {
 public:
     virtual void Slot00();
-    virtual void Slot01();
+    virtual void Slot01(float fDt);
     virtual void Slot02();
     virtual void Slot03();
     virtual void Slot04();
@@ -130,6 +150,23 @@ void PParticleManager::DestroyEweedReactionFx() {
     } while (i < 8);
 }
 
+// DRAFT: 0x001B8130 InitEweedReactionFx__16PParticleManagerFv
+// note: 20 lines differ, DRAFT; s-regs match (i,pFx,off order); only diff is delay slot: orig fills bnez slot with the lui of the assert path and joins at addu; ours hoists the join addu into the slot and duplicates it. Tried i++ before store, paren offset (worse).
+void PParticleManager::InitEweedReactionFx() {
+    int i = 0;
+    PParticleOneShot *pFx;
+    int off = 0;
+    do {
+        pFx = Create(0x83000346, 0.0f, 0.0f, 0.0f, 0, false);
+        if (pFx == 0) {
+            CdsAssert("PParticleManager.cpp", 0x5A1, "apFx");
+        }
+        *(PParticleOneShot **)((char *)this + off + 0x20DC) = pFx;
+        i++;
+        off += 4;
+    } while (i < 8);
+}
+
 // DRAFT: 0x001B81D0 RenderSulphurReactionFx__16PParticleManagerFv
 // note: 5 words differ; original is bottom-tested (no entry b) with an empty join nop at 0x44 before i++. Tried do-while (11), for with off in increment (6), empty else (6), continue (19), for with off at body end (5).
 void PParticleManager::RenderSulphurReactionFx() {
@@ -151,6 +188,23 @@ void PParticleManager::DestroySulphurReactionFx() {
         if (pFx != 0 && pFx != 0) {
             pFx->Slot00(1);
         }
+        i++;
+        off += 4;
+    } while (i < 8);
+}
+
+// DRAFT: 0x001B8370 InitSulphurReactionFx__16PParticleManagerFv
+// note: 20 lines differ, DRAFT; s-regs and string addressing match (i,pFx,off order, -str readonly); only diff is the bnez delay slot hoisting the join addu (same as Eweed). Tried i++ before store, paren offset (worse).
+void PParticleManager::InitSulphurReactionFx() {
+    int i = 0;
+    PParticleOneShot *pFx;
+    int off = 0;
+    do {
+        pFx = Create(0x8300025A, 0.0f, 0.0f, 0.0f, 0, false);
+        if (pFx == 0) {
+            CdsAssert("PParticleManager.cpp", 0x572, "apFx");
+        }
+        *(PParticleOneShot **)((char *)this + off + 0x20BC) = pFx;
         i++;
         off += 4;
     } while (i < 8);
@@ -305,6 +359,23 @@ void PParticleManager::SetRainDensity(unsigned int hRain, float fDensity, bool b
     }
 }
 
+// FUNCTION: 0x001B8F20 CreateRain__16PParticleManagerFP21tagParticleRainParams
+PParticleRain *PParticleManager::CreateRain(tagParticleRainParams *pParams) {
+    PParticleRain *pRain = (PParticleRain *)__nw__FUi(0x2C0);
+    if (pRain != 0) {
+        pRain = __ct__13PParticleRainFv(pRain);
+    }
+    PParticleRain *pResult = 0;
+    if (pRain != 0) {
+        pRain->Create(pParams, (float (*)[4])((char *)this + 0x680), (float (*)[4])((char *)this + 0x690), (PFlashScreen *)((char *)this + 0x6B0));
+        pRain->m_unkD4 = 2;
+        pRain->Slot06();
+        Add((PParticleSystem *)pRain);
+        pResult = pRain;
+    }
+    return pResult;
+}
+
 // FUNCTION: 0x001B92E0 CreateOneShot__16PParticleManagerFUifff
 PParticleOneShot *PParticleManager::CreateOneShot(unsigned int hFx, float fA, float fB, float fC) {
     PParticleOneShot *pFx = Create(hFx, fA, fB, fC, 0, true);
@@ -321,6 +392,28 @@ int PParticleManager::IsValid(PParticleSystem *pSystem) {
         return 1;
     }
     return 0;
+}
+
+// DRAFT: 0x001BA3F0 UpdateMasterParticleInstances__16PParticleManagerFfP9PFrustrum
+// note: 10 lines: original reloads 0x207C after the store and keeps fDt copy in the branch delay slot; tried if/else tail (worse, 14)
+void PParticleManager::UpdateMasterParticleInstances(float fDt, PFrustrum *pFrustrum) {
+    PParticleSystem *pSystem;
+    m_unk207C = 0;
+    if (m_unk2078 != 0) {
+        pSystem = m_unk2080[0];
+    } else {
+        pSystem = 0;
+    }
+    if (pSystem != 0) {
+        do {
+            pSystem->Slot01(fDt);
+            ++m_unk207C;
+            pSystem = 0;
+            if (m_unk207C < m_unk2078) {
+                pSystem = m_unk2080[m_unk207C];
+            }
+        } while (pSystem != 0);
+    }
 }
 
 // FUNCTION: 0x001BA490 RenderParticleInstanceGroups__16PParticleManagerFb
@@ -362,6 +455,32 @@ void PParticleManager::AddMasterParticleInstance(PParticleSystem *pFx) {
         CdsAssert("PParticleManager.cpp", 0x1AA, "pFx");
     }
     ((PArray *)((char *)this + 0x2078))->Add(pFx);
+}
+
+// DRAFT: 0x001BA5F0 RemoveAllFogObjects__16PParticleManagerFv
+// note: 8 lines: original reloads 0x24 after the store (sw v1 then lw a1); ours reuses the register; postfix ++ same count
+void PParticleManager::RemoveAllFogObjects() {
+    PParticleFog *pFog;
+    m_unk24 = 0;
+    if (m_unk20 != 0) {
+        pFog = m_unk28[0];
+    } else {
+        pFog = 0;
+    }
+    if (pFog != 0) {
+        do {
+            __dt__12PParticleFogFv(pFog, 1);
+            ++m_unk24;
+            pFog = 0;
+            if (m_unk24 < m_unk20) {
+                pFog = m_unk28[m_unk24];
+            }
+        } while (pFog != 0);
+    }
+    if (m_unk28 != 0) {
+        m_unk20 = 0;
+        m_unk24 = 0;
+    }
 }
 
 // FUNCTION: 0x001BA9B0 RemoveAll__16PParticleManagerFv
