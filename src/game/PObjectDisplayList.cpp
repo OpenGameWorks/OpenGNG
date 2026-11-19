@@ -7,6 +7,7 @@ class PArray {
 public:
     PArray();
     ~PArray();
+    void Add(void *pItem);
 };
 
 class PShader {
@@ -34,7 +35,10 @@ public:
 
 class PMNode {
 public:
-    char _pad000[0x14];
+    char _pad000[0x4];
+    int m_unk4;             // 0x004
+    char _pad008[0x8];
+    PMesh *m_unk10;         // 0x010
     PMNodeChildList m_apoChildList;  // 0x014
     char _pad020[0xB0];
     int m_unkD0;            // 0x0D0
@@ -223,6 +227,47 @@ void PObjectDisplayList::GetNumSharedBones(PMNode *pNode, int *pCount) {
     }
 }
 
+// DRAFT: 0x1D48B0 WriteBoneMatrices__18PObjectDisplayListFP6PMNodePi
+// note: entry and stores match; child-loop tail differs (original reloads m_unk4 after store; join nop before epilogue). Tried +=1, ++, explicit store.
+void PObjectDisplayList::WriteBoneMatrices(PMNode *pNode, int *pCount) {
+    PMNodeChildList *pList;
+    PMNode *pChild;
+
+    int nBone = pNode->m_unkD0;
+
+    if (nBone >= 0) {
+        char *pDst = (char *)m_unk0 + (*(int *)((char *)m_unk8 + 8) * 0x10) + (*pCount * 0x50);
+        *(int *)(pDst + 0x0) = 0;
+        *(int *)(pDst + 0x4) = 0;
+        *(int *)(pDst + 0x8) = 0;
+        *(int *)(pDst + 0xC) = ((nBone * 4) + 0x296) | 0x6C040000;
+        *(u_long128 *)(pDst + 0x10) = *(u_long128 *)((char *)pNode + 0x40);
+        *(u_long128 *)(pDst + 0x20) = *(u_long128 *)((char *)pNode + 0x50);
+        *(u_long128 *)(pDst + 0x30) = *(u_long128 *)((char *)pNode + 0x60);
+        *(u_long128 *)(pDst + 0x40) = *(u_long128 *)((char *)pNode + 0x70);
+        *pCount += 1;
+    }
+    pList = &pNode->m_apoChildList;
+    if (pList == 0) {
+        CdsAssert("PObjectDisplayList.cpp", 0x1EC, "apoChildList");
+    }
+    pList->m_unk4 = 0;
+    pChild = 0;
+    if (pList->m_unk0 != 0) {
+        pChild = pList->m_unk8[0];
+    }
+    if (pChild != 0) {
+        do {
+            WriteBoneMatrices(pChild, pCount);
+            pList->m_unk4 += 1;
+            pChild = 0;
+            if ((unsigned int)pList->m_unk4 < (unsigned int)pList->m_unk0) {
+                pChild = pList->m_unk8[pList->m_unk4];
+            }
+        } while (pChild != 0);
+    }
+}
+
 // FUNCTION: 0x1D49F0 SetupSharedMeshInfo__18PObjectDisplayListFP5PMeshP6PMNode
 void PObjectDisplayList::SetupSharedMeshInfo(PMesh *pMesh, PMNode *pNode) {
     if (pMesh == 0) {
@@ -242,6 +287,132 @@ void PObjectDisplayList::SetupSharedMeshInfo(PMesh *pMesh, PMNode *pNode) {
         GetNumSharedBones(pNode, (int *)((char *)m_unk8 + 4));
     }
     m_unk1E4 |= pMesh->m_unk8 > 0;
+}
+
+// DRAFT: 0x1D4AF0 SetupNodeInfo__18PObjectDisplayListFP6PMNode
+// note: 6 differing lines, all in the child-loop tail: original increments in v1 and reloads m_unk4 into a0 after the store; ours reuses a0. Tried info-pointer declaration order (fixed the entry, 13->7) and swapped compare operands (7->6); += 1 and ++ same as WriteBoneMatrices.
+void PObjectDisplayList::SetupNodeInfo(PMNode *pNode) {
+    void *pInfo;
+    PMesh *pMesh;
+    PMNodeChildList *pList;
+    PMNode *pChild;
+
+    if (pNode != 0) {
+        pMesh = pNode->m_unk10;
+        if (pMesh != 0) {
+            pInfo = __nw__FUi(0x64);
+            if (pInfo == 0) {
+                CdsAssert("PObjectDisplayList.cpp", 0x1A2, "apNodeInfo");
+            }
+            memset(pInfo, 0, 4);
+            ((PArray *)m_unkC)->Add(pInfo);
+            *(PMNode **)pInfo = pNode;
+            m_unk1E4 |= pMesh->m_unk8 > 0;
+        }
+        pList = &pNode->m_apoChildList;
+        if (pList == 0) {
+            CdsAssert("PObjectDisplayList.cpp", 0x1AD, "apoChildList");
+        }
+        pList->m_unk4 = 0;
+        pChild = 0;
+        if (pList->m_unk0 != 0) {
+            pChild = pList->m_unk8[0];
+        }
+        if (pChild != 0) {
+            do {
+                SetupNodeInfo(pChild);
+                pList->m_unk4 += 1;
+                pChild = 0;
+                if ((unsigned int)pList->m_unk0 > (unsigned int)pList->m_unk4) {
+                    pChild = pList->m_unk8[pList->m_unk4];
+                }
+            } while (pChild != 0);
+        }
+    }
+}
+
+// DRAFT: 0x1D4C30 SetupNodeInfo__18PObjectDisplayListFP6PArray
+// note: 51 differing lines, entry register allocation: original keeps pArray in s0 and this in s1 (copied in bnez delay slot); ours copies this to s2 first and adds a saved register for the pList local. Tried inline casts (76), pList first (51), pList last (51).
+void PObjectDisplayList::SetupNodeInfo(PArray *pArray) {
+    PMNodeChildList *pList;
+    void *pInfo;
+    PMesh *pMesh;
+    PMNode *pNode;
+
+    if (pArray == 0) {
+        CdsAssert("PObjectDisplayList.cpp", 0x184, "poNodes");
+    }
+    pList = (PMNodeChildList *)pArray;
+    pList->m_unk4 = 0;
+    pNode = 0;
+    if (pList->m_unk0 != 0) {
+        pNode = pList->m_unk8[0];
+    }
+    if (pNode != 0) {
+        do {
+            pMesh = pNode->m_unk10;
+            if (pMesh != 0) {
+                pInfo = __nw__FUi(0x64);
+                if (pInfo == 0) {
+                    CdsAssert("PObjectDisplayList.cpp", 0x18D, "apNodeInfo");
+                }
+                memset(pInfo, 0, 4);
+                ((PArray *)m_unkC)->Add(pInfo);
+                *(PMNode **)pInfo = pNode;
+                m_unk1E4 |= pMesh->m_unk8 > 0;
+            }
+            {
+                int nIndex = pList->m_unk4 + 1;
+                pList->m_unk4 = nIndex;
+                pNode = 0;
+                if ((unsigned int)nIndex < (unsigned int)pList->m_unk0) {
+                    pNode = pList->m_unk8[pList->m_unk4];
+                }
+            }
+        } while (pNode != 0);
+    }
+}
+
+// DRAFT: 0x1D54A0 Create__18PObjectDisplayListFP6PMNodePb
+// note: 1 true difference: original has an extra nop at 0x7C after the loop increment (shifts the rest by one); for-loop, while, manual increment, continue, empty else, inverted check tried
+int PObjectDisplayList::Create(PMNode *pNode, bool *pFlags) {
+    PMNodeChildList *pList;
+    PMNode *pChild;
+    PMesh *pMesh;
+    int i;
+    int nOffset;
+
+    if (m_unk1E5 != 0) {
+        Destroy();
+    }
+    memcpy(m_unk1E0, pFlags, 4);
+    FindUniqueShaders(pNode);
+    for (i = 0, nOffset = 0; i < m_unk20; nOffset += 4, i++) {
+        if (((PShader *)*(PShader **)((char *)this + nOffset + 0xE4))->m_unkC == 0) {
+            return 0;
+        }
+    }
+    FindUniqueTextures();
+    if (m_unk20 == 0) {
+        return 0;
+    }
+    if (pNode->m_unk4 == 2) {
+        pMesh = pNode->m_unk10;
+        pNode->m_apoChildList.m_unk4 = 0;
+        pList = &pNode->m_apoChildList;
+        if (pList->m_unk0 != 0) {
+            pChild = pList->m_unk8[0];
+        } else {
+            pChild = 0;
+        }
+        if (pMesh != 0 && pChild != 0) {
+            SetupSharedMeshInfo(pMesh, pChild);
+        }
+        SetupNodeInfo(pChild);
+    } else {
+        SetupNodeInfo(pNode);
+    }
+    return CreateDisplayList();
 }
 
 // DRAFT: 0x1D55E0 Create__18PObjectDisplayListFP6PArrayP6PMNodeP5PMeshPb

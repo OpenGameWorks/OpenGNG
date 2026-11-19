@@ -16,12 +16,16 @@ public:
     int IsTextureUnique(int nTexture);
     int IsShaderUnique(PShader *pShader);
     void FindUniqueShaders(PArray *pArray);
+    void FindUniqueShaders(PMNode *pNode);
     void FindUniqueShaders(PMesh *pMesh);
     void FindUniqueTextures();
     void GetNumSharedBones(PMNode *pNode, int *pCount);
+    void WriteBoneMatrices(PMNode *pNode, int *pCount);
     void SetupSharedMeshInfo(PMesh *pMesh, PMNode *pNode);
+    void SetupNodeInfo(PMNode *pNode);
     void SetupNodeInfo(PArray *pArray);
     int CreateDisplayList();
+    int Create(PMNode *pNode, bool *pFlags);
     int Create(PArray *pArray, PMNode *pNode, PMesh *pMesh, bool *pFlags);
 
     void *m_unk0;           // 0x000 cleared by ctor, freed by Destroy
