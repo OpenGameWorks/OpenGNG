@@ -16,6 +16,8 @@ public:
     int ActivatedEnemiesDead();
     void ActivateAttackingEnemies();
     int HideItems();
+    void InitItems();
+    void ValidateItems();
     int GetNextPosition(float (&afPos)[4]);
 
     void *m_unk0;                   // 0x000 vtable pointer
@@ -71,10 +73,15 @@ public:
     ~PeddlerItems();
     void EnableDisplay(bool bEnable);
     int AnimateFloat(float &fVal, float fTarget, float fStep);
+    int AnimateVector(float (&afVec)[4], float (&afTarget)[4], float fStep);
     int Hide();
+    void Reset(float fAngle);
+    PMNode *CopyItemMesh(int nIndex);
 
-    PMNode *m_unk0;                 // 0x000
-    int m_unk4;                     // 0x004
+    PMNode *m_unk0;                 // 0x000 item node
+    PMNode *m_unk4;                 // 0x004 rotate node
+    float m_unk8;                   // 0x008 animated scale
+    float m_unkC;                   // 0x00C animated fade
 };
 
 unsigned int GetItemID(unsigned int arg0);

@@ -1,3 +1,4 @@
+#include "types.h"
 #include "Peddler.h"
 
 // TODO(header): foreign declarations
@@ -29,6 +30,43 @@ extern "C" void Remove__6PArrayFPv(void *pThis, void *pItem);
 extern "C" void AddMeshLayer__9InterfaceFP6PMNode(void *pThis, PMNode *pNode);
 extern "C" void DeleteMeshLayer__9InterfaceFP6PMNode(void *pThis, PMNode *pNode);
 extern unsigned char gInterface[];
+extern float gUnitMatrix[16];
+extern "C" float Round180__Ff(float fAngle);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void CheckVariable__15EntityBaseClassFii(void *pThis, int nFlags, int nValue);
+extern "C" PeddlerItems *__ct__12PeddlerItemsFi(PeddlerItems *pThis, int nIndex);
+extern "C" void FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(void *pThis, float fX, float fY, bool bFlag, int eColor);
+class PMNode;
+extern "C" PMNode *__ct__9PMeshNodeFR9PMeshNode(PMNode *pThis, PMNode *pSrc);
+extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
+extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
+extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
+extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
+extern "C" float sceVu0InnerProduct(float *pA, float *pB);
+
+// Sequence record, 88 bytes; the PeddlerSeqData symbol holds two of them (176 bytes).
+struct PeddlerSeq {
+    char _pad000[0x44];
+    float m_unk44;                  // 0x44
+    float m_unk48;                  // 0x48
+    float m_unk4C;                  // 0x4C
+    char _pad050[0x58 - 0x50];
+};
+extern PeddlerSeq PeddlerSeqData[2];
+
+// Only the PMNode fields used here; offsets follow PMNode.h.
+class PMNode {
+public:
+    void ScaleSet(float a, float b, float c, float d);
+    char _pad000[0x2C];
+    float m_unk2C;                  // 0x2C fade value
+    char _pad030[0x3E - 0x30];
+    unsigned char m_unk3E;          // 0x3E flags; 0x08 = scale set
+    char _pad03F[0x40 - 0x3F];
+    char _pad040[0x40];
+    char _pad080[0x20];
+    float m_unkA0[4];               // 0xA0 animated scale vector
+};
 
 // Engine size is unknown; the placeholder keeps gEng out of small data (threshold 8 bytes).
 class Engine {
@@ -201,6 +239,58 @@ int Peddler::GetNextPosition(float (&afPos)[4]) {
     return 0;
 }
 
+// Reinterprets a bit pattern as float so the literal is built from lui/ori/mtc1, as the original does.
+static inline float FloatBits(unsigned int uBits) {
+    union {
+        unsigned int u;
+        float f;
+    } conv;
+    conv.u = uBits;
+    return conv.f;
+}
+
+// DRAFT: 0x001D08C0 Hide__12PeddlerItemsFv
+// note: 48 diff lines; original keeps this in s1 and the 0x3DAAAAAB literal in f13, ours uses s2 and spills the literal to the stack; FloatBits literal and early hoist tried.
+int PeddlerItems::Hide() {
+    float fStepScale = FloatBits(0x3DAAAAAB);
+    float fScale;
+    float fFade;
+    int bFadeDone;
+    int bScaleDone;
+
+    fScale = m_unk4->m_unkA0[0];
+    fFade = m_unk4->m_unk2C;
+    m_unk8 = 0.0f;
+    m_unkC = 0.0f;
+    bScaleDone = AnimateFloat(fScale, m_unk8, fStepScale) & 0xFF;
+    m_unk4->ScaleSet(fScale, fScale, fScale, 1.0f);
+    bFadeDone = AnimateFloat(fFade, m_unkC, FloatBits(0x3CCCCCCD)) & 0xFF;
+    m_unk4->m_unk2C = fFade;
+    ((void (*)(PMNode *, int, int, int, float, float))(*(void ***)m_unk0)[6])(m_unk0, 0, 0, 0, 0.0f, 1.0f);
+    return (bScaleDone != 0) ? (bFadeDone != 0) : 0;
+}
+
+// FUNCTION: 0x001D0B80 CopyItemMesh__12PeddlerItemsFi
+PMNode *PeddlerItems::CopyItemMesh(int nIndex) {
+    bool bOk = m_unk4 && m_unk0;
+    if (!bOk) {
+        CdsAssert("Peddler.cpp", 0x6C9, "m_pItemNode && m_pRotateNode");
+    }
+    PMNode *pCopy = (PMNode *)__nw__FUi(0x140);
+    if (pCopy) {
+        pCopy = __ct__9PMeshNodeFR9PMeshNode(pCopy, m_unk4);
+    }
+    pCopy->ScaleSet(0.75f, 0.75f, 0.75f, 1.0f);
+    PeddlerSeq *pSeq = &PeddlerSeqData[nIndex];
+    *(float *)((char *)pCopy + 0x80) = pSeq->m_unk44;
+    *(float *)((char *)pCopy + 0x84) = pSeq->m_unk48;
+    *(int *)((char *)pCopy + 0x88) = 0;
+    *(int *)((char *)pCopy + 0x90) = 0;
+    *(unsigned int *)((char *)pCopy + 0x94) = 0x43870000;
+    *(float *)((char *)pCopy + 0x98) = pSeq->m_unk4C;
+    return pCopy;
+}
+
 // FUNCTION: 0x001D0C80 EnableDisplay__12PeddlerItemsFb
 void PeddlerItems::EnableDisplay(bool bEnable) {
     if (m_unk0 == 0) {
@@ -213,6 +303,33 @@ void PeddlerItems::EnableDisplay(bool bEnable) {
     } else {
         Remove__6PArrayFPv(gInterface + 0x404, m_unk0);
     }
+}
+
+// DRAFT: 0x001D0D20 Reset__12PeddlerItemsFf
+// note: 27 diff lines; the original defers the -R negation until after the m_unk0 block-2 store and keeps R in f12, ours negates right after the call and reorders the m_unk4 block. Tried: cached m_unk4 pointer (38), cached pItem for block 1 (32), pItem for block 2 (57), fRot local for R and -R (27).
+void PeddlerItems::Reset(float fAngle) {
+    float afVec[4];
+    PMNode *pRotate = m_unk4;
+
+    *(u_long128 *)(pRotate->_pad080) = *(u_long128 *)&gUnitMatrix[0];
+    pRotate->m_unk3E |= 8;
+    afVec[0] = 0.0f;
+    afVec[1] = 7.0f;
+    afVec[2] = 0.0f;
+    afVec[3] = 1.0f;
+    PMNode *pItem = m_unk0;
+    *(u_long128 *)(pItem->_pad080) = *(u_long128 *)afVec;
+    pItem->m_unk3E |= 8;
+    afVec[1] = 0.0f;
+    float fRot = Round180__Ff(fAngle);
+    afVec[2] = fRot;
+    *(u_long128 *)(m_unk0->_pad080 + 0x10) = *(u_long128 *)afVec;
+    m_unk0->m_unk3E |= 8;
+    afVec[2] = -fRot;
+    *(u_long128 *)(m_unk4->_pad080 + 0x10) = *(u_long128 *)afVec;
+    m_unk4->m_unk3E |= 8;
+    m_unk4->ScaleSet(0.0f, 0.0f, 0.0f, 1.0f);
+    m_unk4->m_unk2C = 0.0f;
 }
 
 // DRAFT: 0x001D0E10 AnimateFloat__12PeddlerItemsFRfff
@@ -243,6 +360,31 @@ int PeddlerItems::AnimateFloat(float &fVal, float fTarget, float fStep) {
     }
     if (bDone != 0) {
         fVal = fTarget;
+        return 1;
+    }
+    return 0;
+}
+
+// FUNCTION: 0x001D0EC0 AnimateVector__12PeddlerItemsFRA4_fRA4_ff
+int PeddlerItems::AnimateVector(float (&afVec)[4], float (&afTarget)[4], float fStep) {
+    u_long128 qDelta;
+    u_long128 qOrig;
+    float fOldLenSq;
+
+    float fScale = fStep;
+    fScale = fScale * gEng.m_unk1E8;
+    *(u_long128 *)&qOrig = *(u_long128 *)afVec;
+    sceVu0SubVector((float *)&qDelta, afTarget, afVec);
+    sceVu0Normalize((float *)&qDelta, (float *)&qDelta);
+    sceVu0ScaleVectorXYZ((float *)&qDelta, (float *)&qDelta, fScale);
+    sceVu0AddVector(afVec, afVec, (float *)&qDelta);
+    sceVu0SubVector((float *)&qDelta, afVec, (float *)&qOrig);
+    sceVu0SubVector((float *)&qOrig, afTarget, (float *)&qOrig);
+    fOldLenSq = sceVu0InnerProduct((float *)&qDelta, (float *)&qDelta);
+    if (sceVu0InnerProduct((float *)&qOrig, (float *)&qOrig) <= fOldLenSq) {
+        afVec[0] = afTarget[0];
+        afVec[1] = afTarget[1];
+        afVec[2] = afTarget[2];
         return 1;
     }
     return 0;
@@ -280,6 +422,40 @@ int Peddler::HideItems() {
         nOff += 4;
     } while (i < 5);
     return bAll;
+}
+
+// DRAFT: 0x001D1A80 InitItems__7PeddlerFv
+// note: 39 diff lines; frame 0x80 vs 0x70, this/pnId in s4/s3 vs s3/s4, add.s operand order; tried FloatBits literals, pnId pointer local, decl reorder, zeroing order, plain literals (kept), operand swap (no change)
+void Peddler::InitItems() {
+    int i;
+    unsigned int nOff;
+    PeddlerItems **ppSlot;
+    int *pnId;
+    PeddlerItems *pItem;
+    float fAngle;
+
+    ValidateItems();
+    fAngle = 90.0f;
+    i = 0;
+    nOff = 0;
+    do {
+        ppSlot = (PeddlerItems **)((char *)this + nOff + 0x218);
+        pnId = (int *)((char *)this + nOff + 0x230);
+        if (*ppSlot == 0) {
+            CheckVariable__15EntityBaseClassFii((void *)this, *pnId & 0x3F, 0x3C);
+            pItem = (PeddlerItems *)__nw__FUi(0x30);
+            if (pItem != 0) {
+                pItem = __ct__12PeddlerItemsFi(pItem, *pnId);
+            }
+            *ppSlot = pItem;
+            (*ppSlot)->Reset(fAngle);
+        }
+        (*ppSlot)->EnableDisplay(1);
+        i++;
+        nOff += 4;
+        fAngle = fAngle + 72.0f;
+    } while (i < 5);
+    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 16.0f, 0.85f, 1, 0);
 }
 
 // FUNCTION: 0x001D1DB0 OnTimerEvent__7PeddlerFUi
