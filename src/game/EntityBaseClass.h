@@ -8,6 +8,10 @@ class Physics;
 
 class EntityBaseClass {
 public:
+    // Enumerator values are not recovered yet; only the nested type name matters for linking.
+    enum eHitObjectType { eHitObjectType_Unrecovered = 0 };
+    enum eHitWeaponType { eHitWeaponType_Unrecovered = 0 };
+
     void ProcessPhysics(float arg0, int arg1);
     void CheckDie(bool arg0);
     void DestroyDamageFx(unsigned int arg0);
@@ -36,10 +40,17 @@ public:
     void FreezeCheck(EntityBaseClass *arg0, int arg1);
     void SetShadowVolume(float arg0);
     void SetFreeze(float arg0);
+    void CreateHitMarkFx(float (*arg0)[4], eHitObjectType arg1, eHitWeaponType arg2, bool arg3);
+    void OnInnocentAttack(EntityBaseClass *arg0, int arg1);
+    void CheckVariable(int arg0, int arg1);
+    void RequestAttack(EntityBaseClass *arg0, unsigned int arg1);
+    void CreateFireDamageFx(float arg0);
+    void InitLoadSystem();
 
     char _pad000[0x4];
     int m_unk04;                // 0x004
-    char _pad008[0x8];          // 0x008..0x00F
+    int m_unk08;                // 0x008
+    char _pad00C[0x4];          // 0x00C..0x00F
     int m_unk10;                // 0x010
     int m_unk14;                // 0x014
     unsigned char m_unk18;      // 0x018
@@ -56,7 +67,8 @@ public:
     signed char m_unkD0;        // 0x0D0
     char _padD1[0x17];          // 0x0D1..0x0E7
     signed char m_unkE8;        // 0x0E8
-    char _pad0E9[0xB];          // 0x0E9..0x0F3
+    char _pad0E9[0x7];          // 0x0E9..0x0EF
+    float m_unkF0;              // 0x0F0
     int m_unkF4;                // 0x0F4 freeze timer
     char _pad0F8[0xA];          // 0x0F8..0x101
     unsigned char m_unk102;     // 0x102 physics anim list flag
@@ -66,7 +78,9 @@ public:
     unsigned short m_unk15E;    // 0x15E flag halfword
     char _pad160[0x1];          // 0x160
     unsigned char m_unk161;     // 0x161 BG anim list flag
-    char _pad162[0x2E];         // 0x162..0x18F; MathAPI matrix block at 0x190
+    char _pad162[0x4];          // 0x162..0x165
+    unsigned char m_unk166;     // 0x166
+    char _pad167[0x29];         // 0x167..0x18F; MathAPI matrix block at 0x190
 };
 
 #endif

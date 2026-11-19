@@ -12,11 +12,13 @@ public:
 extern PSound gSound;
 
 class PParticleSystem;
+class PMNode;
 
 class PParticleManager {
 public:
     void Remove(PParticleSystem *pSystem);
     void CreateSulphurReaction(float *arg0, float arg1);
+    void CreateFireDamageFx(PMNode *arg0, unsigned int arg1);
 };
 extern char gGfxEng[1504384];
 
@@ -66,6 +68,7 @@ public:
     virtual void VirtSlot5(AnimData *arg0);
     PMNode *FindAnimNode(unsigned int arg0);
     void EnableOneRenderPassOnly(int arg0);
+    void DestroyFxTriggersBySpawnFrame(float arg0, bool arg1);
     char _pad04[0x3B];
     signed char m_3F;
 };
@@ -92,9 +95,28 @@ public:
 };
 extern PResourceManager *mpResMgr__15EntityBaseClass;
 
+// EntityAttackManager size is unknown; only the pointer global and the RequestAttack call are needed.
+class EntityAttackManager {
+public:
+    void RequestAttack(EntityBaseClass *arg0, float arg1, unsigned int arg2, EntityBaseClass *arg3);
+    char _pad000[0x10];
+};
+extern EntityAttackManager *mpEntMgr__15EntityBaseClass;
+
 extern "C" void sceVu0ScaleVector(float *pDst);
 extern "C" void sceVu0AddVector(float *pDst, float *pSrc0, float *pSrc1);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
+extern "C" int sprintf(char *, const char *, ...);
+
+// Vptr view used to call the object's virtual name getter at slot 0x18.
+class EntityBaseClassVirtuals {
+public:
+    virtual ~EntityBaseClassVirtuals();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void Slot3();
+    virtual const char *GetName();
+};
 
 float Round180(float arg0);
 
@@ -113,6 +135,23 @@ void EntityBaseClass::DestroyDamageFx(unsigned int arg0) {
     }
 }
 
+// DRAFT: 0x0014A8F0 OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi
+// note: 21 differing lines; original keeps a2=3 default in a delay slot and compares m_unk10 against a separate v0 literal, ours reuses a2 and uses branch-form select where original uses movz. Tried: nested if/else with ternary, pre-assigned default, nested plain assignment, if/else-if chain.
+void EntityBaseClass::OnInnocentAttack(EntityBaseClass *arg0, int arg1) {
+    int hitType;
+
+    this->FreezeCheck(arg0, arg1);
+    hitType = 3;
+    if (arg0->m_unk10 != 6) {
+        if (arg0->m_unk10 == 3) {
+            hitType = (arg0->m_unk166 == 0) ? 4 : 2;
+        } else {
+            hitType = 5;
+        }
+    }
+    this->CreateHitMarkFx(0, (eHitObjectType)hitType, (eHitWeaponType)0, false);
+}
+
 // FUNCTION: 0x0014B080 FlashTexture__15EntityBaseClassFUii
 void EntityBaseClass::FlashTexture(unsigned int arg0, int arg1) {
     if (arg0 == 0) {
@@ -120,6 +159,18 @@ void EntityBaseClass::FlashTexture(unsigned int arg0, int arg1) {
     }
     this->m_unk30 = mpResMgr__15EntityBaseClass->GetResource(arg0, false);
     this->m_unk34 = arg1;
+}
+
+// FUNCTION: 0x0014B0F0 CheckVariable__15EntityBaseClassFii
+void EntityBaseClass::CheckVariable(int arg0, int arg1) {
+    char buf[0x100];
+    int id;
+
+    if ((unsigned int)arg0 >= (unsigned int)arg1) {
+        id = this->m_unk08;
+        sprintf(buf, "Invalid variable in %d %s. value %d < %d", id, ((EntityBaseClassVirtuals *)this)->GetName(), arg0, arg1);
+        CdsAssert__FPciPc("EntityBaseClass.cpp", 0xA0C, buf);
+    }
 }
 
 // FUNCTION: 0x0014B330 IsBGAnimating__15EntityBaseClassFUi
@@ -199,6 +250,26 @@ float EntityBaseClass::GetDistFromPlayer() {
         a0 = (float (*)[4])((char *)this + 0x190);
     }
     return MathAPI::Distance(a0, a1);
+}
+
+// FUNCTION: 0x0014C710 RequestAttack__15EntityBaseClassFP15EntityBaseClassUi
+void EntityBaseClass::RequestAttack(EntityBaseClass *arg0, unsigned int arg1) {
+    EntityBaseClass *player = mPlayerAPI__13EntityManager;
+    float (*playerMtx)[4];
+    float (*ownMtx)[4];
+    float dist;
+
+    if (player->m_unk3C != 0) {
+        playerMtx = (float (*)[4])(player->m_unk3C + 0x80);
+    } else {
+        playerMtx = (float (*)[4])((char *)player + 0x190);
+    }
+    ownMtx = (float (*)[4])((char *)this + 0x190);
+    if (this->m_unk3C != 0) {
+        ownMtx = (float (*)[4])(this->m_unk3C + 0x80);
+    }
+    dist = MathAPI::Distance(ownMtx, playerMtx);
+    mpEntMgr__15EntityBaseClass->RequestAttack(this, dist, arg1, arg0);
 }
 
 // FUNCTION: 0x0014C790 SetRenderPass__15EntityBaseClassFi
@@ -392,6 +463,19 @@ void EntityBaseClass::FreezeCheck(EntityBaseClass *arg0, int arg1) {
     }
 }
 
+// DRAFT: 0x0014E480 CreateFireDamageFx__15EntityBaseClassFf
+// note: 25000.0f compiles as int-to-float (addiu/cvt.s.w) not lui/ori/mtc1; c.eq.s operands stay f0,f20; a1/a2 load order differs. Tried: operand swap, both compare forms.
+void EntityBaseClass::CreateFireDamageFx(float arg0) {
+    PMNode *temp_a0;
+
+    temp_a0 = (PMNode *)this->m_unk3C;
+    if ((temp_a0 != 0) && (arg0 != 0.0f)) {
+        temp_a0->DestroyFxTriggersBySpawnFrame(25000.0f, true);
+        this->m_unkF0 = arg0;
+        ((PParticleManager *)(gGfxEng + 0x154F00))->CreateFireDamageFx((PMNode *)this->m_unk3C, this->m_unk08);
+    }
+}
+
 // FUNCTION: 0x0014E900 SetAnimData__15EntityBaseClassFP8AnimData
 void EntityBaseClass::SetAnimData(AnimData *arg0) {
     if (this->m_unk3C != 0) {
@@ -421,4 +505,22 @@ void EntityBaseClass::SetActiveLoad() {
         mLoadTable__15EntityBaseClass[this->m_unk10].m0 += this->m_unk14;
         mLoadTable__15EntityBaseClass[this->m_unk10].m8 += 1;
     }
+}
+
+// FUNCTION: 0x0014EF70 InitLoadSystem__15EntityBaseClassFv
+void EntityBaseClass::InitLoadSystem() {
+    mLoadTable__15EntityBaseClass[0].m0 = 0;
+    mLoadTable__15EntityBaseClass[1].m0 = 0;
+    mLoadTable__15EntityBaseClass[0].m4 = 0x64;
+    mLoadTable__15EntityBaseClass[1].m4 = 0x64;
+    mLoadTable__15EntityBaseClass[2].m0 = 0;
+    mLoadTable__15EntityBaseClass[2].m4 = 0x64;
+    mLoadTable__15EntityBaseClass[3].m0 = 0;
+    mLoadTable__15EntityBaseClass[3].m4 = 0x64;
+    mLoadTable__15EntityBaseClass[4].m0 = 0;
+    mLoadTable__15EntityBaseClass[4].m4 = 0x64;
+    mLoadTable__15EntityBaseClass[5].m0 = 0;
+    mLoadTable__15EntityBaseClass[5].m4 = 0x64;
+    mLoadTable__15EntityBaseClass[6].m4 = 0x64;
+    mLoadTable__15EntityBaseClass[6].m0 = 0;
 }
