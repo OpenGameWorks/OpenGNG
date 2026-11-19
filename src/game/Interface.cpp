@@ -8,6 +8,9 @@ public:
     void StopStreamsAndRequestEEControl();
     int GetEEControlStatus();
     void SetAllowCallOneFrameHasElapsed(bool flag);
+    void AbilityScreenEnter();
+    void AbilityScreenLeave();
+    void PlaySoundUbiquitous(unsigned int id);
     char _pad000[0x10];
 };
 extern PSound gSound;
@@ -24,6 +27,16 @@ public:
 extern char gGfxEng[1504384];
 
 extern unsigned char fst_bUseOldLoadingDisplay;
+
+// Pad is reached via lui/addiu; the placeholder keeps gPad above the 8-byte small-data threshold.
+class Pad {
+public:
+    void PauseVibrate(bool flag);
+
+    char _pad000[0x110];
+    unsigned short m_unk110;    // 0x110 button state
+};
+extern Pad gPad;
 
 // Polymorphic embedded object; Slot04 is the vtable word at offset 0x18
 // (the compiler places the first virtual slot at offset 0x8).
@@ -46,6 +59,7 @@ public:
     PMNode *Find(unsigned int id);
     void RecurseSetSTAnimOptions(bool flag);
     void SetAllFrustrumTest(eBoxIntersect arg0);
+    void RecurseSetLoopRateByID(unsigned int id, int arg1, float arg2);
 };
 
 // Placeholder size; the original object is larger than the 8-byte small-data threshold.
@@ -57,6 +71,8 @@ extern char gDebug[0x10];
 extern "C" void DebugClear__5DebugFv(void *pThis);
 extern "C" void DebugDispPos__5DebugFPcUiUii(void *pThis, char *text, unsigned int x, unsigned int y, int color);
 extern "C" void RefreshDisplay__10PGfxEngineFv(void *pThis);
+extern "C" void SoundOneFrameHasElapsed_R__9MaxEngineFRiRi(void *pThis, int *pA, int *pB);
+extern "C" void IncrementSecondarySyncCounts__9MaxEngineFv(void *pThis);
 
 class HudData {
 public:
@@ -71,9 +87,15 @@ public:
     void AddIcon(int id);
     void Reset();
     void UpdateGroup(int arg0);
+    void UpdateStatus(bool flag);
 
     char _pad000[0x4];
     void *m_unk4;               // 0x004
+    char _pad008[0x7];
+    signed char m_unkF;         // 0x00F
+    unsigned char m_unk10;      // 0x010
+    char _pad011[0x2B];
+    int m_unk3C;                // 0x03C
 };
 
 extern unsigned char __vt__7GameHud[];
@@ -101,12 +123,13 @@ public:
     void RemoveText(FontNode *pNode);
     void RemoveText(unsigned short arg0);
     int DisplayString(int arg0, int arg1, int arg2, bool arg3);
+    void RemoveAll(bool flag);
+    void RenderWarning(int arg0);
 };
 
 // MemMgr is 908 bytes; the field at offset 0x18 is saved and cleared around AddIcon.
 extern char MemMgr[908];
 
-extern "C" void FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(void *, float, float, bool, int);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern Interface gInterface;
 // HintTable is 120 bytes (symbols.tsv); element size taken from the lw/sll 2 indexing.
@@ -252,6 +275,25 @@ void HudSuper::Update(int arg0) {
     }
 }
 
+// FUNCTION: 0x1411C0 AbilityScreen__9InterfaceFv
+int Interface::AbilityScreen() {
+    int buttons = gPad.m_unk110;
+    if (m_unk324 < 0) {
+        if (buttons & 1) {
+            m_unk1C0 &= ~8;
+            gGfxEng[0x1558B0] = 0;
+            SetPause();
+            DisplayLevelName(-1, 0xF0);
+            ((PVirtObj *)((char *)this + 0x2E8))->Slot05(0);
+            gPad.PauseVibrate(true);
+            ((FontManager *)((char *)this + 0x80))->RemoveAll(true);
+        } else {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 // FUNCTION: 0x141270 AddAbility__9InterfaceFi
 void Interface::AddAbility(int arg0) {
     int saved = *(int *)(MemMgr + 0x18);
@@ -334,6 +376,27 @@ void GameHud::Reset() {
     }
 }
 
+// FUNCTION: 0x142FF0 UpdateStatus__12HudInventoryFb
+void HudInventory::UpdateStatus(bool flag) {
+    float rate;
+    if (flag) {
+        m_unkF = 3;
+        rate = -0.5f;
+        m_unk10 = 1;
+        m_unk3C = -1;
+        gPad.PauseVibrate(false);
+        gSound.AbilityScreenLeave();
+    } else {
+        m_unkF = 1;
+        gSound.AbilityScreenEnter();
+        *(int *)((char *)m_unk4 + 0xC) = 1;
+        rate = 0.5f;
+        m_unk3C = 0;
+    }
+    ((PMNode *)m_unk4)->RecurseSetLoopRateByID(-1U, 1, rate);
+    gSound.PlaySoundUbiquitous(0x3A);
+}
+
 // DRAFT: 0x143510 Reset__12HudInventoryFv
 // note: 8 words differ; size 0x88 vs 0x8c. The original has an extra nop before the loop bnez, and the call-site reloc set is otherwise equal. Tried: pointer local for this+4 (CSE into s0), member m_unk4, for-loop form (16 words), UpdateGroup(i++) (12 words).
 void HudInventory::Reset() {
@@ -388,7 +451,7 @@ void HudHint::WriteHint() {
 void HudHint::Init(unsigned int arg0) {
     m_unk0 = 0;
     m_unk8 = arg0;
-    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(&gInterface, 255.0f, 17.0f, true, 0);
+    gInterface.FadeScreen(255.0f, 17.0f, true, (Interface::eFadeColor)0);
     m_unk4 = gInterface.m_unk1C0;
     gInterface.m_unk1C0 = m_unk4 | 0x10;
 }
@@ -400,8 +463,7 @@ void GameHud::Init(PMeshNode *meshNode, HudData *hud) {
     m_unkE = hud->m_unk4;
 }
 
-// DRAFT: 0x144930 LoadingDisplayGuts__9InterfaceFUi
-// note: 7 words differ; only the local-static reloc names differ (ours init$182/st_uCount$181, original init$722/st_uCount$721; the MW $N counter is per-TU). Tried: file-scope statics (names cannot carry '$').
+// FUNCTION: 0x144930 LoadingDisplayGuts__9InterfaceFUi
 void Interface::LoadingDisplayGuts(unsigned int arg0) {
     static int st_uCount;
     static signed char init;
@@ -418,6 +480,36 @@ void Interface::LoadingDisplayGuts(unsigned int arg0) {
         DebugDispPos__5DebugFPcUiUii(gDebug, "LOADING...", 10, 20, 7);
     }
     RefreshDisplay__10PGfxEngineFv(gGfxEng);
+}
+
+// FUNCTION: 0x144B90 LoadingDisplayOld__9InterfaceFUii
+void Interface::LoadingDisplayOld(unsigned int arg0, int arg1) {
+    int a;
+    int b;
+    if (m_unk427 != 0) {
+        int msg = 0x28F;
+        switch (arg1) {
+        case 2:
+            msg = 0x28E;
+            break;
+        case 3:
+            msg = 0x28B;
+            break;
+        case 1:
+        case 4:
+            msg = 0x290;
+            break;
+        case 6:
+            msg = 0x292;
+            break;
+        }
+        ((FontManager *)((char *)this + 0x80))->RenderWarning(msg);
+    }
+    SoundOneFrameHasElapsed_R__9MaxEngineFRiRi(gEng, &a, &b);
+    if (m_unk427 != 0) {
+        RefreshDisplay__10PGfxEngineFv(gGfxEng);
+    }
+    IncrementSecondarySyncCounts__9MaxEngineFv(gEng);
 }
 
 // FUNCTION: 0x144C60 LoadingDisplay__9InterfaceFUii
@@ -444,6 +536,60 @@ void Interface::DeleteMeshLayer(PMNode *node) {
         node->Slot00(1);
     }
     ((PArray *)((char *)this + 0x404))->Remove(node);
+}
+
+// DRAFT: 0x144D60 DeleteMeshLayer__9InterfaceFv
+// note: 25 differing words; frame (0x20) and s0-only saves match; original has a nop after the Slot00 jalr and reloads m_unk408 for the list index (ours keeps idx in a1), so the loop skip is 0x17 vs ours 0x15. Tried NULL->0, if/else on first list read, m_unk408 header field (37 -> 31 -> 25), if/else in loop tail (27), m_unk408 index in tail (27); last two reverted.
+void Interface::DeleteMeshLayer() {
+    PMNode *node;
+    unsigned int idx;
+    m_unk408 = 0;
+    if (m_unk404 != 0) {
+        node = (PMNode *)(*(void ***)((char *)this + 0x40C))[0];
+    } else {
+        node = 0;
+    }
+    if (node != 0) {
+        do {
+            if (node != 0) {
+                node->Slot00(1);
+            }
+            idx = m_unk408 + 1;
+            m_unk408 = idx;
+            node = 0;
+            if (idx < (unsigned int)m_unk404) {
+                node = (PMNode *)(*(void ***)((char *)this + 0x40C))[idx];
+            }
+        } while (node != 0);
+    }
+    if (*(void ***)((char *)this + 0x40C) != 0) {
+        m_unk404 = 0;
+        m_unk408 = 0;
+    }
+}
+
+// DRAFT: 0x1452A0 FadeScreen__9InterfaceFffbQ29Interface10eFadeColor
+// note: 1 differing line, c.eq.s operand order (orig $f20,$f0 vs ours $f0,$f20); tried 0.0f!=v, arg1!=0, inverted ==0 layout (18 diffs), !(v==0).
+void Interface::FadeScreen(float arg0, float arg1, bool arg2, eFadeColor arg3) {
+    float var_f20 = arg1;
+    if ((int)arg3 >= 2) {
+        CdsAssert__FPciPc("Interface.cpp", 0x14E, "eColor < FADE_COLOR_MAX");
+    }
+    m_unk426 = (signed char)arg3;
+    m_unk424 = arg2;
+    if (!(var_f20 == 0.0f)) {
+        m_unk425 = 1;
+        *(float *)&m_unk420 = arg0;
+        if (arg0 < *(float *)&m_unk41C) {
+            var_f20 = -var_f20;
+        }
+        *(float *)&m_unk418 = var_f20;
+        return;
+    }
+    m_unk425 = 0;
+    *(float *)&m_unk41C = arg0;
+    DisplayFadeRectangle();
+    *(float *)&m_unk418 = arg0;
 }
 
 // FUNCTION: 0x145370 InitScreenFadeVars__9InterfaceFv

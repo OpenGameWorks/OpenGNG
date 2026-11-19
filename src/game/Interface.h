@@ -106,6 +106,12 @@ public:
     void InitRender();
     void DeleteMeshLayer(PMNode *node);
     void AddMeshLayer(PMNode *node);
+    void DeleteMeshLayer();
+    void DisplayFadeRectangle();
+    int AbilityScreen();
+    // Enumerator names are placeholders; only the type identity (Q29Interface10eFadeColor) matters.
+    enum eFadeColor { eFadeColor_Value0 = 0, eFadeColor_Value1 = 1, eFadeColor_Value2 = 2 };
+    void FadeScreen(float arg0, float arg1, bool arg2, eFadeColor arg3);
 
     char _pad000[0x80];
     int m_unk80;                // 0x080 first word of the embedded FontManager
@@ -115,15 +121,19 @@ public:
     int m_unk1C0;               // 0x1C0
     char _pad1C4[0x133];
     unsigned char m_unk2F7;     // 0x2F7
-    char _pad2F8[0x10C];
+    char _pad2F8[0x2C];
+    int m_unk324;               // 0x324 sign tested by AbilityScreen
+    char _pad328[0xDC];
     int m_unk404;               // 0x404 mesh layer list count, then entries (PArray)
-    char _pad408[0x10];
+    unsigned int m_unk408;      // 0x408 loop index into the mesh layer list
+    char _pad40C[0xC];
     int m_unk418;               // 0x418
     int m_unk41C;               // 0x41C
     int m_unk420;               // 0x420
     signed char m_unk424;       // 0x424
     signed char m_unk425;       // 0x425
     signed char m_unk426;       // 0x426
+    unsigned char m_unk427;     // 0x427 nonzero enables the warning and display-refresh path
 };
 
 #endif
