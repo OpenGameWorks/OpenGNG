@@ -5,6 +5,16 @@
 
 class PArray;
 class PLight;
+class PPakFile;
+class PAnim;
+
+// Placeholder for the anim table passed to RecurseAttachAnim; only the layout used by that function is known.
+class PMeshNodeAnimDataTable {
+public:
+    char _pad00[8];
+    unsigned int m_unk08;       // 0x08 entry count
+    void *m_unk0C;              // 0x0C entry array, 0x18 bytes per entry
+};
 
 // TODO(header): PResource::eResObjType belongs to the PResource header. Placeholder until that header defines it; only the name matters for mangling.
 class PResource {
@@ -12,18 +22,33 @@ public:
     enum eResObjType { eResObjType_Placeholder = 0 };
 };
 
+// Pickup record reached through PMeshNode::m_unk10; only the two floats clamped by AdjustPickup are named.
+class PMeshPickup {
+public:
+    char _pad00[0x20];
+    float m_unk20;              // 0x20 clamped to at least 1.0f
+    char _pad24[0x4];
+    float m_unk28;              // 0x28 clamped to at least 1.0f
+};
+
 class PMeshNode {
 public:
     PMeshNode(PResource::eResObjType eType);
+    PMeshNode(PMeshNode &other);
     ~PMeshNode();
+    void AdjustPickup();
     void DetachLight(PLight *pLight);
     void RemoveFromCollisionArray(PArray *pArr);
+    int BuildCollisionArray(PArray *pArr, unsigned int flag);
     void DetachAllLights();
     void InitMembers();
+    int RecurseAttachAnim(PMeshNodeAnimDataTable *pAnimDataTable);
+    void LoadCollision(PPakFile *pPak);
 
     void *m_unk00;              // 0x000 vtable
     int m_unk04;                // 0x004 PResource state; 1 after InitMembers
-    char _pad008[0xC];
+    char _pad008[0x8];
+    PMeshPickup *m_unk10;       // 0x010 pickup record; PMeshPickup fields at +0x20 and +0x28
     unsigned int m_unk14;       // 0x014 child count (PArray)
     unsigned int m_unk18;       // 0x018 child index (PArray)
     PMeshNode **m_unk1C;        // 0x01C child array (PArray)
