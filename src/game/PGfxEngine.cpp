@@ -10,6 +10,7 @@ extern char vu_debug_microcode_dma_packet[];
 extern char dbg_display_init[];
 extern int gCDSVBlankCount[1];
 extern float GAME_FPS;
+extern float gUnitMatrix[16];
 class PMat4;
 
 class PDisplayList {
@@ -22,6 +23,8 @@ public:
     void SetScreenMatrix(PMat4 *pMat);
     void SetVifCodes(unsigned int nA, unsigned int nB);
     void SetGsRegisters(int *pData);
+    void SetWorldMatrix(PMat4 *pMat);
+    void BeginMesh(unsigned int nFlags);
 
     char _pad000[0xA3348];
     int m_unkA3348;                     // 0xA3348
@@ -33,6 +36,47 @@ public:
 };
 
 #include "PGfxEngine.h"
+
+// FUNCTION: 0x00184640 ComputeDistanceSq__FPfPfPA4_A4_fPA4_A4_fPfPf
+void ComputeDistanceSq(float *pA, float *pB, float (*pMatA)[4][4], float (*pMatB)[4][4], float *pSrc, float *pDst)
+{
+    asm {
+        .set noreorder
+        lqc2 vf1, 0x0(a2)
+        lqc2 vf2, 0x10(a2)
+        lqc2 vf3, 0x20(a2)
+        lqc2 vf4, 0x30(a2)
+        lqc2 vf5, 0x0(a0)
+        lqc2 vf7, 0x0(a3)
+        lqc2 vf8, 0x10(a3)
+        lqc2 vf9, 0x20(a3)
+        lqc2 vf10, 0x30(a3)
+        lqc2 vf11, 0x0(a1)
+        lqc2 vf13, 0x0(t0)
+        vmulax.xyzw ACC, vf1, vf5x
+        vmadday.xyzw ACC, vf2, vf5y
+        vmaddaz.xyzw ACC, vf3, vf5z
+        vmaddw.xyzw vf6, vf4, vf0w
+        vmulax.xyzw ACC, vf7, vf11x
+        vmadday.xyzw ACC, vf8, vf11y
+        vmaddaz.xyzw ACC, vf9, vf11z
+        vmaddw.xyzw vf12, vf10, vf0w
+        vsub.xyzw vf14, vf6, vf13
+        vmul.xyz vf15, vf14, vf14
+        vaddy.x vf15, vf15, vf15y
+        vaddz.x vf31, vf15, vf15z
+        vsub.xyzw vf16, vf12, vf13
+        vmul.xyz vf17, vf16, vf16
+        vaddx.y vf17, vf17, vf17x
+        vaddz.y vf31, vf17, vf17z
+        vnop
+        vnop
+        vnop
+        sqc2 vf31, 0x0(t1)
+        jr ra
+        nop
+    }
+}
 
 // DRAFT: 0x184800 VBlankEndInterruptHandler__Fi
 // note: 2 words differ: the original places daddu v1,zero,zero before sd ra; ours emits sd ra first (6 variants: scalar/array counter, consolidated/split COP0 asm, lui/sync as .word, nop, daddu moved to its own asm before the counter).
@@ -149,6 +193,17 @@ void PGfxEngine::BeginDebugRender() {
     m_unk154C80->SetVifCodes(0U, ((unsigned int)dbg_display_init >> 3) | 0x14000000);
 }
 
+// FUNCTION: 0x185840 BeginSharedMesh__10PGfxEngineF13eBoxIntersectP6PMNode
+void PGfxEngine::BeginSharedMesh(eBoxIntersect eBox, PMNode *pNode) {
+    m_unk158E24 = 1;
+    m_unk16D400 = pNode;
+    m_unk154C80->SetWorldMatrix((PMat4 *)gUnitMatrix);
+    unsigned char saved = m_unk158E21;
+    m_unk158E21 = 0;
+    BeginMesh(eBox);
+    m_unk158E21 = saved;
+}
+
 // FUNCTION: 0x1858E0 UpdateLights__10PGfxEngineFP17tagVuLightingInfo
 void PGfxEngine::UpdateLights(struct tagVuLightingInfo *pInfo) {
     if (m_unk158E23 != 0) {
@@ -179,6 +234,18 @@ void PGfxEngine::SetFullAmbientLight() {
 void PGfxEngine::SetAmbientLight(float *pVec) {
     sceVu0ScaleVector(m_unk158EB0, pVec, 128.0f);
     m_unk158EB0[3] = 0.0f;
+}
+
+// DRAFT: 0x185EE0 SetDirLightColor__10PGfxEngineFifff
+// note: original has 0x80 bytes with this+idx*16 computed before the member constant (folded into store displacements, 128.0f reloaded per store); ours folds the constant first. Tried: swapped range test, local pointer (best, 29 words), pointer+index, operand swap, index-first pointer math.
+void PGfxEngine::SetDirLightColor(int nIndex, float fR, float fG, float fB) {
+    if (nIndex < 4 && nIndex >= 0) {
+        tagDirLightColor *pLight = &m_unk158E70[nIndex];
+        pLight->m_fR = 128.0f * fR;
+        pLight->m_fG = 128.0f * fG;
+        pLight->m_fB = 128.0f * fB;
+        pLight->m_nW = 0;
+    }
 }
 
 // FUNCTION: 0x1869D0 SetScreenMatrix__10PGfxEngineFP5PMat4
@@ -214,6 +281,18 @@ void PGfxEngine::SetClipMatrix(PMat4 *pMat) {
     pDst[3] = pSrc[3];
 }
 
+// FUNCTION: 0x186F10 BeginMesh__10PGfxEngineF13eBoxIntersect
+void PGfxEngine::BeginMesh(eBoxIntersect eBox) {
+    unsigned int nOffset = 0;
+    m_unk16D328 = (int)eBox;
+    void *pMicrocode = ComputeMicrocodeOffset(eBox, nOffset);
+    if (pMicrocode != m_unk158E1C) {
+        m_unk154C80->SetVu1Microcode(pMicrocode);
+        m_unk158E1C = pMicrocode;
+    }
+    m_unk154C80->BeginMesh(nOffset);
+}
+
 // DRAFT: 0x186FA0 SetZBufferUpdate__10PGfxEngineFb10eGsContext
 // note: 18 words differ: original selects 0x4E/0x4F with movn and builds flag<<32 before the select; ours uses beqz and computes flag<<32 after it. Tried: unsigned int nData (26), ternary select (22), reordered OR (18), hoisted flag shift (23), int flag (24).
 void PGfxEngine::SetZBufferUpdate(bool bEnable, eGsContext eCtx) {
@@ -227,6 +306,15 @@ void PGfxEngine::SetZBufferUpdate(bool bEnable, eGsContext eCtx) {
     aGs[1] = nCtx;
     aGs[0] = ((unsigned long long)cFlag << 32) | (nData | ((unsigned long long)m_unk158E02 << 24));
     m_unk154C80->SetGsRegisters((int *)aGs);
+}
+
+// FUNCTION: 0x187020 SetMaterial__10PGfxEngineFiPfbUlUl
+void PGfxEngine::SetMaterial(int nIndex, float *pVec, bool bFlag, unsigned long nA, unsigned long nB) {
+    unsigned char cSaved = m_unk158F00;
+    int nUse = (m_unk16D408 != 0) ? m_unk16D408 : nIndex;
+    m_unk158F00 = bFlag;
+    SetMaterial(nUse, pVec, nA, nB, 0, 0, 0);
+    m_unk158F00 = cSaved;
 }
 
 // FUNCTION: 0x187880 EnableFullScreenFx__10PGfxEngineFb
