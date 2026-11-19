@@ -33,7 +33,8 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4`) that `tool
 - An empty function is `jr ra; nop`; a getter is `jr ra; lw v0,off(a0)`.
 - Store order and local declaration order set instruction order; separate early returns or a duplicated tail replace a shared exit.
 - A global the original reaches with `lui`/`addiu` (or `%hi`/`%lo`) needs a complete type larger than 8 bytes; an extern of incomplete or small type compiles to gp-relative `lw ...(gp)` and mismatches. A placeholder member (`char _pad[0x10];`) in your header fixes it. A file-wide `// FLAGS: -sdatathreshold 0` is wrong: most original files use gp-relative globals elsewhere.
-- A function ending in a frameless `j` tail call matches only with C++ exceptions off: line 1 reads `// FLAGS: -Cpp_exceptions off` (appended to any existing FLAGS), and every FUNCTION tag in the file is rechecked.
+- A short string literal (an assert's `"0"`, a file name) that the original addresses with `lui`/`addiu` where ours uses `gp` needs `// FLAGS: -str readonly` on line 1; every FUNCTION tag in the file is rechecked after adding it.
+- C++ exceptions are off by default (`tools/srcmeta.py`), which frameless `j` tail calls require; no FLAGS line is needed for them.
 - MW inlines builtin `abs()`; where the original calls libc `abs` (`jal 0x122520`), a block-scope `int abs(int);` declaration inside the function keeps the call.
 - A void callee declaration where the original reads v0 (or the reverse) shifts registers: callee return types follow their own asm.
 - `src/game/PWorld.cpp` holds the first match and serves as a model.
@@ -49,7 +50,8 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4`) that `tool
 - `fncmp.py` compiles through the `tools/ccd.py` spool, so it runs inside the sandbox; a compile under load takes up to a minute.
 - Every command runs in the foreground with a timeout; a background command, sleep or monitor keeps the job open after its report and delays the coordinator's commit.
 - `wc`, `cat`, `xargs` and `grep` with no file list wait on stdin; pass `< /dev/null`.
-- Output is read through `head`, `tail` or `grep`, never whole files; context stays under 100k tokens.
+- Output is read through `head`, `tail` or `grep`, never whole files; context stays under 100k tokens. Source files are read with `grep -n` plus Read with a limit of at most 60 lines, `draft.py` through `| head -60`, `disasm.py` through `| head -90`; a worker that read large files whole has run out of context and lost its job.
+- A results row is appended as soon as an address is settled, so a worker that stops early still leaves its results.
 - No commits, no `ninja`, and no edits under `tools/`, `config/` or `include/`. Tool bugs and permission denials go into the report, unworked-around.
 
 ## Report

@@ -19,7 +19,9 @@ import re
 from pathlib import Path
 
 DEFAULT_COMPILER = "mwcps2-3.0.3-020716"
-DEFAULT_FLAGS = ["-O4", "-Iinclude", "-Isrc/game"]
+# Exceptions off: frameless `j` tail calls match only without EH tables, and a
+# regression over every tag found no function that needs them on.
+DEFAULT_FLAGS = ["-O4", "-Cpp_exceptions", "off", "-Iinclude", "-Isrc/game"]
 TAG = re.compile(r"^\s*//\s*(FUNCTION|DRAFT):\s*(0x[0-9A-Fa-f]+)(?:\s+(\S+))?")
 
 
