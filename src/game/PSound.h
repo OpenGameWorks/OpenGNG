@@ -1,6 +1,10 @@
 #ifndef PSOUND_H
 #define PSOUND_H
 
+// Forward declarations of foreign classes named by PSound member parameters.
+class GameSoundTrigletPawn;
+class PMNode;
+
 class PSound {
 public:
     class AmbientChannelState {
@@ -66,6 +70,14 @@ public:
     void SetProposedReverbParams(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3, unsigned int p4);
     void SetMonoOut(bool bMono);
     void SetMainMusicRelVolume(unsigned int nVolume);
+    int PlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3, unsigned int p4);
+    int PlaySoundTrigletUbiquitous(unsigned int p0, unsigned int p1, const GameSoundTrigletPawn *pPawn);
+    int PlaySoundPMNode(unsigned int p0, unsigned int p1, const PMNode *pNode);
+    int StopAllRegularSounds();
+    void StopStreamsAndRequestEEControl();
+    int DebugPlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int p2);
+    void PSoundReInitRegularSounds();
+    void SetEEControlOfIOP(unsigned int nMode);
 
     char _pad000[0x024];
     unsigned int m_unk024;  // 0x024
