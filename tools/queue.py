@@ -54,7 +54,7 @@ def tried() -> set[int]:
 def candidates() -> dict[str, list[tuple[int, int, str]]]:
     files: dict[str, list] = {}
     tus = [l.split("\t") for l in (ROOT / "config/tus.tsv").read_text().splitlines()[1:]]
-    tus = [(int(a, 16), int(b, 16), c, f) for a, b, c, f, _ in tus]
+    tus = [(int(t[0], 16), int(t[1], 16), t[2], t[3]) for t in tus]
     taken = set(claimed.claims()) | tried()
     for l in (ROOT / "config/units.tsv").read_text().splitlines()[1:]:
         a, b, k, n = l.split("\t")

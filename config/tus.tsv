@@ -1,476 +1,415 @@
-start	end	category	file	nfuncs
-001001E0	00100274	sdk	sdk/00100000.c	4
-00100278	00100414	sdk	sdk/00100278.c	2
-00100418	00100480	sdk	sdk/00100418.c	1
-00100480	001008A4	sdk	sdk/00100480.c	3
-001008A8	00100964	sdk	sdk/001008A8.c	1
-00100968	00100A30	sdk	sdk/00100968.c	1
-00100A30	00100C14	sdk	sdk/00100A30.c	1
-00100C18	00100D1C	sdk	sdk/00100C18.c	1
-00100D20	00100E08	sdk	sdk/00100D20.c	1
-00100E08	001010A0	sdk	sdk/00100E08.c	1
-001010A0	00101134	sdk	sdk/001010A0.c	1
-00101138	0010144C	sdk	sdk/00101138.c	1
-00101450	001014AC	sdk	sdk/00101450.c	1
-001014B0	001014EC	sdk	sdk/001014B0.c	1
-001014F0	00101578	sdk	sdk/001014F0.c	1
-00101578	00101594	sdk	sdk/00101578.c	1
-00101598	00101DDC	sdk	sdk/00101598.c	19
-00101DE0	001021EC	sdk	sdk/00101DE0.c	13
-001021F0	00102748	sdk	sdk/001021F0.c	15
-00102748	00102A74	sdk	sdk/00102748.c	8
-00102A78	00102E60	sdk	sdk/00102A78.c	9
-00102E60	00104734	sdk	sdk/00102E60.c	33
-00104738	00104748	sdk	sdk/00104738.c	1
-00104748	00104758	sdk	sdk/00104748.c	1
-00104758	001047B0	sdk	sdk/00104758.c	1
-001047B0	001047C4	sdk	sdk/001047B0.c	1
-001047C8	0010483C	sdk	sdk/001047C8.c	1
-00104840	001048B4	sdk	sdk/00104840.c	1
-001048B8	0010495C	sdk	sdk/001048B8.c	1
-00104960	00104988	sdk	sdk/00104960.c	1
-00104988	00104998	sdk	sdk/00104988.c	1
-00104998	001049A8	sdk	sdk/00104998.c	1
-001049A8	00104A00	sdk	sdk/001049A8.c	1
-00104A00	00104A14	sdk	sdk/00104A00.c	1
-00104A18	00104A40	sdk	sdk/00104A18.c	1
-00104A40	00105784	sdk	sdk/00104A40.c	42
-00105790	0010A44C	sdk	sdk/00105790.c	65
-0010A450	0010ABD0	sdk	sdk/0010A450.c	5
-0010ABD0	0010ADDC	sdk	sdk/0010ABD0.c	7
-0010ADE0	0010BBE8	sdk	sdk/0010ADE0.c	8
-0010BBE8	0010C740	sdk	sdk/0010BBE8.c	35
-0010C740	0010D244	sdk	sdk/0010C740.c	19
-0010D248	0010D264	sdk	sdk/0010D248.c	2
-0010D268	0010D5D8	sdk	sdk/0010D268.c	5
-0010D5D8	0010D878	sdk	sdk/0010D5D8.c	2
-0010D878	0010D8FC	sdk	sdk/0010D878.c	2
-0010D900	0010E1A0	sdk	sdk/0010D900.c	138
-0010E1A0	0010E570	sdk	sdk/0010E1A0.c	16
-0010E570	0010E7EC	sdk	sdk/0010E570.c	6
-0010E7F0	0010EA20	sdk	sdk/0010E7F0.c	9
-0010EA20	0010ED80	sdk	sdk/0010EA20.c	5
-0010ED80	0010EF5C	sdk	sdk/0010ED80.c	10
-0010EF60	0010F47C	sdk	sdk/0010EF60.c	7
-0010F480	0010FE20	sdk	sdk/0010F480.c	8
-0010FE20	00110568	sdk	sdk/0010FE20.c	16
-00110568	001114C8	sdk	sdk/00110568.c	22
-001114C8	00114B70	sdk	sdk/001114C8.c	40
-00114B70	001150BC	sdk	sdk/00114B70.c	11
-001150C0	00115E1C	sdk	sdk/001150C0.c	18
-00115E20	001160D0	sdk	sdk/00115E20.c	4
-001160D0	001165DC	sdk	sdk/001160D0.c	19
-00116600	0011695C	sdk	sdk/00116600.c	3
-00116960	001169C0	sdk	sdk/00116960.c	2
-001169C0	00116C24	sdk	sdk/001169C0.c	9
-00116C28	00116DA4	sdk	sdk/00116C28.c	6
-00116DA8	00117044	sdk	sdk/00116DA8.c	9
-00117048	00117184	sdk	sdk/00117048.c	5
-00117188	001174C4	sdk	sdk/00117188.c	4
-001174C8	0011884C	sdk	sdk/001174C8.c	22
-00118850	00118A30	sdk	sdk/00118850.c	1
-00118A30	00118AC8	sdk	sdk/00118A30.c	1
-00118AC8	00118B60	sdk	sdk/00118AC8.c	1
-00118B60	00118C18	sdk	sdk/00118B60.c	1
-00118C18	00118D10	sdk	sdk/00118C18.c	1
-00118D10	001191F0	sdk	sdk/00118D10.c	10
-001191F0	0011AA58	sdk	sdk/001191F0.c	28
-0011AA58	0011AE74	sdk	sdk/0011AA58.c	1
-0011AE78	0011B29C	sdk	sdk/0011AE78.c	1
-0011B2A0	0011B640	sdk	sdk/0011B2A0.c	1
-0011B640	0011B820	sdk	sdk/0011B640.c	1
-0011B820	0011B9F0	sdk	sdk/0011B820.c	1
-0011B9F0	0011BDA0	sdk	sdk/0011B9F0.c	1
-0011BDA0	0011BE6C	sdk	sdk/0011BDA0.c	1
-0011BE70	0011BFC0	sdk	sdk/0011BE70.c	1
-0011BFC0	0011C824	sdk	sdk/0011BFC0.c	1
-0011C828	0011C92C	sdk	sdk/0011C828.c	1
-0011C930	0011CBB4	sdk	sdk/0011C930.c	1
-0011CBB8	0011CC00	sdk	sdk/0011CBB8.c	1
-0011CC00	0011CC3C	sdk	sdk/0011CC00.c	1
-0011CC40	0011CECC	sdk	sdk/0011CC40.c	1
-0011CED0	0011CF0C	sdk	sdk/0011CED0.c	1
-0011CF10	0011CFE4	sdk	sdk/0011CF10.c	1
-0011CFE8	0011D010	sdk	sdk/0011CFE8.c	1
-0011D010	0011D0E8	sdk	sdk/0011D010.c	1
-0011D0E8	0011D1B0	sdk	sdk/0011D0E8.c	1
-0011D1B0	0011D298	sdk	sdk/0011D1B0.c	1
-0011D298	0011D310	sdk	sdk/0011D298.c	1
-0011D310	0011D324	sdk	sdk/0011D310.c	1
-0011D328	0011D33C	sdk	sdk/0011D328.c	1
-0011D340	0011D354	sdk	sdk/0011D340.c	1
-0011D358	0011D36C	sdk	sdk/0011D358.c	1
-0011D370	0011D384	sdk	sdk/0011D370.c	1
-0011D388	0011D3FC	sdk	sdk/0011D388.c	1
-0011D400	0011DA94	sdk	sdk/0011D400.c	1
-0011DA98	0011E128	sdk	sdk/0011DA98.c	1
-0011E128	0011E6A4	sdk	sdk/0011E128.c	1
-0011E6A8	0011EC10	sdk	sdk/0011E6A8.c	1
-0011EC10	0011ECB8	sdk	sdk/0011EC10.c	1
-0011ECB8	0011EDD0	sdk	sdk/0011ECB8.c	1
-0011EDD0	001200F8	sdk	sdk/0011EDD0.c	30
-001200F8	001201C8	sdk	sdk/001200F8.c	1
-001201C8	00120224	sdk	sdk/001201C8.c	1
-00120228	00120254	sdk	sdk/00120228.c	1
-00120258	00120294	sdk	sdk/00120258.c	1
-00120298	001203B0	sdk	sdk/00120298.c	1
-001203B0	0012045C	sdk	sdk/001203B0.c	1
-00120460	0012077C	sdk	sdk/00120460.c	3
-00120780	00120A2C	sdk	sdk/00120780.c	1
-00120A30	00120BA4	sdk	sdk/00120A30.c	1
-00120BA8	00120CC8	sdk	sdk/00120BA8.c	1
-00120CC8	00120D14	sdk	sdk/00120CC8.c	1
-00120D18	00120DD0	sdk	sdk/00120D18.c	1
-00120DD0	00120E6C	sdk	sdk/00120DD0.c	1
-00120E70	00120E9C	sdk	sdk/00120E70.c	1
-00120EA0	00120EF4	sdk	sdk/00120EA0.c	1
-00120EF8	00120F98	sdk	sdk/00120EF8.c	1
-00120F98	00122508	sdk	sdk/00120F98.c	19
-00122508	00122520	sdk	sdk/00122508.c	1
-00122520	00122534	sdk	sdk/00122520.c	1
-00122538	00122560	sdk	sdk/00122538.c	1
-00122560	00122614	sdk	sdk/00122560.c	1
-00122618	00122670	sdk	sdk/00122618.c	1
-00122670	00123B04	sdk	sdk/00122670.c	2
-00123B08	00123B14	sdk	sdk/00123B08.c	1
-00123B18	00123BC4	sdk	sdk/00123B18.c	1
-00123BC8	00123CDC	sdk	sdk/00123BC8.c	1
-00123CE0	00123F7C	sdk	sdk/00123CE0.c	6
-00123F80	001243E4	sdk	sdk/00123F80.c	2
-001243E8	00124444	sdk	sdk/001243E8.c	1
-00124448	00124828	sdk	sdk/00124448.c	1
-00124828	001248BC	sdk	sdk/00124828.c	1
-001248C0	001249A4	sdk	sdk/001248C0.c	4
-001249A8	00124A08	sdk	sdk/001249A8.c	1
-00124A08	00124B5C	sdk	sdk/00124A08.c	1
-00124B60	00124C00	sdk	sdk/00124B60.c	2
-00124C00	00125580	sdk	sdk/00124C00.c	2
-00125580	001255B4	sdk	sdk/00125580.c	1
-001255B8	00125698	sdk	sdk/001255B8.c	1
-00125698	0012572C	sdk	sdk/00125698.c	1
-00125730	001257E0	sdk	sdk/00125730.c	1
-001257E0	001258E4	sdk	sdk/001257E0.c	1
-001258E8	001259A8	sdk	sdk/001258E8.c	1
-001259A8	00125A74	sdk	sdk/001259A8.c	2
-00125A78	00126A90	sdk	sdk/00125A78.c	17
-00126A90	00126B60	sdk	sdk/00126A90.c	2
-00126B60	00126BDC	sdk	sdk/00126B60.c	2
-00126BE0	00126C40	sdk	sdk/00126BE0.c	1
-00126C40	00126C98	sdk	sdk/00126C40.c	1
-00126C98	00126F80	sdk	sdk/00126C98.c	8
-00126F80	00126FF4	sdk	sdk/00126F80.c	2
-00126FF8	00127110	sdk	sdk/00126FF8.c	2
-00127110	0012727C	sdk	sdk/00127110.c	4
-00127280	00127358	sdk	sdk/00127280.c	1
-00127358	00127484	sdk	sdk/00127358.c	1
-00127488	001275CC	sdk	sdk/00127488.c	1
-001275D0	001276E4	sdk	sdk/001275D0.c	1
-001276E8	00127820	sdk	sdk/001276E8.c	1
-00127820	001278F8	sdk	sdk/00127820.c	1
-001278F8	00127AB4	sdk	sdk/001278F8.c	1
-00127AB8	00127D1C	sdk	sdk/00127AB8.c	2
-00127D20	001297A4	sdk	sdk/00127D20.c	6
-001297A8	00129854	sdk	sdk/001297A8.c	2
-00129858	001298B8	sdk	sdk/00129858.c	1
-001298B8	0012AA3C	sdk	sdk/001298B8.c	26
-0012AA40	0012AFE0	game	MemoryManager.cpp	8
-0012AFE0	0012BD50	game	MemoryPool.cpp	16
-0012BD50	0012BE88	sdk	sdk/001298B8.c	2
-0012BE90	0012CC5C	game	PCDFile.cpp	10
-0012CC60	0012D744	sdk	sdk/001298B8.c	17
-0012D748	0012DF9C	sdk	sdk/0012D748.c	13
-0012DFA0	0012E10C	sdk	sdk/0012DFA0.c	2
-0012E110	0012EB70	sdk	sdk/0012E110.c	15
-0012EB70	0012F158	game	PArray.cpp	9
-0012F160	00130030	sdk	sdk/0012E110.c	19
-00130030	001305E4	game	PHashTable.cpp	9
-001305F0	00130684	sdk	sdk/0012E110.c	2
-00130690	00131990	game	PMat4.cpp	29
-00131990	00131DE8	game	PList.cpp	8
-00131DF0	00132E24	game	MaxEngine.cpp	17
-00132E30	00134934	game	PMat4.cpp	28
-00134940	0013C700	game	MaximoMain.cpp	25
-0013C700	0013C708	game	Camera.cpp	1
-0013C710	0013C718	game	PAnim.cpp	1
-0013C720	0013CB74	game	MaximoMain.cpp	3
-0013CB80	0013CBD0	game	PMat4.cpp	1
-0013CBD0	0013F7FC	game	MaximoMain.cpp	16
-0013F800	001425E8	game	PMat4.cpp	37
-001425F0	00142618	game	PAnimFrame.cpp	3
-00142620	00142FD8	game	PMat4.cpp	5
-00142FE0	00142FE8	game	PAnim.cpp	1
-00142FF0	001460B8	game	PMat4.cpp	48
-001460C0	00146590	game	EntityManager.cpp	6
-00146590	00146688	game	PMat4.cpp	1
-00146690	00146D7C	game	EntityManager.cpp	3
-00146D80	00146E68	game	PMat4.cpp	1
-00146E70	001471D0	game	EntityManager.cpp	4
-001471D0	001471F0	game	PMat4.cpp	1
-001471F0	00147A84	game	EntityManager.cpp	7
-00147A90	00147A98	game	EntityBaseClass.cpp	1
-00147AA0	0014892C	game	EntityManager.cpp	7
-00148930	00148958	game	EntityBaseClass.cpp	3
-00148960	00149F28	game	EntityManager.cpp	20
-00149F30	0014AB14	game	EntityBaseClass.cpp	30
-0014AB20	0014AB30	game	PParticleSystem.cpp	1
-0014AB30	0014CF7C	game	EntityBaseClass.cpp	45
-0014CF80	0014D178	game	PMat4.cpp	1
-0014D180	0014F56C	game	EntityBaseClass.cpp	32
-0014F570	0014F5B4	game	PMat4.cpp	1
-0014F5C0	0014F620	game	BGCollision.cpp	1
-0014F620	0014FD34	game	PMat4.cpp	6
-0014FD40	00152990	game	MemoryCard.cpp	26
-00152990	00154AD4	game	PResourceManager.cpp	21
-00154AE0	0015501C	game	EntityAttackManager.cpp	7
-00155020	0015527C	game	WaypointManager.cpp	5
-00155280	001557DC	game	CameraAPI.cpp	11
-001557E0	00155974	game	PMat4.cpp	7
-00155980	00155AB8	game	EffectAPI.cpp	1
-00155AC0	00155C6C	game	PMat4.cpp	1
-00155C70	00155D44	game	EffectAPI.cpp	1
-00155D50	00155F00	game	PMat4.cpp	3
-00155F00	00156048	game	EffectAPI.cpp	2
-00156050	00156390	game	PMat4.cpp	3
-00156390	00156434	game	EffectAPI.cpp	1
-00156440	00156598	game	PMat4.cpp	2
-001565A0	001566B0	game	EffectAPI.cpp	1
-001566B0	00156844	game	PMat4.cpp	1
-00156850	00156974	game	EffectAPI.cpp	1
-00156980	00156D20	game	PMat4.cpp	4
-00156D20	00157390	game	EffectAPI.cpp	9
-00157390	001574E8	game	PMat4.cpp	7
-001574F0	0015877C	game	MathAPI.cpp	21
-00158780	00158788	game	PMat4.cpp	1
-00158790	00158C5C	game	TimerAPI.cpp	5
-00158C60	00158F34	game	PMat4.cpp	7
-00158F40	0015C878	game	Player.cpp	62
-0015C880	0015C898	game	PAnimFrame.cpp	2
-0015C8A0	0015CB4C	game	Player.cpp	3
-0015CB50	0015CB58	game	PAnim.cpp	1
-0015CB60	00160CD0	game	Player.cpp	52
-00160CD0	00160D30	game	PAnimFrame.cpp	1
-00160D30	00166BAC	game	Player.cpp	42
-00166BB0	0016819C	game	Projectile.cpp	9
-001681A0	00169594	game	Shield.cpp	12
-001695A0	0016A700	game	PMat4.cpp	23
-0016A700	0016A9D0	game	Debug.cpp	5
-0016A9D0	0016AAF4	game	PMat4.cpp	1
-0016AB00	0016AE38	game	Debug.cpp	7
-0016AE40	0016B260	game	PMat4.cpp	5
-0016B260	0016B2B8	game	Debug.cpp	2
-0016B2C0	0016B4CC	game	PMat4.cpp	1
-0016B4D0	0016B604	game	Debug.cpp	3
-0016B610	0016C894	game	PMat4.cpp	12
-0016C8A0	0016D77C	game	BGCollision.cpp	4
-0016D780	0016DF34	game	PMat4.cpp	1
-0016DF40	0016E664	game	BGCollision.cpp	2
-0016E670	0016ED9C	game	PMat4.cpp	1
-0016EDA0	0016F338	game	BGCollision.cpp	2
-0016F340	0016F490	game	PMat4.cpp	1
-0016F490	00170908	game	BGCollision.cpp	9
-00170910	00170998	game	PMat4.cpp	1
-001709A0	00170E70	game	BGCollision.cpp	4
-00170E70	00170E78	game	PMat4.cpp	1
-00170E80	001723D8	game	Physics.cpp	10
-001723E0	00172464	game	PMat4.cpp	1
-00172470	00172650	game	Physics.cpp	3
-00172650	00172A14	game	CEifInstanceGroup.cpp	6
-00172A20	00172CFC	game	CEifInstance.cpp	10
-00172D00	00172D38	game	PMat4.cpp	1
-00172D40	00172DF4	game	CEifInstance.cpp	2
-00172E00	00173324	game	CEifFile.cpp	7
-00173330	00173530	game	CBefEntityData.cpp	1
-00173530	00173574	game	PMat4.cpp	1
-00173580	00173634	game	CBefEntityData.cpp	2
-00173640	00173858	game	CameraFollow.cpp	2
-00173860	00173D08	game	PMat4.cpp	9
-00173D10	00173E68	game	CameraFollow.cpp	2
-00173E70	00173EAC	game	Camera.cpp	1
-00173EB0	00174768	game	CameraFollow.cpp	4
-00174770	001747AC	game	Camera.cpp	1
-001747B0	00176170	game	CameraFollow.cpp	18
-00176170	00176194	game	Physics.cpp	1
-001761A0	00177F64	game	CameraFollow.cpp	17
-00177F70	00177F78	game	PMat4.cpp	1
-00177F80	0017A99C	game	Camera.cpp	48
-0017A9A0	00180400	game	PMat4.cpp	56
-00180400	00184634	game	PDisplayList.cpp	44
-00184640	0018497C	game	PMat4.cpp	4
-00184980	00188F8C	game	PGfxEngine.cpp	80
-00188F90	00188FB8	game	PMat4.cpp	1
-00188FC0	00189078	game	PGfxEngine.cpp	2
-00189080	00189344	game	PTextureDmaChain.cpp	6
-00189350	0018A84C	game	PTextureManager.cpp	14
-0018A850	0018A990	game	PAnim.cpp	2
-0018A990	0018C7E8	game	PTextureManager.cpp	18
-0018C7F0	0018CE08	game	PAnim.cpp	19
-0018CE10	0018D4D8	game	PAnimFrame.cpp	16
-0018D4E0	0018DC80	game	PChannel.cpp	2
-0018DC80	0018DE40	game	EntityManager.cpp	2
-0018DE40	0018DE90	game	PChannel.cpp	1
-0018DE90	0018E514	game	PFrustrum.cpp	5
-0018E520	0018E874	game	PLight.cpp	5
-0018E880	0018E8A4	game	EntityManager.cpp	1
-0018E8B0	0018F584	game	PLightManager.cpp	13
-0018F590	0018FEA0	game	PMesh.cpp	11
-0018FEA0	001901BC	game	PMeshFragment.cpp	5
-001901C0	00191158	game	PMeshNode.cpp	14
-00191160	00191564	game	PMeshNodeAnimData.cpp	5
-00191570	001917D0	game	PMeshNodeAnimDataTable.cpp	3
-001917D0	00192AB0	game	PMNode.cpp	14
-00192AB0	00192AB8	game	PParticleSystem.cpp	1
-00192AC0	001963A8	game	PMNode.cpp	53
-001963B0	00196890	game	PRenderPass.cpp	3
-00196890	001974C4	game	PShader.cpp	8
-001974D0	001986A4	game	PSkeleton.cpp	16
-001986B0	00198FEC	game	PSpacePartitionNode.cpp	8
-00198FF0	00199BE0	game	PSpacePartitionTree.cpp	8
-00199BE0	0019A2C8	game	PSTAnim.cpp	5
-0019A2D0	0019A680	game	PSTAnimChannel.cpp	6
-0019A680	0019C470	game	PWorld.cpp	20
-0019C470	0019C530	game	EntityManager.cpp	9
-0019C530	0019CF34	game	CamBox.cpp	7
-0019CF40	0019F260	game	Pickup.cpp	19
-0019F260	001A1588	game	Innocent.cpp	25
-001A1590	001A30F4	game	WoodenChest.cpp	11
-001A3100	001A32BC	game	CamSphere.cpp	5
-001A32C0	001A3A5C	game	HolyGround.cpp	7
-001A3A60	001A3C6C	game	CamCylinder.cpp	6
-001A3C70	001AD794	game	PSound.cpp	173
-001AD7A0	001AF32C	game	EntityManager.cpp	61
-001AF330	001AFEDC	game	ZinShell.cpp	6
-001AFEE0	001B01FC	game	EntityManager.cpp	11
-001B0200	001B0508	game	Shadow.cpp	4
-001B0510	001B074C	game	AnimTrigger.cpp	7
-001B0750	001B07A8	game	TimerAPI.cpp	1
-001B07B0	001B0810	game	EffectAPI.cpp	1
-001B0810	001B25E0	game	EntityManager.cpp	12
-001B25E0	001B3F68	game	Raven.cpp	15
-001B3F70	001B42DC	game	Fire.cpp	7
-001B42E0	001B4A74	game	MineableItem.cpp	7
-001B4A80	001B5388	game	PParticleSystem.cpp	13
-001B5390	001B63F4	game	PParticleExplosion.cpp	7
-001B6400	001B75CC	game	PParticleFire.cpp	8
-001B75D0	001BB100	game	PParticleManager.cpp	63
-001BB100	001BBBA0	game	CutableItem.cpp	7
-001BBBA0	001BDD9C	game	PCutScenePlayer.cpp	18
-001BDDA0	001BE76C	game	PParticleFog.cpp	5
-001BE770	001BEDD8	game	PParticleVertexGlow.cpp	9
-001BEDE0	001BF1C4	game	PFxMesh.cpp	4
-001BF1D0	001BF79C	unknown	unk_001BF1D0.cpp	8
-001BF7A0	001C4C54	game	ClockworkReaper.cpp	36
-001C4C60	001C564C	game	ExitLevel.cpp	7
-001C5650	001C6E30	unknown	unk_001C5650.cpp	8
-001C6E30	001C715C	game	MusicSwitch.cpp	6
-001C7160	001C880C	game	BattleArena.cpp	12
-001C8810	001C8ADC	unknown	unk_001C8810.cpp	13
-001C8AE0	001C9554	game	PMotionBlur.cpp	9
-001C9560	001CAEC8	game	PParticleLiteFire.cpp	10
-001CAED0	001CC100	game	PParticleSpurt.cpp	7
-001CC100	001CD4AC	unknown	unk_001CC100.cpp	13
-001CD4B0	001CD69C	game	Rain.cpp	6
-001CD6A0	001CD8C0	game	RainTrigger.cpp	5
-001CD8C0	001CEF08	game	PZBufferFog.cpp	11
-001CEF10	001CF160	game	FogTrigger.cpp	5
-001CF160	001CFD5C	game	Fog.cpp	6
-001CFD60	001D00A8	unknown	unk_001CFD60.cpp	5
-001D00B0	001D04EC	game	PRainSplatter.cpp	6
-001D04F0	001D39EC	game	Peddler.cpp	36
-001D39F0	001D3B80	unknown	unk_001D39F0.cpp	7
-001D3B80	001D5804	game	PObjectDisplayList.cpp	19
-001D5810	001D5ECC	game	PDynamicBuffer.cpp	10
-001D5ED0	001D6160	game	PPakFile.cpp	4
-001D6160	001D6ADC	unknown	unk_001D6160.cpp	13
-001D6AE0	001D6EAC	game	PStaticInstanceMesh.cpp	3
-001D6EB0	001D74C4	game	PStaticInstanceGroup.cpp	5
-001D74D0	001D7C90	unknown	unk_001D74D0.cpp	6
-001D7C90	001D88D4	game	PShadowBuffer.cpp	10
-001D88E0	001D89C0	unknown	unk_001D88E0.cpp	1
-001D89C0	001D944C	game	PShadowVolume.cpp	6
-001D9450	001D9F8C	game	SpitterItem.cpp	9
-001D9F90	001DA5AC	game	Spitter.cpp	9
-001DA5B0	001DA610	unknown	unk_001DA5B0.cpp	2
-001DA610	001DA9B8	game	IOPTransactionManager.cpp	7
-001DA9C0	001DAAA8	unknown	unk_001DA9C0.cpp	4
-001DAAB0	001DB7C8	game	PIOPFile.cpp	14
-001DB7D0	001DBD50	game	PParticleAura.cpp	7
-001DBD50	001DC2A0	unknown	unk_001DBD50.cpp	6
-001DC2A0	001DC74C	game	CutCameraSetup.cpp	5
-001DC750	001DE040	game	Bridge.cpp	17
-001DE040	001E27F8	game	ClockworkPuncher.cpp	38
-001E2800	001E6480	game	ClockworkStalker.cpp	30
-001E6480	001E8E28	game	ClockworkStinger.cpp	23
-001E8E30	001EB514	game	ClockworkFlyer.cpp	33
-001EB520	001EBF10	game	ReversibleAnimTrigger.cpp	9
-001EBF10	001ED740	game	PParticleGas.cpp	9
-001ED740	001EE330	game	PParticleRipples.cpp	13
-001EE330	001EF264	game	PWaterTexture.cpp	9
-001EF270	001EF530	game	PFireTexture.cpp	6
-001EF530	001EFA68	game	PGasTexture.cpp	6
-001EFA70	001F0324	game	PParticleTexture.cpp	6
-001F0330	001F06A4	game	PFogTexture.cpp	6
-001F06B0	001F0E18	game	ClockworkReaperSpear.cpp	7
-001F0E20	001F1B04	game	PParticleSplineTrail.cpp	11
-001F1B10	001F1DB4	game	PTranslateATable.cpp	3
-001F1DC0	001F2BF0	game	PGrid.cpp	10
-001F2BF0	001F327C	game	PropellerPowerSource.cpp	10
-001F3280	001F41AC	game	PDynamicSplinePatch.cpp	10
-001F41B0	001F46A8	unknown	unk_001F41B0.cpp	8
-001F46B0	001F5504	game	PParticleElectricity.cpp	8
-001F5510	001F6608	game	PParticleEnergyStream.cpp	11
-001F6610	001F7844	game	PParticleLiteExplosion.cpp	9
-001F7850	001F7F04	game	PCyclocksFx.cpp	10
-001F7F10	001F8978	game	PParticleSparks.cpp	8
-001F8980	001F9844	game	PMidasShieldRings.cpp	12
-001F9850	001F9DE8	game	PParticleShockwaveRing.cpp	7
-001F9DF0	001FAC10	game	PFrozenFx.cpp	11
-001FAC10	001FB624	game	PScrollingTrees.cpp	7
-001FB630	001FB90C	unknown	unk_001FB630.cpp	5
-001FB910	001FCE34	game	Rabite.cpp	16
-001FCE40	001FD124	game	BlowingLeaves.cpp	7
-001FD130	001FE408	game	PParticleBlowingLeaves.cpp	11
-001FE410	001FEE5C	game	PCrystalizeFx.cpp	7
-001FEE60	00201E54	unknown	unk_001FEE60.cpp	44
-00201E60	002028FC	game	PParticleBubbles.cpp	6
-00202900	00202DD4	game	PZinDamageFx.cpp	6
-00202DE0	00203084	unknown	unk_00202DE0.cpp	6
-00203090	00203418	game	PFireDamageFx.cpp	3
-00203420	0020422C	game	PParticleTracers.cpp	11
-00204230	00208AB4	game	ClockworkSoulsucker.cpp	43
-00208AC0	00208D60	unknown	unk_00208AC0.cpp	5
-00208D60	0020C234	game	Tinker.cpp	31
-0020C240	0020CB80	unknown	unk_0020C240.cpp	14
-0020CB80	0020D848	game	PFallingShellsFx.cpp	11
-0020D850	0020DA0C	unknown	unk_0020D850.cpp	10
-0020DA10	0020DD84	game	PMovieOverlayEngine.cpp	13
-0020DD90	0020E5F0	game	EnemyGenerator.cpp	11
-0020E5F0	0020E80C	unknown	unk_0020E5F0.cpp	8
-0020E810	0020F028	game	PSeaSerpentTeeth.cpp	6
-0020F030	0020F7BC	game	AnimSegmentTrigger.cpp	8
-0020F7C0	0020F9AC	game	CeilingDebris.cpp	5
-0020F9B0	0020FA64	unknown	unk_0020F9B0.cpp	2
-0020FA70	00210488	game	LiftOperator.cpp	8
-00210490	00213D94	game	ClockworkMaximo.cpp	39
-00213DA0	002141F8	game	PGrimBarAura.cpp	7
-00214200	00214B9C	unknown	unk_00214200.cpp	20
-00214BA0	002164FC	game	PSlideShow.cpp	15
-00216500	00217404	game	PScreenBlurFx.cpp	9
-00217410	00218114	game	PProjectileRipples.cpp	12
-00218120	00218298	unknown	unk_00218120.cpp	4
-0026E880	0026E8B8	game	main.c	1
-0026E8C0	0026E91C	game	pad.cpp	1
-0026E920	0026E95C	game	PMat4.cpp	1
-0026E960	0026E9BC	game	MaximoMain.cpp	1
-0026E9C0	0026E9F8	game	Interface.cpp	1
-0026EA00	0026EA5C	game	EntityBaseClass.cpp	1
-0026EA60	0026EA98	game	MemoryCard.cpp	1
-0026EAA0	002705EC	game	Player.cpp	1
-002705F0	00270668	game	Debug.cpp	1
-00270670	002706A8	game	Physics.cpp	1
-002706B0	002706E8	game	Vu1Engine.cpp	1
-002706F0	0027076C	game	PSound.cpp	1
-00270770	002707DC	game	API.cpp	1
-002707E0	00270818	game	PDynamicBuffer.cpp	1
-00270820	0027085C	game	PPakFile.cpp	1
-00270860	00270898	game	IOPTransactionManager.cpp	1
-002708A0	00270900	game	playpss.c	1
+start	end	category	file	nfuncs	evidence
+001001E0	00100274	unknown	unk_001001E0.cpp	4	gap
+00100278	00100414	sdk	sdk/00100278.c	2	gcc-marker
+00100418	00100480	sdk	sdk/00100418.c	1	gcc-marker
+00100480	001008A4	sdk	sdk/00100480.c	3	gcc-marker
+001008A8	00100964	sdk	sdk/001008A8.c	1	gcc-marker
+00100968	00100A30	sdk	sdk/00100968.c	1	gcc-marker
+00100A30	00100C14	sdk	sdk/00100A30.c	1	gcc-marker
+00100C18	00100D1C	sdk	sdk/00100C18.c	1	gcc-marker
+00100D20	00100E08	sdk	sdk/00100D20.c	1	gcc-marker
+00100E08	001010A0	sdk	sdk/00100E08.c	1	gcc-marker
+001010A0	00101134	sdk	sdk/001010A0.c	1	gcc-marker
+00101138	0010144C	sdk	sdk/00101138.c	1	gcc-marker
+00101450	001014AC	sdk	sdk/00101450.c	1	gcc-marker
+001014B0	001014EC	sdk	sdk/001014B0.c	1	gcc-marker
+001014F0	00101578	sdk	sdk/001014F0.c	1	gcc-marker
+00101578	00101594	sdk	sdk/00101578.c	1	gcc-marker
+00101598	00101DDC	sdk	sdk/00101598.c	19	gcc-marker
+00101DE0	001021EC	sdk	sdk/00101DE0.c	13	gcc-marker
+001021F0	00102748	sdk	sdk/001021F0.c	15	gcc-marker
+00102748	00102A74	sdk	sdk/00102748.c	8	gcc-marker
+00102A78	00102E60	sdk	sdk/00102A78.c	9	gcc-marker
+00102E60	00104734	sdk	sdk/00102E60.c	33	gcc-marker
+00104738	00104748	sdk	sdk/00104738.c	1	gcc-marker
+00104748	00104758	sdk	sdk/00104748.c	1	gcc-marker
+00104758	001047B0	sdk	sdk/00104758.c	1	gcc-marker
+001047B0	001047C4	sdk	sdk/001047B0.c	1	gcc-marker
+001047C8	0010483C	sdk	sdk/001047C8.c	1	gcc-marker
+00104840	001048B4	sdk	sdk/00104840.c	1	gcc-marker
+001048B8	0010495C	sdk	sdk/001048B8.c	1	gcc-marker
+00104960	00104988	sdk	sdk/00104960.c	1	gcc-marker
+00104988	00104998	sdk	sdk/00104988.c	1	gcc-marker
+00104998	001049A8	sdk	sdk/00104998.c	1	gcc-marker
+001049A8	00104A00	sdk	sdk/001049A8.c	1	gcc-marker
+00104A00	00104A14	sdk	sdk/00104A00.c	1	gcc-marker
+00104A18	00104A40	sdk	sdk/00104A18.c	1	gcc-marker
+00104A40	00105784	sdk	sdk/00104A40.c	42	gcc-marker
+00105790	0010A44C	sdk	sdk/00105790.c	65	gcc-marker
+0010A450	0010ABD0	sdk	sdk/0010A450.c	5	gcc-marker
+0010ABD0	0010ADDC	sdk	sdk/0010ABD0.c	7	gcc-marker
+0010ADE0	0010BBE8	sdk	sdk/0010ADE0.c	8	gcc-marker
+0010BBE8	0010C740	sdk	sdk/0010BBE8.c	35	gcc-marker
+0010C740	0010D244	sdk	sdk/0010C740.c	19	gcc-marker
+0010D248	0010D264	sdk	sdk/0010D248.c	2	gcc-marker
+0010D268	0010D5D8	sdk	sdk/0010D268.c	5	gcc-marker
+0010D5D8	0010D878	sdk	sdk/0010D5D8.c	2	gcc-marker
+0010D878	0010D8FC	sdk	sdk/0010D878.c	2	gcc-marker
+0010D900	0010E1A0	sdk	sdk/0010D900.c	138	gcc-marker
+0010E1A0	0010E570	sdk	sdk/0010E1A0.c	16	gcc-marker
+0010E570	0010E7EC	sdk	sdk/0010E570.c	6	gcc-marker
+0010E7F0	0010EA20	sdk	sdk/0010E7F0.c	9	gcc-marker
+0010EA20	0010ED80	sdk	sdk/0010EA20.c	5	gcc-marker
+0010ED80	0010EF5C	sdk	sdk/0010ED80.c	10	gcc-marker
+0010EF60	0010F47C	sdk	sdk/0010EF60.c	7	gcc-marker
+0010F480	0010FE20	sdk	sdk/0010F480.c	8	gcc-marker
+0010FE20	00110568	sdk	sdk/0010FE20.c	16	gcc-marker
+00110568	001114C8	sdk	sdk/00110568.c	22	gcc-marker
+001114C8	00114B70	sdk	sdk/001114C8.c	40	gcc-marker
+00114B70	001150BC	sdk	sdk/00114B70.c	11	gcc-marker
+001150C0	00115E1C	sdk	sdk/001150C0.c	18	gcc-marker
+00115E20	001160D0	sdk	sdk/00115E20.c	4	gcc-marker
+001160D0	001165DC	sdk	sdk/001160D0.c	19	gcc-marker
+00116600	0011695C	sdk	sdk/00116600.c	3	gcc-marker
+00116960	001169C0	sdk	sdk/00116960.c	2	gcc-marker
+001169C0	00116C24	sdk	sdk/001169C0.c	9	gcc-marker
+00116C28	00116DA4	sdk	sdk/00116C28.c	6	gcc-marker
+00116DA8	00117044	sdk	sdk/00116DA8.c	9	gcc-marker
+00117048	00117184	sdk	sdk/00117048.c	5	gcc-marker
+00117188	001174C4	sdk	sdk/00117188.c	4	gcc-marker
+001174C8	0011884C	sdk	sdk/001174C8.c	22	gcc-marker
+00118850	00118A30	sdk	sdk/00118850.c	1	gcc-marker
+00118A30	00118AC8	sdk	sdk/00118A30.c	1	gcc-marker
+00118AC8	00118B60	sdk	sdk/00118AC8.c	1	gcc-marker
+00118B60	00118C18	sdk	sdk/00118B60.c	1	gcc-marker
+00118C18	00118D10	sdk	sdk/00118C18.c	1	gcc-marker
+00118D10	001191F0	sdk	sdk/00118D10.c	10	gcc-marker
+001191F0	0011AA58	sdk	sdk/001191F0.c	28	gcc-marker
+0011AA58	0011AE74	sdk	sdk/0011AA58.c	1	gcc-marker
+0011AE78	0011B29C	sdk	sdk/0011AE78.c	1	gcc-marker
+0011B2A0	0011B640	sdk	sdk/0011B2A0.c	1	gcc-marker
+0011B640	0011B820	sdk	sdk/0011B640.c	1	gcc-marker
+0011B820	0011B9F0	sdk	sdk/0011B820.c	1	gcc-marker
+0011B9F0	0011BDA0	sdk	sdk/0011B9F0.c	1	gcc-marker
+0011BDA0	0011BE6C	sdk	sdk/0011BDA0.c	1	gcc-marker
+0011BE70	0011BFC0	sdk	sdk/0011BE70.c	1	gcc-marker
+0011BFC0	0011C824	sdk	sdk/0011BFC0.c	1	gcc-marker
+0011C828	0011C92C	sdk	sdk/0011C828.c	1	gcc-marker
+0011C930	0011CBB4	sdk	sdk/0011C930.c	1	gcc-marker
+0011CBB8	0011CC00	sdk	sdk/0011CBB8.c	1	gcc-marker
+0011CC00	0011CC3C	sdk	sdk/0011CC00.c	1	gcc-marker
+0011CC40	0011CECC	sdk	sdk/0011CC40.c	1	gcc-marker
+0011CED0	0011CF0C	sdk	sdk/0011CED0.c	1	gcc-marker
+0011CF10	0011CFE4	sdk	sdk/0011CF10.c	1	gcc-marker
+0011CFE8	0011D010	sdk	sdk/0011CFE8.c	1	gcc-marker
+0011D010	0011D0E8	sdk	sdk/0011D010.c	1	gcc-marker
+0011D0E8	0011D1B0	sdk	sdk/0011D0E8.c	1	gcc-marker
+0011D1B0	0011D298	sdk	sdk/0011D1B0.c	1	gcc-marker
+0011D298	0011D310	sdk	sdk/0011D298.c	1	gcc-marker
+0011D310	0011D324	sdk	sdk/0011D310.c	1	gcc-marker
+0011D328	0011D33C	sdk	sdk/0011D328.c	1	gcc-marker
+0011D340	0011D354	sdk	sdk/0011D340.c	1	gcc-marker
+0011D358	0011D36C	sdk	sdk/0011D358.c	1	gcc-marker
+0011D370	0011D384	sdk	sdk/0011D370.c	1	gcc-marker
+0011D388	0011D3FC	sdk	sdk/0011D388.c	1	gcc-marker
+0011D400	0011DA94	sdk	sdk/0011D400.c	1	gcc-marker
+0011DA98	0011E128	sdk	sdk/0011DA98.c	1	gcc-marker
+0011E128	0011E6A4	sdk	sdk/0011E128.c	1	gcc-marker
+0011E6A8	0011EC10	sdk	sdk/0011E6A8.c	1	gcc-marker
+0011EC10	0011ECB8	sdk	sdk/0011EC10.c	1	gcc-marker
+0011ECB8	0011EDD0	sdk	sdk/0011ECB8.c	1	gcc-marker
+0011EDD0	001200F8	sdk	sdk/0011EDD0.c	30	gcc-marker
+001200F8	001201C8	sdk	sdk/001200F8.c	1	gcc-marker
+001201C8	00120224	sdk	sdk/001201C8.c	1	gcc-marker
+00120228	00120254	sdk	sdk/00120228.c	1	gcc-marker
+00120258	00120294	sdk	sdk/00120258.c	1	gcc-marker
+00120298	001203B0	sdk	sdk/00120298.c	1	gcc-marker
+001203B0	0012045C	sdk	sdk/001203B0.c	1	gcc-marker
+00120460	0012077C	sdk	sdk/00120460.c	3	gcc-marker
+00120780	00120A2C	sdk	sdk/00120780.c	1	gcc-marker
+00120A30	00120BA4	sdk	sdk/00120A30.c	1	gcc-marker
+00120BA8	00120CC8	sdk	sdk/00120BA8.c	1	gcc-marker
+00120CC8	00120D14	sdk	sdk/00120CC8.c	1	gcc-marker
+00120D18	00120DD0	sdk	sdk/00120D18.c	1	gcc-marker
+00120DD0	00120E6C	sdk	sdk/00120DD0.c	1	gcc-marker
+00120E70	00120E9C	sdk	sdk/00120E70.c	1	gcc-marker
+00120EA0	00120EF4	sdk	sdk/00120EA0.c	1	gcc-marker
+00120EF8	00120F98	sdk	sdk/00120EF8.c	1	gcc-marker
+00120F98	00122508	sdk	sdk/00120F98.c	19	gcc-marker
+00122508	00122520	sdk	sdk/00122508.c	1	gcc-marker
+00122520	00122534	sdk	sdk/00122520.c	1	gcc-marker
+00122538	00122560	sdk	sdk/00122538.c	1	gcc-marker
+00122560	00122614	sdk	sdk/00122560.c	1	gcc-marker
+00122618	00122670	sdk	sdk/00122618.c	1	gcc-marker
+00122670	00123B04	sdk	sdk/00122670.c	2	gcc-marker
+00123B08	00123B14	sdk	sdk/00123B08.c	1	gcc-marker
+00123B18	00123BC4	sdk	sdk/00123B18.c	1	gcc-marker
+00123BC8	00123CDC	sdk	sdk/00123BC8.c	1	gcc-marker
+00123CE0	00123F7C	sdk	sdk/00123CE0.c	6	gcc-marker
+00123F80	001243E4	sdk	sdk/00123F80.c	2	gcc-marker
+001243E8	00124444	sdk	sdk/001243E8.c	1	gcc-marker
+00124448	00124828	sdk	sdk/00124448.c	1	gcc-marker
+00124828	001248BC	sdk	sdk/00124828.c	1	gcc-marker
+001248C0	001249A4	sdk	sdk/001248C0.c	4	gcc-marker
+001249A8	00124A08	sdk	sdk/001249A8.c	1	gcc-marker
+00124A08	00124B5C	sdk	sdk/00124A08.c	1	gcc-marker
+00124B60	00124C00	sdk	sdk/00124B60.c	2	gcc-marker
+00124C00	00125580	sdk	sdk/00124C00.c	2	gcc-marker
+00125580	001255B4	sdk	sdk/00125580.c	1	gcc-marker
+001255B8	00125698	sdk	sdk/001255B8.c	1	gcc-marker
+00125698	0012572C	sdk	sdk/00125698.c	1	gcc-marker
+00125730	001257E0	sdk	sdk/00125730.c	1	gcc-marker
+001257E0	001258E4	sdk	sdk/001257E0.c	1	gcc-marker
+001258E8	001259A8	sdk	sdk/001258E8.c	1	gcc-marker
+001259A8	00125A74	sdk	sdk/001259A8.c	2	gcc-marker
+00125A78	00126A90	sdk	sdk/00125A78.c	17	gcc-marker
+00126A90	00126B60	sdk	sdk/00126A90.c	2	gcc-marker
+00126B60	00126BDC	sdk	sdk/00126B60.c	2	gcc-marker
+00126BE0	00126C40	sdk	sdk/00126BE0.c	1	gcc-marker
+00126C40	00126C98	sdk	sdk/00126C40.c	1	gcc-marker
+00126C98	00126F80	sdk	sdk/00126C98.c	8	gcc-marker
+00126F80	00126FF4	sdk	sdk/00126F80.c	2	gcc-marker
+00126FF8	00127110	sdk	sdk/00126FF8.c	2	gcc-marker
+00127110	0012727C	sdk	sdk/00127110.c	4	gcc-marker
+00127280	00127358	sdk	sdk/00127280.c	1	gcc-marker
+00127358	00127484	sdk	sdk/00127358.c	1	gcc-marker
+00127488	001275CC	sdk	sdk/00127488.c	1	gcc-marker
+001275D0	001276E4	sdk	sdk/001275D0.c	1	gcc-marker
+001276E8	00127820	sdk	sdk/001276E8.c	1	gcc-marker
+00127820	001278F8	sdk	sdk/00127820.c	1	gcc-marker
+001278F8	00127AB4	sdk	sdk/001278F8.c	1	gcc-marker
+00127AB8	00127D1C	sdk	sdk/00127AB8.c	2	gcc-marker
+00127D20	001297A4	sdk	sdk/00127D20.c	6	gcc-marker
+001297A8	00129854	sdk	sdk/001297A8.c	2	gcc-marker
+00129858	001298B8	sdk	sdk/00129858.c	1	gcc-marker
+001298B8	0012A670	sdk	sdk/001298B8.c	25	gcc-marker
+0012A670	0012AA3C	game	main.c	1	sinit
+0012AA40	0012AFE0	game	MemoryManager.cpp	8	class-extends-next
+0012AFE0	0012BD50	game	MemoryPool.cpp	16	file-string
+0012BD50	0012BE88	game	Overlay.cpp	2	file-string
+0012BE90	0012CC5C	game	PCDFile.cpp	10	file-string
+0012CC60	0012D744	game	pad.cpp	17	class-extends-next
+0012D748	0012DF9C	sdk	sdk/0012D748.c	13	gcc-marker
+0012DFA0	0012E10C	sdk	sdk/0012DFA0.c	2	gcc-marker
+0012E110	0012EBB0	sdk	sdk/0012E110.c	16	gcc-marker
+0012EBB0	0012F158	game	PArray.cpp	8	file-string
+0012F160	0012F31C	unknown	unk_0012F160.cpp	4	gap
+0012F320	0012F3E8	game	FastMath.c	1	file-string
+0012F3F0	00130030	unknown	unk_0012F3F0.cpp	14	local-block
+00130030	001305E4	game	PHashTable.cpp	9	file-string
+001305F0	00130684	unknown	unk_001305F0.cpp	2	gap
+00130690	00131474	game	PMat4.cpp	21	class-extends-next
+00131480	00131990	unknown	unk_00131480.cpp	8	gap
+00131990	00131DE8	game	PList.cpp	8	class-extends-next
+00131DF0	00132E24	game	MaxEngine.cpp	17	class-extends-next
+00132E30	00134934	game	Font.cpp	28	class-extends-next
+00134940	0013F7FC	game	MaximoMain.cpp	47	class-extends-next
+0013F800	001460B8	game	Interface.cpp	94	class-extends-next
+001460C0	0014A378	game	EntityManager.cpp	77	class-extends-next
+0014A380	0014F56C	game	EntityBaseClass.cpp	86	file-string
+0014F570	0014F620	unknown	unk_0014F570.cpp	2	gap
+0014F620	0014FD34	unknown	unk_0014F620.cpp	6	local-block
+0014FD40	00152990	game	MemoryCard.cpp	26	class-extends-next
+00152990	00154AD4	game	PResourceManager.cpp	21	file-string
+00154AE0	0015501C	game	EntityAttackManager.cpp	7	class-extends-next
+00155020	0015527C	game	WaypointManager.cpp	5	file-string
+00155280	001557DC	game	CameraAPI.cpp	11	file-string
+001557E0	00155974	unknown	unk_001557E0.cpp	7	gap
+00155980	001574E8	game	EffectAPI.cpp	37	file-string
+001574F0	0015877C	game	MathAPI.cpp	21	class-extends-next
+00158780	00158788	unknown	unk_00158780.cpp	1	gap
+00158790	00158C5C	game	TimerAPI.cpp	5	class-extends-next
+00158C60	00158CA8	unknown	unk_00158C60.cpp	1	gap
+00158CB0	00158DFC	unknown	unk_00158CB0.cpp	1	local-block
+00158E00	00158F34	unknown	unk_00158E00.cpp	5	gap
+00158F40	00166BAC	game	Player.cpp	163	class-extends-next
+00166BB0	0016819C	game	Projectile.cpp	9	class-extends-next
+001681A0	00169594	game	Shield.cpp	12	file-string
+001695A0	0016A6EC	game	Timing.cpp	22	file-string
+0016A6F0	0016A700	unknown	unk_0016A6F0.cpp	1	gap
+0016A700	0016B604	game	Debug.cpp	24	file-string
+0016B610	0016C850	unknown	unk_0016BB90.cpp	11	class-extends-next
+0016C850	0016C894	unknown	unk_0016C850.cpp	1	gap
+0016C8A0	00170E78	game	BGCollision.cpp	26	file-string
+00170E80	00172650	game	Physics.cpp	14	class-extends-next
+00172650	00172A14	game	CEifInstanceGroup.cpp	6	class-extends-next
+00172A20	00172CFC	game	CEifInstance.cpp	10	class-extends-next
+00172D00	00172DF4	unknown	unk_00172D00.cpp	3	gap
+00172E00	00173324	game	CEifFile.cpp	7	class-extends-next
+00173330	00173530	game	CBefEntityData.cpp	1	file-string
+00173530	00173634	unknown	unk_00173530.cpp	3	gap
+00173640	00177F64	game	CameraFollow.cpp	55	file-string
+00177F70	00177F78	unknown	unk_00177F70.cpp	1	gap
+00177F80	0017A99C	game	Camera.cpp	48	class-extends-next
+0017A9A0	0017C844	game	CameraCutscene.cpp	22	class-extends-next
+0017C850	0017D2BC	unknown	unk_0017C850.cpp	5	local-block
+0017D2C0	0017D4AC	unknown	unk_0017D2C0.cpp	3	gap
+0017D4B0	0017D5CC	unknown	unk_0017D4B0.cpp	1	local-block
+0017D5D0	0017D62C	unknown	unk_0017D5D0.cpp	1	gap
+0017D630	00180104	game	GsUtils.cpp	18	file-string
+00180110	00180400	unknown	unk_00180110.cpp	6	gap
+00180400	00184634	game	PDisplayList.cpp	44	class-extends-next
+00184640	00188F8C	game	PGfxEngine.cpp	84	file-string
+00188F90	00189078	unknown	unk_00188F90.cpp	3	gap
+00189080	00189344	game	PTextureDmaChain.cpp	6	class-extends-next
+00189350	0018C7F8	game	PTextureManager.cpp	35	file-string
+0018C800	0018CE08	game	PAnim.cpp	18	class-extends-next
+0018CE10	0018D4D8	game	PAnimFrame.cpp	16	class-extends-next
+0018D4E0	0018DE90	game	PChannel.cpp	5	file-string
+0018DE90	0018E514	game	PFrustrum.cpp	5	file-string
+0018E520	0018E874	game	PLight.cpp	5	class-extends-next
+0018E880	0018F584	game	PLightManager.cpp	14	file-string
+0018F590	0018FEA0	game	PMesh.cpp	11	class-extends-next
+0018FEA0	001901BC	game	PMeshFragment.cpp	5	file-string
+001901C0	00191158	game	PMeshNode.cpp	14	class-in-object
+00191160	00191564	game	PMeshNodeAnimData.cpp	5	class-extends-next
+00191570	001917D0	game	PMeshNodeAnimDataTable.cpp	3	file-string
+001917D0	001963A8	game	PMNode.cpp	68	class-extends-next
+001963B0	00196890	game	PRenderPass.cpp	3	file-string
+00196890	001974C4	game	PShader.cpp	8	file-string
+001974D0	001986A4	game	PSkeleton.cpp	16	file-string
+001986B0	00198FEC	game	PSpacePartitionNode.cpp	8	class-extends-next
+00198FF0	00199BE0	game	PSpacePartitionTree.cpp	8	file-string
+00199BE0	0019A2C8	game	PSTAnim.cpp	5	file-string
+0019A2D0	0019A680	game	PSTAnimChannel.cpp	6	file-string
+0019A680	0019C470	game	PWorld.cpp	20	class-extends-next
+0019C470	0019C530	unknown	unk_0019C470.cpp	9	gap
+0019C530	0019CF34	game	CamBox.cpp	7	class-extends-next
+0019CF40	0019F260	game	Pickup.cpp	19	class-extends-next
+0019F260	001A1588	game	Innocent.cpp	25	class-extends-next
+001A1590	001A30F4	game	WoodenChest.cpp	11	class-extends-next
+001A3100	001A32BC	game	CamSphere.cpp	5	class-extends-next
+001A32C0	001A3A5C	game	HolyGround.cpp	7	class-extends-next
+001A3A60	001A3C6C	game	CamCylinder.cpp	6	class-extends-next
+001A3C70	001AD794	game	PSound.cpp	173	class-extends-next
+001AD7A0	001ADA80	unknown	unk_001AD7A0.cpp	9	gap
+001ADA80	001AF32C	game	sound.c	52	file-string
+001AF330	001AFEDC	game	ZinShell.cpp	6	class-extends-next
+001AFEE0	001B003C	unknown	unk_001AFF40.cpp	5	class-extends-next
+001B0040	001B01FC	unknown	unk_001B00A0.cpp	6	class-extends-next
+001B0200	001B0508	game	Shadow.cpp	4	class-extends-next
+001B0510	001B074C	game	AnimTrigger.cpp	7	class-extends-next
+001B0750	001B0810	unknown	unk_001B0750.cpp	2	gap
+001B0810	001B08EC	unknown	unk_001B0870.cpp	5	class-extends-next
+001B08F0	001B0A94	unknown	unk_001B0950.cpp	6	class-extends-next
+001B0AA0	001B25E0	game	EntityAllocator.cpp	1	file-string
+001B25E0	001B3F68	game	Raven.cpp	15	class-extends-next
+001B3F70	001B42DC	game	Fire.cpp	7	class-extends-next
+001B42E0	001B4A74	game	MineableItem.cpp	7	class-extends-next
+001B4A80	001B5388	game	PParticleSystem.cpp	13	class-extends-next
+001B5390	001B63F4	game	PParticleExplosion.cpp	7	class-extends-next
+001B6400	001B75CC	game	PParticleFire.cpp	8	class-extends-next
+001B75D0	001BB100	game	PParticleManager.cpp	63	class-extends-next
+001BB100	001BBBA0	game	CutableItem.cpp	7	class-extends-next
+001BBBA0	001BDD9C	game	PCutScenePlayer.cpp	18	class-extends-next
+001BDDA0	001BE76C	game	PParticleFog.cpp	5	class-extends-next
+001BE770	001BEDD8	game	PParticleVertexGlow.cpp	9	class-extends-next
+001BEDE0	001BF1C4	game	PFxMesh.cpp	4	class-extends-next
+001BF1D0	001BF79C	unknown	unk_001BF230.cpp	8	class-extends-next
+001BF7A0	001C4C54	game	ClockworkReaper.cpp	36	class-extends-next
+001C4C60	001C564C	game	ExitLevel.cpp	7	class-extends-next
+001C5650	001C6E30	unknown	unk_001C5650.cpp	8	gap
+001C6E30	001C715C	game	MusicSwitch.cpp	6	class-extends-next
+001C7160	001C7258	unknown	unk_001C7160.cpp	2	gap
+001C7260	001C880C	game	BattleArena.cpp	10	file-string
+001C8810	001C883C	unknown	unk_001C8810.cpp	1	gap
+001C8840	001C890C	unknown	unk_001C88A0.cpp	5	class-extends-next
+001C8910	001C8ADC	unknown	unk_001C8970.cpp	7	class-extends-next
+001C8AE0	001C9554	game	PMotionBlur.cpp	9	file-string
+001C9560	001CAEC8	game	PParticleLiteFire.cpp	10	file-string
+001CAED0	001CC100	game	PParticleSpurt.cpp	7	class-extends-next
+001CC100	001CD4AC	unknown	unk_001CD0B0.cpp	13	class-extends-next
+001CD4B0	001CD69C	game	Rain.cpp	6	class-extends-next
+001CD6A0	001CD8C0	game	RainTrigger.cpp	5	class-extends-next
+001CD8C0	001CEF08	game	PZBufferFog.cpp	11	class-extends-next
+001CEF10	001CF160	game	FogTrigger.cpp	5	class-extends-next
+001CF160	001CFD5C	game	Fog.cpp	6	class-extends-next
+001CFD60	001D00A8	unknown	unk_001CFD60.cpp	5	gap
+001D00B0	001D04EC	game	PRainSplatter.cpp	6	class-in-object
+001D04F0	001D3A2C	game	Peddler.cpp	37	class-extends-next
+001D3A30	001D3B80	unknown	unk_001D3A90.cpp	6	class-extends-next
+001D3B80	001D5804	game	PObjectDisplayList.cpp	19	file-string
+001D5810	001D5ECC	game	PDynamicBuffer.cpp	10	file-string
+001D5ED0	001D6160	game	PPakFile.cpp	4	file-string
+001D6160	001D68C0	unknown	unk_001D6520.cpp	7	class-extends-next
+001D68C0	001D6ADC	unknown	unk_001D68D0.cpp	6	class-extends-next
+001D6AE0	001D6EAC	game	PStaticInstanceMesh.cpp	3	file-string
+001D6EB0	001D74C4	game	PStaticInstanceGroup.cpp	5	class-extends-next
+001D74D0	001D7C90	unknown	unk_001D7530.cpp	6	class-extends-next
+001D7C90	001D88D4	game	PShadowBuffer.cpp	10	class-extends-next
+001D88E0	001D89C0	unknown	unk_001D88E0.cpp	1	gap
+001D89C0	001D944C	game	PShadowVolume.cpp	6	file-string
+001D9450	001D9F8C	game	SpitterItem.cpp	9	class-extends-next
+001D9F90	001DA5AC	game	Spitter.cpp	9	class-extends-next
+001DA5B0	001DA610	unknown	unk_001DA5B0.cpp	2	gap
+001DA610	001DA9B8	game	IOPTransactionManager.cpp	7	class-extends-next
+001DA9C0	001DAAA8	unknown	unk_001DA9C0.cpp	4	gap
+001DAAB0	001DB7C8	game	PIOPFile.cpp	14	class-extends-next
+001DB7D0	001DBD50	game	PParticleAura.cpp	7	class-extends-next
+001DBD50	001DBE0C	unknown	unk_001DBDB0.cpp	4	class-extends-next
+001DBE10	001DC2A0	unknown	unk_001DBE10.cpp	2	local-block
+001DC2A0	001DC74C	game	CutCameraSetup.cpp	5	class-extends-next
+001DC750	001DE040	game	Bridge.cpp	17	file-string
+001DE040	001E27F8	game	ClockworkPuncher.cpp	38	class-extends-next
+001E2800	001E6480	game	ClockworkStalker.cpp	30	class-extends-next
+001E6480	001E8E28	game	ClockworkStinger.cpp	23	class-extends-next
+001E8E30	001EB514	game	ClockworkFlyer.cpp	33	class-extends-next
+001EB520	001EBF10	game	ReversibleAnimTrigger.cpp	9	file-string
+001EBF10	001ED740	game	PParticleGas.cpp	9	file-string
+001ED740	001EE330	game	PParticleRipples.cpp	13	file-string
+001EE330	001EF264	game	PWaterTexture.cpp	9	file-string
+001EF270	001EF530	game	PFireTexture.cpp	6	class-extends-next
+001EF530	001EFA68	game	PGasTexture.cpp	6	class-extends-next
+001EFA70	001F0324	game	PParticleTexture.cpp	6	file-string
+001F0330	001F06A4	game	PFogTexture.cpp	6	class-extends-next
+001F06B0	001F0E18	game	ClockworkReaperSpear.cpp	7	class-extends-next
+001F0E20	001F1B04	game	PParticleSplineTrail.cpp	11	class-extends-next
+001F1B10	001F1DB4	game	PTranslateATable.cpp	3	file-string
+001F1DC0	001F2BF0	game	PGrid.cpp	10	class-in-object
+001F2BF0	001F327C	game	PropellerPowerSource.cpp	10	class-extends-next
+001F3280	001F41AC	game	PDynamicSplinePatch.cpp	10	class-extends-next
+001F41B0	001F46A8	unknown	unk_001F42F0.cpp	8	class-extends-next
+001F46B0	001F5504	game	PParticleElectricity.cpp	8	file-string
+001F5510	001F6608	game	PParticleEnergyStream.cpp	11	class-extends-next
+001F6610	001F7844	game	PParticleLiteExplosion.cpp	9	file-string
+001F7850	001F7F04	game	PCyclocksFx.cpp	10	file-string
+001F7F10	001F8978	game	PParticleSparks.cpp	8	file-string
+001F8980	001F9844	game	PMidasShieldRings.cpp	12	file-string
+001F9850	001F9DE8	game	PParticleShockwaveRing.cpp	7	class-extends-next
+001F9DF0	001FAC10	game	PFrozenFx.cpp	11	file-string
+001FAC10	001FB624	game	PScrollingTrees.cpp	7	class-extends-next
+001FB630	001FB90C	unknown	unk_001FB690.cpp	5	class-extends-next
+001FB910	001FCE34	game	Rabite.cpp	16	class-extends-next
+001FCE40	001FD124	game	BlowingLeaves.cpp	7	class-extends-next
+001FD130	001FE408	game	PParticleBlowingLeaves.cpp	11	file-string
+001FE410	001FEE5C	game	PCrystalizeFx.cpp	7	file-string
+001FEE60	001FEE88	unknown	unk_001FEE60.cpp	1	gap
+001FEE90	001FF2C0	unknown	unk_001FEE90.cpp	9	local-block
+001FF2C0	001FFA3C	game	movie.cpp	7	class-extends-next
+001FFA40	002012F0	game	playpss.c	11	file-string
+002012F0	00201334	unknown	unk_002012F0.cpp	1	gap
+00201340	00201654	unknown	unk_00201340.cpp	3	local-block
+00201660	00201E54	unknown	unk_00201660.cpp	12	local-block
+00201E60	002028FC	game	PParticleBubbles.cpp	6	class-extends-next
+00202900	00202DD4	game	PZinDamageFx.cpp	6	class-extends-next
+00202DE0	00202FC0	unknown	unk_00202E40.cpp	5	class-extends-next
+00202FC0	00203418	game	PFireDamageFx.cpp	4	file-string
+00203420	0020422C	game	PParticleTracers.cpp	11	class-extends-next
+00204230	00208AB4	game	ClockworkSoulsucker.cpp	43	class-extends-next
+00208AC0	00208D60	unknown	unk_00208B20.cpp	5	class-extends-next
+00208D60	0020C234	game	Tinker.cpp	31	class-extends-next
+0020C240	0020C824	unknown	unk_0020C240.cpp	10	local-block
+0020C830	0020CB80	unknown	unk_0020C830.cpp	4	gap
+0020CB80	0020D848	game	PFallingShellsFx.cpp	11	class-extends-next
+0020D850	0020D92C	unknown	unk_0020D8B0.cpp	5	class-extends-next
+0020D930	0020DA0C	unknown	unk_0020D990.cpp	5	class-extends-next
+0020DA10	0020DD84	game	PMovieOverlayEngine.cpp	13	class-extends-next
+0020DD90	0020E5F0	game	EnemyGenerator.cpp	11	class-extends-next
+0020E5F0	0020E80C	unknown	unk_0020E670.cpp	8	class-extends-next
+0020E810	0020F028	game	PSeaSerpentTeeth.cpp	6	file-string
+0020F030	0020F7BC	game	AnimSegmentTrigger.cpp	8	class-extends-next
+0020F7C0	0020F9AC	game	CeilingDebris.cpp	5	class-extends-next
+0020F9B0	0020FA64	unknown	unk_0020F9B0.cpp	2	gap
+0020FA70	00210488	game	LiftOperator.cpp	8	class-extends-next
+00210490	00213D94	game	ClockworkMaximo.cpp	39	class-extends-next
+00213DA0	002141F8	game	PGrimBarAura.cpp	7	class-extends-next
+00214200	00214224	unknown	unk_00214210.cpp	2	class-extends-next
+00214230	00214558	unknown	unk_00214380.cpp	6	class-extends-next
+00214560	00214888	unknown	unk_002146B0.cpp	6	class-extends-next
+00214890	00214A08	unknown	unk_002148F0.cpp	4	class-extends-next
+00214A10	00214B9C	unknown	unk_00214A10.cpp	2	local-block
+00214BA0	002164FC	game	PSlideShow.cpp	15	class-extends-next
+00216500	00217404	game	PScreenBlurFx.cpp	9	file-string
+00217410	00218114	game	PProjectileRipples.cpp	12	file-string
+00218120	00270898	unknown	unk_00218120.cpp	20	gap
+002708A0	00270900	unknown	unk_002708A0.cpp	1	local-block

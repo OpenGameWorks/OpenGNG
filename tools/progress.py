@@ -47,7 +47,7 @@ def pretty(mangled: str, addr: int) -> str:
 def load():
     tus = []
     for l in (ROOT / "config/tus.tsv").read_text().splitlines()[1:]:
-        a, b, c, f, _ = l.split("\t")
+        a, b, c, f = l.split("\t")[:4]
         tus.append((int(a, 16), int(b, 16), c, f))
     starts = [t[0] for t in tus]
     funcs = []
