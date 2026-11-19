@@ -14,14 +14,17 @@ class PMeshNode;
 class EffectAPI {
 public:
     EffectAPI();
+    EffectNode *FindPling(EntityBaseClass *arg0);
     void CreatePling(EntityBaseClass *arg0, float arg1, unsigned int arg2, unsigned int arg3, bool arg4);
     void CreatePling(EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4);
     GhostEffect *CreateGhost(PMeshNode *arg0);
     EffectNode *EffectValid(unsigned int arg0);
     void DeleteEffect(EffectNode *arg0);
+    void DeleteEffect(EntityBaseClass *arg0);
     void DeleteEffect(unsigned int arg0);
     int Render(PLightManager *arg0);
     void Reset();
+    void EnableParticleFx(bool arg0);
 
     unsigned int m_unk0;        // 0x000 effect count (PArray base region)
     unsigned int m_unk4;        // 0x004 scan index used by EffectValid
@@ -49,7 +52,17 @@ public:
 
 class GhostEffect : public EffectNode {
 public:
+    GhostEffect(PMeshNode *arg0);
     virtual ~GhostEffect();
+    int Render(PLightManager *arg0);
+
+    u_long128 m_unk10[8];       // 0x010 per-slot matrix rows (world translation in row 3)
+    unsigned char m_unk90;      // 0x090 first slot visibility flag
+    char _pad091[7];
+    void *m_unk98;              // 0x098 PMesh pointer
+    short m_unk9C;              // 0x09C slot count
+    char _pad09E[1];
+    unsigned char m_unk9F;      // 0x09F wrap flag
 };
 
 class OneshotEffect : public EffectNode {

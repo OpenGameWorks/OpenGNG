@@ -49,6 +49,16 @@ public:
     virtual int Slot4(int arg0, int arg1, int arg2, float arg3, float arg4);
 };
 
+// Pling and ghost entries are scanned through vtable slots 3 (type id) and 4 (owner pointer).
+class EffectEntry {
+public:
+    virtual void Slot0();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual int Slot3();
+    virtual void *Slot4();
+};
+
 class PMat4;
 
 class PFrustrum {
@@ -63,6 +73,8 @@ enum eBoxIntersect {
 class PMNode {
 public:
     void SetAllFrustrumTest(eBoxIntersect arg0);
+    void *GetFirstMesh();
+    void EnableFx(bool arg0, bool arg1);
 };
 
 extern PFrustrum *mpFrustum__15EntityBaseClass;
@@ -78,11 +90,40 @@ extern "C" int printf(const char *fmt, ...);
 extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" GhostEffect *__ct__11GhostEffectFP9PMeshNode(GhostEffect *pThis, PMeshNode *arg0);
+class PMesh {
+public:
+    int Render(int arg0, bool *arg1, bool arg2);
+};
+extern "C" void sceVu0UnitMatrix(PMat4 *arg0);
+void vu1SetWorldMatrix(PMat4 *arg0);
+void vu1BeginMesh(eBoxIntersect arg0);
+void vu1EndMesh();
 void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern unsigned char mEffectAPI__13EntityManager[0x10];
 extern unsigned char __vt__10EffectNode[0x40];
 extern unsigned char __vt__11GhostEffect[0x20];
 extern unsigned char __vt__13OneshotEffect[0x20];
+
+// DRAFT: 0x155C70 FindPling__9EffectAPIFP15EntityBaseClass
+// note: 2 differing lines in the loop; plain while, for-ternary, duplicated return-0 and returning pNode variants each differ by 3+ lines.
+EffectNode *EffectAPI::FindPling(EntityBaseClass *arg0) {
+    m_unk4 = 0;
+    EffectNode *pNode = (m_unk0 != 0) ? m_ppEntries[0] : 0;
+    if (pNode != 0) {
+        do {
+            if (((EffectEntry *)pNode)->Slot3() == 3 && ((EffectEntry *)pNode)->Slot4() == arg0) {
+                return pNode;
+            }
+            pNode = 0;
+            unsigned int nIndex = m_unk4 + 1;
+            m_unk4 = nIndex;
+            if (nIndex < m_unk0) {
+                pNode = m_ppEntries[m_unk4];
+            }
+        } while (pNode != 0);
+    }
+    return 0;
+}
 
 // FUNCTION: 0x156010 CreatePling__9EffectAPIFP15EntityBaseClassfUiUib
 void EffectAPI::CreatePling(EntityBaseClass *arg0, float arg1, unsigned int arg2, unsigned int arg3, bool arg4) {
@@ -91,6 +132,58 @@ void EffectAPI::CreatePling(EntityBaseClass *arg0, float arg1, unsigned int arg2
     vec[1] = arg1;
     vec[2] = 0.0f;
     CreatePling(arg0, &vec, arg2, arg3, arg4);
+}
+
+// FUNCTION: 0x156050 Render__11GhostEffectFP13PLightManager
+int GhostEffect::Render(PLightManager *arg0) {
+    *(unsigned char *)(gGfxEng + 0x158E22) = 1;
+    u_long128 mat[4];
+    int total = 0;
+    sceVu0UnitMatrix((PMat4 *)mat);
+    int size = 0x28;
+    u_long128 *pVec = m_unk10;
+    unsigned char *pFlag = &m_unk90;
+    if (m_unk9F != 0) {
+        int off = 8 - m_unk9C;
+        pVec = m_unk10 + off;
+        pFlag = &m_unk90 + off;
+    }
+    int i;
+    for (i = 0; i < m_unk9C; i++, size -= 4, pVec++, pFlag++) {
+        if (*pFlag != 0) {
+            mat[3] = *pVec;
+            vu1SetWorldMatrix((PMat4 *)mat);
+            vu1BeginMesh((eBoxIntersect)4);
+            total += ((PMesh *)m_unk98)->Render(size, 0, 0);
+            vu1EndMesh();
+        }
+    }
+    return total;
+}
+
+// DRAFT: 0x1562B0 __ct__11GhostEffectFP9PMeshNode
+// note: 50 words differ; post-assert reload of m_unk98 and "mpMesh" literal placement (gp-relative here, lui/addiu in original).
+GhostEffect::GhostEffect(PMeshNode *arg0) {
+    *(void **)this = __vt__10EffectNode;
+    m_unk4 = 0;
+    m_unkC = 0;
+    *(void **)this = __vt__11GhostEffect;
+    m_unk4 = (int)arg0;
+    m_unk98 = ((PMNode *)m_unk4)->GetFirstMesh();
+    if (m_unk98 == 0) {
+        CdsAssert("EffectAPI.cpp", 0x14D, "mpMesh");
+    }
+    m_unk9C = 0;
+    _pad09E[0] = 0;
+    m_unk9F = 0;
+    m_unk90 = 0;
+    _pad091[0] = 0;
+    _pad091[1] = 0;
+    _pad091[2] = 0;
+    _pad091[3] = 0;
+    _pad091[4] = 0;
+    _pad091[5] = 0;
+    _pad091[6] = 0;
 }
 
 // FUNCTION: 0x156390 CreateGhost__9EffectAPIFP9PMeshNode
@@ -165,6 +258,29 @@ extern "C" void *__dt__10EffectNodeFv(void *pThis, short nFlag) {
     return pThis;
 }
 
+// DRAFT: 0x156D20 EnableParticleFx__9EffectAPIFb
+// note: 33 words differ; original guard branch targets a nop before the epilogue, and Slot3 test is beq+b, not bne (tried &&-merged and empty-then forms, same count).
+void EffectAPI::EnableParticleFx(bool arg0) {
+    m_unk4 = 0;
+    EffectNode *pNode = (m_unk0 != 0) ? m_ppEntries[0] : 0;
+    if (pNode != 0) {
+        do {
+            if (((EffectEntry *)pNode)->Slot3() == 1) {
+                PMNode *pMesh = (PMNode *)((EffectNode *)pNode)->m_unk4;
+                if (pMesh != 0) {
+                    pMesh->EnableFx(arg0, 1);
+                }
+            }
+            pNode = 0;
+            unsigned int nIndex = m_unk4 + 1;
+            m_unk4 = nIndex;
+            if (nIndex < m_unk0) {
+                pNode = m_ppEntries[m_unk4];
+            }
+        } while (pNode != 0);
+    }
+}
+
 // DRAFT: 0x156F30 EffectValid__9EffectAPIFUi
 // note: 13 differing words (size 0x90 vs 0x94): loop-top branch form, index update in v0/v1 vs a2, extra nop before the return block. Tried: ternary first fetch (16), local nIndex (13), m_unk4++ (28), ternary index update (17), for-loop form (13), pNode clear before update (13).
 EffectNode *EffectAPI::EffectValid(unsigned int arg0) {
@@ -219,6 +335,29 @@ void EffectAPI::DeleteEffect(unsigned int arg0) {
         if (nIndex < m_unk0) {
             pNode = m_ppEntries[m_unk4];
         }
+    }
+}
+
+// DRAFT: 0x157100 DeleteEffect__9EffectAPIFP15EntityBaseClass
+// note: 24 differing lines: loop top and bottom match, but the Slot0 guard skips to an extra nop before the join (original 0x7C), and the do-while join lacks the nop before the epilogue. Tried: guarded do-while (24), plain while (24, top becomes b).
+void EffectAPI::DeleteEffect(EntityBaseClass *arg0) {
+    m_unk4 = 0;
+    EffectNode *pNode = (m_unk0 != 0) ? m_ppEntries[0] : 0;
+    if (pNode != 0) {
+        do {
+            if (((EffectEntry *)pNode)->Slot4() == arg0) {
+                RemoveCurrent__6PArrayFv(this);
+                if (pNode != 0) {
+                    ((EffectDrawable *)pNode)->Slot0(1);
+                }
+            }
+            pNode = 0;
+            unsigned int nIndex = m_unk4 + 1;
+            m_unk4 = nIndex;
+            if (nIndex < m_unk0) {
+                pNode = m_ppEntries[m_unk4];
+            }
+        } while (pNode != 0);
     }
 }
 
