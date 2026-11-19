@@ -52,8 +52,9 @@ def members(path: Path):
         pos += 60 + size + (size & 1)
 
 
-def text_words(obj: bytes) -> list[int] | None:
-    """Masked little-endian words of an object's .text, or None without one."""
+def text_words(obj: bytes) -> tuple[list[int], list[tuple[int, str]]] | None:
+    """Masked little-endian words of an object's .text and its (offset, name) function
+    symbols, or None without one."""
     elf = ELFFile(io.BytesIO(obj))
     sec = elf.get_section_by_name(".text")
     if sec is None or sec.data_size < 4 * KEY:
@@ -68,7 +69,10 @@ def text_words(obj: bytes) -> list[int] | None:
                 i = r["r_offset"] // 4
                 if i < len(words):
                     words[i] &= MASK.get(r["r_info_type"], 0)
-    return words
+    syms = elf.get_section_by_name(".symtab")
+    funcs = [(y["st_value"], y.name) for y in (syms.iter_symbols() if syms else ())
+             if y["st_info"]["type"] == "STT_FUNC" and y["st_shndx"] == tidx]
+    return words, funcs
 
 
 def exe_words() -> list[int]:
@@ -86,6 +90,8 @@ def exe_words() -> list[int]:
 def main() -> int:
     sdk = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "ext/sce"
     libs = sorted((sdk / "x252").rglob("ee/lib/*.a")) + sorted((sdk / "x250").glob("sce/ee/lib/*.a"))
+    # ee-gcc toolchain runtime (newlib libc/libm, libgcc); first directory wins per archive name
+    libs += sorted(sdk.glob("toolchain*/*.a"))
     if not libs:
         print(f"no SCE archives under {sdk}", file=sys.stderr)
         return 1
@@ -93,6 +99,7 @@ def main() -> int:
     index: dict[tuple, list[int]] = {}
     for i in range(len(ex) - KEY):
         index.setdefault(tuple(ex[i:i + KEY]), []).append(i)
+    names = {a: n for a, _, n in disasm.functions()}
     placed: dict[int, tuple[int, str, str]] = {}
     seen_libs: set[str] = set()
     for lib in libs:
@@ -106,9 +113,11 @@ def main() -> int:
                 continue
             if not w:
                 continue
+            w, funcs = w
             for i in index.get(tuple(w[:KEY]), ()):
-                if ex[i:i + len(w)] == w:
-                    a = disasm.MAIN_VA + 4 * i
+                a = disasm.MAIN_VA + 4 * i
+                # short generic bodies recur in game code; the exe's own symbols confirm the object
+                if ex[i:i + len(w)] == w and all(names.get(a + o) == n for o, n in funcs):
                     if a not in placed:
                         placed[a] = (a + 4 * len(w), lib.name, name)
     rows = sorted(placed.items())
