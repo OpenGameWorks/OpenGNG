@@ -12,6 +12,7 @@ extern signed char fst_bCalledByDebug;
 extern "C" void FlushIOPCommand(int, int, int);
 extern "C" void SOUND_CopyIOPBuffer();
 extern char gEng[105360];
+extern "C" void __ct__14PFadeMsecFloatFv(void *);
 
 // FUNCTION: 0x001A3E60 LinkAmbientEntry__6PSoundFPQ26PSound12AmbientEntryPQ26PSound12AmbientEntry
 void PSound::LinkAmbientEntry(AmbientEntry *pEntry, AmbientEntry *pNext) {
@@ -36,6 +37,14 @@ void PSound::SetProposedReverbParams(unsigned int p0, unsigned int p1, unsigned 
     fst_ReverbRecProposed[4] = p4;
     fst_ReverbRecProposed[0] = p0;
     m_unk5438 = p0;
+}
+
+// FUNCTION: 0x001A5920 ErrorRecovery__6PSoundFv
+void PSound::ErrorRecovery() {
+    bool bSaved = m_unkD0;
+
+    PSoundRestart();
+    EnableProcessTriglets(bSaved);
 }
 
 // FUNCTION: 0x001A5BF0 AmbientFadeToFree__6PSoundFPQ26PSound19AmbientChannelState
@@ -82,6 +91,16 @@ void PSound::ResumeAmbientEntry(AmbientEntry *pEntry) {
             pEntry->m_unk16 = nFlags & 0xFFFE;
         }
     }
+}
+
+// FUNCTION: 0x001A8A80 IsAmbientSoundByID__6PSoundFUi
+int PSound::IsAmbientSoundByID(unsigned int nID) {
+    SpotInfo *pInfo = GetSpotInfoPtrByPublicID(nID);
+
+    if (pInfo == 0) {
+        return -1;
+    }
+    return (pInfo->m_unk0C & 2) != 0;
 }
 
 // FUNCTION: 0x001A9080 Resume__6PSoundFv
@@ -142,6 +161,13 @@ void PSound::StopStreamsAndRequestEEControl() {
     SetEEControlOfIOP(2);
 }
 
+// FUNCTION: 0x001AA030 PSoundReInitSubWSoundCalls__6PSoundFv
+void PSound::PSoundReInitSubWSoundCalls() {
+    PSoundReInitSub(0);
+    InternalUpdateRelVolumes();
+    PSoundFlushIOPCommandsWaitFinish();
+}
+
 // FUNCTION: 0x001AA0D0 PSoundReInitTriglets__6PSoundFv
 void PSound::PSoundReInitTriglets() {
     m_unk79E0[0] = 0;
@@ -181,6 +207,12 @@ PSound::AmbientChannelState::AmbientChannelState() {
     Init();
 }
 
+// FUNCTION: 0x001AAC10 __ct__Q26PSound12AmbientEntryFv
+PSound::AmbientEntry::AmbientEntry() {
+    __ct__14PFadeMsecFloatFv(m_unk20);
+    Init();
+}
+
 // FUNCTION: 0x001AAC50 Init__Q26PSound19OneShotChannelStateFv
 void PSound::OneShotChannelState::Init() {
     m_unk10 = 0x3FFF;
@@ -197,6 +229,21 @@ void PSound::OneShotChannelState::Init() {
 // FUNCTION: 0x001AAC80 __ct__Q26PSound19OneShotChannelStateFv
 PSound::OneShotChannelState::OneShotChannelState() {
     Init();
+}
+
+// FUNCTION: 0x001AAD30 Init__Q26PSound8SpotInfoFv
+void PSound::SpotInfo::Init() {
+    m_unk10 = 0;
+    m_unk0C = 0;
+    m_unk00 = 0x3FFF;
+    m_unk04 = 0;
+    m_unk08 = 0;
+    m_unk0A = 0;
+    m_unk0E = 0;
+    m_unk0F = 0;
+    m_unk11 = 0;
+    m_unk15 = 0;
+    m_unk12 = 0x11;
 }
 
 // FUNCTION: 0x001AAD70 __ct__Q26PSound8SpotInfoFv

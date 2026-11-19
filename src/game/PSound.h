@@ -49,11 +49,15 @@ public:
 
     class AmbientEntry {
     public:
+        AmbientEntry();
+        void Init();
+
         char _pad00[0x10];
         unsigned int m_unk10;   // 0x10, Resume skips entries at or above 0x3FFD
         char _pad14[0x02];
         unsigned short m_unk16; // 0x16, bit 0 is cleared on Resume
-        char _pad18[0x50 - 0x18];
+        char _pad18[0x20 - 0x18];
+        char m_unk20[0x50 - 0x20];  // 0x20, PFadeMsecFloat built by the ctor
         AmbientEntry *m_unk50;  // 0x50
         AmbientEntry *m_unk54;  // 0x54
     };
@@ -62,14 +66,35 @@ public:
     public:
         SpotInfo();
         void Init();
+
+        int m_unk00;            // 0x00, Init sets 0x3FFF
+        int m_unk04;            // 0x04
+        short m_unk08;          // 0x08
+        short m_unk0A;          // 0x0A
+        unsigned char m_unk0C;  // 0x0C, IsAmbientSoundByID tests bit 1
+        char _pad0D[0x01];
+        char m_unk0E;           // 0x0E
+        char m_unk0F;           // 0x0F
+        char m_unk10;           // 0x10
+        char m_unk11;           // 0x11
+        char m_unk12;           // 0x12, Init sets 0x11
+        char _pad13[0x02];
+        char m_unk15;           // 0x15
     };
 
+    void ErrorRecovery();
+    void PSoundRestart();
+    void PSoundReInitSub(unsigned int nMode);
+    void PSoundReInitSubWSoundCalls();
+    int IsAmbientSoundByID(unsigned int nID);
+    SpotInfo *GetSpotInfoPtrByPublicID(unsigned int nID);
     void InternalUpdateRelVolumes();
     void AmbientFadeToFree(AmbientChannelState *pState);
     int StopAllSounds();
     int SetStandardSecondaryMusicFileID(unsigned int id);
     void PSoundReInitTriglets();
     void EnableLevelProcessing(bool bEnable);
+    void EnableProcessTriglets(bool bEnable);
     void LinkAmbientEntry(AmbientEntry *pEntry, AmbientEntry *pNext);
     void SetProposedReverbParams(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3, unsigned int p4);
     void SetMonoOut(bool bMono);
@@ -97,7 +122,9 @@ public:
     int m_unk38;            // 0x038, RelVolumes arg 2
     int m_unk3C;            // 0x03C, RelVolumes arg 3
     int m_unk40;            // 0x040, RelVolumes arg 4
-    char _pad044[0x0EC - 0x044];
+    char _pad044[0x0D0 - 0x044];
+    bool m_unkD0;           // 0x0D0, ErrorRecovery reads it before PSoundRestart
+    char _pad0D1[0x0EC - 0x0D1];
     int m_unk0EC;           // 0x0EC
     int m_unk0F0;           // 0x0F0
     char _pad0F4[0x5438 - 0x0F4];
