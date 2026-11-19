@@ -21,11 +21,16 @@ public:
     void SetVifCodes(unsigned int nCode0, unsigned int nCode1);
     void BeginMatrixList();
     void EndMatrixList();
+    void AddMatrix(PMat4 *pMat, unsigned int nTag);
+    void WriteToVu1Mem(unsigned int uVu1MemOffset, u_long128 *pData, int nQwords);
+    void SetGsRegisters(u_long128 *pRegData, int nNumRegs);
     void Reset();
     void RenderShadowVolume(void *pvData, int iSize);
     void DrawVertices(void *pvData, int iSize);
     void SetClipMatrix(PMat4 *pMat);
     void SetScreenMatrix(PMat4 *pMat);
+    void SetViewMatrix(PMat4 *pMat);
+    void SetWorldMatrix(PMat4 *pMat);
     void KickVifDmaChain(bool bWait);
 
     char _pad000[0xA3340];

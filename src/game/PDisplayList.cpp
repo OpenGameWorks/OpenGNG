@@ -83,6 +83,32 @@ void PDisplayList::EndMatrixList() {
     m_unkA334C = 0;
 }
 
+// FUNCTION: 0x180A10 AddMatrix__12PDisplayListFP5PMat4Ui
+void PDisplayList::AddMatrix(PMat4 *pMat, unsigned int nTag) {
+    if (pMat == 0) {
+        CdsAssert("PDisplayList.cpp", 0x851, "pMat");
+    }
+    if (m_unkA334C == 0) {
+        CdsAssert("PDisplayList.cpp", 0x852, "mpMatrixListDmaTag");
+    }
+    int nPacket = AllocEntries(5);
+    if (nPacket == 0) {
+        CdsAssert("PDisplayList.cpp", 0x857, "0");
+    }
+    ((unsigned int *)nPacket)[0] = 0;
+    ((unsigned int *)nPacket)[1] = 0;
+    ((unsigned int *)nPacket)[2] = 0;
+    ((unsigned int *)nPacket)[3] = nTag | 0x6C040000;
+    *(u_long128 *)(nPacket + 0x10) = *(u_long128 *)pMat;
+    *(u_long128 *)(nPacket + 0x20) = *(u_long128 *)((char *)pMat + 0x10);
+    *(u_long128 *)(nPacket + 0x30) = *(u_long128 *)((char *)pMat + 0x20);
+    *(u_long128 *)(nPacket + 0x40) = *(u_long128 *)((char *)pMat + 0x30);
+    m_unkA3350 += 1;
+    asm {
+        sync
+    }
+}
+
 // FUNCTION: 0x180B20 BeginMatrixList__12PDisplayListFv
 void PDisplayList::BeginMatrixList() {
     m_unkA334C = AllocEntries(1);
@@ -90,6 +116,58 @@ void PDisplayList::BeginMatrixList() {
         CdsAssert("PDisplayList.cpp",0x844, "0");
     }
     m_unkA3350 = 0;
+}
+
+// FUNCTION: 0x180F50 WriteToVu1Mem__12PDisplayListFUiP1i
+void PDisplayList::WriteToVu1Mem(unsigned int uVu1MemOffset, u_long128 *pData, int nQwords) {
+    if (pData == 0) {
+        CdsAssert("PDisplayList.cpp", 0x7DF, "pData");
+    }
+    if (nQwords == 0) {
+        CdsAssert("PDisplayList.cpp", 0x7E0, "iNumQW");
+    }
+    int nPacket = AllocEntries(nQwords + 1);
+    if (nPacket == 0) {
+        CdsAssert("PDisplayList.cpp", 0x7E5, "0");
+    }
+    *(long long *)nPacket = (long long)nQwords | 0x10000000LL;
+    ((unsigned int *)nPacket)[2] = 0x11000000;
+    ((unsigned int *)nPacket)[3] = uVu1MemOffset | (nQwords << 16) | 0x6C000000;
+    QwordCopy((u_long128 *)(nPacket + 0x10), pData, nQwords);
+    asm {
+        sync
+    }
+}
+
+// DRAFT: 0x1811B0 SetGsRegisters__12PDisplayListFP1i
+// note: 37 differing lines; mask constants and lhu/sq order are scheduled differently; tried lh/lb vs lhu/lbu (39->37), hoisted masks, 64-bit temporaries (no change).
+void PDisplayList::SetGsRegisters(u_long128 *pRegData, int nNumRegs) {
+    if (pRegData == 0) {
+        CdsAssert("PDisplayList.cpp", 0x790, "pRegData");
+    }
+    if (nNumRegs == 0) {
+        CdsAssert("PDisplayList.cpp", 0x791, "iNumRegs");
+    }
+    int nPacket = AllocEntries(nNumRegs + 2);
+    if (nPacket == 0) {
+        CdsAssert("PDisplayList.cpp", 0x797, "0");
+    }
+    *(long long *)nPacket = ((long long)nNumRegs + 1) | 0x10000000LL;
+    ((unsigned int *)nPacket)[2] = 0x11000000;
+    ((unsigned int *)nPacket)[3] = (nNumRegs + 1) | 0x50000000;
+    *(u_long128 *)(nPacket + 0x10) = 0;
+    unsigned int uField = *(unsigned short *)(nPacket + 0x10);
+    *(unsigned short *)(nPacket + 0x10) = (uField & ~0x7FFF) | (nNumRegs & 0x7FFF);
+    uField = *(unsigned char *)(nPacket + 0x11);
+    *(unsigned char *)(nPacket + 0x11) = (uField & ~0x80) | 0x80;
+    uField = *(unsigned char *)(nPacket + 0x17);
+    *(unsigned char *)(nPacket + 0x17) = (uField & ~0xF0) | 0x10;
+    uField = *(unsigned char *)(nPacket + 0x18);
+    *(unsigned char *)(nPacket + 0x18) = (uField & ~0xF) | 0xE;
+    QwordCopy((u_long128 *)(nPacket + 0x20), pRegData, nNumRegs);
+    asm {
+        sync
+    }
 }
 
 // FUNCTION: 0x181300 SetTexSyncPacket__12PDisplayListFv
@@ -244,6 +322,64 @@ void PDisplayList::SetScreenMatrix(PMat4 *pMat) {
         nSize = 0x33E;
     } else {
         nSize = 0x38C;
+    }
+    if (pMat == 0) {
+        CdsAssert("PDisplayList.cpp", 0x94C, "pMat");
+    }
+    if (nSize >= 0x400) {
+        CdsAssert("PDisplayList.cpp", 0x94D, "uVu1MemOffset < 1024");
+    }
+    int nPacket = AllocEntries(5);
+    if (nPacket != 0) {
+        *(long long *)nPacket = 0x10000004LL;
+        ((unsigned int *)nPacket)[2] = 0x10000000;
+        ((unsigned int *)nPacket)[3] = nSize | 0x6C040000;
+        *(u_long128 *)(nPacket + 0x10) = *(u_long128 *)pMat;
+        *(u_long128 *)(nPacket + 0x20) = *(u_long128 *)((char *)pMat + 0x10);
+        *(u_long128 *)(nPacket + 0x30) = *(u_long128 *)((char *)pMat + 0x20);
+        *(u_long128 *)(nPacket + 0x40) = *(u_long128 *)((char *)pMat + 0x30);
+        asm {
+            sync
+        }
+    }
+}
+
+// FUNCTION: 0x183B50 SetViewMatrix__12PDisplayListFP5PMat4
+void PDisplayList::SetViewMatrix(PMat4 *pMat) {
+    unsigned int nSize;
+    if (m_unkA3348 == 1) {
+        nSize = 0x33A;
+    } else {
+        nSize = 0x388;
+    }
+    if (pMat == 0) {
+        CdsAssert("PDisplayList.cpp", 0x94C, "pMat");
+    }
+    if (nSize >= 0x400) {
+        CdsAssert("PDisplayList.cpp", 0x94D, "uVu1MemOffset < 1024");
+    }
+    int nPacket = AllocEntries(5);
+    if (nPacket != 0) {
+        *(long long *)nPacket = 0x10000004LL;
+        ((unsigned int *)nPacket)[2] = 0x10000000;
+        ((unsigned int *)nPacket)[3] = nSize | 0x6C040000;
+        *(u_long128 *)(nPacket + 0x10) = *(u_long128 *)pMat;
+        *(u_long128 *)(nPacket + 0x20) = *(u_long128 *)((char *)pMat + 0x10);
+        *(u_long128 *)(nPacket + 0x30) = *(u_long128 *)((char *)pMat + 0x20);
+        *(u_long128 *)(nPacket + 0x40) = *(u_long128 *)((char *)pMat + 0x30);
+        asm {
+            sync
+        }
+    }
+}
+
+// FUNCTION: 0x183C40 SetWorldMatrix__12PDisplayListFP5PMat4
+void PDisplayList::SetWorldMatrix(PMat4 *pMat) {
+    unsigned int nSize;
+    if (m_unkA3348 == 1) {
+        nSize = 0x336;
+    } else {
+        nSize = 0x384;
     }
     if (pMat == 0) {
         CdsAssert("PDisplayList.cpp", 0x94C, "pMat");
