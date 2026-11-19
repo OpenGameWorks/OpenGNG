@@ -46,6 +46,7 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4`) that `tool
 ## Environment
 
 - `fncmp.py` compiles through the `tools/ccd.py` spool, so it runs inside the sandbox; a compile under load takes up to a minute.
+- Every command runs in the foreground with a timeout; a background command, sleep or monitor keeps the job open after its report and delays the coordinator's commit.
 - `wc`, `cat`, `xargs` and `grep` with no file list wait on stdin; pass `< /dev/null`.
 - Output is read through `head`, `tail` or `grep`, never whole files; context stays under 100k tokens.
 - No commits, no `ninja`, and no edits under `tools/`, `config/` or `include/`. Tool bugs and permission denials go into the report, unworked-around.
