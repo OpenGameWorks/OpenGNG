@@ -18,16 +18,24 @@ public:
     ~CameraCutManager();
 
     void *GetFirstCutCamera(unsigned int arg0);
+    int CutCameraMovesPlayer(unsigned int arg0);
+    void StartCutCamera(unsigned int arg0, bool bArg);
+    int ProcessCutCameras();
+    int Update();
     void HideText();
     void ShowText();
     void ActivateInstances(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3);
     void FreeUpCameraStructure(CutSceneCamera_Generic *arg0);
 
     Camera *m_unk0;             // 0x000
-    char _pad004[0x50 - 0x04];
+    char _pad004[0x0C];
+    float m_unk10[16];          // 0x010 (4x4 matrix)
     float m_unk50[4];           // 0x050
     float m_unk60[4];           // 0x060
-    char m_unk70[0x10];         // 0x070 (PList, extent assumed)
+    char m_unk70[4];            // 0x070 (PList head, extent assumed)
+    char *m_unk74;              // 0x074
+    char _pad078[4];
+    char *m_unk7C;              // 0x07C
     int m_unk80;                // 0x080
     unsigned char m_unk84;      // 0x084
     unsigned char m_unk85;      // 0x085
@@ -42,7 +50,8 @@ public:
     char _padA4[0xC8 - 0xA4];
     unsigned char m_unkC8;      // 0x0C8
     unsigned char m_unkC9;      // 0x0C9
-    char _padCA[2];
+    unsigned char m_unkCA;      // 0x0CA
+    unsigned char m_unkCB;      // 0x0CB
     unsigned char m_unkCC;      // 0x0CC
 };
 

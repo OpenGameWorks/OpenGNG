@@ -9,6 +9,13 @@ extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void __dl__FPv(void *p);
 extern unsigned char mbGlobalSleep__15EntityBaseClass;
 extern unsigned char gInterface[];
+extern char gEng[105360];
+extern "C" void CallAllOnStopAttack__19EntityAttackManagerFv(void *pThis);
+extern "C" void ReleaseHeadCamera__6PlayerFv(void *pThis);
+extern "C" void UpdatePos__6CameraF5PVec35PVec3(void *pThis, float *pA, float *pB);
+extern "C" void CheckCameraShake__6CameraFR5PVec3R5PVec3b(void *pThis, float *pA, float *pB, bool bFlag);
+extern "C" void CreateViewMatrix__6CameraFR5PMat45PVec35PVec3(void *pThis, float *pMatrix, float *pA, float *pB);
+extern "C" void SetViewMatrix__6CameraF5PMat4(void *pThis, float *pMatrix);
 void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern int InnocentDialogID[0x100];
 
@@ -22,8 +29,13 @@ class Camera {
 public:
     void RestoreFollowCamPos(bool bRestore);
     void SetCamMode(short nMode, bool bFlag);
-    char _pad000[0x2B8];
+    char _pad000[0x10];
+    float m_unk10[4];
+    char _pad020[0x2B8 - 0x20];
     unsigned char m_unk2B8;
+    char _pad2B9[0x2F0 - 0x2B9];
+    float m_unk2F0[4];
+    float m_unk300[4];
 };
 
 class PVec3 {
@@ -37,6 +49,61 @@ public:
     char _pad000[0x10];
     int m_unk10;
 };
+
+// DRAFT: 0x0017A9A0 CutCameraMovesPlayer__16CameraCutManagerFUi
+// note: entry layout matches via ternary entry; loop body uses a2 for the node where the original uses v1 (register allocation). Variants: pNext hoisting, inner-block decls, lbu flag, local reorder, if-else entry, cast ternary.
+int CameraCutManager::CutCameraMovesPlayer(unsigned int arg0) {
+    char *pNode;
+    char *pElem;
+    char *pNext;
+    m_unk7C = m_unk74;
+    pNode = m_unk74 != 0 ? *(char **)m_unk74 : (char *)0;
+    while (pNode != 0) {
+        if (*(unsigned int *)pNode == arg0) {
+            *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
+            pElem = 0;
+            if (*(char **)(pNode + 8) != 0) {
+                pElem = *(char **)(*(char **)(pNode + 8));
+            }
+            while (pElem != 0) {
+                if (*(unsigned char *)(pElem + 0x29) != 0) {
+                    return 1;
+                }
+                if (*(char **)(pNode + 0x10) == 0) {
+                    *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
+                    pElem = 0;
+                    if (*(char **)(pNode + 8) != 0) {
+                        pElem = *(char **)(*(char **)(pNode + 8));
+                    }
+                } else {
+                    pNext = *(char **)(*(char **)(pNode + 0x10) + 4);
+                    if (pNext != 0) {
+                        *(char **)(pNode + 0x10) = pNext;
+                        pElem = *(char **)(*(char **)(pNode + 0x10));
+                    } else {
+                        pElem = 0;
+                    }
+                }
+            }
+        }
+        if (m_unk7C != 0) {
+            pNext = *(char **)(m_unk7C + 4);
+            if (pNext != 0) {
+                m_unk7C = pNext;
+                pNode = *(char **)m_unk7C;
+            } else {
+                pNode = 0;
+            }
+        } else {
+            m_unk7C = m_unk74;
+            pNode = 0;
+            if (m_unk74 != 0) {
+                pNode = *(char **)m_unk74;
+            }
+        }
+    }
+    return 0;
+}
 
 // FUNCTION: 0x0017AAE0 CutCameraExists__16CameraCutManagerFUi
 int CameraCutManager::CutCameraExists(unsigned int arg0) {
@@ -117,6 +184,89 @@ void CameraCutManager::StopCutCamera(bool bRestore) {
     *(unsigned int *)(gInterface + 0x18D0) |= 0xE;
 }
 
+// FUNCTION: 0x0017ADC0 StartCutCamera__16CameraCutManagerFUib
+void CameraCutManager::StartCutCamera(unsigned int arg0, bool bArg) {
+    if (m_unk85 == 0) {
+        m_unk8C = arg0;
+        m_unk88 = 2;
+        m_unkC8 = 0;
+        m_unkC9 = 0;
+        m_unkCB = 0;
+        Camera *pCam = m_unk0;
+        sceVu0CopyVector(pCam->m_unk2F0, (float *)pCam);
+        sceVu0CopyVector(pCam->m_unk300, pCam->m_unk10);
+        m_unk0->SetCamMode(1, false);
+        m_unk0->m_unk2B8 = 1;
+        m_unk85 = 1;
+        m_unkCA = bArg;
+        if (CutCameraMovesPlayer(arg0) != 0) {
+            m_unkCA = 1;
+        }
+        CallAllOnStopAttack__19EntityAttackManagerFv((void *)(gEng + 0x3250));
+        ReleaseHeadCamera__6PlayerFv(*(void **)(gEng + 0x82AC));
+        m_unkCC = mbGlobalSleep__15EntityBaseClass;
+        mbGlobalSleep__15EntityBaseClass = 0;
+        *(short *)(gInterface + 0x1B24) = 0x1E;
+        *(int *)(gInterface + 0x18D0) &= ~0xE;
+    }
+}
+
+// DRAFT: 0x0017B0E0 GetFirstCutCamera__16CameraCutManagerFUi
+// note: 66 differing lines; the element sits in $a0 where the original uses $v1, and the outer loop and exit layout differ. Tried do-while guard, while loop, nValue at function scope, direct returns on the match path, shared exit label; none dropped below 66.
+void *CameraCutManager::GetFirstCutCamera(unsigned int arg0) {
+    char *pNode;
+    char *pElem;
+    char *pNext;
+    char *pBest;
+    unsigned int nMin;
+    unsigned int nValue;
+
+    m_unk7C = m_unk74;
+    nMin = 0x270F;
+    pNode = m_unk74 != 0 ? *(char **)m_unk74 : (char *)0;
+    while (pNode != 0) {
+        if (*(unsigned int *)pNode == arg0) {
+            *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
+            pElem = *(char **)(pNode + 8) != 0 ? *(char **)(*(char **)(pNode + 8)) : (char *)0;
+            if (pElem != 0) {
+                do {
+                    nValue = *(unsigned int *)(pElem + 0x50);
+                    if (nValue < nMin) {
+                        nMin = nValue;
+                        pBest = pElem;
+                    }
+                    if (*(char **)(pNode + 0x10) != 0) {
+                        pNext = *(char **)(*(char **)(pNode + 0x10) + 4);
+                        if (pNext != 0) {
+                            *(char **)(pNode + 0x10) = pNext;
+                            pElem = *(char **)pNext;
+                        } else {
+                            pElem = (char *)0;
+                        }
+                    } else {
+                        *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
+                        pElem = *(char **)(pNode + 8) != 0 ? *(char **)(*(char **)(pNode + 8)) : (char *)0;
+                    }
+                } while (pElem != 0);
+            }
+            return pBest;
+        }
+        if (m_unk7C == 0) {
+            m_unk7C = m_unk74;
+            pNode = m_unk74 != 0 ? *(char **)m_unk74 : (char *)0;
+        } else {
+            pNext = *(char **)(m_unk7C + 4);
+            if (pNext != 0) {
+                m_unk7C = pNext;
+                pNode = *(char **)m_unk7C;
+            } else {
+                pNode = (char *)0;
+            }
+        }
+    }
+    return 0;
+}
+
 // FUNCTION: 0x0017B240 GetTargetPositionFromInstance__16CameraCutManagerFUiR5PVec3
 void CameraCutManager::GetTargetPositionFromInstance(unsigned int nInstance, PVec3 &arg1) {
     char *pEntity = (char *)InstanceIsValid__15EntityBaseClassFUi(nInstance);
@@ -162,6 +312,28 @@ void CameraCutManager::FreeUpCameraStructure(CutSceneCamera_Generic *arg0) {
         CdsAssert("CameraCutscene.cpp", 0x95, "Tried to free invalid camera type");
         break;
     }
+}
+
+// FUNCTION: 0x0017C630 Update__16CameraCutManagerFv
+int CameraCutManager::Update() {
+    if (ProcessCutCameras() != 0) {
+        float a[4];
+        float b[4];
+        *(PVec3 *)a = *(PVec3 *)m_unk50;
+        *(PVec3 *)b = *(PVec3 *)m_unk60;
+        UpdatePos__6CameraF5PVec35PVec3(m_unk0, a, b);
+        CheckCameraShake__6CameraFR5PVec3R5PVec3b(m_unk0, m_unk50, m_unk60, false);
+        float c[4];
+        float d[4];
+        *(PVec3 *)c = *(PVec3 *)m_unk50;
+        *(PVec3 *)d = *(PVec3 *)m_unk60;
+        float mat[16];
+        CreateViewMatrix__6CameraFR5PMat45PVec35PVec3(m_unk0, m_unk10, c, d);
+        sceVu0CopyMatrix((float (*)[4])mat, (float (*)[4])m_unk10);
+        SetViewMatrix__6CameraF5PMat4(m_unk0, mat);
+        return 1;
+    }
+    return 0;
 }
 
 // FUNCTION: 0x0017C740 __dt__16CameraCutManagerFv
