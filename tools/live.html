@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>OpenGNG progress</title>
+<style>
+body{font:14px/1.4 system-ui,sans-serif;background:#111;color:#ddd;margin:20px}
+h1{font-size:18px;margin:0 0 8px}
+table{border-collapse:collapse;margin:8px 0 16px}
+td,th{padding:2px 10px;text-align:right;border-bottom:1px solid #333}
+th{color:#999;font-weight:normal}td.l,th.l{text-align:left}
+.bar{display:inline-block;width:240px;height:10px;background:#333;vertical-align:middle}
+.bar i{display:block;height:100%;background:#4c8}
+.ok{color:#4c8}.bad{color:#e66}.dim{color:#888}
+#files td{font-size:12px}
+</style></head><body>
+<h1>OpenGNG — Maximo: The Army of Zin (SLUS-20722)</h1>
+<div id="build"></div>
+<table id="cats"></table>
+<h1>Active workers</h1><table id="workers"></table>
+<h1>Files</h1><table id="files"></table>
+<script>
+// Metrics come only from build/progress.json (link.tsv); asm fallbacks never count as matched.
+const pct=(a,b)=>b?(100*a/b).toFixed(2):"0.00";
+const bar=(a,b)=>`<span class=bar><i style="width:${b?100*a/b:0}%"></i></span>`;
+const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+async function get(u){try{const r=await fetch(u,{cache:"no-cache"});return r.ok?r.json():null}catch(e){return null}}
+async function tick(){
+  const [p,s,w]=await Promise.all([get("progress.json"),get("status.json"),get("workers.json")]);
+  if(p){
+    const t=Object.values(p.categories).reduce((a,c)=>({b:a.b+c.bytes,m:a.m+c.matched_bytes}),{b:0,m:0});
+    document.getElementById("build").innerHTML=
+      `Executable SHA-1: <b class=${p.build_ok?"ok":"bad"}>${p.build_ok?"OK":"NOT VERIFIED"}</b>`+
+      ` · total source-matched ${pct(t.m,t.b)}% of code bytes · updated ${new Date(p.updated*1000).toLocaleTimeString()}`+
+      (s&&!s.ok?` · <span class=bad>${esc(s.message)}</span>`:"");
+    let h="<tr><th class=l>category<th>matched funcs<th>matched bytes<th>%<th><th>draft funcs";
+    for(const [k,c] of Object.entries(p.categories))
+      h+=`<tr><td class=l>${k}<td>${c.matched_funcs}/${c.funcs}<td>${c.matched_bytes}/${c.bytes}<td>${pct(c.matched_bytes,c.bytes)}<td>${bar(c.matched_bytes,c.bytes)}<td>${c.draft_funcs}`;
+    document.getElementById("cats").innerHTML=h;
+    const fs=p.files.filter(f=>f.matched||f.draft).sort((a,b)=>b.matched_bytes-a.matched_bytes);
+    let fh="<tr><th class=l>file<th class=l>cat<th>matched<th>draft<th>bytes<th>";
+    for(const f of fs) fh+=`<tr><td class=l>${esc(f.file)}<td class=l>${f.cat}<td>${f.matched}/${f.funcs}<td>${f.draft}<td>${f.matched_bytes}/${f.bytes}<td>${bar(f.matched_bytes,f.bytes)}`;
+    document.getElementById("files").innerHTML=fh+(fs.length?"":"<tr><td class=l dim>none yet");
+  }
+  const ws=(w&&w.workers)||[];
+  let wh="<tr><th class=l>job<th class=l>file<th class=l>functions<th>started";
+  for(const j of ws) wh+=`<tr><td class=l>${esc(j.id)}<td class=l>${esc(j.file)}<td class=l>${esc(j.funcs)}<td>${new Date(j.started*1000).toLocaleTimeString()}`;
+  document.getElementById("workers").innerHTML=wh+(ws.length?"":"<tr><td class=l dim>idle");
+}
+tick();setInterval(tick,3000);
+</script></body></html>
