@@ -15,6 +15,7 @@ public:
     void SetTexSyncPacket();
     void BeginFxLoop(unsigned int nTag);
     void SetVertexData(float (*pVerts)[4], int nCount, int nFlags);
+    void DrawRawVertices(float (*p0)[4], float (*p1)[4], float (*p2)[4], float (*p3)[4], int nCount);
     void AddVifPacket(u_long128 *pTag, int nCount, unsigned int nCode0, unsigned int nCode1);
     void AddVifDmaPacket(u_long128 *pPacket, int nNumQW);
     void BeginMesh(unsigned int nTag);
@@ -23,9 +24,11 @@ public:
     void EndMatrixList();
     void AddMatrix(PMat4 *pMat, unsigned int nTag);
     void WriteToVu1Mem(unsigned int uVu1MemOffset, u_long128 *pData, int nQwords);
+    void SendGsPacket(void *pvData, int iSize, bool bFlag);
     void SetGsRegisters(u_long128 *pRegData, int nNumRegs);
     void Reset();
     void RenderShadowVolume(void *pvData, int iSize);
+    void BeginShadowVolume(PMat4 *pMat, float *pA, float *pB, float *pC, float *pD, float *pE);
     void DrawVertices(void *pvData, int iSize);
     void SetClipMatrix(PMat4 *pMat);
     void SetScreenMatrix(PMat4 *pMat);

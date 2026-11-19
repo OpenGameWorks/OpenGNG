@@ -67,6 +67,36 @@ void PDisplayList::RenderShadowVolume(void *pvData, int iSize) {
     }
 }
 
+// FUNCTION: 0x180630 BeginShadowVolume__12PDisplayListFP5PMat4PfPfPfPfPf
+void PDisplayList::BeginShadowVolume(PMat4 *pMat, float *pA, float *pB, float *pC, float *pD, float *pE) {
+    if (pMat == 0) {
+        CdsAssert("PDisplayList.cpp", 0x8C2, "pWorldMat");
+    }
+    int nPacket = AllocEntries(0xD);
+    if (nPacket == 0) {
+        CdsAssert("PDisplayList.cpp", 0x8C7, "0");
+    }
+    *(long long *)nPacket = 0x1000000CLL;
+    ((unsigned int *)nPacket)[2] = 0x11000000;
+    ((unsigned int *)nPacket)[3] = 0x6C0C8000;
+    *(u_long128 *)(nPacket + 0x10) = *(u_long128 *)pMat;
+    *(u_long128 *)(nPacket + 0x20) = *(u_long128 *)((char *)pMat + 0x10);
+    *(u_long128 *)(nPacket + 0x30) = *(u_long128 *)((char *)pMat + 0x20);
+    *(u_long128 *)(nPacket + 0x40) = *(u_long128 *)((char *)pMat + 0x30);
+    *(u_long128 *)(nPacket + 0x50) = *(u_long128 *)pA;
+    *(u_long128 *)(nPacket + 0x60) = *(u_long128 *)pB;
+    *(u_long128 *)(nPacket + 0x70) = *(u_long128 *)pC;
+    *(u_long128 *)(nPacket + 0x90) = *(u_long128 *)pE;
+    *(u_long128 *)(nPacket + 0x80) = *(u_long128 *)pD;
+    *(long long *)(nPacket + 0xA0) = 0x4021C00000000000LL;
+    *(long long *)(nPacket + 0xA8) = 0x5551LL;
+    *(long long *)(nPacket + 0xB0) = 0x5022400000000000LL;
+    *(long long *)(nPacket + 0xB8) = 0x55551LL;
+    *(long long *)(nPacket + 0xC0) = 0x2022C00000000000LL;
+    *(long long *)(nPacket + 0xC8) = 0x51LL;
+    asm { sync }
+}
+
 // DRAFT: 0x180960 EndMatrixList__12PDisplayListFv
 // note: 39 lines differ; first m_unkA334C load uses lui v1/ori/addu/lw 0(v1) where original uses lui at/addu at/lw 0x334C(at), shifting the rest by one word; 64-bit arithmetic matches; tried void* member, !ptr test, local copy (void* and int), = int local (41 lines)
 void PDisplayList::EndMatrixList() {
@@ -137,6 +167,37 @@ void PDisplayList::WriteToVu1Mem(unsigned int uVu1MemOffset, u_long128 *pData, i
     asm {
         sync
     }
+}
+
+// DRAFT: 0x181050 SendGsPacket__12PDisplayListFPvib
+// note: iSize/bFlag swapped between s0/s1 (ours: iSize in s0); variants tried: bFlag != 0 (75 words), inverted if/else (60 words); baseline 23 words.
+void PDisplayList::SendGsPacket(void *pvData, int iSize, bool bFlag) {
+    if (pvData == 0) {
+        CdsAssert("PDisplayList.cpp", 0x7B4, "pvData");
+    }
+    if (iSize == 0) {
+        CdsAssert("PDisplayList.cpp", 0x7B5, "iSize");
+    }
+    int nCount = iSize >> 4;
+    if (bFlag) {
+        int nPacket = AllocEntries(nCount + 1);
+        if (nPacket == 0) {
+            CdsAssert("PDisplayList.cpp", 0x7BE, "0");
+        }
+        *(long long *)nPacket = (long long)nCount | 0x10000000LL;
+        ((unsigned int *)nPacket)[2] = 0x11000000;
+        ((unsigned int *)nPacket)[3] = nCount | 0x50000000;
+        QwordCopy((u_long128 *)(nPacket + 0x10), (u_long128 *)pvData, nCount);
+    } else {
+        int nPacket = AllocEntries(1);
+        if (nPacket == 0) {
+            CdsAssert("PDisplayList.cpp", 0x7CE, "0");
+        }
+        *(long long *)nPacket = ((long long)(unsigned int)pvData << 32) | 0x30000000LL | (long long)nCount;
+        ((unsigned int *)nPacket)[2] = 0x11000000;
+        ((unsigned int *)nPacket)[3] = nCount | 0x50000000;
+    }
+    asm { sync }
 }
 
 // DRAFT: 0x1811B0 SetGsRegisters__12PDisplayListFP1i
@@ -215,6 +276,51 @@ void PDisplayList::SetVertexData(float (*pVerts)[4], int nCount, int nFlags) {
     ((unsigned int *)nPacket)[2] = 0;
     ((unsigned int *)nPacket)[3] = nFlags | 0x8000 | (nCount << 16) | 0x6C000000;
     QwordCopy((u_long128 *)(nPacket + 0x10), (u_long128 *)pVerts, nCount);
+    asm {
+        sync
+    }
+}
+
+// DRAFT: 0x1834F0 DrawRawVertices__12PDisplayListFPA4_fPA4_fPA4_fPA4_fi
+// note: 109 differing lines. Local register allocation differs (nCount s3 vs s1, nOffset s0 vs s2, nBatch s1 vs s3), the dead div/mfhi by 0x1E is absent, and the loop test uses $v0 not $at. Tried: nBatch declared before nOffset (still 109).
+void PDisplayList::DrawRawVertices(float (*p0)[4], float (*p1)[4], float (*p2)[4], float (*p3)[4], int nCount) {
+    int nOffset = 0;
+    while (nCount >= 3) {
+        int nBatch = nCount;
+        if (nBatch >= 0x1E) {
+            nBatch = 0x1E;
+        }
+        nCount -= nBatch;
+        int nPacket = AllocEntries(2);
+        if (nPacket == 0) {
+            CdsAssert("PDisplayList.cpp", 0x1CE, "0");
+        }
+        *(long long *)nPacket = 0x10000001LL;
+        ((unsigned int *)nPacket)[2] = 0;
+        ((unsigned int *)nPacket)[3] = 0x6C018000;
+        ((unsigned int *)nPacket)[4] = nBatch;
+        ((unsigned int *)nPacket)[5] = 0;
+        ((unsigned int *)nPacket)[6] = 0;
+        ((unsigned int *)nPacket)[7] = 0;
+        if (p0 != 0) {
+            SetVertexData(p0 + nOffset, nBatch, 0x3D);
+        }
+        if (p1 != 0) {
+            SetVertexData(p1 + nOffset, nBatch, 1);
+        }
+        if (p2 != 0) {
+            SetVertexData(p2 + nOffset, nBatch, 0x1F);
+        }
+        if (p3 != 0) {
+            SetVertexData(p3 + nOffset, nBatch, 0x5B);
+        }
+        int nTail = AllocEntries(1);
+        *(long long *)nTail = 0x10000000LL;
+        nOffset += nBatch - 2;
+        ((unsigned int *)nTail)[2] = 0;
+        ((unsigned int *)nTail)[3] = 0x17000000;
+        nCount += 2;
+    }
     asm {
         sync
     }
