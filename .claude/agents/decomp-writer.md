@@ -32,7 +32,7 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4`) that `tool
 - `mtc1` from `lui` is a float literal; `lwc1` from `%lo(lit_...)` is a pooled literal. Both are written as plain literals.
 - An empty function is `jr ra; nop`; a getter is `jr ra; lw v0,off(a0)`.
 - Store order and local declaration order set instruction order; separate early returns or a duplicated tail replace a shared exit.
-- A global the original reaches with `lui`/`addiu` (or `%hi`/`%lo`) needs a complete type larger than 8 bytes; an extern of incomplete or small type compiles to gp-relative `lw ...(gp)` and mismatches. A placeholder member (`char _pad[0x10];`) in your header fixes it.
+- A global the original reaches with `lui`/`addiu` (or `%hi`/`%lo`) needs a complete type larger than 8 bytes; an extern of incomplete or small type compiles to gp-relative `lw ...(gp)` and mismatches. A placeholder member (`char _pad[0x10];`) in your header fixes it. A file-wide `// FLAGS: -sdatathreshold 0` is wrong: most original files use gp-relative globals elsewhere.
 - A function ending in a `j` tail call with no frame does not match with any known flag; draft it and move on.
 - A void callee declaration where the original reads v0 (or the reverse) shifts registers: callee return types follow their own asm.
 - `src/game/PWorld.cpp` holds the first match and serves as a model.
