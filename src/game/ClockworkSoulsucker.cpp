@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "ClockworkSoulsucker.h"
 
 // TODO(header): foreign declarations
@@ -5,6 +6,8 @@ class PMNode {
 public:
     int AddFxTrigger(struct tagParticleFxTrigger *, bool);
     void ScaleSet(float, float, float, float);
+    PMNode *Find(unsigned int);
+    float GetFrameTime();
 };
 
 class Physics {
@@ -59,7 +62,9 @@ extern MathAPI *mPlayerAPI__13EntityManager;
 extern unsigned char m_bSuckingActive__19ClockworkSoulsucker;
 extern unsigned char m_bSuckingSemaphoreBusy__19ClockworkSoulsucker;
 extern int m_SuckerRef__19ClockworkSoulsucker;
+extern int miRandom__7MathAPI;
 void CdsAssert(char *, int, char *);
+extern "C" int printf(const char *fmt, ...);
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __dl__FPv(void *);
 extern "C" void DestroyDamageFx__15EntityBaseClassFUi(void *, unsigned int);
@@ -67,9 +72,48 @@ extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, void
 extern "C" void RotateTo__15EntityBaseClassFff(void *, float, float);
 extern "C" void **InstanceIsValid__15EntityBaseClassFUi(unsigned int);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *, int, unsigned int);
+extern "C" int GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(void *pThis, int eLoadClass, void *pArray, float (*pBox)[4], float fRadius, int nFlags, bool bFlagA, bool bFlagB);
+struct ApparitionState {
+    char _pad000[0x1B0];
+    int m_unk1B0;
+};
+struct TempApparitionArray {
+    int m_count;            // 0x00
+    int m_unk04;            // 0x04 cleared with m_count
+    unsigned int *m_pData;  // 0x08
+    char _pad0C[4];
+};
+extern "C" ApparitionState *ApparitionIsValid__15EntityBaseClassFUi(unsigned int);
+extern void *mpEntMgr__15EntityBaseClass;
+extern TempApparitionArray mTempArray__15EntityBaseClass;
 extern unsigned char __vt__19ClockworkSoulsucker[0x10];
+extern "C" void GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(void *, void *);
+extern "C" float Round180__Ff(float);
 extern unsigned char ClockworkSoulsucker_GrabAttemptSeq[0x10];
 extern unsigned char ClockworkSoulsucker_Small_AirJuggleSeq[0x10];
+extern unsigned char ClockworkSoulsucker_Small_JuggleSeq[0x10];
+extern unsigned char ClockworkSoulsucker_Small_LaunchSeq[0x10];
+extern unsigned char ClockworkSoulsucker_Small_KnockUpSeq[0x10];
+
+// DRAFT: 0x00204470 AttachSmokeEffect__19ClockworkSoulsuckerFv
+// note: 18 lines differ; original reloads miRandom in beqz delay slot at 0x40, ours has nop. Tried truthiness, bit-compare, early-return, zero-first (40), else-if (40).
+void ClockworkSoulsucker::AttachSmokeEffect() {
+    int nRand;
+
+    m_unk2B0 = 1;
+    nRand = miRandom__7MathAPI;
+    miRandom__7MathAPI = nRand * 0x343FD + 0x269EC3;
+    if (m_unk3C != 0) {
+        if (miRandom__7MathAPI & 1) {
+            AttachDamageEffect(((PMNode *)m_unk3C)->Find(0x8EA3DD30U), 0x83000154U, 0.0f, 0.0f, 0.0f);
+        } else {
+            AttachDamageEffect(((PMNode *)m_unk3C)->Find(0x72C7C29BU), 0x83000154U, 0.0f, 0.0f, 0.0f);
+        }
+    } else {
+        printf("SOULSUCKER BUG (ALERT JOEY IMMEDIATELY): GetMeshNode() returned NULL when calling AttachSmokeEffects!!!\n", nRand);
+        CdsAssert("ClockworkSoulsucker.cpp", 0xA32, "0");
+    }
+}
 
 // FUNCTION: 0x00204570 AttachDamageEffect__19ClockworkSoulsuckerFP6PMNodeUifff
 void ClockworkSoulsucker::AttachDamageEffect(PMNode *pNode, unsigned int nId, float fA, float fB, float fC) {
@@ -162,6 +206,53 @@ void ClockworkSoulsucker::DeleteEffects() {
     }
 }
 
+// FUNCTION: 0x002049F0 InJuggleAirspace__19ClockworkSoulsuckerFv
+int ClockworkSoulsucker::InJuggleAirspace() {
+    float fTime;
+
+    fTime = ((PMNode *)m_unk3C)->GetFrameTime();
+    if (m_unk140 == ClockworkSoulsucker_Small_AirJuggleSeq && fTime < 21.0f) {
+        return 1;
+    }
+    if (m_unk140 == ClockworkSoulsucker_Small_JuggleSeq && fTime < 17.0f) {
+        return 1;
+    }
+    if (m_unk140 == ClockworkSoulsucker_Small_LaunchSeq && fTime < 30.0f) {
+        return 1;
+    }
+    if (m_unk140 == ClockworkSoulsucker_Small_KnockUpSeq && fTime < 23.0f) {
+        return 1;
+    }
+    return 0;
+}
+
+// DRAFT: 0x00204EA0 SoulsInRange__19ClockworkSoulsuckerFv
+// note: 24 lines; register swap (ours i=s0, off=s1), loop-tail order and range-test branch shape differ. Tried: off before i, for-header steps (26), pointer local (37), range test forms (same count).
+int ClockworkSoulsucker::SoulsInRange() {
+    unsigned int i;
+    unsigned int off;
+    float (*pBox)[4];
+    if (mTempArray__15EntityBaseClass.m_pData != 0) {
+        mTempArray__15EntityBaseClass.m_count = 0;
+        mTempArray__15EntityBaseClass.m_unk04 = 0;
+    }
+    pBox = (float (*)[4])((char *)this + 0x190);
+    if (m_unk3C != 0) {
+        pBox = (float (*)[4])(m_unk3C + 0x80);
+    }
+    GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 1, &mTempArray__15EntityBaseClass, pBox, 30.0f, 8, true, false);
+    off = 0;
+    for (i = 0; i < (unsigned int)mTempArray__15EntityBaseClass.m_count; i++) {
+        ApparitionState *p = ApparitionIsValid__15EntityBaseClassFUi(i < (unsigned int)mTempArray__15EntityBaseClass.m_count ? *(unsigned int *)((char *)mTempArray__15EntityBaseClass.m_pData + off) : 0);
+        int st = p->m_unk1B0;
+        if (st == 4 || (unsigned int)(st - 0x14) < 2U || st == 0x16) {
+            return 1;
+        }
+        off += 4;
+    }
+    return 0;
+}
+
 // FUNCTION: 0x00204AF0 SetupType__19ClockworkSoulsuckerFv
 void ClockworkSoulsucker::SetupType() {
     if (m_unk3C == 0) {
@@ -241,6 +332,47 @@ void ClockworkSoulsucker::DeleteTimers() {
     m_unk244 = 0;
 }
 
+// DRAFT: 0x00205220 FaceHit__19ClockworkSoulsuckerFv
+// note: 42 lines differ; original E-block is an out-of-line beq, ours inline bne; chain order and tail s0 load differ. Tried: early-return vs single exit, chain orders (E-first 42, 0x82000007-first 43), cached physics pointer (42).
+void ClockworkSoulsucker::FaceHit() {
+    float vec[4];
+    void *pMath;
+    float *pVec;
+    float fY;
+    int nMode;
+
+    pMath = *(void **)((char *)mpEntMgr__15EntityBaseClass + 0x505C);
+    GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(pMath, vec);
+    if (*(int *)((char *)pMath + 0x3C) != 0) {
+        pVec = (float *)(*(int *)((char *)pMath + 0x3C) + 0x90);
+    } else {
+        pVec = (float *)((char *)pMath + 0x1A0);
+    }
+    fY = pVec[1];
+    nMode = *(int *)((char *)*(void **)((char *)mpEntMgr__15EntityBaseClass + 0x505C) + 0x154);
+    if (nMode != 0x82000010) {
+        if (nMode == 0x8200000E) {
+            fY = fY - (-150.0f);
+        } else if (nMode == 0x82000007) {
+            fY = fY - 150.0f;
+        } else {
+            fY = fY - 180.0f;
+        }
+        if (m_unk3C != 0) {
+            pVec = (float *)(m_unk3C + 0x90);
+        } else {
+            pVec = (float *)((char *)this + 0x1A0);
+        }
+        pVec[1] = fY;
+        if (m_unk3C != 0) {
+            pVec = (float *)(m_unk3C + 0x90);
+        } else {
+            pVec = (float *)((char *)this + 0x1A0);
+        }
+        *(float *)((char *)m_unk38 + 0x11C) = Round180__Ff(pVec[1]);
+    }
+}
+
 // FUNCTION: 0x00205330 GetTarget__19ClockworkSoulsuckerFv
 void *ClockworkSoulsucker::GetTarget() {
     if (m_unk234 != 0) {
@@ -310,6 +442,35 @@ void ClockworkSoulsucker::AddSoulValue(int nValue) {
     if (m_unk258 >= 6) {
         m_unk2B8 = 1;
     }
+}
+
+// FUNCTION: 0x002055A0 GetSuckingPos__19ClockworkSoulsuckerFRA4_f
+int ClockworkSoulsucker::GetSuckingPos(float (&)[4]) {
+    ClockworkSoulsucker *pSucker;
+    PMNode *pNeck;
+
+    if (m_bSuckingActive__19ClockworkSoulsucker != 0) {
+        if (m_SuckerRef__19ClockworkSoulsucker == 0) {
+            CdsAssert("ClockworkSoulsucker.cpp", 0x7E8, "m_SuckerRef");
+        }
+        pSucker = (ClockworkSoulsucker *)ApparitionIsValid__15EntityBaseClassFUi(m_SuckerRef__19ClockworkSoulsucker);
+        if (pSucker == 0) {
+            CdsAssert("ClockworkSoulsucker.cpp", 0x7EA, "pSucker");
+        }
+        if (pSucker->m_unk3C == 0) {
+            CdsAssert("ClockworkSoulsucker.cpp", 0x7EC, "pSucker->GetMeshNode()");
+        }
+        pNeck = ((PMNode *)pSucker->m_unk3C)->Find(0xD0A0801EU);
+        if (pNeck == 0) {
+            CdsAssert("ClockworkSoulsucker.cpp", 0x7EF, "pNeckJoint");
+        }
+        *(float *)((char *)this + 0x0) = *(float *)((char *)pNeck + 0x70);
+        *(float *)((char *)this + 0x4) = *(float *)((char *)pNeck + 0x74);
+        *(float *)((char *)this + 0x8) = *(float *)((char *)pNeck + 0x78);
+        *(float *)((char *)this + 0xC) = *(float *)((char *)pNeck + 0x7C);
+        return 1;
+    }
+    return 0;
 }
 
 // FUNCTION: 0x002056A0 SetDefaultVars__19ClockworkSoulsuckerFv

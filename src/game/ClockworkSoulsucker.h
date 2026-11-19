@@ -11,6 +11,7 @@ public:
     int DetermineIdleState();
     void DeleteTimers();
     int GetSuckingSucker();
+    int GetSuckingPos(float (&)[4]);
     void SetRiseAndAttack(float (*pVec)[4], float fA, float fB);
     void ResetAttackTimer();
     void ReleaseSemaphoreIfOwned();
@@ -18,6 +19,7 @@ public:
     void SetDefaultVars();
     void SetSpawnedFromEntity(float *pPos, float *pAlt, int nType);
     void FaceTarget(float fArg);
+    void FaceHit();
     void AddSoulValue(int nValue);
     void OnWakeEvent();
     void *GetTarget();
@@ -28,6 +30,7 @@ public:
     void AdjustPhysicsForEweedCheck();
     int InBlockableState();
     int InJuggleAirspace();
+    int SoulsInRange();
     void SetDrainHit(unsigned int nArg);
 
     void *m_unk0;           // 0x000 vtable pointer
