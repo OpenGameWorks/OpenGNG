@@ -2,6 +2,8 @@
 #define INTERFACE_H
 
 class PParticleSystem;
+class PMeshNode;
+class HudData;
 
 class HudGrim {
 public:
@@ -21,6 +23,17 @@ public:
     void *m_unk48;              // 0x048
 };
 
+class GameHud {
+public:
+    void Init(PMeshNode *meshNode, HudData *hud);
+
+    void *m_unk0;               // 0x000 vtable pointer (__vt__7GameHud)
+    void *m_unk4;               // 0x004
+    char _pad008[0x6];
+    signed char m_unkE;         // 0x00E
+    unsigned char m_unkF;       // 0x00F
+};
+
 class Interface {
 public:
     void SoundGainEEControl();
@@ -29,8 +42,21 @@ public:
     void LoadingDisplayOld(unsigned int arg0, int arg1);
     void LoadingDisplayNew(unsigned int arg0);
     void InitScreenFadeVars();
+    void LevelClear();
+    void AddAbility(int arg0);
+    int IsTreasureOK();
+    void Init();
+    void InitMatrices();
 
-    char _pad000[0x418];
+    char _pad000[0x80];
+    int m_unk80;                // 0x080 first word of the embedded FontManager
+    char _pad084[0x134];
+    int m_unk1B8;               // 0x1B8
+    char _pad1BC[0x4];
+    int m_unk1C0;               // 0x1C0
+    char _pad1C4[0x133];
+    unsigned char m_unk2F7;     // 0x2F7
+    char _pad2F8[0x120];
     int m_unk418;               // 0x418
     int m_unk41C;               // 0x41C
     int m_unk420;               // 0x420
