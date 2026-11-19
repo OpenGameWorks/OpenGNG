@@ -70,6 +70,7 @@ public:
     void RefreshDisplay();
     void SetScreenMatrix(PMat4 *pMat);
     int Init(short nWidth, short nHeight, short a2, short nTvMode, short a4, short a5, int a6, int a7);
+    char _pad000[0x10];
 };
 
 class PShadowBuffer {
@@ -100,6 +101,7 @@ struct PClipVolume {
 extern PClipVolume clip_volume;
 void vu1SetScreenMatrix(PMat4 *pMat);
 extern "C" void __dl__FPv(void *pMem);
+extern "C" void scePcStart(int nMode, int nA, int nB);
 extern "C" void __destroy_arr(void *pBlock, void *(*pDtor)(void *, short), int nSize, int nCount);
 extern "C" void *__dt__11PFogTextureFv(void *pThis, short nFlag);
 extern "C" void *__dt__12PFireTextureFv(void *pThis, short nFlag);
@@ -110,6 +112,24 @@ extern "C" void *__dt__11PZBufferFogFv(void *pThis, short nFlag);
 extern "C" void *__dt__15PCutScenePlayerFv(void *pThis, short nFlag);
 extern "C" void *__dt__13PLightManagerFv(void *pThis, short nFlag);
 extern "C" void *__dt__9PFrustrumFv(void *pThis, short nFlag);
+extern "C" void *__dt__19PSpacePartitionTreeFv(void *pThis, short nFlag);
+extern "C" void *__dt__19PStaticInstanceMeshFv(void *pThis, short nFlag);
+extern "C" void Unload__15PCutScenePlayerFb(void *pThis, bool bFlag);
+extern "C" void DestroyFxTriggers__6PMNodeFbbb(void *pThis, bool bA, bool bB, bool bC);
+extern "C" void DestroyAllStaticLights__13PLightManagerFv(void *pThis);
+extern "C" void DestroyAllDynamicLights__13PLightManagerFv(void *pThis);
+extern "C" void Reset__13PWaterTextureFv(void *pThis);
+extern "C" void Reset__11PGasTextureFv(void *pThis);
+extern "C" void Reset__12PFireTextureFv(void *pThis);
+extern "C" void Reset__11PFogTextureFv(void *pThis);
+extern "C" void RemoveAllParticleSystems__16PParticleManagerF8ePSLayer(void *pThis, int nLayer);
+extern unsigned char gInterface[0x300];
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__19PStaticInstanceMeshFv(void *pThis);
+extern "C" int Load__19PStaticInstanceMeshFP8PPakFileP6PArray16ePsx2FileVersion(void *pThis, PPakFile *pFile, PArray *pArray, ePsx2FileVersion nVersion);
+extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
+extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, char *pExpr);
+extern "C" void AddMasterParticleInstance__16PParticleManagerFP15PParticleSystem(void *pThis, void *pSystem);
 
 // FUNCTION: 0x19A680 CullMainWorld__6PWorldFv
 void PWorld::CullMainWorld() {
@@ -197,6 +217,70 @@ int PWorld::LoadFxTriggerData(PPakFile *pFile, tagParticleFxTriggerData **ppData
     return 1;
 }
 
+// DRAFT: 0x19AC40 CleanupStaticInstanceMeshes__6PWorldFv
+// note: 56 differing lines; loop guard shape (original sltu/beqz entry + bottom test) and second gGfxEng block gp-relative (original lui 0x46/addiu absolute). Tried: for-loop 58, do-while 59, pointer for first block 56
+void PWorld::CleanupStaticInstanceMeshes() {
+    unsigned int n;
+    unsigned int i;
+    PStaticInstanceMesh *p;
+    char *pGfx;
+
+    n = m_9FB0;
+    for (i = 0; i < n; i++) {
+        p = 0;
+        if (i < m_9FB0) {
+            p = m_9FB8[i];
+        }
+        if (p) {
+            __dt__19PStaticInstanceMeshFv(p, 1);
+        }
+    }
+    if (m_9FB8) {
+        m_9FB0 = 0;
+        m_9FB4 = 0;
+    }
+    pGfx = (char *)&gGfxEng + 0x154F00;
+    if (*(int *)(pGfx + 0x2070)) {
+        *(int *)(pGfx + 0x2068) = 0;
+        *(int *)(pGfx + 0x206C) = 0;
+    }
+    if (*(int *)((char *)&gGfxEng + 0x154F00 + 0x2080)) {
+        *(int *)((char *)&gGfxEng + 0x154F00 + 0x2078) = 0;
+        *(int *)((char *)&gGfxEng + 0x154F00 + 0x207C) = 0;
+    }
+}
+
+// DRAFT: 0x19AD50 LoadStaticInstanceMeshes__6PWorldFP8PPakFileP6PArray16ePsx2FileVersion
+// note: 39 differing lines: join nop at 0x7C and assert-path nop at 0x9C missing, loop-tail nops, gGfxEng folded as lui 0x46/addiu -0x4A80 in original; tried pSystem block scope and single-constant gGfxEng, no gain
+int PWorld::LoadStaticInstanceMeshes(PPakFile *pFile, PArray *pArray, ePsx2FileVersion nVersion) {
+    PStaticInstanceMesh *pMesh;
+    char aHeader[0x18];
+    unsigned int i;
+    void *pSystem;
+
+    if (((PCDFile *)pFile)->Read(aHeader, 0x18) != 0x18) {
+        return 0;
+    }
+    for (i = 0; i < *(unsigned int *)aHeader; i++) {
+        pMesh = (PStaticInstanceMesh *)__nw__FUi(0x14);
+        if (pMesh) {
+            pMesh = (PStaticInstanceMesh *)__ct__19PStaticInstanceMeshFv(pMesh);
+        }
+        if (!pMesh) {
+            CdsAssert__FPciPc("PWorld.cpp", 0x2F7, (char *)"apMesh");
+        }
+        if (Load__19PStaticInstanceMeshFP8PPakFileP6PArray16ePsx2FileVersion(pMesh, pFile, pArray, nVersion) == 0) {
+            return 0;
+        }
+        Add__6PArrayFPv(&m_9FB0, pMesh);
+        pSystem = *(void **)((char *)pMesh + 0x10);
+        if (pSystem) {
+            AddMasterParticleInstance__16PParticleManagerFP15PParticleSystem((char *)&gGfxEng + 0x154F00, pSystem);
+        }
+    }
+    return 1;
+}
+
 // FUNCTION: 0x19AE80 RenderWorld__6PWorldFv
 void PWorld::RenderWorld() {
     if (m_pSpacePartitionTree != 0) {
@@ -236,6 +320,73 @@ void PWorld::UpdateAnimate(PMNode *pNode) {
             }
         }
     }
+}
+
+// DRAFT: 0x19B400 Destroy__6PWorldFv
+// note: 69 differing lines; this sits in s0 and the loop counter in s2 (original: s2 and s0); for-loop, comma-increment and declaration-order variants all stay at 69
+void PWorld::Destroy() {
+    int i;
+    int off;
+
+    off = 0;
+    for (i = 0; i < 4; i++, off += 0x2140) {
+        Unload__15PCutScenePlayerFb((char *)this + off + 0x220, false);
+    }
+    m_8720 = 0;
+    if (m_pSpacePartitionTree) {
+        __dt__19PSpacePartitionTreeFv(m_pSpacePartitionTree, 1);
+        m_pSpacePartitionTree = 0;
+    }
+    if (m_pMeshNode) {
+        (*(void (**)(void *, int))(*(char **)m_pMeshNode + 8))(m_pMeshNode, 1);
+    }
+    m_pMeshNode = 0;
+    DestroyFxTriggers__6PMNodeFbbb(m_pMeshNode, false, true, true);
+    if (*(void **)((char *)this + 4)) {
+        if (*(void **)((char *)this + 4)) {
+            (*(void (**)(void *, int))(*(char **)((char *)this + 4) + 8))(*(void **)((char *)this + 4), 1);
+        }
+        *(void **)((char *)this + 4) = 0;
+    }
+    DestroyAllStaticLights__13PLightManagerFv((char *)this + 0x1F0);
+    DestroyAllDynamicLights__13PLightManagerFv((char *)this + 0x1F0);
+    m_8728 = 0;
+    CleanupStaticInstanceMeshes();
+    Reset__13PWaterTextureFv((char *)this + 0x9FC0);
+    Reset__11PGasTextureFv((char *)this + 0x12690);
+    Reset__12PFireTextureFv((char *)this + 0x12C10);
+    Reset__11PFogTextureFv((char *)this + 0x13210);
+    (*(void (**)(void *))(*(char **)gInterface + 0xC))(gInterface);
+    RemoveAllParticleSystems__16PParticleManagerF8ePSLayer((char *)&gGfxEng + 0x154F00, 2);
+    RemoveAllParticleSystems__16PParticleManagerF8ePSLayer((char *)&gGfxEng + 0x154F00, 3);
+}
+
+// DRAFT: 0x19BE70 UpdateTimer__6PWorldFv
+// note: 51 lines differ: mfc0 sel bit (0x4010C800 vs 0x4011C801), fCounter in f2 vs f4, srl/andi order and or/mtc1 dest reg a0 vs v1 in the negative path, add.s dest, m_1E0/m_1E4 load order. Tried operand swap of or (53), fStep before fRate (54).
+void PWorld::UpdateTimer() {
+    int nCounter;
+    asm {
+        mfc0 nCounter, $25
+    }
+    scePcStart(0x8003403E, 0, 0);
+    float fCounter;
+    if (nCounter >= 0) {
+        fCounter = (float)nCounter;
+    } else {
+        float fHalf = (float)(int)(((unsigned int)nCounter >> 1) | (nCounter & 1));
+        fCounter = fHalf + fHalf;
+    }
+    float fRate = m_1E4;
+    float fStep = (fCounter * m_1E0) / 1000.0f;
+    float fResult;
+    if (fRate != 60.0f) {
+        fResult = (fStep * fRate) / 1000.0f;
+    } else if (MODE_PAL != 0) {
+        fResult = 1.2f * (float)(int)(0.5f + ((50.0f * fStep) / 1000.0f));
+    } else {
+        fResult = (float)(int)(0.5f + ((fStep * fRate) / 1000.0f));
+    }
+    m_1E8 = fResult;
 }
 
 // DRAFT: 0x19BFA0 InitRenderFrame__6PWorldFv
