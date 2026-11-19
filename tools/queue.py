@@ -2,7 +2,7 @@
 """On-disk job queue for decomp workers; keeps the coordinator's context small.
 
 A job is one game source file plus up to MAXF of its unclaimed functions
-(smallest first, at most MAXB bytes). A file has at most one active job, so
+(mid-sized first, at most MAXB bytes; trivial ones go to tools/trivial.py). A file has at most one active job, so
 a worker owns `src/game/<File>.cpp` and `<File>.h` exclusively.
 
 Usage:
@@ -26,7 +26,12 @@ ROOT = Path(__file__).resolve().parent.parent
 Q = ROOT / "build/queue"
 ACTIVE = Q / "active.json"
 RESULTS = ROOT / "build/results"
-MAXF, MAXB = 6, 0x500
+MAXF, MAXB = 5, 0x600
+# Functions of TRIVIAL bytes or less (empty bodies, one-load getters) are generated
+# by tools/trivial.py, not by workers; mid-sized functions give the most matched
+# bytes per worker token.
+TRIVIAL = 0x10
+SWEET = (0x20, 0x200)
 
 
 def load_active() -> list[dict]:
@@ -59,7 +64,7 @@ def candidates() -> dict[str, list[tuple[int, int, str]]]:
     for l in (ROOT / "config/units.tsv").read_text().splitlines()[1:]:
         a, b, k, n = l.split("\t")
         a, b = int(a, 16), int(b, 16)
-        if k != "func" or a in taken:
+        if k != "func" or a in taken or b - a <= TRIVIAL:
             continue
         tu = next((t for t in tus if t[0] <= a < t[1]), None)
         if tu and tu[2] == "game" and not tu[3].startswith("unk_"):
@@ -72,7 +77,8 @@ def take(n: int) -> list[dict]:
     busy = {j["file"] for j in act}
     cands = candidates()
     # Files with the most small functions first: the highest matched bytes per worker-hour.
-    order = sorted(cands, key=lambda f: -sum(1 for _, s, _ in cands[f] if s <= 0x100))
+    sweet = lambda s: SWEET[0] <= s <= SWEET[1]
+    order = sorted(cands, key=lambda f: -sum(s for _, s, _ in cands[f] if sweet(s)))
     jobs = []
     for f in order:
         if len(jobs) >= n:
@@ -80,7 +86,7 @@ def take(n: int) -> list[dict]:
         if f in busy:
             continue
         pick, total = [], 0
-        for a, s, nm in sorted(cands[f], key=lambda x: x[1]):
+        for a, s, nm in sorted(cands[f], key=lambda x: (not sweet(x[1]), x[1])):
             if len(pick) < MAXF and total + s <= MAXB:
                 pick.append((a, s, nm))
                 total += s
