@@ -10,3 +10,4 @@ tools/compilers/*.tar.*
 src/scratch/
 __pycache__/
 .ninja_*
+ext/
