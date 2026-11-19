@@ -185,7 +185,15 @@ def render_m2c(name: str, addr: int, size: int) -> list[str]:
 
 
 def main() -> int:
-    a, s, n = lookup(sys.argv[1])
+    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
+        print(__doc__.strip())
+        return 0 if len(sys.argv) > 1 else 2
+    try:
+        a, s, n = lookup(sys.argv[1])
+    except (StopIteration, ValueError):
+        # Data addresses (literals, vtables) and unknown names have no function entry.
+        print(f"{sys.argv[1]}: not the start of a function in .main", file=sys.stderr)
+        return 1
     if "--m2c" in sys.argv:
         print("\n".join(render_m2c(n, a, s)))
         return 0

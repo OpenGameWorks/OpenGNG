@@ -23,7 +23,10 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def main() -> int:
-    elf = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "original/extracted/SLUS_207.22"
+    if len(sys.argv) > 1 and sys.argv[1] in ("-h", "--help"):
+        print(__doc__.strip())
+        return 0
+    elf =Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "original/extracted/SLUS_207.22"
     out = Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "build/info"
     out.mkdir(parents=True, exist_ok=True)
     with elf.open("rb") as fh:
