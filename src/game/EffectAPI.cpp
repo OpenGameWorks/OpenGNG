@@ -49,6 +49,16 @@ public:
     virtual int Slot4(int arg0, int arg1, int arg2, float arg3, float arg4);
 };
 
+// The node's update handler sits at vtable byte offset 0x18 (slot 4 after the 8-byte header).
+class EffectUpdateNode {
+public:
+    virtual void Slot0();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void Slot3();
+    virtual int Slot4(int arg0, int arg1, int arg2, float arg3, float arg4);
+};
+
 // Pling and ghost entries are scanned through vtable slots 3 (type id) and 4 (owner pointer).
 class EffectEntry {
 public:
@@ -57,6 +67,13 @@ public:
     virtual void Slot2();
     virtual int Slot3();
     virtual void *Slot4();
+};
+
+// Animate walks entries through vtable offset 0x8 (slot 0, int arg) and 0xC (slot 1, float arg, int result).
+class EffectAnimNode {
+public:
+    virtual void Slot0(int arg0);
+    virtual int Slot1(float arg0);
 };
 
 class PMat4;
@@ -90,6 +107,9 @@ extern "C" int printf(const char *fmt, ...);
 extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" GhostEffect *__ct__11GhostEffectFP9PMeshNode(GhostEffect *pThis, PMeshNode *arg0);
+extern "C" OneshotEffect *__ct__13OneshotEffectFUiUiP5PMat4P15EntityBaseClassfib(OneshotEffect *pThis, unsigned int arg0, unsigned int arg1, PMat4 *arg2, EntityBaseClass *arg3, float arg4, int arg5, bool arg6);
+extern "C" OneshotEffect *__ct__13OneshotEffectFUiUiPA4_fPA4_fP15EntityBaseClassfbib(OneshotEffect *pThis, unsigned int arg0, unsigned int arg1, float (*arg2)[4], float (*arg3)[4], EntityBaseClass *arg4, float arg5, bool arg6, int arg7, bool arg8);
+extern "C" PlingEffect *__ct__11PlingEffectFP15EntityBaseClassPA4_fUiUib(PlingEffect *pThis, EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4);
 class PMesh {
 public:
     int Render(int arg0, bool *arg1, bool arg2);
@@ -98,6 +118,7 @@ extern "C" void sceVu0UnitMatrix(PMat4 *arg0);
 void vu1SetWorldMatrix(PMat4 *arg0);
 void vu1BeginMesh(eBoxIntersect arg0);
 void vu1EndMesh();
+float Round180(float arg0);
 void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern unsigned char mEffectAPI__13EntityManager[0x10];
 extern unsigned char __vt__10EffectNode[0x40];
@@ -123,6 +144,32 @@ EffectNode *EffectAPI::FindPling(EntityBaseClass *arg0) {
         } while (pNode != 0);
     }
     return 0;
+}
+
+// DRAFT: 0x155F00 CreatePling__9EffectAPIFP15EntityBaseClassPA4_fUiUib
+// note: 20 differing words: this and the result swap s1/s0 (original this=s1, result=s0). Tried: direct cast init, separate pFound, cast at member access, pPling=0 then assign, pSelf=this local.
+PlingEffect *EffectAPI::CreatePling(EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4) {
+    PlingEffect *pPling = 0;
+    pPling = (PlingEffect *)FindPling(arg0);
+    if (pPling != 0) {
+        pPling->m_unk14 = 0;
+        *(int *)(pPling->m_unk4 + 0x2C) = 0x3F800000;
+    } else {
+        pPling = (PlingEffect *)__nw__FUi(0x30);
+        if (pPling != 0) {
+            pPling = __ct__11PlingEffectFP15EntityBaseClassPA4_fUiUib(pPling, arg0, arg1, arg2, arg3, arg4);
+        }
+        if (pPling != 0) {
+            int nId = m_unk10;
+            m_unk10 = nId + 1;
+            pPling->m_unk8 = nId;
+            if (m_unk0 >= 0x80) {
+                CdsAssert("EffectAPI.cpp", 0x1AD, "mEffectList.GetCount() < MAX_EFFECTS");
+            }
+            Add__6PArrayFPv(this, pPling);
+        }
+    }
+    return pPling;
 }
 
 // FUNCTION: 0x156010 CreatePling__9EffectAPIFP15EntityBaseClassfUiUib
@@ -212,6 +259,111 @@ void EffectNode::SendDeleteEvent(int arg0) {
     EffectTarget *pTarget = (EffectTarget *)((EntityManager *)(gEng + 0x137E0))->GetPtrToApparition(arg0);
     if (pTarget != 0) {
         pTarget->SendDeleteEvent(m_unk8);
+    }
+}
+
+// DRAFT: 0x00156490 Update__13OneshotEffectFf
+// note: 3 differing lines: visibility constant uses addiu (original daddiu) in the delay slot at 0x2C, and the box/matrix args are computed in the opposite order (original a2 first). Tried: pMat local, pBox and pMat locals, pSlot base for the float store.
+int OneshotEffect::Update(float arg0) {
+    int nVisible;
+    if (m_unk4 != 0) {
+        nVisible = 1;
+        if (m_unk18 != 0) {
+            void *pApp = ((EntityManager *)(gEng + 0x137E0))->GetPtrToApparition(m_unk18);
+            if (pApp != 0 && ((unsigned char *)pApp)[0x167] == 0) {
+                nVisible = 0;
+            }
+        }
+        if (nVisible == 0 || (((EffectUpdateNode *)m_unk4)->Slot4(m_unk10, 8, 0, 0.0f, arg0) & 7) != 0) {
+            if (m_unk1C != 0) {
+                float *pSlot = (float *)(m_unk4 + 0x90);
+                pSlot[1] = Round180(180.0f + *(float *)(gEng + 0x19784));
+            }
+            PMat4 *pMat = (PMat4 *)(m_unk4 + 0x40);
+            float (*pBox)[2][4] = (float (*)[2][4])(m_unk4 + 0x110);
+            int test = mpFrustum__15EntityBaseClass->IntersectBox(pBox, pMat);
+            ((PMNode *)m_unk4)->SetAllFrustrumTest((eBoxIntersect)test);
+            return 1;
+        }
+    }
+    SendDeleteEvent(m_unk18);
+    return 0;
+}
+
+// FUNCTION: 0x001565A0 CreateOneshot__9EffectAPIFUiUiP5PMat4P15EntityBaseClassfib
+int EffectAPI::CreateOneshot(unsigned int arg0, unsigned int arg1, PMat4 *arg2, EntityBaseClass *arg3, float arg4, int arg5, bool arg6) {
+    int nId = 0;
+    OneshotEffect *pOneshot = (OneshotEffect *)__nw__FUi(0x20);
+    if (pOneshot != 0) {
+        pOneshot = __ct__13OneshotEffectFUiUiP5PMat4P15EntityBaseClassfib(pOneshot, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+    }
+    if (pOneshot != 0) {
+        if (m_unk0 >= 0x80) {
+            CdsAssert("EffectAPI.cpp", 0x10E, "mEffectList.GetCount() < MAX_EFFECTS");
+        }
+        Add__6PArrayFPv(this, pOneshot);
+        nId = m_unk10;
+        m_unk10 = nId + 1;
+        pOneshot->m_unk8 = nId;
+    }
+    return nId;
+}
+
+// FUNCTION: 0x00156850 CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib
+int EffectAPI::CreateOneshot(unsigned int arg0, unsigned int arg1, float (*arg2)[4], float (*arg3)[4], EntityBaseClass *arg4, float arg5, bool arg6, int arg7, bool arg8) {
+    int nId = 0;
+    OneshotEffect *pOneshot = (OneshotEffect *)__nw__FUi(0x20);
+    if (pOneshot != 0) {
+        pOneshot = __ct__13OneshotEffectFUiUiPA4_fPA4_fP15EntityBaseClassfbib(pOneshot, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+    }
+    if (pOneshot != 0) {
+        if (m_unk0 >= 0x80) {
+            CdsAssert("EffectAPI.cpp", 0xEC, "mEffectList.GetCount() < MAX_EFFECTS");
+        }
+        Add__6PArrayFPv(this, pOneshot);
+        nId = m_unk10;
+        m_unk10 = nId + 1;
+        pOneshot->m_unk8 = nId;
+    }
+    return nId;
+}
+
+// DRAFT: 0x00156E00 Animate__9EffectAPIFf
+// note: frame and saves match; loop rotation differs (original enters with `b` to a bottom test at 0x44, ours tests at top), and the dead-entry store folds the sp+0x60 offset where the original computes sp+0x60 then adds s1. Tried: byte offset nOff, for-loop form, nDead++ before store (no change).
+void EffectAPI::Animate(float arg0) {
+    EffectAnimNode *aDead[64];
+    int nDead = 0;
+    EffectAnimNode *pNode;
+    m_unk4 = 0;
+    if (m_unk0 != 0) {
+        pNode = (EffectAnimNode *)m_ppEntries[0];
+    } else {
+        pNode = 0;
+    }
+    int nOff = 0;
+    while (pNode != 0) {
+        if (pNode->Slot1(arg0) == 0) {
+            nDead++;
+            *(EffectAnimNode **)((char *)aDead + nOff) = pNode;
+            RemoveCurrent__6PArrayFv(this);
+            nOff += 4;
+        }
+        m_unk4++;
+        if (m_unk4 < m_unk0) {
+            pNode = (EffectAnimNode *)m_ppEntries[m_unk4];
+        } else {
+            pNode = 0;
+        }
+    }
+    if (nDead > 0) {
+        int nOff2 = 0;
+        for (int i = 0; i < nDead; i++) {
+            EffectAnimNode *pDead = *(EffectAnimNode **)((char *)aDead + nOff2);
+            if (pDead != 0) {
+                pDead->Slot0(1);
+            }
+            nOff2 += 4;
+        }
     }
 }
 

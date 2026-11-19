@@ -8,6 +8,8 @@ class EffectNode;
 class GhostEffect;
 class PLightManager;
 class PMeshNode;
+class PlingEffect;
+class PMat4;
 
 // EffectAPI derives from PArray at offset 0; the base is not declared here,
 // so the constructor reaches it through the .cpp foreign declarations.
@@ -16,14 +18,17 @@ public:
     EffectAPI();
     EffectNode *FindPling(EntityBaseClass *arg0);
     void CreatePling(EntityBaseClass *arg0, float arg1, unsigned int arg2, unsigned int arg3, bool arg4);
-    void CreatePling(EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4);
+    PlingEffect *CreatePling(EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4);
     GhostEffect *CreateGhost(PMeshNode *arg0);
+    int CreateOneshot(unsigned int arg0, unsigned int arg1, PMat4 *arg2, EntityBaseClass *arg3, float arg4, int arg5, bool arg6);
+    int CreateOneshot(unsigned int arg0, unsigned int arg1, float (*arg2)[4], float (*arg3)[4], EntityBaseClass *arg4, float arg5, bool arg6, int arg7, bool arg8);
     EffectNode *EffectValid(unsigned int arg0);
     void DeleteEffect(EffectNode *arg0);
     void DeleteEffect(EntityBaseClass *arg0);
     void DeleteEffect(unsigned int arg0);
     int Render(PLightManager *arg0);
     void Reset();
+    void Animate(float arg0);
     void EnableParticleFx(bool arg0);
 
     unsigned int m_unk0;        // 0x000 effect count (PArray base region)
@@ -48,6 +53,9 @@ public:
 class PlingEffect : public EffectNode {
 public:
     virtual ~PlingEffect();
+
+    char _pad010[4];
+    int m_unk14;                // 0x014 cleared when an existing pling is reused
 };
 
 class GhostEffect : public EffectNode {
@@ -68,6 +76,12 @@ public:
 class OneshotEffect : public EffectNode {
 public:
     virtual ~OneshotEffect();
+    int Update(float arg0);
+
+    int m_unk10;                // 0x010
+    char _pad014[4];
+    unsigned int m_unk18;       // 0x018
+    unsigned char m_unk1C;      // 0x01C
 };
 
 #endif
