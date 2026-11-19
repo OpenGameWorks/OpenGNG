@@ -11,7 +11,7 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4`) that `tool
 ## Ownership
 
 - The job names one source `src/game/<File>.cpp` and its header `src/game/<File>.h`; the file name comes from the executable's own `__FILE__` strings. You edit those two files only; every other file belongs to another worker.
-- Declarations of other classes, functions and globals go near the top of your .cpp under `// TODO(header): foreign declarations`, never into another file. Include `"types.h"` and your own header only.
+- Declarations of other classes, functions and globals go near the top of your .cpp under `// TODO(header): foreign declarations`, never into another file. Include `"types.h"`, your own header, and shared read-only class headers such as `"PArray.h"`; those stay unedited.
 - An existing .cpp keeps its contents; your functions go in address order among them.
 - Scratch experiments go in `src/scratch/<job-id>/`.
 
