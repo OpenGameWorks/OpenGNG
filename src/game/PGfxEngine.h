@@ -19,6 +19,10 @@ public:
     void EndFxRender();
     void UpdateLights(struct tagVuLightingInfo *pInfo);
     void SetScreenMatrix(PMat4 *pMat);
+    void SetViewMatrix(PMat4 *pMat);
+    void SetClipMatrix(PMat4 *pMat);
+    void SetGlowSizeAndColor(float fA, float fB, float *pColor);
+    void EnableFullScreenFx(bool bEnable);
     void FadeFullScreenMotionBlur(char cTarget, int nFrames);
 
     char _pad000[0x154C80];
@@ -29,12 +33,17 @@ public:
     unsigned char m_unk158E23;          // 0x158E23
     char _pad158E24[0x158EB0 - 0x158E24];
     float m_unk158EB0[4];               // 0x158EB0
-    char _pad158EC0[0x16D3C0 - 0x158EC0];
-    char m_unk16D3C0[0x40];             // 0x16D3C0, copy of a PMat4
+    char _pad158EC0[0x16D340 - 0x158EC0];
+    char m_unk16D340[0x40];             // 0x16D340, copy of a PMat4 (clip)
+    char m_unk16D380[0x40];             // 0x16D380, copy of a PMat4 (view)
+    char m_unk16D3C0[0x40];             // 0x16D3C0, copy of a PMat4 (screen)
     char _pad16D400[0x16D404 - 0x16D400];
     char m_unk16D404;                   // 0x16D404
     char m_unk16D405;                   // 0x16D405
     char m_unk16D406;                   // 0x16D406
+    char _pad16D407[0x16D410 - 0x16D407];
+    char m_unk16D410[0x202C];           // 0x16D410, PGrid
+    float m_unk16F43C;                  // 0x16F43C
 };
 
 #endif
