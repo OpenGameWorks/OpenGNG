@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "Player.h"
 
 // TODO(header): foreign declarations
@@ -35,6 +36,19 @@ public:
     void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
     void EnableFx(bool arg0, bool arg1);
 };
+class Debug {
+public:
+    void DebugDisp(char *pText);
+    char _pad000[0x10];
+};
+extern Debug gDebug;
+extern "C" int sprintf(char *pDst, const char *pFmt, ...);
+extern "C" long long fptodp(float arg0);
+extern "C" void CdsAssert__FPciPc(char *, int, char *);
+extern "C" void memcpy(void *, const void *, unsigned int);
+extern "C" void __dl__FPv(void *pMem);
+extern unsigned char __vt__10PAnimFrame[];
+extern "C" void *__dt__5PAnimFv(void *pThis, short nFlag);
 
 // FUNCTION: 0x00158F60 Ready2Clear__6PlayerFv
 unsigned char Player::Ready2Clear() {
@@ -58,6 +72,15 @@ int Player::IsPauseDisabled() {
         ret = gEng[0x19A18] != 0;
     }
     return ret;
+}
+
+// FUNCTION: 0x00159AF0 OutputDebug__6PlayerFv
+void Player::OutputDebug() {
+    char buf[0x100];
+    if (m_unk3C != 0) {
+        sprintf(buf, "Action %d, frame %f, Atk(%d, 0x%x), Combo %d", m_unk260, fptodp(m_unk3C[13]), m_unk15C, m_unk15E, m_unk220);
+        gDebug.DebugDisp(buf);
+    }
 }
 
 // note: 8 words differ: original keeps the loaded value in v1 and the 1 in v0 before the 0x2A compare; compiled code loads into a0 and uses daddiu. Tried bool, ||, nested if/else and unsigned char locals.
@@ -97,6 +120,29 @@ int Player::CheckDuplicate(int arg0) {
     return 0;
 }
 
+// note: 15 words differ: original loads 3 into a0 and 2 into v1 before the loop, compiled code swaps them; the bltz guard on negative bytes is now present. Tried if-chain, switch, case order swap, pointer/counter declaration order and the guard (V1-V6).
+// DRAFT: 0x0015A880 CheckHammer__6PlayerFb
+int Player::CheckHammer(bool arg0) {
+    signed char *p = m_unk23B;
+    int i = 0;
+    do {
+        int c = *p++;
+        if (c >= 0) {
+            switch (c) {
+            case 3:
+                return 1;
+            case 2:
+                if (!arg0) {
+                    return 1;
+                }
+                break;
+            }
+        }
+        i++;
+    } while (i < 8);
+    return 0;
+}
+
 // FUNCTION: 0x0015AEE0 GetBoxer__6PlayerFi
 void Player::GetBoxer(int arg0) {
     GameVarSet(0x11, arg0 - 0x15);
@@ -111,6 +157,26 @@ void Player::ResetShield() {
         m_unk2A4 = 0;
         SetShield(true);
     }
+}
+
+// note: 2 words differ: the zero-set for the return-0 arm lands in the bne delay slot and the nop moves to the b delay slot. Tried ret=0 and return 0 in the != 1 arm (both 2 lines), and the == 1 layout (about 20 lines).
+// DRAFT: 0x0015C490 IsMidasActive__6PlayerFv
+void *Player::IsMidasActive() {
+    void *ret;
+    if (m_unk210 != 1) {
+        ret = 0;
+    } else {
+        if (m_unk2A4 != 0) {
+            ret = m_unk2A4;
+        } else {
+            Player *p = this;
+            if (!(m_unk264 & 2) || ((m_unk1B0 & 0x200) == 0)) {
+                p = 0;
+            }
+            ret = p;
+        }
+    }
+    return ret;
 }
 
 // note: 12 words differ: original tests m_unk250 with beqz into the body and exits via b with ld ra in the delay slot; compiled code emits bnez to the shared exit. Tried nested if, inner early return and && forms, all 12 words.
@@ -189,6 +255,18 @@ void Player::UpdatePlayerFx() {
     }
 }
 
+// FUNCTION: 0x00160CD0 __dt__10PAnimFrameFv
+extern "C" void *__dt__10PAnimFrameFv(void *pThis, short nFlag) {
+    if (pThis != 0) {
+        *(unsigned char **)pThis = __vt__10PAnimFrame;
+        __dt__5PAnimFv(pThis, 0);
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
+}
+
 // FUNCTION: 0x00163930 BackToMaximo__6PlayerFv
 void Player::BackToMaximo() {
     if (m_unk229 == 4) {
@@ -223,6 +301,15 @@ void Player::ResetPling() {
         }
         m_unk32C = 0;
     }
+}
+
+// FUNCTION: 0x00165930 SavePlayerData__6PlayerFPQ26Player10PlayerData
+void Player::SavePlayerData(Player::PlayerData *arg0) {
+    if (arg0 == 0) {
+        CdsAssert__FPciPc("Player.cpp", 0x58C, "pData");
+    }
+    m_unk21C = 0;
+    memcpy(arg0, &m_unk1D0, 0x7C);
 }
 
 // FUNCTION: 0x00165B60 Kill__6PlayerFv
