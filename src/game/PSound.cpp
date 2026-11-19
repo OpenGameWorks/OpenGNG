@@ -15,6 +15,12 @@ extern char gEng[105360];
 extern "C" void __ct__14PFadeMsecFloatFv(void *);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 
+// FUNCTION: 0x001A3C70 AddAEToFreeList__6PSoundFPQ26PSound12AmbientEntry
+void PSound::AddAEToFreeList(AmbientEntry *pEntry) {
+    pEntry->Init();
+    InsertAEAtHead(&m_unkF4, pEntry);
+}
+
 // FUNCTION: 0x001A3E60 LinkAmbientEntry__6PSoundFPQ26PSound12AmbientEntryPQ26PSound12AmbientEntry
 void PSound::LinkAmbientEntry(AmbientEntry *pEntry, AmbientEntry *pNext) {
     AmbientEntry *pTemp;
@@ -30,11 +36,37 @@ void PSound::LinkAmbientEntry(AmbientEntry *pEntry, AmbientEntry *pNext) {
     }
 }
 
+// FUNCTION: 0x001A3E90 DelinkAmbientEntry__6PSoundFPQ26PSound12AmbientEntry
+void PSound::DelinkAmbientEntry(AmbientEntry *pEntry) {
+    if (pEntry != 0) {
+        AmbientEntry *pNext = pEntry->m_unk50;
+        AmbientEntry *pPrev = pEntry->m_unk54;
+        if (pNext != 0) {
+            pNext->m_unk54 = pPrev;
+        }
+        if (pPrev != 0) {
+            pPrev->m_unk50 = pNext;
+        }
+        if (m_unkF4 == pEntry) {
+            m_unkF4 = pNext;
+        }
+        pEntry->m_unk50 = 0;
+        pEntry->m_unk54 = 0;
+    }
+}
+
 // FUNCTION: 0x001A4390 AbilityScreenLeave__6PSoundFv
 void PSound::AbilityScreenLeave() {
     KillByCategories(0x200);
     PauseByCategories(0);
     SetMainMusicSpecialVolume(MUSIC_SPECIAL_VOLS_NONE);
+}
+
+// FUNCTION: 0x001A43D0 AbilityScreenEnter__6PSoundFv
+void PSound::AbilityScreenEnter() {
+    KillByCategories(0x200);
+    PauseByCategories(0x8C);
+    SetMainMusicSpecialVolume((EnumMusicSpecialVols)1);
 }
 
 // FUNCTION: 0x001A5780 SetProposedReverbParams__6PSoundFUiUiUiUiUi
@@ -101,6 +133,19 @@ void PSound::ResumeAmbientEntry(AmbientEntry *pEntry) {
     }
 }
 
+// DRAFT: 0x001A8660 PauseAmbientEntry__6PSoundFPQ26PSound12AmbientEntryUi
+// note: 2 words differ: original keeps the flag compare in at (sltiu at / bnez at, store after inline return 0), ours compares into v0; tried if/else, result variable, nested return, inverted and local-load forms
+int PSound::PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag) {
+    if (pEntry == 0) {
+        return 0;
+    }
+    if (!(pEntry->m_unk10 < 0x3FFD)) {
+        return 0;
+    }
+    pEntry->m_unk16 |= 1;
+    return 0;
+}
+
 // FUNCTION: 0x001A8A80 IsAmbientSoundByID__6PSoundFUi
 int PSound::IsAmbientSoundByID(unsigned int nID) {
     SpotInfo *pInfo = GetSpotInfoPtrByPublicID(nID);
@@ -109,6 +154,22 @@ int PSound::IsAmbientSoundByID(unsigned int nID) {
         return -1;
     }
     return (pInfo->m_unk0C & 2) != 0;
+}
+
+// DRAFT: 0x001A8FA0 GetSpotInfo__6PSoundFUi
+// note: 13 words differ; original keeps the scan pointer in a0 (in-place addiu from this) and the end in a2, ours puts the pointer in v0 and the end in a0; byte cursor, SpotInfo cursor, for, do-while and while forms tried, best 13
+PSound::SpotInfo *PSound::GetSpotInfo(unsigned int nID) {
+    char *pCur = m_unk2EB4;
+    char *pEnd = pCur + 0x2580;
+    if (pCur < pEnd) {
+        do {
+            if (((SpotInfo *)pCur)->m_unk00 == (int)nID) {
+                return (SpotInfo *)pCur;
+            }
+            pCur += 0x18;
+        } while (pCur < pEnd);
+    }
+    return 0;
 }
 
 // FUNCTION: 0x001A9080 Resume__6PSoundFv

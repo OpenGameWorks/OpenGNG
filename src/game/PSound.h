@@ -88,6 +88,7 @@ public:
 
     void ErrorRecovery();
     void PSoundRestart();
+    void AbilityScreenEnter();
     void AbilityScreenLeave();
     void SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol);
     int PlayMusicOnStream(unsigned int p0, unsigned int p1, unsigned int p2);
@@ -99,6 +100,7 @@ public:
     void PSoundReInitSubWSoundCalls();
     int IsAmbientSoundByID(unsigned int nID);
     SpotInfo *GetSpotInfoPtrByPublicID(unsigned int nID);
+    SpotInfo *GetSpotInfo(unsigned int nID);
     void InternalUpdateRelVolumes();
     void AmbientFadeToFree(AmbientChannelState *pState);
     int StopAllSounds();
@@ -107,6 +109,10 @@ public:
     void EnableLevelProcessing(bool bEnable);
     void EnableProcessTriglets(bool bEnable);
     void LinkAmbientEntry(AmbientEntry *pEntry, AmbientEntry *pNext);
+    void InsertAEAtHead(AmbientEntry **ppHead, AmbientEntry *pEntry);
+    void AddAEToFreeList(AmbientEntry *pEntry);
+    void DelinkAmbientEntry(AmbientEntry *pEntry);
+    int PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag);
     void SetProposedReverbParams(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3, unsigned int p4);
     void SetMonoOut(bool bMono);
     void SetMainMusicRelVolume(unsigned int nVolume);
@@ -144,7 +150,10 @@ public:
     char _pad0D1[0x0EC - 0x0D1];
     int m_unk0EC;           // 0x0EC
     int m_unk0F0;           // 0x0F0
-    char _pad0F4[0x5438 - 0x0F4];
+    AmbientEntry *m_unkF4;  // 0x0F4, head of the ambient entry list (AddAEToFreeList passes &m_unkF4)
+    char _pad0F8[0x2EB4 - 0x0F8];
+    char m_unk2EB4[0x2580]; // 0x2EB4, 400 SpotInfo records of 0x18 bytes, GetSpotInfo scans them
+    char _pad5434[0x5438 - 0x5434];
     unsigned int m_unk5438; // 0x5438, SetProposedReverbParams arg 0
     char _pad543C[0x5444 - 0x543C];
     int m_unk5444;          // 0x5444, PSoundReInitSoundRooms sets -1
