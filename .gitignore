@@ -1,0 +1,12 @@
+*.iso
+*.chd
+original/
+build/
+build.ninja
+asm/
+.venv/
+tools/compilers/*/
+tools/compilers/*.tar.*
+src/scratch/
+__pycache__/
+.ninja_*
