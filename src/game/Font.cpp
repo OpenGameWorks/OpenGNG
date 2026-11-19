@@ -7,11 +7,24 @@ public:
     int Remove(void *pItem);
     void Add(void *pItem);
     void RemoveCurrent();
+    void Allocate(unsigned int nCount);
 };
+
+class PResourceManager {
+public:
+    int GetResource(unsigned int nId, bool bFlag);
+    int LoadGlobalResource(const char *pName, bool bFlag);
+};
+
+struct tagVuSprite;
 
 class PMovieOverlayEngine {
 public:
     void InitTextures(int *pTextures, int nCount);
+    void BeginSprites();
+    void DrawSprites(tagVuSprite *pSprite, int nCount, bool bFlag);
+    void EndSprites();
+    void SetMaterial(int nTexture, float *pColor, bool bFlag, unsigned long nArg4, unsigned long nArg5);
     char _pad[0x10];
 };
 
@@ -32,6 +45,14 @@ extern "C" void *__ct__16PResourceManagerFv(void *pThis);
 extern "C" void *__dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" void *__dt__16PResourceManagerFv(void *pThis, short nFlag);
 extern "C" float FastMath_Fabs__Ff(float f);
+extern "C" void *__dt__8FontNodeFv(FontNode *pThis, short nFlag);
+extern unsigned char mbFadeOut__8FontNode;
+extern char *mpTextBox__8FontNode;
+extern int mbEnableBox__8FontNode;
+extern unsigned char gInterface[];
+extern char Large_fontCharDef[0x100];
+extern float BOXX;
+extern float BOXY;
 
 // FUNCTION: 0x132F30 InitSubTitle__11FontManagerFi
 void FontManager::InitSubTitle(int arg0) {
@@ -85,6 +106,73 @@ void FontManager::EnableAllText(bool arg0) {
             }
         } while (pNode != 0);
     }
+}
+
+// DRAFT: 0x1330C0 InitFrame__11FontManagerFv
+// note: original is 0xD0 bytes against our 0xC8; original loads m_unk20 into a0 and stores a0 (new value) before the index reload, ours stores the old register and reloads; 25 words for both m_unk20 = m_unk20 + 1 and m_unk20++ (also tried local nIndex 28, pArg temp 43).
+void FontManager::InitFrame() {
+    FontNode *pNode;
+
+    m_unk20 = 0;
+    if (m_unk1C != 0) {
+        pNode = *m_unk24;
+    } else {
+        pNode = 0;
+    }
+    if (pNode != 0) {
+        do {
+            __dt__8FontNodeFv(pNode, 1);
+            if (pNode == m_unk18) {
+                m_unk18 = 0;
+                m_unk14 = 0;
+                m_unk12 = 0;
+                m_unk120 = 0;
+                mbFadeOut__8FontNode = 0;
+            }
+            m_unk20 = m_unk20 + 1;
+            pNode = 0;
+            if ((unsigned int)m_unk20 < (unsigned int)m_unk1C) {
+                pNode = m_unk24[m_unk20];
+            }
+        } while (pNode != 0);
+    }
+    if (m_unk24 != 0) {
+        m_unk1C = 0;
+        m_unk20 = 0;
+    }
+}
+
+// FUNCTION: 0x133190 RemoveAll__11FontManagerFb
+void FontManager::RemoveAll(bool arg0) {
+    FontNode *pNode;
+
+    m_unk4 = 0;
+    if (m_unk0 != 0) {
+        pNode = *m_unk8;
+    } else {
+        pNode = 0;
+    }
+    if (pNode != 0) {
+        do {
+            ((PArray *)((char *)this + 0x1C))->Add(pNode);
+            int nIndex = m_unk4 + 1;
+            m_unk4 = nIndex;
+            pNode = 0;
+            if ((unsigned int)nIndex < (unsigned int)m_unk0) {
+                pNode = m_unk8[m_unk4];
+            }
+        } while (pNode != 0);
+    }
+    if (m_unk8 != 0) {
+        m_unk0 = 0;
+        m_unk4 = 0;
+    }
+    m_unk18 = 0;
+    m_unk14 = 0;
+    m_unk12 = 0;
+    m_unk120 = 0;
+    mbFadeOut__8FontNode = 0;
+    ResetWarning();
 }
 
 // FUNCTION: 0x133250 RemoveText__11FontManagerFP8FontNode
@@ -187,6 +275,24 @@ unsigned short *FontManager::JapanAddNumber(unsigned short *pStr, unsigned short
     return pDst;
 }
 
+// DRAFT: 0x1338A0 AdjustTextBox__8FontNodeFPf
+// note: our code is 0xC0 bytes vs 0xB8; BOXX/BOXY gp offsets and the mpTextBox reload pattern differ, 32 words.
+void FontNode::AdjustTextBox(float *arg0) {
+    char *pMesh;
+    float *pBox;
+
+    pBox = (float *)this;
+    if (mpTextBox__8FontNode != 0) {
+        pMesh = *(char **)(mpTextBox__8FontNode + 0x10);
+        if (pMesh == 0) {
+            CdsAssert("Font.cpp", 0x282, "pMesh");
+        }
+        *(float *)(mpTextBox__8FontNode + 0x40) = ((BOXX + (pBox[2] - pBox[0])) * 0.5f) / *(float *)(pMesh + 0x20);
+        *(float *)(mpTextBox__8FontNode + 0x54) = ((BOXY + (pBox[3] - pBox[1])) * 0.5f) / *(float *)(pMesh + 0x24);
+        *(float *)(mpTextBox__8FontNode + 0x74) = 0.5f * (pBox[3] + pBox[1]);
+    }
+}
+
 // FUNCTION: 0x133E00 __dt__8FontNodeFv
 extern "C" void *__dt__8FontNodeFv(FontNode *pThis, short nFlag) {
     if (pThis != 0) {
@@ -237,10 +343,50 @@ int FontNode::AdvanceText() {
     return ret;
 }
 
+// DRAFT: 0x134110 RenderFMV__8FontNodeFiP9FontTableb
+// note: 1 word differs, the c.eq.s operand order ($f1,$f0 in original); tried shared epilogue, 0x3048D constant, swapped compare operands, !(m_unk8 == 0.0f); all still 1 word.
+int FontNode::RenderFMV(int nId, FontTable *pTable, bool bUnused) {
+    float afColor[4];
+
+    if (m_unkC >= 2) {
+        if (!(m_unk8 == 0.0f)) {
+            afColor[0] = m_unk8;
+            afColor[1] = m_unk8;
+            afColor[2] = m_unk8;
+            afColor[3] = 1.0f;
+            pTable = (FontTable *)((char *)pTable + m_unkE * 12);
+            gOverlayEng.BeginSprites();
+            nId = *(int *)((char *)pTable + 8);
+            gOverlayEng.SetMaterial(nId, afColor, 0, 0x44, 0x3048D);
+            gOverlayEng.DrawSprites((tagVuSprite *)m_unk0, m_unkC, 0);
+            gOverlayEng.EndSprites();
+        }
+    }
+    return nId;
+}
+
 // FUNCTION: 0x134690 InitFMV__11FontManagerFv
 void FontManager::InitFMV() {
     int nTexture = m_unk10C;
     gOverlayEng.InitTextures(&nTexture, 1);
+}
+
+// DRAFT: 0x1346C0 Init__11FontManagerFv
+// note: 55 words; the name literal is 0x240080 but the original relocates FontFile$6702 (lui/addiu, not ori), and a $ name cannot be declared in C++; the first Allocate call also keeps this in s1 with a 0x30 frame where the original uses s0 and a 0x20 frame.
+void FontManager::Init() {
+    ((PArray *)this)->Allocate(0x30);
+    ((PArray *)((char *)this + 0x1C))->Allocate(0x30);
+    ((PArray *)((char *)this + 0x110))->Allocate(4);
+    if (((PResourceManager *)((char *)this + 0x2C))->LoadGlobalResource((char *)0x240080, 0) == 0) {
+        CdsAssert("Font.cpp", 0x5E, "0");
+    }
+    gInterface[0x1B37] = 1;
+    m_unk104 = (int)&Large_fontCharDef | 0x30000000;
+    m_unk108 = 0x21;
+    m_unk10A = 0xFE;
+    m_unk10C = ((PResourceManager *)((char *)this + 0x2C))->GetResource(0x8400000B, 0);
+    mpTextBox__8FontNode = (char *)((PResourceManager *)((char *)this + 0x2C))->GetResource(0x810001DC, 0);
+    mbEnableBox__8FontNode = 0;
 }
 
 // FUNCTION: 0x1347A0 SetLanguage__11FontManagerFc
