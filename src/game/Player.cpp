@@ -35,6 +35,20 @@ class PMNode {
 public:
     void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
     void EnableFx(bool arg0, bool arg1);
+    float GetFrameTime();
+};
+class FreeJoint {
+public:
+    int m_unk00;
+    signed char m_unk04;
+    char _pad05[3];
+};
+extern FreeJoint m_pFreeJoints[5];
+class Physics {
+public:
+    char _pad000[0x11C];
+    float m_unk11C;
+    void SetPhysicsType(unsigned int arg0, float (*arg1)[4]);
 };
 class Debug {
 public:
@@ -42,6 +56,16 @@ public:
     char _pad000[0x10];
 };
 extern Debug gDebug;
+class Camera {
+public:
+    int SetHeadCam(bool arg0);
+};
+class PSound {
+public:
+    char _pad000[0x18080];
+    void PlaySoundApparition(unsigned int arg0, unsigned int arg1);
+};
+extern PSound gSound;
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 extern "C" long long fptodp(float arg0);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
@@ -74,12 +98,52 @@ int Player::IsPauseDisabled() {
     return ret;
 }
 
+// FUNCTION: 0x00159720 InitAttachableJoints__6PlayerFv
+void Player::InitAttachableJoints() {
+    m_unk23D0 = 0;
+    m_unk23D4 = 5;
+    m_unk23D1 = 0;
+    m_unk2F8 = 0;
+    m_pFreeJoints[0].m_unk00 = 0;
+    m_pFreeJoints[0].m_unk04 = 1;
+    m_pFreeJoints[1].m_unk00 = 0;
+    m_pFreeJoints[1].m_unk04 = 1;
+    m_pFreeJoints[2].m_unk00 = 0;
+    m_pFreeJoints[2].m_unk04 = 1;
+    m_pFreeJoints[3].m_unk00 = 0;
+    m_pFreeJoints[3].m_unk04 = 1;
+    m_pFreeJoints[4].m_unk04 = 1;
+    m_pFreeJoints[4].m_unk00 = 0;
+}
+
 // FUNCTION: 0x00159AF0 OutputDebug__6PlayerFv
 void Player::OutputDebug() {
     char buf[0x100];
     if (m_unk3C != 0) {
         sprintf(buf, "Action %d, frame %f, Atk(%d, 0x%x), Combo %d", m_unk260, fptodp(m_unk3C[13]), m_unk15C, m_unk15E, m_unk220);
         gDebug.DebugDisp(buf);
+    }
+}
+
+// FUNCTION: 0x00159DD0 GetKeyMove__6PlayerFv
+void Player::GetKeyMove() {
+    if (m_unk250 == 0 && (int)((PMNode *)m_unk3C)->GetFrameTime() >= 2) {
+        m_unk250 = 1;
+        UpdateKey();
+        ((EntityBaseClass *)this)->PlaySound(0x1A);
+    }
+}
+
+// FUNCTION: 0x0015A300 CatchIdleMove__6PlayerFv
+void Player::CatchIdleMove() {
+    CatchLedgeMove();
+    if (m_unk250 == 0) {
+        m_unk250 = 1;
+    }
+    if (m_unk1B2 & 0x4000) {
+        m_unk1C4 = ((Physics *)m_unk38)->m_unk11C;
+        SetAction(0x2C);
+        ((Physics *)m_unk38)->SetPhysicsType(0x800, 0);
     }
 }
 
@@ -205,6 +269,17 @@ void Player::CancelMove() {
     }
 }
 
+// FUNCTION: 0x0015DF60 CancelAttack__6PlayerFUi
+int Player::CancelAttack(unsigned int arg0) {
+    m_unk264 |= arg0;
+    if (m_unk2A4 == 0) {
+        if ((m_unk38[0x42] & 1) && (m_unk1B0 & 0x200)) {
+            return SetAction(0x27);
+        }
+    }
+    return 0;
+}
+
 // note: 10 words differ: original branches to the body on beqz and skips it with an unthreaded b to the epilogue; compiled code threads that into bnez. Tried the early-return form and an empty-then if/else, both threaded the same way.
 // DRAFT: 0x0015E250 AirSliceMove__6PlayerFv
 void Player::AirSliceMove() {
@@ -282,6 +357,15 @@ void Player::ShowPlayer(bool arg0) {
     PMNode *temp = (PMNode *)m_unk288;
     if (temp != 0) {
         temp->EnableFx(arg0, true);
+    }
+}
+
+// FUNCTION: 0x00163FE0 SetHeadCamera__6PlayerFb
+void Player::SetHeadCamera(bool arg0) {
+    if (((Camera *)(gEng + 0x19760))->SetHeadCam(arg0) != 0) {
+        m_unk26C = arg0;
+        ShowPlayer(!arg0);
+        gSound.PlaySoundApparition(0x3F, 0x80000000U);
     }
 }
 

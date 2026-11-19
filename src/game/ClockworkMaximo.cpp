@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "ClockworkMaximo.h"
 #include "types.h"
 
@@ -32,6 +33,13 @@ extern "C" void __dl__FPv(void *);
 extern unsigned char __vt__15ClockworkMaximo[0x40];
 extern "C" void *InstanceIsValid__15EntityBaseClassFUi(unsigned int);
 extern MathAPI *mPlayerAPI__13EntityManager;
+extern "C" void *Spawn__13EntityManagerFUibi(void *, unsigned int, bool, int);
+extern "C" void InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(void *, int, float (*)[4], float (*)[4], float (*)[4]);
+extern void *mpEntMgr__15EntityBaseClass;
+extern "C" void *Find__6PMNodeFUi(void *, unsigned int);
+extern "C" void BuildDispList__9PSkeletonFv(void *);
+extern "C" void memcpy(void *, const void *, unsigned int);
+extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *, int, unsigned int);
 
 // Slot numbers are declaration order; Slot13 is the call at vtable offset 0x3C.
 class VirtualSlots {
@@ -96,6 +104,52 @@ void ClockworkMaximo::UpdateShieldStatus(Shield *arg0) {
         }
     }
     m_unk280 = arg0;
+}
+
+// FUNCTION: 0x00210A40 SetShockwave__15ClockworkMaximoFv
+void ClockworkMaximo::SetShockwave() {
+    int pNode = m_unk3C;
+    if (pNode == 0) {
+        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA59, "pNode");
+    }
+    void *pPrj;
+    float (*pVel)[4] = (float (*)[4])(pNode + 0x80);
+    float (*pPos)[4] = (float (*)[4])(pNode + 0x90);
+    pPrj = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x2D, false, 0);
+    if (pPrj == 0) {
+        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA5F, "pPrj");
+    }
+    InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(pPrj, 0x1E, pVel, pPos, 0);
+}
+
+// FUNCTION: 0x00210AF0 DetachWeapon__15ClockworkMaximoFQ215ClockworkMaximo11WEAPON_TYPE
+void ClockworkMaximo::DetachWeapon(WEAPON_TYPE arg0) {
+    int pNode = m_unk3C;
+    unsigned int var;
+    if (pNode == 0) {
+        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA36, "apSkeleton");
+    }
+    switch (arg0) {
+    case WEAPON_TYPE_0:
+        var = 0xB5714B5A;
+        break;
+    case WEAPON_TYPE_2:
+        var = 0xB5714B5A;
+        break;
+    case WEAPON_TYPE_1:
+        var = 0x6499DC24;
+        break;
+    default:
+        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA47, "FALSE");
+        break;
+    }
+    void *pBone = Find__6PMNodeFUi((void *)pNode, var);
+    if (pBone == 0) {
+        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA4F, "apBone");
+    }
+    *(int *)((char *)pBone + 0x10) = 0;
+    *(unsigned char *)((char *)pBone + 0x3E) &= 0xEF;
+    BuildDispList__9PSkeletonFv((void *)pNode);
 }
 
 // FUNCTION: 0x00210D70 TargetFacingUs__15ClockworkMaximoFv
@@ -185,6 +239,36 @@ int ClockworkMaximo::DetermineIdleState() {
     return (MathAPI::RandomIntRange(0, 0x64) & 1) != 0;
 }
 
+// DRAFT: 0x00211550 SetSpawnedFromEntity__15ClockworkMaximoFPfPfi
+// note: all else matches; the vtable slot-0x30 call loads its target into v0 (original t9). Tried a local fn pointer, int-returning pointer, char-offset cast, local vtable int, and vt[12] index; none moved it.
+void ClockworkMaximo::SetSpawnedFromEntity(float *arg0, float *arg1, int arg2) {
+    m_unk240 = (MathAPI::RandomIntRange(1, 0x64) & 1) ? 0x3DE : 0x429;
+    m_unk1C4 = 0x43160000;
+    m_unk1C8 = arg0[0];
+    m_unk1CC = arg0[1];
+    m_unk1D0 = arg0[2];
+    m_unk1D4 = 0x43160000;
+    m_unk1B4 = 0;
+    m_unk1D8 = 0;
+    m_unk1E0 = 0;
+    m_unk1E4 = MathAPI::RandomIntRange(0, 0x64) & 1;
+    m_unk1E8 = MathAPI::RandomIntRange(0, 0x64) & 1;
+    u_long128 *pDst = &m_unk190;
+    if (m_unk3C != 0) {
+        pDst = (u_long128 *)(m_unk3C + 0x80);
+    }
+    *pDst = *(u_long128 *)arg0;
+    if (arg1 != 0) {
+        u_long128 *pDst2 = &m_unk1A0;
+        if (m_unk3C != 0) {
+            pDst2 = (u_long128 *)(m_unk3C + 0x90);
+        }
+        *pDst2 = *(u_long128 *)arg1;
+    }
+    void **vt = *(void ***)this;
+    ((void (*)(ClockworkMaximo *, int))vt[12])(this, 0);
+}
+
 // FUNCTION: 0x00211650 SetDefaultVars__15ClockworkMaximoFv
 void ClockworkMaximo::SetDefaultVars() {
     m_unk240 = (MathAPI::RandomIntRange(1, 0x64) & 1) ? 0x3DE : 0x429;
@@ -198,6 +282,22 @@ void ClockworkMaximo::SetDefaultVars() {
     m_unk1E0 = 0;
     m_unk1E4 = MathAPI::RandomIntRange(0, 0x64) & 1;
     m_unk1E8 = MathAPI::RandomIntRange(0, 0x64) & 1;
+}
+
+// DRAFT: 0x002116E0 SetEditableVars__15ClockworkMaximoFPc
+// note: ternary, chain and call match; literal test emits xor/sltiu/bnez not sltu/xori/bnez; 8 forms tried (nested pMsg best, 23 lines).
+void ClockworkMaximo::SetEditableVars(char *arg0) {
+    char *pMsg;
+    int bNull;
+    memcpy(_pad1B0, arg0, 0x3C);
+    m_unk240 = (MathAPI::RandomIntRange(1, 0x64) & 1) ? 0x3DE : 0x429;
+    if (m_unk1E0 != 8 && m_unk1E0 != 7 && m_unk1E0 != 0) {
+        pMsg = "Invalid m_iSpawnsKey in ClockworkMaximo.\n";
+        bNull = pMsg == 0;
+        if (!bNull) {
+            CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x882, "!\"Invalid m_iSpawnsKey in ClockworkMaximo.\\n\"");
+        }
+    }
 }
 
 // DRAFT: 0x00211780 OnWakeEvent__15ClockworkMaximoFv
@@ -248,4 +348,32 @@ extern "C" void *__dt__15ClockworkMaximoFv(ClockworkMaximo *pThis, short nFlag) 
         }
     }
     return pThis;
+}
+
+// DRAFT: 0x00213C90 __ct__15ClockworkMaximoFv
+// note: body order and stores match; the original spills this to 0x1C($sp) and reloads it per store (frame ra@0, no s0), ours keeps this in s0 (62 lines); local self pointer tried, same 62.
+ClockworkMaximo::ClockworkMaximo() {
+    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 3, 0U);
+    m_unk0 = __vt__15ClockworkMaximo;
+    m_unk240 = 0;
+    m_unk258 = 0;
+    m_unk250 = 0;
+    m_unk280 = 0;
+    m_unk264 = 0;
+    m_unk284 = 0;
+    m_unk288 = 0;
+    m_unk25C = -1;
+    m_unk274 = 0;
+    m_unk278 = 0;
+    m_unk28F = 0;
+    m_unk28C = 0;
+    m_unk28D = 0;
+    m_unk28E = 0;
+    m_unk27C = 0;
+    m_unk260 = m_unk1B;
+    m_unk290 = 0;
+    m_unk166 = 1;
+    ((void (*)(ClockworkMaximo *, int))(*(void ***)this)[12])(this, 0);
+    m_unkF8 = 0x3F000000;
+    m_unkFC = 0x3F400000;
 }

@@ -41,23 +41,38 @@ public:
     bool FaceTarget(float arg0);
     bool InBlockableState();
     void SetDefaultVars();
+    void SetShockwave();
+    void SetSpawnedFromEntity(float *arg0, float *arg1, int arg2);
+    void SetEditableVars(char *arg0);
+    ClockworkMaximo();
 
-    char _pad000[0x1B];
+    void *m_unk0;                   // 0x000 vtable pointer
+    char _pad004[0x1B - 0x04];
     unsigned char m_unk1B;          // 0x01B
     char _pad01C[0x20 - 0x1C];
     int m_unk20;                    // 0x020
     char _pad024[0x38 - 0x24];
     ClockworkMaximoState *m_unk38;  // 0x038
     int m_unk3C;                    // 0x03C
-    char _pad040[0x140 - 0x40];
+    char _pad040[0xF8 - 0x40];
+    int m_unkF8;                    // 0x0F8 set to 0x3F000000 by the constructor
+    int m_unkFC;                    // 0x0FC set to 0x3F400000 by the constructor
+    char _pad100[0x140 - 0x100];
     int m_unk140;                   // 0x140
-    char _pad144[0x1B4 - 0x144];
+    char _pad144[0x166 - 0x144];
+    unsigned char m_unk166;         // 0x166 set to 1 by the constructor
+    char _pad167[0x190 - 0x167];
+    u_long128 m_unk190;             // 0x190
+    u_long128 m_unk1A0;             // 0x1A0
+    char _pad1B0[0x1B4 - 0x1B0];
     int m_unk1B4;                   // 0x1B4
     int m_unk1B8;                   // 0x1B8
     int m_unk1BC;                   // 0x1BC
     int m_unk1C0;                   // 0x1C0
     int m_unk1C4;                   // 0x1C4
-    char _pad1C8[0x1D4 - 0x1C8];
+    float m_unk1C8;                 // 0x1C8
+    float m_unk1CC;                 // 0x1CC
+    float m_unk1D0;                 // 0x1D0
     int m_unk1D4;                   // 0x1D4
     int m_unk1D8;                   // 0x1D8
     char _pad1DC[0x1E0 - 0x1DC];
@@ -70,13 +85,24 @@ public:
     int m_unk24C;                   // 0x24C
     unsigned int m_unk250;          // 0x250
     int m_unk254;                   // 0x254
-    char _pad258[0x260 - 0x258];
+    unsigned char m_unk258;         // 0x258 cleared by the constructor
+    char _pad259[0x25C - 0x259];
+    int m_unk25C;                   // 0x25C set to -1 by the constructor
     unsigned char m_unk260;         // 0x260
-    char _pad261[0x274 - 0x261];
+    char _pad261[0x264 - 0x261];
+    int m_unk264;                   // 0x264 cleared by the constructor
+    char _pad268[0x274 - 0x268];
     int m_unk274;                   // 0x274
     int m_unk278;                   // 0x278
     char m_unk27C;                  // 0x27C
     Shield *m_unk280;               // 0x280
+    int m_unk284;                   // 0x284 cleared by the constructor
+    int m_unk288;                   // 0x288 cleared by the constructor
+    unsigned char m_unk28C;         // 0x28C cleared by the constructor
+    unsigned char m_unk28D;         // 0x28D cleared by the constructor
+    unsigned char m_unk28E;         // 0x28E cleared by the constructor
+    unsigned char m_unk28F;         // 0x28F cleared by the constructor
+    unsigned char m_unk290;         // 0x290 cleared by the constructor
 };
 
 #endif
