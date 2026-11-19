@@ -8,6 +8,7 @@ class TimerAPI {
 public:
     char _pad000[40];
     void KillTimer(unsigned int);
+    int CreateTimer(unsigned int, unsigned int, bool);
 };
 
 class EffectAPI {
@@ -18,8 +19,18 @@ public:
 
 class MathAPI {
 public:
+    char _pad000[0x3C];
+    char *m_unk3C;
+    char _pad040[0x154 - 0x40];
+    int m_unk154;
     static int RandomIntRange(int, int);
     int FacingPoint(EntityBaseClass *, float (*)[4], float);
+};
+
+class EntityManager {
+public:
+    char _pad000[0x505C];
+    MathAPI *m_unk505C;
 };
 
 extern "C" float DistanceXZ__7MathAPIFPA4_fPA4_f(MathAPI *, float (*)[4]);
@@ -36,6 +47,12 @@ extern char ClockworkStalker_KnockUp1Seq[];
 extern char ClockworkStalker_KnockUp2Seq[];
 extern "C" void SetState__15EntityBaseClassFi(void *, int);
 extern "C" void PlaySequence__15EntityBaseClassFPUi(void *, unsigned int *);
+extern "C" void GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(void *, float *);
+extern "C" float Round180__Ff(float f);
+extern "C" float Distance__7MathAPIFPA4_fPA4_f(void *, float (*)[4]);
+extern "C" int RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(void *, void *, unsigned int);
+extern EntityManager *mpEntMgr__15EntityBaseClass;
+extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *, int, unsigned int);
 
 // DRAFT: 0x001E2B80 KillTimers__16ClockworkStalkerFv
 // note: 2 differing lines; original copies this to s0 before the first timer load, ours loads a0 first (tried local self pointer and unsigned cast, no change)
@@ -62,6 +79,34 @@ int ClockworkStalker::InBlockableState() {
         return 0;
     }
     return 1;
+}
+
+// DRAFT: 0x001E2F70 FaceHit__16ClockworkStalkerFv
+// note: 22 differing lines; original loads f0 with lui+mtc1 per case and subtracts once in a shared delay slot, ours loads the switch scrutinee and constant in different registers (tried f0 constant variable: 44 lines, per-case f1 subtract: 22)
+void ClockworkStalker::FaceHit() {
+    float sp30[4];
+    MathAPI *mgr = mpEntMgr__15EntityBaseClass->m_unk505C;
+    GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(mgr, sp30);
+    char *ptr = mgr->m_unk3C != 0 ? mgr->m_unk3C + 0x90 : (char *)mgr + 0x1A0;
+    float f1 = *(float *)(ptr + 4);
+    switch (mpEntMgr__15EntityBaseClass->m_unk505C->m_unk154) {
+    case 0x82000010:
+        return;
+    case 0x8200000E:
+        f1 = f1 - 150.0f;
+        break;
+    case 0x82000007:
+        f1 = f1 - -150.0f;
+        break;
+    default:
+        f1 = f1 - 180.0f;
+        break;
+    }
+    char *dst = m_unk3C != 0 ? m_unk3C + 0x90 : (char *)this + 0x1A0;
+    *(float *)(dst + 4) = f1;
+    char *s0 = m_unk38;
+    char *src = m_unk3C != 0 ? m_unk3C + 0x90 : (char *)this + 0x1A0;
+    *(float *)(s0 + 0x11C) = Round180__Ff(*(float *)(src + 4));
 }
 
 // FUNCTION: 0x001E3080 IsStalled__16ClockworkStalkerFfPA4_f
@@ -98,6 +143,55 @@ int ClockworkStalker::PlayerFacingUs() {
     return 0;
 }
 
+// DRAFT: 0x001E3170 CanAttackPlayer__16ClockworkStalkerFv
+// note: 42 differing lines; original reloads mPlayerAPI as a gp global (v1) and keeps roll in s0 across RequestAttack, ours uses a local player in s0 and roll in v0 (tried global RequestAttack arg: 50, roll-retest restructure: 52); TimerAPI lui/addiu carries a zero relocation
+int ClockworkStalker::CanAttackPlayer() {
+    if (m_unk221 != 0) {
+        MathAPI *player = mPlayerAPI__13EntityManager;
+        char *target = (char *)player + 0x190;
+        if (player->m_unk3C != 0) {
+            target = player->m_unk3C + 0x80;
+        }
+        if (Distance__7MathAPIFPA4_fPA4_f(target, &m_unk200) <= *(float *)&m_unk1D4) {
+            int roll = MathAPI::RandomIntRange(1, 100);
+            if (roll < 0x33) {
+                if (RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(this, player, 0) != 0) {
+                    m_unk221 = 0;
+                    m_unk214 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, 0xC, true);
+                    return 1;
+                }
+            } else {
+                m_unk221 = 0;
+                m_unk214 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, 0xC, true);
+            }
+        }
+    }
+    return 0;
+}
+
+// FUNCTION: 0x001E3260 SetSpawnedFromEntity__16ClockworkStalkerFPfPfi
+void ClockworkStalker::SetSpawnedFromEntity(float *arg0, float *arg1, int arg2) {
+    if (MathAPI::RandomIntRange(1, 100) & 1) {
+        m_unk1FC = 0x1F4;
+    } else {
+        m_unk1FC = 0x23A;
+    }
+    m_unk210 = m_unk1FC;
+    m_unk1C4 = 0x43160000;
+    m_unk1C8 = arg0[0];
+    m_unk1CC = arg0[1];
+    m_unk1D0 = arg0[2];
+    m_unk1D4 = 0x43160000;
+    m_unk1B4 = 0;
+    m_unk1E0 = 0;
+    char *dst = m_unk3C != 0 ? m_unk3C + 0x80 : &m_unk190;
+    *(u_long128 *)dst = *(u_long128 *)arg0;
+    if (arg1 != 0) {
+        char *dst2 = m_unk3C != 0 ? m_unk3C + 0x90 : &m_unk1A0[0];
+        *(u_long128 *)dst2 = *(u_long128 *)arg1;
+    }
+}
+
 // FUNCTION: 0x001E3330 SetDefaultVars__16ClockworkStalkerFv
 void ClockworkStalker::SetDefaultVars() {
     if (MathAPI::RandomIntRange(1, 100) & 1) {
@@ -130,6 +224,35 @@ void ClockworkStalker::SetEditableVars(char *arg0) {
         m_unk1FC = 0x23A;
     }
     m_unk210 = m_unk1FC;
+}
+
+// FUNCTION: 0x001E3430 OnTimerEvent__16ClockworkStalkerFUi
+void ClockworkStalker::OnTimerEvent(unsigned int arg0) {
+    if (arg0 == m_unk214) {
+        m_unk221 = 1;
+        return;
+    }
+    if (arg0 == m_unk2D8) {
+        m_unk2D5 = 1;
+        return;
+    }
+    if (arg0 == m_unk2D0) {
+        m_unk222 = 1;
+        return;
+    }
+    if (arg0 == m_unk2AC) {
+        int temp_v1 = m_unk2A0;
+        if (temp_v1 == 1) {
+            m_unk2A0 = 2;
+        } else if (temp_v1 == 3) {
+            m_unk2A0 = 0;
+        }
+        LoadCorrectMesh(1);
+        return;
+    }
+    if (arg0 == m_unk280) {
+        m_unk280 = 0;
+    }
 }
 
 // FUNCTION: 0x001E34E0 OnWakeEvent__16ClockworkStalkerFv
@@ -165,4 +288,32 @@ extern "C" ClockworkStalker *__dt__16ClockworkStalkerFv(ClockworkStalker *pThis,
         }
     }
     return pThis;
+}
+
+// FUNCTION: 0x001E63E0 __ct__16ClockworkStalkerFv
+ClockworkStalker::ClockworkStalker() {
+    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 3, 0);
+    *(unsigned char **)this = __vt__16ClockworkStalker;
+    m_unk220 = 0;
+    m_unk228 = 0;
+    m_unk2DC = 0;
+    m_unk270 = 0;
+    m_unk274 = 0;
+    m_unk268 = 0;
+    m_unk26C = 0;
+    m_unk2E4 = 0;
+    m_unk278 = 1;
+    m_unk280 = 0;
+    m_unk2D0 = 0;
+    m_unk230 = 0;
+    m_unk2EC = 0;
+    m_unk2E8 = 0;
+    m_unk2E0 = 0;
+    m_unk2A0 = 0;
+    m_unk2A4 = 0;
+    m_unk2AC = 0;
+    m_unk2B0 = 0;
+    m_unk2A8 = 0xBF800000;
+    m_unk166 = 1;
+    m_unk103 = 0x40;
 }
