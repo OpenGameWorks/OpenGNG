@@ -74,7 +74,7 @@ def candidates() -> dict[str, list[tuple[int, int, str]]]:
 
 def take(n: int) -> list[dict]:
     act = load_active()
-    busy = {j["file"] for j in act}
+    busy = {Path(j["file"]).name for j in act}  # candidates() keys are bare file names
     cands = candidates()
     # Files with the most small functions first: the highest matched bytes per worker-hour.
     sweet = lambda s: SWEET[0] <= s <= SWEET[1]
