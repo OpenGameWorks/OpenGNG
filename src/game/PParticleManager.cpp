@@ -9,6 +9,17 @@ class PFlashScreen;
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" PParticleRain *__ct__13PParticleRainFv(PParticleRain *pThis);
 extern "C" void *__dt__12PParticleFogFv(PParticleFog *pThis, short nFlags);
+extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *, int, float *, bool, unsigned long, unsigned long);
+extern "C" void SetWorldMatrix__10PGfxEngineFP5PMat4(void *, float *);
+extern "C" void BeginParticles__10PGfxEngineF13eBoxIntersect(void *, int);
+extern "C" void DrawParticles__10PGfxEngineFP13tagVuParticleiffb(void *, void *, int, float, float, bool);
+extern "C" void EndParticles__10PGfxEngineFv(void *);
+extern u_long128 lit_002487F0;
+extern unsigned char gGfxEng[0x10];
+extern float gUnitMatrix[16];
+extern "C" void __dla__FPv(void *pMem);
+extern "C" void UnloadGlobalResource__16PResourceManagerFv(void *pThis);
+extern "C" void DestroyRenderedTexture__15PTextureManagerFi(void *pThis, int hTexture);
 
 class PParticleRain {
 public:
@@ -34,6 +45,7 @@ class PArray {
 public:
     int Find(void *pItem);
     void Add(void *pItem);
+    void Remove(void *pItem);
 };
 
 class PMovingFog {
@@ -47,7 +59,7 @@ public:
 
 class PParticleSystem {
 public:
-    virtual void Slot00();
+    virtual void Slot00(int bFlag);
     virtual void Slot01(float fDt);
     virtual void Slot02();
     virtual void Slot03();
@@ -62,10 +74,10 @@ public:
 class PEweedFx {
 public:
     virtual void Slot00();
-    virtual void Slot01();
+    virtual void Slot01(float fDt);
     virtual int Slot02();
     virtual void Slot03();
-    virtual void Slot04();
+    virtual void Slot04(PFrustrum *pFrustrum, float *pVec, float fA, float fB);
     virtual void Slot05();
     virtual void Slot06();
     virtual void Slot07();
@@ -124,6 +136,19 @@ struct tagVuParticle {
     int m_unk1C;                // 0x1C
 };
 
+// DRAFT: 0x001B77F0 RenderAuraParticles__16PParticleManagerFv
+// note: 37 words differ; literal 0x2487F0 loaded via lui/lq off $at (orig lui/addiu/lq via v0), early-return beqz one insn short; tried local pointer and if-block forms.
+void PParticleManager::RenderAuraParticles() {
+    if (m_unkEC0 != 0) {
+        u_long128 sp20 = lit_002487F0;
+        SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, m_unkEC4, (float *)&sp20, true, 0x48, 0x50000);
+        SetWorldMatrix__10PGfxEngineFP5PMat4(gGfxEng, gUnitMatrix);
+        BeginParticles__10PGfxEngineF13eBoxIntersect(gGfxEng, 1);
+        DrawParticles__10PGfxEngineFP13tagVuParticleiffb(gGfxEng, (char *)this + 0x9C0, 0x28, 1.0f, 1.0f, true);
+        EndParticles__10PGfxEngineFv(gGfxEng);
+    }
+}
+
 // DRAFT: 0x001B7F90 RenderEweedReactionFx__16PParticleManagerFv
 // note: 5 words differ; original is bottom-tested (no entry b) with an empty join nop at 0x44 before i++ and off+=4 in the bnez delay slot. Tried index loop with Slot04 (28), byte-offset do-while (11), swapped increments (11), for with off at body end (5).
 void PParticleManager::RenderEweedReactionFx() {
@@ -133,6 +158,19 @@ void PParticleManager::RenderEweedReactionFx() {
             pFx->Slot02();
         }
         off += 4;
+    }
+}
+
+// DRAFT: 0x001B8000 AnimateEweedReactionFx__16PParticleManagerFP9PFrustrumf
+// note: 6 words differ; original tests the loop at bottom (b to cond), fDt copy to f20 one slot early, nop before i++; tried do-while, pointer-walk, for forms.
+void PParticleManager::AnimateEweedReactionFx(PFrustrum *pFrustrum, float fDt) {
+    for (int i = 0, off = 0; i < 8; i++, off += 4) {
+        PEweedFx **pp = (PEweedFx **)((char *)this + off + 0x20DC);
+        PEweedFx *pFx = *pp;
+        if (pFx->m_unk15 != 0) {
+            pFx->Slot04(pFrustrum, (float *)((char *)this + 0x680), *(float *)((char *)this + 0x6A0), *(float *)((char *)this + 0x6A4));
+            (*pp)->Slot01(fDt);
+        }
     }
 }
 
@@ -176,6 +214,19 @@ void PParticleManager::RenderSulphurReactionFx() {
             pFx->Slot02();
         }
         off += 4;
+    }
+}
+
+// DRAFT: 0x001B8240 AnimateSulphurReactionFx__16PParticleManagerFP9PFrustrumf
+// note: 6 words differ; same loop shape as AnimateEweedReactionFx (entry array at 0x20BC).
+void PParticleManager::AnimateSulphurReactionFx(PFrustrum *pFrustrum, float fDt) {
+    for (int i = 0, off = 0; i < 8; i++, off += 4) {
+        PEweedFx **pp = (PEweedFx **)((char *)this + off + 0x20BC);
+        PEweedFx *pFx = *pp;
+        if (pFx->m_unk15 != 0) {
+            pFx->Slot04(pFrustrum, (float *)((char *)this + 0x680), *(float *)((char *)this + 0x6A0), *(float *)((char *)this + 0x6A4));
+            (*pp)->Slot01(fDt);
+        }
     }
 }
 
@@ -511,5 +562,49 @@ void PParticleManager::Destroy(unsigned int hSystem) {
     if (pSystem != 0 && IsValid(pSystem)) {
         pSystem->Slot07();
         Remove(pSystem);
+    }
+}
+
+// FUNCTION: 0x001BAAE0 Remove__16PParticleManagerFP15PParticleSystem
+void PParticleManager::Remove(PParticleSystem *pSystem) {
+    if (pSystem == 0) {
+        CdsAssert("PParticleManager.cpp", 0xF6, "pSystem");
+    }
+    if (IsValid(pSystem)) {
+        ((PArray *)this)->Remove(pSystem);
+        if (pSystem != 0) {
+            pSystem->Slot00(1);
+        }
+    }
+    if (pSystem == (PParticleSystem *)m_pRain) {
+        m_pRain = 0;
+    }
+    if (pSystem == m_unk20FC) {
+        m_unk20FC = 0;
+    }
+}
+
+// FUNCTION: 0x001BAC80 Shutdown__16PParticleManagerFv
+void PParticleManager::Shutdown() {
+    RemoveAll();
+    UnloadGlobalResource__16PResourceManagerFv(m_unk40);
+    m_unk2060 = 0;
+    m_unk2064 = 0;
+    if (m_unk2050 != 0) {
+        __dla__FPv(m_unk2050);
+        m_unk2050 = 0;
+        m_unk2054 = 0;
+    }
+    if (m_unk2058 != 0) {
+        __dla__FPv(m_unk2058);
+        m_unk2058 = 0;
+        m_unk205C = 0;
+    }
+    DestroyGroundDustFx();
+    DestroySulphurReactionFx();
+    DestroyEweedReactionFx();
+    if (m_unk670 != 0) {
+        DestroyRenderedTexture__15PTextureManagerFi(gGfxEng, m_unk670);
+        m_unk670 = 0;
     }
 }
