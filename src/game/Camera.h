@@ -13,6 +13,7 @@ public:
     float Distance(CVector3 arg0, CVector3 arg1);
     float Dot(CVector3 arg0, CVector3 arg1);
     float Magnitude(CVector3 arg0);
+    CVector3 Normalize(CVector3 arg0);
     void UpdateFromApparition();
     void CreateViewMatrix(PMat4 &arg0, PVec3 arg1, PVec3 arg2);
     void SetCamBoxValue_FollowHeight(float arg0);
@@ -22,6 +23,9 @@ public:
     bool ShakeScreen(PVec3 &arg0, PVec3 &arg1, bool arg2);
     unsigned char PlayingCutCamera();
     void CleanUpCutCameras();
+    void RestoreCamBox();
+    void StartCutCamera(unsigned int arg0, bool arg1);
+    void SetupCutCamera_Fixed(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, unsigned int arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, bool arg11, PVec3 arg12, bool arg13, unsigned int arg14);
     void ResetAfterReposition();
     int FollowCamInBossMode();
     void SetFollowCameraParams(float arg0, float arg1);
@@ -30,6 +34,7 @@ public:
     void SetBossPosition(float (*arg0)[4]);
     void SetBossArenaValues(float (*arg0)[4], float arg1, float arg2, bool arg3, bool arg4, float arg5, float arg6, bool arg7);
     void SetCamBoxData(int arg0, void *arg1);
+    void SetupShakeScreen(float arg0, float arg1, float arg2, int arg3, int arg4, unsigned int arg5);
     void CamCollideSphere(PVec3 arg0, float arg1);
     bool PlayerInFixedCamBox();
     int SetHeadCam(bool arg0);
@@ -48,9 +53,21 @@ public:
     void *m_unkC0;          // 0x0C0 (CameraCutManager *)
     void *m_unkC4;          // 0x0C4 (CameraDebug *)
     unsigned char m_unkC8;  // 0x0C8
-    char _pad0C9[0x179 - 0xC9];
+    char _pad0C9[0x148 - 0xC9];
+    int m_unk148;           // 0x148
+    int m_unk14C;           // 0x14C
+    char _pad150[0x158 - 0x150];
+    float m_unk158;         // 0x158
+    float m_unk15C;         // 0x15C
+    char _pad160[0x170 - 0x160];
+    unsigned char m_unk170; // 0x170
+    char _pad171[0x174 - 0x171];
+    float m_unk174;         // 0x174
+    char _pad178[0x179 - 0x178];
     unsigned char m_unk179; // 0x179
-    char _pad17A[0x2B0 - 0x17A];
+    char _pad17A[0x17C - 0x17A];
+    int m_unk17C[3];        // 0x17C
+    char _pad188[0x2B0 - 0x188];
     int m_unk2B0;           // 0x2B0
     void *m_unk2B4;         // 0x2B4
     unsigned char m_unk2B8; // 0x2B8

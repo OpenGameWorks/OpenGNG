@@ -8,6 +8,10 @@ extern "C" void *__dt__12CameraFollowFv(void *pThis, short nFlag);
 extern "C" void *__dt__16CameraCutManagerFv(void *pThis, short nFlag);
 extern "C" void *__dt__11CameraDebugFv(void *pThis, short nFlag);
 extern "C" void __dl__FPv(void *pMem);
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
+extern "C" int sprintf(char *buf, const char *fmt, ...);
+extern unsigned char gEng[0x1A000];
+extern float GAME_FPS;
 
 class CVector3 {
 public:
@@ -24,6 +28,9 @@ public:
 class CameraCutManager {
 public:
     void CleanUpCutCameras();
+    int CutCameraExists(unsigned int arg0);
+    void StartCutCamera(unsigned int arg0, bool arg1);
+    void SetupCutCamera_Fixed(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, unsigned int arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, bool arg11, PVec3 arg12, bool arg13, unsigned int arg14);
 
     char _pad000[0x85];
     unsigned char m_unk85;  // 0x085
@@ -63,6 +70,17 @@ float Camera::Dot(CVector3 arg0, CVector3 arg1) {
     return arg0.m_unk0 * arg1.m_unk0 + arg0.m_unk4 * arg1.m_unk4 + arg0.m_unk8 * arg1.m_unk8;
 }
 
+// DRAFT: 0x001782F0 Normalize__6CameraF8CVector3
+// note: 21 differing lines; original keeps per-component load/div/store with v1=sp+0x24 and a0=sp+0x28 computed after the call, ours hoists loads and folds to sp+0x20; tried pointer-to-x/y/z, temp x, pointer-first, direct member variants.
+CVector3 Camera::Normalize(CVector3 arg0) {
+    CVector3 v = arg0;
+    float m = Magnitude(v);
+    v.m_unk0 /= m;
+    v.m_unk4 /= m;
+    v.m_unk8 /= m;
+    return v;
+}
+
 // FUNCTION: 0x00178380 Magnitude__6CameraF8CVector3
 float Camera::Magnitude(CVector3 arg0) {
     return sqrtf(arg0.m_unk0 * arg0.m_unk0 + arg0.m_unk4 * arg0.m_unk4 + arg0.m_unk8 * arg0.m_unk8);
@@ -88,6 +106,28 @@ void Camera::CleanUpCutCameras() {
     CameraCutManager *temp_a0 = (CameraCutManager *)m_unkC0;
     if (temp_a0 != 0) {
         temp_a0->CleanUpCutCameras();
+    }
+}
+
+// FUNCTION: 0x00178530 StartCutCamera__6CameraFUib
+void Camera::StartCutCamera(unsigned int arg0, bool arg1) {
+    CameraCutManager *temp_a0 = (CameraCutManager *)m_unkC0;
+    if (temp_a0 != 0 && arg0 != -1U && temp_a0->m_unk85 == 0) {
+        if (temp_a0->CutCameraExists(arg0) != 0) {
+            ((CameraCutManager *)m_unkC0)->StartCutCamera(arg0, arg1);
+            return;
+        }
+        char buf[0x100];
+        sprintf(buf, "Cut camera with ID = %d doesn't exist\n", arg0);
+        CdsAssert__FPciPc("Camera.cpp", 0x51B, buf);
+    }
+}
+
+// DRAFT: 0x00178810 SetupCutCamera_Fixed__6CameraFUiUiffUi5PVec35PVec3UiUiUiUib5PVec3bUi
+// note: 49 differing words; original checks m_unkC0 before copying the PVec3 args to stack temps (copies inside the if), ours hoists the copies above the check; also register choice for t0/t1 differs. Tried: early return, local pointer check.
+void Camera::SetupCutCamera_Fixed(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, unsigned int arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, bool arg11, PVec3 arg12, bool arg13, unsigned int arg14) {
+    if (m_unkC0 != 0) {
+        ((CameraCutManager *)m_unkC0)->SetupCutCamera_Fixed(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
     }
 }
 
@@ -173,6 +213,26 @@ void Camera::SetCamBoxData(int arg0, void *arg1) {
     }
 }
 
+// DRAFT: 0x00179810 RestoreCamBox__6CameraFv
+// note: 25 differing lines, size 0x84 vs 0x8c; original shares an epilogue via `b` with ld ra in the delay slot and places the 2B0 test as beq; tried early returns, nested if, combined &&, gEng index form, and swapped add operands.
+void Camera::RestoreCamBox() {
+    if (m_unkB4 != 4) {
+        return;
+    }
+    if (m_unk2B0 != 3) {
+        return;
+    }
+    *(float *)((char *)m_unk2B4 + 0x30) = 1.0f;
+    void *temp_v0 = *(void **)&gEng[0x1883C];
+    void *temp_v1 = *(void **)((char *)temp_v0 + 0x3C);
+    char *var_a1 = (char *)temp_v0 + 0x190;
+    if (temp_v1 != 0) {
+        var_a1 = (char *)temp_v1 + 0x80;
+    }
+    sceVu0CopyVector(m_unk10, (float *)var_a1);
+    m_unk10[1] = 5.0f + m_unk10[1];
+}
+
 // FUNCTION: 0x001798A0 UpdateFromApparition__6CameraFv
 void Camera::UpdateFromApparition() {
     PVec3 sp20;
@@ -182,6 +242,27 @@ void Camera::UpdateFromApparition() {
     sp20 = *(PVec3 *)m_unk00;
     sp30 = *(PVec3 *)m_unk10;
     CreateViewMatrix(*(PMat4 *)&_pad020[0x10], sp20, sp30);
+}
+
+// DRAFT: 0x00179930 SetupShakeScreen__6CameraFfffiiUi
+// note: 24 diff lines; original keeps idx*4 in a0 and does addiu/addu/lw(0) without folding the 0x17C displacement, and its bne skip is one insn longer. Tried: m_unk17C[idx], explicit pointer, idx*4 local, this+0x17C base, typed int* base (24), arg3 test (44).
+void Camera::SetupShakeScreen(float arg0, float arg1, float arg2, int arg3, int arg4, unsigned int arg5) {
+    int idx = arg4;
+    m_unk179 = 1;
+    m_unk170 = 0;
+    m_unk148 = arg3;
+    if (m_unk148 == 1) {
+        if (idx >= 3) {
+            CdsAssert__FPciPc("Camera.cpp", 0x289, "iTableIdx < CAMERA_SHAKE_TABLE_MAX");
+        }
+        int *base = (int *)((char *)this + 0x17C);
+        m_unk14C = base[idx];
+    } else {
+        m_unk14C = 0;
+    }
+    m_unk158 = arg0 * GAME_FPS;
+    m_unk15C = arg1 * GAME_FPS;
+    m_unk174 = arg2;
 }
 
 // FUNCTION: 0x00179F20 CheckCameraShake__6CameraFR5PVec3R5PVec3b
