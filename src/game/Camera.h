@@ -6,10 +6,16 @@
 // TODO(header): foreign declarations
 class CVector3;
 class PVec3;
+class PMat4;
 
 class Camera {
 public:
+    float Distance(CVector3 arg0, CVector3 arg1);
+    float Dot(CVector3 arg0, CVector3 arg1);
     float Magnitude(CVector3 arg0);
+    void UpdateFromApparition();
+    void CreateViewMatrix(PMat4 &arg0, PVec3 arg1, PVec3 arg2);
+    void SetCamBoxValue_FollowHeight(float arg0);
     void CheckCameraShake(PVec3 &arg0, PVec3 &arg1, bool arg2);
     void CamCollideCylinder(PVec3 arg0, float arg1, float arg2);
     void PolyDebug();

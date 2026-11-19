@@ -3,6 +3,11 @@
 // TODO(header): foreign declarations
 extern "C" void sceVu0CopyVector(float *dst, float *src);
 extern "C" float sqrtf(float x);
+extern "C" int printf(const char *fmt, ...);
+extern "C" void *__dt__12CameraFollowFv(void *pThis, short nFlag);
+extern "C" void *__dt__16CameraCutManagerFv(void *pThis, short nFlag);
+extern "C" void *__dt__11CameraDebugFv(void *pThis, short nFlag);
+extern "C" void __dl__FPv(void *pMem);
 
 class CVector3 {
 public:
@@ -32,6 +37,7 @@ public:
     void SetBossPosition(float (*arg0)[4]);
     void SetBossArenaValues(float (*arg0)[4], float arg1, float arg2, bool arg3, bool arg4, float arg5, float arg6, bool arg7);
     void Init(bool arg0);
+    void SetCamBoxValue_FollowHeight(float arg0);
     void CamCollideCylinder(PVec3 arg0, float arg1, float arg2);
     void CamCollideSphere(PVec3 arg0, float arg1);
     int SetHeadCam(bool arg0);
@@ -46,6 +52,16 @@ class CameraDebug {
 public:
     void DrawTextDebug();
 };
+
+// FUNCTION: 0x001781F0 Distance__6CameraF8CVector38CVector3
+float Camera::Distance(CVector3 arg0, CVector3 arg1) {
+    return sqrtf((arg1.m_unk0 - arg0.m_unk0) * (arg1.m_unk0 - arg0.m_unk0) + (arg1.m_unk4 - arg0.m_unk4) * (arg1.m_unk4 - arg0.m_unk4) + (arg1.m_unk8 - arg0.m_unk8) * (arg1.m_unk8 - arg0.m_unk8));
+}
+
+// FUNCTION: 0x00178280 Dot__6CameraF8CVector38CVector3
+float Camera::Dot(CVector3 arg0, CVector3 arg1) {
+    return arg0.m_unk0 * arg1.m_unk0 + arg0.m_unk4 * arg1.m_unk4 + arg0.m_unk8 * arg1.m_unk8;
+}
 
 // FUNCTION: 0x00178380 Magnitude__6CameraF8CVector3
 float Camera::Magnitude(CVector3 arg0) {
@@ -157,6 +173,17 @@ void Camera::SetCamBoxData(int arg0, void *arg1) {
     }
 }
 
+// FUNCTION: 0x001798A0 UpdateFromApparition__6CameraFv
+void Camera::UpdateFromApparition() {
+    PVec3 sp20;
+    PVec3 sp30;
+
+    CheckCameraShake(*(PVec3 *)this, *(PVec3 *)&m_unk10, false);
+    sp20 = *(PVec3 *)m_unk00;
+    sp30 = *(PVec3 *)m_unk10;
+    CreateViewMatrix(*(PMat4 *)&_pad020[0x10], sp20, sp30);
+}
+
 // FUNCTION: 0x00179F20 CheckCameraShake__6CameraFR5PVec3R5PVec3b
 void Camera::CheckCameraShake(PVec3 &arg0, PVec3 &arg1, bool arg2) {
     if (m_unk179 != 0) {
@@ -195,6 +222,18 @@ bool Camera::PlayerInFixedCamBox() {
     return false;
 }
 
+// DRAFT: 0x0017A190 SetCamBoxValue_FollowHeight__6CameraFf
+// note: 27 differing words; frame 0x30 vs 0x40 and this in s0 vs s1; original builds the 3.0 double in s0 before fptodp, ours after. Tried literal 3.0 in printf, local double inside the if, function-scope double, cast removed; count unchanged at 27.
+void Camera::SetCamBoxValue_FollowHeight(float arg0) {
+    double min = 3.0;
+    if (m_unkBC != 0) {
+        if (arg0 < 3.0f) {
+            printf("(Camera Error) Camera height box cannot be less that %f above ground. Value passed = %f\n", min, (double)arg0);
+        }
+        ((CameraFollow *)m_unkBC)->SetCamBoxValue_FollowHeight(arg0);
+    }
+}
+
 // FUNCTION: 0x0017A230 SetHeadCam__6CameraFb
 int Camera::SetHeadCam(bool arg0) {
     if (m_unkB4 == 0) {
@@ -230,6 +269,19 @@ void Camera::TextDebug() {
             break;
         }
     }
+}
+
+// FUNCTION: 0x0017A710 __dt__6CameraFv
+extern "C" Camera *__dt__6CameraFv(Camera *pThis, short nFlag) {
+    if (pThis != 0) {
+        __dt__12CameraFollowFv(pThis->m_unkBC, 1);
+        __dt__16CameraCutManagerFv(pThis->m_unkC0, 1);
+        __dt__11CameraDebugFv(pThis->m_unkC4, 1);
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
 }
 
 // FUNCTION: 0x0017A780 ResetFollowCamera__6CameraFv
