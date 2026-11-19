@@ -1,4 +1,4 @@
-// FLAGS: -sdatathreshold 0
+// FLAGS: -Cpp_exceptions off
 #include "types.h"
 #include "EntityBaseClass.h"
 
@@ -16,12 +16,14 @@ class PParticleSystem;
 class PParticleManager {
 public:
     void Remove(PParticleSystem *pSystem);
+    void CreateSulphurReaction(float *arg0, float arg1);
 };
 extern char gGfxEng[1504384];
 
 class MathAPI {
 public:
     static float Distance(float (*arg0)[4], float (*arg1)[4]);
+    static float GetAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]);
 };
 
 extern EntityBaseClass *mPlayerAPI__13EntityManager;
@@ -36,8 +38,16 @@ extern PArray mBGAnimList__7Physics;
 
 class PMeshNode;
 
+// BGCollision size is unknown; the placeholder member only keeps mBGCollision__15EntityBaseClass a complete object.
+class BGCollision {
+public:
+    char _pad000[0x10];
+};
+extern BGCollision mBGCollision__15EntityBaseClass;
+
 class Physics {
 public:
+    void RunPhysics(EntityBaseClass *arg0, float arg1, int arg2, BGCollision *arg3);
     void AddBGAnimNode(PMeshNode *arg0);
 };
 
@@ -54,7 +64,22 @@ public:
     char _pad04[0x3B];
     signed char m_3F;
 };
-extern PMNode *gEng;
+// gEng is a pointer; the placeholder pads it past the small-data threshold so the load is absolute.
+struct PMNodeHolder {
+    PMNode *ptr;
+    char _pad000[0x10];
+};
+extern PMNodeHolder gEng;
+
+float Round180(float arg0);
+
+// FUNCTION: 0x0014A740 ProcessPhysics__15EntityBaseClassFfi
+void EntityBaseClass::ProcessPhysics(float arg0, int arg1) {
+    if (this->m_unk38 != 0) {
+        this->m_unk38->RunPhysics(this, arg0, arg1 & this->m_unkE8, &mBGCollision__15EntityBaseClass);
+        this->CheckDie(0);
+    }
+}
 
 // FUNCTION: 0x0014A970 DestroyDamageFx__15EntityBaseClassFUi
 void EntityBaseClass::DestroyDamageFx(unsigned int arg0) {
@@ -65,7 +90,7 @@ void EntityBaseClass::DestroyDamageFx(unsigned int arg0) {
 
 // FUNCTION: 0x0014B330 IsBGAnimating__15EntityBaseClassFUi
 long long EntityBaseClass::IsBGAnimating(unsigned int arg0) {
-    PMNode *node = gEng->FindAnimNode(arg0);
+    PMNode *node = gEng.ptr->FindAnimNode(arg0);
 
     if (node != 0) {
         return (signed char)(node->m_3F & 7);
@@ -73,13 +98,42 @@ long long EntityBaseClass::IsBGAnimating(unsigned int arg0) {
     return 0;
 }
 
+// FUNCTION: 0x0014B880 UpdateSulphurFx__15EntityBaseClassFf
+void EntityBaseClass::UpdateSulphurFx(float arg0) {
+    float pos[4];
+    float (*src)[4];
+
+    if (this->m_unk3C != 0) {
+        src = (float (*)[4])(this->m_unk3C + 0x80);
+    } else {
+        src = (float (*)[4])((char *)this + 0x190);
+    }
+    *(u_long128 *)pos = *(u_long128 *)src;
+    pos[1] = arg0;
+    ((PParticleManager *)gGfxEng)->CreateSulphurReaction(pos, 1.0f);
+}
+
+// FUNCTION: 0x0014BFA0 FacePlayer__15EntityBaseClassFf
+void EntityBaseClass::FacePlayer(float arg0) {
+    EntityBaseClass *player = mPlayerAPI__13EntityManager;
+    float (*a1)[4];
+    float angle;
+
+    if (player->m_unk3C != 0) {
+        a1 = (float (*)[4])(player->m_unk3C + 0x80);
+    } else {
+        a1 = (float (*)[4])((char *)player + 0x190);
+    }
+    angle = MathAPI::GetAngleYToPoint(this, a1);
+    this->RotateTo(angle, arg0);
+}
+
 // FUNCTION: 0x0014C160 MusicChangePrimary__15EntityBaseClassFUiUi
 int EntityBaseClass::MusicChangePrimary(unsigned int arg0, unsigned int arg1) {
     return gSound.PlayMusic(arg0) & 0xFF;
 }
 
-// DRAFT: 0x0014C6D0 GetDistFromPlayer__15EntityBaseClassFv
-// note: ours has a stack frame and jal to MathAPI::Distance; original is a leaf with tail j (19 differing lines); tried a0/a1 if-else forms.
+// FUNCTION: 0x0014C6D0 GetDistFromPlayer__15EntityBaseClassFv
 float EntityBaseClass::GetDistFromPlayer() {
     EntityBaseClass *player = mPlayerAPI__13EntityManager;
     float (*a1)[4];
@@ -115,6 +169,34 @@ int EntityBaseClass::ChangedState() {
         return 1;
     }
     return 0;
+}
+
+// FUNCTION: 0x0014C800 RotateTo__15EntityBaseClassFff
+void EntityBaseClass::RotateTo(float arg0, float arg1) {
+    Physics *phys = this->m_unk38;
+
+    if (phys != 0) {
+        *(float *)((char *)phys + 0x11C) = Round180(arg0);
+        *(float *)((char *)this->m_unk38 + 0x118) = arg1;
+    }
+}
+
+// DRAFT: 0x0014D680 RemoveCollision__15EntityBaseClassFP15EntityBaseClass
+// note: 16 differing words (0x44 vs 0x50); source-level loop/store variants (return vs break, index init order, char-pointer and local-pointer store, compare operand swap) do not change the store and delay-slot allocation (original fills bne slot with nop and stores via sll a1 + addiu + addu).
+void EntityBaseClass::RemoveCollision(EntityBaseClass *arg0) {
+    int target;
+    unsigned int i;
+    unsigned int off;
+
+    target = arg0->m_unk04;
+    i = 0;
+    off = 0;
+    for (; i < 10; off += 4, i++) {
+        if (*(int *)((char *)this + off + 0x110) == target) {
+            this->m_unk110[i] = 0;
+            break;
+        }
+    }
 }
 
 // DRAFT: 0x0014D790 FindCollision__15EntityBaseClassFP15EntityBaseClass
