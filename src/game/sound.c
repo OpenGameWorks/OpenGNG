@@ -96,9 +96,60 @@ void SOUND_ReverbSetAdrs(unsigned int arg0, unsigned int arg1) {
     SetIOPCommand(0x4A, 4);
 }
 
+// FUNCTION: 0x001ADE80 SOUND_ChangeReverbCore
+void SOUND_ChangeReverbCore(short arg0, short arg1, short arg2, short arg3, short arg4, short arg5) {
+    IOPCommandData[2] = arg2;
+    IOPCommandData[3] = arg3;
+    IOPCommandData[4] = arg4;
+    IOPCommandData[5] = arg5;
+    IOPCommandData[0] = arg0;
+    IOPCommandData[1] = arg1;
+    SetIOPCommand(0x4D, 6);
+}
+
 // FUNCTION: 0x001AE3A0 SOUND_SetSPUWriteAddress
 void SOUND_SetSPUWriteAddress(unsigned int arg0) {
     IOPCommandData[1] = (short)arg0;
     IOPCommandData[0] = (short)(arg0 >> 16);
     SetIOPCommand(0x0E, 2);
+}
+
+// DRAFT: 0x001AE4B0 SOUND_ResumeMultipleSounds
+// note: 12 differing words; compiler drops the original's ori $v1,0xFFFF + and mask on index 1 (sh truncates) and the stored size is 0x34 vs 0x3c. Tried signed int, unsigned short cast, mask local, unsigned long args; 12 best.
+void SOUND_ResumeMultipleSounds(unsigned int arg0, unsigned int arg1) {
+    IOPCommandData[3] = arg1;
+    IOPCommandData[0] = (short)(arg0 >> 16);
+    IOPCommandData[1] = (short)(arg0 & 0xFFFF);
+    IOPCommandData[2] = (short)(arg1 >> 16);
+    SetIOPCommand(0x45, 4);
+}
+
+// DRAFT: 0x001AE4F0 SOUND_PauseMultipleSounds
+// note: 12 differing words; same masked-store shape as SOUND_ResumeMultipleSounds (mask ori/and dropped by compiler).
+void SOUND_PauseMultipleSounds(unsigned int arg0, unsigned int arg1) {
+    IOPCommandData[3] = arg1;
+    IOPCommandData[0] = (short)(arg0 >> 16);
+    IOPCommandData[1] = (short)(arg0 & 0xFFFF);
+    IOPCommandData[2] = (short)(arg1 >> 16);
+    SetIOPCommand(0x44, 4);
+}
+
+// DRAFT: 0x001AE530 SOUND_StopMultipleSounds
+// note: 12 differing words; same masked-store shape as SOUND_ResumeMultipleSounds (mask ori/and dropped by compiler).
+void SOUND_StopMultipleSounds(unsigned int arg0, unsigned int arg1) {
+    IOPCommandData[3] = arg1;
+    IOPCommandData[0] = (short)(arg0 >> 16);
+    IOPCommandData[1] = (short)(arg0 & 0xFFFF);
+    IOPCommandData[2] = (short)(arg1 >> 16);
+    SetIOPCommand(0x1F, 4);
+}
+
+// FUNCTION: 0x001AE5A0 SOUND_StopStream
+int SOUND_StopStream(unsigned int arg0) {
+    if (arg0 >= 4) {
+        return -1;
+    }
+    IOPCommandData[0] = (short)arg0;
+    SetIOPCommand(5, 1);
+    return 0;
 }

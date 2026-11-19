@@ -11,5 +11,10 @@ void SOUND_FadeMusicStream(short arg0, short arg1, short arg2);
 void SOUND_ChangeReverbMasterVolume(short arg0, short arg1, short arg2);
 void SOUND_ReverbSetAdrs(unsigned int arg0, unsigned int arg1);
 void SOUND_SetSPUWriteAddress(unsigned int arg0);
+void SOUND_ChangeReverbCore(short arg0, short arg1, short arg2, short arg3, short arg4, short arg5);
+void SOUND_ResumeMultipleSounds(unsigned int arg0, unsigned int arg1);
+void SOUND_PauseMultipleSounds(unsigned int arg0, unsigned int arg1);
+void SOUND_StopMultipleSounds(unsigned int arg0, unsigned int arg1);
+int SOUND_StopStream(unsigned int arg0);
 
 #endif
