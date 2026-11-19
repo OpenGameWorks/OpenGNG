@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "PMNode.h"
 
@@ -10,6 +11,8 @@ extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" PObjectDisplayList *__ct__18PObjectDisplayListFv(PObjectDisplayList *);
 extern "C" void __dt__18PObjectDisplayListFv(PObjectDisplayList *, short);
 extern "C" int Create__18PObjectDisplayListFP6PMNodePb(PObjectDisplayList *, PMNode *, bool *);
+class PAnimFrame;
+extern "C" PAnimFrame *__ct__10PAnimFrameFP5PAnim(PAnimFrame *, PAnim *);
 class PMat4;
 class PDisplayList {
 public:
@@ -36,6 +39,28 @@ extern "C" int mst_NextPMNodeRef__6PMNode;
 class PArray {
 public:
     void Add(void *pItem);
+};
+
+// TODO(header): PAnim, PChannel and eAnimType belong to the animation headers. Placeholder shapes; only the names, the FindChannel/AnimateBox signatures and the byte at PAnim+0xA matter here.
+enum eAnimType { eAnimType_Placeholder = 0 };
+class PChannel {
+public:
+    void *AnimateBox(float fTime, unsigned char &bOut);
+};
+class PAnim {
+public:
+    PChannel *FindChannel(eAnimType eType);
+    char _pad000[0xA];
+    unsigned char m_unkA;
+};
+
+// TODO(header): PMNode objects carry a vptr at offset 0; this view names the slots SetFrameTime calls on a child.
+class PNodeVirtual {
+public:
+    virtual void Slot00();
+    virtual void Slot01();
+    virtual void Slot02(float fTime);
+    virtual void Slot03();
 };
 
 // Object held at PMNode+0x24. Slot 18 (0x48) is the frame-rate query; slots 0..17 are unknown.
@@ -220,6 +245,36 @@ void PMNode::SetFrameRate(float fRate, bool bFlag) {
     }
 }
 
+// DRAFT: 0x00193380 FindBone__6PMNodeFUi
+// note: original is 0xD0 bytes with an extra join nop after the loop (0xAC-0xB0), so every later branch is off by one instruction. Tried: plain while, do-while guard (11 lines differ, kept), break-with-result (worse).
+PMNode *PMNode::FindBone(unsigned int uID) {
+    PMNode *pChild;
+    if (uID == 0xFFFFFFFFU) {
+        return 0;
+    }
+    if (m_unkD0 == (int)uID) {
+        return this;
+    }
+    m_unk18 = 0;
+    pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            PMNode *pFound = pChild->FindBone(uID);
+            unsigned int uNext;
+            if (pFound != 0) {
+                return pFound;
+            }
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+    return 0;
+}
+
 // FUNCTION: 0x00193540 BuildDispList__6PMNodeFP6PArray
 void PMNode::BuildDispList(PArray *pArr) {
     PMNode *pChild;
@@ -273,6 +328,62 @@ void PMNode::AddBoneMatrixToDisplayList(bool bRecurse) {
             } while (pChild != 0);
         }
     }
+}
+
+// DRAFT: 0x001936C0 SetFrameTime__6PMNodeFf
+// note: 2 lines differ, both epilogue restore order (original lq s0 then lwc1 f20, ours reversed). Tried: local decl order, flag store after the frame-source call (worse).
+void PMNode::SetFrameTime(float fTime) {
+    PMNode *pChild;
+    void *pObj;
+    m_unk38 = *(float *)&m_unk34;
+    *(float *)&m_unk34 = fTime;
+    m_unk3E |= 8;
+    pObj = m_unk24;
+    if (pObj != 0) {
+        ((PFrameSource *)pObj)->Slot06();
+    }
+    m_unk18 = 0;
+    pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            unsigned int uNext;
+            ((PNodeVirtual *)pChild)->Slot02(fTime);
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+}
+
+// DRAFT: 0x00193890 GetFrameTime__6PMNodeFv
+// note: 10 lines differ: compare operand order at 0x14 and 0x60 (x != 0.0f kept; 0.0f != x compiles identically), branch offsets and epilogue/mtc1 placement at 0xB4-0xC8; join nop after the loop (0x193944) missing as in FindBone.
+float PMNode::GetFrameTime() {
+    PMNode *pChild;
+    float fTime = *(float *)&m_unk34;
+    if (fTime != 0.0f) {
+        return fTime;
+    }
+    m_unk18 = 0;
+    pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            float fChild = pChild->GetFrameTime();
+            unsigned int uNext;
+            if (fChild != 0.0f) {
+                return fChild;
+            }
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+    return 0.0f;
 }
 
 // DRAFT: 0x00193960 SetAnimLoopCount__6PMNodeFib
@@ -338,6 +449,34 @@ void PMNode::DisableAllHitBox() {
                 pChild = 0;
             }
         } while (pChild != 0);
+    }
+}
+
+// FUNCTION: 0x001943E0 AnimateBox__6PMNodeFf
+void PMNode::AnimateBox(float fTime) {
+    PAnim *pAnim;
+    unsigned char *pMesh;
+    pAnim = (PAnim *)m_unk24;
+    if (pAnim != 0 && (pAnim->m_unkA & 0x10)) {
+        m_unk28 = pAnim->FindChannel((eAnimType)5)->AnimateBox(fTime, m_unk3C);
+        if (m_unk28 != 0) {
+            return;
+        }
+        if (m_unk3C != 0) {
+            if (m_unk10 != 0) {
+                m_unk28 = (char *)m_unk10 + 0x10;
+            }
+        }
+        return;
+    } else {
+        pMesh = (unsigned char *)m_unk10;
+        if (pMesh != 0 && pMesh[0xD] != 0) {
+            m_unk3C = pMesh[0xE];
+            m_unk28 = (char *)m_unk10 + 0x10;
+            return;
+        }
+        m_unk3C = 0;
+        m_unk28 = 0;
     }
 }
 
@@ -538,6 +677,29 @@ void PMNode::RecurseSetFade(float fFade) {
                 pChild = 0;
             }
         } while (pChild != 0);
+    }
+}
+
+// FUNCTION: 0x00195B50 AttachAnim__6PMNodeFP5PAnimb
+void PMNode::AttachAnim(PAnim *pAnim, bool bFlag) {
+    PAnimFrame *pFrame;
+    if (pAnim == 0) {
+        CdsAssert__FPciPc("PMNode.cpp", 0x10C, "pAnim");
+    }
+    DestroyAnim();
+    if (bFlag) {
+        pFrame = (PAnimFrame *)__nw__FUi(0x34);
+        if (pFrame != 0) {
+            pFrame = __ct__10PAnimFrameFP5PAnim(pFrame, pAnim);
+        }
+        m_unk24 = pFrame;
+        if (m_unk24 == 0) {
+            CdsAssert__FPciPc("PMNode.cpp", 0x113, "mpAnim");
+        }
+        m_unk3E |= 2;
+    } else {
+        m_unk24 = pAnim;
+        m_unk3E &= 0xFD;
     }
 }
 

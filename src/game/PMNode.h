@@ -6,6 +6,7 @@
 struct tagParticleFxTrigger;
 class PObjectDisplayList;
 class PArray;
+class PAnim;
 // TODO(header): eBoxIntersect belongs to the owner header of the box-test enum. Placeholder until that header defines it; only the name matters for mangling.
 enum eBoxIntersect { eBoxIntersect_Placeholder = 0 };
 
@@ -16,9 +17,11 @@ public:
     void AddFxTriggers(PArray *pArr, bool bFlag);
     void SetAllFade(float fFade);
     float GetFrameRate();
+    PMNode *FindBone(unsigned int uID);
     void SetFrameRate(float fRate, bool bFlag);
     int GetWorldMeshCenter(float *pOut);
     void DisableAllHitBox();
+    void AnimateBox(float fTime);
     int Find(PMNode *pNode);
     PMNode *Find(unsigned int uID);
     void ScaleSet(float a, float b, float c, float d);
@@ -27,6 +30,7 @@ public:
     void RecurseSetFade(float fFade);
     void DestroyAnim();
     void RecurseDetachAnim();
+    void AttachAnim(PAnim *pAnim, bool bFlag);
     void DestroyFxTriggers(bool bA, bool bB, bool bC);
     void *GetFirstMesh();
     void StopAmbientSoundsByObject();
@@ -34,6 +38,8 @@ public:
     void CopyFxTriggers(PMNode &src);
     void BuildDispList(PArray *pArr);
     void AddBoneMatrixToDisplayList(bool bRecurse);
+    void SetFrameTime(float fTime);
+    float GetFrameTime();
     void SetAnimLoopCount(int nCount, bool bFlag);
     void SetAllFrustrumTest(eBoxIntersect eMode);
     void InitMembers();
@@ -49,7 +55,7 @@ public:
     PMNode **m_unk1C;       // 0x01C child array
     char _pad020[0x4];
     void *m_unk24;          // 0x024 object whose vtable slot 0x48 returns a frame rate
-    int m_unk28;            // 0x028
+    void *m_unk28;          // 0x028 AnimateBox result (PChannel return or PMesh + 0x10)
     float m_unk2C;          // 0x02C fade value
     int m_unk30;            // 0x030
     int m_unk34;            // 0x034
