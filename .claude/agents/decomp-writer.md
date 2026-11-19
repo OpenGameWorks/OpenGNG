@@ -34,6 +34,7 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4`) that `tool
 - Store order and local declaration order set instruction order; separate early returns or a duplicated tail replace a shared exit.
 - A global the original reaches with `lui`/`addiu` (or `%hi`/`%lo`) needs a complete type larger than 8 bytes; an extern of incomplete or small type compiles to gp-relative `lw ...(gp)` and mismatches. A placeholder member (`char _pad[0x10];`) in your header fixes it. A file-wide `// FLAGS: -sdatathreshold 0` is wrong: most original files use gp-relative globals elsewhere.
 - A function ending in a frameless `j` tail call matches only with C++ exceptions off: line 1 reads `// FLAGS: -Cpp_exceptions off` (appended to any existing FLAGS), and every FUNCTION tag in the file is rechecked.
+- MW inlines builtin `abs()`; where the original calls libc `abs` (`jal 0x122520`), a block-scope `int abs(int);` declaration inside the function keeps the call.
 - A void callee declaration where the original reads v0 (or the reverse) shifts registers: callee return types follow their own asm.
 - `src/game/PWorld.cpp` holds the first match and serves as a model.
 
