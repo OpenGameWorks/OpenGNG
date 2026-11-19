@@ -6,9 +6,16 @@
 class PSound {
 public:
     void StopStreamsAndRequestEEControl();
+    int GetEEControlStatus();
+    void SetAllowCallOneFrameHasElapsed(bool flag);
     char _pad000[0x10];
 };
 extern PSound gSound;
+
+class FileUtils {
+public:
+    void LoadingHangCheckInit();
+};
 
 class PParticleManager {
 public:
@@ -54,21 +61,43 @@ extern unsigned char __vt__12HudInventory[];
 class PArray {
 public:
     void Allocate(unsigned int count);
+    void Add(void *item);
     void Remove(void *item);
 };
+
+class FontNode;
 
 class FontManager {
 public:
     void Init();
+    void RemoveText(FontNode *pNode);
+    int DisplayString(int arg0, int arg1, int arg2, bool arg3);
 };
 
 // MemMgr is 908 bytes; the field at offset 0x18 is saved and cleared around AddIcon.
 extern char MemMgr[908];
 
+extern "C" void FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(void *, float, float, bool, int);
+extern "C" void CdsAssert__FPciPc(char *, int, char *);
+extern Interface gInterface;
+
 // FUNCTION: 0x13F880 SoundGainEEControl__9InterfaceFv
 void Interface::SoundGainEEControl() {
     gSound.StopStreamsAndRequestEEControl();
     WaitForEEControl();
+}
+
+// DRAFT: 0x13F8C0 WaitForEEControl__9InterfaceFv
+// note: 6 words off; original leaves a nop in the delay slot of the exit `b`, ours fills it with the epilogue ld ra. Tried break/return/for-increment forms, same count.
+void Interface::WaitForEEControl() {
+    ((FileUtils *)this)->LoadingHangCheckInit();
+    for (unsigned int i = 0;; i++) {
+        if (gSound.GetEEControlStatus() == 3) {
+            gSound.SetAllowCallOneFrameHasElapsed(false);
+            break;
+        }
+        LoadingDisplay(i, 6);
+    }
 }
 
 // FUNCTION: 0x13F9D0 LevelClear__9InterfaceFv
@@ -122,6 +151,19 @@ void Interface::AddAbility(int arg0) {
     *(int *)(MemMgr + 0x18) = saved;
 }
 
+// FUNCTION: 0x1413A0 SetValue__12HudBossMeterFs
+void HudBossMeter::SetValue(short value) {
+    m_unkC = value;
+    if (value < m_unk14) {
+        float f = (float)value / *(float *)&m_unk10;
+        if (!(f <= 1.0f)) {
+            f = 1.0f;
+        }
+        *(float *)((char *)m_unk18 + 0xA0) = f;
+        *((unsigned char *)m_unk18 + 0x3E) |= 8;
+    }
+}
+
 // FUNCTION: 0x1416B0 Reset__12HudBossMeterFv
 void HudBossMeter::Reset() {
     *(int *)((char *)m_unk4 + 0xC) = 0;
@@ -171,6 +213,15 @@ GameHud::~GameHud() {
     ((PVirtObj *)this)->Slot01();
 }
 
+// FUNCTION: 0x144180 Init__7HudHintFUi
+void HudHint::Init(unsigned int arg0) {
+    m_unk0 = 0;
+    m_unk8 = arg0;
+    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(&gInterface, 255.0f, 17.0f, true, 0);
+    m_unk4 = gInterface.m_unk1C0;
+    gInterface.m_unk1C0 = m_unk4 | 0x10;
+}
+
 // FUNCTION: 0x144690 Init__7GameHudFP9PMeshNodeP7HudData
 void GameHud::Init(PMeshNode *meshNode, HudData *hud) {
     m_unk4 = ((PMNode *)meshNode)->Find(hud->m_unk0);
@@ -185,6 +236,15 @@ void Interface::LoadingDisplay(unsigned int arg0, int arg1) {
         return;
     }
     LoadingDisplayNew(arg0);
+}
+
+// FUNCTION: 0x144CA0 AddMeshLayer__9InterfaceFP6PMNode
+void Interface::AddMeshLayer(PMNode *node) {
+    if ((unsigned int)m_unk404 >= 8) {
+        CdsAssert__FPciPc("Interface.cpp", 0x1ED, "mMeshLayerList.GetCount() < MAX_MESHLAYER");
+    }
+    ((PArray *)&m_unk404)->Add(node);
+    m_unk1C0 |= 8;
 }
 
 // FUNCTION: 0x144D10 DeleteMeshLayer__9InterfaceFP6PMNode
@@ -218,6 +278,18 @@ int Interface::IsTreasureOK() {
         return 1;
     }
     return 0;
+}
+
+// FUNCTION: 0x1453E0 DisplayLevelName__9InterfaceFii
+void Interface::DisplayLevelName(int arg0, int arg1) {
+    if (m_unk1B8 != 0) {
+        ((FontManager *)((char *)this + 0x80))->RemoveText((FontNode *)m_unk1B8);
+        m_unk1B8 = 0;
+    }
+    if (arg0 >= 0) {
+        m_unk1B8 = ((FontManager *)((char *)this + 0x80))->DisplayString(arg0 + 0x270, arg1, 0, false);
+        m_unk1BC = arg1;
+    }
 }
 
 // FUNCTION: 0x1459D0 Init__9InterfaceFv

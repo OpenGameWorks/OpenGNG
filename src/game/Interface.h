@@ -19,11 +19,13 @@ public:
 class HudBossMeter {
 public:
     void Reset();
+    void SetValue(short value);
 
     char _pad000[0x4];
     void *m_unk4;               // 0x004 pointer to a HUD element (fields at 0x0C, 0x2C, 0x84)
     float m_unk8;               // 0x008
-    char _pad00C[0x3];
+    short m_unkC;               // 0x00C
+    char _pad00E[0x1];
     signed char m_unkF;         // 0x00F
     int m_unk10;                // 0x010
     short m_unk14;              // 0x014
@@ -41,6 +43,15 @@ public:
     void *m_unk38;              // 0x038
     char _pad03C[0xC];
     void *m_unk48;              // 0x048
+};
+
+class HudHint {
+public:
+    void Init(unsigned int arg0);
+
+    int m_unk0;                 // 0x000
+    int m_unk4;                 // 0x004
+    unsigned int m_unk8;        // 0x008
 };
 
 class GameHud {
@@ -66,19 +77,23 @@ public:
     void LevelClear();
     void AddAbility(int arg0);
     int IsTreasureOK();
+    void DisplayLevelName(int arg0, int arg1);
     void Init();
     void InitMatrices();
     void DeleteMeshLayer(PMNode *node);
+    void AddMeshLayer(PMNode *node);
 
     char _pad000[0x80];
     int m_unk80;                // 0x080 first word of the embedded FontManager
     char _pad084[0x134];
     int m_unk1B8;               // 0x1B8
-    char _pad1BC[0x4];
+    int m_unk1BC;               // 0x1BC
     int m_unk1C0;               // 0x1C0
     char _pad1C4[0x133];
     unsigned char m_unk2F7;     // 0x2F7
-    char _pad2F8[0x120];
+    char _pad2F8[0x10C];
+    int m_unk404;               // 0x404 mesh layer list count, then entries (PArray)
+    char _pad408[0x10];
     int m_unk418;               // 0x418
     int m_unk41C;               // 0x41C
     int m_unk420;               // 0x420
