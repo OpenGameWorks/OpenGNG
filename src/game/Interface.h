@@ -16,6 +16,15 @@ public:
     PParticleSystem *m_unk20;   // 0x020
 };
 
+class HudSuper {
+public:
+    void Update(int arg0);
+    void UpdateBar(int arg0);
+
+    char _pad000[0xC];
+    short m_unkC;               // 0x00C current super value, stepped toward the player's target
+};
+
 class HudBossMeter {
 public:
     void Reset();

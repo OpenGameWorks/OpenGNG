@@ -57,6 +57,10 @@ public:
 
 extern unsigned char __vt__7GameHud[];
 extern unsigned char __vt__12HudInventory[];
+extern unsigned char __vt__7HudGrim[];
+extern unsigned char __vt__8HudCombo[];
+extern unsigned char __vt__12HudBossMeter[];
+extern "C" void __dl__FPv(void *pMem);
 
 class PArray {
 public:
@@ -80,6 +84,21 @@ extern char MemMgr[908];
 extern "C" void FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(void *, float, float, bool, int);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern Interface gInterface;
+
+// FUNCTION: 0x13F800 __dt__7HudGrimFv
+extern "C" HudGrim *__dt__7HudGrimFv(HudGrim *pThis, short nFlag) {
+    if (pThis != 0) {
+        *(unsigned char **)pThis = __vt__7HudGrim;
+        if (pThis != 0) {
+            *(unsigned char **)pThis = __vt__7GameHud;
+            ((PVirtObj *)pThis)->Slot01();
+        }
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
+}
 
 // FUNCTION: 0x13F880 SoundGainEEControl__9InterfaceFv
 void Interface::SoundGainEEControl() {
@@ -140,6 +159,27 @@ void HudGrim::Delete() {
     if (temp_a1 != 0) {
         ((PParticleManager *)(gGfxEng + 0x154F00))->Remove(temp_a1);
         m_unk20 = 0;
+    }
+}
+
+// FUNCTION: 0x140270 Update__8HudSuperFi
+void HudSuper::Update(int arg0) {
+    short cur = m_unkC;
+    int target = *(int *)((char *)mpPlayerData__7GameHud + 0x3C);
+    int diff = target - cur;
+    if (diff != 0) {
+        if (diff > 0) {
+            m_unkC = cur + 4;
+            if (target < m_unkC) {
+                m_unkC = (short)target;
+            }
+        } else {
+            m_unkC = cur - 4;
+            if (m_unkC < target) {
+                m_unkC = (short)target;
+            }
+        }
+        UpdateBar(m_unkC);
     }
 }
 
@@ -297,4 +337,49 @@ void Interface::Init() {
     ((FontManager *)((char *)this + 0x80))->Init();
     ((PArray *)((char *)this + 0x404))->Allocate(8);
     InitMatrices();
+}
+
+// FUNCTION: 0x145E40 __dt__12HudInventoryFv
+extern "C" HudInventory *__dt__12HudInventoryFv(HudInventory *pThis, short nFlag) {
+    if (pThis != 0) {
+        *(unsigned char **)pThis = __vt__12HudInventory;
+        if (pThis != 0) {
+            *(unsigned char **)pThis = __vt__7GameHud;
+            ((PVirtObj *)pThis)->Slot01();
+        }
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
+}
+
+// FUNCTION: 0x145EC0 __dt__8HudComboFv
+extern "C" HudCombo *__dt__8HudComboFv(HudCombo *pThis, short nFlag) {
+    if (pThis != 0) {
+        *(unsigned char **)pThis = __vt__8HudCombo;
+        if (pThis != 0) {
+            *(unsigned char **)pThis = __vt__7GameHud;
+            ((PVirtObj *)pThis)->Slot01();
+        }
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
+}
+
+// FUNCTION: 0x145F40 __dt__12HudBossMeterFv
+extern "C" HudBossMeter *__dt__12HudBossMeterFv(HudBossMeter *pThis, short nFlag) {
+    if (pThis != 0) {
+        *(unsigned char **)pThis = __vt__12HudBossMeter;
+        if (pThis != 0) {
+            *(unsigned char **)pThis = __vt__7GameHud;
+            ((PVirtObj *)pThis)->Slot01();
+        }
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
 }
