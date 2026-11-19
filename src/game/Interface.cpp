@@ -31,6 +31,7 @@ public:
 
 class PMNode {
 public:
+    virtual void Slot00(int flag);
     PMNode *Find(unsigned int id);
 };
 
@@ -43,12 +44,17 @@ public:
 
 class HudInventory {
 public:
+    HudInventory();
     void AddIcon(int id);
 };
+
+extern unsigned char __vt__7GameHud[];
+extern unsigned char __vt__12HudInventory[];
 
 class PArray {
 public:
     void Allocate(unsigned int count);
+    void Remove(void *item);
 };
 
 class FontManager {
@@ -72,6 +78,33 @@ void Interface::LevelClear() {
     m_unk1C0 &= ~8;
 }
 
+// TODO(header): mpPlayerData__7GameHud is a pointer-sized small-data global.
+extern GameHud *mpPlayerData__7GameHud;
+
+// DRAFT: 0x13FEE0 UpdateCover__7HudGrimFv
+// note: 2 words differ; the original runs the i<3 compare before the off+=4 update, the compiler emits off+=4 first. Tried local orders, off=i<<2, explicit condition variable.
+void HudGrim::UpdateCover() {
+    int threshold = 0x14;
+    int hp = *(int *)((char *)mpPlayerData__7GameHud + 0x34);
+    int i = 0;
+    int off = 0;
+    do {
+        void *elem = *(void **)((char *)this + off + 0x14);
+        if (elem != 0) {
+            int val;
+            if (hp >= threshold) {
+                val = 1;
+            } else {
+                val = 0;
+            }
+            *(int *)((char *)elem + 0xC) = val;
+        }
+        i += 1;
+        off += 4;
+        threshold += 0xA;
+    } while (i < 3);
+}
+
 // FUNCTION: 0x140180 Delete__7HudGrimFv
 void HudGrim::Delete() {
     PParticleSystem *temp_a1 = m_unk20;
@@ -89,6 +122,19 @@ void Interface::AddAbility(int arg0) {
     *(int *)(MemMgr + 0x18) = saved;
 }
 
+// FUNCTION: 0x1416B0 Reset__12HudBossMeterFv
+void HudBossMeter::Reset() {
+    *(int *)((char *)m_unk4 + 0xC) = 0;
+    *(int *)((char *)m_unk4 + 0x2C) = 0x3F800000;
+    *(float *)((char *)m_unk4 + 0x84) = m_unk8 - 5.0f;
+    *(int *)((char *)m_unk18 + 0xA0) = 0x3F800000;
+    *(int *)((char *)m_unk1C + 0xA0) = 0;
+    m_unkF = 0;
+    m_unk14 = -1;
+    m_unk10 = 0x42C80000;
+    m_unk17 = 1;
+}
+
 // FUNCTION: 0x141A80 ComboFinish__8HudComboFv
 void HudCombo::ComboFinish() {
     void *temp_a1 = m_unk48;
@@ -99,6 +145,30 @@ void HudCombo::ComboFinish() {
     if (temp_a0 != 0) {
         *(int *)((char *)temp_a0 + 0x2C) = 0x3F800000;
     }
+}
+
+// FUNCTION: 0x143770 __ct__12HudInventoryFv
+HudInventory::HudInventory() {
+    *(void **)this = __vt__7GameHud;
+    *(int *)((char *)this + 0x4) = 0;
+    *(void **)this = __vt__12HudInventory;
+    *(int *)((char *)this + 0x4) = 0;
+    *(signed char *)((char *)this + 0x10) = 1;
+    *(int *)((char *)this + 0x14) = 0;
+    *(int *)((char *)this + 0x18) = 0;
+    *(int *)((char *)this + 0x1C) = 0;
+    *(int *)((char *)this + 0x20) = 0;
+    *(int *)((char *)this + 0x24) = 0;
+    *(int *)((char *)this + 0x28) = 0;
+    *(int *)((char *)this + 0x2C) = 0;
+    *(int *)((char *)this + 0x30) = 0;
+    *(int *)((char *)this + 0x3C) = -1;
+}
+
+// FUNCTION: 0x1437D0 __dt__7GameHudFv
+GameHud::~GameHud() {
+    m_unk0 = __vt__7GameHud;
+    ((PVirtObj *)this)->Slot01();
 }
 
 // FUNCTION: 0x144690 Init__7GameHudFP9PMeshNodeP7HudData
@@ -115,6 +185,14 @@ void Interface::LoadingDisplay(unsigned int arg0, int arg1) {
         return;
     }
     LoadingDisplayNew(arg0);
+}
+
+// FUNCTION: 0x144D10 DeleteMeshLayer__9InterfaceFP6PMNode
+void Interface::DeleteMeshLayer(PMNode *node) {
+    if (node != 0) {
+        node->Slot00(1);
+    }
+    ((PArray *)((char *)this + 0x404))->Remove(node);
 }
 
 // FUNCTION: 0x145370 InitScreenFadeVars__9InterfaceFv

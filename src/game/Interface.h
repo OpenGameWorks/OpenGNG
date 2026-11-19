@@ -3,14 +3,34 @@
 
 class PParticleSystem;
 class PMeshNode;
+class PMNode;
 class HudData;
 
 class HudGrim {
 public:
+    void UpdateCover();
     void Delete();
 
-    char _pad000[0x20];
+    char _pad000[0x14];
+    void *m_unk14[3];           // 0x014 cover element pointers
     PParticleSystem *m_unk20;   // 0x020
+};
+
+class HudBossMeter {
+public:
+    void Reset();
+
+    char _pad000[0x4];
+    void *m_unk4;               // 0x004 pointer to a HUD element (fields at 0x0C, 0x2C, 0x84)
+    float m_unk8;               // 0x008
+    char _pad00C[0x3];
+    signed char m_unkF;         // 0x00F
+    int m_unk10;                // 0x010
+    short m_unk14;              // 0x014
+    char _pad016[0x1];
+    signed char m_unk17;        // 0x017
+    void *m_unk18;              // 0x018 element with field at 0xA0
+    void *m_unk1C;              // 0x01C element with field at 0xA0
 };
 
 class HudCombo {
@@ -25,6 +45,7 @@ public:
 
 class GameHud {
 public:
+    ~GameHud();
     void Init(PMeshNode *meshNode, HudData *hud);
 
     void *m_unk0;               // 0x000 vtable pointer (__vt__7GameHud)
@@ -47,6 +68,7 @@ public:
     int IsTreasureOK();
     void Init();
     void InitMatrices();
+    void DeleteMeshLayer(PMNode *node);
 
     char _pad000[0x80];
     int m_unk80;                // 0x080 first word of the embedded FontManager
