@@ -371,21 +371,21 @@ void FontManager::InitFMV() {
     gOverlayEng.InitTextures(&nTexture, 1);
 }
 
-// DRAFT: 0x1346C0 Init__11FontManagerFv
-// note: 55 words; the name literal is 0x240080 but the original relocates FontFile$6702 (lui/addiu, not ori), and a $ name cannot be declared in C++; the first Allocate call also keeps this in s1 with a 0x30 frame where the original uses s0 and a 0x20 frame.
+// FUNCTION: 0x1346C0 Init__11FontManagerFv
 void FontManager::Init() {
+    static char FontFile[] = "PSXDATA\\RESOURCE\\FONT.PAK";
     ((PArray *)this)->Allocate(0x30);
     ((PArray *)((char *)this + 0x1C))->Allocate(0x30);
     ((PArray *)((char *)this + 0x110))->Allocate(4);
-    if (((PResourceManager *)((char *)this + 0x2C))->LoadGlobalResource((char *)0x240080, 0) == 0) {
+    if (((PResourceManager *)m_unk2C)->LoadGlobalResource(FontFile, 0) == 0) {
         CdsAssert("Font.cpp", 0x5E, "0");
     }
     gInterface[0x1B37] = 1;
     m_unk104 = (int)&Large_fontCharDef | 0x30000000;
     m_unk108 = 0x21;
     m_unk10A = 0xFE;
-    m_unk10C = ((PResourceManager *)((char *)this + 0x2C))->GetResource(0x8400000B, 0);
-    mpTextBox__8FontNode = (char *)((PResourceManager *)((char *)this + 0x2C))->GetResource(0x810001DC, 0);
+    m_unk10C = ((PResourceManager *)m_unk2C)->GetResource(0x8400000B, 0);
+    mpTextBox__8FontNode = (char *)((PResourceManager *)m_unk2C)->GetResource(0x810001DC, 0);
     mbEnableBox__8FontNode = 0;
 }
 

@@ -63,7 +63,8 @@ public:
     int m_unk1C;                // 0x01C second PArray: item count
     int m_unk20;                // 0x020 second PArray: index
     FontNode **m_unk24;         // 0x024 second PArray: item table
-    char _pad028[0xD4];
+    char _pad028[0x4];
+    char m_unk2C[0xD0];         // 0x02C embedded PResourceManager
     int m_unkFC;                // 0x0FC dialog table, from BuildDialogTable
     int m_unk100;               // 0x100 subtitle table, 12 bytes per entry
     int m_unk104;               // 0x104 font character table pointer, ORed with 0x30000000
