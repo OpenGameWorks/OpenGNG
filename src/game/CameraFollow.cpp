@@ -20,11 +20,28 @@ extern "C" void *__dt__15tag_ControlDataFv(void *pThis, short nFlag);
 extern "C" float Round180__Ff(float);
 extern "C" float FastMath_Sin180__Ff(float);
 extern "C" void __mi__5PVec3FR5PVec3(float *ret, float *lhs, float *rhs);
+extern "C" float sqrtf(float x);
+extern "C" float acosf(float x);
+extern "C" void sceVu0ApplyMatrix(float *dst, float *mat, float *src);
+extern "C" void sceVu0AddVector(float *dst, float *a, float *b);
+extern char mBGCollision__15EntityBaseClass[0x20];
+extern "C" float FastMath_Fabs__Ff(float f);
 
 class PVec3 {
 public:
-    PVec3(const PVec3 &) {}
+    PVec3(const PVec3 &o) {
+        m_v[0] = o.m_v[0];
+        m_v[1] = o.m_v[1];
+        m_v[2] = o.m_v[2];
+        m_v[3] = o.m_v[3];
+    }
     float m_v[4];
+};
+
+class BGCollision {
+public:
+    int FindIntersect(PVec3 &arg0, PVec3 &arg1, unsigned int arg2, float (*arg3)[4]);
+    void CameraBGIntersect(PVec3 &arg0, PVec3 arg1, float arg2, unsigned int arg3, float &arg4, float (*arg5)[4]);
 };
 
 class MathAPI;
@@ -60,6 +77,11 @@ void CameraSpline::AddControlPoint(PVec3 arg0) {
     sceVu0CopyVector(m_ctrlPts[idx].m_v, arg0.m_v);
 }
 
+// FUNCTION: 0x00173BA0 GetPosition__12CameraSplineFUiR5PVec3
+void CameraSpline::GetPosition(unsigned int arg0, PVec3 &arg1) {
+    sceVu0CopyVector(arg1.m_v, m_curves[arg0].m_v);
+}
+
 // FUNCTION: 0x00173BD0 __ct__12CameraSplineFv
 CameraSpline::CameraSpline() {
     m_iNumCtrlPoints = 0;
@@ -73,6 +95,28 @@ tag_ControlData::~tag_ControlData() {
 
 // FUNCTION: 0x00173CB0 __dt__13tag_CurveDataFv
 tag_CurveData::~tag_CurveData() {
+}
+
+// DRAFT: 0x00173D20 ForceReset__12CameraFollowFb
+// note: 28 lines; original copies by-value PVec3 temps to sp+0x20/0x30/0x40 with lwc1/swc1 pairs in a different order. Tried: empty copy ctor (43), no copy ctor (breaks 4 matches), copy ctor with body plus explicit locals (28), direct args (34).
+void CameraFollow::ForceReset(bool arg0) {
+    if (arg0) {
+        *(int *)&m_unk10[0] = 0;
+        m_unk10[1] = m_unk144;
+        m_unk10[2] = m_unk140;
+        sceVu0ApplyMatrix(m_unk20, &m_unkA0, m_unk10);
+        sceVu0AddVector(m_unk20, m_unk20, m_unk180);
+        *(int *)&m_unk20[3] = 0x3F800000;
+        m_unk224 = m_unk180[1];
+        sceVu0CopyVector(m_unk40, m_unk180);
+        m_unk40[1] += m_unk164;
+    } else if (((BGCollision *)mBGCollision__15EntityBaseClass)->FindIntersect(*(PVec3 *)m_unk40, *(PVec3 *)m_unk20, 2, 0)) {
+        PVec3 tmp1 = *(PVec3 *)m_unk40;
+        ((BGCollision *)mBGCollision__15EntityBaseClass)->CameraBGIntersect(*(PVec3 *)m_unk20, tmp1, 1.0f, 2, *(float *)&_pad6240[0x40], 0);
+    }
+    PVec3 tmp2 = *(PVec3 *)m_unk20;
+    PVec3 tmp3 = *(PVec3 *)m_unk40;
+    m_pCamera->SetSourceTarget(tmp2, tmp3);
 }
 
 // FUNCTION: 0x00173E70 SetSourceTarget__6CameraF5PVec35PVec3
@@ -105,6 +149,35 @@ void CameraFollow::AddTwistEffect() {
 void CameraFollow::SetSourceAndTarget(PVec3 arg0, PVec3 arg1) {
     sceVu0CopyVector(m_unk20, arg0.m_v);
     sceVu0CopyVector(m_unk40, arg1.m_v);
+}
+
+// DRAFT: 0x00174B30 ProcessCamBox__12CameraFollowFv
+// note: 46 lines; 0.1f is pooled (lwc1 0x0($gp)) where the original builds it inline (lui/ori/mtc1), which shifts the branch layout; case 0 first gave 54, case 1 first is kept.
+int CameraFollow::ProcessCamBox() {
+    float diff;
+    switch (m_unk210) {
+    case 1:
+        if (m_unk144 != m_unk214) {
+            diff = m_unk214 - m_unk144;
+            if (FastMath_Fabs__Ff(diff) <= 0.1f) {
+                m_unk144 = m_unk214;
+            } else {
+                m_unk144 = m_unk144 + (diff * (0.1f * m_unk16C));
+            }
+        }
+        break;
+    case 0:
+        if (m_unk144 != m_unk174) {
+            diff = m_unk174 - m_unk144;
+            if (FastMath_Fabs__Ff(diff) <= 0.1f) {
+                m_unk144 = m_unk174;
+            } else {
+                m_unk144 = m_unk144 + (diff * (0.1f * m_unk16C));
+            }
+        }
+        break;
+    }
+    return 1;
 }
 
 // DRAFT: 0x00174F20 CanDoHeadcam__12CameraFollowFv
@@ -152,6 +225,29 @@ void CameraFollow::CamCollideCylinder(PVec3 arg0, float arg1, float arg2) {
             m_unk22C = 1;
         }
     }
+}
+
+// DRAFT: 0x001756F0 GetAngleBetweenCamAndPlayer__12CameraFollowFRf
+// note: 48 words differ; c and a volatile matches stack slots (65 without); tried local reorder, c-only volatile (62), dot-before-arg0 (49), range-check form (48); remaining is schedule and c[2]/a[2] pointer use.
+float CameraFollow::GetAngleBetweenCamAndPlayer(float &arg0) {
+    float v[4];
+    volatile float c[4];
+    volatile float a[4];
+    float d[4];
+    __mi__5PVec3FR5PVec3(d, m_unk20, m_unk40);
+    sceVu0CopyVector(v, d);
+    c[0] = m_unkC0;
+    c[2] = m_unkC8;
+    a[0] = m_unkA0;
+    a[2] = m_unkA8;
+    arg0 = v[0] * a[0] + v[2] * a[2];
+    float dot = v[0] * c[0] + v[2] * c[2];
+    float q = dot / (sqrtf(v[0] * v[0] + v[2] * v[2]) * sqrtf(c[0] * c[0] + c[2] * c[2]));
+    float ang = 0.0f;
+    if (q >= -1.0f && q <= 1.0f) {
+        ang = 57.295776f * acosf(q);
+    }
+    return FastMath_Fabs__Ff(ang);
 }
 
 // DRAFT: 0x00175830 PlayerIsIdle__12CameraFollowFv
@@ -238,6 +334,28 @@ void Physics::GetGroundPos() {
         sw v1, 0xC(a0)
         jr ra
     }
+}
+
+// DRAFT: 0x00177090 PlayerMovedSinceLastSwing__12CameraFollowFv
+// note: 68 lines; 0.1f pooled via gp where the original builds it inline (lui/ori/mtc1), which shifts branch layout. Shared-exit variant gave 79.
+int CameraFollow::PlayerMovedSinceLastSwing() {
+    sceVu0SubVector(m_unk10, m_unk1C0, m_unk180);
+    if (FastMath_Fabs__Ff(m_unk10[0]) <= 0.1f) {
+        if (!(FastMath_Fabs__Ff(m_unk10[1]) <= 0.1f) || !(FastMath_Fabs__Ff(m_unk10[2]) <= 0.1f)) {
+            return 1;
+        }
+        sceVu0SubVector(m_unk10, m_unk1D0, (float *)m_unk184);
+        if (!(FastMath_Fabs__Ff(m_unk10[0]) <= 0.1f)) {
+            return 1;
+        }
+        if (!(FastMath_Fabs__Ff(m_unk10[1]) <= 0.1f)) {
+            return 1;
+        }
+        if (FastMath_Fabs__Ff(m_unk10[2]) <= 0.1f) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 // FUNCTION: 0x00177820 StorePlayerPos__12CameraFollowFv
