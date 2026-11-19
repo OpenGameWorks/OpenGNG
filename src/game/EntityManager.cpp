@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "EntityManager.h"
 
 // TODO(header): foreign declarations
@@ -16,6 +17,9 @@ public:
 class PMNode {
 public:
     int CheckAnimated();
+    void RecurseResetAnimByID(unsigned int arg0);
+    void RecurseApplyAnimFlagsByID(unsigned int arg0, bool arg1, int arg2);
+    void BuildAnimList(PArray *arg0, unsigned int arg1);
 };
 
 class OverlayManager {
@@ -89,14 +93,35 @@ public:
 };
 
 float FastMath_Fabs(float f);
+extern char gEng[105360];
+extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
+extern "C" float sceVu0InnerProduct(float *a, float *b);
+extern "C" float sqrtf(float x);
 
 extern unsigned char gMC[0x1000];
+
+class Debug {
+public:
+    void StartTimer(unsigned int nId);
+    void StopTimer(unsigned int nId);
+    char _pad000[0x10];         // placeholder size, keeps gDebug out of small data
+};
+extern Debug gDebug;
 
 class EntityBaseClass {
 public:
     bool CameraLookingAtMe();
+    int CheckSleep(bool arg0);
+    void ProcessPhysics(float arg0, int arg1);
 
-    char _pad000[0x3C];
+    char _pad000[0x04];
+    unsigned int m_unk04;       // 0x04
+    char _pad08[0x0C - 0x08];
+    unsigned int m_unk0C;       // 0x0C
+    char _pad10[0x1B - 0x10];
+    unsigned char m_unk1B;      // 0x1B
+    unsigned char m_unk1C;      // 0x1C
+    char _pad1D[0x3C - 0x1D];
     char *m_unk3C;              // 0x3C
     char _pad040[0x190 - 0x40];
     float m_unk190[4];          // 0x190
@@ -160,6 +185,97 @@ void EntityManager::UpdateSwordBGAnim() {
                 node = m_unk5B58[m_unk5B54];
             }
         } while (node != 0);
+    }
+}
+
+// FUNCTION: 0x001463B0 ResetSwordBGAnim__13EntityManagerFv
+void EntityManager::ResetSwordBGAnim() {
+    m_unk5B54 = 0;
+    PMNode *node;
+    if (m_unk5B50 != 0) {
+        node = *m_unk5B58;
+    } else {
+        node = 0;
+    }
+    if (node != 0) {
+        do {
+            node->RecurseResetAnimByID(0);
+            node->RecurseApplyAnimFlagsByID(1, true, 0);
+            node->RecurseApplyAnimFlagsByID(0x3E8, true, 0);
+            unsigned int idx = m_unk5B54 + 1;
+            m_unk5B54 = idx;
+            node = 0;
+            if (idx < (unsigned int)m_unk5B50) {
+                node = m_unk5B58[m_unk5B54];
+            }
+        } while (node != 0);
+    }
+}
+
+// FUNCTION: 0x00146690 InitSwordBGAnimList__13EntityManagerFP9PMeshNode
+void EntityManager::InitSwordBGAnimList(PMeshNode *pMesh) {
+    if (m_unk5B58 != 0) {
+        m_unk5B50 = 0;
+        m_unk5B54 = 0;
+    }
+    ((PMNode *)pMesh)->BuildAnimList((PArray *)&m_unk5B50, 0x208);
+    if ((unsigned int)m_unk5B50 > 0x20) {
+        CdsAssert("EntityManager.cpp", 0x827, "mSwordBGAnimList.GetCount() <= MAX_SWORD_BGANIM");
+    }
+    if (m_unk5B78 != 0) {
+        m_unk5B70 = 0;
+        m_unk5B74 = 0;
+    }
+    ((PMNode *)pMesh)->BuildAnimList((PArray *)&m_unk5B70, 0x202);
+    ((PMNode *)pMesh)->BuildAnimList((PArray *)&m_unk5B70, 0x1FF);
+    ((PMNode *)pMesh)->BuildAnimList((PArray *)&m_unk5B70, 0x200);
+    if ((unsigned int)m_unk5B70 > 0x20) {
+        CdsAssert("EntityManager.cpp", 0x82C, "mOnTriggerList.GetCount() <= MAX_TRIGGER");
+    }
+}
+
+// DRAFT: 0x00146D80 CompareDistToCam__FPvPv
+// note: string literals fixed by -str readonly; still differs in register allocation (pA lands in s2 with pCam in s0, original pCam s2/pA s0/pB s1), f20 prologue save order, and pB copy placement; tried pA used directly, pCam as float*.
+int CompareDistToCam(void *pA, void *pB) {
+    float sp50[4];
+    float *pCam = (float *)(gEng + 0x19760);
+    if (pCam == 0) {
+        CdsAssert("EntityManager.cpp", 0x740, "pCam");
+    }
+    char *srcA = *(char **)((char *)pA + 0x3C);
+    float *pTargetA = (float *)((char *)pA + 0x190);
+    if (srcA != 0) {
+        pTargetA = (float *)(srcA + 0x80);
+    }
+    sceVu0SubVector(sp50, pCam, pTargetA);
+    float d0 = sqrtf(sceVu0InnerProduct(sp50, sp50));
+    char *srcB = *(char **)((char *)pB + 0x3C);
+    float *pTargetB = (float *)((char *)pB + 0x190);
+    if (srcB != 0) {
+        pTargetB = (float *)(srcB + 0x80);
+    }
+    sceVu0SubVector(sp50, pCam, pTargetB);
+    float d1 = sqrtf(sceVu0InnerProduct(sp50, sp50));
+    return d0 > d1;
+}
+
+// DRAFT: 0x00146E70 PutApparitionsToSleep__13EntityManagerFv
+// note: 45 lines differ; prologue and entry addressing match, loop shape differs (original enters at a bottom test via b with s0=0 in the delay slot, has a beqz $at guard at the head, and loads m_unk5078 at the test). Tried while form, swapped counter/offset declarations (worse), for form (45, kept).
+void EntityManager::PutApparitionsToSleep() {
+    if (m_unk5D48 == 0) {
+        unsigned int off = 0;
+        for (unsigned int i = 0; i < m_unk5078; i++) {
+            EntityBaseClass *pEntity = *(EntityBaseClass **)((char *)m_unk5080 + off);
+            if (pEntity == 0) {
+                CdsAssert("EntityManager.cpp", 0x721, "pEntity");
+            }
+            if (pEntity->m_unk1B != 0 && pEntity->m_unk1C == 0) {
+                if (pEntity->CheckSleep(false)) {
+                    Destroy(pEntity->m_unk04, pEntity->m_unk0C);
+                }
+            }
+            off += 4;
+        }
     }
 }
 
@@ -375,6 +491,20 @@ void *EntityManager::GetPtrToApparition(unsigned int arg0) {
     return 0;
 }
 
+// DRAFT: 0x00148CC0 RunPhysics__13EntityManagerFf
+// note: 20 diffs; original enters the loop with b to a bottom test (ours tests beqz a0 at the top), and reloads m_unk50B4 from memory after the store (ours reuses the addiu result); tried nested while (worse), increment in the update clause (same 20 plus shifted tail).
+void EntityManager::RunPhysics(float arg0) {
+    gDebug.StartTimer(2);
+    m_unk50B4 = 0;
+    for (EntityBaseClass *pEntity = (m_unk50B0 != 0) ? (EntityBaseClass *)m_unk50B8[0] : 0;
+         pEntity != 0;
+         pEntity = (m_unk50B4 < m_unk50B0) ? (EntityBaseClass *)m_unk50B8[m_unk50B4] : 0) {
+        pEntity->ProcessPhysics(arg0, m_unk5058);
+        m_unk50B4++;
+    }
+    gDebug.StopTimer(2);
+}
+
 // DRAFT: 0x00148F40 LoadResource__13EntityManagerFPcb
 // note: 45 words, frame 0x130 vs 0x120 (saves s1 for arg0, buffer at sp+0x30); original saves arg0 in s0 and never spills this, a0 reaches AdjustPickupBox unreloaded; local name pointer variant also 45.
 void EntityManager::LoadResource(char *arg0, bool arg1) {
@@ -433,7 +563,7 @@ void EntityManager::Destroy(unsigned int arg0, unsigned int arg1) {
     PVirtObj *pObj = (PVirtObj *)((PHashTable *)m_unk5088)->Remove((void *)arg0);
     if (pObj != 0) {
         pObj->Slot25();
-        ((PArray *)m_unk5078)->Remove(pObj);
+        ((PArray *)&m_unk5078)->Remove(pObj);
         RemoveFromRenderList((EntityBaseClass *)pObj);
         if (pObj != 0) {
             pObj->Slot02(1);

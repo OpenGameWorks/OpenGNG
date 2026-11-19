@@ -4,6 +4,7 @@
 #include "types.h"
 
 class PMNode;
+class PMeshNode;
 
 struct BGAnimNode {
     int m_unk00;                // 0x00 animation id, 0 ends the list
@@ -53,17 +54,28 @@ public:
     void RemoveFromRenderList(struct EntityBaseClass *arg0);
     int BGAnimIsReset(int arg0);
     void UpdateSwordBGAnim();
+    void ResetSwordBGAnim();
+    void InitSwordBGAnimList(PMeshNode *pMesh);
     void SaveApparitionData(int arg0);
     void SetEifPosition(unsigned int arg0, unsigned int arg1, float (*arg2)[4]);
+    void RunPhysics(float arg0);
 
     static void *mCameraAPI;    // MathAPI instance read by EntityBaseClass::CameraLookingAtMe
 
     char _pad000[0x5054];
     unsigned int m_unk5054;     // 0x5054 bound for dependency flag indices
-    char _pad5058[0x5078 - 0x5058];
-    char m_unk5078[0x10];       // 0x5078 PArray, entries removed by Destroy
+    int m_unk5058;              // 0x5058 physics pass argument, not yet named
+    char _pad505C[0x5078 - 0x505C];
+    unsigned int m_unk5078;     // 0x5078 PArray count of apparitions put to sleep
+    int m_unk507C;              // 0x507C PArray index
+    void **m_unk5080;           // 0x5080 PArray entries, removed by Destroy
+    char _pad5084[0x5088 - 0x5084];
     char m_unk5088[0xC];        // 0x5088 PHashTable, looked up by GetPtrToApparition
-    char m_unk5094[0x50C0 - 0x5094];    // 0x5094 PHashTable, looked up by GetPtrToInstance
+    char m_unk5094[0x50B0 - 0x5094];    // 0x5094 PHashTable, looked up by GetPtrToInstance
+    unsigned int m_unk50B0;     // 0x50B0 physics list count
+    unsigned int m_unk50B4;     // 0x50B4 physics list index
+    void **m_unk50B8;           // 0x50B8 physics list entries, EntityBaseClass pointers
+    char _pad50BC[0x50C0 - 0x50BC];
     void *m_unk50C0;            // 0x50C0 OverlayManager *, used by LoadOverlay
     char _pad50C4[0x519C - 0x50C4];
     int m_unk519C;              // 0x519C dependency count (max 0x40)
@@ -79,7 +91,11 @@ public:
     int m_unk5B60;              // 0x5B60 trigger count
     int m_unk5B64;              // 0x5B64 trigger scan index
     void **m_unk5B68;           // 0x5B68 trigger list, TriggerEntry pointers
-    char _pad5B6C[0x5B84 - 0x5B6C];
+    char _pad5B6C[0x5B70 - 0x5B6C];
+    int m_unk5B70;              // 0x5B70 PArray count of trigger list (max 0x20)
+    int m_unk5B74;              // 0x5B74 PArray index
+    void **m_unk5B78;           // 0x5B78 PArray entries
+    char _pad5B7C[0x5B84 - 0x5B7C];
     BGAnimNode *m_unk5B84;      // 0x5B84 BG animation list head
     char _pad5B88[4];
     BGAnimNode *m_unk5B8C;      // 0x5B8C BG animation list cursor
