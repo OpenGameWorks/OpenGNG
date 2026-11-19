@@ -5,6 +5,9 @@
 
 struct tagPs2TexDataHeader;
 struct tagGsTextureEnvironment;
+struct tagGsImageXferInfo;
+struct tagImageDmaPacket;
+class PArray;
 
 // Texture group argument of PTexture::InitRendered.
 enum eTextureGroup {
@@ -19,7 +22,8 @@ public:
         eTextureType_Unknown = 0
     };
 
-    virtual ~PTexture();
+    virtual ~PTexture();               // vtable slot 0x08 (deleting dtor)
+    virtual void VFunc2(int nFlag);
     int InitRendered(tagPs2TexDataHeader *pTexHeader, tagGsTextureEnvironment *pTexEnv, eTextureGroup eGroup);
 
     // 0x000 vtable pointer is implicit (virtual dtor).
@@ -53,6 +57,8 @@ public:
 
     void DecodeTextureHandle(int nHandle, bool &bFlag, PTexture::eTextureType &eType, int &nIndex);
     int EncodeTextureHandle(bool bFlag, PTexture::eTextureType eType, int nIndex);
+    PTexture *GetTexture(bool bFlag, PTexture::eTextureType eType, int nIndex);
+    tagGsTextureEnvironment *GetTexEnv(int nHandle);
     void KickDmaChain(void *pBuf, bool bWait);
     void UnloadStaticTextures();
     void Shutdown();
@@ -63,6 +69,10 @@ public:
     void UnloadDynamicTexture(int nHandle);
     void UnloadAllDynamicTextures();
     void UnloadAllRenderedTextures();
+    void UnloadDynamicTextures(eTextureGroup eGroup);
+    void PrepareImageXferInfo(tagGsImageXferInfo *pInfo, int nWidth, int nHeight, int nPsm, int nBase);
+    void PrepareImageDmaPacket(tagImageDmaPacket *pPacket, void *pData, int nSize, int nWidth, int nHeight, int nPsm, int nBase);
+    void AddTexture(PTexture *pTex, PArray *pArray);
 
     int m_unk0;                 // 0x000
     int m_unk4;                 // 0x004

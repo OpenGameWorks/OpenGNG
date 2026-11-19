@@ -12,6 +12,39 @@ extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void memset(void *, int, unsigned int);
 extern "C" void __ct__6PArrayFv(void *pThis);
 extern "C" void Allocate__6PArrayFUi(void *pThis, unsigned int nSize);
+extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
+
+// PArray is defined by another worker. This stub holds the members that AddTexture touches.
+class PArray {
+public:
+    int m_nCount;               // 0x00 element count
+    int m_unk4;                 // 0x04
+    PTexture **m_apItems;       // 0x08 element storage
+    unsigned int m_nCapacity;   // 0x0C
+};
+
+// GS image transfer parameter block: a GIF tag followed by the A+D register pairs.
+struct tagGsImageXferInfo {
+    long long unk0;            // 0x00 GIF tag (low qword)
+    unsigned char unk8;        // 0x08 low nibble holds the GIF register count
+    char _pad9[7];
+    long long unk10;           // 0x10 data, BITBLTBUF DBP/DBW/DPSM
+    long long unk18;           // 0x18 address BITBLTBUF
+    long long unk20;           // 0x20 data, TRXPOS
+    long long unk28;           // 0x28 address TRXPOS
+    long long unk30;           // 0x30 data, TRXREG
+    long long unk38;           // 0x38 address TRXREG
+    long long unk40;           // 0x40 data, TRXDIR
+    long long unk48;           // 0x48 address TRXDIR
+};
+
+// DMA packet holding a GIF tag, an image transfer block and a data qword.
+struct tagImageDmaPacket {
+    long long unk0;            // 0x00 GIF tag (low qword)
+    char _pad8[0x8];
+    tagGsImageXferInfo xfer;   // 0x10 image transfer block
+    long long unk60;           // 0x60 data qword
+};
 
 // DRAFT: 0x001894D0 DecodeTextureHandle__15PTextureManagerFiRbRQ28PTexture12eTextureTypeRi
 // note: 2 lines differ: original shifts a1 directly (dsll32 8/dsrl32 8), mine zero-extends nHandle first (dsll32 0/dsrl32 0); tried signed (long long) intermediate, unsigned int store cast, 64-bit local
@@ -34,6 +67,94 @@ void PTextureManager::KickDmaChain(void *pBuf, bool bWait) {
     if (bWait) {
         DmaWaitForCompletion__Fib(2, 0);
     }
+}
+
+// DRAFT: 0x001897A0 PrepareImageXferInfo__15PTextureManagerFP18tagGsImageXferInfoiiii
+// note: 64 lines differ: struct and lbu/sb now match; register allocation differs (original holds tag in v1, 0xE in t2, nBlocks in v1; mine uses t2 for tag/nBlocks); tried 0xE hoisted local (andi mask appears), tag local (no change), unsigned nCtl load (lbu match)
+void PTextureManager::PrepareImageXferInfo(tagGsImageXferInfo *pInfo, int nWidth, int nHeight, int nPsm, int nBase) {
+    int nBlocks;
+    long long nTag = 0x1000000000000004LL;
+    *(u_long128 *)pInfo = 0;
+    *(long long *)&pInfo->unk0 = nTag;
+    unsigned int nCtl = pInfo->unk8;
+    pInfo->unk8 = (nCtl & ~0xF) | 0xE;
+    if (nPsm == 0x14 || nPsm == 0x13) {
+        nBlocks = nWidth / 64;
+        if (nBlocks < 3) {
+            nBlocks = 2;
+        }
+    } else {
+        nBlocks = nWidth / 64;
+        if (nBlocks < 2) {
+            nBlocks = 1;
+        }
+    }
+    pInfo->unk18 = 0x50;
+    pInfo->unk10 = ((long long)nPsm << 56) | ((long long)nBase << 32) | ((long long)nBlocks << 48);
+    pInfo->unk38 = 0x52;
+    pInfo->unk30 = (long long)nWidth | ((long long)nHeight << 32);
+    pInfo->unk28 = 0x51;
+    pInfo->unk20 = 0;
+    pInfo->unk48 = 0x53;
+    pInfo->unk40 = 0;
+}
+
+// DRAFT: 0x001898C0 PrepareImageDmaPacket__15PTextureManagerFP17tagImageDmaPacketPviiiii
+// note: 49 lines differ, all from parameter copy order: original copies this->s6, pPacket->s5 ... nPsm->s0 in declaration order, mine puts nPsm in s6 and this in s5; tried reassigning pPacket (50), if/else store (49), pDma local with nVal (49, kept)
+void PTextureManager::PrepareImageDmaPacket(tagImageDmaPacket *pPacket, void *pData, int nSize, int nWidth, int nHeight, int nPsm, int nBase) {
+    tagImageDmaPacket *pDma;
+    long long nVal;
+
+    if (pPacket == 0) {
+        CdsAssert__FPciPc("PTextureManager.cpp", 0x6B7, "pPacket");
+    }
+    pDma = (tagImageDmaPacket *)((unsigned int)pPacket | 0x20000000);
+    pDma->unk0 = 0x10000005;
+    PrepareImageXferInfo(&pDma->xfer, nWidth, nHeight, nPsm, nBase);
+    nVal = 0x30000000;
+    if (pData != 0) {
+        nVal = ((long long)(unsigned int)pData << 32) | 0x30000000 | (long long)(nSize >> 4);
+    }
+    pDma->unk60 = nVal;
+    asm { sync }
+}
+
+// DRAFT: 0x00189BF0 AddTexture__15PTextureManagerFP8PTextureP6PArray
+// note: 54 differing lines; loop guard is slt/beqz with count in a0 but entry delay slot and b to bottom test differ; tried while (55), comma init (55), i++ placement (54)
+void PTextureManager::AddTexture(PTexture *pTex, PArray *pArray) {
+    int nOff;
+    int nCount;
+    unsigned int i;
+    PTexture *pEntry;
+
+    if (pTex == 0) {
+        CdsAssert__FPciPc("PTextureManager.cpp", 0x660, "poTexture");
+    }
+    if (pArray == 0) {
+        CdsAssert__FPciPc("PTextureManager.cpp", 0x661, "poTextureArray");
+    }
+    nCount = pArray->m_nCount;
+    nOff = 0;
+    for (i = 0; (int)i < nCount;) {
+        pEntry = 0;
+        if (i < (unsigned int)nCount) {
+            pEntry = *(PTexture **)((char *)pArray->m_apItems + nOff);
+        }
+        if (pEntry == 0) {
+            if (i < pArray->m_nCapacity) {
+                pArray->m_apItems[i] = pTex;
+            }
+            EncodeTextureHandle(0, (PTexture::eTextureType)pTex->m_unkA4, i);
+            return;
+        }
+        i++;
+        nOff += 4;
+    }
+    if (pArray->m_nCapacity < (unsigned int)nCount) {
+        CdsAssert__FPciPc("PTextureManager.cpp", 0x66F, "poTextureArray->GetCount() <= poTextureArray->GetSize()");
+    }
+    Add__6PArrayFPv(pArray, pTex);
+    EncodeTextureHandle(0, (PTexture::eTextureType)pTex->m_unkA4, pArray->m_nCount - 1);
 }
 
 // DRAFT: 0x00189F80 FlipTextureBuffers__15PTextureManagerFv
@@ -168,6 +289,37 @@ void PTextureManager::UnloadAllDynamicTextures() {
     }
 }
 
+// DRAFT: 0x0018AC90 UnloadDynamicTextures__15PTextureManagerF13eTextureGroup
+// note: 16 lines differ: one missing nop after the jalr and a nop at the loop-tail join (original has both, ours does not); tried 0<nCount guard (25), VFunc2 before dtor (24), operand swap on eGroup compare (24, reverted), m_unk1E8 > i (24, reverted), removing inner null check (24, reverted)
+void PTextureManager::UnloadDynamicTextures(eTextureGroup eGroup) {
+    int nCount;
+    int nOff;
+    unsigned int i;
+    PTexture *pEntry;
+
+    nCount = m_nDynCount;
+    i = 0;
+    if (0 < nCount) {
+        nOff = 0;
+        do {
+            pEntry = 0;
+            if (i < (unsigned int)m_nDynCount) {
+                pEntry = *(PTexture **)((char *)m_apDyn + nOff);
+            }
+            if (pEntry != 0 && pEntry->m_unkA0 == (int)eGroup) {
+                if (pEntry != 0) {
+                    delete pEntry;
+                }
+                if (i < m_unk1E8) {
+                    *(PTexture **)((char *)m_apDyn + nOff) = 0;
+                }
+            }
+            i++;
+            nOff += 4;
+        } while ((int)i < nCount);
+    }
+}
+
 // FUNCTION: 0x0018AFE0 UnloadStaticTextures__15PTextureManagerFv
 void PTextureManager::UnloadStaticTextures() {
     if (m_unk1D0 != 0) {
@@ -211,6 +363,34 @@ void PTextureManager::ResetDynamicBuffers() {
     m_aBuf1.m_unk8 = m_aBuf1.m_unk0;
     m_aBuf1.m_unk14 = m_aBuf1.m_unkC;
     m_pCurBuf = &m_aBuf0;
+}
+
+// FUNCTION: 0x0018C400 GetTexEnv__15PTextureManagerFi
+tagGsTextureEnvironment *PTextureManager::GetTexEnv(int nHandle) {
+    PTexture::eTextureType eType = PTexture::eTextureType_Unknown;
+    bool bFlag = false;
+    int nIndex = -1;
+
+    if (nHandle == 0) {
+        return (tagGsTextureEnvironment *)((char *)this + 0x1F0);
+    }
+    DecodeTextureHandle(nHandle, bFlag, eType, nIndex);
+    if (nIndex < 0) {
+        CdsAssert__FPciPc("PTextureManager.cpp", 0x9F, "aiIndex >= 0");
+    }
+    if (bFlag) {
+        if (nIndex >= m_unk1D4) {
+            CdsAssert__FPciPc("PTextureManager.cpp", 0xA3, "aiIndex < miNumStaticTextures");
+        }
+        return (tagGsTextureEnvironment *)((char *)m_unk1D0 + nIndex * 0x60);
+    }
+    {
+        PTexture *pTex = GetTexture(bFlag, eType, nIndex);
+        if (pTex != 0) {
+            return (tagGsTextureEnvironment *)((char *)pTex + 0x40);
+        }
+    }
+    return 0;
 }
 
 // FUNCTION: 0x0018C4E0 Shutdown__15PTextureManagerFv
