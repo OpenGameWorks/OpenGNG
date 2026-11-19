@@ -8,6 +8,18 @@ extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
 extern "C" void sceVu0Normalize(float *dst, float *src);
 extern "C" float GetLength__5PVec3Fv(float *this_vec);
 extern float GAME_FPS;
+extern "C" void sceVu0UnitMatrix(float *pMatrix);
+extern "C" void __dl__FPv(void *pMem);
+extern "C" void *__construct_array(void *pBlock, void *(*pCtor)(void *), void *(*pDtor)(void *, short), int nSize, int nCount);
+extern "C" void __destroy_arr(void *pBlock, void *(*pDtor)(void *, short), int nSize, int nCount);
+extern "C" void *__ct__5PVec3Fv(void *pThis);
+extern "C" void *__dt__5PVec3Fv(void *pThis, short nFlag);
+extern "C" void *__ct__12CameraSplineFv(void *pThis);
+extern "C" void *__dt__13tag_CurveDataFv(void *pThis, short nFlag);
+extern "C" void *__dt__15tag_ControlDataFv(void *pThis, short nFlag);
+extern "C" float Round180__Ff(float);
+extern "C" float FastMath_Sin180__Ff(float);
+extern "C" void __mi__5PVec3FR5PVec3(float *ret, float *lhs, float *rhs);
 
 class PVec3 {
 public:
@@ -75,6 +87,20 @@ void Camera::UpdatePos(PVec3 arg0, PVec3 arg1) {
     sceVu0CopyVector(m_tgt, arg1.m_v);
 }
 
+// DRAFT: 0x00174A40 AddTwistEffect__12CameraFollowFv
+// note: 42 words differ; original builds float literals with lui/ori/mtc1 (0.01f hoisted to v1 before the saves, 0.15f and 180.0f inline), draft loads them from $gp pool with lwc1; the mul/add operand order also differs
+void CameraFollow::AddTwistEffect() {
+    if (!(m_unk170 <= 0.01f)) {
+        float t = m_unk124 + 0.15f * m_unk16C;
+        m_unk124 = t;
+        if (!(t <= 180.0f)) {
+            m_unk124 = t - 360.0f;
+        }
+        Round180__Ff(m_unk124);
+        *(float *)((char *)m_pCamera + 0xD0) = 5.0f * FastMath_Sin180__Ff(m_unk124);
+    }
+}
+
 // FUNCTION: 0x00174AF0 SetSourceAndTarget__12CameraFollowF5PVec35PVec3
 void CameraFollow::SetSourceAndTarget(PVec3 arg0, PVec3 arg1) {
     sceVu0CopyVector(m_unk20, arg0.m_v);
@@ -92,6 +118,40 @@ int CameraFollow::CanDoHeadcam() {
     if (m_unk6290 != 0) { return 0; }
     if (m_unk2C0 != 0) { return 0; }
     return 1;
+}
+
+// DRAFT: 0x00175540 CamCollideSphere__12CameraFollowF5PVec3f
+// note: 33 words differ in all copy variants (direct, pointer-cast, pointer-local, 128-bit temp); original takes d's address via addiu v0,sp,0x50 then lq, and reuses a0=sp+0x40 for the store and GetLength arg
+void CameraFollow::CamCollideSphere(PVec3 arg0, float arg1) {
+    float n[4];
+    float d[4];
+    __mi__5PVec3FR5PVec3(d, m_unk20, arg0.m_v);
+    *(u_long128 *)n = *(u_long128 *)d;
+    if (GetLength__5PVec3Fv(n) < arg1) {
+        sceVu0Normalize(n, n);
+        m_unk20[0] = arg0.m_v[0] + n[0] * arg1;
+        m_unk20[1] = arg0.m_v[1] + n[1] * arg1;
+        m_unk20[2] = arg0.m_v[2] + n[2] * arg1;
+        m_unk22C = 1;
+    }
+}
+
+// DRAFT: 0x00175600 CamCollideCylinder__12CameraFollowF5PVec3ff
+// note: 40 words differ; same copy-addressing mismatch as CamCollideSphere (original keeps a0=sp+0x40 live from the sq into GetLength, draft re-materializes it); n-before-d order gave 41 to 40
+void CameraFollow::CamCollideCylinder(PVec3 arg0, float arg1, float arg2) {
+    float n[4];
+    float d[4];
+    __mi__5PVec3FR5PVec3(d, m_unk20, arg0.m_v);
+    *(u_long128 *)n = *(u_long128 *)d;
+    n[1] = 0.0f;
+    if (!(m_unk20[1] < arg0.m_v[1]) && m_unk20[1] <= arg0.m_v[1] + arg2) {
+        if (GetLength__5PVec3Fv(n) < arg1) {
+            sceVu0Normalize(n, n);
+            m_unk20[0] = arg0.m_v[0] + n[0] * arg1;
+            m_unk20[2] = arg0.m_v[2] + n[2] * arg1;
+            m_unk22C = 1;
+        }
+    }
 }
 
 // DRAFT: 0x00175830 PlayerIsIdle__12CameraFollowFv
@@ -195,4 +255,36 @@ void CameraFollow::StorePlayerPos() {
         } while (idx >= 0);
         sceVu0CopyVector(m_unk61A0[0], m_unk180);
     }
+}
+
+// FUNCTION: 0x00177C00 __dt__12CameraFollowFv
+extern "C" CameraFollow *__dt__12CameraFollowFv(CameraFollow *pThis, short nFlag) {
+    if (pThis != 0) {
+        __destroy_arr((char *)pThis + 0x61A0, __dt__5PVec3Fv, 0x10, 0xA);
+        if (pThis->_pad2D0 != 0) {
+            __destroy_arr((char *)pThis + 0x60A0, __dt__15tag_ControlDataFv, 0x10, 0xF);
+            __destroy_arr((char *)pThis + 0x2E0, __dt__13tag_CurveDataFv, 0x20, 0x2EE);
+        }
+        __destroy_arr((char *)pThis + 0x230, __dt__5PVec3Fv, 0x10, 8);
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
+}
+
+// DRAFT: 0x00177EA0 __ct__12CameraFollowFP6Camera
+// note: original spills this to 0x2C(sp), keeps pCam in s0, frame 0x30, returns this; ours keeps this in s1 (no spill, no reload), frame 0x20 with s1 saved, size 0xa4 vs 0xc4; member form and extern pThis form (with and without return) tried, all differ the same way.
+extern "C" CameraFollow *__ct__12CameraFollowFP6Camera(CameraFollow *pThis, Camera *pCam) {
+    sceVu0UnitMatrix((float *)((char *)pThis + 0x60));
+    sceVu0UnitMatrix((float *)((char *)pThis + 0xA0));
+    __construct_array((char *)pThis + 0x230, __ct__5PVec3Fv, __dt__5PVec3Fv, 0x10, 8);
+    __ct__12CameraSplineFv((char *)pThis + 0x2D0);
+    __construct_array((char *)pThis + 0x61A0, __ct__5PVec3Fv, __dt__5PVec3Fv, 0x10, 0xA);
+    pThis->m_pCamera = pCam;
+    pThis->m_unk0E0 = 0;
+    pThis->m_unk0E4 = -1.0f;
+    pThis->m_unk0E8 = 0;
+    pThis->m_unk0EC = 1.0f;
+    return pThis;
 }
