@@ -7,6 +7,8 @@ class PMNode;
 
 class PSound {
 public:
+    ~PSound();
+
     class AmbientChannelState {
     public:
         AmbientChannelState();
@@ -130,6 +132,11 @@ public:
     void PSoundFlushIOPCommandsWaitFinish();
     void KillByCategories(unsigned int nCategory);
     void PauseByCategories(unsigned int nCategory);
+    void DebugStopAllDebugAmbients();
+    void SendStops();
+    void SoundEditLeave();
+    void SoundEditEnter();
+    unsigned int FindFadingAmbientChannel();
 
     char _pad000[0x01C];
     unsigned int m_unk1C;   // 0x01C, PlayMusic stores its argument
@@ -145,13 +152,24 @@ public:
     char _pad044[0x058 - 0x044];
     float m_unk58;          // 0x058, SetPositionalRangeOneshot sets it
     float m_unk5C;          // 0x05C, SetPositionalRangeAmbient sets it
-    char _pad060[0x0D0 - 0x060];
+    char _pad060[0x0B0 - 0x060];
+    int m_unkB0;            // 0x0B0, SendStops clears it
+    int m_unkB4;            // 0x0B4, SendStops clears it
+    char _pad0B8[0x0C8 - 0x0B8];
+    int m_unkC8;            // 0x0C8, SoundEditEnter sets 1, SoundEditLeave clears it
+    char _padCC[0x0D0 - 0x0CC];
     bool m_unkD0;           // 0x0D0, ErrorRecovery reads it before PSoundRestart
     char _pad0D1[0x0EC - 0x0D1];
     int m_unk0EC;           // 0x0EC
     int m_unk0F0;           // 0x0F0
     AmbientEntry *m_unkF4;  // 0x0F4, head of the ambient entry list (AddAEToFreeList passes &m_unkF4)
-    char _pad0F8[0x2EB4 - 0x0F8];
+    char m_unkF8[0x2E28 - 0x0F8];   // 0x0F8, AmbientChannelState array of stride 0x20, FindFadingAmbientChannel scans it
+    unsigned int m_unk2E28; // 0x2E28, FindFadingAmbientChannel start index
+    unsigned int m_unk2E2C; // 0x2E2C, FindFadingAmbientChannel limit
+    char _pad2E30[0x2E48 - 0x2E30];
+    int m_unk2E48;          // 0x2E48, SoundEditLeave copies 0x2E4C here
+    int m_unk2E4C;          // 0x2E4C, SoundEditLeave/Enter category mask
+    char _pad2E50[0x2EB4 - 0x2E50];
     char m_unk2EB4[0x2580]; // 0x2EB4, 400 SpotInfo records of 0x18 bytes, GetSpotInfo scans them
     char _pad5434[0x5438 - 0x5434];
     unsigned int m_unk5438; // 0x5438, SetProposedReverbParams arg 0

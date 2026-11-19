@@ -14,6 +14,8 @@ extern "C" void SOUND_CopyIOPBuffer();
 extern char gEng[105360];
 extern "C" void __ct__14PFadeMsecFloatFv(void *);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
+extern "C" void SOUND_StopMultipleSounds(int nHandle, int nCount);
+extern "C" void __dl__FPv(void *pMem);
 
 // FUNCTION: 0x001A3C70 AddAEToFreeList__6PSoundFPQ26PSound12AmbientEntry
 void PSound::AddAEToFreeList(AmbientEntry *pEntry) {
@@ -55,6 +57,21 @@ void PSound::DelinkAmbientEntry(AmbientEntry *pEntry) {
     }
 }
 
+// DRAFT: 0x001A3EE0 FindFadingAmbientChannel__6PSoundFv
+// note: 3 words differ; the 0x3FFE constant and loaded element swap a0/a1 at the compare (int*, unsigned int*, for-loop and while-loop variants tried, all DIFF 3 or worse).
+unsigned int PSound::FindFadingAmbientChannel() {
+    unsigned int idx = m_unk2E28;
+    int *p = (int *)m_unkF8;
+    while (idx <= m_unk2E2C) {
+        if (*p == 0x3FFE) {
+            return idx;
+        }
+        idx++;
+        p += 8;
+    }
+    return -1U;
+}
+
 // FUNCTION: 0x001A4390 AbilityScreenLeave__6PSoundFv
 void PSound::AbilityScreenLeave() {
     KillByCategories(0x200);
@@ -67,6 +84,15 @@ void PSound::AbilityScreenEnter() {
     KillByCategories(0x200);
     PauseByCategories(0x8C);
     SetMainMusicSpecialVolume((EnumMusicSpecialVols)1);
+}
+
+// FUNCTION: 0x001A48D0 SendStops__6PSoundFv
+void PSound::SendStops() {
+    if (m_unkB0 != 0 || m_unkB4 != 0) {
+        SOUND_StopMultipleSounds(m_unkB0, m_unkB4);
+        m_unkB0 = 0;
+        m_unkB4 = 0;
+    }
 }
 
 // FUNCTION: 0x001A5780 SetProposedReverbParams__6PSoundFUiUiUiUiUi
@@ -184,6 +210,23 @@ void PSound::Pause() {
     PauseByCategories(0x82);
 }
 
+// FUNCTION: 0x001A9100 SoundEditLeave__6PSoundFv
+void PSound::SoundEditLeave() {
+    DebugStopAllDebugAmbients();
+    KillByCategories(0x200);
+    m_unk2E48 = m_unk2E4C;
+    PauseByCategories(m_unk2E4C);
+    m_unkC8 = 0;
+}
+
+// FUNCTION: 0x001A9150 SoundEditEnter__6PSoundFv
+void PSound::SoundEditEnter() {
+    m_unkC8 = 1;
+    m_unk2E4C = m_unk2E48;
+    KillByCategories(0x200);
+    PauseByCategories(0x9E);
+}
+
 // DRAFT: 0x001A91A0 SetMonoOut__6PSoundFb
 // note: 3 words differ; original keeps the bool in v1 and loads the field into a1 (MWCC swaps them); swapped compare operands cut 4 to 3; direct bool compare, cached load and ternary bool-to-int did not reduce it (ternary gave exit 2)
 void PSound::SetMonoOut(bool bMono) {
@@ -297,6 +340,10 @@ void PSound::PSoundReInitSoundRooms() {
     memset(m_unk5460, 0, 0x2580);
     m_unk544C = 0;
     m_unk5444 = -1;
+}
+
+// FUNCTION: 0x001AA490 __dt__6PSoundFv
+PSound::~PSound() {
 }
 
 // FUNCTION: 0x001AA750 __ct__Q26PSound16MusicStreamStateFv
