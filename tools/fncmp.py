@@ -7,13 +7,17 @@ and every relocation in the compiled function names the same symbol that the
 original executable's `.relmain` names at that offset. Relocations against a
 section symbol (`.rodata`, `.sdata`, literal pools) are reported as `DATA`
 and accepted only when the original also relocates there against a local
-`@N` literal or section; the full build confirms them.
+`@N` literal or section; the full build confirms them. A function-local
+static is named `name$N` with a translation-unit-wide counter N, which only a
+complete unit reproduces; `name$N` therefore matches the original's `name$M`,
+and the build accepts it only when the static's bytes equal the original's.
 Without -q a side-by-side listing marks differing words with `!`.
 """
 
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -27,6 +31,7 @@ import disasm  # noqa: E402
 import srcmeta  # noqa: E402
 
 ROOT = disasm.ROOT
+LOCAL_STATIC = re.compile(r"\$\d+$")
 MASK = {4: 0xFC000000, 5: 0xFFFF0000, 6: 0xFFFF0000, 7: 0xFFFF0000, 2: 0}
 
 
@@ -99,7 +104,8 @@ def compare(src: Path, key: str, obj: Path | None, quiet: bool) -> int:
             if bool(r) != bool(o) or r[0] != o[0]:
                 ok = False
                 notes.append(f"{i * 4:#06x}: reloc {r} vs original {o}")
-            elif r[1] != o[1] and not (r[1].startswith(".") or r[1].startswith("@")):
+            elif (r[1] != o[1] and not (r[1].startswith(".") or r[1].startswith("@"))
+                  and not ("$" in r[1] and LOCAL_STATIC.sub("", r[1]) == LOCAL_STATIC.sub("", o[1]))):
                 ok = False
                 notes.append(f"{i * 4:#06x}: {r[1]} is not the original target {o[1]}")
         diffs += not ok
@@ -119,6 +125,9 @@ def compare(src: Path, key: str, obj: Path | None, quiet: bool) -> int:
 
 def main() -> int:
     args = sys.argv[1:]
+    if len([a for a in args if not a.startswith("-")]) < 2 or "-h" in args or "--help" in args:
+        print(__doc__.strip())
+        return 2
     quiet = "-q" in args
     args = [a for a in args if a != "-q"]
     obj = None
