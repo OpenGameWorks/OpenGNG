@@ -5,14 +5,60 @@
 extern "C" int sceDevConsPrintf(const char *pFmt, ...);
 extern "C" void sceDevConsAttribute(char *pCons, unsigned char nAttr);
 extern "C" void sceDevConsClear(char *pCons);
+extern "C" void sceDevConsLocate(char *pCons, unsigned int nX, unsigned int nY);
 extern "C" unsigned int strlen(const char *pStr);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern char gEng[105360];
 extern short mPerformanceBars;
 extern short mDisplayListStatusBar;
 extern short mDebugTime;
+extern short mSound;
+extern short gPlayerPos;
+extern "C" int sprintf(char *pBuf, const char *pFmt, ...);
+extern "C" void sceDevConsClose(char *pCons);
+extern "C" void __dl__FPv(void *pMem);
 
 class PMat4;
+
+class MaxEngine {
+public:
+    void InitRenderFrame(bool bFlag, unsigned int nId);
+};
+
+class PSound {
+public:
+    void SoundEditEnter();
+    void SoundEditLeave();
+    void DebugInterface(int nPad);
+    char _pad000[0x10];
+};
+
+extern PSound gSound;
+
+struct PadState {
+    char _pad000[0x110];
+    unsigned short m_unk110;
+    char _pad112[0x10];
+};
+
+extern PadState gPad;
+
+class PGfxEngine {
+public:
+    void UpdateLights(PMat4 *pA, PMat4 *pB, float (*pC)[4]);
+    char _pad000[0x158E22];
+    unsigned char m_unk158E22;
+};
+
+extern PGfxEngine gGfxEng;
+extern char mLightCache[0x100];
+extern void *gpAnimation;
+
+class AnimObject {
+public:
+    virtual ~AnimObject();
+    virtual void Slot1(int nA, int nB, int nC);
+};
 
 class ETiming {
 public:
@@ -27,7 +73,11 @@ public:
     void TextDebug();
 };
 
+extern "C" void __dt__7ETimingFv(ETiming *pThis, short nDestroy);
+
 #include "Debug.h"
+
+extern Debug gDebug;
 
 // FUNCTION: 0x16A700 RenderPerformanceMeters__5DebugFv
 void Debug::RenderPerformanceMeters() {
@@ -75,6 +125,20 @@ void Debug::DebugDisp(char *pStr) {
     this->m_unk2D = 1;
 }
 
+// FUNCTION: 0x16AB50 DebugDispPos__5DebugFPcUiUii
+void Debug::DebugDispPos(char *pStr, unsigned int nX, unsigned int nY, int nColor) {
+    if (nColor != 7) {
+        sceDevConsAttribute(this->m_unk00, (unsigned char)nColor);
+    }
+    sceDevConsLocate(this->m_unk00, nX, nY);
+    sceDevConsPrintf(this->m_unk00, pStr);
+    sceDevConsLocate(this->m_unk00, this->m_unk04, this->m_unk08);
+    if (nColor != 7) {
+        sceDevConsAttribute(this->m_unk00, 7);
+    }
+    this->m_unk2D = 1;
+}
+
 // FUNCTION: 0x16AC00 DebugColorDisp__5DebugFPcUc
 void Debug::DebugColorDisp(char *pStr, unsigned char nColor) {
     sceDevConsAttribute(this->m_unk00, nColor);
@@ -109,6 +173,58 @@ void Debug::DebugClear() {
     this->ResetDebugTimer();
 }
 
+// DRAFT: 0x16AE40 SoundEdit__Fv
+// note: 6 differing words: the original reuses the bnez delay-slot lui(gSound) for DebugInterface and has its own lui for SoundEditLeave; ours reloads gSound and shares one lui. Tried int DebugInterface param (15->6), do/while with break (6), local pad copy (6).
+void SoundEdit() {
+    if (mSound != 0) {
+        gSound.SoundEditEnter();
+    loop:
+        ((MaxEngine *)gEng)->InitRenderFrame(false, 0);
+        gDebug.DebugDispPos("Sound Edit", 0x1E, 0, 7);
+        gDebug.DebugDisp("\n");
+        if (!(gPad.m_unk110 & 1)) {
+            gSound.DebugInterface(gPad.m_unk110);
+            goto loop;
+        }
+        gSound.SoundEditLeave();
+    }
+}
+
+// FUNCTION: 0x16AEE0 PlayerPosDisplay__Fv
+void PlayerPosDisplay() {
+    char buf[0x80];
+    float *pPos;
+
+    if (gPlayerPos != 0) {
+        char *pObj = *(char **)(gEng + 0x1883C);
+        if (pObj != 0) {
+            char *pTrack = *(char **)(pObj + 0x3C);
+            if (pTrack != 0) {
+                pPos = (float *)(pTrack + 0x80);
+            } else {
+                pPos = (float *)(pObj + 0x190);
+            }
+            sprintf(buf, "Player (%d, %d, %d)\n", (int)(pPos[0] + 0.5f), (int)(pPos[1] + 0.5f), (int)(pPos[2] + 0.5f));
+            gDebug.DebugDisp(buf);
+        }
+    }
+}
+
+// FUNCTION: 0x16AF80 RenderAnimation__Fv
+void RenderAnimation() {
+    AnimObject *t;
+
+    if (gpAnimation != 0) {
+        t = *(AnimObject **)((char *)gpAnimation + 0x3C);
+        if (t != 0) {
+            gGfxEng.m_unk158E22 = 1;
+            gGfxEng.UpdateLights((PMat4 *)mLightCache, (PMat4 *)(mLightCache + 0x40), (float (*)[4])(mLightCache + 0x80));
+            t->Slot1(0, 0x80, 0);
+            gGfxEng.m_unk158E22 = 0;
+        }
+    }
+}
+
 // FUNCTION: 0x16B210 CameraDisplay__Fv
 void CameraDisplay() {
     Camera *p = (Camera *)(gEng + 0x19760);
@@ -129,5 +245,14 @@ void Debug::StopTimer(unsigned int nId) {
 void Debug::StartTimer(unsigned int nId) {
     if (this->m_unk0C != 0) {
         this->m_unk0C->StartSubTimer(nId);
+    }
+}
+
+// FUNCTION: 0x16B580 __dt__5DebugFv
+Debug::~Debug() {
+    sceDevConsClose(this->m_unk00);
+    if (this->m_unk0C != 0) {
+        __dt__7ETimingFv(this->m_unk0C, 1);
+        this->m_unk0C = 0;
     }
 }

@@ -5,9 +5,11 @@ class ETiming;
 
 class Debug {
 public:
+    ~Debug();
     void StopDebugTimer(void *pArg);
     void ResetDebugTimer();
     void DebugDisp(char *pStr);
+    void DebugDispPos(char *pStr, unsigned int nX, unsigned int nY, int nColor);
     void DebugColorDisp(char *pStr, unsigned char nColor);
     void DebugClear();
     void LineFeed(char *pStr);
