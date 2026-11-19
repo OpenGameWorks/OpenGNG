@@ -6,6 +6,10 @@ extern int gSOUND_EEControlReq;
 extern int gSOUND_EEControlReqCallCnt;
 extern char SOUND_SPUKeyStatus[0x40];
 void SetIOPCommand(int cmd, int count);
+extern char gCd[0x40];
+int sceSifInitRpc(int mode);
+int sceSifBindRpc(void *client, unsigned int rpc_number, int mode);
+int printf(const char *fmt, ...);
 
 static int fst_uEECallCnt;
 static int fst_WaitUpdateArray;
@@ -197,6 +201,46 @@ int SOUND_CountFreeSPUChannels(unsigned int arg0, unsigned int arg1) {
     return count;
 }
 
+// DRAFT: 0x001AE0D0 SOUND_FindFreeSPUChannel
+// note: 17 words differ: first compare in $at (orig $v0), base/var_a2 swapped between $a2/$a3, hoisted delay slot.
+int SOUND_FindFreeSPUChannel(unsigned int arg0, unsigned int arg1, unsigned int arg2) {
+    unsigned int var_a0;
+    unsigned int var_a2;
+    unsigned int var_v0;
+    unsigned char *temp_a1;
+    unsigned char *temp_t0;
+
+    var_a0 = arg0;
+    if (arg0 >= 0x30U) {
+        return -2;
+    }
+    if ((arg1 < var_a0) || (arg1 >= 0x30U)) {
+        return -3;
+    }
+    var_a2 = arg2 + 1;
+    if ((var_a2 < var_a0) || (arg1 < var_a2)) {
+        var_a2 = var_a0;
+    }
+    var_v0 = var_a2;
+    while (var_v0 <= arg1) {
+        temp_t0 = (unsigned char *)&SOUND_SPUKeyStatus[var_v0];
+        if (*temp_t0 == 0) {
+            *temp_t0 = 3;
+            return var_v0;
+        }
+        var_v0 += 1;
+    }
+    while (var_a0 < var_a2) {
+        temp_a1 = (unsigned char *)&SOUND_SPUKeyStatus[var_a0];
+        if (*temp_a1 == 0) {
+            *temp_a1 = 3;
+            return var_a0;
+        }
+        var_a0 += 1;
+    }
+    return -1;
+}
+
 // FUNCTION: 0x001AE3A0 SOUND_SetSPUWriteAddress
 void SOUND_SetSPUWriteAddress(unsigned int arg0) {
     IOPCommandData[1] = (short)arg0;
@@ -294,6 +338,28 @@ int SOUND_StopStream(unsigned int arg0) {
     return 0;
 }
 
+// DRAFT: 0x001AE7F0 SOUND_DataDestEEDirect
+// note: 30 lines differ: arg2&0xFFFF (ori/and in orig) folded to plain sh, epilogue branch target off by one instr; (unsigned short) cast gives same count.
+unsigned int SOUND_DataDestEEDirect(unsigned int arg0, short arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4, unsigned int arg5, unsigned int arg6) {
+    if (arg0 >= 4U) {
+        return -1U;
+    }
+    IOPCommandData[0] = arg0;
+    IOPCommandData[2] = (short)(arg2 >> 16);
+    IOPCommandData[1] = arg1;
+    IOPCommandData[3] = arg2 & 0xFFFFU;
+    IOPCommandData[4] = (short)(arg3 >> 16);
+    IOPCommandData[5] = arg3;
+    IOPCommandData[6] = (short)(arg4 >> 16);
+    IOPCommandData[7] = arg4;
+    IOPCommandData[8] = (short)(arg5 >> 16);
+    IOPCommandData[9] = arg5;
+    IOPCommandData[10] = (short)(arg6 >> 16);
+    IOPCommandData[11] = arg6;
+    SetIOPCommand(0x30, 0xC);
+    return arg2;
+}
+
 // DRAFT: 0x001AE8B0 SOUND_StreamAfterFlags
 // note: masked [2] store (x & 0xFFFF) is folded to plain sh; store order of [2]/[3]/[5]/[6] and early-branch offset differ; 25 lines
 void SOUND_StreamAfterFlags(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4, unsigned int arg5) {
@@ -313,6 +379,42 @@ void SOUND_StreamAfterFlags(unsigned int arg0, unsigned int arg1, unsigned int a
     }
 }
 
+// DRAFT: 0x001AE950 SOUND_PlayDialogRelVol
+// note: 26 differing lines; the original's ori $a2,0xFFFF + and mask on arg2's low half is folded to a plain sh, which shifts the branch and epilogue. (unsigned short) cast gives the same 26.
+unsigned int SOUND_PlayDialogRelVol(unsigned int arg0, short arg1, unsigned int arg2, short arg3, unsigned int arg4) {
+    if (arg0 >= 4U) {
+        return -1;
+    }
+    SOUND_SPUKeyStatus[arg0 * 2] = 3;
+    IOPCommandData[2] = (short)(arg2 >> 16);
+    IOPCommandData[3] = arg2 & 0xFFFFU;
+    IOPCommandData[4] = arg3;
+    IOPCommandData[5] = (short)(arg4 >> 16);
+    IOPCommandData[6] = (short)arg4;
+    IOPCommandData[0] = (short)arg0;
+    IOPCommandData[1] = arg1;
+    SetIOPCommand(0x41, 7);
+    return arg2;
+}
+
+// DRAFT: 0x001AE9F0 SOUND_PlayMusicRelVol
+// note: 26 differing lines; same shape as SOUND_PlayDialogRelVol: the ori $a2,0xFFFF + and mask on arg2's low half is folded to a plain sh, shifting the branch and epilogue.
+unsigned int SOUND_PlayMusicRelVol(unsigned int arg0, short arg1, unsigned int arg2, short arg3, unsigned int arg4) {
+    if (arg0 >= 4U) {
+        return -1;
+    }
+    SOUND_SPUKeyStatus[arg0 * 2] = 3;
+    IOPCommandData[2] = (short)(arg2 >> 16);
+    IOPCommandData[3] = arg2 & 0xFFFFU;
+    IOPCommandData[4] = arg3;
+    IOPCommandData[5] = (short)(arg4 >> 16);
+    IOPCommandData[6] = (short)arg4;
+    IOPCommandData[0] = (short)arg0;
+    IOPCommandData[1] = arg1;
+    SetIOPCommand(0x3E, 7);
+    return arg2;
+}
+
 // DRAFT: 0x001AEA90 SOUND_TransferSFX
 // note: 8 differing words; compiler folds arg2 & 0xFFFF into a plain sh, dropping the original's ori $v0,0xFFFF + and. Tried store reorder (9 words) and hoisted masked local (9 words).
 void SOUND_TransferSFX(short arg0, short arg1, unsigned int arg2, unsigned int arg3) {
@@ -323,4 +425,27 @@ void SOUND_TransferSFX(short arg0, short arg1, unsigned int arg2, unsigned int a
     IOPCommandData[3] = arg2 & 0xFFFFU;
     IOPCommandData[4] = (short)(arg3 >> 16);
     SetIOPCommand(6, 6);
+}
+
+// DRAFT: 0x001AECF0 SOUND_InitIOP
+// note: about 20 differing lines: bgez delay slot filled with countdown init (orig fills with lui a0 of printf block), shifts countdown and tail by 3 instructions; do-while and for-loop countdown both tried, same count.
+int SOUND_InitIOP(void) {
+    int temp_v0;
+    int var_v1;
+
+    fst_WaitUpdateArray = 0;
+    sceSifInitRpc(0);
+loop_1:
+    if (sceSifBindRpc(gCd, 0x6D6A6C6E, 0) < 0) {
+        printf("error: sceSifBindRpc \n");
+loop_3:
+        goto loop_3;
+    }
+    for (var_v1 = 0x2710; var_v1 != 0; var_v1--) {
+    }
+    if (*(int *)(gCd + 0x24) != 0) {
+        SOUND_InitWaitUpdate();
+        return 1;
+    }
+    goto loop_1;
 }

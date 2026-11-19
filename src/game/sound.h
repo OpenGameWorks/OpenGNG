@@ -26,5 +26,10 @@ void SOUND_StopMultipleSounds(unsigned int arg0, unsigned int arg1);
 int SOUND_StopStream(unsigned int arg0);
 void SOUND_StreamAfterFlags(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4, unsigned int arg5);
 void SOUND_TransferSFX(short arg0, short arg1, unsigned int arg2, unsigned int arg3);
+int SOUND_FindFreeSPUChannel(unsigned int arg0, unsigned int arg1, unsigned int arg2);
+unsigned int SOUND_DataDestEEDirect(unsigned int arg0, short arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4, unsigned int arg5, unsigned int arg6);
+unsigned int SOUND_PlayDialogRelVol(unsigned int arg0, short arg1, unsigned int arg2, short arg3, unsigned int arg4);
+unsigned int SOUND_PlayMusicRelVol(unsigned int arg0, short arg1, unsigned int arg2, short arg3, unsigned int arg4);
+int SOUND_InitIOP(void);
 
 #endif
