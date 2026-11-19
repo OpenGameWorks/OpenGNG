@@ -33,10 +33,18 @@ public:
     void SetBossArenaValues(float (*arg0)[4], float arg1, float arg2, bool arg3, bool arg4, float arg5, float arg6, bool arg7);
     void Init(bool arg0);
     void CamCollideCylinder(PVec3 arg0, float arg1, float arg2);
+    void CamCollideSphere(PVec3 arg0, float arg1);
+    int SetHeadCam(bool arg0);
     void DrawPolyDebug();
+    void DrawTextDebug();
 
     char _pad000[0x6318];
     unsigned int m_unk6318; // 0x6318
+};
+
+class CameraDebug {
+public:
+    void DrawTextDebug();
 };
 
 // FUNCTION: 0x00178380 Magnitude__6CameraF8CVector3
@@ -131,6 +139,24 @@ void Camera::SetBossArenaValues(float (*arg0)[4], float arg1, float arg2, bool a
     }
 }
 
+// FUNCTION: 0x00178AD0 SetCamBoxData__6CameraFiPv
+void Camera::SetCamBoxData(int arg0, void *arg1) {
+    switch (arg0) {
+    case 2:
+        m_unk2B0 = 2;
+        m_unk2B4 = arg1;
+        break;
+    case 3:
+        m_unk2B0 = 3;
+        m_unk2B4 = arg1;
+        break;
+    case 5:
+        m_unk2B0 = 5;
+        m_unk2B4 = arg1;
+        break;
+    }
+}
+
 // FUNCTION: 0x00179F20 CheckCameraShake__6CameraFR5PVec3R5PVec3b
 void Camera::CheckCameraShake(PVec3 &arg0, PVec3 &arg1, bool arg2) {
     if (m_unk179 != 0) {
@@ -148,11 +174,61 @@ void Camera::CamCollideCylinder(PVec3 arg0, float arg1, float arg2) {
     }
 }
 
+// DRAFT: 0x0017A0C0 CamCollideSphere__6CameraF5PVec3f
+// note: 18 differing lines; ours copies the PVec3 param to sp+0x10 at entry and again before the call, original copies once after the null test. Tried plain if, local copy in the if (frame 0x30), early return (copy hoisted, second null test); plain if is the closest.
+void Camera::CamCollideSphere(PVec3 arg0, float arg1) {
+    if (m_unkBC != 0) {
+        ((CameraFollow *)m_unkBC)->CamCollideSphere(arg0, arg1);
+    }
+}
+
+// FUNCTION: 0x0017A110 PlayerInFixedCamBox__6CameraFv
+bool Camera::PlayerInFixedCamBox() {
+    if (m_unkB4 == 4) {
+        switch (m_unk2B0) {
+        case 2:
+        case 3:
+        case 5:
+            return true;
+        }
+    }
+    return false;
+}
+
+// FUNCTION: 0x0017A230 SetHeadCam__6CameraFb
+int Camera::SetHeadCam(bool arg0) {
+    if (m_unkB4 == 0) {
+        CameraFollow *temp_a0 = (CameraFollow *)m_unkBC;
+        if (temp_a0 != 0) {
+            int flag = (temp_a0->m_unk6318 != 0) ? 1 : 0;
+            if (flag != 0) {
+                return 0;
+            }
+            return temp_a0->SetHeadCam(arg0);
+        }
+    }
+    return 0;
+}
+
 // DRAFT: 0x0017A280 PolyDebug__6CameraFv
 // note: 11 differing words; original branches with b to the shared jr ra exit (ld in delay slot), ours uses bnez. Tried &&, early return, nested if/else, explicit returns; count unchanged.
 void Camera::PolyDebug() {
     if (m_unkB4 == 0 && m_unkB0 != 0) {
         ((CameraFollow *)m_unkBC)->DrawPolyDebug();
+    }
+}
+
+// FUNCTION: 0x0017A2C0 TextDebug__6CameraFv
+void Camera::TextDebug() {
+    if (m_unkC8 != 0 || m_unkB4 == 3) {
+        switch (m_unkB4) {
+        case 0:
+            ((CameraFollow *)m_unkBC)->DrawTextDebug();
+            return;
+        case 3:
+            ((CameraDebug *)m_unkC4)->DrawTextDebug();
+            break;
+        }
     }
 }
 

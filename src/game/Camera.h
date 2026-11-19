@@ -23,6 +23,11 @@ public:
     void ModifyBossCamera(float arg0, float arg1, float arg2);
     void SetBossPosition(float (*arg0)[4]);
     void SetBossArenaValues(float (*arg0)[4], float arg1, float arg2, bool arg3, bool arg4, float arg5, float arg6, bool arg7);
+    void SetCamBoxData(int arg0, void *arg1);
+    void CamCollideSphere(PVec3 arg0, float arg1);
+    bool PlayerInFixedCamBox();
+    int SetHeadCam(bool arg0);
+    void TextDebug();
     void ResetFollowCamera();
     int SetControlled(unsigned int arg0, bool arg1);
 
@@ -35,9 +40,13 @@ public:
     char _pad0B8[4];
     void *m_unkBC;          // 0x0BC (CameraFollow *)
     void *m_unkC0;          // 0x0C0 (CameraCutManager *)
-    char _pad0C4[0x179 - 0xC4];
+    void *m_unkC4;          // 0x0C4 (CameraDebug *)
+    unsigned char m_unkC8;  // 0x0C8
+    char _pad0C9[0x179 - 0xC9];
     unsigned char m_unk179; // 0x179
-    char _pad17A[0x2B8 - 0x17A];
+    char _pad17A[0x2B0 - 0x17A];
+    int m_unk2B0;           // 0x2B0
+    void *m_unk2B4;         // 0x2B4
     unsigned char m_unk2B8; // 0x2B8
     char _pad2B9[0x2E4 - 0x2B9];
     unsigned int m_unk2E4;  // 0x2E4
