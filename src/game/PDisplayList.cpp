@@ -1,4 +1,4 @@
-// FLAGS: -sdatathreshold 0
+// FLAGS: -str readonly
 #include "types.h"
 #include "PDisplayList.h"
 
@@ -11,6 +11,8 @@ extern "C" int printf(const char *fmt, ...);
 void ExceptionCleanup();
 void DisplayExceptionMessage(char *pMsg, bool bFatal, bool bReboot);
 void QwordCopy(u_long128 *pDst, u_long128 *pSrc, unsigned int nQwords);
+extern "C" void FlushCache(int nMode);
+void DmaWaitForCompletion(int nChannel, bool bWait);
 
 // FUNCTION: 0x180400 DeAllocEntries__12PDisplayListFi
 void PDisplayList::DeAllocEntries(int nCount) {
@@ -43,6 +45,26 @@ void *PDisplayList::AllocParticles(int nCount, int nSize) {
     int nOld = m_unkA3344;
     m_unkA3344 += nBytes;
     return (char *)this + nOld * 16 + 0x80080;
+}
+
+// FUNCTION: 0x180550 RenderShadowVolume__12PDisplayListFPvi
+void PDisplayList::RenderShadowVolume(void *pvData, int iSize) {
+    if (pvData == 0) {
+        CdsAssert("PDisplayList.cpp", 0x8F8, "pvData");
+    }
+    if (iSize == 0) {
+        CdsAssert("PDisplayList.cpp", 0x8F9, "iSize");
+    }
+    int nPacket = AllocEntries(1);
+    if (nPacket == 0) {
+        CdsAssert("PDisplayList.cpp", 0x8FE, "0");
+    }
+    *(long long *)nPacket = ((unsigned long long)(unsigned int)pvData << 32) | 0x30000000ULL | (long long)(iSize >> 4);
+    ((unsigned int *)nPacket)[2] = 0;
+    ((unsigned int *)nPacket)[3] = 0;
+    asm {
+        sync
+    }
 }
 
 // DRAFT: 0x180960 EndMatrixList__12PDisplayListFv
@@ -120,6 +142,26 @@ void PDisplayList::SetVertexData(float (*pVerts)[4], int nCount, int nFlags) {
     }
 }
 
+// FUNCTION: 0x1836B0 DrawVertices__12PDisplayListFPvi
+void PDisplayList::DrawVertices(void *pvData, int iSize) {
+    if (pvData == 0) {
+        CdsAssert("PDisplayList.cpp", 0x1A1, "pvData");
+    }
+    if (iSize == 0) {
+        CdsAssert("PDisplayList.cpp", 0x1A2, "iSize");
+    }
+    int nPacket = AllocEntries(1);
+    if (nPacket == 0) {
+        CdsAssert("PDisplayList.cpp", 0x1A7, "0");
+    }
+    *(long long *)nPacket = ((unsigned long long)(unsigned int)pvData << 32) | 0x30000000ULL | (long long)(iSize >> 4);
+    ((unsigned int *)nPacket)[2] = 0x11000000;
+    ((unsigned int *)nPacket)[3] = 0;
+    asm {
+        sync
+    }
+}
+
 // FUNCTION: 0x183790 AddVifPacket__12PDisplayListFP1iUiUi
 void PDisplayList::AddVifPacket(u_long128 *pTag, int nCount, unsigned int nCode0, unsigned int nCode1) {
     int nPacket = AllocEntries(1);
@@ -166,6 +208,64 @@ void PDisplayList::BeginMesh(unsigned int nTag) {
     }
 }
 
+// FUNCTION: 0x183970 SetClipMatrix__12PDisplayListFP5PMat4
+void PDisplayList::SetClipMatrix(PMat4 *pMat) {
+    unsigned int nSize;
+    if (m_unkA3348 == 1) {
+        nSize = 0x342;
+    } else {
+        nSize = 0x394;
+    }
+    if (pMat == 0) {
+        CdsAssert("PDisplayList.cpp", 0x94C, "pMat");
+    }
+    if (nSize >= 0x400) {
+        CdsAssert("PDisplayList.cpp", 0x94D, "uVu1MemOffset < 1024");
+    }
+    int nPacket = AllocEntries(5);
+    if (nPacket != 0) {
+        *(long long *)nPacket = 0x10000004LL;
+        ((unsigned int *)nPacket)[2] = 0x10000000;
+        ((unsigned int *)nPacket)[3] = nSize | 0x6C040000;
+        *(u_long128 *)(nPacket + 0x10) = *(u_long128 *)pMat;
+        *(u_long128 *)(nPacket + 0x20) = *(u_long128 *)((char *)pMat + 0x10);
+        *(u_long128 *)(nPacket + 0x30) = *(u_long128 *)((char *)pMat + 0x20);
+        *(u_long128 *)(nPacket + 0x40) = *(u_long128 *)((char *)pMat + 0x30);
+        asm {
+            sync
+        }
+    }
+}
+
+// FUNCTION: 0x183A60 SetScreenMatrix__12PDisplayListFP5PMat4
+void PDisplayList::SetScreenMatrix(PMat4 *pMat) {
+    unsigned int nSize;
+    if (m_unkA3348 == 1) {
+        nSize = 0x33E;
+    } else {
+        nSize = 0x38C;
+    }
+    if (pMat == 0) {
+        CdsAssert("PDisplayList.cpp", 0x94C, "pMat");
+    }
+    if (nSize >= 0x400) {
+        CdsAssert("PDisplayList.cpp", 0x94D, "uVu1MemOffset < 1024");
+    }
+    int nPacket = AllocEntries(5);
+    if (nPacket != 0) {
+        *(long long *)nPacket = 0x10000004LL;
+        ((unsigned int *)nPacket)[2] = 0x10000000;
+        ((unsigned int *)nPacket)[3] = nSize | 0x6C040000;
+        *(u_long128 *)(nPacket + 0x10) = *(u_long128 *)pMat;
+        *(u_long128 *)(nPacket + 0x20) = *(u_long128 *)((char *)pMat + 0x10);
+        *(u_long128 *)(nPacket + 0x30) = *(u_long128 *)((char *)pMat + 0x20);
+        *(u_long128 *)(nPacket + 0x40) = *(u_long128 *)((char *)pMat + 0x30);
+        asm {
+            sync
+        }
+    }
+}
+
 // FUNCTION: 0x183FC0 SetVifCodes__12PDisplayListFUiUi
 void PDisplayList::SetVifCodes(unsigned int nCode0, unsigned int nCode1) {
     int nPacket = AllocEntries(1);
@@ -177,6 +277,35 @@ void PDisplayList::SetVifCodes(unsigned int nCode0, unsigned int nCode1) {
     ((unsigned int *)nPacket)[3] = nCode1;
     asm {
         sync
+    }
+}
+
+// DRAFT: 0x184040 KickVifDmaChain__12PDisplayListFb
+// note: 4 lines differ: original keeps 0x13000000 in a0 and masks the address with dsll32/dsrl32 by 4 (28-bit); mwcc uses v1 and folds the mask to 32-bit. Tried: 64-bit locals, pointer and signed casts, separate tag variable, inline tag constant (still 4 lines).
+void PDisplayList::KickVifDmaChain(bool bWait) {
+    int nPacket = AllocEntries(1);
+    if (nPacket == 0) {
+        CdsAssert("PDisplayList.cpp", 0x9E, "0");
+    }
+    *(long long *)nPacket = 0x70000000LL;
+    ((unsigned int *)nPacket)[2] = 0;
+    ((unsigned int *)nPacket)[3] = 0x13000000;
+    *(unsigned int *)0x10009020 = 0;
+    *(unsigned int *)0x10009030 = (unsigned int)(((unsigned long long)((unsigned int)this + 0x40) << 36) >> 36);
+    *(unsigned int *)0x1000E010 = 2;
+    FlushCache(0);
+    asm {
+        sync
+        sync.p
+    }
+    *(unsigned int *)0x10009000 = 0x145;
+    asm {
+        sync
+        sync.p
+    }
+    if (bWait) {
+        DmaWaitForCompletion(1, false);
+        Reset();
     }
 }
 

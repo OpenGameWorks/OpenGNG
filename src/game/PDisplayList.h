@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+class PMat4;
+
 class PDisplayList {
 public:
     PDisplayList();
@@ -20,6 +22,11 @@ public:
     void BeginMatrixList();
     void EndMatrixList();
     void Reset();
+    void RenderShadowVolume(void *pvData, int iSize);
+    void DrawVertices(void *pvData, int iSize);
+    void SetClipMatrix(PMat4 *pMat);
+    void SetScreenMatrix(PMat4 *pMat);
+    void KickVifDmaChain(bool bWait);
 
     char _pad000[0xA3340];
     int m_unkA3340;         // 0xA3340 entry count, decremented by DeAllocEntries
