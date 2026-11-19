@@ -10,6 +10,8 @@ extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" PObjectDisplayList *__ct__18PObjectDisplayListFv(PObjectDisplayList *);
 extern "C" void __dt__18PObjectDisplayListFv(PObjectDisplayList *, short);
+extern "C" void *__dt__6PArrayFv(void *pThis, short nFlag);
+extern "C" char __vt__9PResource[];
 extern "C" int Create__18PObjectDisplayListFP6PMNodePb(PObjectDisplayList *, PMNode *, bool *);
 class PAnimFrame;
 extern "C" PAnimFrame *__ct__10PAnimFrameFP5PAnim(PAnimFrame *, PAnim *);
@@ -36,10 +38,8 @@ extern PSound gSound;
 // TODO(header): mst_NextPMNodeRef__6PMNode is a static PMNode counter; a 4-byte int keeps it gp-relative as the original does.
 extern "C" int mst_NextPMNodeRef__6PMNode;
 
-class PArray {
-public:
-    void Add(void *pItem);
-};
+class AnimData;
+#include "PArray.h"
 
 // TODO(header): PAnim, PChannel and eAnimType belong to the animation headers. Placeholder shapes; only the names, the FindChannel/AnimateBox signatures and the byte at PAnim+0xA matter here.
 enum eAnimType { eAnimType_Placeholder = 0 };
@@ -61,6 +61,8 @@ public:
     virtual void Slot01();
     virtual void Slot02(float fTime);
     virtual void Slot03();
+    virtual void Slot04();
+    virtual void Slot05(AnimData *pAnim);
 };
 
 // Object held at PMNode+0x24. Slot 18 (0x48) is the frame-rate query; slots 0..17 are unknown.
@@ -76,8 +78,8 @@ public:
     virtual void Slot08();
     virtual void Slot09();
     virtual void Slot10();
-    virtual void Slot11();
-    virtual void Slot12();
+    virtual void Slot11(int nCount);
+    virtual float Slot12();
     virtual void Slot13();
     virtual void Slot14();
     virtual void Slot15();
@@ -392,7 +394,7 @@ void PMNode::SetAnimLoopCount(int nCount, bool bFlag) {
     PMNode *pChild;
     void *pObj = m_unk24;
     if (pObj != 0) {
-        ((PFrameSource *)pObj)->Slot11();
+        ((PFrameSource *)pObj)->Slot11(nCount);
     }
     if (bFlag) {
         m_unk18 = 0;
@@ -409,6 +411,34 @@ void PMNode::SetAnimLoopCount(int nCount, bool bFlag) {
                 pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
             } while (pChild != 0);
         }
+    }
+}
+
+// DRAFT: 0x00193A30 SetAllAnimFlags__6PMNodeFP8AnimData
+// note: body and loop match; original has an extra nop at 0x193AF4 (join of the if-guard) before ld ra, ours has none. Tried ternary and if/else loop tails, same 6 lines.
+void PMNode::SetAllAnimFlags(AnimData *pAnim) {
+    PMNode *pChild;
+    void *pObj = m_unk24;
+    if (pObj != 0) {
+        ((PFrameSource *)pObj)->Slot10();
+        float fTime = ((PFrameSource *)m_unk24)->Slot12();
+        *(float *)&m_unk34 = fTime;
+        m_unk38 = fTime;
+    }
+    m_unk3F = 3;
+    m_unk18 = 0;
+    pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            unsigned int uNext;
+            ((PNodeVirtual *)pChild)->Slot05(pAnim);
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
     }
 }
 
@@ -479,6 +509,72 @@ void PMNode::AnimateBox(float fTime) {
         m_unk28 = 0;
     }
 }
+
+// FUNCTION: 0x001944B0 BuildAnimList__6PMNodeFP6PArrayUi
+void PMNode::BuildAnimList(PArray *pArr, unsigned int uID) {
+    PMNode *pChild;
+    int nObjID;
+    void *pObj = m_unk24;
+    if (pObj != 0) {
+        nObjID = *(int *)((char *)pObj + 4);
+    } else {
+        nObjID = 0;
+    }
+    if (uID == (unsigned int)nObjID) {
+        pArr->Add(this);
+        return;
+    }
+    m_unk18 = 0;
+    pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            unsigned int uNext;
+            pChild->BuildAnimList(pArr, uID);
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+}
+
+// DRAFT: 0x00194580 FindAnimNode__6PMNodeFUi
+// note: body matches; original has an extra nop before the return-0 tail (join of the loop exit), ours has none. Tried return-0 tail and result variable with break (worse, 13+ lines). 11 lines.
+PMNode *PMNode::FindAnimNode(unsigned int uID) {
+    PMNode *pChild;
+    int nObjID;
+    void *pObj = m_unk24;
+    if (pObj != 0) {
+        nObjID = *(int *)((char *)pObj + 4);
+    } else {
+        nObjID = 0;
+    }
+    if (uID == (unsigned int)nObjID) {
+        return this;
+    }
+    m_unk18 = 0;
+    pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            PMNode *pFound;
+            unsigned int uNext;
+            pFound = pChild->FindAnimNode(uID);
+            if (pFound != 0) {
+                return pFound;
+            }
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+    return 0;
+}
+
 
 // DRAFT: 0x00194850 Find__6PMNodeFUi
 // note: 2 words differ. Original guards uID==0 with a branch to a shared return-0 tail; ours puts v0=0 in the guard delay slot. Tried: early return on child==0, nested uID!=0 body (worse), single-exit form.
@@ -641,6 +737,31 @@ void PMNode::DestroyChildren() {
     }
 }
 
+// DRAFT: 0x00195480 SetAllLoopCountByID__6PMNodeFUii
+// note: 7 lines differ; the original has a join nop (0x53C) between the child loop exit and the epilogue. Tried the nested-if guard, same 7 lines.
+void PMNode::SetAllLoopCountByID(unsigned int uID, int nCount) {
+    PMNode *pChild;
+    void *pObj = m_unk24;
+    if (pObj != 0 && (uID == 0 || uID == *(unsigned int *)((char *)pObj + 4))) {
+        uID = 0;
+        ((PFrameSource *)pObj)->Slot11(nCount);
+    }
+    m_unk18 = 0;
+    pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            unsigned int uNext;
+            pChild->SetAllLoopCountByID(uID, nCount);
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+}
+
 // FUNCTION: 0x00195240 DestroyMesh__6PMNodeFv
 void PMNode::DestroyMesh() {
     void *pMesh = m_unk10;
@@ -747,6 +868,28 @@ void PMNode::RecurseDetachAnim() {
                 pChild = 0;
             }
         } while (pChild != 0);
+    }
+}
+
+// FUNCTION: 0x00195E70 __dt__6PMNodeFv
+PMNode::~PMNode() {
+    DestroyMesh();
+    DestroyAnim();
+    DestroyChildren();
+    DestroyFxTriggers(false, false, false);
+    m_unk04 = 0;
+    if (m_pObjDisplayList != 0) {
+        __dt__18PObjectDisplayListFv(m_pObjDisplayList, 1);
+        m_pObjDisplayList = 0;
+    }
+    StopAmbientSoundsByObject();
+    m_unkEC = 0;
+    m_unkF0 = 0;
+    __dt__6PArrayFv(&m_unkD8, -1);
+    __dt__6PArrayFv(&m_unk14, -1);
+    if (this != 0) {
+        *(void **)this = __vt__9PResource;
+        m_unk04 = 0;
     }
 }
 

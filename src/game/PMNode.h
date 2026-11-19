@@ -7,11 +7,13 @@ struct tagParticleFxTrigger;
 class PObjectDisplayList;
 class PArray;
 class PAnim;
+class AnimData;
 // TODO(header): eBoxIntersect belongs to the owner header of the box-test enum. Placeholder until that header defines it; only the name matters for mangling.
 enum eBoxIntersect { eBoxIntersect_Placeholder = 0 };
 
 class PMNode {
 public:
+    virtual ~PMNode();
     int PlaySound(unsigned int arg0);
     int AddFxTrigger(tagParticleFxTrigger *pTrigger, bool bFlag);
     void AddFxTriggers(PArray *pArr, bool bFlag);
@@ -41,12 +43,15 @@ public:
     void SetFrameTime(float fTime);
     float GetFrameTime();
     void SetAnimLoopCount(int nCount, bool bFlag);
+    void SetAllAnimFlags(AnimData *pAnim);
+    void BuildAnimList(PArray *pArr, unsigned int uID);
+    PMNode *FindAnimNode(unsigned int uID);
+    void SetAllLoopCountByID(unsigned int uID, int nCount);
     void SetAllFrustrumTest(eBoxIntersect eMode);
     void InitMembers();
     void RemoveNullAnimation();
 
-    char _pad000[4];
-    int m_unk04;            // 0x004 state; 2 skips frustum test
+    int m_unk04;           // 0x004 state; 2 skips frustum test
     int m_unk08;            // 0x008 zeroed by InitMembers
     int m_unk0C;            // 0x00C eBoxIntersect mode
     void *m_unk10;          // 0x010 PMesh *
