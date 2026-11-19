@@ -13,6 +13,7 @@ extern "C" void FlushIOPCommand(int, int, int);
 extern "C" void SOUND_CopyIOPBuffer();
 extern char gEng[105360];
 extern "C" void __ct__14PFadeMsecFloatFv(void *);
+extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 
 // FUNCTION: 0x001A3E60 LinkAmbientEntry__6PSoundFPQ26PSound12AmbientEntryPQ26PSound12AmbientEntry
 void PSound::LinkAmbientEntry(AmbientEntry *pEntry, AmbientEntry *pNext) {
@@ -27,6 +28,13 @@ void PSound::LinkAmbientEntry(AmbientEntry *pEntry, AmbientEntry *pNext) {
             pTemp->m_unk54 = pNext;
         }
     }
+}
+
+// FUNCTION: 0x001A4390 AbilityScreenLeave__6PSoundFv
+void PSound::AbilityScreenLeave() {
+    KillByCategories(0x200);
+    PauseByCategories(0);
+    SetMainMusicSpecialVolume(MUSIC_SPECIAL_VOLS_NONE);
 }
 
 // FUNCTION: 0x001A5780 SetProposedReverbParams__6PSoundFUiUiUiUiUi
@@ -126,6 +134,41 @@ void PSound::SetMonoOut(bool bMono) {
     }
 }
 
+// FUNCTION: 0x001A91D0 SetPositionalRangeAmbient__6PSoundFUi
+void PSound::SetPositionalRangeAmbient(unsigned int nRange) {
+    float fRange;
+
+    int nSigned = nRange;
+
+    gPSndDbg[19] = nRange;
+    if (nSigned >= 0) {
+        fRange = (float)nSigned;
+    } else {
+        int nHalf = nRange >> 1;
+        nHalf |= nRange & 1;
+        fRange = (float)nHalf;
+        fRange = fRange + fRange;
+    }
+    m_unk5C = fRange;
+}
+
+// FUNCTION: 0x001A9210 SetPositionalRangeOneshot__6PSoundFUi
+void PSound::SetPositionalRangeOneshot(unsigned int nRange) {
+    float fRange;
+    int nSigned = nRange;
+
+    gPSndDbg[18] = nRange;
+    if (nSigned >= 0) {
+        fRange = (float)nSigned;
+    } else {
+        int nHalf = nRange >> 1;
+        nHalf |= nRange & 1;
+        fRange = (float)nHalf;
+        fRange = fRange + fRange;
+    }
+    m_unk58 = fRange;
+}
+
 // FUNCTION: 0x001A9400 InternalUpdateRelVolumes__6PSoundFv
 void PSound::InternalUpdateRelVolumes() {
     SOUND_SetGlobalRelVols(m_unk34, m_unk38, m_unk3C, m_unk40, 1000, 1000, 1000, m_unk30);
@@ -147,6 +190,15 @@ void PSound::SetMainMusicRelVolume(unsigned int nVolume) {
 int PSound::SetStandardSecondaryMusicFileID(unsigned int id) {
     m_unk024 = id;
     return (m_unk024 >= 0x21) ? -1 : 0;
+}
+
+// FUNCTION: 0x001A9800 PlayMusic__6PSoundFUi
+int PSound::PlayMusic(unsigned int nTrack) {
+    if (nTrack < 0x21) {
+        m_unk1C = nTrack;
+        return (unsigned char)PlayMusicOnStream(m_unk28, nTrack, 100);
+    }
+    return 0;
 }
 
 // FUNCTION: 0x001A9840 PSoundFlushIOPCommandsWaitFinish__6PSoundFv
@@ -177,6 +229,13 @@ void PSound::PSoundReInitTriglets() {
     m_unk79E0[4] = 0;
     m_unk79E0[5] = 0;
     EnableLevelProcessing(false);
+}
+
+// FUNCTION: 0x001AA0F0 PSoundReInitSoundRooms__6PSoundFv
+void PSound::PSoundReInitSoundRooms() {
+    memset(m_unk5460, 0, 0x2580);
+    m_unk544C = 0;
+    m_unk5444 = -1;
 }
 
 // FUNCTION: 0x001AA750 __ct__Q26PSound16MusicStreamStateFv

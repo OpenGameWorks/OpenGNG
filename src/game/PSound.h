@@ -82,8 +82,19 @@ public:
         char m_unk15;           // 0x15
     };
 
+    enum EnumMusicSpecialVols {
+        MUSIC_SPECIAL_VOLS_NONE = 0
+    };
+
     void ErrorRecovery();
     void PSoundRestart();
+    void AbilityScreenLeave();
+    void SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol);
+    int PlayMusicOnStream(unsigned int p0, unsigned int p1, unsigned int p2);
+    void SetPositionalRangeAmbient(unsigned int nRange);
+    void SetPositionalRangeOneshot(unsigned int nRange);
+    int PlayMusic(unsigned int nTrack);
+    void PSoundReInitSoundRooms();
     void PSoundReInitSub(unsigned int nMode);
     void PSoundReInitSubWSoundCalls();
     int IsAmbientSoundByID(unsigned int nID);
@@ -114,22 +125,33 @@ public:
     void KillByCategories(unsigned int nCategory);
     void PauseByCategories(unsigned int nCategory);
 
-    char _pad000[0x024];
+    char _pad000[0x01C];
+    unsigned int m_unk1C;   // 0x01C, PlayMusic stores its argument
+    char _pad020[0x024 - 0x020];
     unsigned int m_unk024;  // 0x024
-    char _pad028[0x030 - 0x028];
+    unsigned int m_unk28;   // 0x028, PlayMusic passes it to PlayMusicOnStream
+    char _pad02C[0x030 - 0x02C];
     int m_unk30;            // 0x030, RelVolumes arg 8
     int m_unk34;            // 0x034, RelVolumes arg 1
     int m_unk38;            // 0x038, RelVolumes arg 2
     int m_unk3C;            // 0x03C, RelVolumes arg 3
     int m_unk40;            // 0x040, RelVolumes arg 4
-    char _pad044[0x0D0 - 0x044];
+    char _pad044[0x058 - 0x044];
+    float m_unk58;          // 0x058, SetPositionalRangeOneshot sets it
+    float m_unk5C;          // 0x05C, SetPositionalRangeAmbient sets it
+    char _pad060[0x0D0 - 0x060];
     bool m_unkD0;           // 0x0D0, ErrorRecovery reads it before PSoundRestart
     char _pad0D1[0x0EC - 0x0D1];
     int m_unk0EC;           // 0x0EC
     int m_unk0F0;           // 0x0F0
     char _pad0F4[0x5438 - 0x0F4];
     unsigned int m_unk5438; // 0x5438, SetProposedReverbParams arg 0
-    char _pad543C[0x79E0 - 0x543C];
+    char _pad543C[0x5444 - 0x543C];
+    int m_unk5444;          // 0x5444, PSoundReInitSoundRooms sets -1
+    char _pad5448[0x544C - 0x5448];
+    int m_unk544C;          // 0x544C, PSoundReInitSoundRooms clears it
+    char _pad5450[0x5460 - 0x5450];
+    char m_unk5460[0x2580]; // 0x5460, PSoundReInitSoundRooms clears it
     int m_unk79E0[6];       // 0x79E0
 };
 
