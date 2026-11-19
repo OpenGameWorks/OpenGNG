@@ -4,9 +4,35 @@
 class PMNode {
 public:
     int AddFxTrigger(struct tagParticleFxTrigger *, bool);
+    void ScaleSet(float, float, float, float);
+};
+
+class Physics {
+public:
+    void SetPhysicsType(unsigned int, float (*)[4]);
 };
 
 class EntityBaseClass;
+
+class EntitySlotView {
+public:
+    virtual void Slot0();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void Slot3();
+    virtual void Slot4();
+    virtual void Slot5();
+    virtual void Slot6();
+    virtual void Slot7();
+    virtual void Slot8();
+    virtual void Slot9();
+    virtual void Slot10();
+    virtual void Slot11();
+    virtual void Slot12();
+    virtual int Slot13();
+    virtual void Slot14();
+    virtual void Slot15();
+};
 
 class TimerAPI {
 public:
@@ -39,7 +65,11 @@ extern "C" void __dl__FPv(void *);
 extern "C" void DestroyDamageFx__15EntityBaseClassFUi(void *, unsigned int);
 extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, void *);
 extern "C" void RotateTo__15EntityBaseClassFff(void *, float, float);
+extern "C" void **InstanceIsValid__15EntityBaseClassFUi(unsigned int);
+extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *, int, unsigned int);
 extern unsigned char __vt__19ClockworkSoulsucker[0x10];
+extern unsigned char ClockworkSoulsucker_GrabAttemptSeq[0x10];
+extern unsigned char ClockworkSoulsucker_Small_AirJuggleSeq[0x10];
 
 // FUNCTION: 0x00204570 AttachDamageEffect__19ClockworkSoulsuckerFP6PMNodeUifff
 void ClockworkSoulsucker::AttachDamageEffect(PMNode *pNode, unsigned int nId, float fA, float fB, float fC) {
@@ -132,6 +162,25 @@ void ClockworkSoulsucker::DeleteEffects() {
     }
 }
 
+// FUNCTION: 0x00204AF0 SetupType__19ClockworkSoulsuckerFv
+void ClockworkSoulsucker::SetupType() {
+    if (m_unk3C == 0) {
+        CdsAssert("ClockworkSoulsucker.cpp", 0x966, "GetMeshNode()");
+    }
+    if (m_unk1B0 == 0) {
+        ((PMNode *)m_unk3C)->ScaleSet(0.5f, 0.5f, 0.5f, 1.0f);
+        m_unk104 = 0x40000000;
+        m_unk108 = 0x40000000;
+        m_unk103 = 0x40;
+        ScaleSpikes(0.0f);
+        return;
+    }
+    ((PMNode *)m_unk3C)->ScaleSet(1.0f, 1.0f, 1.0f, 1.0f);
+    m_unk104 = 0x40600000;
+    m_unk108 = 0x40800000;
+    m_unk103 = 0x40;
+}
+
 // FUNCTION: 0x00204BC0 PlayerFacingUs__19ClockworkSoulsuckerFv
 int ClockworkSoulsucker::PlayerFacingUs() {
     EntityBaseClass *pTarget;
@@ -146,6 +195,25 @@ int ClockworkSoulsucker::PlayerFacingUs() {
         }
         if (pPlayer->FacingPoint(pTarget, pVec, 45.0f)) {
             return 1;
+        }
+    }
+    return 0;
+}
+
+// FUNCTION: 0x00204C20 InBlockableState__19ClockworkSoulsuckerFv
+int ClockworkSoulsucker::InBlockableState() {
+    int nState;
+
+    nState = m_unk20;
+    if (m_unk1B0 == 1) {
+        if (nState == 4 || nState == 7 || nState == 5) {
+            return 1;
+        }
+    } else {
+        if (nState == 0x10 || (unsigned int)(nState - 0x1B) <= 1U || (nState == 0x17 && m_unk2A0 == 0) || nState == 0x19 || nState == 0x1E) {
+            if (!InJuggleAirspace()) {
+                return 1;
+            }
         }
     }
     return 0;
@@ -173,6 +241,25 @@ void ClockworkSoulsucker::DeleteTimers() {
     m_unk244 = 0;
 }
 
+// FUNCTION: 0x00205330 GetTarget__19ClockworkSoulsuckerFv
+void *ClockworkSoulsucker::GetTarget() {
+    if (m_unk234 != 0) {
+        m_unk260 = InstanceIsValid__15EntityBaseClassFUi(m_unk234);
+        if (m_unk260 == 0 || ((EntitySlotView *)m_unk260)->Slot13() == 0) {
+            m_unk260 = mPlayerAPI__13EntityManager;
+            if (m_unk260 == 0) {
+                CdsAssert("ClockworkSoulsucker.cpp", 0x841, "m_pTarget");
+            }
+        }
+    } else {
+        m_unk260 = mPlayerAPI__13EntityManager;
+        if (m_unk260 == 0) {
+            CdsAssert("ClockworkSoulsucker.cpp", 0x848, "m_pTarget");
+        }
+    }
+    return m_unk260;
+}
+
 // FUNCTION: 0x002053F0 FaceTarget__19ClockworkSoulsuckerFf
 void ClockworkSoulsucker::FaceTarget(float fArg) {
     void *pTarget;
@@ -186,6 +273,17 @@ void ClockworkSoulsucker::FaceTarget(float fArg) {
         pPos = (char *)nOwner + 0x80;
     }
     RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, pPos), fArg);
+}
+
+// FUNCTION: 0x00205450 SetDrainHit__19ClockworkSoulsuckerFUi
+void ClockworkSoulsucker::SetDrainHit(unsigned int nArg) {
+    if (m_unk140 != &ClockworkSoulsucker_GrabAttemptSeq) {
+        CdsAssert("ClockworkSoulsucker.cpp", 0x820, "GetCurrentSequence() == ClockworkSoulsucker_GrabAttemptSeq");
+    }
+    m_unk10C &= 0xF8FFFFFF;
+    m_unk38->SetPhysicsType(0x812, 0);
+    m_unk2A0 = 1;
+    m_unk2C4 = nArg;
 }
 
 // FUNCTION: 0x002054E0 GetSuckingSucker__19ClockworkSoulsuckerFv
@@ -256,4 +354,36 @@ extern "C" void *__dt__19ClockworkSoulsuckerFv(void *pThis, short nFlag) {
         }
     }
     return pThis;
+}
+
+// FUNCTION: 0x00208A00 __ct__19ClockworkSoulsuckerFv
+ClockworkSoulsucker::ClockworkSoulsucker() {
+    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 3, 0U);
+    m_unk0 = __vt__19ClockworkSoulsucker;
+    m_unk22C = 0x320;
+    m_unk238 = 0;
+    m_unk166 = 1;
+    m_unk24C = 0x3F800000;
+    m_unk248 = 0;
+    m_unk244 = 0;
+    m_unk240 = 0;
+    m_unk250 = 0;
+    m_unk254 = 0;
+    m_unk25C = 0;
+    m_unk264 = 0;
+    m_unk268 = 0;
+    m_unk258 = 5;
+    m_unk2A0 = 0;
+    m_unk2A1 = 0;
+    m_unk2A4 = 0;
+    m_unk2A8 = 0;
+    m_unk2AC = 0;
+    m_unk2C8 = 0;
+    m_unk2C9 = 0;
+    m_unk2B0 = 0;
+    m_unk2B4 = 0;
+    m_unk2BC = 0;
+    m_unk2C0 = 0;
+    m_unk2C4 = 0;
+    m_unk2B8 = 0;
 }
