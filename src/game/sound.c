@@ -60,6 +60,19 @@ void SOUND_SetChanUse(short arg0, short arg1, short arg2, short arg3, short arg4
     SetIOPCommand(0x3A, 5);
 }
 
+// FUNCTION: 0x001ADB70 SOUND_SetGlobalRelVols
+void SOUND_SetGlobalRelVols(short arg0, short arg1, short arg2, short arg3, short arg4, short arg5, short arg6, short arg7) {
+    IOPCommandData[2] = arg2;
+    IOPCommandData[3] = arg3;
+    IOPCommandData[4] = arg4;
+    IOPCommandData[5] = arg5;
+    IOPCommandData[6] = arg6;
+    IOPCommandData[7] = arg7;
+    IOPCommandData[0] = arg0;
+    IOPCommandData[1] = arg1;
+    SetIOPCommand(0x39, 8);
+}
+
 // DRAFT: 0x001ADBE0 SOUND_EnableFeatures
 // note: 11 differing lines; compiler stores index 1 from $a0 before index 0 and drops the original's and/ori 0xFFFF; tried unsigned int args, no (short) cast on index 1, hi local.
 void SOUND_EnableFeatures(unsigned int arg0, unsigned int arg1) {
@@ -114,6 +127,40 @@ void SOUND_SetSPUWriteAddress(unsigned int arg0) {
     SetIOPCommand(0x0E, 2);
 }
 
+// DRAFT: 0x001AE3C0 SOUND_AllocateStreamBuffer
+// note: 6 differing lines; compiler folds the low-half mask so the original's ori $v0,0xFFFF + and is missing. Tried arg1 & 0xFFFFU, (short)(arg1 & 0xFFFF), (unsigned short) cast, unsigned long arg1 (header conflict); all 6.
+void SOUND_AllocateStreamBuffer(short arg0, unsigned int arg1, unsigned int arg2) {
+    IOPCommandData[0] = arg0;
+    IOPCommandData[4] = (short)arg2;
+    IOPCommandData[3] = (short)(arg2 >> 16);
+    IOPCommandData[1] = (short)(arg1 >> 16);
+    IOPCommandData[2] = arg1 & 0xFFFFU;
+    SetIOPCommand(0xD, 5);
+}
+
+// FUNCTION: 0x001AE5E0 SOUND_SetChannelPitch
+int SOUND_SetChannelPitch(unsigned int arg0, short arg1) {
+    if (arg0 > 0x2FU) {
+        return -1;
+    }
+    IOPCommandData[0] = arg0;
+    IOPCommandData[1] = arg1;
+    SetIOPCommand(3, 2);
+    return 0;
+}
+
+// FUNCTION: 0x001AE630 SOUND_SetChanRelVol
+int SOUND_SetChanRelVol(unsigned int arg0, short arg1, short arg2) {
+    if (arg0 > 0x2FU) {
+        return -1;
+    }
+    IOPCommandData[2] = arg2;
+    IOPCommandData[0] = arg0;
+    IOPCommandData[1] = arg1;
+    SetIOPCommand(0x3B, 3);
+    return 0;
+}
+
 // DRAFT: 0x001AE4B0 SOUND_ResumeMultipleSounds
 // note: 12 differing words; compiler drops the original's ori $v1,0xFFFF + and mask on index 1 (sh truncates) and the stored size is 0x34 vs 0x3c. Tried signed int, unsigned short cast, mask local, unsigned long args; 12 best.
 void SOUND_ResumeMultipleSounds(unsigned int arg0, unsigned int arg1) {
@@ -152,4 +199,16 @@ int SOUND_StopStream(unsigned int arg0) {
     IOPCommandData[0] = (short)arg0;
     SetIOPCommand(5, 1);
     return 0;
+}
+
+// DRAFT: 0x001AEA90 SOUND_TransferSFX
+// note: 8 differing words; compiler folds arg2 & 0xFFFF into a plain sh, dropping the original's ori $v0,0xFFFF + and. Tried store reorder (9 words) and hoisted masked local (9 words).
+void SOUND_TransferSFX(short arg0, short arg1, unsigned int arg2, unsigned int arg3) {
+    IOPCommandData[0] = arg0;
+    IOPCommandData[1] = arg1;
+    IOPCommandData[2] = (short)(arg2 >> 16);
+    IOPCommandData[5] = (short)arg3;
+    IOPCommandData[3] = arg2 & 0xFFFFU;
+    IOPCommandData[4] = (short)(arg3 >> 16);
+    SetIOPCommand(6, 6);
 }
