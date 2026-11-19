@@ -4,6 +4,17 @@
 class PHashTable {
 public:
     int Lookup(void *pKey, void *&pValue);
+    void *Remove(void *pKey);
+};
+
+class PArray {
+public:
+    void Remove(void *pItem);
+};
+
+class OverlayManager {
+public:
+    int LoadOverlay(const char *pName);
 };
 
 class Icon {
@@ -22,7 +33,7 @@ public:
 
 class PVirtObj {
 public:
-    virtual void Slot02();
+    virtual void Slot02(unsigned int arg0);
     virtual void Slot03();
     virtual void Slot04();
     virtual void Slot05();
@@ -30,6 +41,22 @@ public:
     virtual void Slot07();
     virtual void Slot08();
     virtual void Slot09(unsigned int arg0);
+    virtual void Slot10();
+    virtual void Slot11();
+    virtual void Slot12();
+    virtual void Slot13();
+    virtual void Slot14();
+    virtual void Slot15();
+    virtual void Slot16();
+    virtual void Slot17();
+    virtual void Slot18();
+    virtual void Slot19();
+    virtual void Slot20();
+    virtual void Slot21();
+    virtual void Slot22();
+    virtual void Slot23();
+    virtual void Slot24();
+    virtual void Slot25();
 };
 
 void CdsAssert(char *pFile, int nLine, char *pExpr);
@@ -43,6 +70,8 @@ public:
 };
 
 float FastMath_Fabs(float f);
+
+extern unsigned char gMC[0x1000];
 
 class EntityBaseClass {
 public:
@@ -65,6 +94,31 @@ void EntityManager::ProcessApparitions() {
     ExecuteApparitions();
 }
 
+// DRAFT: 0x00146FA0 CalculateTallyData__13EntityManagerFv
+// note: 17 lines differ; constants preload order and the join placement differ (ours inlines off+=4 before the body); tried ||-chain signed char (32 words), !=/else (26), int t (32), offset-first decl (26), switch 4..1 (21), switch 1..4 with ascending cases (17, kept).
+void *EntityManager::CalculateTallyData() {
+    m_unk5B24[0].m_unk00 = 0;
+    m_unk5B24[1].m_unk00 = 0;
+    m_unk5B24[2].m_unk00 = 0;
+    m_unk5B24[3].m_unk00 = 0;
+    m_unk5B24[4].m_unk00 = 0;
+    unsigned int i = 0;
+    int off = 0;
+    for (; i < m_unk5054; i++) {
+        signed char t = *(signed char *)((char *)this + 0x53A0 + off);
+        switch (t) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+            m_unk5B24[t].m_unk00 = m_unk5B24[t].m_unk00 + 1;
+            break;
+        }
+        off += 4;
+    }
+    return m_unk5B24;
+}
+
 // FUNCTION: 0x001471D0 Reset__4IconFv
 void Icon::Reset() {
     m_unk0 = 0;
@@ -73,6 +127,36 @@ void Icon::Reset() {
     m_unkD = 0;
     m_unk10 = 0;
     m_unk14 = 0;
+}
+
+// DRAFT: 0x001471F0 FindTrigger__13EntityManagerFUii
+// note: 8 lines; the else-arm p=0 leaves a b over the else at 0x14/0x1C (original falls through into the while test) and the increment uses a3 for the new index (original uses v1). Tried truthiness test (32), if-sense reversed (11), index reload (11), local idx without else (32), local idx with else (8, kept).
+void *EntityManager::FindTrigger(unsigned int arg0, int arg1) {
+    m_unk5B64 = 0;
+    TriggerEntry *p = 0;
+    if (m_unk5B60 != 0) {
+        p = (TriggerEntry *)m_unk5B68[0];
+    } else {
+        p = 0;
+    }
+    while (p != 0) {
+        if (arg1 >= 0) {
+            if (arg1 == p->m_unk06) {
+                return p;
+            }
+        } else {
+            if (arg0 == p->m_unk00) {
+                return p;
+            }
+        }
+        int idx = m_unk5B64 + 1;
+        m_unk5B64 = idx;
+        p = 0;
+        if (idx < (unsigned int)m_unk5B60) {
+            p = (TriggerEntry *)m_unk5B68[m_unk5B64];
+        }
+    }
+    return 0;
 }
 
 // DRAFT: 0x00147760 ValidateDependencyList__13EntityManagerFv
@@ -101,6 +185,35 @@ void EntityManager::Add2DependencyList(unsigned int arg0, unsigned int arg1) {
     DependencyEntry *e = &m_unk51A0[n];
     e->m_unk00 = arg0;
     e->m_unk04 = arg1;
+}
+
+// DRAFT: 0x00147B40 LoadApparitionData__13EntityManagerFi
+// note: 22 lines differ; branch offset 0x1D vs 0x1C, p=0 in t1 (orig v1), addiu 0x2B1 placement, b/mask/i/off/q registers (orig a2/a3/t0/t1/t2), loop tail order. Tried gMC[idx+0x2B1] (27), two-pointer q (22), single pointer p (22), counters before byte load (23).
+void EntityManager::LoadApparitionData(int arg0) {
+    if (arg0 < 0x15) {
+        unsigned char *p = 0;
+        if (arg0 < 0x15) {
+            p = &gMC[arg0 * 0x31];
+            p = p + 0x2B1;
+        }
+        unsigned char b = *p;
+        p = p + 1;
+        unsigned int mask = 0x80;
+        int i = 0;
+        int off = 0;
+        do {
+            int bit = (unsigned char)b & mask;
+            mask = mask >> 1;
+            *(signed char *)((char *)this + 0x53A0 + off) = bit;
+            if (mask == 0) {
+                b = *p;
+                mask = 0x80;
+                p = p + 1;
+            }
+            i = i + 1;
+            off = off + 4;
+        } while (i < 0x180);
+    }
 }
 
 // FUNCTION: 0x00148960 GetPtrToInstance__13EntityManagerFUi
@@ -140,7 +253,7 @@ float EntityManager::GetItemCounter(ItemCounterType theType) {
 }
 
 // DRAFT: 0x001491C0 CallOnTimerEvent__13EntityManagerFUiUi
-// note: 16 lines; original tests the string address at runtime (lui/addiu/sltu/xori/bnez over the CdsAssert call, frame 0x30) and ours folds !"..." away; tried local char* pMsg (0x40 frame, worse), early return (more lines), if(!(!"...")) else arm (16 lines, kept).
+// note: 16 lines, all in the failure branch; the Slot09 call and Lookup match under the current PVirtObj layout. Original tests the string address at runtime (lui/addiu/sltu/xori/bnez over the CdsAssert call, frame 0x30) and ours folds !"..." away; tried local char* pMsg (0x40 frame, worse), early return (more lines), if(!(!"...")) else arm (16 lines, kept).
 void EntityManager::CallOnTimerEvent(unsigned int arg0, unsigned int arg1) {
     void *pValue;
     if (((PHashTable *)m_unk5088)->Lookup((void *)arg0, pValue) != 0) {
@@ -149,6 +262,38 @@ void EntityManager::CallOnTimerEvent(unsigned int arg0, unsigned int arg1) {
         if (!(!"Invalid Apparition Accessed")) {
             CdsAssert("EntityManager.cpp", 0x184, "!\"Invalid Apparition Accessed\"");
         }
+    }
+}
+
+// FUNCTION: 0x00149500 Destroy__13EntityManagerFUiUi
+void EntityManager::Destroy(unsigned int arg0, unsigned int arg1) {
+    if (arg1 != 0) {
+        ((PHashTable *)m_unk5094)->Remove((void *)arg1);
+    }
+    PVirtObj *pObj = (PVirtObj *)((PHashTable *)m_unk5088)->Remove((void *)arg0);
+    if (pObj != 0) {
+        pObj->Slot25();
+        ((PArray *)m_unk5078)->Remove(pObj);
+        RemoveFromRenderList((EntityBaseClass *)pObj);
+        if (pObj != 0) {
+            pObj->Slot02(1);
+        }
+    }
+}
+
+// DRAFT: 0x00149B10 LoadOverlay__13EntityManagerFPcPc
+// note: 21 words differ; the original tests the failure-message string address at runtime (lui/addiu/sltu/xori/bnez, skip over the CdsAssert call) and ours folds the test away; the 0x13-word beqz skip differs from 0x15. Tried !(!"...") (23), local char* pMsg with pMsg != 0 (21), !(!pMsg) (21, kept as pMsg != 0 form).
+void EntityManager::LoadOverlay(char *arg0, char *arg1) {
+    m_unk5D4C = 0;
+    Reset(true);
+    if (arg0 != 0) {
+        if (((OverlayManager *)m_unk50C0)->LoadOverlay(arg0) == 0) {
+            char *pMsg = "Load Overlay failed";
+            if (pMsg != 0) {
+                CdsAssert("EntityManager.cpp", 0x8A, "!\"Load Overlay failed\"");
+            }
+        }
+        LoadResource(arg1, false);
     }
 }
 
