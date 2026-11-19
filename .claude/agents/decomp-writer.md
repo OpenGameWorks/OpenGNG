@@ -40,6 +40,8 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4`) that `tool
 - A constructor that stores `this` to `0x1C(sp)` and reloads it before each store has a member subobject whose type declares a destructor; CodeWarrior keeps `this` in `s0` when no member type has one. Such members are embedded as real classes (`#include "PArray.h"`, `PArray m_unk70;`) so the compiler constructs them implicitly; a manual `__ct__6PArrayFv(...)` call reproduces neither the spill nor the call order.
 - `lw t9,0(a0); lw t9,N(t9); jalr t9` is a C++ virtual call; a cast function-pointer call loads `v0` instead. CodeWarrior vtables start with an 8-byte header, so slot `N` is virtual number `(N - 8) / 4` in declaration order, the virtual destructor taking one slot. A class declaring virtuals up to that slot (`.venv/bin/python tools/vtable.py CLASS < /dev/null` lists each slot's target) and a cast `((View *)this)->Method(args)` reproduce it; `src/game/ClockworkMaximo.cpp` shows one.
 - A callee defined in no source still links: `tools/link.py` resolves it by name from the original symbol table, so its declaration under `TODO(header)` is enough.
+- A function-local `static` compiles to `name$N` with a counter N that runs across the whole TU; `fncmp.py` and the linker accept `name$N` against the original's `name$M`, so only the bytes need to agree.
+- `fncmp.py`'s verdict line (`MATCH` or `DIFF N words`) is the difference count; counting `^!` lines is unreliable.
 - `src/game/PWorld.cpp` holds the first match and serves as a model.
 
 ## Finishing
