@@ -256,8 +256,7 @@ int ClockworkMaximo::DetermineIdleState() {
     return (MathAPI::RandomIntRange(0, 0x64) & 1) != 0;
 }
 
-// DRAFT: 0x00211550 SetSpawnedFromEntity__15ClockworkMaximoFPfPfi
-// note: all else matches; the vtable slot-0x30 call loads its target into v0 (original t9). Tried a local fn pointer, int-returning pointer, char-offset cast, local vtable int, and vt[12] index; none moved it.
+// FUNCTION: 0x00211550 SetSpawnedFromEntity__15ClockworkMaximoFPfPfi
 void ClockworkMaximo::SetSpawnedFromEntity(float *arg0, float *arg1, int arg2) {
     m_unk240 = (MathAPI::RandomIntRange(1, 0x64) & 1) ? 0x3DE : 0x429;
     m_unk1C4 = 0x43160000;
@@ -282,8 +281,7 @@ void ClockworkMaximo::SetSpawnedFromEntity(float *arg0, float *arg1, int arg2) {
         }
         *pDst2 = *(u_long128 *)arg1;
     }
-    void **vt = *(void ***)this;
-    ((void (*)(ClockworkMaximo *, int))vt[12])(this, 0);
+    ((ClockworkMaximoVirtuals *)this)->SetInnocentInstanceID(0);
 }
 
 // FUNCTION: 0x00211650 SetDefaultVars__15ClockworkMaximoFv
