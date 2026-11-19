@@ -13,12 +13,16 @@ struct tagVuParticle;
 
 class PParticleManager {
 public:
+    void *AllocAuraParticle();
     void FreeAuraParticle(tagVuParticle *pParticle);
     void DestroyMovingFog();
     void SetLightningDensity(float fDensity);
     void SetRainDensity(float fDensity, bool bFlag);
     void SetRainDensity(unsigned int hRain, float fDensity, bool bFlag);
     void DestroyRain();
+    int CreateEweedReaction(float *pPos);
+    int CreateSulphurReaction(float *pPos, float fUnused);
+    int CreateGroundDust(float *pPos, float fScale);
     void RenderEweedReactionFx();
     void DestroyEweedReactionFx();
     void RenderSulphurReactionFx();
@@ -28,6 +32,7 @@ public:
     PParticleOneShot *Create(unsigned int hFx, float fA, float fB, float fC, PMNode *pNode, bool bFlag);
     PParticleOneShot *CreateOneShot(unsigned int hFx, float fA, float fB, float fC);
     int IsValid(PParticleSystem *pSystem);
+    void RenderParticleInstanceGroups(bool bFlag);
     void AddParticleInstanceGroup(PStaticInstanceGroup *pGroup);
     void AddMasterParticleInstance(PParticleSystem *pFx);
     void RemoveAll();
@@ -45,6 +50,10 @@ public:
     PMovingFog *m_unk9B4;       // 0x9B4
     char _pad9B8[0xEC0 - 0x9B8];
     int m_unkEC0;               // 0xEC0
+    char _padEC4[0x2068 - 0xEC4];
+    unsigned int m_unk2068;     // 0x2068
+    unsigned int m_unk206C;     // 0x206C
+    PStaticInstanceGroup **m_unk2070; // 0x2070
 };
 
 #endif

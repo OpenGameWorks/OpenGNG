@@ -46,6 +46,11 @@ public:
     virtual int Slot02();
     virtual void Slot03();
     virtual void Slot04();
+    virtual void Slot05();
+    virtual void Slot06();
+    virtual void Slot07();
+    virtual void Slot08(float *pA, float *pB);
+    virtual void Slot09();
     char _pad004[0x11];
     unsigned char m_unk15;      // 0x15
 };
@@ -61,7 +66,36 @@ public:
     virtual void Slot06();
 };
 
+class PParticleLiteExplosion {
+public:
+    virtual void Slot00();
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual void Slot04();
+    virtual void Slot05();
+    virtual void Slot06();
+    virtual void Slot07();
+    virtual void Slot08(float *pA, float *pB);
+    void Start(float fScale);
+    char _pad004[0x11];
+    unsigned char m_unk15;      // 0x15
+};
+
+class PStaticInstanceGroup {
+public:
+    void RenderParticleInstances(bool bFlag);
+};
+
+struct tagGroundDustParams {
+    char _pad000[0x80];
+    float m_unk80;              // 0x80
+};
+
+extern tagGroundDustParams gGroundDustParams;
+
 void CdsAssert(char *pFile, int nLine, char *pExpr);
+extern "C" int printf(const char *fmt, ...);
 
 struct tagVuParticle {
     char _pad000[0xC];
@@ -148,6 +182,57 @@ void PParticleManager::DestroyGroundDustFx() {
     } while (i < 12);
 }
 
+// FUNCTION: 0x001B8750 CreateEweedReaction__16PParticleManagerFPf
+int PParticleManager::CreateEweedReaction(float *pPos) {
+    int i = 0;
+    int off = 0;
+    do {
+        PEweedFx *pFx = *(PEweedFx **)((char *)this + off + 0x20DC);
+        if (pFx->m_unk15 == 0) {
+            pFx->Slot08(pPos, pPos);
+            pFx->Slot06();
+            return 1;
+        }
+        i++;
+        off += 4;
+    } while (i < 8);
+    return 0;
+}
+
+// FUNCTION: 0x001B87D0 CreateSulphurReaction__16PParticleManagerFPff
+int PParticleManager::CreateSulphurReaction(float *pPos, float fUnused) {
+    int i = 0;
+    int off = 0;
+    do {
+        PEweedFx *pFx = *(PEweedFx **)((char *)this + off + 0x20BC);
+        if (pFx->m_unk15 == 0) {
+            pFx->Slot08(pPos, pPos);
+            pFx->Slot06();
+            return 1;
+        }
+        i++;
+        off += 4;
+    } while (i < 8);
+    return 0;
+}
+
+// FUNCTION: 0x001B8850 CreateGroundDust__16PParticleManagerFPff
+int PParticleManager::CreateGroundDust(float *pPos, float fScale) {
+    int i = 0;
+    int off = 0;
+    do {
+        PParticleLiteExplosion *pFx = *(PParticleLiteExplosion **)((char *)this + off + 0x208C);
+        if (pFx->m_unk15 == 0) {
+            pFx->Slot08(pPos, pPos);
+            pFx->Start(gGroundDustParams.m_unk80 * fScale);
+            return 1;
+        }
+        i++;
+        off += 4;
+    } while (i < 12);
+    return 0;
+}
+
 // DRAFT: 0x001B8A00 FreeAuraParticle__16PParticleManagerFP13tagVuParticle
 // note: the zero path stores $zero directly (sw) where the original does daddu v1,zero,zero then sw v1; branch offset of the b differs by one word.
 void PParticleManager::FreeAuraParticle(tagVuParticle *pParticle) {
@@ -162,6 +247,22 @@ void PParticleManager::FreeAuraParticle(tagVuParticle *pParticle) {
         n = 0;
         m_unkEC0 = n;
     }
+}
+
+// FUNCTION: 0x001B8A40 AllocAuraParticle__16PParticleManagerFv
+void *PParticleManager::AllocAuraParticle() {
+    int i = 0;
+    int off = 0;
+    do {
+        if (*(float *)((char *)this + off + 0x9CC) == 0.0f && *(float *)((char *)this + off + 0x9DC) == 0.0f) {
+            m_unkEC0++;
+            return (char *)this + (i << 5) + 0x9C0;
+        }
+        i++;
+        off += 0x20;
+    } while (i < 0x28);
+    printf("\n**Too many Aura Particles! Ask Vn to increase array size!\n", off);
+    return 0;
 }
 
 // DRAFT: 0x001B8AD0 DestroyMovingFog__16PParticleManagerFv
@@ -220,6 +321,29 @@ int PParticleManager::IsValid(PParticleSystem *pSystem) {
         return 1;
     }
     return 0;
+}
+
+// FUNCTION: 0x001BA490 RenderParticleInstanceGroups__16PParticleManagerFb
+void PParticleManager::RenderParticleInstanceGroups(bool bFlag) {
+    PStaticInstanceGroup *pGroup;
+    m_unk206C = 0;
+    if (m_unk2068 != 0) {
+        pGroup = m_unk2070[0];
+    } else {
+        pGroup = 0;
+    }
+    if (pGroup != 0) {
+        do {
+            pGroup->RenderParticleInstances(bFlag);
+            unsigned int idx = m_unk206C + 1;
+            m_unk206C = idx;
+            if (idx < m_unk2068) {
+                pGroup = m_unk2070[m_unk206C];
+            } else {
+                pGroup = 0;
+            }
+        } while (pGroup != 0);
+    }
 }
 
 // DRAFT: 0x001BA530 AddParticleInstanceGroup__16PParticleManagerFP20PStaticInstanceGroup
