@@ -20,7 +20,9 @@ ROOT = Path(__file__).resolve().parent.parent
 def claims() -> dict[int, list[str]]:
     out: dict[int, list[str]] = defaultdict(list)
     for s in sorted((ROOT / "src").rglob("*.c*")):
-        if "scratch" in s.parts:
+        # Editors write atomic saves as `X.cpp.tmp.<pid>.<hash>`; only real
+        # sources claim addresses.
+        if "scratch" in s.parts or s.suffix not in (".c", ".cpp"):
             continue
         for kind, addr, _, line in srcmeta.tags(s):
             out[addr].append(f"{kind} {s.relative_to(ROOT)}:{line}")
