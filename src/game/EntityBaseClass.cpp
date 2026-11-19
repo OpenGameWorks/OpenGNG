@@ -45,6 +45,7 @@ public:
 // BGCollision size is unknown; the placeholder member only keeps mBGCollision__15EntityBaseClass a complete object.
 class BGCollision {
 public:
+    int CheckCeiling(float (*arg0)[4]);
     char _pad000[0x10];
 };
 extern BGCollision mBGCollision__15EntityBaseClass;
@@ -79,9 +80,17 @@ extern PMNodeHolder gEng;
 struct LoadEntry {
     int m0;
     unsigned int m4;
-    char _pad8[0x4];
+    int m8;
 };
 extern LoadEntry mLoadTable__15EntityBaseClass[6];
+
+// PResourceManager size is unknown; only the call through mpResMgr__15EntityBaseClass is needed.
+class PResourceManager {
+public:
+    int GetResource(unsigned int arg0, bool arg1);
+    char _pad000[0x10];
+};
+extern PResourceManager *mpResMgr__15EntityBaseClass;
 
 extern "C" void sceVu0ScaleVector(float *pDst);
 extern "C" void sceVu0AddVector(float *pDst, float *pSrc0, float *pSrc1);
@@ -102,6 +111,15 @@ void EntityBaseClass::DestroyDamageFx(unsigned int arg0) {
     if (arg0 != 0) {
         ((PParticleManager *)(gGfxEng + 0x154F00))->Remove((PParticleSystem *)arg0);
     }
+}
+
+// FUNCTION: 0x0014B080 FlashTexture__15EntityBaseClassFUii
+void EntityBaseClass::FlashTexture(unsigned int arg0, int arg1) {
+    if (arg0 == 0) {
+        CdsAssert__FPciPc("EntityBaseClass.cpp", 0xA16, "iTextureID");
+    }
+    this->m_unk30 = mpResMgr__15EntityBaseClass->GetResource(arg0, false);
+    this->m_unk34 = arg1;
 }
 
 // FUNCTION: 0x0014B330 IsBGAnimating__15EntityBaseClassFUi
@@ -261,6 +279,51 @@ int EntityBaseClass::FindCollision(EntityBaseClass *arg0) {
     return 0;
 }
 
+// DRAFT: 0x0014D7E0 ResetCollisions__15EntityBaseClassFv
+// note: 6 words differ; original keeps a carried byte offset in the remainder loop and has an extra nop before its loop test (size 0x6c vs 0x68). Tried: simple loop, unroll-by-8 with i<10 loop, separate offset, unsigned counter, while and for remainder forms.
+void EntityBaseClass::ResetCollisions() {
+    unsigned int i;
+    unsigned int off;
+
+    i = 0;
+    off = 0;
+    do {
+        char *base = (char *)this + off;
+        *(int *)(base + 0x110) = 0;
+        *(int *)(base + 0x114) = 0;
+        *(int *)(base + 0x118) = 0;
+        *(int *)(base + 0x11C) = 0;
+        *(int *)(base + 0x120) = 0;
+        *(int *)(base + 0x124) = 0;
+        *(int *)(base + 0x128) = 0;
+        *(int *)(base + 0x12C) = 0;
+        off += 0x20;
+        i += 8;
+    } while (i < 2);
+    off = i * 4;
+    for (; i < 10; i++) {
+        *(int *)((char *)this + off + 0x110) = 0;
+        off += 4;
+    }
+}
+
+// DRAFT: 0x0014D850 UpdateShadowVolume__15EntityBaseClassFv
+// note: 12 words differ; original tail-merges the two SetShadowVolume arms into one jal with 0.4f built by lui/ori/mtc1 (ours pools 0.4f and calls twice). Tried: if/else with local scale, ternary, flipped branch, per-arm calls (best, 12 words; 15 for the others).
+void EntityBaseClass::UpdateShadowVolume() {
+    float (*mtx)[4];
+
+    if (this->m_unk3C != 0) {
+        mtx = (float (*)[4])(this->m_unk3C + 0x80);
+    } else {
+        mtx = (float (*)[4])((char *)this + 0x190);
+    }
+    if (mBGCollision__15EntityBaseClass.CheckCeiling(mtx) != 0) {
+        this->SetShadowVolume(0.4f);
+    } else {
+        this->SetShadowVolume(1.0f);
+    }
+}
+
 // FUNCTION: 0x0014D940 RemovePhysicsAnimList__15EntityBaseClassFv
 void EntityBaseClass::RemovePhysicsAnimList() {
     if (this->m_unk102 != 0) {
@@ -312,6 +375,23 @@ void EntityBaseClass::AddToBGAnimList() {
     }
 }
 
+// FUNCTION: 0x0014E2F0 FreezeCheck__15EntityBaseClassFP15EntityBaseClassi
+void EntityBaseClass::FreezeCheck(EntityBaseClass *arg0, int arg1) {
+    if (arg0->m_unkF4 == 0) {
+        if ((this->m_unk15E & 0x100) && (arg1 == 1)) {
+            arg0->SetFreeze(180.0f);
+        }
+    } else {
+        float value;
+        if (arg1 == 2) {
+            value = -1.0f;
+        } else {
+            value = 0.0f;
+        }
+        arg0->SetFreeze(value);
+    }
+}
+
 // FUNCTION: 0x0014E900 SetAnimData__15EntityBaseClassFP8AnimData
 void EntityBaseClass::SetAnimData(AnimData *arg0) {
     if (this->m_unk3C != 0) {
@@ -332,4 +412,13 @@ void EntityBaseClass::SetState(int arg0) {
         }
     }
     this->m_unk20 = arg0;
+}
+
+// FUNCTION: 0x0014EF00 SetActiveLoad__15EntityBaseClassFv
+void EntityBaseClass::SetActiveLoad() {
+    if (this->m_unk19 == 0) {
+        this->m_unk19 = 1;
+        mLoadTable__15EntityBaseClass[this->m_unk10].m0 += this->m_unk14;
+        mLoadTable__15EntityBaseClass[this->m_unk10].m8 += 1;
+    }
 }
