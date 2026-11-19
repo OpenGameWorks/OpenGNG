@@ -1,4 +1,4 @@
-// FLAGS: -str readonly
+// FLAGS: -str readonly -O4,p
 #include "types.h"
 
 // TODO(header): foreign declarations
@@ -148,8 +148,7 @@ void Debug::DebugColorDisp(char *pStr, unsigned char nColor) {
     this->m_unk2D = 1;
 }
 
-// DRAFT: 0x16AC70 LineFeed__5DebugFPc
-// note: 10 differing lines, size 0x68 vs 0x6C; original has nops at inner-if join (0x44) and guard join (0x54) that the compiler does not emit; tried for/while/do-while, empty else, pre-decrement test.
+// FUNCTION: 0x16AC70 LineFeed__5DebugFPc
 void Debug::LineFeed(char *pStr) {
     int n = strlen(pStr);
     if (n != 0) {

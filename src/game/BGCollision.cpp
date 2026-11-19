@@ -1,4 +1,4 @@
-// FLAGS: -sdatathreshold 0
+// FLAGS: -sdatathreshold 0 -O4,p
 #include "BGCollision.h"
 
 // TODO(header): foreign declarations
@@ -162,8 +162,7 @@ int BGCollision::FindGrid(float (*pArr)[4], int &rX, int &rZ)
     return ok;
 }
 
-// DRAFT: 0x00170760 CheckIntersect__11BGCollisionFRA4_fRA4_fPA4_fUi
-// note: 30 differing lines; frame, saved regs, bFlag compare and first CheckIntersectST call match; the dx/dz branch and FindNextGrid block differ (branch at 0x4C/0x110/0x134 one insn short, nop at 0x13C vs daddu). Tried: bFlag negation, dz inside loop, goto loop, for(;;) with break, nested if/else on dx/dz.
+// FUNCTION: 0x00170760 CheckIntersect__11BGCollisionFRA4_fRA4_fPA4_fUi
 int BGCollision::CheckIntersect(float (&pA)[4], float (&pB)[4], float (*pC)[4], unsigned int nFlags)
 {
     float diff[4];

@@ -1,3 +1,4 @@
+// FLAGS: -O4,p
 #include "types.h"
 #include "PTextureManager.h"
 
@@ -157,8 +158,7 @@ void PTextureManager::AddTexture(PTexture *pTex, PArray *pArray) {
     EncodeTextureHandle(0, (PTexture::eTextureType)pTex->m_unkA4, pArray->m_nCount - 1);
 }
 
-// DRAFT: 0x00189F80 FlipTextureBuffers__15PTextureManagerFv
-// note: 27 lines differ: original keeps a nop in the bne delay slot where mine fills it, and the copy uses a3 in the original but a2 in mine; tried if-only form (36 lines), reversed compare (38), kept ternary (27)
+// FUNCTION: 0x00189F80 FlipTextureBuffers__15PTextureManagerFv
 void PTextureManager::FlipTextureBuffers() {
     m_pCurBuf = (m_pCurBuf == &m_aBuf0) ? &m_aBuf1 : &m_aBuf0;
     m_pCurBuf->m_unk8 = m_pCurBuf->m_unk0;
@@ -331,8 +331,7 @@ void PTextureManager::UnloadStaticTextures() {
     m_unk1D8 = 0;
 }
 
-// DRAFT: 0x0018B410 ResetDynamicBuffers__15PTextureManagerFv
-// note: 41 lines differ: extra nop after each sb and loop tail offset by one slot; tried indexed for loops (40+), do-while with byte offset (41), p hoisted out of loops (41), nOff+=4 before i++ (41); kept the byte-offset do-while
+// FUNCTION: 0x0018B410 ResetDynamicBuffers__15PTextureManagerFv
 void PTextureManager::ResetDynamicBuffers() {
     int i = 0;
     int nOff = 0;

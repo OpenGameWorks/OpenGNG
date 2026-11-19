@@ -1,4 +1,4 @@
-// FLAGS: -str readonly
+// FLAGS: -str readonly -O4,p
 #include "types.h"
 #include "PMeshNode.h"
 
@@ -95,8 +95,7 @@ void PMeshNode::DetachLight(PLight *pLight) {
     }
 }
 
-// DRAFT: 0x00190510 RemoveFromCollisionArray__9PMeshNodeFP6PArray
-// note: 7 words differ; original has one extra nop before the epilogue (0xA8 vs 0xA4), shifting the beq at 0x58 and the tail.
+// FUNCTION: 0x00190510 RemoveFromCollisionArray__9PMeshNodeFP6PArray
 void PMeshNode::RemoveFromCollisionArray(PArray *pArr) {
     if (m_unk104 != 0) {
         pArr->Remove(this);

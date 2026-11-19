@@ -1,4 +1,4 @@
-// FLAGS: -str readonly
+// FLAGS: -str readonly -O4,p
 #include "types.h"
 #include "PObjectDisplayList.h"
 
@@ -98,8 +98,7 @@ void PObjectDisplayList::Destroy() {
     m_unk1C = 0;
 }
 
-// DRAFT: 0x1D4160 IsTextureUnique__18PObjectDisplayListFi
-// note: 8 words differ; the original's extra nop at 0x2C (target of the loop-entry branch) is missing. Tried off+=4 in the header, i++ at body end, i+=1: no gain.
+// FUNCTION: 0x1D4160 IsTextureUnique__18PObjectDisplayListFi
 int PObjectDisplayList::IsTextureUnique(int nTexture) {
     int i;
     int off;
@@ -373,8 +372,7 @@ void PObjectDisplayList::SetupNodeInfo(PArray *pArray) {
     }
 }
 
-// DRAFT: 0x1D54A0 Create__18PObjectDisplayListFP6PMNodePb
-// note: 1 true difference: original has an extra nop at 0x7C after the loop increment (shifts the rest by one); for-loop, while, manual increment, continue, empty else, inverted check tried
+// FUNCTION: 0x1D54A0 Create__18PObjectDisplayListFP6PMNodePb
 int PObjectDisplayList::Create(PMNode *pNode, bool *pFlags) {
     PMNodeChildList *pList;
     PMNode *pChild;
@@ -415,8 +413,7 @@ int PObjectDisplayList::Create(PMNode *pNode, bool *pFlags) {
     return CreateDisplayList();
 }
 
-// DRAFT: 0x1D55E0 Create__18PObjectDisplayListFP6PArrayP6PMNodeP5PMeshPb
-// note: 33 differing lines; the early return 0 in the shader loop jumps to the ld ra epilogue instead of sharing the ld-in-delay exit (lq s4 target), and the loop tail is missing the nop before slt. Tried while, for-loop, break+post-check (43), all in this file.
+// FUNCTION: 0x1D55E0 Create__18PObjectDisplayListFP6PArrayP6PMNodeP5PMeshPb
 int PObjectDisplayList::Create(PArray *pArray, PMNode *pNode, PMesh *pMesh, bool *pFlags) {
     int i;
     int off;

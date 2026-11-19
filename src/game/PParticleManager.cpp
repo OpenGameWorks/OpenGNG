@@ -1,4 +1,4 @@
-// FLAGS: -str readonly
+// FLAGS: -str readonly -O4,p
 #include "types.h"
 #include "PParticleManager.h"
 
@@ -149,8 +149,7 @@ void PParticleManager::RenderAuraParticles() {
     }
 }
 
-// DRAFT: 0x001B7F90 RenderEweedReactionFx__16PParticleManagerFv
-// note: 5 words differ; original is bottom-tested (no entry b) with an empty join nop at 0x44 before i++ and off+=4 in the bnez delay slot. Tried index loop with Slot04 (28), byte-offset do-while (11), swapped increments (11), for with off at body end (5).
+// FUNCTION: 0x001B7F90 RenderEweedReactionFx__16PParticleManagerFv
 void PParticleManager::RenderEweedReactionFx() {
     for (int i = 0, off = 0; i < 8; i++) {
         PEweedFx *pFx = *(PEweedFx **)((char *)this + off + 0x20DC);
@@ -161,8 +160,7 @@ void PParticleManager::RenderEweedReactionFx() {
     }
 }
 
-// DRAFT: 0x001B8000 AnimateEweedReactionFx__16PParticleManagerFP9PFrustrumf
-// note: 6 words differ; original tests the loop at bottom (b to cond), fDt copy to f20 one slot early, nop before i++; tried do-while, pointer-walk, for forms.
+// FUNCTION: 0x001B8000 AnimateEweedReactionFx__16PParticleManagerFP9PFrustrumf
 void PParticleManager::AnimateEweedReactionFx(PFrustrum *pFrustrum, float fDt) {
     for (int i = 0, off = 0; i < 8; i++, off += 4) {
         PEweedFx **pp = (PEweedFx **)((char *)this + off + 0x20DC);
@@ -188,8 +186,7 @@ void PParticleManager::DestroyEweedReactionFx() {
     } while (i < 8);
 }
 
-// DRAFT: 0x001B8130 InitEweedReactionFx__16PParticleManagerFv
-// note: 20 lines differ, DRAFT; s-regs match (i,pFx,off order); only diff is delay slot: orig fills bnez slot with the lui of the assert path and joins at addu; ours hoists the join addu into the slot and duplicates it. Tried i++ before store, paren offset (worse).
+// FUNCTION: 0x001B8130 InitEweedReactionFx__16PParticleManagerFv
 void PParticleManager::InitEweedReactionFx() {
     int i = 0;
     PParticleOneShot *pFx;
@@ -205,8 +202,7 @@ void PParticleManager::InitEweedReactionFx() {
     } while (i < 8);
 }
 
-// DRAFT: 0x001B81D0 RenderSulphurReactionFx__16PParticleManagerFv
-// note: 5 words differ; original is bottom-tested (no entry b) with an empty join nop at 0x44 before i++. Tried do-while (11), for with off in increment (6), empty else (6), continue (19), for with off at body end (5).
+// FUNCTION: 0x001B81D0 RenderSulphurReactionFx__16PParticleManagerFv
 void PParticleManager::RenderSulphurReactionFx() {
     for (int i = 0, off = 0; i < 8; i++) {
         PEweedFx *pFx = *(PEweedFx **)((char *)this + off + 0x20BC);
@@ -217,8 +213,7 @@ void PParticleManager::RenderSulphurReactionFx() {
     }
 }
 
-// DRAFT: 0x001B8240 AnimateSulphurReactionFx__16PParticleManagerFP9PFrustrumf
-// note: 6 words differ; same loop shape as AnimateEweedReactionFx (entry array at 0x20BC).
+// FUNCTION: 0x001B8240 AnimateSulphurReactionFx__16PParticleManagerFP9PFrustrumf
 void PParticleManager::AnimateSulphurReactionFx(PFrustrum *pFrustrum, float fDt) {
     for (int i = 0, off = 0; i < 8; i++, off += 4) {
         PEweedFx **pp = (PEweedFx **)((char *)this + off + 0x20BC);
@@ -244,8 +239,7 @@ void PParticleManager::DestroySulphurReactionFx() {
     } while (i < 8);
 }
 
-// DRAFT: 0x001B8370 InitSulphurReactionFx__16PParticleManagerFv
-// note: 20 lines differ, DRAFT; s-regs and string addressing match (i,pFx,off order, -str readonly); only diff is the bnez delay slot hoisting the join addu (same as Eweed). Tried i++ before store, paren offset (worse).
+// FUNCTION: 0x001B8370 InitSulphurReactionFx__16PParticleManagerFv
 void PParticleManager::InitSulphurReactionFx() {
     int i = 0;
     PParticleOneShot *pFx;
@@ -261,8 +255,7 @@ void PParticleManager::InitSulphurReactionFx() {
     } while (i < 8);
 }
 
-// DRAFT: 0x001B8410 RenderGroundDustFx__16PParticleManagerFv
-// note: 5 words differ; same loop shape as RenderSulphurReactionFx (entry b and join nop at 0x44). Tried do-while (11), for with off at body end (5).
+// FUNCTION: 0x001B8410 RenderGroundDustFx__16PParticleManagerFv
 void PParticleManager::RenderGroundDustFx() {
     for (int i = 0, off = 0; i < 12; i++) {
         PEweedFx *pFx = *(PEweedFx **)((char *)this + off + 0x208C);
@@ -470,6 +463,7 @@ void PParticleManager::UpdateMasterParticleInstances(float fDt, PFrustrum *pFrus
 // FUNCTION: 0x001BA490 RenderParticleInstanceGroups__16PParticleManagerFb
 void PParticleManager::RenderParticleInstanceGroups(bool bFlag) {
     PStaticInstanceGroup *pGroup;
+    unsigned int idx;
     m_unk206C = 0;
     if (m_unk2068 != 0) {
         pGroup = m_unk2070[0];
@@ -479,19 +473,14 @@ void PParticleManager::RenderParticleInstanceGroups(bool bFlag) {
     if (pGroup != 0) {
         do {
             pGroup->RenderParticleInstances(bFlag);
-            unsigned int idx = m_unk206C + 1;
+            idx = m_unk206C + 1;
             m_unk206C = idx;
-            if (idx < m_unk2068) {
-                pGroup = m_unk2070[m_unk206C];
-            } else {
-                pGroup = 0;
-            }
+            pGroup = (idx < m_unk2068) ? m_unk2070[m_unk206C] : 0;
         } while (pGroup != 0);
     }
 }
 
-// DRAFT: 0x001BA530 AddParticleInstanceGroup__16PParticleManagerFP20PStaticInstanceGroup
-// note: the "pGroup" literal is gp-relative (addiu a2,gp) in ours but lui/addiu in the original, so the then-branch is 5 words not 6; tried (char*) casts, !pGroup, local char* expr (all 13 diff lines).
+// FUNCTION: 0x001BA530 AddParticleInstanceGroup__16PParticleManagerFP20PStaticInstanceGroup
 void PParticleManager::AddParticleInstanceGroup(PStaticInstanceGroup *pGroup) {
     if (pGroup == 0) {
         CdsAssert("PParticleManager.cpp", 0x1B2, "pGroup");
@@ -499,8 +488,7 @@ void PParticleManager::AddParticleInstanceGroup(PStaticInstanceGroup *pGroup) {
     ((PArray *)((char *)this + 0x2068))->Add(pGroup);
 }
 
-// DRAFT: 0x001BA590 AddMasterParticleInstance__16PParticleManagerFP15PParticleSystem
-// note: 13 words differ; "pFx" literal is gp-relative (addiu a2,gp) in ours but lui/addiu in the original, which shifts the bnez offset by one word. Tried const char* CdsAssert (13), char* (13).
+// FUNCTION: 0x001BA590 AddMasterParticleInstance__16PParticleManagerFP15PParticleSystem
 void PParticleManager::AddMasterParticleInstance(PParticleSystem *pFx) {
     if (pFx == 0) {
         CdsAssert("PParticleManager.cpp", 0x1AA, "pFx");

@@ -1,3 +1,4 @@
+// FLAGS: -O4,p
 #include "types.h"
 #include "EffectAPI.h"
 
@@ -125,8 +126,7 @@ extern unsigned char __vt__10EffectNode[0x40];
 extern unsigned char __vt__11GhostEffect[0x20];
 extern unsigned char __vt__13OneshotEffect[0x20];
 
-// DRAFT: 0x155C70 FindPling__9EffectAPIFP15EntityBaseClass
-// note: 2 differing lines in the loop; plain while, for-ternary, duplicated return-0 and returning pNode variants each differ by 3+ lines.
+// FUNCTION: 0x155C70 FindPling__9EffectAPIFP15EntityBaseClass
 EffectNode *EffectAPI::FindPling(EntityBaseClass *arg0) {
     m_unk4 = 0;
     EffectNode *pNode = (m_unk0 != 0) ? m_ppEntries[0] : 0;

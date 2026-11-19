@@ -1,4 +1,4 @@
-// FLAGS: -str readonly
+// FLAGS: -str readonly -O4,p
 #include "MaximoMain.h"
 
 // TODO(header): foreign declarations
@@ -341,8 +341,7 @@ int MaximoMain::StartCutScene(int arg0) {
     return 0;
 }
 
-// DRAFT: 0x0013DC30 FindFirstDialog__10MaximoMainFPC10LevelFilesb
-// note: 22 lines differ; saved regs and loop match, but the original duplicates the early-return v0 tail (b past the shared daddu v0) and sets jal a0 before the a1 delay slot. Tried: do-while (29), base var, for-loop with pre-test (28), counter first (22), unsigned 0 return (22)
+// FUNCTION: 0x0013DC30 FindFirstDialog__10MaximoMainFPC10LevelFilesb
 unsigned int MaximoMain::FindFirstDialog(LevelFiles const *arg0, bool arg1) {
     int s1;
     unsigned int temp_s2;

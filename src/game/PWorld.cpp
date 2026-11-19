@@ -1,4 +1,4 @@
-// FLAGS: -str readonly
+// FLAGS: -str readonly -O4,p
 #include "PWorld.h"
 
 // TODO(header): foreign declarations
@@ -250,8 +250,7 @@ void PWorld::CleanupStaticInstanceMeshes() {
     }
 }
 
-// DRAFT: 0x19AD50 LoadStaticInstanceMeshes__6PWorldFP8PPakFileP6PArray16ePsx2FileVersion
-// note: 39 differing lines: join nop at 0x7C and assert-path nop at 0x9C missing, loop-tail nops, gGfxEng folded as lui 0x46/addiu -0x4A80 in original; tried pSystem block scope and single-constant gGfxEng, no gain
+// FUNCTION: 0x19AD50 LoadStaticInstanceMeshes__6PWorldFP8PPakFileP6PArray16ePsx2FileVersion
 int PWorld::LoadStaticInstanceMeshes(PPakFile *pFile, PArray *pArray, ePsx2FileVersion nVersion) {
     PStaticInstanceMesh *pMesh;
     char aHeader[0x18];
@@ -414,8 +413,7 @@ void PWorld::InitMatrices() {
     vu1SetScreenMatrix((PMat4 *)m_Screen);
 }
 
-// DRAFT: 0x19C140 Init__6PWorldFv
-// note: movz matches; 34 lines with FLAGS (gp loads of MODE_PAL/SCREEN_WIDTH/SCREEN_HEIGHT/TV_MODE become lui/at, load order); 25 with no flag or -sdatathreshold 4.
+// FUNCTION: 0x19C140 Init__6PWorldFv
 void PWorld::Init() {
     FastMath_Setup();
     if (gGfxEng.Init(SCREEN_WIDTH, SCREEN_HEIGHT, 0, TV_MODE, 2, 0x31, MODE_PAL != 0 ? 0x177000 : 0x1B3000, 0xA9000) == 0) {
