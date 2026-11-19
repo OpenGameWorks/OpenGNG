@@ -1,48 +1,125 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>OpenGNG progress</title>
+<meta charset="utf-8">
+<title>OpenGNG progress</title>
 <style>
-body{font:14px/1.4 system-ui,sans-serif;background:#111;color:#ddd;margin:20px}
-h1{font-size:18px;margin:0 0 8px}
-table{border-collapse:collapse;margin:8px 0 16px}
-td,th{padding:2px 10px;text-align:right;border-bottom:1px solid #333}
-th{color:#999;font-weight:normal}td.l,th.l{text-align:left}
-.bar{display:inline-block;width:240px;height:10px;background:#333;vertical-align:middle}
-.bar i{display:block;height:100%;background:#4c8}
-.ok{color:#4c8}.bad{color:#e66}.dim{color:#888}
-#files td{font-size:12px}
-</style></head><body>
-<h1>OpenGNG — Maximo: The Army of Zin (SLUS-20722)</h1>
-<div id="build"></div>
-<table id="cats"></table>
-<h1>Active workers</h1><table id="workers"></table>
-<h1>Files</h1><table id="files"></table>
+  body { margin: 0; background: #14161a; color: #e6e6e6; font: 13px Helvetica, Arial, sans-serif; display: flex; flex-direction: column; height: 100vh; }
+  header { padding: 8px 12px; display: flex; gap: 16px; align-items: baseline; }
+  h1 { font-size: 22px; margin: 0; }
+  #sub, #stale { color: #9aa0a6; }
+  #err { color: #ff7b72; }
+  main { flex: 1; display: flex; min-height: 0; }
+  #map { flex: 1; min-width: 0; }
+  aside { width: 260px; overflow: auto; padding: 0 12px; border-left: 1px solid #2c3037; }
+  aside h2 { font-size: 13px; color: #9aa0a6; margin: 8px 0; }
+  li { list-style: none; padding: 2px 0; word-break: break-all; }
+  ul { margin: 0; padding: 0; }
+  .grp { color: #9aa0a6; }
+  rect.fn { fill: #4a4f57; } rect.ok { fill: #3fb950; }
+  @keyframes flash { 0% { fill: #ffffff; } 100% { fill: #3fb950; } }
+  rect.flash { animation: flash 2.5s ease-out; }
+  text { pointer-events: none; font-size: 11px; fill: #fff; stroke: #000; stroke-width: 2.5px; paint-order: stroke; }
+  text.cat { font-size: 10px; fill: #9aa0a6; stroke: none; }
+</style>
+<header><h1 id="title">Maximo: The Army of Zin</h1><span id="sub"></span><span id="err"></span><span id="stale"></span></header>
+<main><svg id="map"></svg><aside><h2>Build</h2><ul id="build"></ul><h2>Active workers</h2><ul id="workers"></ul><h2>Recent matches</h2><ul id="recent"></ul></aside></main>
 <script>
-// Metrics come only from build/progress.json (link.tsv); asm fallbacks never count as matched.
-const pct=(a,b)=>b?(100*a/b).toFixed(2):"0.00";
-const bar=(a,b)=>`<span class=bar><i style="width:${b?100*a/b:0}%"></i></span>`;
-const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
-async function get(u){try{const r=await fetch(u,{cache:"no-cache"});return r.ok?r.json():null}catch(e){return null}}
-async function tick(){
-  const [p,s,w]=await Promise.all([get("progress.json"),get("status.json"),get("workers.json")]);
-  if(p){
-    const t=Object.values(p.categories).reduce((a,c)=>({b:a.b+c.bytes,m:a.m+c.matched_bytes}),{b:0,m:0});
-    document.getElementById("build").innerHTML=
-      `Executable SHA-1: <b class=${p.build_ok?"ok":"bad"}>${p.build_ok?"OK":"NOT VERIFIED"}</b>`+
-      ` · total source-matched ${pct(t.m,t.b)}% of code bytes · updated ${new Date(p.updated*1000).toLocaleTimeString()}`+
-      (s&&!s.ok?` · <span class=bad>${esc(s.message)}</span>`:"");
-    let h="<tr><th class=l>category<th>matched funcs<th>matched bytes<th>%<th><th>draft funcs";
-    for(const [k,c] of Object.entries(p.categories))
-      h+=`<tr><td class=l>${k}<td>${c.matched_funcs}/${c.funcs}<td>${c.matched_bytes}/${c.bytes}<td>${pct(c.matched_bytes,c.bytes)}<td>${bar(c.matched_bytes,c.bytes)}<td>${c.draft_funcs}`;
-    document.getElementById("cats").innerHTML=h;
-    const fs=p.files.filter(f=>f.matched||f.draft).sort((a,b)=>b.matched_bytes-a.matched_bytes);
-    let fh="<tr><th class=l>file<th class=l>cat<th>matched<th>draft<th>bytes<th>";
-    for(const f of fs) fh+=`<tr><td class=l>${esc(f.file)}<td class=l>${f.cat}<td>${f.matched}/${f.funcs}<td>${f.draft}<td>${f.matched_bytes}/${f.bytes}<td>${bar(f.matched_bytes,f.bytes)}`;
-    document.getElementById("files").innerHTML=fh+(fs.length?"":"<tr><td class=l dim>none yet");
+const NS = "http://www.w3.org/2000/svg", GREY = "#4a4f57";
+const svg = document.getElementById("map");
+let doc = null, sig = "", cells = new Map(), lastOk = 0;
+
+function squarify(items, x, y, w, h) {
+  items = items.filter(i => i.v > 0).sort((a, b) => b.v - a.v);
+  const out = [], total = items.reduce((s, i) => s + i.v, 0);
+  if (!items.length || w <= 0 || h <= 0) return out;
+  let rest = items.map(i => ({ k: i.k, a: i.v * w * h / total }));
+  const worst = (row, side) => { const s = row.reduce((t, r) => t + r.a, 0);
+    return Math.max(...row.map(r => Math.max(side * side * r.a / (s * s), s * s / (side * side * r.a)))); };
+  while (rest.length) {
+    const side = Math.min(w, h), row = [rest[0]]; let i = 1;
+    while (i < rest.length && worst([...row, rest[i]], side) <= worst(row, side)) row.push(rest[i++]);
+    rest = rest.slice(i);
+    const s = row.reduce((t, r) => t + r.a, 0);
+    if (w >= h) { const cw = s / h; let cy = y; for (const r of row) { out.push({ k: r.k, x, y: cy, w: cw, h: r.a / cw }); cy += r.a / cw; } x += cw; w -= cw; }
+    else { const rh = s / w; let cx = x; for (const r of row) { out.push({ k: r.k, x: cx, y, w: r.a / rh, h: rh }); cx += r.a / rh; } y += rh; h -= rh; }
   }
-  const ws=(w&&w.workers)||[];
-  let wh="<tr><th class=l>job<th class=l>file<th class=l>functions<th>started";
-  for(const j of ws) wh+=`<tr><td class=l>${esc(j.id)}<td class=l>${esc(j.file)}<td class=l>${esc(j.funcs)}<td>${new Date(j.started*1000).toLocaleTimeString()}`;
-  document.getElementById("workers").innerHTML=wh+(ws.length?"":"<tr><td class=l dim>idle");
+  return out;
 }
-tick();setInterval(tick,3000);
-</script></body></html>
+const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); (p || svg).appendChild(e); return e; };
+
+function layout() {
+  const W = svg.clientWidth, H = svg.clientHeight;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.replaceChildren(); cells = new Map();
+  const cats = {};
+  for (const g of doc.groups) (cats[g.cat] ||= []).push(g);
+  const catRects = squarify(Object.entries(cats).map(([k, gs]) => ({ k, v: gs.reduce((s, g) => s + g.size, 0) })), 2, 2, W - 4, H - 4);
+  for (const c of catRects) {
+    const gs = cats[c.k], head = c.h > 40 && c.w > 60 ? 13 : 0;
+    el("rect", { x: c.x, y: c.y, width: c.w, height: c.h, fill: "#0b0c0e", stroke: "#2c3037" });
+    const lab = el("text", { x: c.x + 4, y: c.y + 10, class: "cat" });
+    lab.dataset.cat = c.k; lab.textContent = head ? c.k : "";
+    for (const r of squarify(gs.map(g => ({ k: g, v: g.size })), c.x + 1, c.y + head + 1, c.w - 2, c.h - head - 2)) {
+      const g = r.k, n = g.fns.length, inner = r.w > 8 && r.h > 8 ? 1 : 0;
+      const x = r.x + inner, y = r.y + inner, w = r.w - 2 * inner, h = r.h - 2 * inner;
+      const cols = Math.max(1, Math.min(n, Math.round(Math.sqrt(n * w / h)))), rows = Math.ceil(n / cols);
+      const cw = w / cols, ch = h / rows, gap = Math.min(cw, ch) >= 4 ? 1 : 0.5;
+      const dense = Math.min(cw, ch) < 2.5, arr = [];
+      if (dense) arr.push(el("rect", { x, y, width: w, height: h, class: "fn" }));
+      else g.fns.forEach((f, i) => { const e = el("rect", { x: x + (i % cols) * cw + gap / 2, y: y + Math.floor(i / cols) * ch + gap / 2, width: cw - gap, height: ch - gap, class: "fn" });
+        e.appendChild(document.createElementNS(NS, "title")).textContent = `${f[0]} (${f[1]} bytes)`; arr.push(e); });
+      cells.set(g.name, { arr, dense });
+      const t = el("rect", { x: r.x, y: r.y, width: r.w, height: r.h, fill: "none", stroke: "#0b0c0e" });
+      t.appendChild(document.createElementNS(NS, "title")).textContent = g.name;
+      if (r.w > 7 * g.name.length + 6 && r.h > 22) el("text", { x: r.x + 4, y: r.y + 12 }).textContent = g.name;
+    }
+  }
+}
+
+function paint(animate) {
+  for (const g of doc.groups) {
+    const c = cells.get(g.name); if (!c) continue;
+    if (c.dense) { c.arr[0].setAttribute("class", "fn" + (g.fns.filter(f => f[2]).length * 2 > g.fns.length ? " ok" : "")); continue; }
+    g.fns.forEach((f, i) => {
+      const e = c.arr[i], on = !!f[2];
+      if (e.classList.contains("ok") === on) return;
+      e.classList.toggle("ok", on); e.classList.remove("flash");
+      if (on && animate) { void e.getBoundingClientRect(); e.classList.add("flash"); }
+    });
+  }
+  for (const t of svg.querySelectorAll("text.cat")) {
+    const gs = doc.groups.filter(g => g.cat === t.dataset.cat);
+    if (t.textContent) t.textContent = `${t.dataset.cat} (${gs.reduce((s, g) => s + g.fns.filter(f => f[2]).length, 0)}/${gs.reduce((s, g) => s + g.fns.length, 0)})`;
+  }
+}
+
+function render(next) {
+  const animate = doc !== null;
+  doc = next;
+  const s = doc.groups.map(g => g.name + g.size + g.fns.length).join("|");
+  const rebuilt = s !== sig;
+  if (rebuilt) { sig = s; layout(); }
+  paint(animate && !rebuilt);
+  document.getElementById("title").textContent = doc.title;
+  const b = doc.bytes;
+  document.getElementById("sub").textContent = `${(100 * b.matched / b.total).toFixed(2)}% of ${b.total} code bytes`;
+  const bl = document.getElementById("build"); bl.replaceChildren(...(doc.build || []).map(t => { const li = document.createElement("li"); li.textContent = t; return li; }));
+  document.getElementById("recent").replaceChildren(...doc.recent.map(r => { const li = document.createElement("li");
+    li.innerHTML = `<b></b> <span class="grp"></span>`; li.firstChild.textContent = r.fn; li.lastChild.textContent = `${r.group} ${new Date(r.t * 1000).toLocaleTimeString()}`; return li; }));
+}
+
+async function poll() {
+  try {
+    const r = await fetch("progress.json", { cache: "no-cache" });  // revalidates; 304 when unchanged
+    if (r.status === 200) render(await r.json());
+    lastOk = Date.now();
+    const st = await (await fetch("status.json", { cache: "no-cache" })).json().catch(() => null);
+    const w = await (await fetch("workers.json", { cache: "no-cache" })).json().catch(() => null);
+    const ws = (w && w.workers) || [];
+    document.getElementById("workers").replaceChildren(...(ws.length ? ws : [{ id: "idle", file: "", funcs: "" }]).map(j => { const li = document.createElement("li");
+      li.innerHTML = `<b></b> <span class="grp"></span>`; li.firstChild.textContent = j.id; li.lastChild.textContent = `${j.file} ${j.funcs}`; return li; }));
+    document.getElementById("err").textContent = st && !st.ok ? "showing last good data; waiting for tree to settle: " + st.message : "";
+  } catch (e) { /* server restarting */ }
+  document.getElementById("stale").textContent = doc ? `updated ${new Date(doc.updated * 1000).toLocaleTimeString()}` : "waiting for progress.json";
+}
+window.addEventListener("resize", () => { if (doc) { sig = ""; render(doc); } });
+poll(); setInterval(poll, 3000);
+</script>

@@ -14,6 +14,7 @@ Usage: progress.py [--json]   (--json writes build/progress.json)
 from __future__ import annotations
 
 import json
+import re
 import sys
 import time
 from bisect import bisect_right
@@ -22,6 +23,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import srcmeta  # noqa: E402
+
+# First time each address was seen matched; feeds the page's "Recent matches".
+SEEN = ROOT / "build/match_times.json"
+CAT = {"game": "Game", "sdk": "SDK", "unknown": "Unattributed"}
+
+
+def pretty(mangled: str, addr: int) -> str:
+    """`Class::Method` from a CodeWarrior mangled name; plain C names unchanged."""
+    i = mangled.find("__", 1)
+    rest = mangled[i + 2:] if i > 0 else ""
+    m = re.match(r"(\d+)", rest)
+    if m:
+        n = int(m.group(1))
+        return f"{rest[len(m.group(1)):len(m.group(1)) + n]}::{mangled[:i]}"
+    return mangled or f"func_{addr:08X}"
 
 
 def load():
@@ -55,10 +71,14 @@ def main() -> int:
     tus, starts, funcs, status, drafts = load()
     cats: dict[str, dict[str, int]] = {}
     files: dict[str, dict] = {}
+    groups: dict[str, dict] = {}
+    recent: list[dict] = []
+    now = time.time()
+    seen = json.loads(SEEN.read_text()) if SEEN.exists() else {}
     for a, size, n in funcs:
         i = bisect_right(starts, a) - 1
         cat, f = (tus[i][2], tus[i][3]) if i >= 0 and a < tus[i][1] else ("unknown", "?")
-        st = "matched" if status.get(a) == "match" else "draft" if (a in drafts or status.get(a) in ("differ", "refs")) else "asm"
+        st = "matched" if status.get(a) == "match" else "draft" if (a in drafts or status.get(a) in ("differ", "refs", "missing", "draft-match")) else "asm"
         c = cats.setdefault(cat, {"funcs": 0, "bytes": 0, "matched_funcs": 0, "matched_bytes": 0, "draft_funcs": 0, "draft_bytes": 0})
         c["funcs"] += 1
         c["bytes"] += size
@@ -71,13 +91,35 @@ def main() -> int:
         fe["matched"] += st == "matched"
         fe["matched_bytes"] += size if st == "matched" else 0
         fe["draft"] += st == "draft"
-    ok = (ROOT / "build/SLUS_207.22.ok").exists() and (ROOT / "build/SLUS_207.22.ok").stat().st_mtime >= (ROOT / "build/main.bin").stat().st_mtime if (ROOT / "build/main.bin").exists() else False
-    doc = {"updated": time.time(), "build_ok": ok, "categories": cats, "files": sorted(files.values(), key=lambda x: x["file"])}
+        groups.setdefault(f, {"name": Path(f).stem, "cat": CAT[cat], "size": 0, "fns": []})
+        groups[f]["size"] += size
+        groups[f]["fns"].append([pretty(n, a), size, st == "matched"])
+        if st == "matched":
+            seen.setdefault(f"{a:08X}", now)
+            recent.append({"fn": pretty(n, a), "group": Path(f).stem, "t": seen[f"{a:08X}"]})
+    okf, binf = ROOT / "build/SLUS_207.22.ok", ROOT / "build/main.bin"
+    ok = okf.exists() and binf.exists() and okf.stat().st_mtime >= binf.stat().st_mtime
+    g = cats.get("game", {"funcs": 0, "bytes": 0, "matched_funcs": 0, "matched_bytes": 0})
+    tot = {k: sum(c[k] for c in cats.values()) for k in ("funcs", "bytes", "matched_funcs", "matched_bytes")}
+    pf = 100 * g["matched_funcs"] / g["funcs"] if g["funcs"] else 0
+    build = [f"SLUS_207.22 SHA-1: {'OK' if ok else 'NOT VERIFIED'}"] + [
+        f"{k}: {c['matched_funcs']}/{c['funcs']} fn, {c['matched_bytes']}/{c['bytes']} B, {c['draft_funcs']} drafts"
+        for k, c in sorted(cats.items())]
+    doc = {"title": f"Maximo: {pf:.2f}% ({g['matched_funcs']}/{g['funcs']} game functions)",
+           "updated": now, "build_ok": ok, "build": build,
+           "functions": {"matched": tot["matched_funcs"], "total": tot["funcs"]},
+           "bytes": {"matched": tot["matched_bytes"], "total": tot["bytes"]},
+           "recent": sorted(recent, key=lambda r: -r["t"])[:40],
+           "groups": list(groups.values()),
+           "categories": cats, "files": sorted(files.values(), key=lambda x: x["file"])}
     for k, c in sorted(cats.items()):
         pf = 100 * c["matched_bytes"] / c["bytes"] if c["bytes"] else 0
         print(f"{k:8} matched {c['matched_funcs']:5}/{c['funcs']:5} funcs  {c['matched_bytes']:8}/{c['bytes']:8} bytes ({pf:6.2f}%)  draft {c['draft_funcs']} funcs")
     if "--json" in sys.argv:
-        (ROOT / "build/progress.json").write_text(json.dumps(doc))
+        SEEN.write_text(json.dumps(seen))
+        tmp = ROOT / "build/progress.json.tmp"
+        tmp.write_text(json.dumps(doc))
+        tmp.rename(ROOT / "build/progress.json")  # the live server never serves a half-written file
     return 0
 
 

@@ -18,13 +18,16 @@ Packages download on first use into tools/compilers/ and are pinned by SHA-256.
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import platform
 import shutil
 import subprocess
 import sys
 import tarfile
+import time
 import urllib.request
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -81,10 +84,37 @@ def serve(box: str) -> int:
     return subprocess.call([d, "exec", "-d", box, "wineserver", "-p"])
 
 
+def spooled(argv: list[str]) -> int | None:
+    """Hand the compile to tools/ccd.py when its heartbeat is fresh; None when no daemon runs.
+
+    Sandboxed callers cannot reach Docker, so the daemon compiles for them."""
+    q = ROOT / "build/ccq"
+    alive = q / "alive"
+    if os.environ.get("MWCC_NO_SPOOL") or not alive.exists() or time.time() - alive.stat().st_mtime > 5:
+        return None
+    rid = f"{os.getpid()}-{uuid.uuid4().hex}"
+    tmp, req, res = q / f"{rid}.part", q / f"{rid}.req", q / f"{rid}.res"
+    tmp.write_text(json.dumps({"cwd": str(Path.cwd().resolve()), "argv": argv}))
+    tmp.rename(req)
+    deadline = time.time() + 600
+    while not res.exists():
+        if time.time() > deadline:
+            req.unlink(missing_ok=True)
+            print("mwcc: compile daemon did not answer in 600 s", file=sys.stderr)
+            return 1
+        time.sleep(0.05)
+    doc = json.loads(res.read_text())
+    res.unlink()
+    sys.stdout.write(doc["out"])
+    return doc["rc"]
+
+
 def main() -> int:
     argv = sys.argv[1:]
     if argv[:1] == ["--serve"]:
         return serve(argv[1] if len(argv) > 1 else "mwcc")
+    if (rc := spooled(argv)) is not None:
+        return rc
     name = os.environ.get("MWCC_COMPILER", DEFAULT)
     if argv[:1] == ["--compiler"]:
         name, argv = argv[1], argv[2:]

@@ -143,8 +143,8 @@ def main() -> int:
     for objp, srcp in pairs:
         obj = Obj(Path(objp))
         for kind, addr, name, _ in srcmeta.tags(Path(srcp)):
-            if kind != "FUNCTION":
-                continue
+            # DRAFT sources compile too; they are verified like FUNCTION claims, and a
+            # draft whose bytes already equal the original is reported for retagging.
             if addr in claimed:
                 report.append((addr, name, "duplicate", srcp, claimed[addr]))
                 continue
@@ -171,7 +171,7 @@ def main() -> int:
                 continue
             buf[addr - BASE:end - BASE] = code
             placed += 1
-            report.append((addr, uname, "match", srcp, ""))
+            report.append((addr, uname, "match" if kind == "FUNCTION" else "draft-match", srcp, ""))
     out.write_bytes(buf)
     with (ROOT / "build/link.tsv").open("w") as w:
         for r in sorted(report):
