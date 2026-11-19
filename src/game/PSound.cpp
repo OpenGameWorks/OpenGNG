@@ -9,6 +9,9 @@ extern int gPSndDbg[52];
 extern "C" void SOUND_StopAllRegularSounds();
 extern "C" void SOUND_StopAllStreams();
 extern signed char fst_bCalledByDebug;
+extern "C" void FlushIOPCommand(int, int, int);
+extern "C" void SOUND_CopyIOPBuffer();
+extern char gEng[105360];
 
 // FUNCTION: 0x001A3E60 LinkAmbientEntry__6PSoundFPQ26PSound12AmbientEntryPQ26PSound12AmbientEntry
 void PSound::LinkAmbientEntry(AmbientEntry *pEntry, AmbientEntry *pNext) {
@@ -71,6 +74,28 @@ int PSound::StopAllRegularSounds() {
     return 0;
 }
 
+// FUNCTION: 0x001A8620 ResumeAmbientEntry__6PSoundFPQ26PSound12AmbientEntry
+void PSound::ResumeAmbientEntry(AmbientEntry *pEntry) {
+    if (pEntry != 0 && pEntry->m_unk10 < 0x3FFD) {
+        unsigned short nFlags = pEntry->m_unk16;
+        if (nFlags & 1) {
+            pEntry->m_unk16 = nFlags & 0xFFFE;
+        }
+    }
+}
+
+// FUNCTION: 0x001A9080 Resume__6PSoundFv
+void PSound::Resume() {
+    KillByCategories(0x200);
+    PauseByCategories(0);
+}
+
+// FUNCTION: 0x001A90C0 Pause__6PSoundFv
+void PSound::Pause() {
+    KillByCategories(0x200);
+    PauseByCategories(0x82);
+}
+
 // DRAFT: 0x001A91A0 SetMonoOut__6PSoundFb
 // note: 3 words differ; original keeps the bool in v1 and loads the field into a1 (MWCC swaps them); swapped compare operands cut 4 to 3; direct bool compare, cached load and ternary bool-to-int did not reduce it (ternary gave exit 2)
 void PSound::SetMonoOut(bool bMono) {
@@ -105,6 +130,12 @@ int PSound::SetStandardSecondaryMusicFileID(unsigned int id) {
     return (m_unk024 >= 0x21) ? -1 : 0;
 }
 
+// FUNCTION: 0x001A9840 PSoundFlushIOPCommandsWaitFinish__6PSoundFv
+void PSound::PSoundFlushIOPCommandsWaitFinish() {
+    FlushIOPCommand(0, *(int *)(gEng + 0x19A80), *(int *)(gEng + 0x137A4));
+    SOUND_CopyIOPBuffer();
+}
+
 // FUNCTION: 0x001A9B60 StopStreamsAndRequestEEControl__6PSoundFv
 void PSound::StopStreamsAndRequestEEControl() {
     SOUND_StopAllStreams();
@@ -125,6 +156,13 @@ void PSound::PSoundReInitTriglets() {
 // FUNCTION: 0x001AA750 __ct__Q26PSound16MusicStreamStateFv
 PSound::MusicStreamState::MusicStreamState() {
     Init();
+}
+
+// FUNCTION: 0x001AA780 ReInit__Q26PSound19AmbientChannelStateFv
+void PSound::AmbientChannelState::ReInit() {
+    short nSaved = m_unk06;
+    Init();
+    m_unk06 = nSaved;
 }
 
 // FUNCTION: 0x001AA7C0 Init__Q26PSound19AmbientChannelStateFv

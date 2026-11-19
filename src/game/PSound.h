@@ -15,7 +15,7 @@ public:
 
         int m_unk00;        // 0x00, Init sets 0x3FFF
         short m_unk04;      // 0x04
-        char _pad06[0x02];
+        short m_unk06;      // 0x06, ReInit keeps it across Init
         int m_unk08;        // 0x08
         int m_unk0C;        // 0x0C
         int m_unk10;        // 0x10
@@ -49,7 +49,11 @@ public:
 
     class AmbientEntry {
     public:
-        char _pad00[0x50];
+        char _pad00[0x10];
+        unsigned int m_unk10;   // 0x10, Resume skips entries at or above 0x3FFD
+        char _pad14[0x02];
+        unsigned short m_unk16; // 0x16, bit 0 is cleared on Resume
+        char _pad18[0x50 - 0x18];
         AmbientEntry *m_unk50;  // 0x50
         AmbientEntry *m_unk54;  // 0x54
     };
@@ -78,6 +82,12 @@ public:
     int DebugPlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int p2);
     void PSoundReInitRegularSounds();
     void SetEEControlOfIOP(unsigned int nMode);
+    void Resume();
+    void Pause();
+    void ResumeAmbientEntry(AmbientEntry *pEntry);
+    void PSoundFlushIOPCommandsWaitFinish();
+    void KillByCategories(unsigned int nCategory);
+    void PauseByCategories(unsigned int nCategory);
 
     char _pad000[0x024];
     unsigned int m_unk024;  // 0x024
