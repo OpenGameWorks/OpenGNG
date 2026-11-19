@@ -4,6 +4,14 @@
 // TODO(header): foreign declarations
 extern "C" void sceVu0ApplyMatrix(float *, float (*)[4], float *);
 extern "C" void __dt__5PMeshFv(void *, short);
+extern "C" void *__nw__FUi(unsigned int);
+extern "C" void CdsAssert__FPciPc(char *, int, char *);
+extern "C" void memcpy(void *, const void *, unsigned int);
+
+class PArray {
+public:
+    void Add(void *pItem);
+};
 
 // Object held at PMNode+0x24. Slot 18 (0x48) is the frame-rate query; slots 0..17 are unknown.
 class PFrameSource {
@@ -26,6 +34,45 @@ public:
     virtual void Slot16();
     virtual float GetFrameRate();
 };
+
+// FUNCTION: 0x00192E30 AddFxTrigger__6PMNodeFP20tagParticleFxTriggerb
+int PMNode::AddFxTrigger(tagParticleFxTrigger *pTrigger, bool bFlag) {
+    char *pBlk = (char *)__nw__FUi(0x28);
+    if (pBlk == 0) {
+        CdsAssert__FPciPc("PMNode.cpp", 0x746, "apTrigger");
+    }
+    memcpy(pBlk, pTrigger, 0x28);
+    *(int *)(pBlk + 0x20) = 0;
+    *(int *)(pBlk + 0x24) = bFlag ? 4 : 0;
+    ((PArray *)((char *)this + 0xD8))->Add(pBlk);
+    return 1;
+}
+
+// DRAFT: 0x00192FD0 SetAllFade__6PMNodeFf
+// note: 5 words differ, the join nop at 0x84 before the epilogue and the f20 copy of fFade in the first beqz delay slot. Tried: local float copy (5), do-while on child count (30).
+void PMNode::SetAllFade(float fFade) {
+    PMNode *pChild;
+    unsigned int idx;
+    m_unk2C = fFade;
+    m_unk18 = 0;
+    if (m_unk14 != 0) {
+        pChild = *m_unk1C;
+    } else {
+        pChild = 0;
+    }
+    if (pChild != 0) {
+        do {
+            pChild->SetAllFade(fFade);
+            idx = m_unk18 + 1;
+            m_unk18 = idx;
+            if (idx < m_unk14) {
+                pChild = m_unk1C[m_unk18];
+            } else {
+                pChild = 0;
+            }
+        } while (pChild != 0);
+    }
+}
 
 // FUNCTION: 0x00193070 GetFrameRate__6PMNodeFv
 float PMNode::GetFrameRate() {
@@ -96,4 +143,77 @@ void PMNode::DestroyMesh() {
     m_unk3E &= 0xEE;
     m_unk28 = 0;
     m_unk3C = 0;
+}
+
+// DRAFT: 0x001952B0 RecurseSetFade__6PMNodeFf
+// note: 5 words differ, the join nop at 0x84 before the epilogue, same shape as SetAllFade. Tried: same structure as SetAllFade (not separately varied).
+void PMNode::RecurseSetFade(float fFade) {
+    PMNode *pChild;
+    unsigned int idx;
+    m_unk2C = fFade;
+    m_unk18 = 0;
+    if (m_unk14 != 0) {
+        pChild = *m_unk1C;
+    } else {
+        pChild = 0;
+    }
+    if (pChild != 0) {
+        do {
+            pChild->RecurseSetFade(fFade);
+            idx = m_unk18 + 1;
+            m_unk18 = idx;
+            if (idx < m_unk14) {
+                pChild = m_unk1C[m_unk18];
+            } else {
+                pChild = 0;
+            }
+        } while (pChild != 0);
+    }
+}
+
+// FUNCTION: 0x00195D30 DestroyAnim__6PMNodeFv
+void PMNode::DestroyAnim() {
+    unsigned char flags = m_unk3E;
+    if (flags & 2) {
+        m_unk3E = flags & 0xFD;
+        if (m_unk24 != 0) {
+            delete (PFrameSource *)m_unk24;
+        }
+    }
+    m_unk3E |= 8;
+    m_unk24 = 0;
+    m_unk28 = 0;
+    m_unk3C = 0;
+    StopAmbientSoundsByObject();
+    m_unk3F = 0;
+    *(unsigned int *)&m_unk2C = 0x3F800000;
+    m_unk30 = 0;
+    m_unk34 = 0;
+    *(unsigned int *)&m_unk38 = 0xC61C4000;
+}
+
+// FUNCTION: 0x00195DD0 RecurseDetachAnim__6PMNodeFv
+void PMNode::RecurseDetachAnim() {
+    PMNode *pChild;
+    unsigned int idx;
+    DestroyAnim();
+    DestroyFxTriggers(true, false, false);
+    m_unk18 = 0;
+    if (m_unk14 != 0) {
+        pChild = *m_unk1C;
+    } else {
+        pChild = 0;
+    }
+    if (pChild != 0) {
+        do {
+            pChild->RecurseDetachAnim();
+            idx = m_unk18 + 1;
+            m_unk18 = idx;
+            if (idx < m_unk14) {
+                pChild = m_unk1C[m_unk18];
+            } else {
+                pChild = 0;
+            }
+        } while (pChild != 0);
+    }
 }

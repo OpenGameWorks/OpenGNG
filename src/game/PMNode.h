@@ -3,13 +3,21 @@
 
 #include "types.h"
 
+struct tagParticleFxTrigger;
+
 class PMNode {
 public:
+    int AddFxTrigger(tagParticleFxTrigger *pTrigger, bool bFlag);
+    void SetAllFade(float fFade);
     float GetFrameRate();
     int GetWorldMeshCenter(float *pOut);
     void DisableAllHitBox();
     void ScaleSet(float a, float b, float c, float d);
     void DestroyMesh();
+    void RecurseSetFade(float fFade);
+    void DestroyAnim();
+    void RecurseDetachAnim();
+    void DestroyFxTriggers(bool bA, bool bB, bool bC);
     void *GetFirstMesh();
     void StopAmbientSoundsByObject();
 
@@ -21,11 +29,14 @@ public:
     char _pad020[0x4];
     void *m_unk24;          // 0x024 object whose vtable slot 0x48 returns a frame rate
     int m_unk28;            // 0x028
-    char _pad02C[0x10];
+    float m_unk2C;          // 0x02C fade value
+    int m_unk30;            // 0x030
+    int m_unk34;            // 0x034
+    float m_unk38;          // 0x038
     unsigned char m_unk3C;  // 0x03C
     char _pad03D[0x1];
     unsigned char m_unk3E;  // 0x03E flags: 0x01 owns mesh, 0x08 scale set
-    char _pad03F[0x1];
+    unsigned char m_unk3F;  // 0x03F
     float m_unk40[4][4];    // 0x040 matrix; row 3 (0x070) is a vector
     char _pad080[0x20];
     float m_unkA0[4];       // 0x0A0

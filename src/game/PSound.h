@@ -5,6 +5,7 @@ class PSound {
 public:
     class AmbientChannelState {
     public:
+        AmbientChannelState();
         void Init();
         void ReInit();
 
@@ -19,6 +20,25 @@ public:
         int m_unk1C;        // 0x1C
     };
 
+    class MusicStreamState {
+    public:
+        MusicStreamState();
+        void Init();
+    };
+
+    class OneShotChannelState {
+    public:
+        OneShotChannelState();
+        void Init();
+    };
+
+    class SpotInfo {
+    public:
+        SpotInfo();
+        void Init();
+    };
+
+    void InternalUpdateRelVolumes();
     void AmbientFadeToFree(AmbientChannelState *pState);
     int StopAllSounds();
     int SetStandardSecondaryMusicFileID(unsigned int id);
@@ -27,7 +47,13 @@ public:
 
     char _pad000[0x024];
     unsigned int m_unk024;  // 0x024
-    char _pad028[0x0EC - 0x028];
+    char _pad028[0x030 - 0x028];
+    int m_unk30;            // 0x030, RelVolumes arg 8
+    int m_unk34;            // 0x034, RelVolumes arg 1
+    int m_unk38;            // 0x038, RelVolumes arg 2
+    int m_unk3C;            // 0x03C, RelVolumes arg 3
+    int m_unk40;            // 0x040, RelVolumes arg 4
+    char _pad044[0x0EC - 0x044];
     int m_unk0EC;           // 0x0EC
     int m_unk0F0;           // 0x0F0
     char _pad0F4[0x79E0 - 0x0F4];
