@@ -20,10 +20,33 @@ extern "C" void SetState__15EntityBaseClassFi(void *, int);
 extern "C" void __dl__FPv(void *);
 extern unsigned char __vt__9PResource[12];
 extern "C" int GetDialogStreamReadiness__6PSoundFUi(void *, unsigned int);
+extern "C" void PrepDialog__6PSoundFUi(void *, unsigned int);
+struct LevelFiles {
+    char _pad00[0x10];
+    int m_unk10;            // 0x10, zero when the level lists no dialog files
+};
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void *__dt__6CameraFv(void *, short);
 extern "C" void *__dt__13EntityManagerFv(void *, short);
 extern "C" void *__dt__9MaxEngineFv(void *, short);
+extern "C" void ResetGameData__10MemoryCardFv(void *);
+extern "C" void InitLoadGame__10MemoryCardFv(void *);
+extern "C" void InitRenderFrame__9MaxEngineFbUi(void *, bool, unsigned int);
+extern "C" int LoadGame__10MemoryCardFv(void *);
+extern "C" void Render__9InterfaceFi(void *, int);
+extern "C" void SetInputMode__3PadFQ23Pad10eInputModePQ23Pad9InputDatai(void *, int, void *, int);
+extern int miAbilityCount__15EntityBaseClass;
+extern int miRandom__7MathAPI;
+extern unsigned char MODE_PAL;
+extern unsigned char DemoTable[24];
+extern unsigned char DemoTableP[24];
+extern unsigned char gPad[448];
+extern unsigned char gEng[0x1A000];
+extern "C" void DisplayLevelName__9InterfaceFii(void *, int, int);
+extern "C" unsigned char PlayingCutCamera__6CameraFv(void *);
+extern "C" void __ct__9MaxEngineFv(void *);
+extern "C" void __ct__13EntityManagerFv(void *);
+extern "C" void __ct__6CameraFv(void *);
 class PMNode {
 public:
     virtual void Slot0();
@@ -52,12 +75,62 @@ void MaximoMain::InitGameTimes() {
     m_unk19B80 = 0;
 }
 
+// DRAFT: 0x00137430 LoadGame__10MaximoMainFv
+// note: 37 lines differ. Frame and saves match. 0x6C beq targets 0xE4 in original, 0xDC in ours (return-path block length). 0x78 is beq 0xB in original, bne in ours. Tried: nested if/return, inverted 0xB test (worse, spreads to 0xA0), do/while, flat if/break.
+int MaximoMain::LoadGame() {
+    ResetGameData__10MemoryCardFv(gMC);
+    InitLoadGame__10MemoryCardFv(gMC);
+    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 8.5f, true, 0);
+    miAbilityCount__15EntityBaseClass = 0;
+    for (;;) {
+        InitRenderFrame__9MaxEngineFbUi(this, 0, 0);
+        int result = LoadGame__10MemoryCardFv(gMC);
+        if (result != -1) {
+            if (result == 0xB) {
+                m_unk19A78 = gMC[0x22C];
+                if (m_unk19A78 >= 0x14) {
+                    m_unk19A78 = 0x13;
+                }
+                return 1;
+            }
+            m_unk19A78 = 0;
+            return 0;
+        }
+        Render__9InterfaceFi(gInterface, 0);
+    }
+}
+
 // FUNCTION: 0x00137540 InitStaticDemo__10MaximoMainFv
 void MaximoMain::InitStaticDemo() {
     m_unk19784 = 0;
     m_unkD0 = 0;
     m_unkD4 = 0;
     m_unkD8 = 0x42180000;
+}
+
+// FUNCTION: 0x00137B00 InitPlayDemo__10MaximoMainFi
+void MaximoMain::InitPlayDemo(int arg0) {
+    int *entry;
+    if (MODE_PAL != 0) {
+        entry = (int *)(DemoTableP + m_unk19B54++ * 12);
+    } else {
+        entry = (int *)(DemoTable + m_unk19B54++ * 12);
+    }
+    m_unk19A78 = entry[0];
+    int value;
+    if (arg0 == 2) {
+        value = 0x1C20;
+    } else {
+        value = entry[1];
+    }
+    m_unk19B5C = value;
+    if ((unsigned int)m_unk19B54 >= 2) {
+        m_unk19B54 = 0;
+    }
+    SetInputMode__3PadFQ23Pad10eInputModePQ23Pad9InputDatai(gPad, arg0, (void *)entry[2], 0);
+    miRandom__7MathAPI = 0;
+    miAbilityCount__15EntityBaseClass = 0;
+    ResetGameData__10MemoryCardFv(gMC);
 }
 
 // FUNCTION: 0x00137EA0 DeletePressStart__10MaximoMainFv
@@ -243,6 +316,58 @@ int MaximoMain::InitCutSceneIfDialogReady() {
     return 1;
 }
 
+// DRAFT: 0x0013DB50 StartCutScene__10MaximoMainFi
+// note: index math matches (addiu base, scaled adds); still differs in camera arg (gEng+0x19760 folded into one lui/addiu), so v0/a0 register order and the 0x30 branch shift; 6 variants tried (base ptr, slot array, member array, int addr, split base, operand order); 24 differing lines.
+int MaximoMain::StartCutScene(int arg0) {
+    int ok;
+    DisplayLevelName__9InterfaceFii(gInterface, -1, 0xF0);
+    ok = 0;
+    if (arg0 < 4) {
+        unsigned int base = (unsigned int)this + 0x260;
+        unsigned int addr = base + arg0 * 0x2140;
+        ok = *(int *)addr != 0;
+    }
+    if (ok) {
+        if (!(*(int *)((char *)m_unk1883C + 0x264) & 8)) {
+            m_unk19A70 = 3;
+            *(int *)((char *)this + 0x8724) = arg0;
+            if (PlayingCutCamera__6CameraFv(gEng + 0x19760) != 0) {
+                gEng[0x19A18] = 0;
+            }
+            return 1;
+        }
+        return 0;
+    }
+    return 0;
+}
+
+// DRAFT: 0x0013DC30 FindFirstDialog__10MaximoMainFPC10LevelFilesb
+// note: 22 lines differ; saved regs and loop match, but the original duplicates the early-return v0 tail (b past the shared daddu v0) and sets jal a0 before the a1 delay slot. Tried: do-while (29), base var, for-loop with pre-test (28), counter first (22), unsigned 0 return (22)
+unsigned int MaximoMain::FindFirstDialog(LevelFiles const *arg0, bool arg1) {
+    int s1;
+    unsigned int temp_s2;
+    int idx;
+    int a0;
+
+    m_unk19AA4 = 0;
+    if (arg0->m_unk10 == 0) {
+        m_unk19AA8 = -1;
+        return 0;
+    }
+    for (s1 = 0, idx = 0, a0 = 0; s1 < 4; s1++, idx += 0x2140, a0 += 0x10) {
+        if (*(int *)((char *)this + idx + 0x260) != 0) {
+            temp_s2 = *(unsigned int *)((char *)arg0 + a0 + 0x18);
+            if (temp_s2 != 0 && (!arg1 || m_unk19AA8 < s1)) {
+                PrepDialog__6PSoundFUi(gSound, temp_s2);
+                m_unk19AA4 = temp_s2;
+                m_unk19AA8 = s1;
+                return temp_s2;
+            }
+        }
+    }
+    return 0;
+}
+
 // FUNCTION: 0x0013ED80 PauseDisplay__10MaximoMainFi
 void MaximoMain::PauseDisplay(int arg0) {
     FontManager *fm = (FontManager *)(gInterface + 0x1790);
@@ -275,4 +400,21 @@ extern "C" void *__dt__10MaximoMainFv(void *pThis, short nFlag) {
         }
     }
     return pThis;
+}
+
+// DRAFT: 0x0013F730 __ct__10MaximoMainFv
+// note: 47 lines; ours spills this to 0x1C(sp) and never saves s0 (original sq s0 / daddu s0,a0). Tried member, extern "C" with return this, local self before/after first call, register hint; all 47. Size 0xA8 vs 0xCC.
+MaximoMain::MaximoMain() {
+    __ct__9MaxEngineFv(this);
+    MaximoMain *self = this;
+    __ct__13EntityManagerFv((char *)self + 0x137E0);
+    __ct__6CameraFv((char *)self + 0x19760);
+    self->m_unk19AC4 = 0;
+    self->m_unk19A7C = 0;
+    self->m_unk19B54 = 0;
+    self->m_unk19B58 = 0;
+    self->m_unk19B44 = 0;
+    self->m_unk19B48 = 0;
+    self->m_unk19B4C = 0;
+    self->m_unk19AA0 = 0;
 }
