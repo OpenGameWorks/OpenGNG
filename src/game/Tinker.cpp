@@ -24,6 +24,11 @@ extern unsigned char Tinker_Attack2Seq[0x10];
 extern unsigned char Manda_AttackSeq[0x10];
 extern "C" void PlaySoundOnFrame__15EntityBaseClassFUiUi(void *pThis, unsigned int nSound, unsigned int nFrame);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
+struct tagWaypointGroup { char _pad000[4]; unsigned int m_unk4; };
+extern "C" float *GetWaypoint__15WaypointManagerFP16tagWaypointGroupUiRUc(void *pThis, tagWaypointGroup *pGroup, unsigned int nIndex, unsigned char &rbFlag);
+extern "C" int ReadApparitionData__15EntityBaseClassFiUi(void *pThis, int nMode, unsigned int nId);
+extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int eLoadClass, unsigned int nFlags);
+extern "C" void __ct__6PArrayFv(void *pThis);
 
 // Apparition objects are reached through a virtual table; slot 12 sits at offset 0x30.
 class ApparitionVirtual {
@@ -39,6 +44,11 @@ public:
     virtual void Slot10();
     virtual void Slot11();
     virtual void Slot12(int arg);
+    virtual int Slot13();
+    virtual void Slot14();
+    virtual void Slot15();
+    virtual void Slot16();
+    virtual int Slot17();
 };
 
 // FUNCTION: 0x00208D60 __dt__6TinkerFv
@@ -128,6 +138,57 @@ unsigned int Tinker::IsBadWaypoint(unsigned int arg0) {
     return 0;
 }
 
+// DRAFT: 0x00209760 GetNextPosition__6TinkerFRA4_f
+// note: 13 differing lines; branch layout at 0x18, 0x68, 0x88 and bc1f vs bc1t at 0xD4, bool materialization through v1 at 0xD8-0xF4. Tried early returns (more diffs), nested if with single exit, split scoped bPrimary/bFlag, return compare (14); ternary return kept (13).
+int Tinker::GetNextPosition(float (&pos)[4]) {
+    tagWaypointGroup *pGroup = (tagWaypointGroup *)m_unk2A8;
+    if (pGroup != 0) {
+        if (m_unk2CC < m_unk2C8) {
+            unsigned char bPrimary;
+            float *pWp = GetWaypoint__15WaypointManagerFP16tagWaypointGroupUiRUc((char *)mpEntMgr__15EntityBaseClass + 0x30, pGroup, m_unk2CC, bPrimary);
+            pos[0] = pWp[0];
+            pos[1] = pWp[1];
+            pos[2] = pWp[2];
+            m_unk2CC++;
+            return 1;
+        }
+        unsigned char bFlag;
+        float *pWp = GetWaypoint__15WaypointManagerFP16tagWaypointGroupUiRUc((char *)mpEntMgr__15EntityBaseClass + 0x30, pGroup, m_unk2C8 - 1, bFlag);
+        if (bFlag) {
+            pos[0] = pWp[0];
+            pos[1] = pWp[1];
+            pos[2] = pWp[2];
+            MathAPI *pTarget;
+            if (m_unk3C != 0) {
+                pTarget = (MathAPI *)(m_unk3C + 0x80);
+            } else {
+                pTarget = (MathAPI *)m_unk190;
+            }
+            return (DistanceXZ__7MathAPIFPA4_fPA4_f(pTarget, &pos) > 1.0f) ? 1 : 0;
+        }
+    }
+    return 0;
+}
+
+// DRAFT: 0x00209860 AwardCheck__6TinkerFv
+// note: 44 differing lines; original materializes m_unk1B0 == 0 and == 1 as xor/sltiu bools (bnez), ours uses beqz/bne, and s0 is set late in the original. Tried: shared tail (kept), int locals (45), bool locals in both orders (44, kept).
+int Tinker::AwardCheck() {
+    int r;
+    bool bOne = (m_unk1B0 == 1);
+    bool bZero = (m_unk1B0 == 0);
+    if (bZero || bOne) {
+        r = ReadApparitionData__15EntityBaseClassFiUi(this, 2, 0);
+    } else if (m_unk200 == 8 || m_unk200 == 7) {
+        r = ReadApparitionData__15EntityBaseClassFiUi(this, 1, 0);
+    } else {
+        r = ReadApparitionData__15EntityBaseClassFiUi(this, 3, 0);
+    }
+    if (r == 0) {
+        return 1;
+    }
+    return (m_unk2C1 != 0) ^ 1;
+}
+
 // FUNCTION: 0x00209930 IsStalled__6TinkerFfPA4_f
 int Tinker::IsStalled(float fDist, float (*arg1)[4]) {
     MathAPI *pTarget;
@@ -155,6 +216,65 @@ int Tinker::EnemiesInCheckRadius() {
     fRadius = m_unk1D0[3];
     *pLast = fRadius;
     return GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 3, 0, &box, fRadius, 0, true, false);
+}
+
+// DRAFT: 0x00209F10 ActivateAttackingEnemies__6TinkerFv
+// note: 38 differing lines; original keeps entity in s2, valid in s3, offset in s4, i in s1 (0x70 frame); ours assigns s3/s4/s1/s2 differently (0x60 frame). Tried locals in 3 orders and hoisted pEnt/pValid; count stays 38.
+void Tinker::ActivateAttackingEnemies() {
+    EntityBaseClass **pSlot = m_unk1E0;
+    int off = 0;
+    int i = 0;
+    EntityBaseClass *pEnt;
+    ApparitionVirtual *pValid;
+    do {
+        pEnt = *pSlot;
+        if (pEnt != 0) {
+            pValid = (ApparitionVirtual *)InstanceIsValid__15EntityBaseClassFUi(pEnt);
+            if (pValid != 0) {
+                if (pValid->Slot17() == 0) {
+                    ((unsigned char *)pValid)[0x1A] = 1;
+                }
+                if (m_unk280 == 0) {
+                    pValid->Slot12(m_unk00C);
+                }
+                *(EntityBaseClass **)((char *)this + off + 0x2AC) = pEnt;
+            }
+        }
+        i++;
+        off += 4;
+        pSlot++;
+    } while (i < 4);
+    m_unk2C0 = 1;
+}
+
+// DRAFT: 0x00209FF0 ActivatedEnemiesDead__6TinkerFv
+// note: 30 differing lines; the m_unk2BC/m_unk2C0 guards are folded into one `&&` (42 nested, 30 folded) and the m_unk2C0==0 path returns 1 as the asm does; still differs at the 0x1C/0x28 branch targets and the loop-init and join layout from 0x2C on. Tried early returns (49), and a `return 0` vs `return 1` on the m_unk2C0 guard (42, unchanged).
+int Tinker::ActivatedEnemiesDead() {
+    if (m_unk2BC != 0 && m_unk2C0 != 0) {
+        int i = 0;
+        int off = 0;
+        do {
+            EntityBaseClass **pSlot = (EntityBaseClass **)((char *)this + off + 0x2AC);
+            EntityBaseClass *pEnt = *pSlot;
+            if (pEnt != 0) {
+                ApparitionVirtual *pValid = (ApparitionVirtual *)InstanceIsValid__15EntityBaseClassFUi(pEnt);
+                if (pValid != 0 && pValid->Slot13() > 0) {
+                    return 0;
+                }
+                *pSlot = 0;
+            }
+            i++;
+            off += 4;
+        } while (i < 4);
+        if (m_unk228 == 0) {
+            return 1;
+        }
+        if (InstanceIsValid__15EntityBaseClassFUi(m_unk228) == 0) {
+            return 1;
+        }
+        return 0;
+    }
+    return 1;
 }
 
 // Layout-compatible view of the Tinker vtable. Two header entries precede the
@@ -197,4 +317,28 @@ void Tinker::OnDestroyEvent() {
     if (m_unk1B0 == 0) {
         WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0);
     }
+}
+
+// DRAFT: 0x0020C160 __ct__6TinkerFv
+// note: 49 words differ; original keeps this in a 0x1C(sp) slot with frame 0x20 and no s0 save, ours uses s0 with frame 0x10. Tried: volatile pSelf (55), integer-bit float stores (49, no change), kept float literals.
+Tinker::Tinker() {
+    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 6, 0);
+    *(unsigned char **)this = __vt__6Tinker;
+    __ct__6PArrayFv((char *)this + 0x2D0);
+    m_unk2F0 = 0;
+    m_unk0D4 = 0;
+    m_unk2C4 = -1;
+    m_unk2CC = -1;
+    m_unk280 = 0;
+    m_unk284 = 0;
+    m_unk294 = 0;
+    m_unk2EC = 0;
+    m_unk278 = 0;
+    m_unk2A4 = 0;
+    m_unk284 = 0;
+    m_unk28C = 0;
+    m_unk290 = 0;
+    m_unk294 = 0;
+    m_unk104 = 1.5f;
+    m_unk108 = 3.0f;
 }
