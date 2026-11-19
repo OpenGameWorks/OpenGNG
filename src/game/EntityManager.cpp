@@ -20,7 +20,39 @@ public:
     int m_unk14;                // 0x14
 };
 
+class PVirtObj {
+public:
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual void Slot04();
+    virtual void Slot05();
+    virtual void Slot06();
+    virtual void Slot07();
+    virtual void Slot08();
+    virtual void Slot09(unsigned int arg0);
+};
+
 void CdsAssert(char *pFile, int nLine, char *pExpr);
+
+class MathAPI {
+public:
+    float GetRelAngleYToPoint(float (*arg0)[4], float arg1, float (*arg2)[4]);
+
+    char _pad000[0x20];
+    float m_unk20[4];           // 0x20, element 1 at 0x24
+};
+
+float FastMath_Fabs(float f);
+
+class EntityBaseClass {
+public:
+    bool CameraLookingAtMe();
+
+    char _pad000[0x3C];
+    char *m_unk3C;              // 0x3C
+    char _pad040[0x190 - 0x40];
+    float m_unk190[4];          // 0x190
+};
 
 // FUNCTION: 0x00146F50 ProcessApparitions__13EntityManagerFv
 void EntityManager::ProcessApparitions() {
@@ -43,6 +75,34 @@ void Icon::Reset() {
     m_unk14 = 0;
 }
 
+// DRAFT: 0x00147760 ValidateDependencyList__13EntityManagerFv
+// note: 7 lines; loop counter and byte offset swap registers (original keeps offset in a3 and counter in a1, ours offset a1 and counter a2); tried scoped counter (9 lines), unsigned offset (9 lines), counter-first ordering (7 lines, kept).
+void EntityManager::ValidateDependencyList() {
+    int i = 0;
+    int off = 0;
+    for (; i < m_unk519C; i++) {
+        DependencyEntry *p = (DependencyEntry *)((char *)this + off);
+        unsigned int v = p->m_unk04;
+        if (v < m_unk5054 && (signed char)m_unk53A1[v * 4] >= 0) {
+            m_unk53A1[p->m_unk00 * 4] = 0;
+        }
+        off += 8;
+    }
+    m_unk519C = 0;
+}
+
+// FUNCTION: 0x001477C0 Add2DependencyList__13EntityManagerFUiUi
+void EntityManager::Add2DependencyList(unsigned int arg0, unsigned int arg1) {
+    if (m_unk519C >= 0x40) {
+        CdsAssert("EntityManager.cpp", 0x4ED, "miDependencySize < MAX_DEPENDENCY");
+    }
+    int n = m_unk519C;
+    m_unk519C = n + 1;
+    DependencyEntry *e = &m_unk51A0[n];
+    e->m_unk00 = arg0;
+    e->m_unk04 = arg1;
+}
+
 // FUNCTION: 0x00148960 GetPtrToInstance__13EntityManagerFUi
 void *EntityManager::GetPtrToInstance(unsigned int arg0) {
     void *pValue;
@@ -61,6 +121,15 @@ void *EntityManager::GetPtrToApparition(unsigned int arg0) {
     return 0;
 }
 
+// DRAFT: 0x001490F0 SetItemCounter__13EntityManagerFQ213EntityManager15ItemCounterTypef
+// note: 10 lines; original keeps this+0x5F74 as a separate addiu after sll, ours folds 0x5F74 into swc1 displacement; tried m_unk5F74[i] (9 lines), local float* base (9), offset-then-add (9), deferred pointer (9); final form 10.
+void EntityManager::SetItemCounter(ItemCounterType theType, float value) {
+    if (theType >= ITEM_COUNTER_MAX) {
+        CdsAssert("EntityManager.cpp", 0x192, "theType < ITEM_COUNTER_MAX");
+    }
+    m_unk5F74[theType] = value;
+}
+
 // DRAFT: 0x00149160 GetItemCounter__13EntityManagerFQ213EntityManager15ItemCounterType
 // note: original keeps this+0x5F74 as a separate addiu (lwc1 0(v0)); ours folds 0x5F74 into lwc1 and is 0x58 bytes vs 0x5C; tried m_unk5F74[i], local float*, (float*)(this+0x5F74)[i], char* index-then-offset, constant-first sum.
 float EntityManager::GetItemCounter(ItemCounterType theType) {
@@ -68,4 +137,27 @@ float EntityManager::GetItemCounter(ItemCounterType theType) {
         CdsAssert("EntityManager.cpp", 0x18A, "theType < ITEM_COUNTER_MAX");
     }
     return *(float *)((char *)this + 0x5F74 + ((int)theType << 2));
+}
+
+// DRAFT: 0x001491C0 CallOnTimerEvent__13EntityManagerFUiUi
+// note: 16 lines; original tests the string address at runtime (lui/addiu/sltu/xori/bnez over the CdsAssert call, frame 0x30) and ours folds !"..." away; tried local char* pMsg (0x40 frame, worse), early return (more lines), if(!(!"...")) else arm (16 lines, kept).
+void EntityManager::CallOnTimerEvent(unsigned int arg0, unsigned int arg1) {
+    void *pValue;
+    if (((PHashTable *)m_unk5088)->Lookup((void *)arg0, pValue) != 0) {
+        ((PVirtObj *)pValue)->Slot09(arg1);
+    } else {
+        if (!(!"Invalid Apparition Accessed")) {
+            CdsAssert("EntityManager.cpp", 0x184, "!\"Invalid Apparition Accessed\"");
+        }
+    }
+}
+
+// DRAFT: 0x0014A220 CameraLookingAtMe__15EntityBaseClassFv
+// note: 2 words; lui scratch is v1 (original v0). Tried reversed compare (4), if-return (3), direct m_unk20[1] (23); kept pf local + fabs local (2).
+bool EntityBaseClass::CameraLookingAtMe() {
+    MathAPI *pCam = (MathAPI *)EntityManager::mCameraAPI;
+    float *pf = pCam->m_unk20;
+    float (*p)[4] = m_unk3C != 0 ? (float (*)[4])(m_unk3C + 0x80) : &m_unk190;
+    float a = FastMath_Fabs(pCam->GetRelAngleYToPoint(p, pf[1], (float (*)[4])pCam));
+    return a <= 35.0f;
 }
