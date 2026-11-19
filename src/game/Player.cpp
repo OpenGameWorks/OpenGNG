@@ -71,7 +71,7 @@ extern PSound gSound;
 class EffectAPI {
 public:
     char _pad000[20];
-    void CreateOneshot(unsigned int, unsigned int, float (*)[4], float (*)[4], EntityBaseClass *, float, bool, int, bool);
+    int CreateOneshot(unsigned int, unsigned int, float (*)[4], float (*)[4], EntityBaseClass *, float, bool, int, bool);
 };
 extern EffectAPI mEffectAPI__13EntityManager;
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
@@ -81,6 +81,34 @@ extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void __dl__FPv(void *pMem);
 extern unsigned char __vt__10PAnimFrame[];
 extern "C" void *__dt__5PAnimFv(void *pThis, short nFlag);
+extern void *mpEntMgr__15EntityBaseClass;
+extern int mbHard__15EntityBaseClass;
+extern int ComboLevel[20];
+extern "C" void *GetPtrToApparition__13EntityManagerFUi(void *, unsigned int);
+class ApparitionVirtuals {
+public:
+    virtual void Slot00();
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual void Slot04();
+    virtual void Slot05();
+    virtual void Slot06();
+    virtual void Slot07();
+    virtual void Slot08();
+    virtual void Slot09();
+    virtual void Slot10();
+    virtual void Slot11();
+    virtual void Slot12();
+    virtual void Slot13();
+    virtual void Slot14();
+    virtual void Slot15();
+    virtual void Slot16();
+    virtual void Slot17();
+    virtual void Slot18();
+    virtual void Slot19();
+    virtual void OnHitEvent(void *pSource, int nEvent, unsigned int nArg1, unsigned int nArg2);
+};
 
 // FUNCTION: 0x00158F60 Ready2Clear__6PlayerFv
 unsigned char Player::Ready2Clear() {
@@ -274,6 +302,18 @@ void Player::ResurrectionMove() {
     }
 }
 
+// note: 2 words differ: the gp global mpEntMgr loads into a0 before the m_unk328 load into a1; the original has them reversed. Tried a hoisted id local (worse), a cast local (same).
+// DRAFT: 0x0015BC20 OpenChestMove__6PlayerFv
+void Player::OpenChestMove() {
+    if (m_unk250 == 0 && !(m_unk3C[0xD] <= 8.0f)) {
+        m_unk250 = 1;
+        void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk328);
+        if (pApparition != 0) {
+            ((ApparitionVirtuals *)pApparition)->OnHitEvent(this, 0, 0x1FD, 0);
+        }
+    }
+}
+
 // FUNCTION: 0x0015C090 ResetShield__6PlayerFv
 void Player::ResetShield() {
     if (m_unk2A4 != 0) {
@@ -313,6 +353,18 @@ void Player::GuardHitMove() {
     if (((EntityBaseClass *)this)->ProcessHitBack() == 0) {
         m_unk250 = 1;
     }
+}
+
+// FUNCTION: 0x0015CE30 Over3Move__6PlayerFv
+void Player::Over3Move() {
+    static unsigned short Over3Attacks[3] = {0x11, 0x0C, 0xFFFF};
+    if (m_unk250 == 0) {
+        m_unk250 = 1;
+        if (m_unk1FC == 1) {
+            m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(0x81000323, 0x82000554, 0, 0, (EntityBaseClass *)this, m_unk24C, false, 0, false);
+        }
+    }
+    MultipleAttack(&Over3Attacks[0]);
 }
 
 // FUNCTION: 0x0015DA80 HammerDSlashMove__6PlayerFv
@@ -403,6 +455,32 @@ extern "C" void *__dt__10PAnimFrameFv(void *pThis, short nFlag) {
     return pThis;
 }
 
+// note: branch shape and 0x27 path match; the original keeps m_unk1BC in v0 and flags in v1, ours uses v1 for m_unk1BC. Tried flags local (fixes lhu slot), early-return tail (worse), nested 0x200 check (same), direct field reads (same).
+// DRAFT: 0x00162010 GetGroundAction__6PlayerFv
+int Player::GetGroundAction() {
+    unsigned short flags = m_unk1B0;
+    if (m_unk1D0 & 8) {
+        int r = 0xB;
+        if (m_unk1BC < 0x32) {
+            r = 0xA;
+        }
+        return r;
+    }
+    if (flags & 0x200) {
+        if (m_unk2A4 == 0) {
+            return 0x27;
+        }
+    }
+    if (m_unk1BC < 0x32) {
+        return 0;
+    }
+    int r2 = 2;
+    if (m_unk1BC < 0x64) {
+        r2 = 1;
+    }
+    return r2;
+}
+
 // FUNCTION: 0x00163930 BackToMaximo__6PlayerFv
 void Player::BackToMaximo() {
     if (m_unk229 == 4) {
@@ -475,9 +553,40 @@ void Player::SavePlayerData(Player::PlayerData *arg0) {
     memcpy(arg0, &m_unk1D0, 0x7C);
 }
 
+// FUNCTION: 0x00165990 LoadPlayerData__6PlayerFPQ26Player10PlayerData
+void Player::LoadPlayerData(Player::PlayerData *arg0) {
+    if (arg0 == 0) {
+        CdsAssert__FPciPc("Player.cpp", 0x581, "pData");
+    }
+    memcpy(&m_unk1D0, arg0, 0x7C);
+    if (m_unk229 == 4) {
+        m_unk229 = MaximoArmor[m_unk1DC];
+    }
+    m_unk21C = 0;
+    m_unk220 = 0;
+}
+
 // FUNCTION: 0x00165B60 Kill__6PlayerFv
 void Player::Kill() {
     if (m_unk1D0 & 1) {
         ForceDie(0x1A);
     }
+}
+
+// note: 31 differing lines; original keeps the row base in a2 and counter in a0 with mbHard loaded first; ours uses a1/a0 and a different loop shape. Tried: first loop form (about 30), base pointer ComboLevel[mb*10] (32), mb/thr locals first (31, kept).
+// DRAFT: 0x00165B90 GetComboLevel__6PlayerFv
+int Player::GetComboLevel() {
+    int mb = mbHard__15EntityBaseClass;
+    int thr = m_unk220;
+    int i = 0;
+    int off = 0;
+    int row = mb * 0x28;
+    while (i < 10) {
+        if (*(int *)((char *)ComboLevel + row + off) >= thr) {
+            break;
+        }
+        off += 8;
+        i++;
+    }
+    return *(int *)((char *)ComboLevel + 4 + row + i * 8);
 }

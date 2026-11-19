@@ -60,6 +60,11 @@ public:
     void SetHeadCamera(bool arg0);
     void UpdateKey();
     void CatchLedgeMove();
+    void OpenChestMove();
+    void Over3Move();
+    void LoadPlayerData(PlayerData *arg0);
+    int GetComboLevel();
+    void MultipleAttack(unsigned short *arg0);
 
     char _pad000[0x20];
     int m_unk20;            // 0x020
@@ -72,7 +77,9 @@ public:
     char _pad160[0x1B0 - 0x160];
     unsigned short m_unk1B0; // 0x1B0 bit 0x200 is tested by IsMidasActive
     unsigned short m_unk1B2; // 0x1B2 bit 0x4000 is tested by CatchIdleMove
-    char _pad1B4[0x1C4 - 0x1B4];
+    char _pad1B4[0x1BC - 0x1B4];
+    int m_unk1BC;           // 0x1BC compared with 0x32 and 0x64 by GetGroundAction
+    char _pad1C0[0x1C4 - 0x1C0];
     float m_unk1C4;         // 0x1C4 set from Physics float 0x11C by CatchIdleMove
     char _pad1C8[0x1D0 - 0x1C8];
     int m_unk1D0;           // 0x1D0
@@ -91,7 +98,8 @@ public:
     signed char m_unk229;   // 0x229 state byte, compared with 4 by BackToMaximo
     char _pad22A[0x23B - 0x22A];
     signed char m_unk23B[8]; // 0x23B list of 8 signed bytes, scanned by CheckHammer
-    char _pad243[0x250 - 0x243];
+    char _pad243[0x24C - 0x243];
+    float m_unk24C;         // 0x24C read by Over3Move as the CreateOneshot scale
     int m_unk250;           // 0x250
     void *m_unk254;         // 0x254 object whose byte 4 is the attack limit read by CancelMove
     char _pad258[0x260 - 0x258];
@@ -105,11 +113,12 @@ public:
     void *m_unk28C;         // 0x28C object with a vtable, Slot04 called by RenderCutScene
     char _pad290[0x2A4 - 0x290];
     Shield *m_unk2A4;       // 0x2A4 shield object, DeleteShield'd by ResetShield
-    char _pad2A8[0x2F8 - 0x2A8];
+    int m_unk2A8;           // 0x2A8 effect id stored by Over3Move from CreateOneshot
+    char _pad2AC[0x2F8 - 0x2AC];
     int m_unk2F8;           // 0x2F8 cleared by InitAttachableJoints
     char _pad2FC[0x324 - 0x2FC];
     int m_unk324;           // 0x324
-    char _pad328[0x32C - 0x328];
+    int m_unk328;           // 0x328 apparition id passed to GetPtrToApparition by OpenChestMove
     PlingEffect *m_unk32C;  // 0x32C pling effect object, Slot00(1) called by ResetPling
     char _pad330[0x335 - 0x330];
     signed char m_unk335;   // 0x335 flag, tested by SetPowerupMotion
