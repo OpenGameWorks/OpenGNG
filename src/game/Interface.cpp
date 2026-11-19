@@ -34,13 +34,29 @@ public:
     virtual void Slot02();
     virtual void Slot03();
     virtual void Slot04();
+    virtual void Slot05(int flag);
 };
+
+// Only the mangled name (13eBoxIntersect) matters here; the enumerator names are placeholders.
+enum eBoxIntersect { eBoxIntersect_Value0 = 0, eBoxIntersect_Value1 = 1 };
 
 class PMNode {
 public:
     virtual void Slot00(int flag);
     PMNode *Find(unsigned int id);
+    void RecurseSetSTAnimOptions(bool flag);
+    void SetAllFrustrumTest(eBoxIntersect arg0);
 };
+
+// Placeholder size; the original object is larger than the 8-byte small-data threshold.
+extern char CoinAnim[0x10];
+extern char DefaultLoopAnim[0x10];
+
+// Placeholder size; gDebug is reached via lui/addiu, so its type must exceed the 8-byte small-data threshold.
+extern char gDebug[0x10];
+extern "C" void DebugClear__5DebugFv(void *pThis);
+extern "C" void DebugDispPos__5DebugFPcUiUii(void *pThis, char *text, unsigned int x, unsigned int y, int color);
+extern "C" void RefreshDisplay__10PGfxEngineFv(void *pThis);
 
 class HudData {
 public:
@@ -53,6 +69,11 @@ class HudInventory {
 public:
     HudInventory();
     void AddIcon(int id);
+    void Reset();
+    void UpdateGroup(int arg0);
+
+    char _pad000[0x4];
+    void *m_unk4;               // 0x004
 };
 
 extern unsigned char __vt__7GameHud[];
@@ -135,6 +156,17 @@ void Interface::WaitForEEControl() {
     }
 }
 
+// FUNCTION: 0x13F940 SetPause__9InterfaceFv
+void Interface::SetPause() {
+    int saved = *(int *)(MemMgr + 0x18);
+    *(int *)(MemMgr + 0x18) = 0;
+    ((PVirtObj *)((char *)this + 0x1FC))->Slot05(1);
+    ((PVirtObj *)((char *)this + 0x1EC))->Slot05(1);
+    ((PVirtObj *)((char *)this + 0x21C))->Slot05(1);
+    ((PVirtObj *)((char *)this + 0x20C))->Slot05(1);
+    *(int *)(MemMgr + 0x18) = saved;
+}
+
 // FUNCTION: 0x13F9D0 LevelClear__9InterfaceFv
 void Interface::LevelClear() {
     ((PVirtObj *)((char *)this + 0x290))->Slot04();
@@ -176,6 +208,27 @@ void HudGrim::Delete() {
         ((PParticleManager *)(gGfxEng + 0x154F00))->Remove(temp_a1);
         m_unk20 = 0;
     }
+}
+
+// Cover element IDs; the original local object GrimCover$1444 at 0x241200 (12 bytes).
+static unsigned int GrimCover_1444[3] = {0x0D3B7139, 0x2F38C229, 0xC132DB59};
+
+// DRAFT: 0x1401C0 Init__7HudGrimFP9PMeshNodeP7HudData
+// note: 10 words differ; GrimCover table reloc names GrimCover_1444 (original GrimCover$1444, '$' rejected), and the Find arg setup and store address order differ. Tried: static table, do/while with offset walk.
+void HudGrim::Init(PMeshNode *meshNode, HudData *hud) {
+    ((GameHud *)this)->Init(meshNode, hud);
+    m_unk10 = ((PMNode *)meshNode)->Find(0x303B74C6);
+    if (m_unk4 != 0) {
+        m_unk4->RecurseSetSTAnimOptions(false);
+    }
+    int n = 0;
+    int off = 0;
+    do {
+        n++;
+        *(void **)((char *)m_unk14 + off) = ((PMNode *)meshNode)->Find(*(unsigned int *)((char *)GrimCover_1444 + off));
+        off += 4;
+    } while (n < 3);
+    m_unk20 = 0;
 }
 
 // FUNCTION: 0x140270 Update__8HudSuperFi
@@ -261,6 +314,44 @@ void HudCombo::ComboFinish() {
     }
 }
 
+// DRAFT: 0x142620 Reset__7GameHudFv
+// note: 30 words differ; lbu/bltz match, but the original loads the mpPlayerData pointer before andi and folds +4 into addiu before the index add; ours folds +4 into the lh offset and reloads the global after andi. Tried: int local for m_unkE, char* base + 4, int table view, explicit offset variable.
+void GameHud::Reset() {
+    int idx = m_unkE;
+    if (idx >= 0) {
+        char *base = (char *)mpPlayerData__7GameHud;
+        int off = (idx & 0xFF) << 2;
+        m_unkC = *(short *)(base + 4 + off);
+        if (m_unkC == 0) {
+            *(int *)((char *)m_unk4 + 0xC) = 0;
+            m_unkF = 0;
+            return;
+        }
+        m_unkF = 1;
+        SetNumber();
+        ((PMNode *)m_unk4)->SetAllFrustrumTest((eBoxIntersect)1);
+        ((PVirtObj *)m_unk4)->Slot05((int)&CoinAnim);
+    }
+}
+
+// DRAFT: 0x143510 Reset__12HudInventoryFv
+// note: 8 words differ; size 0x88 vs 0x8c. The original has an extra nop before the loop bnez, and the call-site reloc set is otherwise equal. Tried: pointer local for this+4 (CSE into s0), member m_unk4, for-loop form (16 words), UpdateGroup(i++) (12 words).
+void HudInventory::Reset() {
+    if (m_unk4 != 0) {
+        ((PVirtObj *)m_unk4)->Slot05((int)&DefaultLoopAnim);
+        *(int *)((char *)m_unk4 + 0xC) = 0;
+        *(signed char *)((char *)this + 0xF) = 0;
+    }
+    *(signed char *)((char *)this + 0x10) = 1;
+    *(int *)((char *)this + 0x3C) = -1;
+    *(int *)((char *)this + 0x40) = 0;
+    int i = 0;
+    do {
+        UpdateGroup(i);
+        i += 1;
+    } while (i < 4);
+}
+
 // FUNCTION: 0x143770 __ct__12HudInventoryFv
 HudInventory::HudInventory() {
     *(void **)this = __vt__7GameHud;
@@ -307,6 +398,26 @@ void GameHud::Init(PMeshNode *meshNode, HudData *hud) {
     m_unk4 = ((PMNode *)meshNode)->Find(hud->m_unk0);
     m_unkF = hud->m_unk5;
     m_unkE = hud->m_unk4;
+}
+
+// DRAFT: 0x144930 LoadingDisplayGuts__9InterfaceFUi
+// note: 7 words differ; only the local-static reloc names differ (ours init$182/st_uCount$181, original init$722/st_uCount$721; the MW $N counter is per-TU). Tried: file-scope statics (names cannot carry '$').
+void Interface::LoadingDisplayGuts(unsigned int arg0) {
+    static int st_uCount;
+    static signed char init;
+    if (init == 0) {
+        st_uCount = 0;
+        init = 1;
+    }
+    DebugClear__5DebugFv(gDebug);
+    st_uCount += 1;
+    if (arg0 == 0) {
+        st_uCount = 0;
+    }
+    if (st_uCount & 0x10) {
+        DebugDispPos__5DebugFPcUiUii(gDebug, "LOADING...", 10, 20, 7);
+    }
+    RefreshDisplay__10PGfxEngineFv(gGfxEng);
 }
 
 // FUNCTION: 0x144C60 LoadingDisplay__9InterfaceFUii

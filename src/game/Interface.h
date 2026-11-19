@@ -9,9 +9,13 @@ class HudData;
 class HudGrim {
 public:
     void UpdateCover();
+    void Init(PMeshNode *meshNode, HudData *hud);
     void Delete();
 
-    char _pad000[0x14];
+    char _pad000[0x4];
+    PMNode *m_unk4;             // 0x004
+    char _pad008[0x8];
+    void *m_unk10;              // 0x010 PMNode::Find(0x303B74C6) result
     void *m_unk14[3];           // 0x014 cover element pointers
     PParticleSystem *m_unk20;   // 0x020
 };
@@ -72,11 +76,14 @@ class GameHud {
 public:
     ~GameHud();
     void Init(PMeshNode *meshNode, HudData *hud);
+    void Reset();
+    void SetNumber();
 
     void *m_unk0;               // 0x000 vtable pointer (__vt__7GameHud)
     void *m_unk4;               // 0x004
-    char _pad008[0x6];
-    signed char m_unkE;         // 0x00E
+    char _pad008[0x4];
+    short m_unkC;               // 0x00C
+    unsigned char m_unkE;       // 0x00E
     unsigned char m_unkF;       // 0x00F
 };
 
@@ -87,6 +94,7 @@ public:
     void LoadingDisplay(unsigned int arg0, int arg1);
     void LoadingDisplayOld(unsigned int arg0, int arg1);
     void LoadingDisplayNew(unsigned int arg0);
+    void LoadingDisplayGuts(unsigned int arg0);
     void InitScreenFadeVars();
     void LevelClear();
     void AddAbility(int arg0);
@@ -94,6 +102,7 @@ public:
     void DisplayLevelName(int arg0, int arg1);
     void Init();
     void InitMatrices();
+    void SetPause();
     void InitRender();
     void DeleteMeshLayer(PMNode *node);
     void AddMeshLayer(PMNode *node);
