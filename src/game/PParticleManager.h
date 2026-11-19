@@ -20,6 +20,11 @@ public:
     void SetRainDensity(unsigned int hRain, float fDensity, bool bFlag);
     void DestroyRain();
     void RenderEweedReactionFx();
+    void DestroyEweedReactionFx();
+    void RenderSulphurReactionFx();
+    void DestroySulphurReactionFx();
+    void RenderGroundDustFx();
+    void DestroyGroundDustFx();
     PParticleOneShot *Create(unsigned int hFx, float fA, float fB, float fC, PMNode *pNode, bool bFlag);
     PParticleOneShot *CreateOneShot(unsigned int hFx, float fA, float fB, float fC);
     int IsValid(PParticleSystem *pSystem);

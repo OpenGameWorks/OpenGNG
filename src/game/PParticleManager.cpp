@@ -43,7 +43,7 @@ class PEweedFx {
 public:
     virtual void Slot00();
     virtual void Slot01();
-    virtual void Slot02();
+    virtual int Slot02();
     virtual void Slot03();
     virtual void Slot04();
     char _pad004[0x11];
@@ -71,18 +71,81 @@ struct tagVuParticle {
 };
 
 // DRAFT: 0x001B7F90 RenderEweedReactionFx__16PParticleManagerFv
-// note: 11 words differ; original has an extra nop at 0x44 after the Slot02 jalr, shifting the tail by one word. Tried index loop with Slot04 (28 words), byte-offset do-while (11), swapped increments (11).
+// note: 5 words differ; original is bottom-tested (no entry b) with an empty join nop at 0x44 before i++ and off+=4 in the bnez delay slot. Tried index loop with Slot04 (28), byte-offset do-while (11), swapped increments (11), for with off at body end (5).
 void PParticleManager::RenderEweedReactionFx() {
-    int i = 0;
-    int off = 0;
-    do {
+    for (int i = 0, off = 0; i < 8; i++) {
         PEweedFx *pFx = *(PEweedFx **)((char *)this + off + 0x20DC);
         if (pFx->m_unk15 != 0) {
             pFx->Slot02();
         }
         off += 4;
+    }
+}
+
+// FUNCTION: 0x001B80C0 DestroyEweedReactionFx__16PParticleManagerFv
+void PParticleManager::DestroyEweedReactionFx() {
+    int i = 0;
+    int off = 0;
+    do {
+        PMovingFog *pFx = *(PMovingFog **)((char *)this + off + 0x20DC);
+        if (pFx != 0 && pFx != 0) {
+            pFx->Slot00(1);
+        }
         i++;
+        off += 4;
     } while (i < 8);
+}
+
+// DRAFT: 0x001B81D0 RenderSulphurReactionFx__16PParticleManagerFv
+// note: 5 words differ; original is bottom-tested (no entry b) with an empty join nop at 0x44 before i++. Tried do-while (11), for with off in increment (6), empty else (6), continue (19), for with off at body end (5).
+void PParticleManager::RenderSulphurReactionFx() {
+    for (int i = 0, off = 0; i < 8; i++) {
+        PEweedFx *pFx = *(PEweedFx **)((char *)this + off + 0x20BC);
+        if (pFx->m_unk15 != 0) {
+            pFx->Slot02();
+        }
+        off += 4;
+    }
+}
+
+// FUNCTION: 0x001B8300 DestroySulphurReactionFx__16PParticleManagerFv
+void PParticleManager::DestroySulphurReactionFx() {
+    int i = 0;
+    int off = 0;
+    do {
+        PMovingFog *pFx = *(PMovingFog **)((char *)this + off + 0x20BC);
+        if (pFx != 0 && pFx != 0) {
+            pFx->Slot00(1);
+        }
+        i++;
+        off += 4;
+    } while (i < 8);
+}
+
+// DRAFT: 0x001B8410 RenderGroundDustFx__16PParticleManagerFv
+// note: 5 words differ; same loop shape as RenderSulphurReactionFx (entry b and join nop at 0x44). Tried do-while (11), for with off at body end (5).
+void PParticleManager::RenderGroundDustFx() {
+    for (int i = 0, off = 0; i < 12; i++) {
+        PEweedFx *pFx = *(PEweedFx **)((char *)this + off + 0x208C);
+        if (pFx->m_unk15 != 0) {
+            pFx->Slot02();
+        }
+        off += 4;
+    }
+}
+
+// FUNCTION: 0x001B8540 DestroyGroundDustFx__16PParticleManagerFv
+void PParticleManager::DestroyGroundDustFx() {
+    int i = 0;
+    int off = 0;
+    do {
+        PMovingFog *pFx = *(PMovingFog **)((char *)this + off + 0x208C);
+        if (pFx != 0 && pFx != 0) {
+            pFx->Slot00(1);
+        }
+        i++;
+        off += 4;
+    } while (i < 12);
 }
 
 // DRAFT: 0x001B8A00 FreeAuraParticle__16PParticleManagerFP13tagVuParticle
