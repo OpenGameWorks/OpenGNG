@@ -11,13 +11,16 @@ enum eBoxIntersect { eBoxIntersect_Placeholder = 0 };
 
 class PMNode {
 public:
+    int PlaySound(unsigned int arg0);
     int AddFxTrigger(tagParticleFxTrigger *pTrigger, bool bFlag);
     void AddFxTriggers(PArray *pArr, bool bFlag);
     void SetAllFade(float fFade);
     float GetFrameRate();
+    void SetFrameRate(float fRate, bool bFlag);
     int GetWorldMeshCenter(float *pOut);
     void DisableAllHitBox();
     int Find(PMNode *pNode);
+    PMNode *Find(unsigned int uID);
     void ScaleSet(float a, float b, float c, float d);
     void DestroyChildren();
     void DestroyMesh();
@@ -31,8 +34,10 @@ public:
     void CopyFxTriggers(PMNode &src);
     void BuildDispList(PArray *pArr);
     void AddBoneMatrixToDisplayList(bool bRecurse);
+    void SetAnimLoopCount(int nCount, bool bFlag);
     void SetAllFrustrumTest(eBoxIntersect eMode);
     void InitMembers();
+    void RemoveNullAnimation();
 
     char _pad000[4];
     int m_unk04;            // 0x004 state; 2 skips frustum test

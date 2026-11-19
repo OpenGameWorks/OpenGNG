@@ -21,6 +21,15 @@ struct PGfxEngineRef {
     char _pad04[0x10];
 };
 extern PGfxEngineRef gGfxEng;
+// PSound size is unknown; the placeholder member only keeps gSound out of small data (threshold 8 bytes).
+class PSound {
+public:
+    int IsAmbientSoundByID(unsigned int nID);
+    int IsObjectPlayingAmbientByID(unsigned int p0, unsigned int p1, unsigned int p2);
+    int PlaySoundPMNode(unsigned int p0, unsigned int p1, const PMNode *pNode);
+    char _pad000[0x10];
+};
+extern PSound gSound;
 // TODO(header): mst_NextPMNodeRef__6PMNode is a static PMNode counter; a 4-byte int keeps it gp-relative as the original does.
 extern "C" int mst_NextPMNodeRef__6PMNode;
 
@@ -49,7 +58,31 @@ public:
     virtual void Slot15();
     virtual void Slot16();
     virtual float GetFrameRate();
+    char _pad04[6];
+    unsigned char m_unk0A;  // 0x0A nonzero keeps the object alive in RemoveNullAnimation
 };
+
+// FUNCTION: 0x00191830 PlaySound__6PMNodeFUi
+int PMNode::PlaySound(unsigned int arg0) {
+    int var_s0 = 0;
+    int var_s1 = 1;
+    if (gSound.IsAmbientSoundByID(arg0) != 0) {
+        var_s0 = 1;
+        m_unkF4 = 1;
+        if (gSound.IsObjectPlayingAmbientByID(arg0, m_unkE8, 0x20) != 0) {
+            var_s1 = 0;
+        }
+    }
+    if (var_s1 != 0) {
+        m_unkEC = gSound.PlaySoundPMNode(arg0, m_unkE8, this);
+        if (var_s0 != 0) {
+            m_unkF0 = m_unkEC;
+        }
+    } else {
+        m_unkEC = 0;
+    }
+    return m_unkEC;
+}
 
 // FUNCTION: 0x001919E0 CreateObjectDisplayList__6PMNodeFv
 int PMNode::CreateObjectDisplayList() {
@@ -163,6 +196,30 @@ float PMNode::GetFrameRate() {
     return 0.0f;
 }
 
+// DRAFT: 0x001930B0 SetFrameRate__6PMNodeFfb
+// note: loop body and guard match; original has an extra nop (0xA4) in the guard join before the epilogue. Tried: plain while, ternary, guarded do-while, empty else join.
+void PMNode::SetFrameRate(float fRate, bool bFlag) {
+    PMNode *pChild;
+    void *pObj = m_unk24;
+    if (pObj != 0) {
+        ((PFrameSource *)pObj)->Slot16();
+    }
+    m_unk18 = 0;
+    pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            unsigned int uNext;
+            pChild->SetFrameRate(fRate, bFlag);
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+}
+
 // FUNCTION: 0x00193540 BuildDispList__6PMNodeFP6PArray
 void PMNode::BuildDispList(PArray *pArr) {
     PMNode *pChild;
@@ -218,6 +275,32 @@ void PMNode::AddBoneMatrixToDisplayList(bool bRecurse) {
     }
 }
 
+// DRAFT: 0x00193960 SetAnimLoopCount__6PMNodeFib
+// note: 8 lines differ; the bool guard beqz at 0x38 has offset 0x1C vs original 0x1D, and the original has the join nop (0xAC) before the epilogue. Loop body matches.
+void PMNode::SetAnimLoopCount(int nCount, bool bFlag) {
+    PMNode *pChild;
+    void *pObj = m_unk24;
+    if (pObj != 0) {
+        ((PFrameSource *)pObj)->Slot11();
+    }
+    if (bFlag) {
+        m_unk18 = 0;
+        pChild = 0;
+        if (m_unk14 != 0) {
+            pChild = m_unk1C[0];
+        }
+        if (pChild != 0) {
+            do {
+                unsigned int uNext;
+                pChild->SetAnimLoopCount(nCount, bFlag);
+                uNext = m_unk18 + 1;
+                m_unk18 = uNext;
+                pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+            } while (pChild != 0);
+        }
+    }
+}
+
 // FUNCTION: 0x00193B10 GetWorldMeshCenter__6PMNodeFPf
 int PMNode::GetWorldMeshCenter(float *pOut) {
     u_long128 tmp;
@@ -256,6 +339,36 @@ void PMNode::DisableAllHitBox() {
             }
         } while (pChild != 0);
     }
+}
+
+// DRAFT: 0x00194850 Find__6PMNodeFUi
+// note: 2 words differ. Original guards uID==0 with a branch to a shared return-0 tail; ours puts v0=0 in the guard delay slot. Tried: early return on child==0, nested uID!=0 body (worse), single-exit form.
+PMNode *PMNode::Find(unsigned int uID) {
+    PMNode *pChild;
+    if (uID == 0) {
+        return 0;
+    }
+    if (m_unk08 == uID) {
+        return this;
+    }
+    m_unk18 = 0;
+    pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            PMNode *pFound = pChild->Find(uID);
+            unsigned int uNext;
+            if (pFound != 0) {
+                return pFound;
+            }
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+    return 0;
 }
 
 // DRAFT: 0x00194920 Find__6PMNodeFP6PMNode
@@ -513,4 +626,35 @@ void PMNode::InitMembers() {
     m_unkEC = 0;
     m_unkF0 = 0;
     m_unkF4 = 0;
+}
+
+// DRAFT: 0x001962E0 RemoveNullAnimation__6PMNodeFv
+// note: 5 lines differ, all in the epilogue: original has the join nop at 0xB4 before the ld ra, ours does not. Guard, delete, child loop match. Tried: single delete without inner null check (kept, 5 lines from many).
+void PMNode::RemoveNullAnimation() {
+    PMNode *pChild;
+    unsigned int idx;
+    void *pObj = m_unk24;
+    if (pObj != 0 && ((PFrameSource *)pObj)->m_unk0A == 0) {
+        delete (PFrameSource *)pObj;
+        m_unk24 = 0;
+        StopAmbientSoundsByObject();
+    }
+    m_unk18 = 0;
+    if (m_unk14 != 0) {
+        pChild = *m_unk1C;
+    } else {
+        pChild = 0;
+    }
+    if (pChild != 0) {
+        do {
+            pChild->RemoveNullAnimation();
+            idx = m_unk18 + 1;
+            m_unk18 = idx;
+            if (idx < m_unk14) {
+                pChild = m_unk1C[m_unk18];
+            } else {
+                pChild = 0;
+            }
+        } while (pChild != 0);
+    }
 }
