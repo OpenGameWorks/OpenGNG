@@ -4,6 +4,10 @@
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
 extern "C" void iFlushCache(int nMode);
 extern char vu_clip_microcode_dma_packet[];
+extern char vu_shadow_microcode_dma_packet[];
+extern char vu_fx_microcode_dma_packet[];
+extern char vu_debug_microcode_dma_packet[];
+extern char dbg_display_init[];
 extern int gCDSVBlankCount[1];
 extern float GAME_FPS;
 class PMat4;
@@ -16,6 +20,8 @@ public:
     void SetViewMatrix(PMat4 *pMat);
     void SetClipMatrix(PMat4 *pMat);
     void SetScreenMatrix(PMat4 *pMat);
+    void SetVifCodes(unsigned int nA, unsigned int nB);
+    void SetGsRegisters(int *pData);
 
     char _pad000[0xA3348];
     int m_unkA3348;                     // 0xA3348
@@ -67,6 +73,16 @@ void PGfxEngine::EndShadowRender() {
     m_unk154C80->SetVu1Microcode(m_unk158E1C);
 }
 
+// FUNCTION: 0x184F90 BeginShadowRender__10PGfxEngineFv
+void PGfxEngine::BeginShadowRender() {
+    m_unk154C80->m_unkA3348 = 1;
+    void *pShadow = &vu_shadow_microcode_dma_packet;
+    if (m_unk158E1C != pShadow) {
+        m_unk158E1C = pShadow;
+        m_unk154C80->SetVu1Microcode(m_unk158E1C);
+    }
+}
+
 // DRAFT: 0x1851B0 DrawFxLines__10PGfxEngineFP11tagVuFxLineiffb
 // note: original tail-calls DrawParticles with j and no frame; this compiler emits jal plus a frame for every tail-position call (13 words differ).
 void PGfxEngine::DrawFxLines(struct tagVuFxLine *pLines, int nCount, float fA, float fB, bool bFlag) {
@@ -115,6 +131,24 @@ void PGfxEngine::EndFxRender() {
     m_unk154C80->SetVu1Microcode(m_unk158E1C);
 }
 
+// FUNCTION: 0x1854B0 BeginFxRender__10PGfxEngineFv
+void PGfxEngine::BeginFxRender() {
+    m_unk154C80->m_unkA3348 = 2;
+    void *pFx = &vu_fx_microcode_dma_packet;
+    if (m_unk158E1C != pFx) {
+        m_unk158E1C = pFx;
+        m_unk154C80->SetVu1Microcode(m_unk158E1C);
+    }
+}
+
+// FUNCTION: 0x1857C0 BeginDebugRender__10PGfxEngineFv
+void PGfxEngine::BeginDebugRender() {
+    void *pDbg = &vu_debug_microcode_dma_packet;
+    m_unk154C80->SetVu1Microcode(pDbg);
+    m_unk158E1C = pDbg;
+    m_unk154C80->SetVifCodes(0U, ((unsigned int)dbg_display_init >> 3) | 0x14000000);
+}
+
 // FUNCTION: 0x1858E0 UpdateLights__10PGfxEngineFP17tagVuLightingInfo
 void PGfxEngine::UpdateLights(struct tagVuLightingInfo *pInfo) {
     if (m_unk158E23 != 0) {
@@ -122,6 +156,15 @@ void PGfxEngine::UpdateLights(struct tagVuLightingInfo *pInfo) {
         return;
     }
     m_unk154C80->WriteToVu1Mem(0x35E, (u_long128 *)pInfo, 9);
+}
+
+// FUNCTION: 0x185CF0 UpdateLights__10PGfxEngineFv
+void PGfxEngine::UpdateLights() {
+    if (m_unk158E23 != 0) {
+        m_unk154C80->WriteToVu1Mem(0x35E, (u_long128 *)m_unk158E30, 13);
+        return;
+    }
+    m_unk154C80->WriteToVu1Mem(0x35E, (u_long128 *)m_unk158E30, 9);
 }
 
 // FUNCTION: 0x185E50 SetFullAmbientLight__10PGfxEngineFv
@@ -169,6 +212,21 @@ void PGfxEngine::SetClipMatrix(PMat4 *pMat) {
     pDst[1] = pSrc[1];
     pDst[2] = pSrc[2];
     pDst[3] = pSrc[3];
+}
+
+// DRAFT: 0x186FA0 SetZBufferUpdate__10PGfxEngineFb10eGsContext
+// note: 18 words differ: original selects 0x4E/0x4F with movn and builds flag<<32 before the select; ours uses beqz and computes flag<<32 after it. Tried: unsigned int nData (26), ternary select (22), reordered OR (18), hoisted flag shift (23), int flag (24).
+void PGfxEngine::SetZBufferUpdate(bool bEnable, eGsContext eCtx) {
+    unsigned long long aGs[2];
+    unsigned long long nData = m_unk158E04;
+    unsigned char cFlag = !bEnable;
+    int nCtx = 0x4E;
+    if (eCtx != 0) {
+        nCtx = 0x4F;
+    }
+    aGs[1] = nCtx;
+    aGs[0] = ((unsigned long long)cFlag << 32) | (nData | ((unsigned long long)m_unk158E02 << 24));
+    m_unk154C80->SetGsRegisters((int *)aGs);
 }
 
 // FUNCTION: 0x187880 EnableFullScreenFx__10PGfxEngineFb
