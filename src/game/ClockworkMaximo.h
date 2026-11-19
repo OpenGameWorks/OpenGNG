@@ -91,7 +91,9 @@ public:
     unsigned char m_unk260;         // 0x260
     char _pad261[0x264 - 0x261];
     int m_unk264;                   // 0x264 cleared by the constructor
-    char _pad268[0x274 - 0x268];
+    // 0x268: a member whose type declares a destructor; the constructor keeps
+    // `this` spilled at 0x1C(sp), which CodeWarrior does only for such members.
+    struct Member268 { ~Member268(); char m_unk0[0x274 - 0x268]; } m_unk268;
     int m_unk274;                   // 0x274
     int m_unk278;                   // 0x278
     char m_unk27C;                  // 0x27C

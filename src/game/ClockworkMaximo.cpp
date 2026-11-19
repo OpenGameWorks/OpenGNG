@@ -3,6 +3,23 @@
 #include "types.h"
 
 // TODO(header): foreign declarations
+// Leading virtuals of ClockworkMaximo's vtable (__vt__15ClockworkMaximo); a call
+// through this view loads the slot into $t9 as the original's virtual calls do.
+class PLightManager;
+class ClockworkMaximoVirtuals {
+public:
+    virtual ~ClockworkMaximoVirtuals();
+    virtual int GetTallyType();
+    virtual void Execute();
+    virtual void OutputDebug();
+    virtual char *GetClassName();
+    virtual void SetEditableVars(char *);
+    virtual void SetDefaultVars();
+    virtual void OnTimerEvent(unsigned int);
+    virtual void Render(PLightManager *);
+    virtual void Animate(int, float);
+    virtual void SetInnocentInstanceID(unsigned int);
+};
 class EntityBaseClass {
 public:
     void PlaySoundOnFrame(unsigned int arg0, unsigned int arg1);
@@ -350,8 +367,7 @@ extern "C" void *__dt__15ClockworkMaximoFv(ClockworkMaximo *pThis, short nFlag) 
     return pThis;
 }
 
-// DRAFT: 0x00213C90 __ct__15ClockworkMaximoFv
-// note: body order and stores match; the original spills this to 0x1C($sp) and reloads it per store (frame ra@0, no s0), ours keeps this in s0 (62 lines); local self pointer tried, same 62.
+// FUNCTION: 0x00213C90 __ct__15ClockworkMaximoFv
 ClockworkMaximo::ClockworkMaximo() {
     __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 3, 0U);
     m_unk0 = __vt__15ClockworkMaximo;
@@ -373,7 +389,7 @@ ClockworkMaximo::ClockworkMaximo() {
     m_unk260 = m_unk1B;
     m_unk290 = 0;
     m_unk166 = 1;
-    ((void (*)(ClockworkMaximo *, int))(*(void ***)this)[12])(this, 0);
+    ((ClockworkMaximoVirtuals *)this)->SetInnocentInstanceID(0);
     m_unkF8 = 0x3F000000;
     m_unkFC = 0x3F400000;
 }
