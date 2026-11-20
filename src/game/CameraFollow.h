@@ -149,7 +149,9 @@ public:
     float m_unk2B0[4];      // 0x2B0
     unsigned char m_unk2C0; // 0x2C0
     char _pad2C1[0x2D0 - 0x2C1];
-    char _pad2D0[0x5EC0];   // CameraSpline, 0x2D0..0x6190
+    char _pad2D0[0x8];      // CameraSpline, 0x2D0..0x6190
+    int m_unk2D8;           // 0x2D8
+    char _pad2DC[0x6190 - 0x2DC];
     int m_unk6190;          // 0x6190
     char _pad6194[0x61A0 - 0x6194];
     float m_unk61A0[10][4]; // 0x61A0
@@ -162,7 +164,9 @@ public:
     unsigned char m_unk6290; // 0x6290
     char _pad6291[0x62B0 - 0x6291];
     unsigned char m_unk62B0; // 0x62B0
-    char _pad62B1[0x62F0 - 0x62B1];
+    char _pad62B1[0x62D1 - 0x62B1];
+    unsigned char m_unk62D1; // 0x62D1
+    char _pad62D2[0x62F0 - 0x62D2];
     unsigned char m_unk62F0; // 0x62F0
     unsigned char m_unk62F1; // 0x62F1
     char _pad62F2[0x62F4 - 0x62F2];

@@ -294,6 +294,94 @@ int CameraFollow::CalcNewCameraViewpointPos() {
     return 0;
 }
 
+// DRAFT: 0x00175320 CalcNewCameraOffsets__12CameraFollowFv
+// note: DIFF 10 words, register picks and load order in the neg.s blocks. Tried: a-first scoped locals (20), b-first (10, kept), single-block flips (12, 13, 10).
+void CameraFollow::CalcNewCameraOffsets() {
+    float sp50[4];
+    float sp60[4];
+
+    {
+        float b = m_unk20[1];
+        float a = m_unk140;
+        sp50[0] = 0.0f;
+        sp50[1] = b;
+        sp50[2] = a;
+        sp50[3] = 1.0f;
+        sceVu0ApplyMatrix(sp60, m_unkA0, sp50);
+        sceVu0CopyVector((float *)(_pad230 + 0x00), sp60);
+    }
+    {
+        float b = m_unk20[1];
+        float a = m_unk140;
+        sp50[0] = -a;
+        sp50[1] = b;
+        sp50[2] = a;
+        sp50[3] = 1.0f;
+        sceVu0ApplyMatrix(sp60, m_unkA0, sp50);
+        sceVu0CopyVector((float *)(_pad230 + 0x10), sp60);
+    }
+    {
+        float b = m_unk20[1];
+        float a = m_unk140;
+        sp50[0] = a;
+        sp50[1] = b;
+        sp50[2] = a;
+        sp50[3] = 1.0f;
+        sceVu0ApplyMatrix(sp60, m_unkA0, sp50);
+        sceVu0CopyVector((float *)(_pad230 + 0x20), sp60);
+    }
+    {
+        float b = m_unk20[1];
+        float a = m_unk140;
+        sp50[0] = -a;
+        sp50[1] = b;
+        sp50[2] = 0.0f;
+        sp50[3] = 1.0f;
+        sceVu0ApplyMatrix(sp60, m_unkA0, sp50);
+        sceVu0CopyVector((float *)(_pad230 + 0x30), sp60);
+    }
+    {
+        float b = m_unk20[1];
+        float a = m_unk140;
+        sp50[0] = a;
+        sp50[1] = b;
+        sp50[2] = 0.0f;
+        sp50[3] = 1.0f;
+        sceVu0ApplyMatrix(sp60, m_unkA0, sp50);
+        sceVu0CopyVector((float *)(_pad230 + 0x40), sp60);
+    }
+    {
+        float b = m_unk20[1];
+        float a = m_unk140;
+        sp50[0] = -a;
+        sp50[1] = b;
+        sp50[2] = -a;
+        sp50[3] = 1.0f;
+        sceVu0ApplyMatrix(sp60, m_unkA0, sp50);
+        sceVu0CopyVector((float *)(_pad230 + 0x50), sp60);
+    }
+    {
+        float b = m_unk20[1];
+        float a = m_unk140;
+        sp50[0] = a;
+        sp50[1] = b;
+        sp50[2] = -a;
+        sp50[3] = 1.0f;
+        sceVu0ApplyMatrix(sp60, m_unkA0, sp50);
+        sceVu0CopyVector((float *)(_pad230 + 0x60), sp60);
+    }
+    {
+        float b = m_unk20[1];
+        float a = m_unk140;
+        sp50[0] = 0.0f;
+        sp50[1] = b;
+        sp50[2] = -a;
+        sp50[3] = 1.0f;
+        sceVu0ApplyMatrix(sp60, m_unkA0, sp50);
+        sceVu0CopyVector((float *)(_pad230 + 0x70), sp60);
+    }
+}
+
 // DRAFT: 0x00175540 CamCollideSphere__12CameraFollowF5PVec3f
 // note: 33 words differ in all copy variants (direct, pointer-cast, pointer-local, 128-bit temp); original takes d's address via addiu v0,sp,0x50 then lq, and reuses a0=sp+0x40 for the store and GetLength arg
 void CameraFollow::CamCollideSphere(PVec3 arg0, float arg1) {
@@ -365,6 +453,50 @@ int CameraFollow::PlayerIsIdle() {
         return 1;
     }
     return 0;
+}
+
+// DRAFT: 0x001758A0 MoveCameraToNewViewpoint__12CameraFollowFv
+// note: DIFF 22 words. Open: early-return epilogue (b at 0x5C targets 0x6B, ours 0x69); float x/K register order at 0x68-0x78; bc1 sense; cvt/lui/or split layout; blend load order from 0xCC. Tried: `K <= x` (103), `x >= K` (103), local fx (103), `!(x < K)` member form (22), blend operand swap (22), hoisted 0.1f*16C local (90).
+int CameraFollow::MoveCameraToNewViewpoint() {
+    PVec3 sp20;
+    unsigned int idx;
+
+    sceVu0CopyVector(m_unk10, m_unk20);
+    if (((BGCollision *)mBGCollision__15EntityBaseClass)->FindIntersect(*(PVec3 *)m_unk40, *(PVec3 *)m_unk10, 2, 0) == 0) {
+        m_unk6258 += 1;
+        if (m_unk6258 >= 0x14) {
+            return 1;
+        }
+    } else {
+        m_unk6258 = 0;
+    }
+    if (!(*(float *)&m_unk6190 < 2147483648.0f)) {
+        idx = (unsigned int)(int)(*(float *)&m_unk6190 - 2147483648.0f) | 0x80000000;
+    } else {
+        idx = (unsigned int)(int)*(float *)&m_unk6190;
+    }
+    if (idx < (unsigned int)m_unk2D8) {
+        ((CameraSpline *)_pad2D0)->GetPosition(idx, sp20);
+        m_unk20[0] = m_unk20[0] + (0.1f * m_unk16C) * (sp20.m_v[0] - m_unk20[0]);
+        m_unk20[2] = m_unk20[2] + (0.1f * m_unk16C) * (sp20.m_v[2] - m_unk20[2]);
+        if (*(float *)&m_unk6254 < 3.0f) {
+            *(float *)&m_unk6254 = *(float *)&m_unk6254 * (1.2f * m_unk16C);
+        }
+        *(float *)&m_unk6190 += *(float *)&m_unk6254 * m_unk16C;
+        ((CameraSpline *)_pad2D0)->GetPosition(m_unk2D8 - 1, *(PVec3 *)m_unk10);
+        if (((BGCollision *)mBGCollision__15EntityBaseClass)->FindIntersect(*(PVec3 *)m_unk40, *(PVec3 *)m_unk10, 2, 0) != 0 &&
+            CalcNewCameraViewpointPos() != 0) {
+            m_unk2C0 = 1;
+            m_unk62D1 = 0;
+            CreatePathToPlayer();
+        }
+        return 0;
+    }
+    sceVu0CopyVector(m_unk10, m_unk20);
+    if (((BGCollision *)mBGCollision__15EntityBaseClass)->FindIntersect(*(PVec3 *)m_unk40, *(PVec3 *)m_unk10, 2, 0) != 0) {
+        ForceReset(false);
+    }
+    return 1;
 }
 
 // FUNCTION: 0x00175AC0 ResetFromCamBox__12CameraFollowFv
