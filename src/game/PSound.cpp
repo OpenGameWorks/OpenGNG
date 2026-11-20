@@ -1414,6 +1414,13 @@ void PSound::SetDistLinearPercent(unsigned int nPercent) {
     m_unk64 = 1.0f - m_unk60;
 }
 
+// FUNCTION: 0x001A9300 SetUbiquitousFactorRelVol__6PSoundFUi
+void PSound::SetUbiquitousFactorRelVol(unsigned int nFactor) {
+    gPSndDbg[8] = nFactor;
+    m_unk48 = nFactor * 10;
+    InternalUpdateRelVolumes();
+}
+
 // FUNCTION: 0x001A9340 SetMasterRelVolume__6PSoundFUi
 void PSound::SetMasterRelVolume(unsigned int nVolume) {
     unsigned int nClamped = nVolume;
@@ -1761,6 +1768,70 @@ void PSound::PSoundReInitMusic() {
     m_unkCE = 0;
 }
 
+// DRAFT: 0x001AA1F0 PSoundReInitRegularSounds__6PSoundFv
+// note: 59 words differ: gPSndDbg addend (ours lui 0 + 0x44, original lui 0x24 + 0x7C44), sltu operand order, pShotEnd register (original s1), store order around memset.
+void PSound::PSoundReInitRegularSounds() {
+    AmbientEntry *pPrev;
+    AmbientEntry *pEntry;
+    AmbientEntry *pEnd;
+    AmbientChannelState *pChan;
+    OneShotChannelState *pShot;
+    OneShotChannelState *pShotEnd;
+    short nIdx;
+
+    m_unkE4 = (m_unk2E2C - m_unk2E28) + 1;
+    m_unk0F0 = m_unkE4;
+    m_unk0EC = 0;
+    m_unkF4 = 0;
+    pEntry = (AmbientEntry *)((char *)this + 0x380);
+    pEnd = (AmbientEntry *)((char *)this + 0x2220);
+    m_unkF4 = pEntry;
+    pPrev = 0;
+    if (pEntry < pEnd) {
+        do {
+            pEntry->Init();
+            pEntry->m_unk54 = pPrev;
+            pEntry->m_unk50 = pEntry + 1;
+            pPrev = pEntry;
+            pEntry = (AmbientEntry *)((char *)pEntry + 0x70);
+        } while (pEntry < pEnd);
+    }
+    pPrev->m_unk50 = 0;
+
+    pChan = (AmbientChannelState *)m_unkF8;
+    for (nIdx = (short)m_unk2E28; m_unk2E2C >= nIdx; nIdx += 1) {
+        pChan->Init();
+        pChan->m_unk06 = nIdx;
+        pChan++;
+    }
+
+    pShot = (OneShotChannelState *)((char *)this + 0x2220);
+    pShotEnd = (OneShotChannelState *)((char *)this + 0x2E20);
+    if (pShot < pShotEnd) {
+        do {
+            pShot->Init();
+            pShot++;
+        } while (pShot < pShotEnd);
+    }
+
+    m_unk0C = 0;
+    m_unk08 = 0;
+    m_unkB0 = 0;
+    m_unkB4 = 0;
+    m_unkB8[0] = 0;
+    m_unkB8[1] = 0;
+    memset(&m_unk1808C, 0, 0x30);
+    m_unk2E40 = 0;
+    m_unk543C = 0;
+    m_unk5440 = 0;
+    m_unk2E48 &= ~0x80;
+    m_unk2E4C = m_unk2E48;
+    DebugRestartValues();
+    SetDistLinearPercent(gPSndDbg[17]);
+    SetPositionalRangeOneshot(gPSndDbg[18]);
+    SetPositionalRangeAmbient(gPSndDbg[19]);
+}
+
 // FUNCTION: 0x001AA3A0 PSoundReInitSub__6PSoundFUi
 void PSound::PSoundReInitSub(unsigned int nMode) {
     fst_bCalledByDebug = 0;
@@ -1788,6 +1859,14 @@ void PSound::PSoundReInitSub(unsigned int nMode) {
 
 // FUNCTION: 0x001AA490 __dt__6PSoundFv
 PSound::~PSound() {
+}
+
+// FUNCTION: 0x001AA720 ReInit__Q26PSound16MusicStreamStateFv
+void PSound::MusicStreamState::ReInit() {
+    m_unk00 = 0;
+    m_unk04 = 0;
+    m_unk0C = 1000;
+    m_unk08 = 0;
 }
 
 // FUNCTION: 0x001AA750 __ct__Q26PSound16MusicStreamStateFv

@@ -38,6 +38,11 @@ public:
         MusicStreamState();
         void Init();
         void ReInit();
+
+        int m_unk00;        // 0x00, ReInit sets 0
+        int m_unk04;        // 0x04, ReInit sets 0
+        int m_unk08;        // 0x08, ReInit sets 0
+        int m_unk0C;        // 0x0C, ReInit sets 1000
     };
 
     class OneShotChannelState {
@@ -146,6 +151,7 @@ public:
     void InternalUpdateRelVolumes();
     void SetMasterRelVolume(unsigned int nVolume);
     void SetEffectsRelVolume(unsigned int nVolume);
+    void SetUbiquitousFactorRelVol(unsigned int nFactor);
     int StopSoundBySoundRefIfAmbient(unsigned int nSoundRef);
     unsigned int FindFreeAmbientChannel();
     int DelinkChannelState(AmbientChannelState **ppHead, AmbientEntry *pEntry);
@@ -250,7 +256,9 @@ public:
     int WriteLineToPCFile(int nFd, char *pLine);
 
     int m_unk00;            // 0x000, GetEEControlStatus tests it
-    char _pad004[0x010 - 0x004];
+    char _pad004[0x008 - 0x004];
+    int m_unk08;            // 0x008, PSoundReInitRegularSounds clears it
+    int m_unk0C;            // 0x00C, PSoundReInitRegularSounds clears it
     unsigned int m_unk10;   // 0x010, DebugRestartValues range check
     unsigned int m_unk14;   // 0x014, record count for DebugFindLastID/DebugFindFirstID
     char _pad018[0x01C - 0x018];
@@ -264,8 +272,9 @@ public:
     int m_unk38;            // 0x038, RelVolumes arg 2
     int m_unk3C;            // 0x03C, RelVolumes arg 3
     int m_unk40;            // 0x040, RelVolumes arg 4
-    char _pad044[0x04C - 0x044];
-    int m_unk4C;            // 0x04C, SetMasterRelVolume arg 3
+    char _pad044[0x048 - 0x044];
+    int m_unk48;            // 0x048, SetUbiquitousFactorRelVol sets it to 10x its arg
+    int m_unk4C;           // 0x04C, SetMasterRelVolume arg 3
     int m_unk50;            // 0x050, SetEffectsRelVolume arg 3
     char _pad054[0x058 - 0x054];
     float m_unk58;         // 0x058, SetPositionalRangeOneshot sets it
@@ -292,8 +301,9 @@ public:
 
     float m_unkDC;          // 0x0DC, PSoundReInitMusic clears it, ProcessMusic counts it down by a frame time
     int m_unkE0;            // 0x0E0, PSoundReInitMusic sets 0x3E8
-    char _pad0E4[0x0EC - 0x0E4];
-    int m_unk0EC;           // 0x0EC
+    int m_unkE4;            // 0x0E4, PSoundReInitRegularSounds computes it from 0x2E2C and 0x2E28
+    char _padE8[0x0EC - 0x0E8];
+    int m_unk0EC;          // 0x0EC
     int m_unk0F0;           // 0x0F0
     AmbientEntry *m_unkF4;  // 0x0F4, head of the ambient entry list (AddAEToFreeList passes &m_unkF4)
     char m_unkF8[0x2E20 - 0x0F8];   // 0x0F8, AmbientChannelState array of stride 0x20, FindFadingAmbientChannel scans it
@@ -304,7 +314,9 @@ public:
     unsigned int m_unk2E30; // 0x2E30, StopSoundBySoundRef loop start index
     unsigned int m_unk2E34; // 0x2E34, StopSoundBySoundRef loop limit (inclusive)
     unsigned int m_unk2E38; // 0x2E38, PSoundInit passes it to SOUND_SetChanUse
-    char _pad2E3C[0x2E48 - 0x2E3C];
+    char _pad2E3C[0x2E40 - 0x2E3C];
+    int m_unk2E40;          // 0x2E40, PSoundReInitRegularSounds clears it
+    char _pad2E44[0x2E48 - 0x2E44];
     int m_unk2E48;          // 0x2E48, SoundEditLeave copies 0x2E4C here
     int m_unk2E4C;          // 0x2E4C, SoundEditLeave/Enter category mask
     int m_unk2E50[4];       // 0x2E50, PSoundStopDialog zeroes 0x2E50..0x2E5C
