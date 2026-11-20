@@ -61,7 +61,7 @@ int PZinDamageFx::Create(EntityBaseClass *pOwner, float fArg, unsigned int nArg)
     m_unkE0 = pOwner;
     m_unkE8 = fArg;
     m_unkEC = fArg;
-    m_unkE4 = (PParticleSystem *)((PParticleManager *)gGfxEng)->Create(nArg, 0.0f, 0.0f, 0.0f, 0, false);
+    m_unkE4 = (PParticleSystem *)((PParticleManager *)(gGfxEng + 0x154F00))->Create(nArg, 0.0f, 0.0f, 0.0f, 0, false);
     ((m_unkE4) ? (void)0 : CdsAssert__FPciPc("PZinDamageFx.cpp", 0x36, "mpMasterFx"));
     PParticleSystem::Create(1, false);
     m_unk0C = 0x1A;
