@@ -166,7 +166,7 @@ public:
     void AddMeshLayer(PMNode *node);
     void DeleteMeshLayer();
     void DisplayFadeRectangle();
-    void Render(int arg0);
+    int Render(int arg0);
     int AbilityScreen();
     void ResetGameHud();
     void ProcessScreenFade();
@@ -216,7 +216,8 @@ public:
     char mName[0x20];           // 0x3E4 level name copied by Load
     int m_unk404;               // 0x404 mesh layer list count, then entries (PArray)
     unsigned int m_unk408;      // 0x408 loop index into the mesh layer list
-    char _pad40C[0x8];
+    void **m_unk40C;            // 0x40C pointer list of mesh layers, walked by Render
+    char _pad410[0x4];
     short m_unk414;             // 0x414 cleared by Load
     short m_unk416;             // 0x416 cleared by Load
     int m_unk418;               // 0x418

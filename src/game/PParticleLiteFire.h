@@ -18,6 +18,7 @@ public:
     void SetPosition(float *pPos, float *pUnused);
     void ModifyPosition(PMat4 *pMat);
     void AnimateRotatableParticles(float fDt);
+    void Animate(float fDt);
 
     char _pad0E0[0x40];         // 0x0E0 MulVector output written by ModifyPosition; vector slots to 0x120
     float m_unk120;             // 0x120

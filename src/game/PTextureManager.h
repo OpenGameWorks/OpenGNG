@@ -53,7 +53,7 @@ public:
     char m_unk40[0x60];         // 0x040 copied texture environment
     int m_unkA0;               // 0x0A0
     int m_unkA4;               // 0x0A4
-    char m_unkA8;              // 0x0A8
+    unsigned char m_unkA8;     // 0x0A8
     int m_unkAC;               // 0x0AC
 };
 
@@ -103,6 +103,7 @@ public:
     int PrepareStaticTextureForDma(u_long128 *pDmaChain, tagPs2TexDataHeader *pTexHeader, void *pvTexClutPacket, void *pvTexImagePacket, tagGsTextureEnvironment *pTexEnv);
     int LoadTexture(PPakFile *poFile, tagPs2TexDataHeader *pTexHeader, void **ppvTexClutPacket, void **ppvTexImagePacket);
     void SetTexture(int nHandle, PDisplayList *pDisplayList, tagGsTextureEnvironment **ppEnv, bool &bOut);
+    int SetTextures(int *pHandles, int nCount, PDisplayList *pDisplayList, bool &bOut);
     void UploadDynamicTexturesToVram(int *pArray, int nCount, int nA, int nB, bool bFlag);
 
     int m_unk0;                 // 0x000

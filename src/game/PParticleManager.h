@@ -116,7 +116,8 @@ public:
     char _pad02C[0x30 - 0x2C];
     char m_unk30[0x10];         // 0x30 memset target in Init
     void *m_unk40;              // 0x40 PResourceManager, passed to LoadGlobalResource
-    char _pad44[0x50 - 0x44];
+    void *m_unk44;              // 0x44 PResourceManager (mpGameResMgr), passed to GetResource
+    char _pad48[0x50 - 0x48];
     char m_unk50[0x620];        // 0x50 GS frame buffer copy packet, sent with size 0x620
     int m_unk670;               // 0x670
     char _pad674[0x680 - 0x674];

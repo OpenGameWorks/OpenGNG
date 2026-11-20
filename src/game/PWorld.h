@@ -2,6 +2,7 @@
 #define PWORLD_H
 
 #include "PFrustrum.h"
+#include "PTextureManager.h"
 
 class PMeshNode;
 class PSpacePartitionTree;
@@ -16,6 +17,7 @@ struct tagParticleFxTriggerData;
 class PWorld {
 public:
     PWorld();
+    PMNode *Load(const char *pFileName, bool bFlag, eTextureGroup eGroup);
     void InitFrustrum(PMat4 *pMat, float (*pVec)[4]);
     void CullMainWorld();
     int LoadEditedInstanceData(PPakFile *pFile);

@@ -19,6 +19,7 @@ public:
     PParticleSpurt();
     int Create(tagParticleSpurtParams *pParams, float fX, float fY, float fZ);
     void ModifyPosition(PMat4 *pMat);
+    void Animate(float fDt);
     void SetupBoundingBox();
 
     void *m_unkE0;              // 0x0E0 owned buffer, released by the destructor
@@ -26,19 +27,21 @@ public:
     void *m_unkE8;              // 0x0E8 owned buffer, released by the destructor
     char _pad0EC[0x04];         // 0x0EC
     float m_unkF0[4];           // 0x0F0 vector written by ModifyPosition
-    char _pad100[0x30];         // 0x100
+    float m_unk100[4];          // 0x100 vector read by Animate
+    float m_unk110[4];          // 0x110 vector read by Animate
+    float m_unk120[4];          // 0x120 vector read by Animate
     float m_unk130[4];          // 0x130 offset vector read by SetupBoundingBox
     float m_unk140[4];          // 0x140 vector written by ModifyPosition
     char _pad150[0x10];         // 0x150
     float m_unk160[4];          // 0x160 vector read by SetupBoundingBox
-    char _pad170[0x04];         // 0x170
+    unsigned int m_unk170;      // 0x170 particle count limit read by Animate
     float m_unk174;             // 0x174 min selection source for m_unkA0
     float m_unk178;             // 0x178 min selection source for m_unkA0
     float m_unk17C;             // 0x17C min selection source for m_unkA0
     float m_unk180[4];          // 0x180 scale source (x 0.5f) for SetupBoundingBox
-    char _pad190[0x04];         // 0x190
+    float m_unk190;             // 0x190 scale factor read by Animate
     float m_unk194;             // 0x194 scale source (x 0.5f) for SetupBoundingBox
-    char _pad198[0x04];         // 0x198
+    float m_unk198;             // 0x198 negated into the spC0 slot by Animate
     unsigned char m_unk19C;     // 0x19C nonzero selects the transform path in ModifyPosition
     char _pad19D[0x03];         // 0x19D
     char _pad1A0[0x10];         // 0x1A0
