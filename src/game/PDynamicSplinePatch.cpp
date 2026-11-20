@@ -10,9 +10,16 @@ extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void QwordMemset__FP1Ui1(u_long128 *pDst, unsigned int nQwords, u_long128 nValue);
 extern "C" void Vu0_Compute_Spline_Tangents(void);
 extern "C" void Vu0_Compute_Spline_Patch_Color_ST(void);
+extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
+extern "C" void Vu0_Compute_Spline_Patch_Pos(void);
+float FastMath_Sin180(float fAngle);
+float FastMath_Cos180(float fAngle);
+void FastMath_VectorFabs(float *pDst, float *pSrc);
+extern u_long128 lit_004C9320;
 extern u_long128 lit_004C9330;
 extern u_long128 lit_0024D860;
 extern u_long128 lit_0024D870;
+extern float gfAngleDiff[8];
 extern char gGfxEng[1504384];
 class PMNode;
 
@@ -194,6 +201,114 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
         *(float *)&qB = *(float *)&qA;
     }
     gGfxEng[0x158E22] = 1;
+}
+
+// DRAFT: 0x001F39C0 InitSplineKeys__19PDynamicSplinePatchFPfPf
+// note: 162 words differ; literal load and 360.0f hoist order, angle wrap, outer-step and loop shape differ (variable gfAngleDiff index: 210; size 0x3a0 vs 0x3c0)
+void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {
+    float diff[4];
+    float cvec[4];
+    float scale[4];
+    float vec[4];
+    float *pM1F80;
+    float *pCvec;
+    float *pVec;
+    u_long128 *pLit;
+    float fSum;
+    float fAngle;
+    float fT;
+    float fSin;
+    float fCos;
+    float fInv;
+    int nAngIdx;
+    int nRow;
+    int nCol;
+    char *pSlot;
+    u_long128 *pDst;
+    u_long128 *pRow;
+
+    sceVu0SubVector(diff, pVecB, pVecA);
+    FastMath_VectorFabs(diff, diff);
+    pLit = &lit_004C9320;
+    *(u_long128 *)scale = *pLit;
+    scale[0] = diff[0] / (float)(m_unk00 - 1);
+    scale[1] = diff[1] / (float)(m_unk00 - 1);
+    scale[2] = diff[2] / (float)(m_unk08 - 1);
+
+    fSum = m_unk1F70 + m_unk1F74;
+    m_unk1F70 = fSum;
+    if (fSum > 360.0f) {
+        m_unk1F70 = fSum - 360.0f;
+    }
+    fAngle = m_unk1F70 + gfAngleDiff[0];
+    nAngIdx = 0;
+    if (fAngle >= 360.0f) {
+        fAngle -= 360.0f;
+    } else if (fAngle <= 0.0f) {
+        fAngle += 360.0f;
+    }
+    nAngIdx++;
+    if (nAngIdx >= 8) {
+        nAngIdx = 0;
+    }
+
+    sceVu0CopyVector(vec, pVecA);
+    pM1F80 = &m_unk1F80;
+    asm {
+        lqc2 vf12, 0x0(pM1F80)
+    }
+    vec[3] = 0.0f;
+    fInv = 1.0f / (float)m_unk08;
+    fT = 0.0f;
+
+    for (nRow = 0; nRow < m_unk00;) {
+        for (nCol = 1; nCol < m_unk04 - 1; nCol++) {
+            fSin = FastMath_Sin180(fAngle - 180.0f);
+            fCos = FastMath_Cos180(fAngle - 180.0f);
+            cvec[1] = fCos;
+            cvec[2] = fT;
+            cvec[0] = fSin;
+            cvec[3] = fSin;
+            pCvec = cvec;
+            pVec = vec;
+            asm {
+                lqc2 vf11, 0x0(pCvec)
+                lqc2 vf13, 0x0(pVec)
+                vcallms Vu0_Compute_Spline_Patch_Pos
+            }
+            vec[2] = vec[2] + scale[2];
+            fT = (float)(nCol - 1) * fInv;
+            fAngle = fAngle + gfAngleDiff[nAngIdx];
+            if (fAngle >= 360.0f) {
+                fAngle -= 360.0f;
+            } else if (fAngle <= 0.0f) {
+                fAngle += 360.0f;
+            }
+            nAngIdx++;
+            if (nAngIdx >= 8) {
+                nAngIdx = 0;
+            }
+            pSlot = (char *)this + nRow * 288 + nCol * 16;
+            pDst = (u_long128 *)(pSlot + 0x10);
+            asm {
+                qmtc2.i v0, vf0
+                sqc2 vf14, 0x0(pDst)
+            }
+            if (m_unk1F8C == 0.0f) {
+                *(float *)(pSlot + 0x1C) = 1.0f;
+            } else if (m_unk1F78 != 0.0f) {
+                *(float *)(pSlot + 0x1C) = m_unk1F78 + (1.0f - m_unk1F78) * *(float *)(pSlot + 0x1C);
+            }
+        }
+        nAngIdx = 0;
+        fT = 0.0f;
+        pRow = (u_long128 *)((char *)this + nRow * 288);
+        nRow++;
+        pRow[1] = pRow[2];
+        pRow[m_unk04] = pRow[m_unk04 - 1];
+        vec[0] = vec[0] + scale[0];
+        vec[2] = pVecA[2];
+    }
 }
 
 // FUNCTION: 0x001F3D80 Render__19PDynamicSplinePatchFv

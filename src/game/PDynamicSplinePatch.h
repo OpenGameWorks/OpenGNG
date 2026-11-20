@@ -31,14 +31,14 @@ public:
     int m_unk1F20[18];              // 0x1F20
     int m_unk1F68;                  // 0x1F68, ring index into m_unk1690
     void *m_unk1F6C;                // 0x1F6C, PMNode *
-    int m_unk1F70;                  // 0x1F70
+    float m_unk1F70;                // 0x1F70
     float m_unk1F74;                // 0x1F74
-    int m_unk1F78;                  // 0x1F78
+    float m_unk1F78;                // 0x1F78
     char _pad1F7C[4];
     float m_unk1F80;                // 0x1F80
     float m_unk1F84;                // 0x1F84
     float m_unk1F88;                // 0x1F88
-    int m_unk1F8C;                  // 0x1F8C
+    float m_unk1F8C;                // 0x1F8C
     float m_unk1F90[4];             // 0x1F90
     float m_unk1FA0[4];             // 0x1FA0
     float m_unk1FB0[8];             // 0x1FB0
