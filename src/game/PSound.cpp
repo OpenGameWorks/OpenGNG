@@ -33,6 +33,7 @@ extern int fst_StartMultiple;
 extern "C" int sceWrite(int, char *, int);
 extern "C" int strlen(char *);
 extern int miRandom__7MathAPI;
+extern "C" void ShellSort__FPFPvPv_bPPvi(bool (*pCompare)(void *, void *), void **ppItems, int nCount);
 extern "C" void SOUND_StopAllRegularSounds();
 extern "C" void SOUND_StopAllMusic();
 extern "C" void SOUND_StopAllStreams();
@@ -2628,6 +2629,78 @@ void PSound::AmbientChannelState::Init() {
 // FUNCTION: 0x001AA7F0 __ct__Q26PSound19AmbientChannelStateFv
 PSound::AmbientChannelState::AmbientChannelState() {
     Init();
+}
+
+// DRAFT: 0x001AA820 SetInitialPitch__Q26PSound12AmbientEntryFv
+// note: DIFF 206; list walk restructured to head-then-do-while (211 before); lo/hi/out register layout and bnez target (0xB2 vs 0xD6) still differ; 5 attempts, 2 variants with the early-return store bug were rejected
+void PSound::AmbientEntry::SetInitialPitch() {
+    unsigned int aItems[52];
+    int nCount = 0;
+    if ((unsigned short)m_unk1A == 0) {
+        unsigned short lo = *(unsigned short *)((char *)m_unk48 + 8);
+        unsigned short hi = *(unsigned short *)((char *)m_unk48 + 0xA);
+        int out = lo;
+        if (lo < hi) {
+            miRandom__7MathAPI = miRandom__7MathAPI * 0x343FD + 0x269EC3;
+            int v = lo + (int)((unsigned int)miRandom__7MathAPI % (unsigned int)(hi - lo));
+            out = v;
+            if (*((unsigned char *)m_unk48 + 0xE) >= 2) {
+                int last = 0;
+                AmbientEntry *pHead = (AmbientEntry *)m_unk4C;
+                if (pHead != 0) {
+                    AmbientEntry *pNode = *(AmbientEntry **)((char *)pHead + 8);
+                    if (pNode != 0) {
+                        do {
+                            if (pNode != this && !((unsigned short)pNode->m_unk14 & 0x8000)) {
+                                aItems[nCount + 1] = (unsigned short)pNode->m_unk1A;
+                                nCount++;
+                                last = (unsigned short)pNode->m_unk1A;
+                            }
+                            pNode = pNode->m_unk50;
+                        } while (pNode != 0);
+                    }
+                }
+                if (nCount == 1) {
+                    int mid = (lo + hi) >> 1;
+                    if (mid < last) {
+                        if (mid < v) {
+                            v = lo + (int)((unsigned int)miRandom__7MathAPI % (unsigned int)(mid - lo));
+                        }
+                    } else if (last < mid) {
+                        if (v < mid) {
+                            v = mid + (int)((unsigned int)miRandom__7MathAPI % (unsigned int)(hi - mid));
+                        }
+                    }
+                    out = v;
+                }
+                float r1 = (float)v / (float)hi;
+                float r2 = (float)v / (float)lo;
+                if (nCount != 1 && nCount != 0) {
+                    aItems[0] = lo;
+                    aItems[nCount + 1] = hi;
+                    ShellSort__FPFPvPv_bPPvi(0, (void **)aItems, nCount + 2);
+                    unsigned int mn = aItems[0];
+                    unsigned int mx = aItems[nCount + 1];
+                    unsigned int gap = mx - mn;
+                    for (int i = 1; i < nCount + 2; i++) {
+                        unsigned int d = aItems[i] - aItems[i - 1];
+                        if (gap < d) {
+                            gap = d;
+                            mn = aItems[i - 1];
+                            mx = aItems[i];
+                        }
+                    }
+                    ((gap != 0) ? (void)0 : CdsAssert("PSound.cpp", 0x9E9, "maxRange > 0"));
+                    out = (int)((mx + mn) >> 1);
+                } else if (!(r1 <= 0.98f)) {
+                    out = hi;
+                } else if (r2 < 1.02f) {
+                    out = lo;
+                }
+            }
+        }
+        m_unk1A = (short)out;
+    }
 }
 
 // FUNCTION: 0x001AABB0 Init__Q26PSound12AmbientEntryFv

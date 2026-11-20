@@ -72,6 +72,7 @@ public:
     public:
         AmbientEntry();
         void Init();
+        void SetInitialPitch();
 
         char _pad00[0x10];
         unsigned int m_unk10;   // 0x10, Resume skips entries at or above 0x3FFD, Init sets 0x3FFF
@@ -109,19 +110,22 @@ public:
         unsigned short m_unk0A; // 0x0A
         unsigned char m_unk0C;  // 0x0C, IsAmbientSoundByID tests bit 1
         char _pad0D[0x01];
-        char m_unk0E;           // 0x0E
-        char m_unk0F;           // 0x0F
-        char m_unk10;           // 0x10
-        char m_unk11;           // 0x11
-        char m_unk12;           // 0x12, Init sets 0x11
+        unsigned char m_unk0E;  // 0x0E
+        unsigned char m_unk0F;  // 0x0F
+        unsigned char m_unk10;  // 0x10
+        unsigned char m_unk11;  // 0x11
+        unsigned char m_unk12;  // 0x12, Init sets 0x11
         char _pad13[0x02];
-        char m_unk15;           // 0x15
+        unsigned char m_unk15;  // 0x15
     };
 
     class PSoundUsage {
     public:
         unsigned int m_unk0;    // 0x00, record ID; 0xFFFFFFFF marks an unused record
-        char _pad04[0x14 - 0x04];
+        unsigned int m_unk4;    // 0x04, sprintf argument in the sound report
+        unsigned int m_unk8;    // 0x08
+        unsigned int m_unkC;    // 0x0C
+        unsigned int m_unk10;   // 0x10
     };
 
     enum EnumMusicSpecialVols {
@@ -269,6 +273,7 @@ public:
     int DebugFindNextID(unsigned int *pValue, unsigned int *pIndex, unsigned int nBound);
     unsigned int DebugChangeParam(unsigned int nValue, int nStep, unsigned int nRate, unsigned int nLo, unsigned int nHi, bool bWrap);
     int WriteLineToPCFile(int nFd, char *pLine);
+    int WriteSoundFileToPC();
 
     int m_unk00;            // 0x000, GetEEControlStatus tests it
     char _pad004[0x008 - 0x004];
