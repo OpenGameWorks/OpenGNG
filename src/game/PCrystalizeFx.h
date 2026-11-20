@@ -5,6 +5,7 @@
 #include "PParticleSystem.h"
 
 class PMNode;
+struct tagCrystalizeFxParams;
 
 // Crystalize particle effect. The PParticleSystem base occupies the first
 // 0xE0 bytes; the members below start at 0xE0. The vtable (__vt__13PCrystalizeFx)
@@ -16,6 +17,7 @@ public:
     void Render();
     void Animate(float fDelta);
     void UpdateInstances();
+    int Create(PMNode *pNode, tagCrystalizeFxParams *pParams);
 
     char m_unkE0[0x100];        // 0x0E0 cleared by the constructor (memset)
     void *m_unk1E0;             // 0x1E0 freed with __dla__ by the destructor
@@ -27,6 +29,21 @@ public:
     unsigned char m_unk1F8;     // 0x1F8 set to 1 by the constructor
     unsigned char m_unk1F9;     // 0x1F9 set to 1 by the constructor
     unsigned char m_unk1FA;     // 0x1FA set to 1 by the constructor
+};
+
+// Parameter block for PCrystalizeFx::Create. Offsets follow the Create asm.
+struct tagCrystalizeFxParams {
+    float m_unk00;
+    float m_unk04;
+    float m_unk08;
+    float m_unk0C;
+    float m_unk10;
+    float m_unk14;
+    float m_unk18;
+    int m_unk1C;
+    unsigned char m_unk20;
+    unsigned char m_unk21;
+    unsigned char m_unk22;
 };
 
 #endif

@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "PCrystalizeFx.h"
 #include "PGfxEngine.h"
@@ -8,12 +9,18 @@ extern "C" void __dl__FPv(void *);
 extern "C" void __dla__FPv(void *);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern unsigned char __vt__13PCrystalizeFx[];
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
+extern "C" void *__nwa__FUi(unsigned int nSize);
+extern "C" void *GetResource__16PParticleManagerFUi(void *pThis, unsigned int nId);
+extern "C" float sqrtf(float);
 extern "C" void DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(void *pThis, void *pData, int nCount, bool bFlag);
 extern char gUnk45B300[16];
 extern float gUnitMatrix[16];
 // TODO(header): PGfxEngine.h does not declare the global gGfxEng; declared here by name.
 extern PGfxEngine gGfxEng;
 extern "C" void Vu0_Set_Identity_Matrix(void);
+extern "C" int rand(void);
+extern "C" void sceVu0ScaleVectorXYZ(void *pDst, void *pSrc, float fScale);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 void FastMath_RotateMatrix(float (*)[4][4], float (*)[4][4], float (*)[4], float (*)[4][4]);
 
@@ -48,9 +55,23 @@ struct PCrystalizeFxChild {
 };
 
 struct PCrystalizeFxNodeView {
-    char _pad0[0x10];
+    char _pad0[4];
+    int m_unk4;
+    char _pad8[8];
     void *m_unk10;
     PCrystalizeFxChild m_child;
+    char _pad20[8];
+    void *m_unk28;
+};
+
+// Virtual view of the PParticleSystem vtable. ModifyPosition is virtual #3 (slot 0x14);
+// Create passes the node matrix at +0x40 as its argument.
+class PCrystalizeFxVirtView {
+public:
+    virtual void Slot0();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void ModifyPosition(void *pMat);
 };
 
 // DRAFT: 0x001FE410 UpdateInstances__13PCrystalizeFxFv
@@ -168,6 +189,62 @@ void PCrystalizeFx::Animate(float fDelta) {
     }
 }
 
+// DRAFT: 0x001FE980 Create__13PCrystalizeFxFP6PMNodeP21tagCrystalizeFxParams
+// note: 65 words differ. Seed/LCG block schedules differently (original loads the constants 0x343FD and 0x269EC3 before m_unkD0 and uses mult with a2 = m_unkD0; ours loads m_unkD0 first) and the scale expression's neg.s/add.s order differs; loop-end b is 2 instructions longer than the original. Relocation addends at 0x138/0x178/0x188 are placeholders. Tried: -str readonly (65, kept), scale operand swap (65), pBlock declared after the assert (78, reverted).
+int PCrystalizeFx::Create(PMNode *pNode, tagCrystalizeFxParams *pParams) {
+    PMNode *poModel = pNode;
+    CDS_ASSERT(0x28, poModel);
+    m_unkD0 = (int)(0.5f + (23154.0f + 20367.0f * ((float)rand() / 2147483648.0f)));
+    m_unk0C = 22;
+    m_unk1F4 = m_unkD0;
+    if (((PCrystalizeFxNodeView *)pNode)->m_unk4 == 2) {
+        PCrystalizeFxChild *apChildList = (PCrystalizeFxChild *)((char *)pNode + 0x14);
+        CDS_ASSERT(0x32, apChildList);
+        apChildList->nIndex = 0;
+        pNode = (apChildList->nCount != 0) ? apChildList->pNodes[0] : 0;
+    }
+    GetValidNodes(pNode, (PMNode **)m_unkE0);
+    PParticleSystem::Create(m_unk1E4, false);
+    m_unk1E8 = GetResource__16PParticleManagerFUi(&gGfxEng, pParams->m_unk1C);
+    if (m_unk1E8 == 0) {
+        return 0;
+    }
+    m_unk1E0 = __nwa__FUi(m_unk1E4 * 0x60);
+    CDS_ASSERT(0x42, m_unk1E0);
+    m_unk1EC = pParams->m_unk14;
+    m_unk1F0 = pParams->m_unk18;
+    m_unk1F8 = pParams->m_unk20;
+    m_unk1F9 = pParams->m_unk21;
+    m_unk1FA = pParams->m_unk22;
+    for (int i = 0; i < m_unk1E4; i++) {
+        void *apNode = *(void **)(m_unkE0 + i * 4);
+        char *pBlock = (char *)m_unk1E0 + i * 0x60;
+        CDS_ASSERT(0x50, apNode);
+        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+        float fScale = (1.0f + (-pParams->m_unk10 + (pParams->m_unk10 + pParams->m_unk10) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)))) * 0.003921569f;
+        sceVu0ScaleVectorXYZ(pBlock + 0x40, pParams, fScale);
+        *(float *)(pBlock + 0x4C) = pParams->m_unk0C / 128.0f;
+        *(u_long128 *)(pBlock + 0x50) = (u_long128)((unsigned long long)0x3F800000 << 32);
+    }
+    if (pNode == 0) {
+        return 1;
+    }
+    {
+        int nType = ((PCrystalizeFxNodeView *)pNode)->m_unk4;
+        if (nType == 2 || nType == 1) {
+            memcpy(&m_unk80, (char *)pNode + 0x110, 0x20);
+        } else if (((PCrystalizeFxNodeView *)pNode)->m_unk28 != 0) {
+            memcpy(&m_unk80, ((PCrystalizeFxNodeView *)pNode)->m_unk28, 0x20);
+        }
+    }
+    m_unk90 = (m_unk1F0 <= m_unk90) ? m_unk90 : m_unk1F0;
+    m_unk94 = (m_unk1F0 <= m_unk94) ? m_unk94 : m_unk1F0;
+    m_unk98 = (m_unk1F0 <= m_unk98) ? m_unk98 : m_unk1F0;
+    m_unk9C = sqrtf(m_unk90 * m_unk90 + m_unk94 * m_unk94 + m_unk98 * m_unk98);
+    ((PCrystalizeFxVirtView *)this)->ModifyPosition((char *)pNode + 0x40);
+    return 1;
+}
+
 // FUNCTION: 0x001FED60 __dt__13PCrystalizeFxFv
 extern "C" void *__dt__13PCrystalizeFxFv(void *pThis, short nFlag) {
     if (pThis != 0) {
@@ -185,16 +262,14 @@ extern "C" void *__dt__13PCrystalizeFxFv(void *pThis, short nFlag) {
     return pThis;
 }
 
-// DRAFT: 0x001FEDE0 __ct__13PCrystalizeFxFv
-// note: 28 words differ. Original stores this to 0x1C(sp) and reloads it before each store; ours keeps this in s0. Tried: direct this stores (28), pSelf alias (28), volatile pSelf (31, reverted).
+// FUNCTION: 0x001FEDE0 __ct__13PCrystalizeFxFv
 PCrystalizeFx::PCrystalizeFx() {
-    PCrystalizeFx *pSelf = this;
-    *(void **)pSelf = __vt__13PCrystalizeFx;
-    pSelf->m_unk1E0 = 0;
-    pSelf->m_unk1E4 = 0;
-    pSelf->m_unk1E8 = 0;
-    memset(pSelf->m_unkE0, 0, 0x100);
-    pSelf->m_unk1F8 = 1;
-    pSelf->m_unk1F9 = 1;
-    pSelf->m_unk1FA = 1;
+    *(void **)this = __vt__13PCrystalizeFx;
+    m_unk1E0 = 0;
+    m_unk1E4 = 0;
+    m_unk1E8 = 0;
+    memset(m_unkE0, 0, 0x100);
+    m_unk1F8 = 1;
+    m_unk1F9 = 1;
+    m_unk1FA = 1;
 }
