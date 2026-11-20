@@ -296,16 +296,11 @@ int Camera::ControlledByApp(unsigned int arg0) {
     return (arg0 == m_unk2E4) ? 1 : 0;
 }
 
-// DRAFT: 0x00178940 SetControlled__6CameraFUib
-// note: 12 differing lines; branch layout of the arg1 && m_unk2E4 test and the return paths differs. Tried ternary, early return, single trailing return; all 12-16 lines.
+// FUNCTION: 0x00178940 SetControlled__6CameraFUib
 int Camera::SetControlled(unsigned int arg0, bool arg1) {
     if (m_unk2E4 == 0 || arg0 == 0) {
         m_unk2E4 = arg0;
-        if (arg1 && m_unk2E4 != 0) {
-            m_unk2B8 = 1;
-        } else {
-            m_unk2B8 = 0;
-        }
+        m_unk2B8 = (arg1 && m_unk2E4 != 0) ? 1 : 0;
         return 1;
     }
     return 0;
