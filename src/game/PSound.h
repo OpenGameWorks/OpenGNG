@@ -152,6 +152,7 @@ public:
     void SetMasterRelVolume(unsigned int nVolume);
     void SetEffectsRelVolume(unsigned int nVolume);
     void SetUbiquitousFactorRelVol(unsigned int nFactor);
+    void SetPositionalFactorRelVol(unsigned int nFactor);
     int StopSoundBySoundRefIfAmbient(unsigned int nSoundRef);
     unsigned int FindFreeAmbientChannel();
     int DelinkChannelState(AmbientChannelState **ppHead, AmbientEntry *pEntry);
@@ -183,7 +184,7 @@ public:
     void SwapLinksAmbientEntry(AmbientEntry *pA, AmbientEntry *pB);
     void DelinkAmbientEntry(AmbientEntry *pEntry);
     int PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag);
-    void StopAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag);
+    int StopAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag);
     AmbientEntry *FindAmbientEntry(unsigned int nID);
     int StartAESoftwareFadeout(unsigned int nID, unsigned int nArg);
     int StartAESoftwareFadeout(AmbientEntry *pEntry, unsigned int nArg);
@@ -193,6 +194,7 @@ public:
     void PSoundStopDialog();
     void UsageInit();
     void SetProposedReverbParams(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3, unsigned int p4);
+    void ChangeReverb();
     void SetMonoOut(bool bMono);
     void SetMainMusicRelVolume(unsigned int nVolume);
     int PlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3, unsigned int p4);
@@ -247,6 +249,7 @@ public:
     int UsageFindNextHigherID(PSoundUsage **ppUsage);
     int *UsageFind(unsigned int nID);
     int UsageAdd(unsigned int nID);
+    void Test1();
     void DebugRestartValues();
     int DebugFindLastID(unsigned int *pValue, unsigned int *pIndex);
     int DebugFindFirstID(unsigned int *pValue, unsigned int *pIndex);
@@ -272,7 +275,7 @@ public:
     int m_unk38;            // 0x038, RelVolumes arg 2
     int m_unk3C;            // 0x03C, RelVolumes arg 3
     int m_unk40;            // 0x040, RelVolumes arg 4
-    char _pad044[0x048 - 0x044];
+    int m_unk44;           // 0x044, SetPositionalFactorRelVol sets it to 10x its arg
     int m_unk48;            // 0x048, SetUbiquitousFactorRelVol sets it to 10x its arg
     int m_unk4C;           // 0x04C, SetMasterRelVolume arg 3
     int m_unk50;            // 0x050, SetEffectsRelVolume arg 3

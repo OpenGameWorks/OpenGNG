@@ -1,6 +1,7 @@
 // FLAGS: -Cpp_exceptions off -str readonly
 #include "PSound.h"
 #include "MathAPI.h"
+#include "PIOPFile.h"
 
 // TODO(header): foreign declarations
 void CdsAssert(char *pFile, int nLine, char *pExpr);
@@ -14,6 +15,8 @@ extern "C" void SOUND_AllChannelReverbOff(int);
 extern "C" void SOUND_ReverbSetAdrs(int, int);
 extern "C" void SOUND_ClearIOPBuffer();
 extern int gPSndDbg[52];
+extern "C" void SOUND_ChangeReverbCore(int, int, int, int, int, int);
+extern "C" void SOUND_ChangeReverbMasterVolume(int, int, int);
 extern int fst_StartMultiple;
 extern "C" int sceWrite(int, char *, int);
 extern "C" int strlen(char *);
@@ -30,6 +33,7 @@ extern unsigned char MODE_PAL;
 extern "C" void SOUND_FadeOutAllMusic(short);
 extern "C" void SOUND_MusicAddExciteHits(int);
 extern "C" void __ct__14PFadeMsecFloatFv(void *);
+extern "C" void FadeMsecFloatPrep__14PFadeMsecFloatFffUiUi(void *pThis, float fStart, float fEnd, unsigned int nArg2, unsigned int nArg3);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(void *pThis, unsigned int arg);
@@ -55,6 +59,7 @@ extern "C" void SOUND_SetLanguage(unsigned int);
 extern "C" void SOUND_AllocateStreamBuffer(int, unsigned int, unsigned int);
 extern int fst_ADSR_Translate_Attack[16];
 extern int fst_ADSR_Translate_Release[16];
+extern int fst_ADSR_Msecs_Release[16];
 extern char fst_Usage[24000];
 extern int fst_dialogSpecialVol;
 extern int gSOUND_EEControl;
@@ -84,6 +89,18 @@ extern int SOUND_IOP_DISK_TYPE;
 extern int SOUND_STREAM_ID[4];
 extern int SOUND_STREAM_STATUS16[4];
 extern unsigned int gSOUND_EEMainSyncCount3Returned;
+extern PIOPFile fst_PIOPFileTest;
+extern char fst_ReadBuf[32768];
+extern int fst_VBCountC;
+extern int fst_VBCountD;
+extern int fst_VBCountE;
+extern int fst_VBCountF;
+extern int fst_diffCD;
+extern int fst_diffDE;
+extern int fst_diffEF;
+extern int fst_TransferUsecs;
+extern int gSOUND_AllowSIFTranferTiming;
+extern int gSOUND_usecsTotalTransfer;
 class PTranslateATable {
 public:
     static int FindASubTableRandomItem(unsigned int *pOut, unsigned int nIdx, int (*pfnBank)(unsigned int), const unsigned int *pTable);
@@ -676,6 +693,28 @@ void PSound::SetMusicPitchBend(bool bBend) {
     } else {
         m_unk543C &= ~1;
         SOUND_SetOverallMusicPitch(0x2710, 0);
+    }
+}
+
+// FUNCTION: 0x001A55F0 ChangeReverb__6PSoundFv
+void PSound::ChangeReverb() {
+    int bChanged = 0;
+    if (gPSndDbg[32] != 0) {
+        if (fst_ReverbRecCur[0] != fst_ReverbRecProposed[0]) {
+            bChanged = 1;
+        } else if ((unsigned int)fst_ReverbRecCur[0] >= 7 && (fst_ReverbRecCur[3] != fst_ReverbRecProposed[3] || fst_ReverbRecCur[4] != fst_ReverbRecProposed[4])) {
+            bChanged = 1;
+        }
+        if (bChanged != 0) {
+            memcpy(fst_ReverbRecCur, fst_ReverbRecProposed, 0x14);
+            SOUND_ChangeReverbCore(0, fst_ReverbRecCur[0], fst_ReverbRecCur[1], fst_ReverbRecCur[2], fst_ReverbRecCur[3], fst_ReverbRecCur[4]);
+            SOUND_ChangeReverbCore(1, fst_ReverbRecCur[0], fst_ReverbRecCur[1], fst_ReverbRecCur[2], fst_ReverbRecCur[3], fst_ReverbRecCur[4]);
+        } else if (fst_ReverbRecCur[1] != fst_ReverbRecProposed[1] || fst_ReverbRecCur[2] != fst_ReverbRecProposed[2]) {
+            memcpy(fst_ReverbRecCur, fst_ReverbRecProposed, 0x14);
+            SOUND_ChangeReverbMasterVolume(0, fst_ReverbRecCur[1], fst_ReverbRecCur[2]);
+            SOUND_ChangeReverbMasterVolume(1, fst_ReverbRecCur[1], fst_ReverbRecCur[2]);
+        }
+        m_unk5434 = 1;
     }
 }
 
@@ -1289,6 +1328,61 @@ int PSound::StartAESoftwareFadeout(unsigned int nID, unsigned int nArg) {
     return 1;
 }
 
+// DRAFT: 0x001A8B80 StartAESoftwareFadeout__6PSoundFPQ26PSound12AmbientEntryUi
+// note: 53 words differ; nCount in v0 instead of s4 and no top guard before the loop (do-while, while, for, declaration-at-use, pointer-split and reorder forms tried; while 57, for 57, split returns 55)
+int PSound::StartAESoftwareFadeout(AmbientEntry *pEntry, unsigned int nArg) {
+    int bFound = 0;
+    int nRet;
+    AmbientEntry *pNode;
+    char *pACSMain;
+    AmbientEntry *pHead;
+
+    if (pEntry == 0) {
+        CdsAssert("PSound.cpp", 0x1169, "0");
+        return -1;
+    }
+    pACSMain = (char *)pEntry->m_unk4C;
+    if (pACSMain == 0) {
+        CdsAssert("PSound.cpp", 0x1174, "pACSMain");
+    }
+    if (pACSMain == 0) {
+        return -1;
+    }
+    pHead = *(AmbientEntry **)(pACSMain + 8);
+    if (pHead == 0) {
+        CdsAssert("PSound.cpp", 0x117A, "pAEHead");
+    }
+    VerifyAmbientEntryList(pHead);
+    if (pACSMain == 0 || pHead == 0) {
+        return -1;
+    }
+    int nCount = 0;
+    pNode = pHead;
+    do {
+        nCount += 1;
+        if (pNode == pEntry) {
+            bFound = 1;
+        }
+        pNode = pNode->m_unk50;
+    } while (pNode != 0);
+    if (bFound == 0) {
+        CdsAssert("PSound.cpp", 0x118B, "bFound");
+        return -1;
+    }
+    nRet = 0;
+    if (nCount < 2) {
+        nRet = StopAmbientEntry(pEntry, nArg);
+    } else {
+        int nIdx = 1;
+        if (pEntry->m_unk48 != 0) {
+            nIdx = ((unsigned char *)pEntry->m_unk48)[0x12] & 0xF;
+        }
+        FadeMsecFloatPrep__14PFadeMsecFloatFffUiUi(pEntry->m_unk20, 1.0f, 0.0f, m_unk6C, fst_ADSR_Msecs_Release[nIdx]);
+        pEntry->m_unk44 = 1;
+    }
+    return nRet;
+}
+
 // DRAFT: 0x001A8FA0 GetSpotInfo__6PSoundFUi
 // note: 13 words differ; original keeps the scan pointer in a0 (in-place addiu from this) and the end in a2, ours puts the pointer in v0 and the end in a0; byte cursor, SpotInfo cursor, for, do-while and while forms tried, best 13
 PSound::SpotInfo *PSound::GetSpotInfo(unsigned int nID) {
@@ -1418,6 +1512,13 @@ void PSound::SetDistLinearPercent(unsigned int nPercent) {
 void PSound::SetUbiquitousFactorRelVol(unsigned int nFactor) {
     gPSndDbg[8] = nFactor;
     m_unk48 = nFactor * 10;
+    InternalUpdateRelVolumes();
+}
+
+// FUNCTION: 0x001A9320 SetPositionalFactorRelVol__6PSoundFUi
+void PSound::SetPositionalFactorRelVol(unsigned int nFactor) {
+    gPSndDbg[7] = nFactor;
+    m_unk44 = nFactor * 10;
     InternalUpdateRelVolumes();
 }
 
@@ -2067,6 +2168,66 @@ int PSound::UsageAdd(unsigned int nID) {
         } while (p < end);
     }
     return -1;
+}
+
+// FUNCTION: 0x001AB150 Test1__6PSoundFv
+void PSound::Test1() {
+    unsigned int nSize;
+    unsigned int nRemain;
+    unsigned int nChunk;
+
+    gSOUND_AllowSIFTranferTiming = 1;
+    fst_VBCountC = gCDSVBlankCount;
+    fst_PIOPFileTest.OpenByFileID(0xC2);
+    nSize = fst_PIOPFileTest.GetSize();
+    if (nSize != 0) {
+        nRemain = nSize;
+        do {
+            nChunk = nRemain;
+            if (nRemain > 0x8000) {
+                nChunk = 0x8000;
+            }
+            fst_PIOPFileTest.Read(fst_ReadBuf, nChunk);
+            nRemain -= nChunk;
+        } while (nRemain != 0);
+    }
+    fst_VBCountD = gCDSVBlankCount;
+    fst_diffCD = fst_VBCountD - fst_VBCountC;
+    fst_PIOPFileTest.Close();
+    fst_PIOPFileTest.OpenByFileID(0xC3);
+    nSize = fst_PIOPFileTest.GetSize();
+    if (nSize != 0) {
+        nRemain = nSize;
+        do {
+            nChunk = nRemain;
+            if (nRemain > 0x8000) {
+                nChunk = 0x8000;
+            }
+            fst_PIOPFileTest.Read(fst_ReadBuf, nChunk);
+            nRemain -= nChunk;
+        } while (nRemain != 0);
+    }
+    fst_VBCountE = gCDSVBlankCount;
+    fst_diffDE = fst_VBCountE - fst_VBCountD;
+    fst_PIOPFileTest.Close();
+    fst_PIOPFileTest.OpenByFileID(0xC4);
+    nSize = fst_PIOPFileTest.GetSize();
+    if (nSize != 0) {
+        nRemain = nSize;
+        do {
+            nChunk = nRemain;
+            if (nRemain > 0x8000) {
+                nChunk = 0x8000;
+            }
+            fst_PIOPFileTest.Read(fst_ReadBuf, nChunk);
+            nRemain -= nChunk;
+        } while (nRemain != 0);
+    }
+    fst_VBCountF = gCDSVBlankCount;
+    fst_diffEF = fst_VBCountF - fst_VBCountE;
+    fst_TransferUsecs = gSOUND_usecsTotalTransfer;
+    fst_PIOPFileTest.Close();
+    gSOUND_AllowSIFTranferTiming = 0;
 }
 
 // FUNCTION: 0x001AB330 DebugClearPlayedInGame__6PSoundFv
