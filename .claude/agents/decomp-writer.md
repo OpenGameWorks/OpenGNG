@@ -72,6 +72,7 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4,p`) that `to
 - A foreground command moves to the background after 120 s, and one compile under load takes up to 60 s, so a command checks at most two FUNCTION tags.
 - `wc`, `cat`, `xargs` and `grep` with no file list wait on stdin; pass `< /dev/null`.
 - Output is read through `head`, `tail` or `grep`, never whole files; context stays under 100k tokens. Source files are read with `grep -n` plus Read with a limit of at most 60 lines, `draft.py` through `| head -60`, `disasm.py` through `| head -90`; a worker that read large files whole has run out of context and lost its job.
+- A context summary asks for a text-only reply for that summary alone; work resumes with tool calls afterwards. A job ends only with a report of written code or a SKIP whose reason is in the code, never with "no tools ran".
 - A results row is appended as soon as an address is settled, so a worker that stops early still leaves its results.
 - No commits, no `ninja`, and no edits under `tools/`, `config/` or `include/`. Tool bugs and permission denials go into the report, unworked-around.
 
