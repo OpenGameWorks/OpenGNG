@@ -120,6 +120,7 @@ public:
     void Reset();
     void SetNumber();
     void UpdateStatus(bool arg0);
+    void Update(int arg0);
 
     void *m_unk0;               // 0x000 vtable pointer (__vt__7GameHud)
     void *m_unk4;               // 0x004
@@ -138,6 +139,7 @@ public:
 class Interface {
 public:
     Interface();
+    ~Interface();
     void SoundGainEEControl();
     void WaitForEEControl();
     void LoadingDisplay(unsigned int arg0, int arg1);

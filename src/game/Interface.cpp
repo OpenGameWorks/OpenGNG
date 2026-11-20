@@ -990,6 +990,68 @@ void HudCombo::InitCombo(PMeshNode *arg0, HudData *arg1, PMNode *arg2) {
     ((PArray *)((char *)m_unk4 + 0x14))->Add(m_unk38);
 }
 
+// DRAFT: 0x142010 Update__7GameHudFi
+// note: frame 0x20 vs 0x30, this in s0 vs s1, case 1 8 insns short, d in a3 vs s0, no short sext on step, gate lacks sext8
+void GameHud::Update(int arg0) {
+    switch (m_unkF) {
+    case 1:
+        if (((*(signed char *)((char *)m_unk4 + 0x3F)) & 7) & 4) {
+            int table = *(int *)((char *)mpPlayerData__7GameHud + 4 + (m_unkE * 4));
+            int d = table - m_unkC;
+            if (d != 0) {
+                int snd = -1;
+                short step;
+                if (d < -10 || d >= 11) {
+                    step = 10;
+                } else {
+                    step = 1;
+                }
+                if (d > 0) {
+                    m_unkC += step;
+                    if (m_unkE == 9) {
+                        snd = 0xC;
+                    } else if (m_unkE == 3 && d >= 2) {
+                        snd = 0xD3;
+                    }
+                } else {
+                    m_unkC -= step;
+                    if (m_unkE == 3) {
+                        snd = 0x39;
+                    }
+                }
+                if (snd > 0) {
+                    gSound.PlaySoundUbiquitous(snd);
+                }
+                SetFrameRate__6PMNodeFfb((PMNode *)m_unk4, 1.0f, true);
+                SetNumber();
+            } else {
+                ((PMNode *)m_unk4)->EnableAnim(false, false);
+                m_unkF++;
+            }
+        }
+        ((PMNode *)m_unk4)->Slot04(0.0f, 1.0f, 0, 0, false);
+        break;
+    case 2:
+        if (arg0) {
+            *(int *)&m_unk8 = 0x40000000;
+        }
+        m_unk8 = m_unk8 - 1.0f;
+        if (m_unk8 <= 0.0f) {
+            m_unkF = 3;
+            ((PMNode *)m_unk4)->EnableAnim(true, false);
+            ((PMNode *)m_unk4)->SetAnimLoopCount(1, false);
+            SetFrameRate__6PMNodeFfb((PMNode *)m_unk4, -1.0f, false);
+        }
+        break;
+    case 3:
+        if ((((PMNode *)m_unk4)->Slot04(0.0f, 1.0f, 0, 0, false) & 7) == 0) {
+            m_unkF = 0;
+            ((PMNode *)m_unk4)->SetAllFrustrumTest(eBoxIntersect_Value0);
+        }
+        break;
+    }
+}
+
 // DRAFT: 0x00142280 SetNumber__7GameHudFv
 // note: 131 words; frame size differs (0x220 vs 0x23C-class spill) because the PMNode node-ctor spill needs PMNode as a real class (another worker's header). Tried: local reorder, void *volatile self (136, reverted).
 void GameHud::SetNumber() {
