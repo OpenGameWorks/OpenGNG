@@ -3,8 +3,14 @@
 #include "PMeshFragment.h"
 #include "PGfxEngine.h"
 #include "PDisplayList.h"
+#include "PSpacePartitionNode.h"
+#include "PLightManager.h"
 
 // TODO(header): foreign declarations
+void vu1SetWorldMatrix(PMat4 *pMat);
+void vu1BeginMesh(eBoxIntersect eMode);
+void vu1EndMesh();
+void vu1KickDisplayList();
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void Render__7PShaderFibPb(void *pThis, int nArg, bool bFlag, bool *pbOut);
 extern "C" void *__dt__19PSpacePartitionNodeFv(void *pThis, short nFlag);
@@ -139,6 +145,97 @@ void PSpacePartitionTree::ResetShaderGroups() {
         *(int *)(pGroup + 0x720) = 0;
     }
     m_unk12898 = 0;
+}
+
+// DRAFT: 0x00199550 Render__19PSpacePartitionTreeFP13PLightManagerP5PMat4b
+// note: 202 words differ: the bFlag/pLightManager gate and else-path branch layout differ, apMesh/nCount swap s4/s6, string address relocs; tried nCount init move (223->202), decl reorder (203, reverted), && operand swap (202, no change)
+int PSpacePartitionTree::Render(PLightManager *pLightManager, PMat4 *pMat, bool bFlag) {
+    int nCount;
+    int nIndex;
+    int nOffset;
+    PSpacePartitionNode *pNode;
+    PMesh *apMesh;
+    if (m_unk0 == 0) {
+        return 0;
+    }
+    ResetShaderGroups();
+    vu1SetWorldMatrix(pMat);
+    nCount = 0;
+    if (m_unk404 != 0) {
+        CDS_ASSERT(0xB3, m_unk4->m_pMesh);
+        if (bFlag && pLightManager) {
+            nIndex = 0;
+            nOffset = 0;
+            while (nIndex < (int)m_unk404) {
+                pNode = *(PSpacePartitionNode **)((char *)this + 4 + nOffset);
+                if (pNode->m_unk4 != 1) {
+                    apMesh = pNode->m_pMesh;
+                    CDS_ASSERT(0x121, apMesh);
+                    pLightManager->ComputeLights(apMesh, pMat, false, bFlag, true, 0, 1.0f);
+                    vu1BeginMesh((eBoxIntersect)4);
+                    nCount += apMesh->Render(0x80, 0, false);
+                    vu1EndMesh();
+                }
+                nOffset += 4;
+                nIndex++;
+            }
+            vu1KickDisplayList();
+            nIndex = 0;
+            nOffset = 0;
+            while (nIndex < (int)m_unk404) {
+                pNode = *(PSpacePartitionNode **)((char *)this + 4 + nOffset);
+                if (pNode->m_unk4 == 1) {
+                    apMesh = pNode->m_pMesh;
+                    CDS_ASSERT(0x131, apMesh);
+                    pLightManager->ComputeLights(apMesh, pMat, false, bFlag, true, 0, 1.0f);
+                    vu1BeginMesh((eBoxIntersect)1);
+                    nCount += apMesh->Render(0x80, 0, false);
+                    vu1EndMesh();
+                }
+                nOffset += 4;
+                nIndex++;
+            }
+            vu1KickDisplayList();
+        } else {
+            vu1BeginMesh((eBoxIntersect)4);
+            nIndex = 0;
+            nOffset = 0;
+            while (nIndex < (int)m_unk404) {
+                pNode = *(PSpacePartitionNode **)((char *)this + 4 + nOffset);
+                if (pNode->m_unk4 != 1) {
+                    apMesh = pNode->m_pMesh;
+                    CDS_ASSERT(0xC9, apMesh);
+                    nCount += apMesh->m_unkA;
+                    RenderMesh(apMesh, true);
+                    apMesh->Render(0x80, 0, true);
+                }
+                nOffset += 4;
+                nIndex++;
+            }
+            RenderShaderGroups(true);
+            vu1EndMesh();
+            vu1BeginMesh((eBoxIntersect)1);
+            nIndex = 0;
+            nOffset = 0;
+            while (nIndex < (int)m_unk404) {
+                pNode = *(PSpacePartitionNode **)((char *)this + 4 + nOffset);
+                if (pNode->m_unk4 == 1) {
+                    apMesh = pNode->m_pMesh;
+                    CDS_ASSERT(0xE0, apMesh);
+                    nCount += apMesh->m_unkA;
+                    RenderMesh(apMesh, false);
+                    apMesh->Render(0x80, 0, true);
+                }
+                nOffset += 4;
+                nIndex++;
+            }
+            RenderShaderGroups(false);
+            vu1EndMesh();
+        }
+    }
+    nCount += m_unk0->RenderStaticInstances();
+    gGfxEng.m_unk154C80->SetVifCodes(0x11000000, 0);
+    return nCount;
 }
 
 // DRAFT: 0x00199910 CullToFrustrum__19PSpacePartitionTreeFP9PFrustrumPf

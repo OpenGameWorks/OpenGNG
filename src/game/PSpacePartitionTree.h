@@ -6,6 +6,8 @@
 
 class PFrustrum;
 class PSpacePartitionNode;
+class PLightManager;
+class PMat4;
 
 // Root of the static-world space partition. The object is 0x1289C bytes, so
 // members past 0x8000 are reached with lui/addiu.
@@ -19,6 +21,7 @@ public:
     void ResetShaderGroups();
     void RenderMesh(PMesh *pMesh, bool bFlag);
     void RenderShaderGroups(bool bFlag);
+    int Render(PLightManager *pLightManager, PMat4 *pMat, bool bFlag);
 
     PSpacePartitionNode *m_unk0;            // 0x000 root node, owned
     PSpacePartitionNode *m_unk4;            // 0x004 child node set by Load
