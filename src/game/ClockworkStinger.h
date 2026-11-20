@@ -3,18 +3,34 @@
 
 #include "types.h"
 
+class PMNode;
+
 class ClockworkStinger {
 public:
     void SetRiseAndAttack(float (*arg0)[4], float arg1, float arg2);
+    void SetSpawnedFromEntity(float *arg0, float *arg1, int arg2);
     void SetDefaultVars();
+    void SetEditableVars(char *arg0);
     void OnStopAttack();
     void OnTimerEvent(unsigned int arg0);
+    int GetSequenceState();
+    int IsStalled(float arg0, float (*arg1)[4]);
 
     char _pad000[4];
     unsigned int m_unk4;            // 0x004 timer argument for CreateTimer
     char _pad008[0x20 - 0x08];
     int m_unk20;                    // 0x020 state
-    char _pad024[0x1B0 - 0x24];
+    char _pad024[0x3C - 0x24];
+    PMNode *m_unk3C;                // 0x03C animation node
+    char _pad040[0x103 - 0x40];
+    unsigned char m_unk103;         // 0x103 ctor default 0x10
+    int m_unk104;                   // 0x104 ctor default 2.0f
+    int m_unk108;                   // 0x108 ctor default 1.5f
+    char _pad10C[0x140 - 0x10C];
+    unsigned int *m_unk140;         // 0x140 current sequence
+    char _pad144[0x166 - 0x144];
+    unsigned char m_unk166;         // 0x166 ctor default 1
+    char _pad167[0x1B0 - 0x167];
     int m_unk1B0;                   // 0x1B0 nonzero blocks OnStopAttack
     char _pad1B4[0x1B8 - 0x1B4];
     float m_unk1B8;                 // 0x1B8 copied from arg0[0]
@@ -35,12 +51,34 @@ public:
     int m_unk1F4;                   // 0x1F4
     int m_unk1F8;                   // 0x1F8 float bits 0.1f
     int m_unk1FC;                   // 0x1FC random 0xB4 or 0x6E
-    char _pad200[0x240 - 0x200];
+    int m_unk200;
+    int m_unk204;
+    int m_unk208;
+    int m_unk20C;
+    int m_unk210;
+    int m_unk214;
+    int m_unk218;
+    int m_unk21C;
+    int m_unk220;
+    int m_unk224;
+    int m_unk228;
+    int m_unk22C;
+    int m_unk230;
+    int m_unk234;
+    int m_unk238;
+    int m_unk23C;
     int m_unk240;                   // 0x240 timer id slot
-    char _pad244[0x250 - 0x244];
+    int m_unk244;
+    int m_unk248;
+    int m_unk24C;
     unsigned int m_unk250;          // 0x250 damage fx handle, destroyed in dtor
     int m_unk254;                   // 0x254 timer id slot
     int m_unk258;                   // 0x258 timer id slot
+    unsigned char m_unk25C;
+    char _pad25D[3];
+    int m_unk260;
+    int m_unk264;
+    unsigned char m_unk268;
 };
 
 #endif
