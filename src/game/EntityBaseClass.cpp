@@ -667,7 +667,7 @@ void EntityBaseClass::UpdateSulphurFx(float arg0) {
     }
     *(u_long128 *)pos = *(u_long128 *)src;
     pos[1] = arg0;
-    ((PParticleManager *)gGfxEng)->CreateSulphurReaction(pos, 1.0f);
+    ((PParticleManager *)(gGfxEng + 0x154F00))->CreateSulphurReaction(pos, 1.0f);
 }
 
 // DRAFT: 0x0014B8D0 UpdateRipple__15EntityBaseClassFfUib
@@ -1225,7 +1225,7 @@ void EntityBaseClass::RemoveFromBGAnimList() {
             CdsAssert__FPciPc("EntityBaseClass.cpp", 0x430, "mpMeshNode");
         }
         this->m_unk161 = 0;
-        ((PMeshNode *)this->m_unk3C)->RemoveFromCollisionArray((PArray *)&mBGCollision__15EntityBaseClass);
+        ((PMeshNode *)this->m_unk3C)->RemoveFromCollisionArray((PArray *)((char *)&mBGCollision__15EntityBaseClass + 0x70));
     }
 }
 
