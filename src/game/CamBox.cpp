@@ -22,8 +22,20 @@ class Camera {
 public:
     char _pad0[0x2BC];
     int m_unk2BC;
+    int m_unk2C0;
+    float m_unk2C4;
     CVector3 ClosestPointOnLine(CVector3 a, CVector3 b, CVector3 c);
+    unsigned char PlayingCutCamera();
+    void SetCamBoxData(int arg0, void *arg1);
+    void SetCamMode(short mode, bool flag);
+    void SetCamBoxValue_FollowHeight(float arg0);
 };
+extern char *mPlayerAPI__13EntityManager;
+extern char *mCameraAPI__13EntityManager;
+extern "C" void sceVu0UnitMatrix(float *pMatrix);
+extern "C" void RotateX__5PMat4Ff(float *pMat, float angle);
+extern "C" void RotateY__5PMat4Ff(float *pMat, float angle);
+extern "C" void RotateZ__5PMat4Ff(float *pMat, float angle);
 
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("CamBox.cpp", line, #cond))
 
@@ -84,6 +96,164 @@ int CamBox::PointInsideTriggerArea(float (*pPoint)[4], float (*pOther)[4]) {
     }
     CDS_ASSERT(0x197, 0);
     return 0;
+}
+
+#define CAMBOX_PIT(pt, other) PointInsideTriggerArea((float (*)[4])(pt), (float (*)[4])(other))
+
+// DRAFT: 0x0019C860 Execute__6CamBoxFv
+// note: compiles; 328 differing lines, first real diff at 0x005C (branch targets, epilogue layout); case-switch order and case base (lui 0x2F vs gEng) unverified; 1 attempt
+void CamBox::Execute() {
+    Camera *pCam;
+    char *pPlayer;
+    char *pvPlayerPos;
+    char *pvCamPos;
+    char *pCamBox_Flip;
+    char *pCamBox_FixedLookAt;
+    char *pCamBoxRail;
+    float sp50[16];
+
+    pCam = (Camera *)(gEng + 0x19760);
+    CDS_ASSERT(0x15, pCam);
+    if (pCam->PlayingCutCamera()) {
+        m_unk2A4 = 0;
+        return;
+    }
+    if (pCam->m_unk2BC == 0 || pCam->m_unk2BC == (int)this) {
+        pPlayer = mPlayerAPI__13EntityManager;
+        pvPlayerPos = *(char **)(pPlayer + 0x3C) ? *(char **)(pPlayer + 0x3C) + 0x80 : pPlayer + 0x190;
+        CDS_ASSERT(0x2C, pvPlayerPos);
+        pvCamPos = mCameraAPI__13EntityManager;
+        CDS_ASSERT(0x2F, pvCamPos);
+        if (m_unk1E0 == 6) {
+            if (m_unk2A4 == 0) {
+                if (CAMBOX_PIT(pvPlayerPos, pvCamPos)) {
+                    m_unk2A4 = 1;
+                    pCam->m_unk2BC = (int)this;
+                    pCam->m_unk2C0 = m_unk20C;
+                    pCam->m_unk2C4 = m_unk1E4;
+                }
+            } else if (CAMBOX_PIT(pvPlayerPos, pvCamPos) == 0) {
+                m_unk2A4 = 0;
+                pCam->m_unk2BC = 0;
+                pCam->m_unk2C0 = 0;
+                if (m_unk208 != 0) {
+                    SetState(-2);
+                }
+            }
+        } else if (m_unk2A4 == 0) {
+            if (CAMBOX_PIT(pvPlayerPos, pvCamPos)) {
+                m_unk2A4 = 1;
+                pCam->m_unk2BC = (int)this;
+                switch (m_unk1E0) {
+                case 5:
+                    pCam = (Camera *)(gEng + 0x19760);
+                    CDS_ASSERT(0xA5, pCam);
+                    pCamBoxRail = (char *)pCam + 0x220;
+                    CDS_ASSERT(0xA8, pCamBoxRail);
+                    *(int *)(pCamBoxRail + 0x00) = 0;
+                    *(int *)(pCamBoxRail + 0x50) = 0;
+                    *(float *)(pCamBoxRail + 0x10) = m_unk244;
+                    *(float *)(pCamBoxRail + 0x14) = m_unk248;
+                    *(float *)(pCamBoxRail + 0x18) = m_unk24C;
+                    *(float *)(pCamBoxRail + 0x20) = m_unk25C;
+                    *(float *)(pCamBoxRail + 0x24) = m_unk260;
+                    *(float *)(pCamBoxRail + 0x28) = m_unk264;
+                    *(short *)(pCamBoxRail + 0x02) = 0;
+                    *(float *)(pCamBoxRail + 0x30) = m_unk214;
+                    *(float *)(pCamBoxRail + 0x34) = m_unk218;
+                    *(float *)(pCamBoxRail + 0x38) = m_unk21C;
+                    *(int *)(pCamBoxRail + 0x3C) = 0x3F800000;
+                    *(float *)(pCamBoxRail + 0x40) = m_unk22C;
+                    *(float *)(pCamBoxRail + 0x44) = m_unk230;
+                    *(float *)(pCamBoxRail + 0x48) = m_unk234;
+                    *(int *)(pCamBoxRail + 0x4C) = 0x3F800000;
+                    sceVu0UnitMatrix(sp50);
+                    if (m_unk220 != 0.0f) {
+                        RotateX__5PMat4Ff(sp50, m_unk220);
+                    }
+                    if (m_unk224 != 0.0f) {
+                        RotateY__5PMat4Ff(sp50, m_unk224);
+                    }
+                    if (m_unk228 != 0.0f) {
+                        RotateZ__5PMat4Ff(sp50, m_unk228);
+                    }
+                    *(float *)(pCamBoxRail + 0x70) = -sp50[8];
+                    *(float *)(pCamBoxRail + 0x74) = -sp50[9];
+                    *(float *)(pCamBoxRail + 0x78) = -sp50[10];
+                    *(int *)(pCamBoxRail + 0x7C) = 0x3F800000;
+                    *(unsigned char *)(pCamBoxRail + 0x80) = (m_unk274 != 0);
+                    *(float *)(pCamBoxRail + 0x54) = m_unk210;
+                    *(unsigned char *)(pCamBoxRail + 0x81) = (m_unk29C == 0) ? 1 : 0;
+                    *(unsigned char *)(pCamBoxRail + 0x82) = (m_unk2A0 == 0) ? 0 : 1;
+                    pCam->SetCamBoxData(5, pCamBoxRail);
+                    pCam->SetCamMode(4, false);
+                    break;
+                case 3:
+                    pCam = (Camera *)(gEng + 0x19760);
+                    CDS_ASSERT(0x84, pCam);
+                    pCamBox_FixedLookAt = (char *)pCam + 0x1C0;
+                    if (m_unk1EC == 0.0f) {
+                        if (m_unk1F0 == 0.0f && m_unk1F4 == 0.0f) {
+                            CDS_ASSERT(0x89, !"eif 0, 0, 0 error.  see keith or ted");
+                        } else {
+                            goto block48;
+                        }
+                    } else {
+block48:
+                        CDS_ASSERT(0x90, pCamBox_FixedLookAt);
+                        *(int *)(pCamBox_FixedLookAt + 0x00) = 0;
+                        *(float *)(pCamBox_FixedLookAt + 0x10) = m_unk1EC;
+                        *(float *)(pCamBox_FixedLookAt + 0x14) = m_unk1F0;
+                        *(float *)(pCamBox_FixedLookAt + 0x18) = m_unk1F4;
+                        *(float *)(pCamBox_FixedLookAt + 0x38) = (float)(unsigned int)m_unk1E8 * 60.0f;
+                        *(float *)(pCamBox_FixedLookAt + 0x40) = m_unk210;
+                        *(int *)(pCamBox_FixedLookAt + 0x3C) = 0;
+                        pCam->SetCamBoxData(3, pCamBox_FixedLookAt);
+                        pCam->SetCamMode(4, false);
+                    }
+                    break;
+                case 2:
+                    pCam = (Camera *)(gEng + 0x19760);
+                    CDS_ASSERT(0x66, pCam);
+                    pCamBox_Flip = (char *)pCam + 0x190;
+                    if (m_unk1EC == 0.0f) {
+                        if (m_unk1F0 == 0.0f && m_unk1F4 == 0.0f) {
+                            CDS_ASSERT(0x6B, !"eif 0, 0, 0 error.  see keith or ted");
+                        } else {
+                            goto block34;
+                        }
+                    } else {
+block34:
+                        CDS_ASSERT(0x72, pCamBox_Flip);
+                        *(int *)(pCamBox_Flip + 0x00) = 0;
+                        *(float *)(pCamBox_Flip + 0x10) = m_unk1EC;
+                        *(float *)(pCamBox_Flip + 0x14) = m_unk1F0;
+                        *(float *)(pCamBox_Flip + 0x18) = m_unk1F4;
+                        *(float *)(pCamBox_Flip + 0x20) = (float)(unsigned int)m_unk1E8 * 60.0f;
+                        pCam->SetCamBoxData(2, pCamBox_Flip);
+                        pCam->SetCamMode(4, false);
+                    }
+                    break;
+                case 1:
+                    break;
+                default:
+                    CdsAssert__FPciPc("CamBox.cpp", 0xE4, "Illegal Camera BoxMode");
+                    break;
+                }
+            }
+        } else if (CAMBOX_PIT(pvPlayerPos, pvCamPos) == 0) {
+            m_unk2A4 = 0;
+            pCam->m_unk2BC = 0;
+            if (m_unk208 != 0) {
+                SetState(-2);
+            }
+        } else {
+            if (m_unk1E0 != 1) {
+                return;
+            }
+            pCam->SetCamBoxValue_FollowHeight(m_unk1E4);
+        }
+    }
 }
 
 // FUNCTION: 0x0019CEE0 __ct__6CamBoxFv
