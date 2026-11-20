@@ -6,6 +6,11 @@
 #include "PGrimBarAura.h"
 
 // TODO(header): foreign declarations
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern unsigned char __vt__9PResource[];
+extern unsigned char __vt__6PMNode[];
+extern "C" void InitMembers__6PMNodeFv(PMNode *pThis);
+extern "C" void CopyMNode__6PMNodeFR6PMNodeb(PMNode *pThis, PMNode *src, bool flag);
 class Player {
 public:
     void SwapAbility(int arg0);
@@ -617,6 +622,67 @@ void HudBossMeter::SetValue(short value) {
     }
 }
 
+// DRAFT: 0x141410 Update__12HudBossMeterFi
+// note: DIFF 116 words; case 2 branch lands at 0x30 not 0x31, flag-block delay slot and f0/f1/f2 register assignment differ, and gInterface reloc form (lui $at,0) differs. Tried case order swap (123), case 1 first (117), inverted flags (117), no-else (121), load order and operand order (116 neutral).
+void HudBossMeter::Update(int arg0) {
+    float f;
+    switch ((unsigned char)m_unkF) {
+    case 1: {
+        if ((unsigned char)m_unk17 != 0 && gInterface.m_unk1A0 == 0) {
+            f = 1.0f;
+        } else {
+            f = 0.0f;
+        }
+        *(float *)((char *)m_unk4 + 0x2C) = f;
+        if (!((m_unk8 - *(float *)((char *)m_unk4 + 0x84)) <= 0.0f)) {
+            float cur = *(float *)((char *)m_unk4 + 0x84);
+            float next = cur + 0.5f;
+            if (!(next < m_unk8)) {
+                m_unkF = 2;
+            }
+            *(float *)((char *)m_unk4 + 0x84) = next;
+            ((PMNode *)m_unk4)->Slot04(0.0f, 0.0f, 0, 8, false);
+        }
+        break;
+    }
+    case 2: {
+        if ((unsigned char)m_unk17 != 0 && gInterface.m_unk1A0 == 0) {
+            f = 1.0f;
+        } else {
+            f = 0.0f;
+        }
+        *(float *)((char *)m_unk4 + 0x2C) = f;
+        int diff = (short)m_unkC - (short)m_unk14;
+        if (diff != 0) {
+            if (diff < 0) {
+                int v = m_unk14 + diff;
+                if (diff < -2) {
+                    v = m_unk14 - 2;
+                }
+                m_unk14 = (short)v;
+                f = (float)m_unk14 / *(float *)&m_unk10;
+                if (!(f <= 1.0f)) {
+                    f = 1.0f;
+                }
+                *(float *)((char *)m_unk1C + 0xA0) = f;
+            } else {
+                if (diff >= 5) {
+                    diff = 4;
+                }
+                m_unk14 += (short)diff;
+                f = (float)m_unk14 / *(float *)&m_unk10;
+                if (!(f <= 1.0f)) {
+                    f = 1.0f;
+                }
+                *(float *)((char *)m_unk18 + 0xA0) = f;
+            }
+            ((PMNode *)m_unk4)->Slot04(0.0f, 0.0f, 0, 8, false);
+        }
+        break;
+    }
+    }
+}
+
 // FUNCTION: 0x141630 SetFace__12HudBossMeterFv
 void HudBossMeter::SetFace() {
     static unsigned int FaceID[3] = {0x00000000, 0x902DF890, 0x4B01E2EE};
@@ -745,6 +811,53 @@ void HudCombo::ComboFinish() {
     if (temp_a0 != 0) {
         *(int *)((char *)temp_a0 + 0x2C) = 0x3F800000;
     }
+}
+
+// Ten 32-bit hash keys looked up by HudCombo::InitCombo; the original local object ComboNumber$1169 at 0x241080 (40 bytes).
+static unsigned int ComboNumber_1169[10] = {0x6B0BE84A, 0x6AAE41FC, 0x6840BB26, 0x69E51290, 0x6D9D4E92,
+                                            0x6C38E724, 0x6ED61DFE, 0x6F73B448, 0x6626A5FA, 0x67830C4C};
+
+// DRAFT: 0x141DF0 InitCombo__8HudComboFP9PMeshNodeP7HudDataP6PMNode
+// note: 74 words. Differs from 0x130 on: Find/Remove/Add argument order and m_unk4 load before Find; frame 0x60 vs 0x70 with the node kept in s1 (ours spills to 0x6C); CdsAssert and CopyMNode argument order. Tried: vtable +0x970/+0xE00 (75), void **slots loop (134), scoped slotBase loop (134), direct *(void **) temp_v1 load (74, reverted).
+void HudCombo::InitCombo(PMeshNode *arg0, HudData *arg1, PMNode *arg2) {
+    m_unk4 = Find__6PMNodeFUi((PMNode *)arg0, arg1->m_unk0);
+    m_unkF = arg1->m_unk5;
+    m_unkE = arg1->m_unk4;
+    *(int *)((char *)this + 0x3C) = 0;
+    *(int *)((char *)this + 0x40) = 0;
+    m_unk44 = Find__6PMNodeFUi((PMNode *)arg0, 0xEE9AFE2CU);
+    m_unk48 = Find__6PMNodeFUi((PMNode *)arg0, 0x9A4EBB54U);
+    ((PMNode *)m_unk48)->SetAllFrustrumTest((eBoxIntersect)0);
+    *(int *)((char *)m_unk48 + 0xC) = 1;
+    m_unk4C = Find__6PMNodeFUi((PMNode *)arg0, 0x2BE31146U);
+    PMNode *temp_v0 = Find__6PMNodeFUi((PMNode *)arg0, 0x4F83EE74U);
+    if (temp_v0 == 0) {
+        CdsAssert__FPciPc("Interface.cpp", 0x781, "pNumber");
+    }
+    for (int i = 0; i < 10; i++) {
+        ((void **)((char *)this + 0x10))[i] = Find__6PMNodeFUi(temp_v0, ComboNumber_1169[i]);
+    }
+    void *temp_v1 = ((void **)((char *)this + 0x10))[0];
+    m_unk50 = *(float *)((char *)temp_v1 + 0x80);
+    m_unk54 = *(float *)((char *)temp_v1 + 0x84);
+    ((PArray *)((char *)Find__6PMNodeFUi(m_unk4, 0xF796F8CBU) + 0x14))->Remove(temp_v0);
+    ((PArray *)((char *)arg2 + 0x14))->Add(temp_v0);
+    void *node = __nw__FUi(0x100);
+    if (node != 0) {
+        *(unsigned char **)node = __vt__9PResource;
+        *(int *)((char *)node + 4) = 0;
+        *(unsigned char **)node = __vt__6PMNode;
+        __ct__6PArrayFv((char *)node + 0x14);
+        sceVu0UnitMatrix((char *)node + 0x40);
+        __ct__6PArrayFv((char *)node + 0xD8);
+        InitMembers__6PMNodeFv((PMNode *)node);
+    }
+    m_unk38 = node;
+    if (m_unk38 == 0) {
+        CdsAssert__FPciPc("Interface.cpp", 0x78B, "mpNumberBase");
+    }
+    CopyMNode__6PMNodeFR6PMNodeb((PMNode *)m_unk38, temp_v0, false);
+    ((PArray *)((char *)m_unk4 + 0x14))->Add(m_unk38);
 }
 
 // DRAFT: 0x1424A0 UpdateStatus__7GameHudFb

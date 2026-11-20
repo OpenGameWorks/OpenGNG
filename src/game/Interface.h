@@ -44,6 +44,7 @@ public:
     void SetMaxValue(short arg0, int arg1);
     void SetFace();
     void Init(PMeshNode *meshNode, HudData *hud);
+    void Update(int arg0);
 
     char _pad000[0x4];
     void *m_unk4;               // 0x004 pointer to a HUD element (fields at 0x0C, 0x2C, 0x84)
@@ -65,6 +66,7 @@ public:
     void ComboNumber();
     void UpdateStatus(bool flag);
     void Update(int arg0);
+    void InitCombo(PMeshNode *arg0, HudData *arg1, PMNode *arg2);
 
     char _pad000[0x4];
     PMNode *m_unk4;             // 0x004 node whose frustum test and frame rate are set
@@ -78,6 +80,8 @@ public:
     void *m_unk44;              // 0x044 polymorphic element, slot 5 called by UpdateStatus
     void *m_unk48;              // 0x048
     void *m_unk4C;              // 0x04C polymorphic element, slot 5 called by UpdateStatus
+    float m_unk50;              // 0x050 copied from the table entry at 0x80 by InitCombo
+    float m_unk54;              // 0x054 copied from the table entry at 0x84 by InitCombo
 };
 
 class HudHint {
@@ -166,7 +170,9 @@ public:
     InterfaceSpillGuard m_spill000;
     char _pad001[0x7F];
     int m_unk80;                // 0x080 first word of the embedded FontManager
-    char _pad084[0x134];
+    char _pad084[0x11C];
+    unsigned char m_unk1A0;     // 0x1A0 flag read by HudBossMeter::Update and HudCombo::UpdateStatus
+    char _pad1A1[0x17];
     int m_unk1B8;               // 0x1B8
     int m_unk1BC;               // 0x1BC
     int m_unk1C0;               // 0x1C0
