@@ -35,6 +35,7 @@ public:
     int InJuggleAirspace();
     int SoulsInRange();
     void SetDrainHit(unsigned int nArg);
+    int OnHitEvent(class EntityBaseClass *pAttacker, int nDamage, unsigned int nA, unsigned int nB);
 
     void *m_unk0;           // 0x000 vtable pointer
     unsigned int m_unk4;    // 0x004 owner id, compared with m_SuckerRef
@@ -43,9 +44,12 @@ public:
     char _pad024[0x38 - 0x24];
     class Physics *m_unk38; // 0x038 physics object, first argument of SetPhysicsType
     int m_unk3C;            // 0x03C target entity pointer; +0x80 used when non-null
-    char _pad040[0xDC - 0x40];
+    char _pad040[0xD8 - 0x40];
+    float m_unkD8;          // 0x0D8
     int m_unkDC;            // 0x0DC cleared by OnTimerEvent
-    char _pad0E0[0x103 - 0xE0];
+    char _pad0E0[0xF4 - 0xE0];
+    int m_unkF4;            // 0x0F4 first gate read by OnHitEvent
+    char _padF8[0x103 - 0xF8];
     unsigned char m_unk103; // 0x103 flag byte set by SetupType
     int m_unk104;           // 0x104 float bits set by SetupType
     int m_unk108;           // 0x108 float bits set by SetupType

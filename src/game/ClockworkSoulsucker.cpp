@@ -8,6 +8,7 @@ public:
     void ScaleSet(float, float, float, float);
     PMNode *Find(unsigned int);
     float GetFrameTime();
+    float GetFrameRate();
     void SetFrameRate(float, bool);
 };
 
@@ -98,6 +99,10 @@ struct TempApparitionArray {
     char _pad0C[4];
 };
 extern "C" ApparitionState *ApparitionIsValid__15EntityBaseClassFUi(unsigned int);
+extern "C" void StopAllSoundsByObject__15EntityBaseClassFv(void *);
+extern "C" void PlaySound__15EntityBaseClassFUi(void *, unsigned int);
+extern "C" float GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, void *);
+extern unsigned char ClockworkSoulsucker_DeathBottomWiggleSeq[60];
 extern void *mpEntMgr__15EntityBaseClass;
 extern TempApparitionArray mTempArray__15EntityBaseClass;
 extern unsigned char __vt__19ClockworkSoulsucker[0x10];
@@ -737,6 +742,87 @@ void ClockworkSoulsucker::OnTimerEvent(unsigned int nTimer) {
     if (nTimer == m_unk2BC) {
         m_unk2BC = 0;
     }
+}
+
+// DRAFT: 0x00205850 OnHitEvent__19ClockworkSoulsuckerFP15EntityBaseClassiUiUi
+// note: DIFF 93. Float block at 0x138-0x1AC matches. Left: branch offsets at 0x4C/0x70/0xA0/0xD4/0xE8/0x1F0, dead addiu v0,0xB vs 0x2 at 0x90, m_unk1B0 far bne at 0x208, timer block and mask order at 0x210-0x264. Tried: operand swap (102), compound fAngle += 180.0f (93), merged return-0 tails (102), if/else for m_unk1B0 (93, reverted).
+int ClockworkSoulsucker::OnHitEvent(EntityBaseClass *pAttacker, int nDamage, unsigned int nA, unsigned int nB) {
+    int nAnim = m_unk20;
+    if (m_unkF4 != 0) {
+        int nLeft = m_unk22C - nDamage;
+        if (nLeft > 0) {
+            m_unk22C = nLeft;
+            return 1;
+        }
+    }
+    if (m_unk2AC != 0 || nAnim == 0x18) {
+        return 0;
+    }
+    StopAllSoundsByObject__15EntityBaseClassFv(this);
+    if (m_unk140 == ClockworkSoulsucker_DeathBottomWiggleSeq) {
+        SetState__15EntityBaseClassFi(this, 0xE);
+        return 2;
+    }
+    if (nAnim == 2 && ((PMNode *)m_unk3C)->GetFrameTime() < 19.0f) {
+        return 4;
+    }
+    if (nAnim == 0x1D) {
+        return 4;
+    }
+    if (m_unk1B0 == 0) {
+        PlaySound__15EntityBaseClassFUi(this, 0x1D6);
+    } else {
+        PlaySound__15EntityBaseClassFUi(this, 0x5E);
+    }
+    float fAngle = GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (void *)(*(int *)((char *)pAttacker + 0x3C) + 0x80));
+    fAngle += 180.0f;
+    float *pSrc = (m_unk3C != 0) ? (float *)(m_unk3C + 0x90) : (float *)((char *)this + 0x1A0);
+    float fPos = pSrc[1] + fAngle;
+    if (fPos < -180.0f) {
+        fPos += 360.0f;
+    } else if (fPos > 180.0f) {
+        fPos -= 360.0f;
+    }
+    m_unkD8 = fPos;
+    m_unkDC = 0x3E99999A;
+    m_unk22C -= nDamage;
+    m_unk250 = nA;
+    if (m_unk22C <= 0) {
+        DeleteTimers();
+        ReleaseSemaphoreIfOwned();
+        SetState__15EntityBaseClassFi(this, 0xD);
+        return 2;
+    }
+    UpdateDamageFx();
+    if (m_unk1B0 != 1) {
+        ReleaseSemaphoreIfOwned();
+        SetState__15EntityBaseClassFi(this, 0x1E);
+        return 1;
+    }
+    if (m_unk240 == 0 && m_unk244 == 0) {
+        m_unk23C = ((PMNode *)m_unk3C)->GetFrameRate();
+        ((PMNode *)m_unk3C)->SetFrameRate(0.0f, true);
+        EffectObj *pEffect = mEffectAPI__13EntityManager.EffectValid(m_unk2A4);
+        if (pEffect != 0) {
+            pEffect->m_unk4->SetFrameRate(0.0f, true);
+        }
+        m_unk240 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, 0xE, true);
+        ((m_unk3C) ? (void)0 : CdsAssert("ClockworkSoulsucker.cpp", 0x768, "GetMeshNode()"));
+        if (((PMNode *)m_unk3C)->Find(0x0700104EU) != 0) {
+            m_unk248 = *(float *)((char *)((PMNode *)m_unk3C)->Find(0x0700104EU) + 0x90);
+        }
+    }
+    {
+        unsigned int nFlags = nA & ~0x5C0U;
+        if (nFlags == 8 || nFlags == 0x2D) {
+            FaceHit();
+            DeleteEffects();
+            ReleaseSemaphoreIfOwned();
+            SetState__15EntityBaseClassFi(this, 0xC);
+            DeleteTimers();
+        }
+    }
+    return 1;
 }
 
 // FUNCTION: 0x00205BC0 OnWakeEvent__19ClockworkSoulsuckerFv
