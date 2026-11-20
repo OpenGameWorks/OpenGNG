@@ -8,8 +8,11 @@
 class ClockworkStalker {
 public:
     ClockworkStalker();
+    void PlaySoundOnFrame(unsigned int arg0, unsigned int arg1);
+    void CircleAround(float *arg0, float arg1);
     void KillTimers();
     void DeleteEffects();
+    void CheckBlockAttack();
     int InBlockableState();
     int IsStalled(float fDist, float (*arg1)[4]);
     int PlayerFacingUs();
@@ -30,7 +33,9 @@ public:
     char _pad024[0x38 - 0x24];
     char *m_unk38;                  // 0x038 entity whose 0x11C float receives FaceHit's angle
     char *m_unk3C;                  // 0x03C
-    char _pad040[0x103 - 0x40];
+    char _pad040[0xF4 - 0x40];
+    int m_unkF4;                    // 0x0F4 zero while no block is pending
+    char _pad0F8[0x103 - 0xF8];
     unsigned char m_unk103;         // 0x103 set to 0x40 by the constructor
     char _pad104[0x140 - 0x104];
     unsigned int *m_unk140;         // 0x140
@@ -100,6 +105,8 @@ public:
     unsigned int *m_unk2E4;         // 0x2E4 sequence pointer
     unsigned int m_unk2E8;          // 0x2E8 damage fx handle, destroyed in dtor
     int m_unk2EC;                   // 0x2EC
+    char _pad2F0[0x2F4 - 0x2F0];
+    unsigned int m_unk2F4;          // 0x2F4 last sound frame id, written by PlaySoundOnFrame
 };
 
 #endif

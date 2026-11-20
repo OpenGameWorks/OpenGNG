@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "ClockworkStalker.h"
 
@@ -53,6 +54,116 @@ extern "C" float Distance__7MathAPIFPA4_fPA4_f(void *, float (*)[4]);
 extern "C" int RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(void *, void *, unsigned int);
 extern EntityManager *mpEntMgr__15EntityBaseClass;
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *, int, unsigned int);
+extern "C" void PlaySound__15EntityBaseClassFUi(void *, unsigned int);
+extern "C" float GetAngleBetweenVectors__7MathAPIFPfPf(float *, float *);
+extern "C" void VectorRotateY__7MathAPIFPA4_ff(float *, float);
+extern "C" void CdsAssert__FPciPc(char *, int, char *);
+extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
+extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
+extern "C" float GetFrameTime__6PMNodeFv(void *);
+extern "C" void *Find__6PMNodeFUi(void *, unsigned int);
+extern char ClockworkStalker_NormalMesh[0x10];
+extern char ClockworkStalker_TransitionMesh[0x10];
+extern char ClockworkStalker_CamouflageMesh[0x10];
+
+// Local view of PMNode with the virtual slots used here (dtor 0x08, Render 0x0C, SetFrameTime 0x10).
+class PMNodeView {
+public:
+    virtual ~PMNodeView();
+    virtual void Render(void *pLights, int a, int b);
+    virtual void SetFrameTime(float fTime);
+    char _pad004[0x38 - 0x04];
+    float m_unk38;
+    char _pad03C[0x3E - 0x3C];
+    unsigned char m_unk3E;
+    char _pad03F[0x94 - 0x3F];
+    float m_unk94;
+};
+
+// DRAFT: 0x001E2880 PlaySoundOnFrame__16ClockworkStalkerFUiUi
+// note: 0x34 float lands in f0 (original f1), so sub.s/cvt/c.lt operands swap and branch offsets shift; 59 words differ.
+void ClockworkStalker::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
+    int t0 = 0;
+    float f1;
+    if (m_unk3C != 0) {
+        unsigned int t1;
+        f1 = *(float *)(m_unk3C + 0x34);
+        if (f1 < 2147483648.0f) {
+            t1 = (unsigned int)(int)f1;
+        } else {
+            t1 = (unsigned int)(int)(f1 - 2147483648.0f) | 0x80000000;
+        }
+        if (t1 != m_unk2F4) {
+            m_unk2F4 = 0xF423F;
+            if (t1 == arg1) {
+                t0 = 1;
+            } else {
+                f1 = *(float *)(m_unk3C + 0x38);
+                if (*(signed char *)(m_unk3C + 0x3F) & 4) {
+                    f1 = -1000000.0f;
+                }
+                int at = arg1 < t1;
+                if (*(float *)&m_unk2A8 != -1.0f) {
+                    f1 = 1000000.0f;
+                    at = arg1 < t1;
+                }
+                if (at != 0) {
+                    float f0;
+                    if ((int)arg1 >= 0) {
+                        f0 = (float)(int)arg1;
+                    } else {
+                        f0 = 2.0f * (float)(int)((arg1 >> 1) | (arg1 & 1));
+                    }
+                    if (f1 < f0) {
+                        t0 = 1;
+                        *(float *)&m_unk2A8 = -1.0f;
+                    }
+                }
+            }
+            if (t0 != 0) {
+                m_unk2F4 = t1;
+                PlaySound__15EntityBaseClassFUi(this, arg0);
+            }
+        }
+    }
+}
+
+
+// DRAFT: 0x001E29C0 CircleAround__16ClockworkStalkerFPff
+// note: 108 words differ: this/arg0 register swap in prologue and xori/sltiu assert-compare form at 0x20-0x2C; no-op, inverted guard and local copy probes changed nothing
+void ClockworkStalker::CircleAround(float *arg0, float arg1) {
+    float v40[4];
+    float v50[4];
+    float v60[4];
+    float f20;
+    if (m_unk268 != 1 && m_unk268 != 2) {
+        CdsAssert__FPciPc("ClockworkStalker.cpp", 0x9D5, "m_iSideStepDir == SIDESTEP_RIGHT || m_iSideStepDir == SIDESTEP_LEFT");
+    }
+    sceVu0SubVector(v40, arg0, (float *)(m_unk3C ? m_unk3C + 0x80 : &m_unk190));
+    sceVu0Normalize(v40, v40);
+    *(u_long128 *)v50 = *(u_long128 *)v40;
+    if (m_unk268 == 1) {
+        VectorRotateY__7MathAPIFPA4_ff(v50, arg1);
+    } else {
+        VectorRotateY__7MathAPIFPA4_ff(v50, -arg1);
+    }
+    GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(this, v60);
+    sceVu0Normalize(v60, v60);
+    f20 = GetAngleBetweenVectors__7MathAPIFPfPf(v50, v60);
+    if (m_unk268 == 2) {
+        f20 *= -1.0f;
+    }
+    if (f20 < -180.0f) {
+        f20 += 360.0f;
+    } else if (!(f20 <= 180.0f)) {
+        f20 -= 360.0f;
+    }
+    if (!(GetAngleBetweenVectors__7MathAPIFPfPf(v40, v60) <= arg1)) {
+        f20 *= -1.0f;
+    }
+    float *t = (float *)(m_unk3C ? m_unk3C + 0x90 : m_unk1A0);
+    *(float *)(m_unk38 + 0x11C) = Round180__Ff(f20 + t[1]);
+}
 
 // DRAFT: 0x001E2B80 KillTimers__16ClockworkStalkerFv
 // note: 2 differing lines; original copies this to s0 before the first timer load, ours loads a0 first (tried local self pointer and unsigned cast, no change)
@@ -61,6 +172,49 @@ void ClockworkStalker::KillTimers() {
     mTimerAPI__13EntityManager.KillTimer(m_unk2D8);
     mTimerAPI__13EntityManager.KillTimer(m_unk2D0);
     mTimerAPI__13EntityManager.KillTimer(m_unk2AC);
+}
+
+// DRAFT: 0x001E2BE0 LoadCorrectMesh__16ClockworkStalkerFb
+// note: 8 words differ: f20/f21 swapped for fFrameTime/fAlpha (decl order, split init tried, no change); switch case 1 before 3 kept (10->8)
+void ClockworkStalker::LoadCorrectMesh(bool arg0) {
+    if ((m_unk2B0 == 0 || arg0) && (m_unk20 != 9 || m_unk20 != 0x18)) {
+        float fFrameTime = -1.0f;
+        float fAlpha = 0.0f;
+        if (m_unk3C != 0) {
+            fFrameTime = GetFrameTime__6PMNodeFv(m_unk3C);
+            *(float *)&m_unk2A8 = ((PMNodeView *)m_unk3C)->m_unk38;
+            fAlpha = ((PMNodeView *)Find__6PMNodeFUi(m_unk3C, 0xE1612999))->m_unk94;
+        }
+        switch (m_unk2A0) {
+        case 0:
+            m_unk2A4 = 0x3F800000;
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_NormalMesh);
+            break;
+        case 1:
+        case 3:
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_TransitionMesh);
+            break;
+        case 2:
+            m_unk2A4 = 0x3F800000;
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_CamouflageMesh);
+            break;
+        default:
+            CdsAssert__FPciPc("ClockworkStalker.cpp", 0x994, "false");
+            break;
+        }
+        if (m_unk2E4 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, m_unk2E4);
+        }
+        if (fFrameTime != -1.0f) {
+            ((PMNodeView *)m_unk3C)->SetFrameTime(fFrameTime);
+        }
+        if (fAlpha != 0.0f) {
+            PMNodeView *pNode = (PMNodeView *)Find__6PMNodeFUi(m_unk3C, 0xE1612999);
+            pNode->m_unk94 = fAlpha;
+            pNode->m_unk3E |= 8;
+        }
+        m_unk2B0 = 1;
+    }
 }
 
 // FUNCTION: 0x001E2DA0 DeleteEffects__16ClockworkStalkerFv
@@ -79,6 +233,26 @@ int ClockworkStalker::InBlockableState() {
         return 0;
     }
     return 1;
+}
+
+// FUNCTION: 0x001E2E40 CheckBlockAttack__16ClockworkStalkerFv
+void ClockworkStalker::CheckBlockAttack() {
+    MathAPI *player = mPlayerAPI__13EntityManager;
+    if (player == 0) {
+        CdsAssert__FPciPc("ClockworkStalker.cpp", 0x920, "pPlayer");
+    }
+    if (m_unk1FC > 0 && m_unkF4 == 0 && *(unsigned char *)((char *)player + 0x23D2) != 0) {
+        unsigned short state = *(unsigned short *)((char *)player + 0x15E);
+        if (state != 0xD && state != 0xF && ((state != 0x40) | 8) &&
+            *(int *)((char *)player + 0x1CC) == (int)m_unk4 && InBlockableState()) {
+            char *thisSide = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+            char *playerSide = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+            if (Distance__7MathAPIFPA4_fPA4_f(playerSide, (float (*)[4])thisSide) <= 10.0f &&
+                PlayerFacingUs() != 0 && MathAPI::RandomIntRange(1, 100) < 0x1F) {
+                SetState__15EntityBaseClassFi(this, 0x1B);
+            }
+        }
+    }
 }
 
 // DRAFT: 0x001E2F70 FaceHit__16ClockworkStalkerFv
