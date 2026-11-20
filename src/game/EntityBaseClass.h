@@ -50,6 +50,7 @@ public:
     void AddCollision(EntityBaseClass *arg0);
     void RemoveCollision(EntityBaseClass *arg0);
     int FindCollision(EntityBaseClass *arg0);
+    void CollisionCheck(EntityBaseClass *arg0);
     void RemovePhysicsAnimList();
     void AddPhysicsAnimList();
     void SetAnimData(AnimData *arg0);
@@ -140,7 +141,10 @@ public:
     unsigned char m_unk100;     // 0x100
     unsigned char m_unk101;     // 0x101
     unsigned char m_unk102;     // 0x102 physics anim list flag
-    char _pad103[0xD];          // 0x103..0x10F
+    unsigned char m_unk103;     // 0x103 collision group
+    float m_unk104;             // 0x104 collision radius
+    float m_unk108;             // 0x108 collision radius (second)
+    unsigned int m_unk10C;      // 0x10C collision flags
     int m_unk110[10];           // 0x110..0x137
     int m_unk138;               // 0x138 last frame value for PlaySoundOnFrame
     int m_unk13C;               // 0x13C current sequence

@@ -290,6 +290,7 @@ extern float BEHIND_WAKE;
 extern float BEHIND_SLEEP;
 extern unsigned char mbGlobalSleep__15EntityBaseClass;
 extern "C" float atan2f(float y, float x);
+extern "C" float FastMath_Fabs__Ff(float fVal);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern unsigned int guHitMarkFxID[7][7];
@@ -364,13 +365,13 @@ public:
     virtual void Slot17();
     virtual void Slot18();
     virtual void Slot19();
-    virtual void Slot20();
-    virtual void Slot21();
+    virtual int Slot20(EntityBaseClass *arg0, unsigned short a, unsigned short b);
+    virtual void Slot21(EntityBaseClass *arg0, int n);
     virtual void Slot22();
     virtual void Slot23();
     virtual void Slot24();
     virtual void Slot25();
-    virtual void Slot26();
+    virtual void Slot26(EntityBaseClass *arg0);
     virtual void OnSleepEvent();
     virtual void OnWakeEvent();
 };
@@ -1632,6 +1633,102 @@ int NormalizedBox(float (*arg0)[2][4], float (&arg1)[2][4], float (*arg2)[4][4],
     NORMALIZEDBOX_ROW(1)
     NORMALIZEDBOX_ROW(2)
     return 1;
+}
+
+// DRAFT: 0x0014D180 CollisionCheck__15EntityBaseClassFP15EntityBaseClass
+// note: 261 words; first beqz at 0x40 keeps a nop delay slot in the original but takes srl in ours; and-order, nesting and a separate mask variable (4 attempts) all stay at 261
+void EntityBaseClass::CollisionCheck(EntityBaseClass *arg0) {
+    float sp80[4];
+    float sp90[4];
+    float spA0[4];
+    unsigned int a2 = m_unk10C;
+    unsigned int a1 = arg0->m_unk10C;
+    if ((a2 & a1 & 0x01000000) && ((a2 & ((a1 >> 16) & 0xFF)) || (a1 & ((a2 >> 16) & 0xFF)))) {
+        sceVu0SubVector(sp80, (float *)(m_unk3C + 0x80), (float *)(arg0->m_unk3C + 0x80));
+        float fy = sp80[1];
+        float f20;
+        if (fy < 0.0f) {
+            f20 = m_unk108;
+        } else {
+            f20 = arg0->m_unk108;
+        }
+        if (FastMath_Fabs__Ff(fy) < f20) {
+            float f3 = sqrtf(sp80[0] * sp80[0] + sp80[2] * sp80[2]);
+            float f1 = (m_unk104 + arg0->m_unk104) - f3;
+            if (!(f1 <= 0.0f)) {
+                if (!(f1 <= 0.25f)) {
+                    f1 = 0.25f;
+                }
+                if (f3 < 0.001f) {
+                    f3 = 0.001f;
+                }
+                sceVu0ScaleVector(sp80, sp80, f1 / f3);
+                ((int *)sp80)[1] = 0;
+                unsigned char a0 = m_unk103;
+                int v1 = a0 - arg0->m_unk103;
+                if (v1 == 0) {
+                    if (a0 != 0xFF) {
+                        RadiusAdjust(0.5f, &sp80);
+                        arg0->RadiusAdjust(-0.5f, &sp80);
+                    }
+                } else if (v1 < 0) {
+                    RadiusAdjust(1.0f, &sp80);
+                } else {
+                    arg0->RadiusAdjust(-1.0f, &sp80);
+                }
+            }
+        }
+    }
+    unsigned int b2 = m_unk10C;
+    unsigned int b1 = arg0->m_unk10C;
+    if ((b2 | b1) & 0x06000000) {
+        int s2 = (b2 >> 8) & b1 & 0xFF;
+        int s3 = (b1 >> 8) & b2 & 0xFF;
+        if (s2 != 0 || s3 != 0) {
+            PMNode *n0 = (PMNode *)m_unk3C;
+            PMNode *n1 = (PMNode *)arg0->m_unk3C;
+            float *s5 = (float *)((char *)n1 + 0x110);
+            sceVu0ApplyMatrix(sp90, n0->m_unk40, (float *)((char *)n0 + 0x110));
+            sceVu0ApplyMatrix(spA0, n1->m_unk40, s5);
+            sceVu0SubVector(sp90, sp90, spA0);
+            float d = sqrtf(sceVu0InnerProduct(sp90, sp90));
+            if (d < *(float *)((char *)n0 + 0x12C) + *(float *)((char *)n1 + 0x12C)) {
+                ((int *)mHitPos__15EntityBaseClass)[0] = 0;
+                int v0 = MeshNodeCollision((PMNode *)m_unk3C, arg0);
+                if (v0 != 0) {
+                    if (v0 & 0x200020) {
+                        if (m_unk10C & 0x04000000) {
+                            ((EntityBaseClassVirtuals *)this)->Slot26(arg0);
+                        }
+                        if (arg0->m_unk10C & 0x04000000) {
+                            ((EntityBaseClassVirtuals *)arg0)->Slot26(this);
+                        }
+                    }
+                    if (v0 & 0x800080) {
+                        int var_v1 = v0 & 0x80;
+                        bool done = false;
+                        if (v0 & 0x800000) {
+                            if (s2 != 0 && m_unkF4 == 0 && (arg0->m_unk10C & 0x02000000) && FindCollision(arg0) == 0) {
+                                AddCollision(arg0);
+                                int t0 = ((EntityBaseClassVirtuals *)arg0)->Slot20(this, *(unsigned short *)((char *)this + 0x15C), m_unk15E);
+                                if (t0 != 0) {
+                                    ((EntityBaseClassVirtuals *)this)->Slot21(arg0, t0);
+                                }
+                                done = true;
+                            }
+                        }
+                        if (!done && var_v1 != 0 && s3 != 0 && arg0->m_unkF4 == 0 && (m_unk10C & 0x02000000) && arg0->FindCollision(this) == 0) {
+                            arg0->AddCollision(this);
+                            int t1 = ((EntityBaseClassVirtuals *)this)->Slot20(arg0, *(unsigned short *)((char *)arg0 + 0x15C), arg0->m_unk15E);
+                            if (t1 != 0) {
+                                ((EntityBaseClassVirtuals *)arg0)->Slot21(this, t1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // FUNCTION: 0x0014D620 RadiusAdjust__15EntityBaseClassFfPA4_f
