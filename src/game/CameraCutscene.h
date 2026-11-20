@@ -26,7 +26,15 @@ public:
     void *GetNextCutCamera(unsigned int nInstance, unsigned int nValue);
     int CutCameraMovesPlayer(unsigned int arg0);
     void StartCutCamera(unsigned int arg0, bool bArg);
+    /**
+     * Advances the cut-camera state machine for the current frame.
+     *
+     * Runs states in sequence until one waits for a later frame.
+     *
+     * @return The m_unk85 active flag: 1 while a cut camera is running, 0 when idle.
+     */
     int ProcessCutCameras();
+    bool ProcessCutCamera();
     int Update();
     void HideText();
     void ShowText();
@@ -53,7 +61,9 @@ public:
     char *m_unk98;              // 0x098
     int m_unk9C;                // 0x09C
     int m_unkA0;                // 0x0A0
-    char _padA4[0xC8 - 0xA4];
+    char _padA4[0xC0 - 0xA4];
+    int m_unkC0;                // 0x0C0
+    float m_unkC4;              // 0x0C4
     unsigned char m_unkC8;      // 0x0C8
     unsigned char m_unkC9;      // 0x0C9
     unsigned char m_unkCA;      // 0x0CA

@@ -19,6 +19,12 @@ extern "C" void UpdatePos__6CameraF5PVec35PVec3(void *pThis, float *pA, float *p
 extern "C" void CheckCameraShake__6CameraFR5PVec3R5PVec3b(void *pThis, float *pA, float *pB, bool bFlag);
 extern "C" void CreateViewMatrix__6CameraFR5PMat45PVec35PVec3(void *pThis, float *pMatrix, float *pA, float *pB);
 extern "C" void SetViewMatrix__6CameraF5PMat4(void *pThis, float *pMatrix);
+extern "C" void ShowPlayer__6PlayerFb(void *pThis, bool bFlag);
+extern "C" void FinishCutCamera__6PlayerFPA4_f(void *pThis, void *pMatrix);
+extern "C" void ResetAfterReposition__6CameraFv(void *pThis);
+extern "C" int printf(const char *pFormat, ...);
+// TODO(header): foreign declarations
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern int InnocentDialogID[0x100];
 extern "C" void *__nw__FUi(unsigned int);
@@ -39,7 +45,9 @@ public:
     float m_unk10[4];
     char _pad020[0x2B8 - 0x20];
     unsigned char m_unk2B8;
-    char _pad2B9[0x2F0 - 0x2B9];
+    char _pad2B9[0x2BC - 0x2B9];
+    int m_unk2BC;
+    char _pad2C0[0x2F0 - 0x2C0];
     float m_unk2F0[4];
     float m_unk300[4];
 };
@@ -384,6 +392,151 @@ void CameraCutManager::GetTargetPositionFromInstance(unsigned int nInstance, PVe
 void CameraCutManager::SetSourceTarget(PVec3 arg0, PVec3 arg1) {
     sceVu0CopyVector(m_unk50, arg0.m_v);
     sceVu0CopyVector(m_unk60, arg1.m_v);
+}
+
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("CameraCutscene.cpp", line, #cond))
+// The cut camera is re-read from m_pCurrentCamera at each use: it is reassigned by
+// calls, so a local would have to survive them in a saved register.
+#define CUR_CAM ((CutSceneCamera_Generic *)m_pCurrentCamera)
+#define PREV_CAM ((CutSceneCamera_Generic *)m_unk98)
+
+// DRAFT: 0x0017B8C0 ProcessCutCameras__16CameraCutManagerFv
+// note: 241 words differ: jump-table lui/addiu reloc shows 0x0 (tool artifact?), case 2 and case 4 branch targets, gInterface store order, camera-path store order, assert lui/addiu order; tried camera local removal, case-2 early return, bool bLoop (kept), bLoop-before-store (worse), truthiness test (same)
+int CameraCutManager::ProcessCutCameras() {
+    // bLoop persists across cases: a state that finishes its work in this frame
+    // leaves it set so the next state runs in the same call; waiting states clear it.
+    bool bLoop = false;
+    void *pPlayer;
+    do {
+        switch (m_unk88) {
+        case 0:
+            break;
+        case 1:
+            m_unkC8 = 0;
+            m_unk85 = 0;
+            m_unkC9 = 0;
+            m_unkCB = 0;
+            break;
+        case 2:
+            m_pCurrentCamera = (char *)GetFirstCutCamera(m_unk8C);
+            if (m_pCurrentCamera == 0) {
+                // No cut camera for this instance: the cut system goes idle and
+                // the interface flag bits are raised before returning 0.
+                m_unk88 = 1;
+                m_unk85 = 0;
+                *(short *)(gInterface + 0x1B24) = 0;
+                *(int *)(gInterface + 0x18D0) |= 0xE;
+                return 0;
+            }
+            m_unk90 = CUR_CAM->m_unk50;
+            bLoop = true;
+            m_unk85 = 1;
+            m_unk88 = 3;
+            break;
+        case 3:
+            printf("User exit cut camera = %d\n", m_unkC8);
+            m_unk9C = *(int *)(gEng + 0x19A80);
+            {
+                unsigned int nFrames = (unsigned int)(60.0f * CUR_CAM->m_unk0);
+                m_unkA0 = nFrames + *(int *)(gEng + 0x19A80);
+            }
+            m_unkC0 = CUR_CAM->m_unk10;
+            if (CUR_CAM->m_unk28) {
+                pPlayer = *(void **)(gEng + 0x1883C);
+                CDS_ASSERT(0x1A6, pPlayer);
+                ShowPlayer__6PlayerFb(pPlayer, 0);
+                m_unkC9 = 1;
+            }
+            ShowText();
+            bLoop = 1;
+            m_unk88 = 4;
+            break;
+        case 4:
+            // ProcessCutCamera() returning true means the camera is still running:
+            // the state holds at 4 and this call ends until the next frame.
+            bLoop = 0;
+            if (ProcessCutCamera()) {
+                break;
+            }
+            m_unk88 = 5;
+            if (m_unkC8) {
+                if (m_unkC9) {
+                    pPlayer = *(void **)(gEng + 0x1883C);
+                    CDS_ASSERT(0x1C5, pPlayer);
+                    ShowPlayer__6PlayerFb(pPlayer, 1);
+                    m_unkC9 = 0;
+                }
+                if (CUR_CAM->m_unk29) {
+                    m_unk0->m_unk2BC = 0;
+                    pPlayer = *(void **)(gEng + 0x1883C);
+                    CDS_ASSERT(0x1D3, pPlayer);
+                    FinishCutCamera__6PlayerFPA4_f(pPlayer, &CUR_CAM->m_unk30);
+                    printf("Cut camera %d moved player\n", m_unk8C);
+                    m_unkCB = 1;
+                }
+                ActivateInstances(CUR_CAM->m_unk18, CUR_CAM->m_unk1C, CUR_CAM->m_unk20, CUR_CAM->m_unk24);
+                StopCutCamera(m_unkCB == 0);
+                break;
+            }
+            if (CUR_CAM->m_unk29) {
+                m_unk0->m_unk2BC = 0;
+                pPlayer = *(void **)(gEng + 0x1883C);
+                CDS_ASSERT(0x1EA, pPlayer);
+                FinishCutCamera__6PlayerFPA4_f(pPlayer, &CUR_CAM->m_unk30);
+                printf("Cut camera %d moved player\n", m_unk8C);
+                m_unkCB = 1;
+            }
+            bLoop = 1;
+            break;
+        case 5:
+            HideText();
+            m_unk98 = m_pCurrentCamera;
+            m_pCurrentCamera = (char *)GetNextCutCamera(m_unk8C, m_unk90);
+            if (m_pCurrentCamera == 0) {
+                m_unk88 = 7;
+                bLoop = 0;
+                break;
+            }
+            m_unkC4 = CUR_CAM->m_unk4;
+            m_unk90 = CUR_CAM->m_unk50;
+            if (PREV_CAM->m_unk4 <= 0.0f) {
+                m_unk88 = 3;
+            } else {
+                m_unk88 = 6;
+            }
+            break;
+        case 6:
+            if (CUR_CAM->m_unk4 <= 0.0f) {
+                m_unk88 = 3;
+                break;
+            }
+            bLoop = 0;
+            CUR_CAM->m_unk4 = CUR_CAM->m_unk4 - *(float *)(gEng + 0x1E8);
+            break;
+        case 7:
+            if (m_unkC4 > 0.0f) {
+                bLoop = 0;
+                m_unkC4 = m_unkC4 - *(float *)(gEng + 0x1E8);
+                break;
+            }
+            // Reached only from case 5 with bLoop already 0: finish the cut and
+            // hand the camera back to the follow camera.
+            if (m_unkC9) {
+                pPlayer = *(void **)(gEng + 0x1883C);
+                CDS_ASSERT(0x235, pPlayer);
+                ShowPlayer__6PlayerFb(pPlayer, 1);
+                m_unkC9 = 0;
+            }
+            if (m_unkCB) {
+                ResetAfterReposition__6CameraFv(m_unk0);
+            }
+            printf("Follow camera reset after cut camera repositioned player\n");
+            ActivateInstances(PREV_CAM->m_unk18, PREV_CAM->m_unk1C, PREV_CAM->m_unk20, PREV_CAM->m_unk24);
+            StopCutCamera(m_unkCB == 0);
+            break;
+        }
+    } while (bLoop);
+    return m_unk85;
 }
 
 // FUNCTION: 0x0017BDD0 SetupCutCamera_Pan__16CameraCutManagerFUiUiff5PVec35PVec35PVec35PVec3UiUiUiUib5PVec3bUi
