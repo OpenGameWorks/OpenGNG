@@ -107,7 +107,7 @@ int PRenderPass::Load(PPakFile *pFile, PArray *pArr) {
         m_unk0 = 1;
         m_unk2 = 1;
     } else if (hdr.m_unk4 == 5) {
-        char *pMgr = gGfxEng - 0x4A80;
+        char *pMgr = gGfxEng + 0x154F00;
         CDS_ASSERT(0xA6, pMgr);
         m_unk8 = *(int *)(pMgr + 0x670);
         m_unk0 = 0;
