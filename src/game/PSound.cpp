@@ -39,9 +39,23 @@ extern int dbg_ChangeFromType;
 extern int dbg_ChangeToType;
 extern int dbg_type;
 extern "C" void __ct__14PFadeMsecFloatFv(void *);
+extern "C" void __ct__Q26PSound16MusicStreamStateFv(void *);
+extern "C" void __ct__Q26PSound19AmbientChannelStateFv(void *);
+extern "C" void __ct__Q26PSound12AmbientEntryFv(void *);
+extern "C" void __ct__Q26PSound19OneShotChannelStateFv(void *);
+extern "C" void __ct__Q26PSound8SpotInfoFv(void *);
+extern "C" void __ct__20GameSoundTrigletPawnFv(void *);
 extern "C" void FadeMsecFloatPrep__14PFadeMsecFloatFffUiUi(void *pThis, float fStart, float fEnd, unsigned int nArg2, unsigned int nArg3);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
+extern "C" void SOUND_SetSPUWriteAddress(unsigned int nAddr);
+extern "C" void SOUND_TransferSFX(unsigned int nArg, int nZero, void *pBuf, int nSize);
+extern "C" void SOUND_GetStatus(int nArg1, int nArg2);
+extern char fst_GeneralBuf[9880];
+extern char stADPCM_SpotFXArrayCurrent[9600];
+extern int SOUND_STREAM_ON[4];
+extern int SOUND_TRANSFER_DATA_BLOCK_TO_EE_STATUS;
+extern int SOUND_SFX_TRANSFER_END;
 extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(void *pThis, unsigned int arg);
 extern "C" int GetWorldMeshCenter__6PMNodeFPf(void *pThis, float *pOut);
 extern "C" void *GetWorldPos__20GameSoundTrigletPawnFv(void *pThis);
@@ -1748,6 +1762,69 @@ void PSound::PSoundFlushIOPCommandsWaitFinish() {
     SOUND_CopyIOPBuffer();
 }
 
+// DRAFT: 0x001A9880 LoadPrimarySoundBank__6PSoundFUi
+// note: DIFF 92 words; size 0x248 vs 0x24C; this/nArg in s1/s0 vs s2/s1; loop condition tail order and gp/lui global forms at 0x0144 differ; local order and nArg copy tried, no change
+int PSound::LoadPrimarySoundBank(unsigned int nArg) {
+    unsigned int nDone;
+    unsigned int nCount;
+    unsigned int nValue;
+    unsigned int nIdx;
+    unsigned int nId;
+    char *pSrc;
+    char *pDst;
+
+    if (nArg < 0x64 || nArg >= 0x73) {
+        return 0;
+    }
+    if (nArg == m_unk10) {
+        return 1;
+    }
+    SOUND_TRANSFER_DATA_BLOCK_TO_EE_STATUS = 1;
+    SOUND_SetSPUWriteAddress(0x50010);
+    memset(fst_GeneralBuf + 0x2100, 0, 0x2698);
+    memset(stADPCM_SpotFXArrayCurrent + 0x5B10, 0, 0x2580);
+    SOUND_TransferSFX(nArg, 0, fst_GeneralBuf + 0x2100, 0x2698);
+    nDone = 0;
+    for (nCount = 0; !nDone || SOUND_STREAM_ON[0] != 0 || SOUND_TRANSFER_DATA_BLOCK_TO_EE_STATUS != 0; nCount++) {
+        WaitOnVSync();
+        SOUND_GetStatus(-1, 0);
+        PSoundFlushIOPCommandsWaitFinish();
+        SOUND_CopyIOPBuffer();
+        nDone = 0;
+        nValue = 0;
+        if (((unsigned int *)(fst_GeneralBuf + 0x2100))[1] < 0x191) {
+            nValue = *(unsigned int *)(fst_GeneralBuf + 0x2120 + ((unsigned int *)(fst_GeneralBuf + 0x2100))[1] * 0x18);
+        }
+        if (((unsigned int *)(fst_GeneralBuf + 0x2100))[0] != 0 && ((unsigned int *)(fst_GeneralBuf + 0x2100))[1] != 0 && nValue != 0) {
+            nDone = 1;
+        }
+    }
+    ((SOUND_SFX_TRANSFER_END != 1) ? (void)0 : CdsAssert("PSound.cpp", 0xDE6, "SOUND_SFX_TRANSFER_END != 1"));
+    if (SOUND_SFX_TRANSFER_END == 2) {
+        return 0;
+    }
+    m_unk10 = nArg;
+    memset(m_unk2EB4, 0, 0x2580);
+    m_unk14 = 0;
+    pSrc = fst_GeneralBuf + 0x2120;
+    pDst = m_unk2EB4;
+    for (nIdx = 0; nIdx < 0x190; nIdx++) {
+        nId = *(unsigned int *)pSrc;
+        if (nId == 0 || nId >= 0x3FFD) {
+            break;
+        }
+        m_unk14++;
+        UsageAdd(nId);
+        memcpy(pDst, pSrc, 0x18);
+        pSrc += 0x18;
+        pDst += 0x18;
+    }
+    if (m_unk14 < 0x190) {
+        *(int *)(m_unk2EB4 + m_unk14 * 0x18) = -1;
+    }
+    return 1;
+}
+
 // FUNCTION: 0x001A9B10 GetEEControlStatus__6PSoundFv
 int PSound::GetEEControlStatus() {
     int nStatus = 3;
@@ -2017,6 +2094,75 @@ void PSound::PSoundReInitSub(unsigned int nMode) {
 
 // FUNCTION: 0x001AA490 __dt__6PSoundFv
 PSound::~PSound() {
+}
+
+// DRAFT: 0x001AA4E0 __ct__6PSoundFv
+// note: DIFF 131 words; loop 1 tail lacks the nop between sltu and bnez, loop 6 pointer register (s2 vs s1), m_unk79F8 store form; unsigned-cast loop end and float block tried, no change
+PSound::PSound() {
+    char *pElem;
+
+    pElem = (char *)this + 0x70;
+    do {
+        __ct__Q26PSound16MusicStreamStateFv(pElem);
+        pElem += 0x20;
+    } while (pElem < (char *)this + 0xB0);
+    pElem = (char *)this + 0xF8;
+    do {
+        __ct__Q26PSound19AmbientChannelStateFv(pElem);
+        pElem += 0x20;
+    } while (pElem < (char *)this + 0x378);
+    pElem = (char *)this + 0x380;
+    do {
+        __ct__Q26PSound12AmbientEntryFv(pElem);
+        pElem += 0x70;
+    } while (pElem < (char *)this + 0x2220);
+    pElem = (char *)this + 0x2220;
+    do {
+        __ct__Q26PSound19OneShotChannelStateFv(pElem);
+        pElem += 0x40;
+    } while (pElem < (char *)this + 0x2E20);
+    pElem = (char *)this + 0x2EB4;
+    do {
+        __ct__Q26PSound8SpotInfoFv(pElem);
+        pElem += 0x18;
+    } while (pElem < (char *)this + 0x5434);
+    pElem = (char *)this + 0x7A00;
+    do {
+        __ct__20GameSoundTrigletPawnFv(pElem);
+        pElem += 0x150;
+    } while (pElem < (char *)this + 0x18080);
+
+    m_unk00 = 0;
+    m_unk79F8 = (char *)((unsigned int)this + 0x7A00);
+    m_unk2E20 = 4;
+    m_unk2E24 = 5;
+    m_unk2E28 = 6;
+    m_unk2E2C = 0xF;
+    m_unk2E30 = 0x10;
+    m_unk2E34 = 0x2B;
+    m_unk2E38 = 0x2C;
+    m_unk2E3C = 0x2F;
+    m_unk30 = 0;
+    m_unk2E80 = 0x100;
+    m_unkCC = 1;
+    m_unk10 = 0;
+    m_unk14 = 0;
+    m_unk18080 = 0;
+    m_unk18084 = 0;
+    m_unk34 = gPSndDbg[4] * 10;
+    m_unk3C = gPSndDbg[5] * 10;
+    m_unk40 = 10;
+    m_unk38 = gPSndDbg[6] * 10;
+    m_unk44 = gPSndDbg[7] * 10;
+    m_unk48 = gPSndDbg[8] * 10;
+    {
+        float fZero = 0.0f;
+        m_unk60 = fZero;
+        m_unk64 = 1.0f - fZero;
+    }
+    UsageInit();
+    PSoundReInitSub(1);
+    SOUND_ClearIOPBuffer();
 }
 
 // FUNCTION: 0x001AA720 ReInit__Q26PSound16MusicStreamStateFv

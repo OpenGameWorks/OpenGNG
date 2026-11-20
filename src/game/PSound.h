@@ -14,6 +14,7 @@ enum EnumEnclosureType {
 
 class PSound {
 public:
+    PSound();
     ~PSound();
 
     class AmbientChannelState {
@@ -294,7 +295,7 @@ public:
     unsigned int m_unkB8[2];// 0x0B8, AddChanToMultiplePauses bit masks (index 1 for channels 0x18 and up)
     unsigned int m_unkC0[2];// 0x0C0, AddChanToMultipleResumes bit masks (index 1 for channels 0x18 and up)
     int m_unkC8;           // 0x0C8, SoundEditEnter sets 1, SoundEditLeave clears it
-    char _padCC[0x0CD - 0x0CC];
+    char m_unkCC;           // 0x0CC, PSound constructor stores 1
     unsigned char m_unkCD;  // 0x0CD, PSoundReInitMusic clears it
     char m_unkCE;           // 0x0CE, PSoundReInitMusic clears it
     char m_unkCF;           // 0x0CF, PSoundStopDialog clears it
@@ -313,13 +314,13 @@ public:
     AmbientEntry *m_unkF4;  // 0x0F4, head of the ambient entry list (AddAEToFreeList passes &m_unkF4)
     char m_unkF8[0x2E20 - 0x0F8];   // 0x0F8, AmbientChannelState array of stride 0x20, FindFadingAmbientChannel scans it
     unsigned int m_unk2E20; // 0x2E20, PSoundInit passes it to SOUND_SetChanUse
-    char _pad2E24[0x2E28 - 0x2E24];
+    int m_unk2E24;          // 0x2E24, PSound constructor stores 5
     unsigned int m_unk2E28; // 0x2E28, FindFadingAmbientChannel start index
     unsigned int m_unk2E2C; // 0x2E2C, FindFadingAmbientChannel limit
     unsigned int m_unk2E30; // 0x2E30, StopSoundBySoundRef loop start index
     unsigned int m_unk2E34; // 0x2E34, StopSoundBySoundRef loop limit (inclusive)
     unsigned int m_unk2E38; // 0x2E38, PSoundInit passes it to SOUND_SetChanUse
-    char _pad2E3C[0x2E40 - 0x2E3C];
+    int m_unk2E3C;          // 0x2E3C, PSound constructor stores 0x2F
     int m_unk2E40;          // 0x2E40, PSoundReInitRegularSounds clears it
     char _pad2E44[0x2E48 - 0x2E44];
     int m_unk2E48;          // 0x2E48, SoundEditLeave copies 0x2E4C here
@@ -333,7 +334,8 @@ public:
     int m_unk2E74;          // 0x2E74, GetEEControlStatus stores its result
     char _pad2E78[0x2E7C - 0x2E78];
     int m_unk2E7C;          // 0x2E7C, RestartSuffix clears it
-    char _pad2E80[0x2EA0 - 0x2E80];
+    int m_unk2E80;          // 0x2E80, PSound constructor stores 0x100
+    char _pad2E84[0x2EA0 - 0x2E84];
     float m_unk2EA0;        // 0x2EA0, RestartAndLoadPrimarySoundBank passes its address to OneFrameHasElapsed_R
     char _pad2EA4[0x2EB0 - 0x2EA4];
     float m_unk2EB0;        // 0x2EB0, RestartAndLoadPrimarySoundBank passes it as the float argument
