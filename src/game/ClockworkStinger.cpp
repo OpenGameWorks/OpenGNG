@@ -20,6 +20,8 @@ extern "C" void DestroyDamageFx__15EntityBaseClassFUi(void *, unsigned int);
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void SetState__15EntityBaseClassFi(void *, int);
+extern "C" void WriteApparitionData__15EntityBaseClassFicUi(void *, int, char, unsigned int);
+extern "C" void EnableSleep__15EntityBaseClassFbb(void *, bool, bool);
 extern unsigned char __vt__16ClockworkStinger[];
 extern int miRandom__7MathAPI;
 extern "C" void *memcpy(void *, const void *, unsigned int);
@@ -44,7 +46,15 @@ extern "C" void StopSoundBySoundRef__15EntityBaseClassFUi(void *, unsigned int);
 extern "C" void RemoveFromAttackSystem__15EntityBaseClassFv(void *);
 extern "C" unsigned int CreateDamageFx__15EntityBaseClassFfUi(void *, float, unsigned int);
 extern "C" void ChangeDamageFxInterval__15EntityBaseClassFUif(void *, unsigned int, float);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__6ShadowFQ26Shadow10ShadowTypeUi(void *, int, unsigned int);
+extern "C" void *__ct__7PhysicsFv(void *);
+extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *, unsigned int, float (*)[4]);
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
+// Target point of a stinger or of the player: the PMNode animation vector at +0x80 when the node exists, else the base's own vector at +0x190.
+#define CS_TARGET(pb) (*(char **)((char *)(pb) + 0x3C) ? *(char **)((char *)(pb) + 0x3C) + 0x80 : (char *)(pb) + 0x190)
+#define CS_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert__FPciPc("ClockworkStinger.cpp", line, msg))
 // FUNCTION: 0x001E6500 GetSequenceState__16ClockworkStingerFv
 int ClockworkStinger::GetSequenceState() {
     int result = 0;
@@ -375,6 +385,143 @@ int ClockworkStinger::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int a
     }
     SetState__15EntityBaseClassFi(this, a1);
     return s0;
+}
+
+// DRAFT: 0x001E7120 Execute__16ClockworkStingerFv
+// note: prologue, case -1 and both gates verified; case 0 and cases 1-15, -2, default still empty; m_unk200 float store unverified
+void ClockworkStinger::Execute()
+{
+    if ((m_unk38 != 0) && (*(unsigned int *)((char *)m_unk38 + 0x108) & 0x400)) {
+        WriteApparitionData__15EntityBaseClassFicUi(this, 0, 1, 0U);
+        if (m_unk38 != 0) {
+            __dl__FPv(m_unk38);
+            m_unk38 = 0;
+        }
+        m_unk10C &= 0xFDFFFFFF;
+        EnableSleep__15EntityBaseClassFbb(this, false, false);
+        m_unk1FC = 0;
+        SetState__15EntityBaseClassFi(this, 0xE);
+        return;
+    }
+    switch (m_unk20) {
+    case -1:
+        if (m_unkE9 != 0) {
+            m_unk10C &= 0xF8FFFFFF;
+            m_unk10C |= 0x071B1902;
+            m_unk15C = 0x32;
+            m_unk15E = 0;
+            if (m_unk1B8 == 0.0f && m_unk1BC == 0.0f && m_unk1C0 == 0.0f) {
+                m_unk1B8 = *(float *)CS_TARGET(this);
+                m_unk1BC = *((float *)CS_TARGET(this) + 1);
+                m_unk1C0 = *((float *)CS_TARGET(this) + 2);
+            }
+            if (m_unk1D8 != 0) {
+                m_unk1C4 = m_unk18C;
+                m_unk1D4 = m_unk18C;
+            }
+            m_unk24C = 0;
+            m_unk240 = 0;
+            m_unk220 = *(u_long128 *)CS_TARGET(this);
+            *(u_long128 *)&m_unk210 = *(u_long128 *)CS_TARGET(this);
+            *(float *)&m_unk200 = m_unk1C8;
+            *(float *)&m_unk204 = m_unk1CC;
+            *(float *)&m_unk208 = m_unk1D0;
+            CS_ASSERT(0x17F, m_unk1B0 == 0 || m_unk1B0 == 1, "mEVars.m_iType == STINGER_TYPE_NORMAL || mEVars.m_iType == STINGER_TYPE_DEMOLITION");
+        } else {
+            float vec[3];
+            vec[0] = m_unk1B8;
+            vec[1] = m_unk1BC;
+            vec[2] = m_unk1C0;
+            if (m_unk1B0 == 1) {
+                if (Distance__7MathAPIFPA4_fPA4_f(vec, CS_TARGET(mPlayerAPI__13EntityManager)) <= m_unk1C4) {
+                    if (m_unkD4 == 0) {
+                        void *p = __nw__FUi(0x10);
+                        if (p) p = __ct__6ShadowFQ26Shadow10ShadowTypeUi(p, 1, 0x87000007);
+                        m_unkD4 = p;
+                    }
+                    CS_ASSERT(0x18F, m_unkD4 != 0, "mpShadow");
+                    if (m_unkD4 != 0) {
+                        *(unsigned char *)m_unkD4 = 1;
+                        char *sp0 = *(char **)((char *)m_unkD4 + 0xC);
+                        if (sp0 != 0) *(unsigned char *)(sp0 + 0x18) = 1;
+                    }
+                    if (m_unk38 == 0) {
+                        void *p = __nw__FUi(0x120);
+                        if (p) p = __ct__7PhysicsFv(p);
+                        m_unk38 = p;
+                    }
+                    CS_ASSERT(0x194, m_unk38 != 0, "mpPhysics");
+                    SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12, 0);
+                    SetState__15EntityBaseClassFi(this, 2);
+                    return;
+                }
+            }
+            if (Distance__7MathAPIFPA4_fPA4_f(vec, CS_TARGET(mPlayerAPI__13EntityManager)) > m_unk1C4) return;
+            if (m_unkD4 == 0) {
+                void *p = __nw__FUi(0x10);
+                if (p) p = __ct__6ShadowFQ26Shadow10ShadowTypeUi(p, 1, 0x87000007);
+                m_unkD4 = p;
+            }
+            CS_ASSERT(0x1A0, m_unkD4 != 0, "mpShadow");
+            if (m_unkD4 != 0) {
+                *(unsigned char *)m_unkD4 = 1;
+                char *sp1 = *(char **)((char *)m_unkD4 + 0xC);
+                if (sp1 != 0) *(unsigned char *)(sp1 + 0x18) = 1;
+            }
+            if (m_unk38 == 0) {
+                void *p = __nw__FUi(0x120);
+                if (p) p = __ct__7PhysicsFv(p);
+                m_unk38 = p;
+            }
+            CS_ASSERT(0x1A5, m_unk38 != 0, "mpPhysics");
+            SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12, 0);
+            if (m_unk1E0 == 1) {
+                SetState__15EntityBaseClassFi(this, 0);
+            } else if (m_unk1E0 == 2) {
+                SetState__15EntityBaseClassFi(this, 1);
+            } else {
+                SetState__15EntityBaseClassFi(this, 2);
+            }
+            return;
+        }
+        break;
+    case 0:
+        break;
+    case 1:
+        break;
+    case 2:
+        break;
+    case 3:
+        break;
+    case 4:
+        break;
+    case 5:
+        break;
+    case 6:
+        break;
+    case 7:
+        break;
+    case 8:
+        break;
+    case 9:
+        break;
+    case 10:
+        break;
+    case 11:
+        break;
+    case 12:
+        break;
+    case 13:
+        break;
+    case 14:
+        break;
+    case 15:
+        break;
+    case -2:
+        break;
+    default:
+        break;
+    }
 }
 
 // FUNCTION: 0x001E8CF0 __dt__16ClockworkStingerFv
