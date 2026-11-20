@@ -64,6 +64,8 @@ public:
     void HammerSliceMove();
     void HammerSlashMove();
     void SwimMove();
+    enum PlingType { PLING_TYPE_UNUSED = 0 };
+    void SetPling(PlingType arg0, EntityBaseClass *arg1, unsigned int arg2);
     void ResetPling();
     void ResetShield();
     void InitCutScene();
@@ -256,7 +258,7 @@ public:
     int m_unk328;           // 0x328 apparition id passed to GetPtrToApparition by OpenChestMove
     PlingEffect *m_unk32C;  // 0x32C pling effect object, Slot00(1) called by ResetPling
     GunTurret *m_unk330;    // 0x330 gun turret object, Slot58 and SetGunParams called by GunDeckMove
-    char _pad334[0x335 - 0x334];
+    unsigned char m_unk334; // 0x334 set to 1 or 0 by SetPling when a pling effect is created
     signed char m_unk335;   // 0x335 flag, tested by SetPowerupMotion
     char _pad336[0x337 - 0x336];
     signed char m_unk337;   // 0x337 treasure proximity level (1 near, 2 far), set by NotifyTreasure
