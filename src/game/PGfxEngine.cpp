@@ -36,6 +36,10 @@ extern char fx_instance_mesh_init[];
 extern char fx_instance_heathaze_init[];
 extern char fx_instance_particle_init[];
 extern char fx_line_clip_init[];
+extern char fx_heathaze_fan_clip_init[];
+extern char fx_glow_particle_clip_init[];
+extern char fx_fog_particle_clip_init[];
+extern char fx_rot_particle_clip_init[];
 extern char fx_instance_screen_st_mesh_init[];
 extern char noclip_static_instance_cull_mesh_init[];
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
@@ -46,6 +50,7 @@ extern float GAME_FPS;
 extern float gUnitMatrix[16];
 extern char shared_vertices_start[];
 extern "C" void sceVu0CopyVector(float *dst, float *src);
+void ShellSort(bool (*pCmp)(void *, void *), void **pArray, int nCount);
 extern "C" void sceGsSetDefDispEnv(void *, short, short, short, short, short);
 extern unsigned char MODE_PAL;
 extern "C" void DisableIntc(int nLine);
@@ -495,6 +500,16 @@ void PGfxEngine::DrawHeatHaze(struct tagVuParticle *pParticles, int nCount, floa
     m_unk154C80->DrawParticles(pParticles, nCount, fA, fB, bFlag, 0x14);
 }
 
+// FUNCTION: 0x185280 BeginHeatHaze__10PGfxEngineFv
+void PGfxEngine::BeginHeatHaze() {
+    m_unk154C80->BeginFxLoop(((unsigned int)(fx_heathaze_fan_clip_init + 0x1788)) >> 3);
+}
+
+// FUNCTION: 0x1852B0 BeginVertexGlow__10PGfxEngineFv
+void PGfxEngine::BeginVertexGlow() {
+    m_unk154C80->BeginFxLoop(((unsigned int)(fx_glow_particle_clip_init + 0x1390)) >> 3);
+}
+
 // DRAFT: 0x1852D0 SetGlowSizeAndColor__10PGfxEngineFffPf
 // note: frame 0x40 matches with volatile colour copy; the four colour loads are one-at-a-time, original batches loads then stores (struct copy is dropped as dead without volatile).
 void PGfxEngine::SetGlowSizeAndColor(float fA, float fB, float *pColor) {
@@ -509,6 +524,16 @@ void PGfxEngine::SetGlowSizeAndColor(float fA, float fB, float *pColor) {
     aColor[2] = *(unsigned int *)&pColor[2];
     aColor[3] = *(unsigned int *)&pColor[3];
     m_unk154C80->WriteToVu1Mem(0x3C3, (u_long128 *)aData, 2);
+}
+
+// FUNCTION: 0x185370 BeginFogParticles__10PGfxEngineF13eBoxIntersect
+void PGfxEngine::BeginFogParticles(eBoxIntersect eBox) {
+    m_unk154C80->BeginFxLoop(((unsigned int)(fx_fog_particle_clip_init + 0x1030)) >> 3);
+}
+
+// FUNCTION: 0x1853B0 BeginRotatableParticles__10PGfxEngineFv
+void PGfxEngine::BeginRotatableParticles() {
+    m_unk154C80->BeginFxLoop(((unsigned int)(fx_rot_particle_clip_init + 0xBA8)) >> 3);
 }
 
 // FUNCTION: 0x185390 DrawRotatableParticles__10PGfxEngineFP22tagVuRotatableParticleiffb
@@ -731,6 +756,36 @@ void PGfxEngine::RenderBlendedFragment(tagBlendedFragmentInfo *pInfo) {
         pInfo->m_unk0->Render(true, pInfo->m_unkC, 0);
     }
     m_unk154C80->EndMesh();
+}
+
+// DRAFT: 0x186410 RenderBlendedFragments__10PGfxEngineFPf
+// note: 45 words differ; loop 1 loads F1 before m_unk0 (original loads m_unk0 first), a1 setup order differs. Tried: pFrag hoist (102-103 words), +0xC word-index form, nested if.
+void PGfxEngine::RenderBlendedFragments(float *pVec) {
+    sceVu0CopyVector(m_unk16D330, pVec);
+    if (m_unk169310 != 0) {
+        m_unk158F00 = 1;
+        unsigned char nSavedF0 = m_unk158E22;
+        ShellSort((bool (*)(void *, void *))ZCompareFragments, (void **)m_unk158F04, m_unk169310);
+        for (int i = 0; i < m_unk169310; i++) {
+            tagBlendedFragmentInfo *pInfo = (tagBlendedFragmentInfo *)(m_unk159310 + (((int *)m_unk158F04)[i] << 8));
+            if (!pInfo->m_unkF1 && (pInfo->m_unk0->m_unk10 & 8) == 0) {
+                RenderBlendedFragment(pInfo);
+            }
+        }
+        for (int i = 0; i < m_unk169310; i++) {
+            tagBlendedFragmentInfo *pInfo = (tagBlendedFragmentInfo *)(m_unk159310 + (((int *)m_unk158F04)[i] << 8));
+            if (!pInfo->m_unkF1 && (pInfo->m_unk0->m_unk10 & 8) != 0) {
+                RenderBlendedFragment(pInfo);
+            }
+        }
+        if (!m_unk158E25) {
+            ResetBlendedFragmentTable();
+        }
+        m_unk158F00 = 0;
+        m_unk158E20 = false;
+        m_unk158E22 = nSavedF0;
+        SetZBufferUpdate(true, (eGsContext)0);
+    }
 }
 
 // DRAFT: 0x1865F0 AddBlendedFragment__10PGfxEngineFP13PMeshFragmentiPbb

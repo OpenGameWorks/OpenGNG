@@ -52,6 +52,10 @@ public:
     void DrawRotatableParticles(struct tagVuRotatableParticle *pParticles, int nCount, float fA, float fB, bool bFlag);
     void DrawParticles(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag);
     void BeginFxLines();
+    void BeginHeatHaze();
+    void BeginVertexGlow();
+    void BeginFogParticles(eBoxIntersect eBox);
+    void BeginRotatableParticles();
     int RenderParticleSystems(ePSLayer eLayer, PZBufferFog *pFog);
     void RenderBlendedFragments(float *pVec);
     void RenderBlendedFragment(tagBlendedFragmentInfo *pInfo);
