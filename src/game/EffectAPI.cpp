@@ -257,7 +257,7 @@ EffectNode *EffectAPI::FindPling(EntityBaseClass *arg0) {
 }
 
 // DRAFT: 0x155D70 __ct__11PlingEffectFP15EntityBaseClassPA4_fUiUib
-// note: 2 differing words: mtc1 zero goes to f0 (original f1), and the m_unk20[0] lwc1 goes to f1 (original f0), so c.eq.s operands are swapped. Tried: 0.0f!=x, !(x==0), float local (all still 2 words).
+// note: 2 differing words: mtc1 zero goes to f0 (original f1), and the m_unk20[0] lwc1 goes to f1 (original f0), so c.eq.s operands are swapped. Tried: 0.0f!=x, !(x==0), 0.0f==x form, int 0 compare, float local, ptr local, zero local (3 words), bool intermediate, x>0||x<0 (19 lines); all others 2 words.
 PlingEffect::PlingEffect(EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4) {
     m_unkC = arg4;
     m_unk10 = arg0;
@@ -476,25 +476,23 @@ OneshotEffect::OneshotEffect(unsigned int arg0, unsigned int arg1, PMat4 *arg2, 
 }
 
 // DRAFT: 0x00156490 Update__13OneshotEffectFf
-// note: 3 differing lines: visibility constant uses addiu (original daddiu) in the delay slot at 0x2C, and the box/matrix args are computed in the opposite order (original a2 first). Tried: pMat local, pBox and pMat locals, pSlot base for the float store.
+// note: 2 differing lines: the box/matrix args are computed in the opposite order (original a2 first at 0xC0, a1 at 0xC8). Bool visibility fixed the daddiu at 0x2C. Tried: pMat local, pBox and pMat locals, pSlot base, char *pBase, int nBase, inline m_unk4+0x110/0x40 (all 2 lines).
 int OneshotEffect::Update(float arg0) {
-    int nVisible;
+    bool bVisible;
     if (m_unk4 != 0) {
-        nVisible = 1;
+        bVisible = true;
         if (m_unk18 != 0) {
             void *pApp = ((EntityManager *)(gEng + 0x137E0))->GetPtrToApparition(m_unk18);
             if (pApp != 0 && ((unsigned char *)pApp)[0x167] == 0) {
-                nVisible = 0;
+                bVisible = false;
             }
         }
-        if (nVisible == 0 || (((EffectUpdateNode *)m_unk4)->Slot4(m_unk10, 8, 0, 0.0f, arg0) & 7) != 0) {
+        if (!bVisible ||(((EffectUpdateNode *)m_unk4)->Slot4(m_unk10, 8, 0, 0.0f, arg0) & 7) != 0) {
             if (m_unk1C != 0) {
                 float *pSlot = (float *)(m_unk4 + 0x90);
                 pSlot[1] = Round180(180.0f + *(float *)(gEng + 0x19784));
             }
-            PMat4 *pMat = (PMat4 *)(m_unk4 + 0x40);
-            float (*pBox)[2][4] = (float (*)[2][4])(m_unk4 + 0x110);
-            int test = mpFrustum__15EntityBaseClass->IntersectBox(pBox, pMat);
+            int test = mpFrustum__15EntityBaseClass->IntersectBox((float (*)[2][4])(m_unk4 + 0x110), (PMat4 *)(m_unk4 + 0x40));
             ((PMNode *)m_unk4)->SetAllFrustrumTest((eBoxIntersect)test);
             return 1;
         }
