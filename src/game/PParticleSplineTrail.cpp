@@ -29,6 +29,9 @@ extern "C" void SetBlurHazeSourcePoint__10PGfxEngineFPff(void *, float *, float)
 extern "C" void SetMaterial__10PGfxEngineFPfbUlUl(void *, float *, bool, unsigned long, unsigned long);
 extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *, int, float *, bool, unsigned long, unsigned long);
 extern "C" void SetWorldMatrix__10PGfxEngineFP5PMat4(void *, void *);
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
+extern "C" float sqrtf(float);
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PParticleSplineTrail.cpp", line, #cond))
 
 // DRAFT: 0x001F0E20 Start__20PParticleSplineTrailFv
 // note: 8 words differ; the loop matches except the offset and constant registers swap (orig offset a3, const a1). Declaration order variants did not change it.
@@ -195,6 +198,62 @@ void PParticleSplineTrail::Animate(float fDelta) {
             UpdateTrailKeys();
         }
     }
+}
+
+// DRAFT: 0x001F17F0 Create__20PParticleSplineTrailFP28tagParticleSplineTrailParamsfff
+// note: DIFF 133 words; clamp of m_unk110/114 uses wrong branch shape and register (v0 vs v1), m_unk128 divide operand order, and every later word is shifted. Tried: lower-first, upper-first, else-if, ternary clamps.
+int PParticleSplineTrail::Create(struct tagParticleSplineTrailParams *pParams, float fA, float fB, float fC) {
+    CDS_ASSERT(27, pParams);
+    memcpy((char *)this + 0xE0, pParams, 0x60);
+    int n110 = m_unk110;
+    if (n110 < 5) {
+        n110 = 4;
+    } else if (n110 >= 0x1C) {
+        n110 = 0x1C;
+    }
+    m_unk110 = n110;
+    int n114 = m_unk114;
+    if (n114 < 5) {
+        n114 = 4;
+    } else if (n114 >= 0x3C) {
+        n114 = 0x3C;
+    }
+    m_unk114 = n114;
+    if (m_unk128 <= 0.0f) {
+        m_unk128 = 0.1428571f;
+    }
+    m_unk128 = 1.0f / m_unk128;
+    m_unkE0[0] += fA;
+    m_unkE0[1] += fB;
+    m_unkE0[2] += fC;
+    m_unkE0[3] = 1.0f;
+    sceVu0CopyVector(m_unk150, m_unkE0);
+    if (PParticleSystem::Create(m_unk110, true) == 0) {
+        return 0;
+    }
+    m_unk0C = 0xD;
+    m_unk140 = 0;
+    m_unk160 = 1.0f;
+    for (unsigned int i = 0; i < m_unk04; i++) {
+        float *p = (float *)((char *)m_unk08 + i * 0x20);
+        p[0] = -1000000.0f;
+        p[1] = -1000000.0f;
+        p[2] = -1000000.0f;
+    }
+    if (m_unk118 <= m_unk11C) {
+        m_unkA0 = m_unk118;
+    } else {
+        m_unkA0 = m_unk11C;
+    }
+    m_unk80 = m_unk150[0];
+    m_unk84 = m_unk150[1];
+    m_unk88 = m_unk150[2];
+    m_unk8C = 0x3F800000;
+    m_unk90 = m_unkA0;
+    m_unk94 = m_unkA0;
+    m_unk98 = m_unkA0;
+    m_unk9C = sqrtf(m_unk90 * m_unk90 + m_unk94 * m_unk94 + m_unk98 * m_unk98);
+    return 1;
 }
 
 // FUNCTION: 0x001F1A70 __dt__20PParticleSplineTrailFv
