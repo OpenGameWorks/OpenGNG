@@ -9,7 +9,9 @@ Relocations are resolved against the symbol addresses of the unit layout,
 which equal config/symbols.tsv because every unit keeps its original size.
 A relocation to an MW literal (`@N`) or a file-local static resolves to the
 target the original names at that offset, and only after the object's
-literal bytes are checked equal to the original's. An undefined extern whose
+literal bytes are checked equal to the original's; words the object relocates
+(jump tables, pointer tables) are compared after relocation, and a local the
+original keeps in .bss must be zero in the object. An undefined extern whose
 name equals the original's local target at that offset resolves to that target.
 
 Usage: link.py OUT.bin [OBJ:SRC ...]
@@ -63,6 +65,7 @@ class Obj:
         if fn is None:
             return None
         shi, start, size = fn["st_shndx"], fn["st_value"], fn["st_size"]
+        self.fn = fn
         code = bytearray(self.f.get_section(shi).data()[start:start + size])
         rels = []
         for rs in self.f.iter_sections():
@@ -80,6 +83,54 @@ class Obj:
             return bytes(sym["st_size"])
         return sec.data()[sym["st_value"]:sym["st_value"] + sym["st_size"]]
 
+    def data_relocs(self, sym):
+        """Relocations inside a data symbol: (offset in symbol, type, target symbol)."""
+        shi, start, size = sym["st_shndx"], sym["st_value"], sym["st_size"]
+        out = []
+        for rs in self.f.iter_sections():
+            if isinstance(rs, RelocationSection) and rs["sh_info"] == shi:
+                for r in rs.iter_relocations():
+                    if start <= r["r_offset"] < start + size:
+                        out.append((r["r_offset"] - start, r["r_info_type"], self.syms[r["r_info_sym"]]))
+        return out
+
+
+def local_matches(obj: Obj, sym, oaddr: int, osize: int, addr: int, glob, byindex, orel, image: bytes) -> bool:
+    """A file-local data symbol equals the original's: same size and bytes, relocated words included."""
+    if sym["st_size"] and sym["st_size"] != osize:
+        return False
+    mine = obj.symbol_bytes(sym)
+    if mine is None:
+        return False
+    if not BASE <= oaddr < BASE + len(image):
+        # The original keeps it in .bss, past the loaded image: zero-initialised.
+        return not any(mine)
+    theirs = image[oaddr - BASE:oaddr - BASE + osize]
+    if len(mine) != len(theirs):
+        return False
+    mine = bytearray(mine)
+    fn = obj.fn
+    for off, typ, tsym in obj.data_relocs(sym):
+        o = orel.get(oaddr + off)
+        if typ != 2 or o is None or o[0] != 2:
+            return False
+        w = struct.unpack_from("<I", mine, off)[0]
+        if tsym["st_info"]["type"] == "STT_SECTION" or tsym.name == fn.name:
+            # A jump table into the function being placed: the addend is an offset in it.
+            base = fn["st_value"] if tsym.name == fn.name else 0
+            rel = w + base - fn["st_value"]
+            if tsym["st_shndx"] != fn["st_shndx"] or not 0 <= rel < fn["st_size"]:
+                return False
+            v = addr + rel
+        elif tsym.name in glob:
+            v = glob[tsym.name] + w
+        elif tsym.name == byindex[o[1]][2]:
+            v = byindex[o[1]][0] + w
+        else:
+            return False
+        struct.pack_into("<I", mine, off, v & 0xFFFFFFFF)
+    return bytes(mine) == theirs
+
 
 def resolve(obj: Obj, code: bytearray, rels, addr: int, glob, byindex, orel, image: bytes) -> str | None:
     """Patch code in place; return an error string when a target cannot be proven."""
@@ -93,9 +144,7 @@ def resolve(obj: Obj, code: bytearray, rels, addr: int, glob, byindex, orel, ima
         if sym["st_info"]["type"] == "STT_SECTION":
             return f"section-relative reloc at +{off:#x}"
         if local:
-            mine = obj.symbol_bytes(sym)
-            theirs = image[oaddr - BASE:oaddr - BASE + osize] if BASE <= oaddr < BASE + len(image) else None
-            if mine is None or theirs is None or mine != theirs or (sym["st_size"] and sym["st_size"] != osize):
+            if not local_matches(obj, sym, oaddr, osize, addr, glob, byindex, orel, image):
                 return f"local {sym.name} differs from original {oname}"
             s = oaddr
         elif sym.name in glob:
