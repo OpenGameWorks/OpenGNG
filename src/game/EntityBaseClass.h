@@ -6,6 +6,7 @@
 class AnimData;
 class Physics;
 class PMNode;
+class PParticleSystem;
 class PZinDamageFx;
 class TriggerSystemWakeKillRec;
 
@@ -51,6 +52,8 @@ public:
     void FreezeCheck(EntityBaseClass *arg0, int arg1);
     void SetShadowVolume(float arg0);
     void SetFreeze(float arg0);
+    int PlaySound(unsigned int arg0);
+    int PlaySoundOnFrame(unsigned int arg0, unsigned int arg1);
     void CreateHitMarkFx(float (*arg0)[4], eHitObjectType arg1, eHitWeaponType arg2, bool arg3);
     void OnInnocentAttack(EntityBaseClass *arg0, int arg1);
     PZinDamageFx *CreateDamageFx(float arg0, unsigned int arg1);
@@ -59,12 +62,14 @@ public:
     void CreateFireDamageFx(float arg0);
     void InitLoadSystem();
     void RestoreOnWake();
+    int WantsToWake();
     void FadeMesh(short arg0, short arg1, unsigned int arg2);
     int SkeletonCollision(PMNode *arg0, EntityBaseClass *arg1);
     int MeshNodeCollision(PMNode *arg0, float (*arg1)[2][4], float (&arg2)[4][4], unsigned char arg3);
     int PlaySequence(unsigned int *arg0);
     void ModifyLoadClass(LoadClass arg0);
     void LoadMesh(unsigned int arg0, bool arg1, bool arg2);
+    int LoadAnim(unsigned int arg0, bool arg1);
     void ResumeAmbientSoundsByObject();
     void StopSoundBySoundRef(unsigned int arg0);
     void ProcessSequence();
@@ -78,7 +83,8 @@ public:
     int m_unk14;                // 0x014
     unsigned char m_unk18;      // 0x018
     unsigned char m_unk19;      // 0x019 active-load flag
-    char _pad01A[0x5];          // 0x01A..0x01E
+    unsigned char m_unk1A;      // 0x01A
+    char _pad01B[0x4];          // 0x01B..0x01E
     unsigned char m_unk1F;      // 0x01F restore-on-wake flag
     int m_unk20;                // 0x020
     int m_unk24;                // 0x024 set to -2 on wake
@@ -98,20 +104,25 @@ public:
     float m_unkE0;              // 0x0E0 shadow volume scale
     char _padE4[0x4];           // 0x0E4..0x0E7
     signed char m_unkE8;        // 0x0E8
-    char _pad0E9[0x7];          // 0x0E9..0x0EF
+    char _pad0E9[0x2];          // 0x0E9..0x0EA
+    unsigned char m_unkEB;      // 0x0EB freeze enabled flag
+    float m_unkEC;              // 0x0EC freeze value
     float m_unkF0;              // 0x0F0
-    int m_unkF4;                // 0x0F4 freeze timer
-    char _pad0F8[0xA];          // 0x0F8..0x101
+    PParticleSystem *m_unkF4;   // 0x0F4 frozen particle system
+    float m_unkF8;              // 0x0F8 frozen fx x
+    float m_unkFC;              // 0x0FC frozen fx y
+    char _pad100[0x2];          // 0x100..0x101
     unsigned char m_unk102;     // 0x102 physics anim list flag
     char _pad103[0xD];          // 0x103..0x10F
     int m_unk110[10];           // 0x110..0x137
-    char _pad138[0x4];          // 0x138..0x13B
+    int m_unk138;               // 0x138 last frame value for PlaySoundOnFrame
     int m_unk13C;               // 0x13C current sequence
     int m_unk140;               // 0x140 previous sequence
     int m_unk144;               // 0x144
     int m_unk148;               // 0x148
     int m_unk14C;               // 0x14C
-    char _pad150[0x8];          // 0x150..0x157
+    char _pad150[0x4];          // 0x150..0x153
+    int m_unk154;               // 0x154 animation argument
     int m_unk158;               // 0x158 sound reference
     char _pad15C[0x2];          // 0x15C..0x15D
     unsigned short m_unk15E;    // 0x15E flag halfword

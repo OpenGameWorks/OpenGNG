@@ -7,6 +7,7 @@
 class PSound {
 public:
     int PlayMusic(unsigned int arg0);
+    void ResumeAmbientSoundsByOriginatorRef(unsigned int arg0, unsigned int arg1);
     char _pad000[0x10];
 };
 extern PSound gSound;
@@ -31,6 +32,7 @@ public:
     void Add(PParticleSystem *pSystem);
     void CreateSulphurReaction(float *arg0, float arg1);
     void CreateFireDamageFx(PMNode *arg0, unsigned int arg1);
+    PParticleSystem *CreateFrozenFx(PMNode *arg0, float arg1, float arg2);
     int IsValid(PParticleSystem *pSystem);
 };
 extern char gGfxEng[1504384];
@@ -89,6 +91,7 @@ public:
     virtual void VirtSlot3();
     virtual void VirtSlot4();
     virtual void VirtSlot5(AnimData *arg0);
+    virtual int VirtSlot6(void *arg0);
     PMNode *FindAnimNode(unsigned int arg0);
     void EnableOneRenderPassOnly(int arg0);
     void DestroyFxTriggersBySpawnFrame(float arg0, bool arg1);
@@ -127,11 +130,12 @@ public:
 };
 extern PResourceManager *mpResMgr__15EntityBaseClass;
 
-// EntityAttackManager size is unknown; only the pointer global and the RequestAttack call are needed.
+// EntityAttackManager size is unknown; the pointer global, the RequestAttack call and the m_unk505C pointer are needed.
 class EntityAttackManager {
 public:
     void RequestAttack(EntityBaseClass *arg0, float arg1, unsigned int arg2, EntityBaseClass *arg3);
-    char _pad000[0x10];
+    char _pad000[0x505C];
+    EntityBaseClass *m_unk505C;
 };
 extern EntityAttackManager *mpEntMgr__15EntityBaseClass;
 
@@ -156,6 +160,11 @@ public:
 extern "C" void sceVu0ScaleVector(float *pDst);
 extern "C" void sceVu0AddVector(float *pDst, float *pSrc0, float *pSrc1);
 extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
+extern "C" float sceVu0InnerProduct(float *a, float *b);
+extern "C" unsigned char PlayingCutCamera__6CameraFv(void *pCam);
+extern "C" void GetForwardVector__6CameraFRA4_f(void *pCam, float *pOut);
+extern float mfSleepDistance__15EntityBaseClass;
+extern float BEHIND_WAKE;
 extern "C" float atan2f(float y, float x);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" int sprintf(char *, const char *, ...);
@@ -278,6 +287,56 @@ PZinDamageFx *EntityBaseClass::CreateDamageFx(float arg0, unsigned int arg1) {
     return pFx;
 }
 
+// DRAFT: 0x0014AF60 PlaySoundOnFrame__15EntityBaseClassFUiUi
+// note: 55 words differ: float value/constant register (orig value f1, const f0), c.le.s operand order and branch sense, subtract-path regs, missing dsll32/dsra32 flag pair, addiu vs daddiu for inRange=1; tried f>=2^31 first (67), g-before-f with f<2^31 (55), (signed char) flag cast (56).
+int EntityBaseClass::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
+    int ret;
+    int inRange;
+    int frame;
+    float g;
+    float f;
+    char *p;
+
+    inRange = 0;
+    p = m_unk3C;
+    ret = 0;
+    if (p != 0) {
+        f = *(float *)(p + 0x34);
+        if (f < 2147483648.0f) {
+            frame = (int)f;
+        } else {
+            frame = (int)(f - 2147483648.0f) | 0x80000000;
+        }
+        if (frame != m_unk138) {
+            m_unk138 = 0xF423F;
+            if (frame == (int)arg1) {
+                inRange = 1;
+            } else {
+                p = m_unk3C;
+                g = *(float *)(p + 0x38);
+                if (*(signed char *)(p + 0x3F) & 4) {
+                    g = -1000000.0f;
+                }
+                if (arg1 < (unsigned int)frame) {
+                    if ((int)arg1 >= 0) {
+                        f = (float)(int)arg1;
+                    } else {
+                        f = 2.0f * (float)((arg1 >> 1) | (arg1 & 1));
+                    }
+                    if (g < f) {
+                        inRange = 1;
+                    }
+                }
+            }
+            if (inRange) {
+                m_unk138 = frame;
+                ret = PlaySound(arg0);
+            }
+        }
+    }
+    return ret;
+}
+
 // FUNCTION: 0x0014B080 FlashTexture__15EntityBaseClassFUii
 void EntityBaseClass::FlashTexture(unsigned int arg0, int arg1) {
     if (arg0 == 0) {
@@ -392,6 +451,42 @@ void EntityBaseClass::RestoreOnWake() {
     ((EntityBaseClassVirtuals *)this)->OnWakeEvent();
 }
 
+// DRAFT: 0x0014B490 WantsToWake__15EntityBaseClassFv
+// note: 64 words; original shares one epilogue (v0=0 on the early path) and keeps the this+0x190 pointer uncached; the mula.s/madd.s dot product is not expressible in C++. Tried: if/else result variable (73), early return (64, kept)
+int EntityBaseClass::WantsToWake() {
+    float sp50[4];
+    float sp60[4];
+    float sp70[4];
+    float f20;
+    float range;
+    char *cam;
+    char *objPos;
+    EntityBaseClass *obj;
+
+    if (this->m_unk1A == 0) {
+        return 0;
+    }
+    obj = mpEntMgr__15EntityBaseClass->m_unk505C;
+    objPos = obj->m_unk3C ? obj->m_unk3C + 0x80 : (char *)obj + 0x190;
+    cam = (char *)&gEng + 0x19760;
+    if (PlayingCutCamera__6CameraFv(cam)) {
+        sceVu0SubVector(sp50, (float *)cam,
+                        (float *)(this->m_unk3C ? this->m_unk3C + 0x80 : (char *)this + 0x190));
+    } else {
+        sceVu0SubVector(sp50, (float *)objPos,
+                        (float *)(this->m_unk3C ? this->m_unk3C + 0x80 : (char *)this + 0x190));
+    }
+    f20 = sceVu0InnerProduct(sp50, sp50);
+    GetForwardVector__6CameraFRA4_f(cam, sp70);
+    sceVu0SubVector(sp60, (float *)(this->m_unk3C ? this->m_unk3C + 0x80 : (char *)this + 0x190),
+                    (float *)cam);
+    range = mfSleepDistance__15EntityBaseClass;
+    if (sp70[0] * sp60[0] + sp70[2] * sp60[2] < 0.0f) {
+        range = BEHIND_WAKE;
+    }
+    return f20 < range ? 1 : 0;
+}
+
 // FUNCTION: 0x0014B880 UpdateSulphurFx__15EntityBaseClassFf
 void EntityBaseClass::UpdateSulphurFx(float arg0) {
     float pos[4];
@@ -463,6 +558,11 @@ void EntityBaseClass::FadeMesh(short arg0, short arg1, unsigned int arg2) {
 // FUNCTION: 0x0014C160 MusicChangePrimary__15EntityBaseClassFUiUi
 int EntityBaseClass::MusicChangePrimary(unsigned int arg0, unsigned int arg1) {
     return gSound.PlayMusic(arg0) & 0xFF;
+}
+
+// FUNCTION: 0x0014C1B0 ResumeAmbientSoundsByObject__15EntityBaseClassFv
+void EntityBaseClass::ResumeAmbientSoundsByObject() {
+    gSound.ResumeAmbientSoundsByOriginatorRef(m_unk04, 0x10U);
 }
 
 // DRAFT: 0x0014C620 FaceHitDirection__15EntityBaseClassFP15EntityBaseClass
@@ -842,6 +942,33 @@ void EntityBaseClass::FreezeCheck(EntityBaseClass *arg0, int arg1) {
     }
 }
 
+// DRAFT: 0x0014E370 SetFreeze__15EntityBaseClassFf
+// note: 27 words differ: c.eq.s operands (orig f20,f0), first-branch b/bnez targets, shared store tail (orig duplicates swc1 in delay slot); tried operand swap, fx!=0 re-test (30), early return (38).
+void EntityBaseClass::SetFreeze(float arg0) {
+    if (arg0 > 0.0f) {
+        if (m_unkEB != 0) {
+            if (m_unkF4 == 0) {
+                m_unkF4 = ((PParticleManager *)(gGfxEng + 0x154F00))->CreateFrozenFx((PMNode *)m_unk3C, m_unkF8, m_unkFC);
+                PlaySound(0x13F);
+            }
+            m_unkEC = arg0;
+        }
+    } else {
+        PParticleSystem *fx = m_unkF4;
+        if (fx != 0) {
+            if (arg0 == 0.0f && m_unkEC > 170.0f) {
+                return;
+            }
+            if (((PParticleManager *)(gGfxEng + 0x154F00))->IsValid(fx)) {
+                fx->FadeAndDie(0);
+            }
+            PlaySound(0x13B);
+            m_unkF4 = 0;
+        }
+        m_unkEC = arg0;
+    }
+}
+
 // DRAFT: 0x0014E480 CreateFireDamageFx__15EntityBaseClassFf
 // note: 25000.0f compiles as int-to-float (addiu/cvt.s.w) not lui/ori/mtc1; c.eq.s operands stay f0,f20; a1/a2 load order differs. Tried: operand swap, both compare forms.
 void EntityBaseClass::CreateFireDamageFx(float arg0) {
@@ -860,6 +987,42 @@ void EntityBaseClass::SetAnimData(AnimData *arg0) {
     if (this->m_unk3C != 0) {
         ((PMNode *)this->m_unk3C)->VirtSlot5(arg0);
     }
+}
+
+// DRAFT: 0x0014E930 LoadAnim__15EntityBaseClassFUib
+// note: DIFF 48 words; register allocation differs (original this=s1, arg0=s0, res=s2; ours this=s2, arg0=s1, res=s0) and the prologue save order differs. Tried: pm local for the copy block, if/else with == 5 first (out-of-line printf), res declared at top, buf scoped in the null block; all 48.
+int EntityBaseClass::LoadAnim(unsigned int arg0, bool arg1) {
+    char *res;
+    if (this->m_unk3C == 0) {
+        char buf[0x100];
+
+        if (!arg1) {
+            return 0;
+        }
+        sprintf(buf, "( %s ) Called load anim ( id = %d ) without loading mesh", ((EntityBaseClassVirtuals *)this)->GetName(), arg0 & 0xFFFF);
+        CdsAssert__FPciPc("EntityBaseClass.cpp", 0x1A0, buf);
+    }
+    this->m_unk138 = 0xF423F;
+    res = (char *)mpResMgr__15EntityBaseClass->GetResource(arg0, false);
+    if (res == 0) {
+        printf("No resource %d for Entity %d\n", arg0, this->m_unk08);
+        return 0;
+    }
+    if (*(int *)(res + 4) == 5) {
+        if (((PMNode *)this->m_unk3C)->VirtSlot6(res) == 0) {
+            return 0;
+        }
+        char *pm = this->m_unk3C;
+        if (*(int *)(pm + 4) == 1) {
+            *(u_long128 *)(pm + 0x110) = *(u_long128 *)(res + 0x10);
+            *(u_long128 *)(pm + 0x120) = *(u_long128 *)(res + 0x20);
+        }
+    } else {
+        printf("%d isn't animation\n", arg0);
+        return 0;
+    }
+    this->m_unk154 = arg0;
+    return 1;
 }
 
 // FUNCTION: 0x0014EDE0 SetState__15EntityBaseClassFi
