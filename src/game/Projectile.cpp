@@ -1,7 +1,27 @@
+// FLAGS: -str readonly
 #include "Projectile.h"
 #include "types.h"
 
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Projectile.cpp", line, #cond))
+// The original names some tested members differently from the header; the message is given explicitly.
+#define CDS_ASSERT_NAMED(line, name, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Projectile.cpp", line, name))
+
 // TODO(header): foreign declarations
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
+extern "C" void LoadAnim__15EntityBaseClassFUib(void *pThis, unsigned int nAnim, bool bLoop);
+extern "C" void SetAnimData__15EntityBaseClassFP8AnimData(void *pThis, void *pData);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__7PhysicsFv(void *pThis);
+extern "C" void *__ct__6ShadowFQ26Shadow10ShadowTypeUi(void *pThis, int nType, unsigned int nFlags);
+extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *pThis, unsigned int nType, float (*pA)[4]);
+extern "C" void SetVelocity__7PhysicsFff(void *pThis, float fA, float fB);
+extern "C" void *GetFirstMesh__6PMNodeFv(void *pThis);
+extern "C" void *Spawn__13EntityManagerFUibi(void *pThis, unsigned int nId, int nA, bool bB);
+extern "C" void ShakeScreenUsingTable__9CameraAPIFiUi(void *pThis, int nA, unsigned int nB);
+extern "C" void DisableAllHitBox__6PMNodeFv(void *pThis);
+extern int mbHard__15EntityBaseClass;
+extern void *mCameraAPI__13EntityManager;
+extern unsigned char Anim[0x10];
 extern unsigned char __vt__10Projectile[];
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
@@ -10,7 +30,6 @@ extern "C" void LoadMesh__15EntityBaseClassFUibb(void *pThis, unsigned int nMesh
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern "C" void ProcessFxTriggers__6PMNodeFfP5PMat4bb(void *pThis, float fTime, void *pMat, bool bA, bool bB);
 extern "C" void __dl__FPv(void *pMem);
-extern "C" int InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(void *pThis, int nType, float (*pA)[4], float (*pB)[4], float (*pC)[4]);
 extern "C" float sinf(float fX);
 extern "C" float cosf(float fX);
 extern float IceDoomPos[5][4];
@@ -159,10 +178,122 @@ void Projectile::InitIceDoom(int nIndex, float (*pOut)[4], float (*pIn)[4]) {
     vec[0] = pOut[0][0] + (pRow[0][2] * fSin + pRow[0][0] * fCos);
     vec[1] = pOut[0][1];
     vec[2] = pOut[0][2] + (pRow[0][2] * fCos - pRow[0][0] * fSin);
-    InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(this, 0x19, (float (*)[4])vec, pIn, 0);
+    InitProjectile((ProjectileType)0x19, (float (*)[4])vec, pIn, 0);
     *(u_long128 *)&m_unk1D0 = *(u_long128 *)pOut;
     *(u_long128 *)&m_unk1C0 = *(u_long128 *)pIn;
     m_unk1B4 = 15.0f;
+}
+
+// DRAFT: 0x00167CD0 InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f
+// note: switch dispatch is emitted as an ascending chain; original is beq 8,4,1E,7,6,1D,5,1C,3,2 with shared bodies; 246 words differ.
+void Projectile::InitProjectile(ProjectileType nType, float (*pA)[4], float (*pB)[4], float (*pC)[4]) {
+    static float ProjectileBox[2][4] = {{0.0f, 0.0f, 0.0f, 1.0f}, {0.75f, 0.5f, 0.75f, 1.0f}};
+    CDS_ASSERT_NAMED(0x89, "eType < MaxProjectile", nType < PROJECTILE_TYPE_COUNT);
+    m_unk1B0 = nType;
+    ProjectileRecord *pRec = &ProjectileTable[nType];
+    unsigned short nDamage = pRec->m_unk18;
+    switch (nType) {
+    case 8:
+        m_unk10C &= 0xF8FFFFFF;
+        *(unsigned char *)&m_unk1B8 = 0;
+        m_unkE8 = 0xB;
+        if (m_unkD4 == 0) {
+            void *pShadow = __nw__FUi(0x10);
+            if (pShadow != 0) {
+                pShadow = __ct__6ShadowFQ26Shadow10ShadowTypeUi(pShadow, 1, 0x87000008);
+            }
+            m_unkD4 = (Shadow *)pShadow;
+            CDS_ASSERT_NAMED(0xB3, "mpShadow", m_unkD4 != 0);
+        }
+        break;
+    case 4:
+    case 0x1E:
+        m_unk10C |= 0x02001100;
+        *(unsigned char *)&m_unk1B8 = 0;
+        m_unkE8 = 0xB;
+        break;
+    case 7:
+    case 6:
+    case 0x1D:
+    case 5:
+    case 0x1C:
+    case 3:
+    case 2:
+        m_unk10C |= 0x021B1902;
+        *(unsigned char *)&m_unk1B8 = 0;
+        m_unkE8 = 0xB;
+        break;
+    default:
+        m_unk10C = 0x02001A01;
+        *(unsigned char *)&m_unk1B8 = 1;
+        m_unkE8 = 3;
+        if (nDamage != 0 && mbHard__15EntityBaseClass == 0) {
+            nDamage = (unsigned short)(nDamage + 0x19);
+        }
+        break;
+    }
+
+    m_unk1B4 = pRec->m_unk10;
+    *(u_long128 *)&m_unk1D0 = *(u_long128 *)pA;
+    *(u_long128 *)&m_unk190 = *(u_long128 *)pA;
+    *(u_long128 *)&m_unk1A0 = *(u_long128 *)pB;
+    LoadMesh__15EntityBaseClassFUibb(this, pRec->m_unk0, false, true);
+    if (pRec->m_unk4 != 0) {
+        LoadAnim__15EntityBaseClassFUib(this, pRec->m_unk4, true);
+    }
+    *(short *)(Anim + 8) = (pRec->m_unk10 == 0.0f) ? 1 : 0;
+    *(float *)(Anim + 0xC) = pRec->m_unk1C;
+    SetAnimData__15EntityBaseClassFP8AnimData(this, Anim);
+    m_unk15C = nDamage;
+    m_unk15E = pRec->m_unk1A;
+
+    if (nType < 9) {
+        void *pPhys = __nw__FUi(0x120);
+        if (pPhys != 0) {
+            pPhys = __ct__7PhysicsFv(pPhys);
+        }
+        m_unk38 = (Physics *)pPhys;
+        CDS_ASSERT_NAMED(0xDE, "mpPhysics", m_unk38 != 0);
+        if (nType != 8) {
+            SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x14, 0);
+            *(int *)((char *)m_unk38 + 0xEC) = 0x58;
+        }
+        if (pC != 0) {
+            *(u_long128 *)m_unk38 = *(u_long128 *)pC;
+        } else {
+            SetVelocity__7PhysicsFff(m_unk38, pB[0][1], pRec->m_unk14);
+        }
+        *((unsigned char *)GetFirstMesh__6PMNodeFv(m_unk3C) + 0xE) = 0xA0;
+        *(u_long128 *)((char *)m_unk38 + 0x80) = *(u_long128 *)ProjectileBox[0];
+        *(u_long128 *)((char *)m_unk38 + 0x90) = *(u_long128 *)ProjectileBox[1];
+    } else if (nType == 0x1C) {
+        void *pPhys = __nw__FUi(0x120);
+        if (pPhys != 0) {
+            pPhys = __ct__7PhysicsFv(pPhys);
+        }
+        m_unk38 = (Physics *)pPhys;
+        CDS_ASSERT_NAMED(0xF8, "mpPhysics", m_unk38 != 0);
+        SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x14, 0);
+        *(int *)((char *)m_unk38 + 0xEC) = 0x00100080;
+    } else {
+        if (nType == 0x18) {
+            void *pSpawn = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x2D, 0, false);
+            CDS_ASSERT_NAMED(0xFF, "pIce", pSpawn != 0);
+            ((Projectile *)pSpawn)->InitIceDoom(0, pA, pB);
+        }
+        ShakeScreenUsingTable__9CameraAPIFiUi(&mCameraAPI__13EntityManager, 0, 0);
+        DisableAllHitBox__6PMNodeFv(m_unk3C);
+    }
+
+    if (pRec->m_unk8 != 0) {
+        PlaySound__15EntityBaseClassFUi(this, pRec->m_unk8);
+    }
+    if (pRec->m_unkC != 0) {
+        PlaySound__15EntityBaseClassFUi(this, pRec->m_unkC);
+    }
+    if (pRec->m_unk20 != 0) {
+        SetState__15EntityBaseClassFi(this, pRec->m_unk20);
+    }
 }
 
 // FUNCTION: 0x00168140 __ct__10ProjectileFv
