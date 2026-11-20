@@ -8,7 +8,8 @@
 // TODO(header): foreign declarations
 class PShader {
 public:
-    char _pad000[0x8];
+    void *m_unk0;
+    char _pad004[0x4];
     unsigned int m_unk8;    // 0x008 texture count
     int m_unkC;             // 0x00C
     char _pad010[0x10];
@@ -66,6 +67,10 @@ public:
 
 void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
+extern "C" void UploadTextures__15PTextureManagerFPiiP12PDisplayList(void *pThis, int *pTextures, int nCount, void *pDisplayList);
+extern "C" void *GetTexEnv__15PTextureManagerFi(void *pThis, int nHandle);
+extern "C" void AddVifDmaPacket__12PDisplayListFP1i(void *pThis, void *pPacket, int nNumQW);
+extern "C" void SetVu1Microcode__12PDisplayListFPv(void *pThis, void *pData);
 extern MemoryManager MemMgr;
 extern PGfxEngine gGfxEng;
 extern PDynamicBuffer gPDynamicBuffer;
@@ -614,6 +619,157 @@ int PObjectDisplayList::RenderBlendedFragments(eBoxIntersect eBox) {
             nTotal += pMesh->Render(0x80, (bool *)m_unk1E0, true);
             (*(PDisplayList **)0x45B300)->EndMesh();
         }
+    }
+    return nTotal;
+}
+
+// DRAFT: 0x001D4ED0 Render__18PObjectDisplayListF13eBoxIntersect
+// note: 318 words best; frame 0xE0 vs 0xC0, shared epilogue vs split returns, cache store placement (inside-if 334, outside 318), pass copy scheduling not compared
+int PObjectDisplayList::Render(eBoxIntersect eBox) {
+    int nTotal;
+    void *pTexEnv;
+    void *pMicro;
+    unsigned int nOffset;
+    int nBones;
+    int fp;
+    int s4;
+    int i;
+    PShader *pShader;
+    char *pRec;
+    char *pSrc;
+    char *pElem;
+    char *pInfo;
+    char *pNode;
+    char *pDst;
+    int nIdx;
+
+    nTotal = m_unk1C;
+    pTexEnv = 0;
+    if (m_unk1E5 == 0) {
+        return 0;
+    }
+    nOffset = 0;
+    pMicro = gGfxEng.ComputeMicrocodeOffset(eBox, nOffset);
+    if (pMicro != gGfxEng.m_unk158E1C) {
+        SetVu1Microcode__12PDisplayListFPv(gGfxEng.m_unk154C80, pMicro);
+    }
+    gGfxEng.m_unk158E1C = pMicro;
+    if (gGfxEng.m_unk16D408 != 0) {
+        UploadTextures__15PTextureManagerFPiiP12PDisplayList((void *)gGfxEng.m_unk154C90, &gGfxEng.m_unk16D408, 1, gGfxEng.m_unk154C80);
+    } else {
+        UploadTextures__15PTextureManagerFPiiP12PDisplayList((void *)gGfxEng.m_unk154C90, m_unk118, m_unk114, gGfxEng.m_unk154C80);
+    }
+    if (gGfxEng.m_unk16D408 > 0) {
+        pTexEnv = GetTexEnv__15PTextureManagerFi((void *)gGfxEng.m_unk154C90, gGfxEng.m_unk16D408);
+        if (pTexEnv == 0) {
+            CdsAssert("PObjectDisplayList.cpp", 0xB8, "apOverrideTexEnv");
+        }
+    }
+    if (m_unk8 != 0) {
+        for (fp = 0; fp < m_unk20; fp++) {
+            pShader = (PShader *)m_apoShaders[fp];
+            if (pShader != 0) {
+                for (s4 = 0; s4 < pShader->m_unk8; s4++) {
+                    if (m_unk1E0[s4] != 0) {
+                        if (pTexEnv == 0) {
+                            pRec = (s4 < pShader->m_unk8) ? (char *)pShader->m_unk0 + s4 * 0xA0 : 0;
+                            if (pRec == 0) {
+                                CdsAssert("PObjectDisplayList.cpp", 0xD5, "apMaterial");
+                            }
+                            pSrc = *(char **)(pRec + 4);
+                        } else {
+                            pSrc = (char *)pTexEnv;
+                        }
+                        nIdx = *(int *)((char *)m_unk8 + (fp << 4) + (s4 << 2) + 0x10);
+                        pDst = (char *)m_unk0 + (nIdx << 4);
+                        *(u_long128 *)(pDst + 0x00) = *(u_long128 *)(pSrc + 0x00);
+                        *(u_long128 *)(pDst + 0x10) = *(u_long128 *)(pSrc + 0x10);
+                        *(u_long128 *)(pDst + 0x20) = *(u_long128 *)(pSrc + 0x20);
+                        *(u_long128 *)(pDst + 0x30) = *(u_long128 *)(pSrc + 0x30);
+                        *(u_long128 *)(pDst + 0x40) = *(u_long128 *)(pSrc + 0x40);
+                        *(u_long128 *)(pDst + 0x50) = *(u_long128 *)(pSrc + 0x50);
+                        pElem = *(char **)((char *)pShader + (s4 << 2) + 0x30);
+                        if (pElem != 0) {
+                            *(unsigned char *)(pElem + 2) = 0;
+                            pSrc = pElem + 0x20;
+                        } else {
+                            pSrc = 0;
+                        }
+                        if (pSrc != 0) {
+                            pDst = (char *)m_unk0 + ((nIdx + 14) << 4);
+                            *(u_long128 *)(pDst + 0x00) = *(u_long128 *)(pSrc + 0x00);
+                            *(u_long128 *)(pDst + 0x10) = *(u_long128 *)(pSrc + 0x10);
+                            *(u_long128 *)(pDst + 0x20) = *(u_long128 *)(pSrc + 0x20);
+                            *(u_long128 *)(pDst + 0x30) = *(u_long128 *)(pSrc + 0x30);
+                        }
+                    }
+                }
+            }
+        }
+        nBones = 0;
+        WriteBoneMatrices(((PMNode *)m_unk8)->m_unk0, &nBones);
+        *(unsigned int *)((char *)m_unk0 + (((PMNode *)m_unk8)->m_unkC << 4) + 0xC) = nOffset | 0x14000000;
+    }
+    for (fp = 0; fp < m_unk20; fp++) {
+        pShader = (PShader *)m_apoShaders[fp];
+        if (pShader != 0) {
+            for (s4 = 0; s4 < pShader->m_unk8; s4++) {
+                if (m_unk1E0[s4] != 0) {
+                    if (pTexEnv == 0) {
+                        pRec = (s4 < pShader->m_unk8) ? (char *)pShader->m_unk0 + s4 * 0xA0 : 0;
+                        if (pRec == 0) {
+                            CdsAssert("PObjectDisplayList.cpp", 0x110, "apMaterial");
+                        }
+                        pSrc = *(char **)(pRec + 4);
+                    } else {
+                        pSrc = (char *)pTexEnv;
+                    }
+                    nIdx = *(int *)((char *)this + (fp << 4) + (s4 << 2) + 0x24);
+                    pDst = (char *)m_unk0 + (nIdx << 4);
+                    *(u_long128 *)(pDst + 0x00) = *(u_long128 *)(pSrc + 0x00);
+                    *(u_long128 *)(pDst + 0x10) = *(u_long128 *)(pSrc + 0x10);
+                    *(u_long128 *)(pDst + 0x20) = *(u_long128 *)(pSrc + 0x20);
+                    *(u_long128 *)(pDst + 0x30) = *(u_long128 *)(pSrc + 0x30);
+                    *(u_long128 *)(pDst + 0x40) = *(u_long128 *)(pSrc + 0x40);
+                    *(u_long128 *)(pDst + 0x50) = *(u_long128 *)(pSrc + 0x50);
+                    pElem = *(char **)((char *)pShader + (s4 << 2) + 0x30);
+                    if (pElem != 0) {
+                        *(unsigned char *)(pElem + 2) = 0;
+                        pSrc = pElem + 0x20;
+                    } else {
+                        pSrc = 0;
+                    }
+                    if (pSrc != 0) {
+                        pDst = (char *)m_unk0 + ((nIdx + 14) << 4);
+                        *(u_long128 *)(pDst + 0x00) = *(u_long128 *)(pSrc + 0x00);
+                        *(u_long128 *)(pDst + 0x10) = *(u_long128 *)(pSrc + 0x10);
+                        *(u_long128 *)(pDst + 0x20) = *(u_long128 *)(pSrc + 0x20);
+                        *(u_long128 *)(pDst + 0x30) = *(u_long128 *)(pSrc + 0x30);
+                    }
+                }
+            }
+            for (i = 0; i < ((PArray *)m_unkC)->m_unk0; i++) {
+                pInfo = (i < ((PArray *)m_unkC)->m_unk0) ? (char *)((PArray *)m_unkC)->m_unk8[i] : 0;
+                if (pInfo == 0) {
+                    CdsAssert("PObjectDisplayList.cpp", 0x130, "apNodeInfo");
+                }
+                pNode = *(char **)pInfo;
+                nIdx = *(int *)(pInfo + (fp << 2) + 4);
+                if (nIdx != -1) {
+                    pDst = (char *)m_unk0 + (nIdx << 4);
+                    *(u_long128 *)(pDst + 0x00) = *(u_long128 *)(pNode + 0x40);
+                    *(u_long128 *)(pDst + 0x10) = *(u_long128 *)(pNode + 0x50);
+                    *(u_long128 *)(pDst + 0x20) = *(u_long128 *)(pNode + 0x60);
+                    *(u_long128 *)(pDst + 0x30) = *(u_long128 *)(pNode + 0x70);
+                    nIdx = *(int *)(pInfo + (fp << 2) + 0x34);
+                    *(unsigned int *)((char *)m_unk0 + (nIdx << 4) + 0xC) = nOffset | 0x14000000;
+                }
+            }
+        }
+    }
+    AddVifDmaPacket__12PDisplayListFP1i(gGfxEng.m_unk154C80, m_unk0, m_unk4);
+    if ((unsigned char)m_unk1E4 != 0) {
+        nTotal += RenderBlendedFragments(eBox);
     }
     return nTotal;
 }
