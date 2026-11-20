@@ -11,6 +11,7 @@ public:
     virtual ~Tinker();
     void AttackSound();
     void FootstepSound();
+    void *GetAnimSequence(unsigned int arg0);
     void SetAsActivatedEnemyTarget();
     bool TrappedEntityRemoved();
     unsigned int IsBadWaypoint(unsigned int arg0);

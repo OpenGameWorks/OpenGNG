@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "Tinker.h"
 
@@ -37,6 +38,49 @@ extern unsigned char Tinker_RunSeq[0x10];
 extern unsigned char Tinker_WalkSeq[0x10];
 extern unsigned char Manda_RunSeq[0x10];
 extern unsigned char BGuard_RunSeq[0x10];
+extern unsigned char Tinker_LoadMeshSeq[0x10];
+extern unsigned char Tinker_IdleSeq[0x10];
+extern unsigned char Tinker_AttackShortIdleSeq[0x10];
+extern unsigned char Tinker_AttackIdleSeq[0x10];
+extern unsigned char Tinker_Idle2Seq[0x10];
+extern unsigned char Tinker_AwardSeq[0x10];
+extern unsigned char Tinker_HitSeq[0x10];
+extern unsigned char Tinker_DieSeq[0x10];
+extern unsigned char Tinker_DeadSeq[0x10];
+extern unsigned char Tinker_TransitionToIdleSeq[0x10];
+extern unsigned char Tinker_TransitionFromAttackToIdleSeq[0x10];
+extern unsigned char TinkerTransitionFromIdleToAttackSeq[0x10];
+extern unsigned char Baron_LoadMeshSeq[0x10];
+extern unsigned char Baron_IdleSeq[0x10];
+extern unsigned char Baron_Attack2Seq[0x10];
+extern unsigned char Baron_AttackSeq[0x10];
+extern unsigned char Baron_AttackShortIdleSeq[0x10];
+extern unsigned char Baron_AwardSeq[0x10];
+extern unsigned char Baron_TalkSeq[0x10];
+extern unsigned char Baron_HitSeq[0x10];
+extern unsigned char Baron_DieSeq[0x10];
+extern unsigned char Baron_DeadSeq[0x10];
+extern unsigned char Baron_TransitionToIdleSeq[0x10];
+extern unsigned char Manda_LoadMeshSeq[0x10];
+extern unsigned char Manda_IdleSeq[0x10];
+extern unsigned char Manda_TrappedSeq[0x10];
+extern unsigned char Manda_ShortIdleSeq[0x10];
+extern unsigned char Manda_TalkSeq[0x10];
+extern unsigned char Manda_HitSeq[0x10];
+extern unsigned char Manda_DieSeq[0x10];
+extern unsigned char Manda_DeadSeq[0x10];
+extern unsigned char Manda_TransitionToIdleSeq[0x10];
+extern unsigned char BGuard_LoadMeshSeq[0x10];
+extern unsigned char BGuard_IdleSeq[0x10];
+extern unsigned char BGuard_AttackSeq[0x10];
+extern unsigned char BGuard_TrappedSeq[0x10];
+extern unsigned char BGuard_ShortIdleSeq[0x10];
+extern unsigned char BGuard_TalkSeq[0x10];
+extern unsigned char BGuard_HitSeq[0x10];
+extern unsigned char BGuard_DieSeq[0x10];
+extern unsigned char BGuard_DeadSeq[0x10];
+extern unsigned char BGuard_TransitionToIdleSeq[0x10];
+extern "C" int RandomIntRange__7MathAPIFii(int nMin, int nMax);
 extern "C" void PlaySoundOnFrame__15EntityBaseClassFUiUi(void *pThis, unsigned int nSound, unsigned int nFrame);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 struct tagWaypointGroup { char _pad000[4]; unsigned int m_unk4; };
@@ -129,6 +173,228 @@ void Tinker::FootstepSound() {
         }
         break;
     }
+}
+
+// DRAFT: 0x00208FF0 GetAnimSequence__6TinkerFUi
+// note: 249 words; case 8 duplicates lui s0 and emits a separate b per arm (original shares a tail), so jump-table offsets shift; tried if/else, (bool) cast, local bool, ternary.
+void *Tinker::GetAnimSequence(unsigned int arg0) {
+    void *var_s0 = 0;
+    if (m_unk1B0 == 0) {
+        switch (arg0) {
+        case 0:
+            var_s0 = &Tinker_LoadMeshSeq;
+            break;
+        case 1:
+        case 6:
+            var_s0 = &Tinker_IdleSeq;
+            break;
+        case 7:
+        case 15:
+        case 18:
+            var_s0 = &Tinker_RunSeq;
+            break;
+        case 8:
+            bool bRand = (RandomIntRange__7MathAPIFii(0, 100) & 1) != 0;
+            if (bRand) {
+                var_s0 = &Tinker_Attack2Seq;
+            } else {
+                var_s0 = &Tinker_AttackSeq;
+            }
+            break;
+        case 9:
+            var_s0 = &Tinker_AttackShortIdleSeq;
+            break;
+        case 12:
+            var_s0 = &Tinker_WalkSeq;
+            break;
+        case 11:
+            var_s0 = &Tinker_AttackIdleSeq;
+            break;
+        case 10:
+            if (m_unk140 == (int)&Tinker_Idle2Seq) {
+                var_s0 = &TinkerTransitionFromIdleToAttackSeq;
+            } else {
+                var_s0 = &Tinker_AttackIdleSeq;
+            }
+            break;
+        case 14:
+        case 16:
+            var_s0 = &Tinker_Idle2Seq;
+            break;
+        case 13:
+            var_s0 = &Tinker_AwardSeq;
+            break;
+        case 3:
+            var_s0 = &Tinker_HitSeq;
+            break;
+        case 4:
+            var_s0 = &Tinker_DieSeq;
+            break;
+        case 19:
+            var_s0 = &Tinker_DeadSeq;
+            break;
+        case 20:
+            if (m_unk140 == (int)&Tinker_AttackIdleSeq || m_unk140 == (int)&TinkerTransitionFromIdleToAttackSeq) {
+                var_s0 = &Tinker_TransitionFromAttackToIdleSeq;
+            } else {
+                var_s0 = &Tinker_TransitionToIdleSeq;
+            }
+            break;
+        default:
+            CdsAssert__FPciPc("Tinker.cpp", 0xB3F, "false");
+            break;
+        }
+    } else if (m_unk1B0 == 1) {
+        switch (arg0) {
+        case 0:
+            var_s0 = &Baron_LoadMeshSeq;
+            break;
+        case 1:
+        case 6:
+        case 10:
+        case 11:
+        case 16:
+            var_s0 = &Baron_IdleSeq;
+            break;
+        case 7:
+        case 15:
+        case 18:
+            var_s0 = &Baron_RunSeq;
+            break;
+        case 8:
+            if ((bool)(RandomIntRange__7MathAPIFii(0, 100) & 1)) {
+                var_s0 = &Baron_Attack2Seq;
+            } else {
+                var_s0 = &Baron_AttackSeq;
+            }
+            break;
+        case 9:
+            var_s0 = &Baron_AttackShortIdleSeq;
+            break;
+        case 12:
+            var_s0 = &Baron_WalkSeq;
+            break;
+        case 13:
+            var_s0 = &Baron_AwardSeq;
+            break;
+        case 14:
+            var_s0 = &Baron_TalkSeq;
+            break;
+        case 3:
+            var_s0 = &Baron_HitSeq;
+            break;
+        case 4:
+            var_s0 = &Baron_DieSeq;
+            break;
+        case 19:
+            var_s0 = &Baron_DeadSeq;
+            break;
+        case 20:
+            var_s0 = &Baron_TransitionToIdleSeq;
+            break;
+        default:
+            CdsAssert__FPciPc("Tinker.cpp", 0xB96, "false");
+            break;
+        }
+    } else if (m_unk1B0 == 2) {
+        switch (arg0) {
+        case 0:
+            var_s0 = &Manda_LoadMeshSeq;
+            break;
+        case 1:
+        case 6:
+        case 16:
+            var_s0 = &Manda_IdleSeq;
+            break;
+        case 7:
+        case 12:
+        case 15:
+        case 18:
+            var_s0 = &Manda_RunSeq;
+            break;
+        case 8:
+            var_s0 = &Manda_AttackSeq;
+            break;
+        case 17:
+            var_s0 = &Manda_TrappedSeq;
+            break;
+        case 9:
+        case 10:
+        case 11:
+            var_s0 = &Manda_ShortIdleSeq;
+            break;
+        case 13:
+        case 14:
+            var_s0 = &Manda_TalkSeq;
+            break;
+        case 3:
+            var_s0 = &Manda_HitSeq;
+            break;
+        case 4:
+            var_s0 = &Manda_DieSeq;
+            break;
+        case 19:
+            var_s0 = &Manda_DeadSeq;
+            break;
+        case 20:
+            var_s0 = &Manda_TransitionToIdleSeq;
+            break;
+        default:
+            CdsAssert__FPciPc("Tinker.cpp", 0xBD4, "false");
+            break;
+        }
+    } else if (m_unk1B0 == 3) {
+        switch (arg0) {
+        case 0:
+            var_s0 = &BGuard_LoadMeshSeq;
+            break;
+        case 1:
+        case 6:
+        case 16:
+            var_s0 = &BGuard_IdleSeq;
+            break;
+        case 7:
+        case 12:
+        case 15:
+        case 18:
+            var_s0 = &BGuard_RunSeq;
+            break;
+        case 8:
+            var_s0 = &BGuard_AttackSeq;
+            break;
+        case 17:
+            var_s0 = &BGuard_TrappedSeq;
+            break;
+        case 9:
+        case 10:
+        case 11:
+            var_s0 = &BGuard_ShortIdleSeq;
+            break;
+        case 13:
+        case 14:
+            var_s0 = &BGuard_TalkSeq;
+            break;
+        case 3:
+            var_s0 = &BGuard_HitSeq;
+            break;
+        case 4:
+            var_s0 = &BGuard_DieSeq;
+            break;
+        case 19:
+            var_s0 = &BGuard_DeadSeq;
+            break;
+        case 20:
+            var_s0 = &BGuard_TransitionToIdleSeq;
+            break;
+        default:
+            CdsAssert__FPciPc("Tinker.cpp", 0xC12, "false");
+            break;
+        }
+    }
+    if (var_s0 == 0) {
+        CdsAssert__FPciPc("Tinker.cpp", 0xC17, "aiRet");
+    }
+    return var_s0;
 }
 
 // FUNCTION: 0x00209440 SetAsActivatedEnemyTarget__6TinkerFv
