@@ -69,6 +69,71 @@ int PArray::Remove(void *pItem) {
     return 0;
 }
 
+// DRAFT: 0x0012EDA0 InsertBefore__6PArrayFPv
+// note: 34 words, size 0x148 vs 0x14c; grow path loads/loop registers differ (lw a0 vs a1 at 0x44, delay-slot a0 zeroing, slt vs sltu at 0xBC, loop uses v1 index); pFree=0 in else branch is best so far
+void PArray::InsertBefore(void *pItem) {
+    if (m_unk4 < 0) {
+        CdsAssert__FPciPc("PArray.cpp", 0x87, "miCurrent >= 0");
+    }
+    void **pSrc = m_unk8;
+    void **pDst = pSrc;
+    void **pFree;
+    if (m_unk0 >= m_unkC) {
+        m_unkC = m_unkC + 4;
+        void **pNew = (void **)__nwa__FUi(m_unkC * 4);
+        if (pNew == 0) {
+            CdsAssert__FPciPc("PArray.cpp", 0x8F, "pNew");
+        }
+        m_unk8 = pNew;
+        pFree = pSrc;
+        pDst = pNew;
+        for (unsigned int i = 0; (int)i < m_unk4; i++) {
+            pDst[i] = pSrc[i];
+        }
+    } else {
+        pFree = 0;
+    }
+    for (int i = (int)m_unk0 - 1; i >= m_unk4; i--) {
+        pDst[i + 1] = pSrc[i];
+    }
+    pDst[m_unk4] = pItem;
+    if (pFree != 0) {
+        __dla__FPv(pFree);
+    }
+    m_unk0++;
+}
+
+// DRAFT: 0x0012EEF0 Add__6PArrayFPv
+// note: 31 words, size 0xe0 vs 0xe8; original keeps old pointer in s3 as copy source and copies it to a0 for __dla before the loop, mine keeps pOld in s3 and copies src to v1; tried swapping src to loop cursor (45 words, reverted)
+void PArray::Add(void *pItem) {
+    if (m_unk0 >= m_unkC) {
+        unsigned int nCap = m_unkC;
+        m_unkC = nCap + 4;
+        void **pOld = m_unk8;
+        void **pNew = (void **)__nwa__FUi(m_unkC * 4);
+        if (pNew == 0) {
+            CdsAssert__FPciPc("PArray.cpp", 0x4A, "pNew");
+        }
+        m_unk8 = pNew;
+        if (pOld != 0) {
+            unsigned int n = nCap;
+            void **src = pOld;
+            void **dst = pNew;
+            if (n != 0) {
+                do {
+                    n--;
+                    *dst = *src;
+                    src++;
+                    dst++;
+                } while (n != 0);
+            }
+            __dla__FPv(pOld);
+        }
+    }
+    m_unk8[m_unk0] = pItem;
+    m_unk0++;
+}
+
 // DRAFT: 0x0012EFE0 Allocate__6PArrayFUi
 // note: 51 words, size 0xdc vs 0xe4; prologue swaps this (s1 orig, s0 ours) and nAlloc (s0 orig, s1 ours); tried nAlloc copy, uninit decl, early return, nSize kept live, nested if
 void PArray::Allocate(unsigned int nSize) {
@@ -110,4 +175,12 @@ PArray::~PArray() {
         m_unk8 = 0;
     }
     m_unk0 = 0;
+}
+
+// FUNCTION: 0x0012F140 __ct__6PArrayFv
+PArray::PArray() {
+    m_unkC = 0;
+    m_unk8 = 0;
+    m_unk0 = 0;
+    m_unk4 = 0;
 }
