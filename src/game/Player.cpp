@@ -10,11 +10,21 @@ public:
 };
 extern Interface gInterface;
 extern signed char AbilityTable[];
+struct AttackEntry {
+    unsigned short m_unk0;
+    unsigned short m_unk2;
+    unsigned short m_unk4;
+    unsigned short m_unk6;
+    unsigned short m_unk8;
+    unsigned short m_unkA;
+};
+extern AttackEntry AttackTable[42];
 class EntityBaseClass {
 public:
     int ProcessHitBack();
     void SetState(int arg0);
     void PlaySound(unsigned int arg0);
+    void ResetCollisions();
 };
 extern signed char MaximoArmor[8];
 class FontManager {
@@ -22,6 +32,9 @@ public:
     void RemoveText(FontNode *pNode);
 };
 extern float GRIM_G;
+extern float gUnitMatrix[16];
+extern float LEye[4];
+extern float REye[4];
 class CutSceneObject {
 public:
     virtual void Slot00();
@@ -43,6 +56,7 @@ public:
     float GetFrameTime();
     PMNode *FindAnimNode(unsigned int arg0);
     int Find(PMNode *arg0);
+    PMNode *Find(unsigned int arg0);
 };
 class FreeJoint {
 public:
@@ -89,6 +103,7 @@ extern "C" void *__dt__5PAnimFv(void *pThis, short nFlag);
 extern void *mpEntMgr__15EntityBaseClass;
 extern int mbHard__15EntityBaseClass;
 extern int ComboLevel[20];
+extern int CAUGHT_TIME;
 extern "C" void *GetPtrToApparition__13EntityManagerFUi(void *, unsigned int);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
@@ -126,7 +141,7 @@ public:
     virtual void Slot17();
     virtual void Slot18();
     virtual void Slot19();
-    virtual void OnHitEvent(void *pSource, int nEvent, unsigned int nArg1, unsigned int nArg2);
+    virtual int OnHitEvent(void *pSource, int nEvent, unsigned int nArg1, unsigned int nArg2);
 };
 
 // FUNCTION: 0x00158F60 Ready2Clear__6PlayerFv
@@ -217,6 +232,27 @@ void Player::PumpkinGrabMove() {
         m_unk1C4 = ((Physics *)m_unk38)->m_unk11C;
         SetAction(0x78);
     }
+}
+
+// FUNCTION: 0x0015A0E0 ReleaseCheck__6PlayerFv
+int Player::ReleaseCheck() {
+    void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk2C0);
+    if (pApparition != 0) {
+        int nLeft = m_unk2C8 - 1;
+        m_unk2C8 = nLeft;
+        if (nLeft <= 0) {
+            m_unk2C4 = 0;
+        }
+        if ((m_unk1B2 & 0xF000) || (m_unk1BA != 0)) {
+            m_unk2C4 = m_unk2C4 + 1;
+            m_unk2C8 = CAUGHT_TIME;
+            if (((ApparitionVirtuals *)pApparition)->OnHitEvent(this, m_unk2C4, 0x1FC, 0) == 1) {
+                return 1;
+            }
+        }
+        return 0;
+    }
+    return 1;
 }
 
 // FUNCTION: 0x0015A300 CatchIdleMove__6PlayerFv
@@ -433,6 +469,42 @@ void Player::GuardHitMove() {
     }
 }
 
+// DRAFT: 0x0015CA90 StabDownMove__6PlayerFv
+// note: DIFF 18 words; original hoists the 0x400 constant, keeps var_v1 in $v1, and case 1 reuses the andi result for the tail test. Tried: local pointer for m_unk38, bits local removed, if-chain instead of switch (36 words).
+void Player::StabDownMove() {
+    int temp_a1 = m_unk250;
+    int temp_f0 = (int)m_unk3C[13];
+    int var_v1 = temp_f0 < 0x12;
+    switch (temp_a1) {
+    case 0:
+        m_unk250 = 1;
+        {
+            int *p = m_unk38;
+            p[0] = 0;
+            p[2] = 0;
+        }
+        break;
+    case 1:
+        if (m_unk1B2 & 0x8000) {
+            m_unk250 = 0x800;
+        } else if (m_unk1B2 & 0x1000) {
+            m_unk250 = 0x400;
+        }
+        /* fallthrough */
+    case 0x800:
+        var_v1 = temp_f0 < 0x12;
+        /* fallthrough */
+    case 0x400:
+        if (var_v1 == 0) {
+            m_unk250 |= 8;
+        }
+        break;
+    }
+    if (temp_f0 >= 0x4B) {
+        CancelAttack(0x30);
+    }
+}
+
 // FUNCTION: 0x0015CE30 Over3Move__6PlayerFv
 void Player::Over3Move() {
     static unsigned short Over3Attacks[3] = {0x11, 0x0C, 0xFFFF};
@@ -443,6 +515,19 @@ void Player::Over3Move() {
         }
     }
     MultipleAttack(&Over3Attacks[0]);
+}
+
+// FUNCTION: 0x0015D5A0 MultipleAttack__6PlayerFPUs
+int Player::MultipleAttack(unsigned short *arg0) {
+    unsigned short *pEntry = arg0 + m_unk27C;
+    if ((int)m_unk3C[13] >= pEntry[0]) {
+        ((EntityBaseClass *)this)->ResetCollisions();
+        m_unk258 = &AttackTable[pEntry[1]];
+        SetPlayerAttack(((AttackEntry *)m_unk258)->m_unk0, ((AttackEntry *)m_unk258)->m_unk2 | (m_unk15E & 0x1C0));
+        m_unk27C += 2;
+        return 1;
+    }
+    return 0;
 }
 
 // FUNCTION: 0x0015D9F0 HammerSliceMove__6PlayerFv
@@ -485,6 +570,22 @@ void Player::AirSliceMove() {
     if (m_unk250 == 0) {
         m_unk250 = 1;
         m_unk38[1] = 0x3A83126F;
+    }
+}
+
+// FUNCTION: 0x0015E590 GrimSliceMove__6PlayerFv
+void Player::GrimSliceMove() {
+    switch (m_unk250) {
+    case 0:
+        m_unk250 = 1;
+        m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(0x810001DE, 0x82000384, 0, 0, (EntityBaseClass *)this, 0.5f, false, 0, false);
+        break;
+    case 1:
+        if ((int)((PMNode *)m_unk3C)->GetFrameTime() >= 0x21) {
+            m_unk250 = 2;
+            ((EntityBaseClass *)this)->PlaySound(0x11B);
+        }
+        break;
     }
 }
 
@@ -580,6 +681,33 @@ void Player::UpdatePlayerFx() {
     PMNode *temp_a1 = (PMNode *)m_unk288;
     if (temp_a1 != 0) {
         temp_a1->ProcessFxTriggers(1.0f, (PMat4 *)(m_unk284 + 0x40), false, false);
+    }
+}
+
+// FUNCTION: 0x001605A0 ResetEye__6PlayerFb
+void Player::ResetEye(bool arg0) {
+    PMNode *s1 = (PMNode *)m_unk3C;
+    PMNode *v0 = s1->Find(0x4F1C44BDU);
+    if (v0 != 0) {
+        float *v1;
+        if (arg0) {
+            v1 = LEye;
+        } else {
+            v1 = gUnitMatrix;
+        }
+        *(u_long128 *)((char *)v0 + 0x90) = *(u_long128 *)v1;
+        *((unsigned char *)v0 + 0x3E) |= 8;
+    }
+    v0 = s1->Find(0x52D670E4U);
+    if (v0 != 0) {
+        float *v1;
+        if (arg0) {
+            v1 = REye;
+        } else {
+            v1 = gUnitMatrix;
+        }
+        *(u_long128 *)((char *)v0 + 0x90) = *(u_long128 *)v1;
+        *((unsigned char *)v0 + 0x3E) |= 8;
     }
 }
 
