@@ -92,6 +92,7 @@ public:
     void UnloadAllRenderedTextures();
     void UnloadDynamicTextures(eTextureGroup eGroup);
     int LoadDynamicTextures(PPakFile *poFile, eTextureGroup eGroup, PArray *pArray);
+    int LoadStaticTextures(PPakFile *poFile, eTextureGroup eGroup, PArray *pArray);
     void PrepareImageXferInfo(tagGsImageXferInfo *pInfo, int nWidth, int nHeight, int nPsm, int nBase);
     void PrepareImageDmaPacket(tagImageDmaPacket *pPacket, void *pData, int nSize, int nWidth, int nHeight, int nPsm, int nBase);
     int AddTexture(PTexture *pTex, PArray *pArray);

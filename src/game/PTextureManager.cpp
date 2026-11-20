@@ -659,7 +659,8 @@ struct tagDynTexFileHeader {
     int iMagic;                 // 0x00 must be 0x13246879
     int unk4;                   // 0x04
     int iNumTextures;           // 0x08
-    char _pad0C[0x20 - 0x0C];   // 0x0C
+    int unkC;                   // 0x0C
+    char _pad10[0x10];          // 0x10
 };
 
 // DRAFT: 0x0018AD70 LoadDynamicTextures__15PTextureManagerFP8PPakFile13eTextureGroupP6PArray
@@ -718,6 +719,90 @@ void PTextureManager::UnloadStaticTextures() {
     m_unk1D4 = 0;
     m_unk10 = 0;
     m_unk1D8 = 0;
+}
+
+// DRAFT: 0x0018B030 LoadStaticTextures__15PTextureManagerFP8PPakFile13eTextureGroupP6PArray
+// note: DIFF 87; if-body 0x20 bytes short, guard and loop bound reads differ (cached &iNumTextures, 0(s0) vs 0x1D4(s5)), s0/s3 roles swapped, sentinel tail and cleanup order differ. Tried: nTex first (100 to 87), guard forms, loop bound from aFileHeader (237), sentinel addressing (87), nQw/nEnv swap (94), nEnv recomputed (95), nRet removed (87).
+int PTextureManager::LoadStaticTextures(PPakFile *poFile, eTextureGroup eGroup, PArray *pArray) {
+    int nTex;
+    PArray aList;
+    tagDynTexFileHeader aFileHeader;
+    tagPs2TexDataHeader aTexHeader;
+    void *pvClut;
+    void *pvImage;
+    char *pBuf;
+    int nQw;
+    int nEnv;
+    int nRet;
+    int i;
+    void *pItem;
+
+    __ct__6PArrayFv(&aList);
+    CDS_ASSERT_MSG(0x3AE, poFile, "pMemFile");
+    CDS_ASSERT_MSG(0x3AF, pArray, "pTextureHandles");
+    UnloadStaticTextures();
+    if (Read__7PCDFileFPvUi((void *)poFile, &aFileHeader, 0x20) != 0x20) {
+        __dt__6PArrayFv(&aList, -1);
+        return 0;
+    }
+    if (aFileHeader.iMagic == 0x13246879 && aFileHeader.iNumTextures > 0 && !(m_unk8 < aFileHeader.unkC)) {
+        m_unk1D4 = aFileHeader.iNumTextures;
+        pBuf = (char *)MemMgr.AllocateAligned((((aFileHeader.iNumTextures * 8 - aFileHeader.iNumTextures) * 2 + 2) << 4) + 0x40, 0x40);
+        CDS_ASSERT_MSG(0x3C6, pBuf, "apDmaChain");
+        nQw = 0;
+        if (m_unk1D0 != 0) {
+            __dla__FPv(m_unk1D0);
+        }
+        m_unk1D0 = __nwa__FUi((aFileHeader.iNumTextures * 3) << 5);
+        CDS_ASSERT_MSG(0x3CE, m_unk1D0, "mpStaticTexEnvTable");
+        if (pArray->m_apItems != 0) {
+            pArray->m_nCount = 0;
+            pArray->m_unk4 = 0;
+        }
+        nEnv = 0;
+        for (nTex = 0; nTex < m_unk1D4; nTex++) {
+            pvClut = 0;
+            pvImage = 0;
+            if (!LoadTexture(poFile, &aTexHeader, &pvClut, &pvImage)) {
+                UnloadStaticTextures();
+                MemMgr.DeAllocateAligned(pBuf);
+                __dt__6PArrayFv(&aList, -1);
+                return 0;
+            }
+            GsInitTexEnv((tagGsTextureEnvironment *)((char *)m_unk1D0 + nEnv), aTexHeader.unk0, aTexHeader.unk1, aTexHeader.type, false, (eGsContext)0);
+            nRet = PrepareStaticTextureForDma((u_long128 *)pBuf + nQw, &aTexHeader, pvClut, pvImage, (tagGsTextureEnvironment *)((char *)m_unk1D0 + nEnv));
+            nQw += nRet;
+            Add__6PArrayFPv(pArray, (void *)EncodeTextureHandle(true, (PTexture::eTextureType)1, nTex));
+            CDS_ASSERT_MSG(0x3EA, pArray->m_nCount == nTex + 1, "pTextureHandles->GetCount() == iCount + 1");
+            Add__6PArrayFPv(&aList, pvClut);
+            Add__6PArrayFPv(&aList, pvImage);
+            nEnv += 0x60;
+        }
+        {
+            u_long128 *pTail = (u_long128 *)pBuf + nQw;
+            *pTail = 0;
+            *(unsigned long long *)pTail = 0x70000001ULL;
+            pTail++;
+            *pTail = 0;
+            *(unsigned long long *)pTail = 0x8000ULL;
+        }
+        KickDmaChain(pBuf, true);
+        MemMgr.DeAllocateAligned(pBuf);
+        for (i = 0; i < aList.m_nCount; i++) {
+            pItem = aList.m_apItems[i];
+            if (pItem != 0) {
+                __dla__FPv(pItem);
+            }
+        }
+        if (aList.m_apItems != 0) {
+            aList.m_nCount = 0;
+            aList.m_unk4 = 0;
+        }
+    }
+    CDS_ASSERT_MSG(0x40F, pArray->m_nCount == aFileHeader.iNumTextures, "pTextureHandles->GetCount() == aFileHeader.iNumTextures");
+    m_unk1D8 = (int)eGroup;
+    __dt__6PArrayFv(&aList, -1);
+    return 1;
 }
 
 // FUNCTION: 0x0018B410 ResetDynamicBuffers__15PTextureManagerFv
