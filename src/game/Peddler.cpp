@@ -25,6 +25,11 @@ struct ItemEntry {
 extern ItemEntry ItemTable[0x3C];
 
 void CdsAssert(char *pFile, int nLine, char *pExpr);
+// Player is declared only for ValidateItem; the entity manager state at 0x505C is passed as its this.
+class Player {
+public:
+    int ValidateItem(int nItem);
+};
 extern "C" int Find__6PArrayFPv(void *pThis, void *pItem);
 extern "C" void Remove__6PArrayFPv(void *pThis, void *pItem);
 extern "C" void AddMeshLayer__9InterfaceFP6PMNode(void *pThis, PMNode *pNode);
@@ -41,8 +46,24 @@ extern "C" PMNode *__ct__9PMeshNodeFR9PMeshNode(PMNode *pThis, PMNode *pSrc);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
+extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
+extern "C" float atan2f(float fY, float fX);
+extern "C" void TakeControlOfCamera__9CameraAPIFP15EntityBaseClassb(void *pThis, void *pEntity, bool bTake);
+extern "C" void SetCameraLookAtParams__9CameraAPIFP15EntityBaseClassPfPf(void *pThis, void *pEntity, float *pPos, float *pVec);
+extern "C" unsigned char mCameraAPI__13EntityManager;
 extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
+extern "C" void ReleaseControlOfCamera__9CameraAPIFP15EntityBaseClassb(void *pThis, void *pEntity, bool bRelease);
+extern "C" void BuildDispList__9PSkeletonFv(void *pThis);
+extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
+extern "C" void FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(void *pThis, EntityBaseClass *pEntity);
+extern "C" void CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(void *pThis, void *pPos, int eObjType, int eWeaponType, bool bFlag);
+
+// Slot object held at 0x22C; Release is virtual number 0, the first declared virtual.
+class PeddlerSlotObject {
+public:
+    virtual void Release(int nMode);
+};
 
 // Sequence record, 88 bytes; the PeddlerSeqData symbol holds two of them (176 bytes).
 struct PeddlerSeq {
@@ -80,7 +101,9 @@ extern Engine gEng;
 class PArray;
 class EntityManagerState {
 public:
-    char _pad000[0x229];
+    char _pad000[0x3C];
+    char *m_unk3C;                  // 0x03C target object with 0x80 vector
+    char _pad040[0x229 - 0x040];
     signed char m_unk229;           // 0x229 compared against 4
 };
 class EntityManager {
@@ -249,6 +272,16 @@ static inline float FloatBits(unsigned int uBits) {
     return conv.f;
 }
 
+// DRAFT: 0x001D08A0 IsAlive__7PeddlerFv
+// note: 2 diff lines, the load targets v1 (orig v0). Tried: bAlive first, split decl, ?: form, early-return form, local copy of m_unk1CC; all keep v1 or reorder branch.
+int Peddler::IsAlive() {
+    int bAlive = 1;
+    if (m_unk1CC <= 0) {
+        bAlive = 0;
+    }
+    return bAlive;
+}
+
 // DRAFT: 0x001D08C0 Hide__12PeddlerItemsFv
 // note: 48 diff lines; original keeps this in s1 and the 0x3DAAAAAB literal in f13, ours uses s2 and spills the literal to the stack; FloatBits literal and early hoist tried.
 int PeddlerItems::Hide() {
@@ -399,6 +432,45 @@ PeddlerItems::~PeddlerItems() {
     }
 }
 
+// DRAFT: 0x001D1550 LookAtPeddler__7PeddlerFv
+// note: 55 differing lines; 57.295776f is pooled (lwc1 gp) where the original uses lui/ori/mtc1; 12-byte size gap. Tried: s0 reuse for m_unk38 (56), split atan2 into a local (55), constant in a local (55).
+void Peddler::LookAtPeddler() {
+    float afPos[4];
+    float afVec[4];
+    char *pObj;
+    char *pTarget;
+    EntityManagerState *pState;
+    float fYaw;
+
+    TakeControlOfCamera__9CameraAPIFP15EntityBaseClassb(&mCameraAPI__13EntityManager, this, false);
+    pObj = m_unk3C;
+    if (m_unk214 != 0) {
+        *(u_long128 *)afVec = *(u_long128 *)(pObj + 0x80);
+        pState = mpEntMgr__15EntityBaseClass->m_unk505C;
+        if (pState->m_unk3C != 0) {
+            pTarget = pState->m_unk3C + 0x80;
+        } else {
+            pTarget = (char *)pState + 0x190;
+        }
+        sceVu0SubVector(afPos, afVec, (float *)pTarget);
+        fYaw = Round180__Ff(57.295776f * atan2f(afPos[0], afPos[2]));
+        *(float *)(pObj + 0x94) = fYaw;
+        *(unsigned char *)(pObj + 0x3E) |= 8;
+        *(float *)(m_unk38 + 0x11C) = Round180__Ff(fYaw);
+        afPos[1] = 0.0f;
+        sceVu0Normalize(afPos, afPos);
+        sceVu0ScaleVector(afPos, afPos, -5.0f);
+    } else {
+        *(u_long128 *)afVec = *(u_long128 *)(pObj + 0x70);
+        sceVu0ScaleVector(afPos, (float *)(pObj + 0x60), -5.0f);
+    }
+    afPos[1] = 1.0f;
+    afVec[1] += 2.25f;
+    sceVu0AddVector(afPos, afPos, afVec);
+    SetCameraLookAtParams__9CameraAPIFP15EntityBaseClassPfPf(&mCameraAPI__13EntityManager, this, afPos, afVec);
+    gInterface[0x1997] = 0;
+}
+
 // DRAFT: 0x001D18A0 HideItems__7PeddlerFv
 // note: 6 diff lines; this and slot pointer swap s3/s4 (orig this=s4, slot=s3). Tried 4 local orders (nOff/i/bAll/ppSlot 11, bAll/i/nOff/ppSlot 13, nOff-first 12, bAll-first 12); ppSlot-first best.
 int Peddler::HideItems() {
@@ -422,6 +494,40 @@ int Peddler::HideItems() {
         nOff += 4;
     } while (i < 5);
     return bAll;
+}
+
+// DRAFT: 0x001D1950 ExitPeddlerView__7PeddlerFv
+// note: 45 diff lines; this stays in s3 (orig s0), frame 0x60 (orig 0x50) from the spilled 0.85f bit pattern. Tried: 3 declaration orders (no change), bit-pattern 0.85f (55 to 45).
+void Peddler::ExitPeddlerView() {
+    int i;
+    unsigned int nOff;
+    PeddlerItems **ppSlot;
+
+    if (m_unk22C != 0) {
+        Remove__6PArrayFPv((char *)m_unk24C + 0x14, (void *)m_unk22C);
+        BuildDispList__9PSkeletonFv(m_unk3C);
+        if (m_unk22C != 0) {
+            ((PeddlerSlotObject *)m_unk22C)->Release(1);
+        }
+        m_unk22C = 0;
+    }
+    unsigned int nFadeBits = 0x3F59999Au;
+    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, *(float *)&nFadeBits, 1, 0);
+    ReleaseControlOfCamera__9CameraAPIFP15EntityBaseClassb(&mCameraAPI__13EntityManager, this, 1);
+
+    i = 0;
+    nOff = 0;
+    ppSlot = (PeddlerItems **)((char *)this + nOff + 0x218);
+    while (*ppSlot != 0 && i < 5) {
+        if (!(i < 5 && (*ppSlot)->m_unk4 != 0)) {
+            CdsAssert("Peddler.cpp", 0x57F, "i < PEDDLER_MAX_ITEMS && m_pItems[i]->IsValid()");
+        }
+        (*ppSlot)->EnableDisplay(0);
+        nOff += 4;
+        i++;
+        ppSlot = (PeddlerItems **)((char *)this + nOff + 0x218);
+    }
+    gInterface[0x1997] = 1;
 }
 
 // DRAFT: 0x001D1A80 InitItems__7PeddlerFv
@@ -473,6 +579,60 @@ void Peddler::OnTimerEvent(unsigned int arg0) {
     }
 }
 
+// DRAFT: 0x001D1E00 OnHitEvent__7PeddlerFP15EntityBaseClassiUiUi
+// note: control flow matches; 75 lines differ. Ours has frame 0x50 with this in s3, original 0x60 with this in s4 (nResult kept live in s0). Tried: nResult returns, declaration reorder, m_unk1CC sense swap (76->75), literal returns.
+int Peddler::OnHitEvent(EntityBaseClass *pEntity, int nArg1, unsigned int nEvent, unsigned int nArg2) {
+    int nFlag = *(unsigned int *)((char *)pEntity + 0x10C) & 1;
+    int nState = m_unk20;
+    int nResult = 5;
+
+    if (nEvent != 0x1FE) {
+        if (nFlag == 0 && m_unk288 != m_unk28C) {
+            return 5;
+        }
+        if (nState == 5) {
+            return 5;
+        }
+        if (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) != 0) {
+            return 5;
+        }
+        if (nState < 15 || nFlag == 0) {
+            if (m_unk214 != 0) {
+                FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(this, pEntity);
+            }
+            if (nFlag == 0) {
+                int nHits = m_unk1CC - nArg1;
+                CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(this, 0, 3, 0, false);
+                m_unk1CC = nHits;
+            }
+            if (m_unk1CC <= 0) {
+                SetState__15EntityBaseClassFi(this, 4);
+            } else {
+                SetState__15EntityBaseClassFi(this, 5);
+                m_unk298 = nState;
+            }
+            return 1;
+        }
+        return 0;
+    }
+
+    m_unkE8 = 3;
+    if (nArg1 == -1) {
+        SetState__15EntityBaseClassFi(this, 0x12);
+        return 5;
+    }
+    m_unk246 = (unsigned short)nArg1;
+    if (!(nArg1 & 0x1000)) {
+        return nResult;
+    }
+    if (m_unk20 == 0x14) {
+        return nResult;
+    }
+    SetState__15EntityBaseClassFi(this, 0x15);
+    nResult = 1;
+    return nResult;
+}
+
 // DRAFT: 0x001D1F90 FindItem__7PeddlerFi
 // note: original has one extra nop after the increments (0x2C) before the loop test; 8 diff lines. Tried: index loop (large diff), p++ in body (10), while form (8), i++ in header with p++ in body (10).
 unsigned int Peddler::FindItem(int arg0) {
@@ -485,6 +645,46 @@ unsigned int Peddler::FindItem(int arg0) {
         }
     }
     return 0;
+}
+
+// DRAFT: 0x001D1FE0 ValidateItems__7PeddlerFv
+// note: 46 diff lines; register assignment differs (orig nOff=s5, index=s3, entry=s4, counter=s2; ours nOff=s3, index=s5, entry=s2, counter=s4) and the prologue zeroing order. Tried: pEntry/pBase split (46), declaration reorder (50), signed nOff (46), inline slot pointer (46).
+void Peddler::ValidateItems() {
+    unsigned int *pIndex;
+    ItemEntry *pEntry;
+    Player *pPlayer;
+    unsigned int nOff;
+    int i;
+    int nIndex;
+    int nCur;
+    int nResult;
+    int *pSlot;
+
+    nOff = 0;
+    i = 0;
+    pIndex = (unsigned int *)((char *)this + 0x1B0);
+    pPlayer = (Player *)mpEntMgr__15EntityBaseClass->m_unk505C;
+    do {
+        pSlot = (int *)((char *)this + nOff + 0x230);
+        nIndex = *(int *)pIndex;
+        nCur = *pSlot;
+        pIndex++;
+        if ((unsigned int)nIndex >= 0x3C) {
+            CdsAssert("Peddler.cpp", 0x4BB, "(u_int)iItem < PEDDLER_MAX");
+        }
+        pEntry = &ItemTable[nIndex];
+        if (pEntry->m_unk4 != 0) {
+            nResult = pPlayer->ValidateItem(pEntry->m_unk4);
+            if (nResult < 0) {
+                nIndex = nCur | 0x40;
+            } else if (nResult != pEntry->m_unk4) {
+                nIndex = FindItem(nResult);
+            }
+        }
+        i++;
+        *pSlot = nIndex;
+        nOff += 4;
+    } while (i < 5);
 }
 
 // DRAFT: 0x001D3870 __dt__7PeddlerFv

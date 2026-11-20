@@ -19,6 +19,10 @@ public:
     void InitItems();
     void ValidateItems();
     int GetNextPosition(float (&afPos)[4]);
+    int IsAlive();
+    void LookAtPeddler();
+    void ExitPeddlerView();
+    int OnHitEvent(EntityBaseClass *pEntity, int nArg1, unsigned int nEvent, unsigned int nArg2);
 
     void *m_unk0;                   // 0x000 vtable pointer
     unsigned int m_unk4;            // 0x004 owner id passed to Add2DependencyList
@@ -26,29 +30,39 @@ public:
     int m_unkC;                     // 0x00C passed to the entity's 0x30 slot
     char _pad010[0x20 - 0x10];
     int m_unk20;                    // 0x020
-    char _pad024[0x0D4 - 0x24];
+    char _pad024[0x038 - 0x024];
+    char *m_unk38;                  // 0x038 object with 0x11C float
+    char *m_unk3C;                  // 0x03C object with 0x80 vector
+    char _pad040[0x0D4 - 0x040];
     int m_unkD4;                    // 0x0D4 cleared by constructor
-    char _pad0D8[0x1E4 - 0x0D8];
+    char _pad0D8[0x0E8 - 0x0D8];
+    unsigned char m_unkE8;          // 0x0E8 set to 3 by OnHitEvent
+    char _padE9[0x1CC - 0x0E9];
+    int m_unk1CC;                   // 0x1CC alive when greater than zero
+    char _pad1D0[0x1E4 - 0x1D0];
     float m_unk1E4;                 // 0x1E4
     float m_unk1E8;                 // 0x1E8
     float m_unk1EC;                 // 0x1EC
     float m_unk1F0;                 // 0x1F0
     EntityBaseClass *m_unk1F4[3];   // 0x1F4
     EntityBaseClass *m_unk200;      // 0x200
-    char _pad204[0x218 - 0x204];
+    char _pad204[0x214 - 0x204];
+    int m_unk214;                   // 0x214 nonzero when the look target is set
     PeddlerItems *m_unk218[5];      // 0x218 cleared by constructor
     int m_unk22C;                   // 0x22C
     char _pad230[0x244 - 0x230];
     unsigned char m_unk244;         // 0x244
-    char _pad245[0x248 - 0x245];
+    char _pad245[0x246 - 0x245];
+    unsigned short m_unk246;        // 0x246 hit argument
     int m_unk248;                   // 0x248
     int m_unk24C;                   // 0x24C
     char _pad250[0x284 - 0x250];
     tagWaypointGroup *m_unk284;     // 0x284
     int m_unk288;                   // 0x288
-    char _pad28C[0x294 - 0x28C];
+    int m_unk28C;                   // 0x28C
+    char _pad290[0x294 - 0x290];
     int m_unk294;                   // 0x294
-    char _pad298[0x29C - 0x298];
+    int m_unk298;                   // 0x298 state saved by OnHitEvent
     unsigned char m_unk29C;         // 0x29C
     char _pad29D[0x2A5 - 0x29D];
     unsigned char m_unk2A5;         // 0x2A5 set to 1 by constructor
