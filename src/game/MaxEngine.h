@@ -3,6 +3,9 @@
 
 class PScrollingTrees;
 class MaxEngineSlot;
+class Camera;
+// TODO(header): ePSLayer belongs to the particle system header; only the value compared in this file is named.
+enum ePSLayer { ePSLayer_2 = 2 };
 
 class MaxEngine {
 public:
@@ -10,21 +13,30 @@ public:
     ~MaxEngine();
     int EngGenerateUniqueID();
     void RenderWorld(int nFrame, bool bFlag);
+    void CreateScrollingTrees();
     void DestroyScrollingTrees();
     void Destroy();
     void CheckCDTrayDuringLoading(unsigned int nTimeout);
     void IncrementSecondarySyncCounts();
     void SoundOneFrameHasElapsed_R(int &nA, int &nB);
     void EngineInit();
+    void InitRenderFrame(bool bFlag, unsigned int nTimeout);
+    void CheckCDTrayDuringGamePlay();
+    int PlayMovie(int nA, int nB, unsigned int nC);
+    void RenderParticleFx(Camera *pCam, int nFlag, ePSLayer eLayer);
 
     char _pad000[0xD0];
     /* 0x0000D0 */ float m_unkD0;
-    char _pad0D4[0x137A0 - 0x0D4];
+    char _pad0D4[0x1E8 - 0x0D4];
+    /* 0x1E8 */ float m_unk1E8;
+    char _pad1EC[0x137A0 - 0x1EC];
     /* 0x137A0 */ int m_unk137A0;
     /* 0x137A4 */ int m_unk137A4;
     /* 0x137A8 */ MaxEngineSlot *m_unk137A8;
     /* 0x137AC */ char m_unk137AC;
-    char _pad137AD[0x137D4 - 0x137AD];
+    char _pad137AD[0x137CC - 0x137AD];
+    /* 0x137CC */ int m_unk137CC;
+    char _pad137D0[0x137D4 - 0x137D0];
     /* 0x137D4 */ int m_unk137D4;
     /* 0x137D8 */ char m_unk137D8;
     char _pad137D9[0x137DC - 0x137D9];
