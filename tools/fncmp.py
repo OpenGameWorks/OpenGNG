@@ -4,7 +4,8 @@
 Usage: fncmp.py [-q] [--obj OBJ] SOURCE NAME|0xADDR
 Exit 0 = MATCH: every instruction word is identical outside relocated fields,
 and every relocation in the compiled function names the same symbol that the
-original executable's `.relmain` names at that offset. Relocations against a
+original executable's `.relmain` names at that offset, with the same in-place
+addend (the offset into that symbol). Relocations against a
 section symbol (`.rodata`, `.sdata`, literal pools) are reported as `DATA`
 and accepted only when the original also relocates there against a local
 `@N` literal or section; the full build confirms them. A function-local
@@ -33,6 +34,20 @@ import srcmeta  # noqa: E402
 ROOT = disasm.ROOT
 LOCAL_STATIC = re.compile(r"\$\d+$")
 MASK = {4: 0xFC000000, 5: 0xFFFF0000, 6: 0xFFFF0000, 7: 0xFFFF0000, 2: 0}
+GP = 0x2CBF70  # .reginfo ri_gp_value
+
+
+def addend_ok(typ: int, have: int, want: int, s: int) -> bool:
+    """The compiled in-place addend, applied to the original target, gives the original field."""
+    lo = ((have & 0xFFFF) ^ 0x8000) - 0x8000
+    if typ == 6:
+        return (s + lo) & 0xFFFF == want & 0xFFFF
+    if typ == 7:
+        return (s + lo - GP) & 0xFFFF == want & 0xFFFF
+    if typ == 4:
+        return (((have & 0x3FFFFFF) << 2) + s) >> 2 & 0x3FFFFFF == want & 0x3FFFFFF
+    # A HI16 addend depends on its LO16 partner, which the LO16 check covers.
+    return True
 
 
 def compile_source(src: Path, out: Path) -> None:
@@ -87,6 +102,11 @@ def compare(src: Path, key: str, obj: Path | None, quiet: bool) -> int:
         return 1
     code, rels = got
     orel = disasm.relocs()
+    ofull = disasm.relocs_full()
+    symaddr = {}
+    for line in (disasm.INFO / "symbols.tsv").read_text().splitlines()[1:]:
+        f = line.split("\t")
+        symaddr[int(f[0])] = int(f[1], 16)
     diffs, notes = 0, []
     n = max(size, len(code)) // 4
     lines = []
@@ -108,6 +128,10 @@ def compare(src: Path, key: str, obj: Path | None, quiet: bool) -> int:
                   and not ("$" in r[1] and LOCAL_STATIC.sub("", r[1]) == LOCAL_STATIC.sub("", o[1]))):
                 ok = False
                 notes.append(f"{i * 4:#06x}: {r[1]} is not the original target {o[1]}")
+            elif ok and have is not None and not r[1].startswith(".") and not addend_ok(r[0], have, want, symaddr[ofull[a][1]]):
+                # Same symbol, different offset into it (a member of a global, an array element).
+                ok = False
+                notes.append(f"{i * 4:#06x}: addend into {r[1]} differs")
         diffs += not ok
         if not quiet:
             def dis(w, va):
