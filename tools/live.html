@@ -116,7 +116,7 @@ async function poll() {
     const ws = (w && w.workers) || [];
     document.getElementById("workers").replaceChildren(...(ws.length ? ws : [{ id: "idle", file: "", funcs: "" }]).map(j => { const li = document.createElement("li");
       li.innerHTML = `<b></b> <span class="grp"></span>`; li.firstChild.textContent = j.id; li.lastChild.textContent = `${j.file} ${j.funcs}`; return li; }));
-    document.getElementById("err").textContent = st && !st.ok ? "showing last good data; waiting for tree to settle: " + st.message : "";
+    document.getElementById("err").textContent = st && !st.ok ? "showing last good build; HEAD does not build: " + st.message : "";
   } catch (e) { /* server restarting */ }
   document.getElementById("stale").textContent = doc ? `updated ${new Date(doc.updated * 1000).toLocaleTimeString()}` : "waiting for progress.json";
 }

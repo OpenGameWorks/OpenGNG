@@ -1,25 +1,31 @@
 #!/usr/bin/env python3
-"""Serve a live decomp-progress treemap and refresh it when sources or objects change.
+"""Serve a live decomp-progress treemap built from the committed tree.
 
 Usage:
   python tools/live.py [--port 8722] [--interval 5]     (or `just live`)
 
 Open http://127.0.0.1:8722/ . The page polls /progress.json every 3 s and flashes
-newly matched functions. A watcher thread stats src/**, include/** and build/queue/*.json every
-INTERVAL seconds; only when an mtime changed it runs `tools/configure.py` (to pick up new
-source files), `ninja` (compile stale sources, link, pack, SHA-1 check) and
-`tools/progress.py --json`. Active workers come from build/queue/active.json, which the
-coordinator rewrites as it dispatches and collects jobs. With no change it does no
-work. A failing refresh (the tree caught mid-edit by a concurrent session) keeps the last
-good progress.json and retries every INTERVAL until it succeeds. The server answers conditional requests, so an unchanged json costs a 304.
+newly matched functions. Progress reflects HEAD, not the working tree: concurrent workers
+keep sources mid-edit (failing variants, half-split headers), so a working-tree build almost
+never settles. Every INTERVAL seconds the watcher compares `git rev-parse HEAD`; on a new
+commit it mirrors HEAD into build/live/head (rewriting only files whose bytes changed, so
+ninja recompiles only those), then runs `tools/configure.py`, `ninja` and
+`tools/progress.py --json` there. Untracked inputs (original/, .venv, build/info, compiler
+packages) are symlinks into the main tree. Active workers come live from
+build/queue/active.json. A failing refresh keeps the last good progress.json and reports
+the compiler's error line. The server answers conditional requests, so an unchanged json
+costs a 304.
 """
 
 from __future__ import annotations
 
 import argparse
+import io
 import json
+import shutil
 import subprocess
 import sys
+import tarfile
 import threading
 import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -27,9 +33,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
+MIRROR = BUILD / "live/head"
 ROUTES = {"/": ROOT / "tools/live.html", "/index.html": ROOT / "tools/live.html",
-          "/progress.json": BUILD / "progress.json", "/status.json": BUILD / "live_status.json",
+          "/progress.json": MIRROR / "build/progress.json", "/status.json": BUILD / "live_status.json",
           "/workers.json": BUILD / "queue/active.json"}
+# Untracked build inputs the mirror borrows from the main tree.
+LINKS = ["original", ".venv", "build/info"] + [
+    str(p.relative_to(ROOT)) for p in sorted((ROOT / "tools/compilers").glob("*")) if p.is_dir()]
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -44,37 +54,71 @@ class Handler(SimpleHTTPRequestHandler):
         pass
 
 
-def snapshot() -> dict[str, float]:
-    """mtimes of everything whose change can alter the report."""
-    files = [*ROOT.joinpath("src").rglob("*.c*"), *ROOT.joinpath("src").rglob("*.h"),
-             *ROOT.joinpath("include").rglob("*.h"), *BUILD.joinpath("queue").glob("*.json")]
-    scratch = ROOT / "src/scratch"
-    snap = {}
-    for f in files:
-        if f.is_relative_to(scratch):  # configure.py ignores scratch experiments
-            continue
-        try:
-            snap[str(f)] = f.stat().st_mtime
-        except OSError:
-            pass
-    return snap
+def head() -> str:
+    return subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True,
+                          check=True).stdout.strip()
 
 
-def refresh() -> str | None:
-    """Rebuild progress.json; return None on success, else the reason the tree is unsettled.
+def sync(sha: str) -> None:
+    """Make MIRROR equal the tracked tree at SHA, touching only files whose bytes differ."""
+    blob = subprocess.run(["git", "archive", sha], cwd=ROOT, capture_output=True, check=True).stdout
+    want = set()
+    with tarfile.open(fileobj=io.BytesIO(blob)) as tar:
+        for m in tar:
+            if not m.isfile():
+                continue
+            want.add(m.name)
+            dst = MIRROR / m.name
+            data = tar.extractfile(m).read()
+            if dst.is_file() and not dst.is_symlink() and dst.read_bytes() == data:
+                continue
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_bytes(data)
+            dst.chmod(m.mode & 0o777)
+    manifest = MIRROR / "build/.live_manifest"
+    old = set(manifest.read_text().splitlines()) if manifest.exists() else set()
+    for gone in old - want:  # files deleted or renamed upstream
+        (MIRROR / gone).unlink(missing_ok=True)
+    for rel in LINKS:
+        link = MIRROR / rel
+        if not link.is_symlink() and (ROOT / rel).exists():
+            link.parent.mkdir(parents=True, exist_ok=True)
+            link.symlink_to(ROOT / rel)
+    seen = MIRROR / "build/match_times.json"
+    if not seen.exists() and (BUILD / "match_times.json").exists():  # keep "Recent matches" history
+        shutil.copy2(BUILD / "match_times.json", seen)
+    manifest.write_text("\n".join(sorted(want)))
+
+
+def reason_of(cmd: list[str], out: str) -> str:
+    """The line that explains a failed step: the first compiler error, else the last output line.
+
+    MWCC prints `#    File: src\\x.cpp`, the source line, a caret line `#   Error: ^^^`, then
+    the message on the next `#` line; the file and message together name the breakage."""
+    lines = [l for l in out.strip().splitlines() if l.strip() and not l.startswith("ninja:")]
+    src = next((l.split("File:", 1)[1].strip() for l in lines if "File:" in l), "")
+    for i, l in enumerate(lines[:-1]):
+        if "Error:" in l:
+            return f"{src}: {lines[i + 1].lstrip('# ').strip()[:300]}"
+    pick = lines[-1] if lines else "failed"
+    return f"{Path(cmd[-1]).name}: {pick.strip()[:300]}"
+
+
+def refresh(sha: str) -> str | None:
+    """Rebuild progress.json from commit SHA; return None on success, else why it failed.
 
     A failed step leaves the previous progress.json in place, so the page keeps the last
     good treemap."""
+    sync(sha)
     steps = [[sys.executable, "tools/configure.py"], ["ninja"],
              [sys.executable, "tools/progress.py", "--json"]]
     for cmd in steps:
         try:
-            r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
+            r = subprocess.run(cmd, cwd=MIRROR, capture_output=True, text=True)
         except OSError as e:
             return f"{cmd[-1]}: {e}"
         if r.returncode:
-            lines = [l for l in (r.stdout + r.stderr).strip().splitlines() if not l.startswith("ninja:")]
-            return f"{cmd[-1]}: {lines[-1][:300] if lines else 'failed'}"
+            return reason_of(cmd, r.stdout + r.stderr)
     return None
 
 
@@ -84,28 +128,23 @@ def write_status(pending: str | None) -> None:
 
 
 def watch(interval: float) -> None:
-    """Refresh on change; while a refresh fails, retry every tick until the tree settles.
-
-    The working tree is edited concurrently by decomp sessions, so a refresh can observe a
-    transient state (a source mid-rename that duplicates an address, a half-written file,
-    a concurrent ninja run). Such failures are expected and only delay the update."""
+    """Refresh on each new commit. A commit that fails to build is a real breakage, so its
+    error stays on the page until a later commit builds; it is not retried."""
     last, pending = None, None
     while True:
         try:
-            snap = snapshot()
-            if snap != last or pending is not None:
-                last = snap
-                reason = refresh()
-                last = snapshot()  # the refresh itself may rebuild objects
+            sha = head()
+            if sha != last:
+                last = sha
+                reason = refresh(sha)
                 if reason is None:
-                    print(f"live: refreshed {time.strftime('%H:%M:%S')}", flush=True)
-                elif reason != pending:  # log each distinct transient state once
-                    print(f"live: waiting for tree to settle ({reason})", flush=True)
-                if reason != pending or reason is None:
-                    write_status(reason)
+                    print(f"live: refreshed {sha[:8]} {time.strftime('%H:%M:%S')}", flush=True)
+                else:
+                    print(f"live: HEAD {sha[:8]} does not build ({reason})", flush=True)
+                write_status(reason)
                 pending = reason
         except Exception as e:  # the watcher thread must outlive any single bad tick
-            pending = f"{type(e).__name__}: {e}"
+            last, pending = None, f"{type(e).__name__}: {e}"  # retry this commit next tick
             print(f"live: tick error ({pending}); retrying", flush=True)
         time.sleep(interval)
 
