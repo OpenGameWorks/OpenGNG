@@ -199,7 +199,7 @@ signed char Pickup::GetVarType(int arg0) {  // static: no this in a0
 Pickup::Pickup() {
     __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 1, 0);
     this->m_unk0 = __vt__6Pickup;
-    this->m_unk1D0 = *(u_long128 *)gUnitMatrix;
+    this->m_unk1D0 = *(u_long128 *)&gUnitMatrix[12];
     this->m_unk1ED = 0;
     this->m_unk1F0 = 0;
     this->m_unk1EE = 0;
