@@ -7,7 +7,9 @@ extern "C" void sceDevConsAttribute(char *pCons, unsigned char nAttr);
 extern "C" void sceDevConsClear(char *pCons);
 extern "C" void sceDevConsLocate(char *pCons, unsigned int nX, unsigned int nY);
 extern "C" unsigned int strlen(const char *pStr);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
+extern "C" char *strcpy(char *pDst, const char *pSrc);
+extern "C" char *strcat(char *pDst, const char *pSrc);
+void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern char gEng[105360];
 extern short mPerformanceBars;
 extern short mDisplayListStatusBar;
@@ -43,9 +45,15 @@ struct PadState {
 
 extern PadState gPad;
 
+class FileUtils {
+public:
+    static int GetHung();
+};
+
 class PGfxEngine {
 public:
     void UpdateLights(PMat4 *pA, PMat4 *pB, float (*pC)[4]);
+    void RefreshDisplay();
     char _pad000[0x158E22];
     unsigned char m_unk158E22;
 };
@@ -62,6 +70,11 @@ public:
 
 class ETiming {
 public:
+    ETiming();
+    char _pad000[0xD40];
+    void InitTimers();
+    void MaxesUpdate();
+    void ZeroAllOneFrameVals();
     void StopSubTimer(unsigned int nId);
     void StartSubTimer(unsigned int nId);
     void PrintPerformanceMeter(unsigned int nId, PMat4 *pMat);
@@ -74,6 +87,19 @@ public:
 };
 
 extern "C" void __dt__7ETimingFv(ETiming *pThis, short nDestroy);
+extern "C" void sceDevConsInit();
+extern "C" int sceDevConsOpen(int nX, int nY, int nW, int nH);
+extern int SCREEN_WIDTH;
+extern int SCREEN_HEIGHT;
+extern "C" void sceDevConsDraw(char *pCons);
+extern unsigned char gbApparition;
+
+struct DebugTblEntry {
+    int _pad000[3];
+    void (*pFn)();
+};
+
+extern DebugTblEntry DebugTbl[0x1A];
 
 #include "Debug.h"
 
@@ -88,6 +114,33 @@ void Debug::RenderPerformanceMeters() {
     }
     if (t != 0 && mDisplayListStatusBar != 0) {
         t->PrintDisplayListStatusMeter(0, 0);
+    }
+}
+
+// DRAFT: 0x16A760 DispDebugTimer__5DebugFv
+// note: 31 differing words: frame and buf size match with buf[0x40]; the compiler evaluates the 1C, 14, 18 float conversions in the order 14, 18, 1C while the original does 1C, 14, 18; local-temporary and early-nSub orders tried (33 and 112 words).
+void Debug::DispDebugTimer() {
+    char buf[0x40];
+    static int test;
+    static char init;
+    unsigned int nSub = 0;
+
+    unsigned int uA;
+    unsigned int uB;
+    unsigned int uC;
+
+    if (this->m_unk24 != 0) {
+        nSub = ((unsigned int *)this->m_unk24)[2];
+    }
+    uC = (unsigned int)((float)this->m_unk1C * *(float *)(gEng + 0x1E0));
+    uA = (unsigned int)((float)this->m_unk14 * *(float *)(gEng + 0x1E0));
+    uB = (unsigned int)((float)this->m_unk18 * *(float *)(gEng + 0x1E0));
+    sprintf(buf, "(%d uS  %d uS, %d) %d uS / %d\n",
+            uA, uB, nSub, uC, this->m_unk20);
+    this->DebugDisp(buf);
+    if (!init) {
+        test = 0x2BC;
+        init = 1;
     }
 }
 
@@ -116,6 +169,37 @@ void Debug::ResetDebugTimer() {
     this->m_unk1C = 0;
     this->m_unk20 = 0;
     this->m_unk24 = 0;
+}
+
+// FUNCTION: 0x16A9D0 CdsAssert__FPciPc
+void CdsAssert(char *pFile, int nLine, char *pExpr) {
+    char buf[0x100];
+    char hangBuf[0x40];
+    char lineBuf[0x10];
+    static unsigned char bLoop;
+    static char init;
+
+    if (!init) {
+        bLoop = 1;
+        init = 1;
+    }
+    char *pHead = "\n\n\nFile  : ";
+    strcpy(buf, pHead);
+    strcat(buf, pFile);
+    strcat(buf, "\nLine  : ");
+    sprintf(lineBuf, "%d", nLine);
+    strcat(buf, lineBuf);
+    strcat(buf, "\nError : ");
+    strcat(buf, pExpr);
+    if (FileUtils::GetHung()) {
+        sprintf(hangBuf, "\n     HangParams %d %d", *(int *)(gEng + 0x19A74), *(int *)(gEng + 0x19A70));
+        strcat(buf, hangBuf);
+    }
+    while (bLoop) {
+        gDebug.DebugClear();
+        gDebug.DebugDisp(buf);
+        gGfxEng.RefreshDisplay();
+    }
 }
 
 // FUNCTION: 0x16AB00 DebugDisp__5DebugFPc
@@ -159,6 +243,38 @@ void Debug::LineFeed(char *pStr) {
             pStr++;
         } while (--n != 0);
     }
+}
+
+// DRAFT: 0x16ACE0 FrameEnd__5DebugFv
+// note: 49 differing words: frame 0x70 vs 0x60 (extra s3 save), this/table/index in s1/s3/s2 vs s2/s0/s1, nCount takes a saved reg so mfc0 counter is copied via s0 into a2. Tried loop decl orders (no change).
+void Debug::FrameEnd() {
+    char buf[0x20];
+
+    if (mDebugTime != 0) {
+        this->m_unk0C->StopSubTimer(1);
+        this->m_unk0C->MaxesUpdate();
+    }
+    gbApparition = 1;
+    if (this->m_unk2C == 0) {
+        DebugTblEntry *p = DebugTbl;
+        unsigned int i = 0;
+        for (; i < 0x1A; i++, p++) {
+            if (p->pFn != 0) {
+                p->pFn();
+            }
+        }
+    }
+    if (mDebugTime != 0) {
+        unsigned int nCount;
+        asm { .word 0x4006C803 }
+        sprintf(buf, "D cache miss : %d\n", nCount);
+        this->DebugDisp(buf);
+        this->m_unk0C->ZeroAllOneFrameVals();
+    }
+    if (this->m_unk2D != 0) {
+        sceDevConsDraw(this->m_unk00);
+    }
+    this->m_unk2D = 0;
 }
 
 // FUNCTION: 0x16ADD0 DebugClear__5DebugFv
@@ -228,7 +344,7 @@ void RenderAnimation() {
 void CameraDisplay() {
     Camera *p = (Camera *)(gEng + 0x19760);
     if (p == 0) {
-        CdsAssert__FPciPc("Debug.cpp", 0x89, "pGameCam");
+        CdsAssert("Debug.cpp", 0x89, "pGameCam");
     }
     p->TextDebug();
 }
@@ -247,6 +363,21 @@ void Debug::StartTimer(unsigned int nId) {
     }
 }
 
+// FUNCTION: 0x16B4D0 InitDebug__5DebugFv
+void Debug::InitDebug() {
+    int nX;
+    int nY;
+
+    sceDevConsInit();
+    nX = (0x1000 - SCREEN_WIDTH) / 2;
+    nY = (0x1000 - SCREEN_HEIGHT) / 2;
+    this->m_unk00 = (char *)sceDevConsOpen(nX * 0x10 + 0x100, nY * 0x10 + 0x100, 0x4B, 0x1E);
+    sceDevConsClear(this->m_unk00);
+    this->m_unk0C = new ETiming();
+    this->m_unk0C->InitTimers();
+    this->m_unk34 = 0;
+}
+
 // FUNCTION: 0x16B580 __dt__5DebugFv
 Debug::~Debug() {
     sceDevConsClose(this->m_unk00);
@@ -254,4 +385,11 @@ Debug::~Debug() {
         __dt__7ETimingFv(this->m_unk0C, 1);
         this->m_unk0C = 0;
     }
+}
+
+// FUNCTION: 0x16B5F0 __ct__5DebugFv
+Debug::Debug() {
+    this->m_unk28 = 0;
+    this->m_unk2C = 0;
+    this->m_unk0C = 0;
 }

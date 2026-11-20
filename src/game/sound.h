@@ -28,6 +28,8 @@ void SOUND_StreamAfterFlags(unsigned int arg0, unsigned int arg1, unsigned int a
 void SOUND_TransferSFX(short arg0, short arg1, unsigned int arg2, unsigned int arg3);
 int SOUND_FindFreeSPUChannel(unsigned int arg0, unsigned int arg1, unsigned int arg2);
 unsigned int SOUND_DataDestEEDirect(unsigned int arg0, short arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4, unsigned int arg5, unsigned int arg6);
+int SOUND_DataDestEEBuffered(unsigned int arg0, short arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4, unsigned int arg5, unsigned int arg6, short arg7, unsigned short arg8, unsigned int arg9);
+int FlushIOPCommand(int arg0, unsigned int arg1, unsigned int arg2);
 unsigned int SOUND_PlayDialogRelVol(unsigned int arg0, short arg1, unsigned int arg2, short arg3, unsigned int arg4);
 unsigned int SOUND_PlayMusicRelVol(unsigned int arg0, short arg1, unsigned int arg2, short arg3, unsigned int arg4);
 int SOUND_InitIOP(void);

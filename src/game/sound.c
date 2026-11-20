@@ -10,9 +10,23 @@ extern char gCd[0x40];
 int sceSifInitRpc(int mode);
 int sceSifBindRpc(void *client, unsigned int rpc_number, int mode);
 int printf(const char *fmt, ...);
+void SOUND_CopyIOPBuffer(void);
+int sceSifCheckStatRpc(void *cd);
+void FlushCache(int nMode);
+void SOUND_GetStatus(int arg0, int arg1);
+void SOUND_SIFTransfer(int arg0, void *arg1, int arg2);
+void memcpy(void *dst, const void *src, unsigned int size);
+extern unsigned short senddata[0x400];
+extern short senddataPrevDbg[0x400];
+extern int IOP_Cnt;
+extern int SOUND_IOP_REQUEST_LOAD;
+extern int gSOUND_uEECallCnt;
+extern int gSOUND_EEMainSyncCount3Sent;
 
-static int fst_uEECallCnt;
+static unsigned int fst_uEECallCnt;
 static int fst_WaitUpdateArray;
+static unsigned int fst_uEECallCntReturned;
+static unsigned char fst_bGetStatusRequested;
 
 // DRAFT: 0x001ADA80 SOUND_MakeStreamTransactionID
 // note: flag load goes to $v1 (original $v0) and 0x100 uses $a0; 9 differing lines. Tried reversed decl order, signed char, !init vs init==0, += 1 vs ++; no change.
@@ -78,6 +92,12 @@ void SOUND_SetGlobalRelVols(short arg0, short arg1, short arg2, short arg3, shor
     SetIOPCommand(0x39, 8);
 }
 
+// FUNCTION: 0x001ADBC0 SOUND_SetMasterRegisterVolumeAbs
+void SOUND_SetMasterRegisterVolumeAbs(short arg0) {
+    IOPCommandData[0] = arg0;
+    SetIOPCommand(0x2C, 1);
+}
+
 // DRAFT: 0x001ADBE0 SOUND_EnableFeatures
 // note: 11 differing lines; compiler stores index 1 from $a0 before index 0 and drops the original's and/ori 0xFFFF; tried unsigned int args, no (short) cast on index 1, hi local.
 void SOUND_EnableFeatures(unsigned int arg0, unsigned int arg1) {
@@ -86,6 +106,12 @@ void SOUND_EnableFeatures(unsigned int arg0, unsigned int arg1) {
     IOPCommandData[1] = (short)(arg0 & 0xFFFF);
     IOPCommandData[2] = (short)(arg1 >> 16);
     SetIOPCommand(0x2A, 4);
+}
+
+// FUNCTION: 0x001ADC40 SOUND_MusicAddExciteHits
+void SOUND_MusicAddExciteHits(short arg0) {
+    IOPCommandData[0] = arg0;
+    SetIOPCommand(0x28, 1);
 }
 
 // DRAFT: 0x001ADC60 SOUND_LevelRestart
@@ -177,6 +203,57 @@ void SOUND_ChangeReverbCore(short arg0, short arg1, short arg2, short arg3, shor
     IOPCommandData[0] = arg0;
     IOPCommandData[1] = arg1;
     SetIOPCommand(0x4D, 6);
+}
+
+// DRAFT: 0x001ADEC0 FlushIOPCommand
+// note: 4 words differ. Original hoists daddu a1,zero,zero above jal SOUND_GetStatus and puts the flag sb in its delay slot; ours is reversed. Original sets a1 (addiu) before jal SOUND_SIFTransfer with daddu a0 in the delay slot; ours is reversed. Tried: volatile flag store, unsigned GetStatus arg, unsigned short* SIFTransfer arg (no change).
+int FlushIOPCommand(int arg0, unsigned int arg1, unsigned int arg2) {
+    int old;
+    static volatile int oldcnt;
+
+    SOUND_CopyIOPBuffer();
+    if (senddata[0] == 0) {
+        if (fst_bGetStatusRequested == 0) {
+            return -2;
+        }
+    }
+    if (fst_uEECallCntReturned != 0 && fst_uEECallCntReturned < fst_uEECallCnt) {
+        printf("FlushIOP Waiting sync %d, returned %d\n", fst_uEECallCnt, fst_uEECallCntReturned);
+        return -3;
+    }
+    FlushCache(0);
+    asm { sync }
+    asm { sync.p }
+    if (sceSifCheckStatRpc(gCd) != 0) {
+        return -1;
+    }
+    if (fst_bGetStatusRequested != 0) {
+        SOUND_GetStatus(SOUND_IOP_REQUEST_LOAD, 0);
+        fst_bGetStatusRequested = 0;
+    }
+    senddata[1] = 0;
+    senddata[4] = (short)(arg1 >> 16);
+    senddata[5] = (short)arg1;
+    senddata[6] = (short)(arg2 >> 16);
+    senddata[7] = (short)arg2;
+    fst_uEECallCnt += 1;
+    gSOUND_uEECallCnt = fst_uEECallCnt;
+    senddata[2] = (short)(fst_uEECallCnt >> 16);
+    senddata[3] = *(unsigned short *)&fst_uEECallCnt;
+    FlushCache(0);
+    asm { sync }
+    asm { sync.p }
+    SOUND_SIFTransfer(0, senddata, arg0);
+    memcpy(senddataPrevDbg, senddata, 0x800);
+    FlushCache(0);
+    asm { sync }
+    asm { sync.p }
+    old = IOP_Cnt;
+    gSOUND_EEMainSyncCount3Sent = arg2;
+    senddata[0] = 0;
+    oldcnt = old;
+    IOP_Cnt = 0;
+    return oldcnt;
 }
 
 // DRAFT: 0x001AE060 SOUND_CountFreeSPUChannels
@@ -336,6 +413,34 @@ int SOUND_StopStream(unsigned int arg0) {
     IOPCommandData[0] = (short)arg0;
     SetIOPCommand(5, 1);
     return 0;
+}
+
+// DRAFT: 0x001AE700 SOUND_DataDestEEBuffered
+// note: 41 words differ (orig 0xEC bytes, ours 0xE4): orig loads lui at,0x4B before most stores and has a different early-return branch and jal delay slot; tried short arg0, reordered stores, masked arg2 inline or via local, positive-if form (53 words).
+int SOUND_DataDestEEBuffered(unsigned int arg0, short arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4, unsigned int arg5, unsigned int arg6, short arg7, unsigned short arg8, unsigned int arg9) {
+    unsigned int lo2;
+    if (arg0 >= 4U) {
+        return -1;
+    }
+    IOPCommandData[12] = arg7;
+    IOPCommandData[2] = (short)(arg2 >> 16);
+    IOPCommandData[0] = (short)arg0;
+    lo2 = arg2 & 0xFFFFU;
+    IOPCommandData[3] = (short)lo2;
+    IOPCommandData[4] = (short)(arg3 >> 16);
+    IOPCommandData[5] = (short)arg3;
+    IOPCommandData[6] = (short)(arg4 >> 16);
+    IOPCommandData[7] = (short)arg4;
+    IOPCommandData[8] = (short)(arg5 >> 16);
+    IOPCommandData[9] = (short)arg5;
+    IOPCommandData[10] = (short)(arg6 >> 16);
+    IOPCommandData[11] = (short)arg6;
+    IOPCommandData[1] = arg1;
+    IOPCommandData[13] = arg8;
+    IOPCommandData[14] = (short)(arg9 >> 16);
+    IOPCommandData[15] = (short)arg9;
+    SetIOPCommand(0x31, 0x10);
+    return arg2;
 }
 
 // DRAFT: 0x001AE7F0 SOUND_DataDestEEDirect

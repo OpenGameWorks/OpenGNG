@@ -5,6 +5,7 @@ class ETiming;
 
 class Debug {
 public:
+    Debug();
     ~Debug();
     void StopDebugTimer(void *pArg);
     void ResetDebugTimer();
@@ -13,9 +14,12 @@ public:
     void DebugColorDisp(char *pStr, unsigned char nColor);
     void DebugClear();
     void LineFeed(char *pStr);
+    void FrameEnd();
     void RenderPerformanceMeters();
+    void DispDebugTimer();
     void StopTimer(unsigned int nId);
     void StartTimer(unsigned int nId);
+    void InitDebug();
 
     char *m_unk00;                  // 0x000 passed to sceDevConsPrintf
     unsigned int m_unk04;           // 0x004 zeroed by DebugClear
@@ -28,8 +32,11 @@ public:
     unsigned int m_unk20;           // 0x020
 
     void *m_unk24;                  // 0x024
-    char _pad028[0x2D - 0x28];
+    unsigned int m_unk28;           // 0x028 zeroed by the constructor
+    unsigned char m_unk2C;          // 0x02C zeroed by the constructor
     unsigned char m_unk2D;          // 0x02D
+    char _pad02E[0x34 - 0x2E];
+    unsigned int m_unk34;           // 0x034 zeroed by InitDebug
 };
 
 #endif
