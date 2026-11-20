@@ -184,7 +184,7 @@ extern int SCREEN_HEIGHT;
 extern "C" void MakeParallelProjectionMatrix__5PMat4Fffffffffffff(void *pThis, float, float, float, float, float, float, float, float, float, float, float, float);
 extern "C" void EnableAllText__11FontManagerFb(void *pThis, bool bFlag);
 extern "C" void *DisplayString__11FontManagerFPcffi9FontColor9FontAlign(void *pThis, char *pStr, float fX, float fY, int nZ, int nColor, int nAlign);
-extern "C" void JapanAddNumber__11FontManagerFPUsPUsi(unsigned short *pDst, unsigned short *pSrc, int nVal);
+extern "C" unsigned short *JapanAddNumber__11FontManagerFPUsPUsi(unsigned short *pDst, unsigned short *pSrc, int nVal);
 extern "C" int printf(const char *fmt, ...);
 extern "C" int strcasecmp(const char *pA, const char *pB);
 extern "C" unsigned int strlen(const char *pStr);
@@ -229,6 +229,7 @@ public:
     void Init(PMeshNode *arg0, HudData *arg1);
     void Update(int arg0);
     void InfoScreen();
+    void DisplayInfo(int arg0);
 
     char _pad000[0x4];
     void *m_unk4;               // 0x004
@@ -607,6 +608,52 @@ void HudSuper::Update(int arg0) {
             }
         }
         UpdateBar(m_unkC);
+    }
+}
+
+// DRAFT: 0x1402F0 UpdateMaxSuper__8HudSuperFv
+// note: frame 0x70 vs 0x80; original spills pNew (s2) to 0x7C(sp) for the inline PMNode ctor (PArray members with dtors), and loads mpPlayerData before this->m_unk4. Variants tried: locals reordered, loop-scoped pNew/pTmp (DIFF 135 each).
+void HudSuper::UpdateMaxSuper() {
+    unsigned int nTarget;
+    PArray *pList;
+    PMNode *pLast;
+    PMNode *pCap;
+    float fStep;
+
+    nTarget = *(unsigned int *)((char *)mpPlayerData__7GameHud + 0x38);
+    pList = (PArray *)((char *)m_unk4 + 0x14);
+    ((nTarget != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0xA07, "iMeter"));
+    if (pList->m_unk0 < nTarget) {
+        pLast = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[pList->m_unk0 - 1] : 0;
+        ((pLast != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0xA0A, "pLast"));
+        pCap = pLast->Find(0x8CF87F7E);
+        ((pCap != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0xA0C, "pCap"));
+        ((PArray *)((char *)pLast + 0x14))->Remove(pCap);
+        fStep = pLast->m_unk80;
+        while (pList->m_unk0 < nTarget) {
+            PMNode *pNew;
+            PMNode *pTmp;
+            pNew = (PMNode *)__nw__FUi(0x100);
+            if (pNew != 0) {
+                *(void **)pNew = __vt__9PResource;
+                *(int *)((char *)pNew + 4) = 0;
+                *(void **)pNew = __vt__6PMNode;
+                __ct__6PArrayFv((char *)pNew + 0x14);
+                sceVu0UnitMatrix((char *)pNew + 0x40);
+                __ct__6PArrayFv((char *)pNew + 0xD8);
+                InitMembers__6PMNodeFv(pNew);
+            }
+            ((pNew != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0xA11, "pTmp"));
+            CopyMNode__6PMNodeFR6PMNodeb(pNew, pLast, true);
+            fStep += 3.3f;
+            pNew->m_unk80 = fStep;
+            pList->Add(pNew);
+            pTmp = pNew->Find(0x136CC35A);
+            ((pTmp != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0xA17, "pTmp"));
+            pTmp->ScaleSet(0.0f, 1.0f, 1.0f, 1.0f);
+        }
+        pLast = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[pList->m_unk0 - 1] : 0;
+        ((PArray *)((char *)pLast + 0x14))->Add(pCap);
     }
 }
 
@@ -1038,6 +1085,58 @@ void GameHud::Reset() {
         SetNumber();
         ((PMNode *)m_unk4)->SetAllFrustrumTest((eBoxIntersect)1);
         ((PVirtObj *)m_unk4)->Slot05((int)&CoinAnim);
+    }
+}
+
+// DRAFT: 0x1426B0 DisplayInfo__12HudInventoryFi
+// note: DIFF 123; the arg0 gate and rem path match, but the rem-chain branch layout differs (original beq/fallthrough, ours bne plus addiu $v1,0xA before b) and the b/bnez targets sit at 0x3C/0x44. Tried buf sizes 2/0x18/0x20, DisplayString duplication (135), inverted gate (128), int lt hoist (123), rem==7 first (127); 9 instructions short (0x224 vs 0x248).
+void HudInventory::DisplayInfo(int arg0) {
+    FontManager *pFont = (FontManager *)((char *)&gInterface + 0x80);
+    pFont->RemoveText((unsigned short)8);
+    int lt = arg0 < 0x18;
+    if (arg0 < 0) {
+        *(int *)((char *)m_unk38 + 0xC) = 0;
+        return;
+    }
+    if (!lt) {
+        int rem = arg0 % 12;
+        int strId;
+        if (rem == 11) {
+            strId = 0x122;
+        } else if (rem == 10) {
+            strId = 0x11E;
+        } else if (rem == 9 || rem == 8) {
+            GameHud *pMp = mpPlayerData__7GameHud;
+            int nVal = (*(int *)((char *)pMp + 0x28) < 0x63) ? *(int *)((char *)pMp + 0x1C) - *(int *)((char *)pMp + 0x14) : 0;
+            char *pRec = *(char **)((char *)&gInterface + 0x180) + 0xD5C;
+            unsigned short buf[0x20];
+            if (*(signed char *)(pRec + 0xA) < 0xC) {
+                sprintf((char *)buf, *(char **)pRec);
+            } else {
+                buf[1] = 0;
+                unsigned short *pEnd = JapanAddNumber__11FontManagerFPUsPUsi(buf, &buf[1], nVal);
+                JapanAddNumber__11FontManagerFPUsPUsi(pEnd, *(unsigned short **)pRec, -1);
+            }
+            void *pNode = DisplayString__11FontManagerFPcffi9FontColor9FontAlign(pFont, (char *)buf, 0.0f, (float)(*(short *)(pRec + 6) + 0x14), *(signed char *)(pRec + 0xA), 0, 1);
+            *(short *)((char *)pNode + 6) = 8;
+            strId = 0x11A;
+        } else if (rem == 7) {
+            strId = 0x116;
+        } else {
+            return;
+        }
+        pFont->DisplayString(strId, 0, 0x14, false);
+    } else {
+        int group = (arg0 < 0xC) ? 0 : 2;
+        int slot = arg0 % 12;
+        if (slot >= 7) {
+            group++;
+            slot -= 7;
+        }
+        signed char id = *((signed char *)mpPlayerData__7GameHud + 0x5B + (group << 3) + slot);
+        if (id >= 0) {
+            pFont->DisplayString(*(int *)((char *)AbilityTable + 0xC + (id << 4)), 0, 0x14, false);
+        }
     }
 }
 
