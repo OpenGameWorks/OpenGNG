@@ -15,6 +15,8 @@ float FastMath_Fabs(float f);
 float Fabs(float f);
 struct STCollisionPoly;
 struct STCollisionNode;
+float SphereIntersect(STCollisionPoly *pPoly, float (*pSph)[4], float fRadius);
+int FindGroundPos(STCollisionPoly *pPoly, float (*pOut)[4]);
 int BoxLineCheck(float (*pBox)[2][4]);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0ApplyMatrix(float *, float *, float *);
@@ -37,6 +39,131 @@ extern "C" void FlushCache(int);
 int BGCollision::CheckCeiling(float (*pVec)[4])
 {
     return CheckIntersectAnim(pVec, &vUp_1253, 0, 0x40) != 0;
+}
+
+#define BGS_F(p, off) (*(float *)((char *)(p) + (off)))
+#define BGS_U(p, off) (*(unsigned int *)((char *)(p) + (off)))
+#define BGS_P(p, off) (*(void **)((char *)(p) + (off)))
+
+// DRAFT: 0x0016E1E0 BGDetectionST__11BGCollisionFPA2_A4_fP5PMat4P11SurfaceInfoi
+// note: 270 words; original keeps pArr in fp and spills pMat/nFlag/this at 0xC8/0xC4/0xCC, ours uses fp=pMat and spills 0xBC/0xB8; frame 0x130 vs 0x140; vE0 at 0xE0 vs 0xD0; nCount spilled. Tried node-array-first and node-array-last local order (count unchanged).
+void BGCollision::BGDetectionST(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo *pSurf, int nFlag)
+{
+    float vE0[4];
+    float vF0[4];
+    float vT100[4];
+    float vG110[4];
+    float vG120[4];
+    STCollisionNode *pNodes[8];
+    int i;
+    int nCount;
+    float f20;
+    float f21;
+    float f22;
+    unsigned int nMask;
+
+    if ((*pArr)[1][2] >= 16.0f) {
+        (*pArr)[1][2] = 15.0f;
+    }
+    nCount = GridCheck(pArr, pMat, pNodes, 0);
+    if (nCount != 0) {
+        sceVu0ApplyMatrix(vE0, (float *)pMat, (float *)pArr);
+        if (nFlag & 2) {
+            nMask = BGS_U(pSurf, 0x4C) & 0x8098;
+            f22 = (*pArr)[1][2];
+            f22 = f22 * f22;
+            f20 = BGS_F(pMat, 0x34) + (*pArr)[0][1];
+            f21 = (*pArr)[1][1];
+            sceVu0SubVector(vF0, (float *)pSurf, (float *)((char *)pMat + 0x30));
+            sceVu0AddVector(vF0, vF0, vE0);
+            for (i = 0; i < nCount; i++) {
+                float *pNode = (float *)pNodes[i];
+                if (Fabs(f20 - pNode[0]) < pNode[1] + f21) {
+                    int nList = *(int *)((char *)pNode + 8);
+                    STCollisionPoly **ppPoly = (STCollisionPoly **)((char *)pNode + 0xC);
+                    for (; nList != 0; nList--, ppPoly++) {
+                        STCollisionPoly *pPoly = *ppPoly;
+                        unsigned int nFl = BGS_U(pPoly, 0xC) & nMask;
+                        if (nFl != 0 && !(nFl & 8)) {
+                            float fd = SphereIntersect(pPoly, (float (*)[4])vE0, f22);
+                            if (fd != 0.0f) {
+                                BGS_P(pSurf, 0x44) = pPoly;
+                                if (nFl & 0x90) {
+                                    *(u_long128 *)vT100 = *(u_long128 *)((char *)pPoly + 0x10);
+                                    sceVu0ScaleVector(vT100, vT100, fd);
+                                    *(int *)&vT100[3] = 0;
+                                    sceVu0AddVector(vE0, vE0, vT100);
+                                    BGS_F(pSurf, 0x10) = BGS_F(pSurf, 0x10) + vT100[0];
+                                    BGS_F(pSurf, 0x18) = BGS_F(pSurf, 0x18) + vT100[2];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (nFlag & 1) {
+            sceVu0SubVector(vG110, vE0, (float *)this);
+            if (vG110[0] >= 0.0f && vG110[2] >= 0.0f) {
+                int nX = (int)(vG110[0] / m_unk30);
+                int nZ = (int)(vG110[2] / m_unk34);
+                if ((unsigned int)nX < m_unk38) {
+                    if ((unsigned int)nZ < m_unk3C) {
+                        int nEnt = *(int *)(m_unk40 + (nX << 2) + ((nZ * (int)m_unk38) << 2));
+                        if (nEnt != 0) {
+                            *(u_long128 *)vG110 = *(u_long128 *)vE0;
+                            nMask = BGS_U(pSurf, 0x4C);
+                            {
+                                float *pG110 = vG110;
+                                float *pDown = vGDown;
+                                asm {
+                                    lqc2 vf26, 0x0(pG110)
+                                }
+                                asm {
+                                    lqc2 vf27, 0x0(pDown)
+                                }
+                            }
+                            {
+                                int nList = *(int *)(nEnt + 8);
+                                STCollisionPoly **ppPoly = (STCollisionPoly **)(nEnt + 0xC);
+                                for (; nList != 0; nList--, ppPoly++) {
+                                    STCollisionPoly *pPoly = *ppPoly;
+                                    unsigned int nF = BGS_U(pPoly, 0xC) & nMask;
+                                    if (nF & 0x110041) {
+                                        if (BGS_F(pPoly, 0x14) > 0.0f) {
+                                            if (FindGroundPos(pPoly, (float (*)[4])vG120)) {
+                                                f20 = vG120[1];
+                                                if (nF & 0x110001) {
+                                                    if (f20 > BGS_F(pSurf, 0x24)) {
+                                                        BGS_F(pSurf, 0x24) = f20;
+                                                        BGS_U(pSurf, 0x48) = (BGS_U(pSurf, 0x48) & 0xFFEEFFFE) | nF;
+                                                    }
+                                                } else if (f20 < vG110[1]) {
+                                                    if (f20 > BGS_F(pSurf, 0x14)) {
+                                                        *(u_long128 *)((char *)pSurf + 0x10) = *(u_long128 *)vG120;
+                                                        BGS_P(pSurf, 0x20) = pPoly;
+                                                        BGS_U(pSurf, 0x48) = (BGS_U(pSurf, 0x48) & 0x110001) | nF;
+                                                    }
+                                                }
+                                            }
+                                        } else if (BGS_U(pSurf, 0x4C) & 0x80000000) {
+                                            if (FindGroundPos(pPoly, (float (*)[4])vG120)) {
+                                                if (vG120[1] < BGS_F(pSurf, 0x28)) {
+                                                    if (BGS_F(pMat, 0x34) + (*pArr)[0][1] < vG120[1]) {
+                                                        BGS_F(pSurf, 0x28) = vG120[1];
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // DRAFT: 0x0016EDA0 BGDetection__11BGCollisionFPA2_A4_fP5PMat4fR11SurfaceInfoiP9PMeshNode
