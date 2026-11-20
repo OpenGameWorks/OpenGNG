@@ -4,6 +4,47 @@
 
 // TODO(header): foreign declarations
 class PResourceManager;
+enum eTextureGroup { eTextureGroup_65 = 0x65, eTextureGroup_66 = 0x66 };
+enum eBoxIntersect { eBoxIntersect_4 = 4 };
+// PMNode size is unknown; only the methods called here are declared.
+class PMNode {
+public:
+    void UpdateCameraFade(bool bFlag);
+    void SetAllFrustrumTest(eBoxIntersect eTest);
+};
+// PPakFile and PCDFile sizes are unknown; the placeholder member only keeps gPFile a complete object.
+class PPakFile {
+public:
+    PPakFile *GetData(const char *pName);
+    int GetFileType();
+    char _pad000[0x10];
+};
+class PCDFile {
+public:
+    void Close();
+};
+class PCutScenePlayer {
+public:
+    void Load(PPakFile *pPak, PResourceManager *pRes, PMeshNode *pNode, int nA, int nB);
+};
+class PTextureManager {
+public:
+    void UnloadDynamicTextures(eTextureGroup eGroup);
+};
+// Physics size is unknown; only the static BGAnim builder is called here.
+class Physics {
+public:
+    static void BuildBGAnimList(PMeshNode *pNode);
+};
+// mfSleepDistance__15EntityBaseClass is two floats; the 8-byte size keeps it gp-relative.
+struct SleepDistance {
+    float m_unk0;
+    float m_unk4;
+};
+extern SleepDistance mfSleepDistance__15EntityBaseClass;
+extern PPakFile gPFile;
+extern "C" int strcmp(char *pA, char *pB);
+extern "C" char *strcpy(char *pDst, char *pSrc);
 // PScrollingTrees size is unknown; only its constructor, Init, Create and CreateFloor are used here.
 class PScrollingTrees {
 public:
@@ -52,6 +93,7 @@ public:
     void Render();
     void Destroy();
     void InitRenderFrame();
+    PMNode *Load(const char *pName, bool bFlag, eTextureGroup eGroup);
 };
 // Debug size is unknown; the placeholder member only keeps gDebug a complete object.
 class Debug {
@@ -71,7 +113,6 @@ public:
 };
 extern Pad gPad;
 extern Pad gPad2;
-// PArray size is unknown; the placeholder member only keeps mBGAnimList__7Physics a complete object.
 // PArray size is unknown; m_unk0, m_unk4 and m_unk8 are the fields Destroy reads and writes.
 class PArray {
 public:
@@ -86,6 +127,7 @@ extern PArray mBGAnimList__7Physics;
 class BGCollision {
 public:
     void Destroy();
+    void ReadCollisionData(char *pName, PMeshNode *pNode);
     char _pad000[0x10];
 };
 extern BGCollision mBGCollision__15EntityBaseClass;
@@ -93,6 +135,9 @@ class PParticleManager {
 public:
     void RemoveAllFogObjects();
     void Update(float fTime, Camera *pCam, PFrustrum *pFrustrum, ePSLayer eLayer);
+    char _pad000[0x6A0];
+    float m_unk6A0;
+    float m_unk6A4;
 };
 extern "C" void sceVu0CopyVector(float *dst, float *src);
 class FontManager {
@@ -105,7 +150,10 @@ extern unsigned char gInterface[2656];
 // Interface size is unknown; gInterface is addressed through a cast at offset 0x1710.
 class Interface {
 public:
+    enum eFadeColor { eFadeColor_0 = 0 };
     void SoundGainEEControl();
+    void InitScreenFadeVars();
+    void FadeScreen(float fA, float fB, bool bC, eFadeColor eColor);
 };
 extern "C" int sceCdStatus(void);
 extern "C" int sceGsSyncPath(int nA, int nB);
@@ -122,6 +170,8 @@ public:
     void PSoundLevelClear();
     void ReturnControlOfIOPToMjln();
     void GetTrayRelated(int *pA, int *pB, int *pC, int *pD);
+    void RestartAndLoadPrimarySoundBank(unsigned int nBank);
+    void PSoundDestroyLevel();
     char _pad000[0x10];
 };
 extern PSound gSound;
@@ -158,12 +208,12 @@ int MaxEngine::PlayMovie(int nA, int nB, unsigned int nC) {
 
     gSound.StopMusic();
     gSound.PSoundLevelClear();
-    ((Interface *)(gInterface + 0x1710))->SoundGainEEControl();
+    ((Interface *)(gInterface))->SoundGainEEControl();
     InitRenderFrame(false, 0);
     DmaWaitForCompletion(1, false);
     sceGsSyncPath(0, 0);
     nResult = PlayMovie__5MovieFiiUib((void *)nA, nB, nC, 0U);
-    ((PGfxEngine *)((char *)&gGfxEng + 0x6680))->Reset();
+    gGfxEng.Reset();
     FastMath_Setup();
     InitRenderFrame(false, 0);
     gSound.ReturnControlOfIOPToMjln();
@@ -230,7 +280,7 @@ extern "C" int RenderSkybox__9MaxEngineFi(MaxEngine *pThis, int nFlag) {
         gDebug.StartTimer(12);
         float aMat[16];
         sceVu0CopyMatrix((float (*)[4])aMat, (float (*)[4])((char *)pThis + 0x90));
-        *(u_long128 *)((char *)aMat + 0x30) = *(u_long128 *)gUnitMatrix;
+        *(u_long128 *)((char *)aMat + 0x30) = *(u_long128 *)&gUnitMatrix[12];
         vu1SetViewMatrix__FP5PMat4(aMat);
         vu1SetClipMatrix__FP5PMat4((char *)pThis + 0x50);
         if ((nFlag & 7) == 0) {
@@ -243,7 +293,7 @@ extern "C" int RenderSkybox__9MaxEngineFi(MaxEngine *pThis, int nFlag) {
             }
             nRet += pThis->m_unk137DC->Render();
         }
-        gGfxEng.RenderBlendedFragments(gUnitMatrix);
+        gGfxEng.RenderBlendedFragments(&gUnitMatrix[12]);
         if (*((unsigned char *)pThis + 0x9EF9) == 0 || *((unsigned char *)pThis + 0x9EFA) != 0) {
             vu1ClearZBuffer__Fv();
         }
@@ -301,6 +351,97 @@ void MaxEngine::Destroy() {
     ((PParticleManager *)((char *)&gGfxEng + 0x154F00))->RemoveAllFogObjects();
 }
 
+// Layout of the InitWorld argument record as read through arg0.
+struct InitWorldArg {
+    char *m_unk0;
+    char *m_unk4;
+    char _pad008[0x8];
+    char *m_unk10;
+    struct CutSceneRec {
+        int m_unk0;
+        char _pad004[0x8];
+        signed char m_unkC;
+        char _pad00D[0x3];
+    } m_unk14[4];
+    char _pad054[0x5A - 0x54];
+    unsigned short m_unk5A;
+    char _pad05C[0x68 - 0x5C];
+    short m_unk68;
+    short m_unk6A;
+    short m_unk6C;
+    short m_unk6E;
+    short m_unk70;
+};
+
+// FUNCTION: 0x001324E0 InitWorld__9MaxEngineFPvP16PResourceManager
+void MaxEngine::InitWorld(void *arg0, PResourceManager *arg1) {
+    m_unk137D8 = 0;
+    gSound.StopMusic();
+    InitRenderFrame(false, 0);
+    scePcStop();
+    InitWorldArg *pArg = (InitWorldArg *)arg0;
+    if (m_unk137A8 != 0) {
+        char *pName = pArg->m_unk4;
+        if (pName == 0 || (pName != 0 && strcmp(pName, &m_unk137AC) != 0)) {
+            delete m_unk137A8;
+            m_unk137A8 = 0;
+            ((PTextureManager *)((char *)&gGfxEng + 0x154C90))->UnloadDynamicTextures((eTextureGroup)0x66);
+        }
+    }
+    ((PWorld *)this)->Destroy();
+    mBGCollision__15EntityBaseClass.Destroy();
+    if (mBGAnimList__7Physics.m_unk8 != 0) {
+        mBGAnimList__7Physics.m_unk0 = 0;
+        mBGAnimList__7Physics.m_unk4 = 0;
+    }
+    PParticleManager *pPart = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
+    pPart->RemoveAllFogObjects();
+    float fB = (float)pArg->m_unk6C;
+    float fA = (float)pArg->m_unk6A;
+    pPart->m_unk6A0 = fA * fA;
+    pPart->m_unk6A4 = fB * fB;
+    gSound.PSoundDestroyLevel();
+    if (m_unk137A8 == 0) {
+        char *pName = pArg->m_unk4;
+        if (pName != 0) {
+            strcpy(&m_unk137AC, pName);
+            m_unk137A8 = (MaxEngineSlot *)((PWorld *)this)->Load(pArg->m_unk4, false, (eTextureGroup)0x66);
+            ((m_unk137A8 != 0) ? (void)0 : CdsAssert__FPciPc("MaxEngine.cpp", 0x16B, "mpSkybox"));
+            ((PMNode *)m_unk137A8)->SetAllFrustrumTest((eBoxIntersect)4);
+        }
+    }
+    if (pArg->m_unk0 != 0) {
+        PMNode *pNode = ((PWorld *)this)->Load(pArg->m_unk0, true, (eTextureGroup)0x65);
+        pNode->UpdateCameraFade(false);
+        mBGCollision__15EntityBaseClass.ReadCollisionData(pArg->m_unk0, (PMeshNode *)pNode);
+        Physics::BuildBGAnimList((PMeshNode *)pNode);
+        mfSleepDistance__15EntityBaseClass.m_unk0 = (float)(pArg->m_unk6E * pArg->m_unk6E);
+        mfSleepDistance__15EntityBaseClass.m_unk4 = (float)(pArg->m_unk70 * pArg->m_unk70);
+        if (pArg->m_unk10 != 0) {
+            PPakFile *pPak = gPFile.GetData(pArg->m_unk10);
+            int i = 0;
+            do {
+                if (pPak->GetFileType() == 7) {
+                    ((PCutScenePlayer *)((char *)this + 0x220 + i * 0x2140))->Load(pPak, arg1, m_unk0, pArg->m_unk14[i].m_unk0, pArg->m_unk14[i].m_unkC);
+                }
+                i += 1;
+            } while (i < 4);
+            ((PCDFile *)pPak)->Close();
+        }
+    }
+    float fC = (float)pArg->m_unk68;
+    m_unkEC = fC;
+    m_unk1CC = fC;
+    gSound.RestartAndLoadPrimarySoundBank((unsigned int)pArg->m_unk5A);
+    ((Interface *)(gInterface))->SoundGainEEControl();
+    scePcStart(0x8008003E, 0, 0);
+    scePcStop();
+    *(int *)&m_unk1E8 = 0x3F800000;
+    m_unk137A0 = 0;
+    ((Interface *)(gInterface))->InitScreenFadeVars();
+    ((Interface *)(gInterface))->FadeScreen(0.0f, 4.25f, true, (Interface::eFadeColor)0);
+}
+
 // FUNCTION: 0x00132870 CheckCDTrayDuringLoading__9MaxEngineFUi
 void MaxEngine::CheckCDTrayDuringLoading(unsigned int nTimeout) {
     if (sceCdStatus() == 1 || nTimeout > 0x2710) {
@@ -325,7 +466,7 @@ void MaxEngine::CheckCDTrayDuringGamePlay() {
     if (nA == 0) {
         return;
     }
-    ((FontManager *)(gInterface + 0x1790))->ResetWarning();
+    ((FontManager *)(gInterface + 0x80))->ResetWarning();
     *(int *)((char *)this + 0x137D0) = (int)GAME_FPS * 2;
     gPad.PauseVibrate(true);
     goto check;
@@ -335,9 +476,9 @@ l960:
         goto refresh;
     }
     if (nD != 0 || nB == 1) {
-        ((FontManager *)(gInterface + 0x1790))->RenderWarning(0x28B);
+        ((FontManager *)(gInterface + 0x80))->RenderWarning(0x28B);
     } else {
-        ((FontManager *)(gInterface + 0x1790))->RenderWarning(0x290);
+        ((FontManager *)(gInterface + 0x80))->RenderWarning(0x290);
     }
 refresh:
     gGfxEng.RefreshDisplay();
@@ -369,7 +510,7 @@ check:
     goto tail;
 
 warn:
-    ((FontManager *)(gInterface + 0x1790))->RenderWarning(0x28F);
+    ((FontManager *)(gInterface + 0x80))->RenderWarning(0x28F);
     nS = nS - 1;
     gGfxEng.RefreshDisplay();
     scePcStart(0x8008003E, 0, 0);
@@ -408,7 +549,7 @@ void MaxEngine::InitRenderFrame(bool bFlag, unsigned int nTimeout) {
     ((PWorld *)this)->InitRenderFrame();
     IncrementSecondarySyncCounts();
     gDebug.DebugClear();
-    ((FontManager *)(gInterface + 0x1790))->InitFrame();
+    ((FontManager *)(gInterface + 0x80))->InitFrame();
     if (bFlag) {
         CheckCDTrayDuringLoading(nTimeout);
     } else {

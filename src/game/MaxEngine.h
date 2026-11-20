@@ -2,6 +2,8 @@
 #define MAXENGINE_H
 
 class PScrollingTrees;
+class PResourceManager;
+class PMeshNode;
 class MaxEngineSlot;
 class Camera;
 // TODO(header): ePSLayer belongs to the particle system header; only the value compared in this file is named.
@@ -16,6 +18,7 @@ public:
     void CreateScrollingTrees();
     void DestroyScrollingTrees();
     void Destroy();
+    void InitWorld(void *arg0, PResourceManager *arg1);
     void CheckCDTrayDuringLoading(unsigned int nTimeout);
     void IncrementSecondarySyncCounts();
     void SoundOneFrameHasElapsed_R(int &nA, int &nB);
@@ -25,9 +28,14 @@ public:
     int PlayMovie(int nA, int nB, unsigned int nC);
     void RenderParticleFx(Camera *pCam, int nFlag, ePSLayer eLayer);
 
-    char _pad000[0xD0];
+    /* 0x000000 */ PMeshNode *m_unk0;
+    char _pad004[0xD0 - 0x004];
     /* 0x0000D0 */ float m_unkD0;
-    char _pad0D4[0x1E8 - 0x0D4];
+    char _pad0D4[0xEC - 0x0D4];
+    /* 0x0000EC */ float m_unkEC;
+    char _pad0F0[0x1CC - 0x0F0];
+    /* 0x0001CC */ float m_unk1CC;
+    char _pad1D0[0x1E8 - 0x1D0];
     /* 0x1E8 */ float m_unk1E8;
     char _pad1EC[0x137A0 - 0x1EC];
     /* 0x137A0 */ int m_unk137A0;
