@@ -48,6 +48,9 @@ public:
     void AddFxTriggers(PArray *pArr, bool bFlag);
     void CopyMNode(PMNode &src, bool bFlag);
     void SetAllFrustrumTest(eBoxIntersect eType);
+    int LoadFxTriggers(PPakFile *pFile);
+    int LoadMesh(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion);
+    int LoadAnim(PPakFile *pFile);
 };
 
 extern "C" void *__ct__6PArrayFv(void *pThis);
@@ -62,6 +65,8 @@ extern "C" void FlushCache(int mode, unsigned int addr, void *pTable, int count)
 extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
 extern "C" void PBoundBoxToBoundBox__FPA2_A4_fPA2_A4_f(float (*pSrc)[2][4], float (*pDst)[2][4]);
 extern "C" void MakePBoundBox__FPfPfPA2_A4_f(float *pMin, float *pMax, float (*pBox)[2][4]);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void memcpy(void *pDst, const void *pSrc, unsigned int size);
 
 class PCDFile {
 public:
@@ -221,7 +226,7 @@ int PMeshNode::BuildCollisionArray(PArray *pArr, unsigned int flag) {
 }
 
 // DRAFT: 0x001906F0 LoadCollision__9PMeshNodeFP8PPakFile
-// note: 33 words differ; mask/tag constant in a0/v1 not v3/a1, tbase in a1 not t0, `or` store value duplicated into the bnez delay slot (orig computes it after sync+nop), count-- hoisted above sw. Tried a local tag constant, table store order, and hoisting the store (all 33).
+// note: 30 words differ (rechecked after job PMeshNode-73530); mask/tag constant in a0/v1 not v3/a1, tbase in a1 not t0, `or` store value duplicated into the bnez delay slot (orig computes it after sync+nop), count-- hoisted above sw. Tried a local tag constant, table store order, and hoisting the store (all 33).
 void PMeshNode::LoadCollision(PPakFile *pPak) {
     unsigned int size;
     if (((PCDFile *)pPak)->Read(&size, 4) == 4) {
@@ -253,6 +258,87 @@ void PMeshNode::LoadCollision(PPakFile *pPak) {
         }
         FlushCache(0, 0x20000000, table, count);
     }
+}
+
+// FUNCTION: 0x00190840 Load__9PMeshNodeFP8PPakFileP6PArray16ePsx2FileVersion
+int PMeshNode::Load(PPakFile *pPak, PArray *pArr, ePsx2FileVersion ver) {
+    ((pPak) ? (void)0 : CdsAssert__FPciPc("PMeshNode.cpp", 0x148, "poFile"));
+    unsigned char rec0[0xD0];
+    unsigned char rec1[0xB4];
+    int tag;
+    if (ver >= 0x20000) {
+        if (((PCDFile *)pPak)->Read(rec1, 0xB4) != 0xB4) {
+            return 0;
+        }
+        m_unk8 = *(int *)rec1;
+        memcpy(m_unk80, rec1 + 0x4, 16);
+        memcpy(m_unk90, rec1 + 0x14, 16);
+        memcpy(&m_unkA0, rec1 + 0x24, 16);
+        memcpy(m_unkB0, rec1 + 0x34, 16);
+        memcpy(m_unkC0, rec1 + 0x44, 16);
+        memcpy(m_unk110, rec1 + 0x94, 16);
+        memcpy(m_unk120, rec1 + 0xA4, 16);
+    } else {
+        if (((PCDFile *)pPak)->Read(rec0, 0xD0) != 0xD0) {
+            return 0;
+        }
+        m_unk8 = *(int *)rec0;
+        memcpy(m_unk80, rec0 + 0x20, 16);
+        memcpy(m_unk90, rec0 + 0x30, 16);
+        memcpy(&m_unkA0, rec0 + 0x40, 16);
+        memcpy(m_unkB0, rec0 + 0x50, 16);
+        memcpy(m_unkC0, rec0 + 0x60, 16);
+        memcpy(m_unk110, rec0 + 0xB0, 16);
+        memcpy(m_unk120, rec0 + 0xC0, 16);
+    }
+    if (ver >= 0x10001) {
+        if (!((PMNode *)this)->LoadFxTriggers(pPak)) {
+            return 0;
+        }
+    }
+    ((PMNode *)this)->LoadMesh(pPak, pArr, ver);
+    tag = 0;
+    if (((PCDFile *)pPak)->Read(&tag, 4) != 4) {
+        return 0;
+    }
+    if (tag == 4) {
+        if (!((PMNode *)this)->LoadAnim(pPak)) {
+            return 0;
+        }
+        m_unk3E |= 2;
+        tag = 0;
+        if (((PCDFile *)pPak)->Read(&tag, 4) != 4) {
+            return 0;
+        }
+    }
+    if (tag == 0x10) {
+        LoadCollision(pPak);
+        tag = 0;
+        if (((PCDFile *)pPak)->Read(&tag, 4) != 4) {
+            return 0;
+        }
+    }
+    if (tag == 2) {
+        return 1;
+    }
+    while (tag == 1) {
+        PMeshNode *child = new PMeshNode((PResource::eResObjType)m_unk04);
+        if (child == 0) {
+            return 0;
+        }
+        ((PArray *)&m_unk14)->Add(child);
+        if (!child->Load(pPak, pArr, ver)) {
+            return 0;
+        }
+        tag = 0;
+        if (((PCDFile *)pPak)->Read(&tag, 4) != 4) {
+            return 0;
+        }
+        if (tag == 2) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 // Leading virtuals of PMeshNode's vtable (__vt__9PMeshNode); a call through this view

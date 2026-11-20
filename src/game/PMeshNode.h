@@ -23,6 +23,8 @@ public:
     enum eResObjType { eResObjType_Placeholder = 0 };
 };
 
+#include "PMesh.h"
+
 // Pickup record reached through PMeshNode::m_unk10; only the two floats clamped by AdjustPickup are named.
 class PMeshPickup {
 public:
@@ -48,12 +50,13 @@ public:
     void InitMembers();
     int RecurseAttachAnim(PMeshNodeAnimDataTable *pAnimDataTable);
     void LoadCollision(PPakFile *pPak);
+    int Load(PPakFile *pPak, PArray *pArr, ePsx2FileVersion ver);
     void ComputeBoundingBox();
 
     void *m_unk00;              // 0x000 vtable
     int m_unk04;                // 0x004 PResource state; 1 after InitMembers
-    char _pad008[4];
-    int m_unkC;                 // 0x00C result of PFrustrum::IntersectBox
+    int m_unk8;                 // 0x008 header word copied from the file record
+    int m_unkC;                // 0x00C result of PFrustrum::IntersectBox
     PMeshPickup *m_unk10;       // 0x010 pickup record; PMeshPickup fields at +0x20 and +0x28
     unsigned int m_unk14;       // 0x014 child count (PArray)
     unsigned int m_unk18;       // 0x018 child index (PArray)
@@ -65,11 +68,14 @@ public:
     char _pad03F[0x1];
     float m_unk40[4][4];        // 0x040 matrix
     float m_unk80[4];           // 0x080 offset added to the child's m_unk110 by ComputeBoundingBox
-    char _pad090[0x10];
+    float m_unk90[4];           // 0x090 copied from the file record
     float m_unkA0;              // 0x0A0 scale clamp input
     float m_unkA4;              // 0x0A4 scale clamp input
     float m_unkA8;              // 0x0A8 scale clamp input
-    char _padAC[0x2C];
+    float m_unkAC;              // 0x0AC
+    float m_unkB0[4];           // 0x0B0 copied from the file record
+    float m_unkC0[4];           // 0x0C0 copied from the file record
+    char _padD0[0x8];
     char m_unkD8[0xC];          // 0x0D8 PArray, size 0xC, not recovered further
     char _padE4[0x1C];
     short m_unk100;             // 0x100
@@ -83,6 +89,7 @@ public:
     unsigned int m_unk130;      // 0x130 light PArray count
     int m_unk134;               // 0x134 light PArray index
     void *m_unk138;             // 0x138 light PArray table
+    char _pad13C[0x4];          // 0x13C tail padding; the original allocates 0x140 bytes
 };
 
 #endif
