@@ -15,6 +15,7 @@ public:
     void InitGameTimes();
     void Controls();
     void TVAdjust();
+    int ScreenAdjust(int &arg0, int &arg1);
     void UpdateGameTimes();
     void LoadTitleMesh();
     int LoadGame();

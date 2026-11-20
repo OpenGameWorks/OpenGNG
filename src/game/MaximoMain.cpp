@@ -92,6 +92,17 @@ extern "C" void ResetAnimations__15PCutScenePlayerFv(void *pThis);
 extern "C" void SetBgNodesOpacity__15PCutScenePlayerFP6PArrayf(void *pThis, void *pArray, float fOpacity);
 extern "C" void CutSceneEnter__6PSoundFPUiUiUiUi(void *pThis, unsigned int *pOut, unsigned int nA, unsigned int nB, unsigned int nC);
 extern char gGfxEng[1504384];
+// TODO(header): foreign declarations for ScreenAdjust
+struct PMat4 { char _pad00[0x40]; };
+// Four debug lines: start, end, start colour, end colour (x, y, z, w each).
+struct tagVuLineBuf { float m_unk00[64]; };
+extern "C" int ReadNew__3PadFv(void *pThis);
+extern "C" void SetTvOffset__10PGfxEngineFii(void *pThis, int nX, int nY);
+extern "C" void SetWorldMatrix__10PGfxEngineFP5PMat4(void *pThis, void *pMat);
+extern "C" void BeginDebugRender__10PGfxEngineFv(void *pThis);
+extern "C" void EndDebugRender__10PGfxEngineFv(void *pThis);
+extern "C" void DrawLines__10PGfxEngineFP9tagVuLinei(void *pThis, void *pLines, int nCount);
+extern "C" void InitRender__9InterfaceFv(void *pThis);
 extern "C" void InitStatic__15EntityBaseClassFP16PResourceManagerP13EntityManagerP9PFrustrum(void *, void *, void *);
 extern "C" void LoadResource__13EntityManagerFPcb(void *, const char *, bool);
 extern "C" void StaticDemo__9InterfaceFPCcUiUiiUs(void *, const char *, unsigned int, unsigned int, int, unsigned short);
@@ -279,6 +290,89 @@ void MaximoMain::TVAdjust() {
             }
             break;
         }
+        Render__9InterfaceFi(gInterface, 0);
+    }
+}
+
+// DRAFT: 0x00135CA0 ScreenAdjust__10MaximoMainFRiRi
+// note: 4 words differ: case 3 FadeScreen loads 17.0f into f13 before 255.0f into f12 in the original (0218-0230), the same order Controls misses.
+int MaximoMain::ScreenAdjust(int &arg0, int &arg1)
+{
+    int state;
+    bool moved;
+    unsigned short pad;
+    int c;
+
+    state = 0;
+    ((FontManager *)(gInterface + 0x80))->DisplayString(0x257, 0, 0, false);
+    tagVuLineBuf lines = {{
+        -32.0f, 22.0f, 0.0f, 1.0f, 32.0f, 22.0f, 0.0f, 1.0f, 255.0f, 0.0f, 0.0f, 0.0f, 255.0f, 0.0f, 0.0f, 0.0f,
+        32.0f, 22.0f, 0.0f, 1.0f, 32.0f, -22.0f, 0.0f, 1.0f, 255.0f, 0.0f, 0.0f, 0.0f, 255.0f, 0.0f, 0.0f, 0.0f,
+        32.0f, -22.0f, 0.0f, 1.0f, -32.0f, -22.0f, 0.0f, 1.0f, 255.0f, 0.0f, 0.0f, 0.0f, 255.0f, 0.0f, 0.0f, 0.0f,
+        -32.0f, -22.0f, 0.0f, 1.0f, -32.0f, 22.0f, 0.0f, 1.0f, 255.0f, 0.0f, 0.0f, 0.0f, 255.0f, 0.0f, 0.0f, 0.0f,
+    }};
+    while (1) {
+        InitRenderFrame__9MaxEngineFbUi(this, 0, 0);
+        switch (state) {
+        case 0:
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 17.0f, true, 0);
+            state++;
+            *(int *)(gInterface + 0x1C0) = 0x81;
+            break;
+        case 1:
+            if (gInterface[0x425] == 0) state++;
+            break;
+        case 2:
+            moved = 0;
+            pad = *(unsigned short *)(gPad + 0x110);
+            if (pad & 0x1000) {
+                PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+                state++;
+            } else {
+                if (pad & 1) {
+                    PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+                    arg0 = 0;
+                    moved = 1;
+                    arg1 = 0;
+                } else {
+                    c = ReadNew__3PadFv(gPad) & 0xFFFF;
+                    if (c & 0x50) {
+                        int v = arg1 + ((c & 0x40) ? 2 : -2);
+                        if (v >= -32 && v < 33) {
+                            arg1 = v;
+                            moved = 1;
+                        }
+                    }
+                    if (c & 0xA0) {
+                        int v = arg0 + ((c & 0x20) ? 2 : -2);
+                        if (v >= -32 && v < 33) {
+                            arg0 = v;
+                            moved = 1;
+                        }
+                    }
+                }
+                if (moved) SetTvOffset__10PGfxEngineFii(gGfxEng, arg0, arg1);
+            }
+            break;
+        case 3:
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 17.0f, true, 0);
+            state++;
+            break;
+        case 4:
+            if (gInterface[0x425] == 0) {
+                ((FontManager *)(gInterface + 0x80))->RemoveText((unsigned short)6);
+                *(int *)(gInterface + 0x1C0) = 0x89;
+                return 1;
+            }
+            break;
+        }
+        PMat4 mat;
+        sceVu0UnitMatrix(&mat);
+        SetWorldMatrix__10PGfxEngineFP5PMat4(gGfxEng, &mat);
+        InitRender__9InterfaceFv(gInterface);
+        BeginDebugRender__10PGfxEngineFv(gGfxEng);
+        DrawLines__10PGfxEngineFP9tagVuLinei(gGfxEng, &lines, 4);
+        EndDebugRender__10PGfxEngineFv(gGfxEng);
         Render__9InterfaceFi(gInterface, 0);
     }
 }
