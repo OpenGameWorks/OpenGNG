@@ -14,6 +14,7 @@ extern "C" void sceVu0ScaleVector(float *, float *, float);
 float FastMath_Fabs(float f);
 float Fabs(float f);
 struct STCollisionPoly;
+struct STCollisionNode;
 int BoxLineCheck(float (*pBox)[2][4]);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0ApplyMatrix(float *, float *, float *);
@@ -70,6 +71,51 @@ void BGCollision::BGDetection(float (*pArr)[2][4], PMat4 *pMat, float fLen, Surf
         *(float *)(pS + 0x24) = -1000.0f;
     }
 }
+
+// DRAFT: 0x0016EF20 GridCheck__11BGCollisionFPA2_A4_fP5PMat4PP15STCollisionNodePf
+// note: 186 differing words; the neighbour-cell block and the register use of x/z and the 0.5f centre terms differ (original precomputes them early). Tried: separate vs merged Fabs checks (merged kept), nCount placement, x/z swap (192, rejected).
+#define GC_NEIGHBOUR(CX, CZ) \
+    if ((unsigned int)(CX) < m_unk38 && (unsigned int)(CZ) < m_unk3C) { \
+        int nCell = ((int *)m_unk40)[(CZ) * m_unk38 + (CX)]; \
+        if (nCell != 0) { \
+            *ppOut++ = (STCollisionNode *)nCell; \
+            nCount++; \
+            if (pOut) { \
+                pOut[0] = (m_unk0 + 0.5f * m_unk30) + (float)(CX) * m_unk30; \
+                pOut[1] = (m_unk8 + 0.5f * m_unk34) + (float)(CZ) * m_unk34; \
+                pOut += 2; \
+            } \
+        } \
+    }
+
+int BGCollision::GridCheck(float (*pArr)[2][4], PMat4 *pMat, STCollisionNode **ppOut, float *pOut)
+{
+    float a[4];
+    float b[4];
+    float f20 = pArr[0][1][2];
+    int nCount;
+    m_unk48 = f20;
+    float f21 = m_unk20[0] + f20;
+    float f22 = m_unk20[2] + f20;
+    sceVu0ApplyMatrix(a, (float *)pMat, (float *)pArr);
+    sceVu0SubVector(b, a, m_unk10);
+    if (!(Fabs(b[0]) < f21) || !(Fabs(b[2]) < f22)) { return 0; }
+    a[0] -= f20;
+    a[2] -= f20;
+    sceVu0SubVector(a, a, (float *)this);
+    nCount = 0;
+    f20 *= 2.0f;
+    int x = (a[0] < 0.0f) ? -1 : (int)(a[0] / m_unk30);
+    int z = (a[2] < 0.0f) ? -1 : (int)(a[2] / m_unk34);
+    GC_NEIGHBOUR(x, z)
+    int x2 = (int)((a[0] + f20) / m_unk30);
+    if (x2 != x) { GC_NEIGHBOUR(x2, z) }
+    int z2 = (int)((a[2] + f20) / m_unk34);
+    if (z2 != z) { GC_NEIGHBOUR(x, z2) }
+    if (x2 != x && z2 != z) { GC_NEIGHBOUR(x2, z2) }
+    return nCount;
+}
+#undef GC_NEIGHBOUR
 
 // FUNCTION: 0x0016F340 FindGroundPos__FP15STCollisionPolyPA4_f
 int FindGroundPos(STCollisionPoly *pPoly, float (*pOut)[4])

@@ -10,6 +10,7 @@ class PMat4;
 class PMeshNode;
 class SurfaceInfo;
 struct STCollisionPoly;
+struct STCollisionNode;
 
 class BGCollision {
 public:
@@ -30,6 +31,7 @@ public:
     void BGDetectionST(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo *pSurf, int nFlag);
     void BGDetectionAnim(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo *pSurf, int nFlag, PMeshNode *pMesh);
     int ReadCollisionData(char *pName, PMeshNode *pMesh);
+    int GridCheck(float (*pArr)[2][4], PMat4 *pMat, STCollisionNode **ppOut, float *pOut);
 
     float m_unk0;           // 0x000 grid origin X
     char _pad04[0x4];
@@ -43,7 +45,7 @@ public:
     unsigned int m_unk3C;   // 0x03C cell count Z
     int m_unk40;            // 0x040 cleared by ctor and Destroy
     int m_unk44;            // 0x044 cleared by ctor
-    char _pad48[0x4];
+    float m_unk48;          // 0x048 holds pArr[1][2] from GridCheck
     void *m_unk4C;          // 0x04C block freed by Destroy
     float m_unk50;          // 0x050
     char _pad54[0x4];
