@@ -4,7 +4,6 @@
 
 // TODO(header): foreign declarations
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
-extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
 extern "C" void __dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern unsigned char __vt__9CamSphere[0x7C];
 extern unsigned char gEng[0x1A000];
@@ -56,8 +55,5 @@ void CamSphere::Execute() {
     }
 }
 
-// DRAFT: 0x001A3280 __ct__9CamSphereFv
-// note: 18 words differ; ours spills this to 0x1C(sp) and calls the base ctor through an unnamed reloc, original keeps this in s0 with no spill. Explicit vptr store after the base call gives 22 words.
-CamSphere::CamSphere() {
-    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 4, 0);
-}
+// FUNCTION: 0x001A3280 __ct__9CamSphereFv
+CamSphere::CamSphere() : EntityBaseClass((LoadClass)4, 0) {}

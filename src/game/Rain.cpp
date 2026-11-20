@@ -5,8 +5,6 @@
 // TODO(header): foreign declarations
 extern unsigned char __vt__4Rain[];
 extern char gGfxEng[1504384];
-extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
-extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, bool bA, bool bB);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void CreateRain__16PParticleManagerFf(void *pThis, float fDensity);
 extern "C" void SetLightningDensity__16PParticleManagerFf(void *pThis, float fDensity);
@@ -43,9 +41,5 @@ Rain::~Rain() {
     DestroyRain__16PParticleManagerFv(apParticleMgr);
 }
 
-// DRAFT: 0x001CD650 __ct__4RainFv
-// note: size 0x5C vs 0x4C; compiler emits a vtable store before the base ctor call and again after it, original has one store after; explicit store removed (21->18 words).
-Rain::Rain() {
-    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 5, 0U);
-    EnableSleep__15EntityBaseClassFbb(this, false, false);
-}
+// FUNCTION: 0x001CD650 __ct__4RainFv
+Rain::Rain() : EntityBaseClass((LoadClass)5, 0) { EnableSleep(false, false); }

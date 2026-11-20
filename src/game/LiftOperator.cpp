@@ -7,10 +7,8 @@
 // TODO(header): foreign declarations
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pMsg);
-extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __dl__FPv(void *pMem);
-extern unsigned char __vt__12LiftOperator[0x7C];
 extern int miSpawnLevel__12LiftOperator;
 extern unsigned char gEng[];
 extern "C" int RandomIntRange__7MathAPIFii(int nLo, int nHi);
@@ -104,11 +102,8 @@ void LiftOperator::SetEditableVars(char *pSrc) {
     }
 }
 
-// DRAFT: 0x00210440 __ct__12LiftOperatorFv
-// note: 26 differing words; compiled code spills this to 0x1C(sp), uses sd ra,0(sp) and stores vptr via reloaded this, original keeps this in s0 (sq s0,0(sp)) and frame 0x20; vptr/member store order variants gave no gain
-LiftOperator::LiftOperator() {
-    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 2, 0U);
-    *(void **)this = __vt__12LiftOperator;
+// FUNCTION: 0x00210440 __ct__12LiftOperatorFv
+LiftOperator::LiftOperator() : EntityBaseClass((LoadClass)2, 0) {
     m_unk1F8 = 0;
     miSpawnLevel__12LiftOperator = 6;
 }
