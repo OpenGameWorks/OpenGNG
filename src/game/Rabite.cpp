@@ -33,6 +33,44 @@ extern "C" float acosf(float fValue);
 extern "C" float FastMath_Fabs__Ff(float fValue);
 // 20 hop offsets of four floats each; the size is a placeholder that keeps this global out of small data.
 extern float m_vRabiteOffsets[20][4];
+// Execute: the player API pointer is a 4-byte gp-relative global.
+extern void *mPlayerAPI__13EntityManager;
+extern unsigned char gEng[0x19B90];
+extern unsigned char gPad[448];
+extern "C" void *GetAttachableJoint__6PlayerFi(void *pThis, int nJoint);
+extern "C" void VectorRotateY__7MathAPIFPA4_ff(float (*pMatrix)[4], float fAngle);
+extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*pA)[4], float (*pB)[4]);
+extern "C" int printf(const char *pFormat, ...);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__6ShadowFQ26Shadow10ShadowTypeUi(void *pThis, int nType, unsigned int nFlags);
+extern "C" void *__ct__7PhysicsFv(void *pThis);
+extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *pThis, unsigned int nType, float (*pMatrix)[4]);
+extern "C" void SetVibrate__3PadFQ23Pad7VibTypeUc(void *pThis, int nType, unsigned char nCount);
+extern "C" void ScaleSet__6PMNodeFffff(void *pThis, float fX, float fY, float fZ, float fW);
+extern "C" int PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
+extern "C" void StopSoundBySoundRef__15EntityBaseClassFUi(void *pThis, int nSound);
+extern "C" void FacePlayer__15EntityBaseClassFf(void *pThis, float fWeight);
+extern unsigned int Rabite_Mean_BurrowUp[4];
+extern unsigned int Rabite_Attached[4];
+extern unsigned int Rabite_Attached2[4];
+extern unsigned int Rabite_Mean_Ready[4];
+extern unsigned int Rabite_Ready[4];
+extern unsigned int Rabite_Hop[4];
+extern unsigned int Rabite_Mean_Hop[4];
+extern unsigned int Rabite_Transform[4];
+extern unsigned int Rabite_Mean_Transform[4];
+extern unsigned int Rabite_Hit[4];
+extern unsigned int Rabite_Mean_Hit[4];
+extern unsigned int Rabite_Mean_HopAttack[4];
+extern unsigned int Rabite_BurrowDown[4];
+extern unsigned int Rabite_Mean_BurrowDown[4];
+extern "C" void RotateTo__15EntityBaseClassFff(void *pThis, float fAngle, float fRate);
+extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *pThis, float (*pPoint)[4]);
+extern "C" float DistanceXZ__7MathAPIFPA4_fPA4_f(float (*pA)[4], float (*pB)[4]);
+extern "C" void LoadMesh__15EntityBaseClassFUibb(void *pThis, unsigned int nMesh, bool bA, bool bB);
+extern "C" void SpawnBonus__15EntityBaseClassFPfii(void *pThis, float *pPos, int nA, int nB);
+extern "C" void WriteApparitionData__15EntityBaseClassFicUi(void *pThis, int nA, char nB, unsigned int nC);
+extern unsigned int Rabite_Mean_Death[17];
 
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Rabite.cpp", line, #cond))
 
@@ -161,6 +199,487 @@ int Rabite::OnHitEvent(EntityBaseClass *pAttacker, int nDamage, unsigned int nA,
         return 2;
     }
     return 0;
+}
+
+// DRAFT: 0x001FBF20 Execute__6RabiteFv
+// note: all switch cases transcribed; size 0xEA0 vs 0xDE4, DIFF 910 words. First diff: prologue init-branch delay slot (nop vs lui) and static gp offsets.
+void Rabite::Execute() {
+    static float SCALESCALESCALE;
+    static signed char init;
+    float vPos[4];
+    float vJoint[4];
+    float vOff[4];
+    void *pPlayer;
+    void *pSrc;
+    void *pJoint;
+
+    if (m_unk3C != 0) {
+        if (init == 0) {
+            SCALESCALESCALE = 0.75f;
+            init = 1;
+        }
+        ScaleSet__6PMNodeFffff(m_unk3C, SCALESCALESCALE, SCALESCALESCALE, SCALESCALESCALE, 1.0f);
+    }
+    if (m_unk21C != -1) {
+        pPlayer = mPlayerAPI__13EntityManager;
+        if (*(void **)((char *)pPlayer + 0x3C) != 0) {
+            pSrc = (char *)*(void **)((char *)pPlayer + 0x3C) + 0x90;
+        } else {
+            pSrc = (char *)pPlayer + 0x1A0;
+        }
+        *(u_long128 *)vPos = *(u_long128 *)pSrc;
+        pJoint = GetAttachableJoint__6PlayerFi(mpEntMgr__15EntityBaseClass->m_unk505C, m_unk21C);
+        if (pJoint == 0) {
+            m_unk21C = -1;
+            SetState__15EntityBaseClassFi(this, 5);
+            PlaySound__15EntityBaseClassFUi(this, 0x1AD);
+            StopSoundBySoundRef__15EntityBaseClassFUi(this, m_unk214);
+        } else {
+            *(u_long128 *)vJoint = *(u_long128 *)((char *)pJoint + 0x70);
+            if (m_unk230[1] != 0.0f) {
+                vOff[0] = 0.0f;
+                vOff[1] = 0.0f;
+                vOff[2] = m_unk230[1];
+                VectorRotateY__7MathAPIFPA4_ff((float (*)[4])vOff, vPos[1]);
+                sceVu0AddVector(vJoint, vJoint, vOff);
+            }
+            vJoint[1] += m_unk230[0];
+            if (m_unk3C != 0) {
+                *(u_long128 *)((char *)m_unk3C + 0x80) = *(u_long128 *)vJoint;
+                *((unsigned char *)m_unk3C + 0x3E) |= 8;
+            } else {
+                *(u_long128 *)&m_unk190 = *(u_long128 *)vJoint;
+            }
+            vPos[1] += m_unk220 + m_unk230[2];
+            if (m_unk3C != 0) {
+                *(u_long128 *)((char *)m_unk3C + 0x90) = *(u_long128 *)vPos;
+                *((unsigned char *)m_unk3C + 0x3E) |= 8;
+            } else {
+                *(u_long128 *)m_unk1A0 = *(u_long128 *)vPos;
+            }
+            if (m_unk240 != 0) {
+                m_unk240 = (int)((float)m_unk240 - *(float *)(gEng + 0x1E8));
+                if (m_unk240 < 0) {
+                    m_unk240 = 0;
+                }
+            }
+            if (m_unk240 == 0) {
+                m_unk240 = 0x1E;
+                SetVibrate__3PadFQ23Pad7VibTypeUc(&gPad, 1, 0xA);
+            }
+        }
+    }
+    switch (m_unk20) {
+    case -1:
+        if (m_unkE9 != 0) {
+            m_unk1F0[0] = m_unk1C0[0];
+            m_unk1F0[1] = m_unk1C0[1];
+            m_unk1F0[2] = m_unk1C0[2];
+            m_unk200 = m_unk1B0;
+            m_unk204 = m_unk1B4;
+            m_unk208 = m_unk1B8;
+        }
+        {
+            float *pFrom = &m_unk190;
+            if (m_unk3C != 0) {
+                pFrom = (float *)((char *)m_unk3C + 0x80);
+            }
+            if (!(Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pFrom, (float (*)[4])m_unk1F0) <= m_unk1CC)) {
+                printf("ERROR - Rabite shutdown as initial position wasn't inside attack radius\n");
+                SetState__15EntityBaseClassFi(this, -2);
+                return;
+            }
+        }
+        {
+            void *pPlayer = mPlayerAPI__13EntityManager;
+            float *pPos = (float *)((char *)pPlayer + 0x190);
+            if (*(void **)((char *)pPlayer + 0x3C) != 0) {
+                pPos = (float *)((char *)*(void **)((char *)pPlayer + 0x3C) + 0x80);
+            }
+            if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])&m_unk200, (float (*)[4])pPos) <= m_unk1BC) {
+                if (m_unkD4 == 0) {
+                    void *pShadow = __nw__FUi(0x10);
+                    if (pShadow != 0) {
+                        pShadow = __ct__6ShadowFQ26Shadow10ShadowTypeUi(pShadow, 1, 0x87000006);
+                    }
+                    m_unkD4 = pShadow;
+                    if (m_unkD4 == 0) {
+                        CdsAssert__FPciPc("Rabite.cpp", 0x157, "mpShadow");
+                    }
+                }
+                {
+                    void *pShadow = m_unkD4;
+                    if (pShadow != 0) {
+                        *(int *)pShadow = 1;
+                        void *pSub = *(void **)((char *)pShadow + 0xC);
+                        if (pSub != 0) {
+                            *(int *)((char *)pSub + 0x18) = 1;
+                        }
+                    }
+                }
+                if (m_unk38 == 0) {
+                    void *pPhys = __nw__FUi(0x120);
+                    if (pPhys != 0) {
+                        pPhys = __ct__7PhysicsFv(pPhys);
+                    }
+                    m_unk38 = pPhys;
+                    if (m_unk38 == 0) {
+                        CdsAssert__FPciPc("Rabite.cpp", 0x15E, "mpPhysics");
+                    }
+                    SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12, 0);
+                }
+                SetState__15EntityBaseClassFi(this, 9);
+                return;
+            }
+        }
+        return;
+    default:
+        return;
+    case 9:
+        if (m_unkE9 != 0) {
+            FacePlayer__15EntityBaseClassFf(this, 1.0f);
+            LoadCorrectMesh();
+            PlaySequence__15EntityBaseClassFPUi(this, Rabite_Mean_BurrowUp);
+        }
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, 0);
+            return;
+        }
+        break;
+    case 12:
+        if (m_unkE9 != 0) {
+            if (*(float *)((char *)this + 0x23C) != 0.0f) {
+                PlaySequence__15EntityBaseClassFPUi(this, Rabite_Attached2);
+            } else {
+                PlaySequence__15EntityBaseClassFPUi(this, Rabite_Attached);
+            }
+            m_unk214 = PlaySound__15EntityBaseClassFUi(this, 0x1C9U);
+        }
+        {
+            void *pPlayer = mPlayerAPI__13EntityManager;
+            float *pPos = (float *)((char *)pPlayer + 0x190);
+            if (*(void **)((char *)pPlayer + 0x3C) != 0) {
+                pPos = (float *)((char *)*(void **)((char *)pPlayer + 0x3C) + 0x80);
+            }
+            if (!(Distance__7MathAPIFPA4_fPA4_f((float (*)[4])m_unk1F0, (float (*)[4])pPos) <= m_unk1CC)) {
+                void *pAttached = mpEntMgr__15EntityBaseClass->m_unk505C;
+                if (pAttached != 0) {
+                    DetachJoint__6PlayerFi(pAttached, m_unk21C);
+                    m_unk21C = -1;
+                    SetState__15EntityBaseClassFi(this, 5);
+                    StopSoundBySoundRef__15EntityBaseClassFUi(this, m_unk214);
+                    return;
+                }
+            }
+        }
+        break;
+    case 0: {
+        float fDist;
+        LoadCorrectMesh();
+        {
+            void *pPlayer = mPlayerAPI__13EntityManager;
+            float *pPos = (float *)((char *)pPlayer + 0x190);
+            if (*(void **)((char *)pPlayer + 0x3C) != 0) {
+                pPos = (float *)((char *)*(void **)((char *)pPlayer + 0x3C) + 0x80);
+            }
+            fDist = Distance__7MathAPIFPA4_fPA4_f((float (*)[4])m_unk1F0, (float (*)[4])pPos);
+        }
+        if (m_unk218 != 0) {
+            if (m_unkE9 != 0) {
+                PlaySequence__15EntityBaseClassFPUi(this, Rabite_Mean_Ready);
+            }
+            if (fDist <= m_unk1CC) {
+                SetState__15EntityBaseClassFi(this, 3);
+            } else {
+                float *pFrom = &m_unk190;
+                if (m_unk3C != 0) {
+                    pFrom = (float *)((char *)m_unk3C + 0x80);
+                }
+                if (!(Distance__7MathAPIFPA4_fPA4_f((float (*)[4])m_unk1F0, (float (*)[4])pFrom) <= m_unk1CC)) {
+                    SetState__15EntityBaseClassFi(this, 0xD);
+                } else {
+                    SetState__15EntityBaseClassFi(this, 8);
+                }
+            }
+        } else {
+            if (m_unkE9 != 0) {
+                PlaySequence__15EntityBaseClassFPUi(this, Rabite_Ready);
+            }
+            if (fDist <= m_unk1CC) {
+                SetState__15EntityBaseClassFi(this, 2);
+            } else {
+                float *pFrom = &m_unk190;
+                if (m_unk3C != 0) {
+                    pFrom = (float *)((char *)m_unk3C + 0x80);
+                }
+                if (!(Distance__7MathAPIFPA4_fPA4_f((float (*)[4])m_unk1F0, (float (*)[4])pFrom) <= m_unk1CC)) {
+                    SetState__15EntityBaseClassFi(this, 0xD);
+                }
+            }
+        }
+        FacePlayer__15EntityBaseClassFf(this, 0.4f);
+        return;
+    }
+    case 13:
+        if (m_unkE9 != 0) {
+            if (m_unk218 != 0) {
+                PlaySequence__15EntityBaseClassFPUi(this, Rabite_Mean_Hop);
+            } else {
+                PlaySequence__15EntityBaseClassFPUi(this, Rabite_Hop);
+            }
+        }
+        if (((signed char)(*((unsigned char *)m_unk3C + 0x3F) & 7)) & 4) {
+            if (m_unk218 != 0) {
+                PlaySound__15EntityBaseClassFUi(this, 0x4E51U);
+            } else {
+                PlaySound__15EntityBaseClassFUi(this, 0xEU);
+            }
+        }
+        RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (float (*)[4])m_unk1F0), 0.4f);
+        if (m_unk218 != 0) {
+            void *pPlayer = mPlayerAPI__13EntityManager;
+            float *pPlayerPos = (float *)((char *)pPlayer + 0x190);
+            if (*(void **)((char *)pPlayer + 0x3C) != 0) {
+                pPlayerPos = (float *)((char *)*(void **)((char *)pPlayer + 0x3C) + 0x80);
+            }
+            float *pThisPos = &m_unk190;
+            if (m_unk3C != 0) {
+                pThisPos = (float *)((char *)m_unk3C + 0x80);
+            }
+            if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pThisPos, (float (*)[4])pPlayerPos) <= 3.0f) {
+                SetState__15EntityBaseClassFi(this, 4);
+                return;
+            }
+        }
+        {
+            float *pThisPos = &m_unk190;
+            if (m_unk3C != 0) {
+                pThisPos = (float *)((char *)m_unk3C + 0x80);
+            }
+            if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])m_unk1F0, (float (*)[4])pThisPos) <= m_unk1CC) {
+                SetState__15EntityBaseClassFi(this, 0);
+            }
+        }
+        {
+            float *pThisPos = &m_unk190;
+            if (m_unk3C != 0) {
+                pThisPos = (float *)((char *)m_unk3C + 0x80);
+            }
+            if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pThisPos, (float (*)[4])m_unk1F0) < 3.0f) {
+                SetState__15EntityBaseClassFi(this, 0);
+                return;
+            }
+        }
+        break;
+    case 3:
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, Rabite_Mean_Hop);
+        }
+        if (((signed char)(*((unsigned char *)m_unk3C + 0x3F) & 7)) & 4) {
+            PlaySound__15EntityBaseClassFUi(this, 0x4E51U);
+        }
+        FacePlayer__15EntityBaseClassFf(this, 0.4f);
+        {
+            void *pPlayer = mPlayerAPI__13EntityManager;
+            float *pPlayerPos = (float *)((char *)pPlayer + 0x190);
+            if (*(void **)((char *)pPlayer + 0x3C) != 0) {
+                pPlayerPos = (float *)((char *)*(void **)((char *)pPlayer + 0x3C) + 0x80);
+            }
+            if (!(Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pPlayerPos, (float (*)[4])m_unk1F0) <= m_unk1CC)) {
+                SetState__15EntityBaseClassFi(this, 0);
+            }
+        }
+        {
+            void *pPlayer = mPlayerAPI__13EntityManager;
+            float *pPlayerPos = (float *)((char *)pPlayer + 0x190);
+            if (*(void **)((char *)pPlayer + 0x3C) != 0) {
+                pPlayerPos = (float *)((char *)*(void **)((char *)pPlayer + 0x3C) + 0x80);
+            }
+            float *pThisPos = &m_unk190;
+            if (m_unk3C != 0) {
+                pThisPos = (float *)((char *)m_unk3C + 0x80);
+            }
+            if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pThisPos, (float (*)[4])pPlayerPos) <= 3.0f) {
+                SetState__15EntityBaseClassFi(this, 4);
+                return;
+            }
+        }
+        break;
+    case 2:
+        if (m_unkE9 != 0) {
+            m_unk218 = 0;
+            SetupHopToPoint();
+            PlaySequence__15EntityBaseClassFPUi(this, Rabite_Hop);
+        }
+        if (((signed char)(*((unsigned char *)m_unk3C + 0x3F) & 7)) & 4) {
+            if (m_unk218 != 0) {
+                PlaySound__15EntityBaseClassFUi(this, 0x4E51U);
+            } else {
+                PlaySound__15EntityBaseClassFUi(this, 0xEU);
+            }
+        }
+        RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (float (*)[4])&m_unk200), 0.04f);
+        {
+            float *pThisPos = &m_unk190;
+            if (m_unk3C != 0) {
+                pThisPos = (float *)((char *)m_unk3C + 0x80);
+            }
+            if (DistanceXZ__7MathAPIFPA4_fPA4_f((float (*)[4])pThisPos, (float (*)[4])&m_unk200) <= 2.0f) {
+                SetupHopToPoint();
+                return;
+            }
+        }
+        {
+            void *pPlayer = mPlayerAPI__13EntityManager;
+            float *pPlayerPos = (float *)((char *)pPlayer + 0x190);
+            if (*(void **)((char *)pPlayer + 0x3C) != 0) {
+                pPlayerPos = (float *)((char *)*(void **)((char *)pPlayer + 0x3C) + 0x80);
+            }
+            if (DistanceXZ__7MathAPIFPA4_fPA4_f((float (*)[4])&m_unk200, (float (*)[4])pPlayerPos) < 10.0f) {
+                SetupHopToPoint();
+                return;
+            }
+        }
+        {
+            void *pPlayer = mPlayerAPI__13EntityManager;
+            float *pPlayerPos = (float *)((char *)pPlayer + 0x190);
+            if (*(void **)((char *)pPlayer + 0x3C) != 0) {
+                pPlayerPos = (float *)((char *)*(void **)((char *)pPlayer + 0x3C) + 0x80);
+            }
+            if (!(DistanceXZ__7MathAPIFPA4_fPA4_f((float (*)[4])m_unk1F0, (float (*)[4])pPlayerPos) <= (1.1f * m_unk1CC))) {
+                SetState__15EntityBaseClassFi(this, 0);
+                return;
+            }
+        }
+        if ((((signed char)(*((unsigned char *)m_unk3C + 0x3F) & 7)) & 4) && (*(int *)((char *)m_unk38 + 0xE4) != 0)) {
+            SetupHopToPoint();
+            return;
+        }
+        break;
+    case 6:
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, Rabite_Transform);
+            m_unk103 = 0xFE;
+        }
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, 7);
+            return;
+        }
+        break;
+    case 7:
+        if (m_unkE9 != 0) {
+            m_unk218 = 1;
+            LoadCorrectMesh();
+            PlaySequence__15EntityBaseClassFPUi(this, Rabite_Mean_Transform);
+        }
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, 3);
+            m_unk103 = 0x10;
+            return;
+        }
+        break;
+    case 5:
+        if (m_unkE9 != 0) {
+            FacePlayer__15EntityBaseClassFf(this, 1.0f);
+            if (m_unk218 != 0) {
+                PlaySequence__15EntityBaseClassFPUi(this, Rabite_Mean_Hit);
+            } else {
+                PlaySequence__15EntityBaseClassFPUi(this, Rabite_Hit);
+            }
+        }
+        if (m_unk160 == 0) {
+            if (m_unk218 != 0) {
+                SetState__15EntityBaseClassFi(this, 0);
+                return;
+            }
+            SetState__15EntityBaseClassFi(this, 6);
+            return;
+        }
+        break;
+    case 4:
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, Rabite_Mean_HopAttack);
+            FacePlayer__15EntityBaseClassFf(this, 0.4f);
+        }
+        if (m_unk160 == 0) {
+            float *pPlayerPos = (float *)((char *)mPlayerAPI__13EntityManager + 0x190);
+            if (*(void **)((char *)mPlayerAPI__13EntityManager + 0x3C) != 0) {
+                pPlayerPos = (float *)((char *)*(void **)((char *)mPlayerAPI__13EntityManager + 0x3C) + 0x80);
+            }
+            if (!(Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pPlayerPos, (float (*)[4])m_unk1F0) <= m_unk1CC)) {
+                SetState__15EntityBaseClassFi(this, 0);
+                return;
+            }
+            SetState__15EntityBaseClassFi(this, 3);
+            return;
+        }
+        break;
+    case 8:
+        if (m_unkE9 != 0) {
+            if (m_unk218 != 0) {
+                PlaySequence__15EntityBaseClassFPUi(this, Rabite_Mean_BurrowDown);
+            } else {
+                PlaySequence__15EntityBaseClassFPUi(this, Rabite_BurrowDown);
+            }
+        }
+        if (m_unk160 == 0) {
+            void *pShadow = m_unkD4;
+            if (pShadow != 0) {
+                *(int *)pShadow = 0;
+                void *pSub = *(void **)((char *)pShadow + 0xC);
+                if (pSub != 0) {
+                    *(int *)((char *)pSub + 0x18) = 0;
+                }
+            }
+            float *pPlayerPos = (float *)((char *)mPlayerAPI__13EntityManager + 0x190);
+            if (*(void **)((char *)mPlayerAPI__13EntityManager + 0x3C) != 0) {
+                pPlayerPos = (float *)((char *)*(void **)((char *)mPlayerAPI__13EntityManager + 0x3C) + 0x80);
+            }
+            if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pPlayerPos, (float (*)[4])m_unk1F0) < m_unk1CC) {
+                SetState__15EntityBaseClassFi(this, 9);
+                return;
+            }
+        }
+        break;
+    case 14:
+        {
+            float *pPlayerPos = (float *)((char *)mPlayerAPI__13EntityManager + 0x190);
+            if (*(void **)((char *)mPlayerAPI__13EntityManager + 0x3C) != 0) {
+                pPlayerPos = (float *)((char *)*(void **)((char *)mPlayerAPI__13EntityManager + 0x3C) + 0x80);
+            }
+            if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pPlayerPos, (float (*)[4])m_unk1F0) < m_unk1CC) {
+                LoadCorrectMesh();
+                SetState__15EntityBaseClassFi(this, 9);
+                return;
+            }
+        }
+        if (m_unk3C != 0) {
+            LoadMesh__15EntityBaseClassFUibb(this, 0, 0, 1);
+            return;
+        }
+        break;
+    case 10:
+        if (m_unkE9 != 0) {
+            static float BonusPos[4] = {0.0f, 2.0f, 0.0f, 1.0f};
+            m_unk10C &= 0xF8FFFFFF;
+            void *pShadow = m_unkD4;
+            if (pShadow != 0) {
+                *(int *)pShadow = 0;
+                void *pSub = *(void **)((char *)pShadow + 0xC);
+                if (pSub != 0) {
+                    *(int *)((char *)pSub + 0x18) = 0;
+                }
+            }
+            PlaySequence__15EntityBaseClassFPUi(this, Rabite_Mean_Death);
+            SpawnBonus__15EntityBaseClassFPfii(this, BonusPos, 1, 1);
+            WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0);
+            WriteApparitionData__15EntityBaseClassFicUi(this, 0, 1, 0);
+        }
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, -2);
+        }
+        break;
+    }
 }
 
 // FUNCTION: 0x001FCD10 __dt__6RabiteFv
