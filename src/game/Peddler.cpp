@@ -20,7 +20,9 @@ extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 struct ItemEntry {
     char _pad000[4];
     int m_unk4;                     // 0x04
-    char _pad008[0x14 - 0x08];
+    unsigned int m_unk8;            // 0x08 resource id of the item node
+    int m_unkC;                     // 0x0C resource id of the animation node
+    char _pad010[0x14 - 0x10];
 };
 extern ItemEntry ItemTable[0x3C];
 
@@ -38,11 +40,22 @@ extern unsigned char gInterface[];
 extern float gUnitMatrix[16];
 extern "C" float Round180__Ff(float fAngle);
 extern "C" void *__nw__FUi(unsigned int nSize);
+inline void *operator new(unsigned int, void *pWhere) { return pWhere; }
 extern "C" void CheckVariable__15EntityBaseClassFii(void *pThis, int nFlags, int nValue);
-extern "C" PeddlerItems *__ct__12PeddlerItemsFi(PeddlerItems *pThis, int nIndex);
+extern unsigned char __vt__9PResource[];
+extern unsigned char __vt__6PMNode[];
+extern unsigned char __vt__9PMeshNode[];
+extern "C" void sceVu0UnitMatrix(void *pDst);
+extern "C" void __ct__6PArrayFv(void *pThis);
+extern "C" void InitMembers__6PMNodeFv(void *pThis);
+extern "C" void InitMembers__9PMeshNodeFv(void *pThis);
 extern "C" void FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(void *pThis, float fX, float fY, bool bFlag, int eColor);
 class PMNode;
 extern "C" PMNode *__ct__9PMeshNodeFR9PMeshNode(PMNode *pThis, PMNode *pSrc);
+extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
+extern "C" PMNode *GetResource__16PResourceManagerFUib(void *pThis, unsigned int nId, bool bLocal);
+extern "C" void SetAnimLoopCount__6PMNodeFib(void *pThis, int nCount, bool bFlag);
+extern "C" void EnableAnim__6PMNodeFbb(void *pThis, bool bA, bool bB);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
@@ -56,6 +69,7 @@ extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 extern "C" void ReleaseControlOfCamera__9CameraAPIFP15EntityBaseClassb(void *pThis, void *pEntity, bool bRelease);
 extern "C" void BuildDispList__9PSkeletonFv(void *pThis);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
+extern "C" void PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
 extern "C" void FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(void *pThis, EntityBaseClass *pEntity);
 extern "C" void CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(void *pThis, void *pPos, int eObjType, int eWeaponType, bool bFlag);
 
@@ -78,8 +92,16 @@ extern PeddlerSeq PeddlerSeqData[2];
 // Only the PMNode fields used here; offsets follow PMNode.h.
 class PMNode {
 public:
+    // Virtual numbers follow the vtable slots: destructor 0 (0x08), Render 1 (0x0C), ... slot 0x20 is number 6.
+    virtual ~PMNode();
+    virtual void Render();
+    virtual void SetFrameTime();
+    virtual void CreateObjectDisplayList();
+    virtual void Animate();
+    virtual void SetAllAnimFlags();
+    virtual int Slot20(void *pNode);
     void ScaleSet(float a, float b, float c, float d);
-    char _pad000[0x2C];
+    char _pad004[0x2C - 0x04];
     float m_unk2C;                  // 0x2C fade value
     char _pad030[0x3E - 0x30];
     unsigned char m_unk3E;          // 0x3E flags; 0x08 = scale set
@@ -303,6 +325,40 @@ int PeddlerItems::Hide() {
     return (bScaleDone != 0) ? (bFadeDone != 0) : 0;
 }
 
+// DRAFT: 0x001D09B0 ReplaceItem__12PeddlerItemsFi
+// note: DIFF 95; frame 0x50 vs 0x60 and s2 (ItemTable entry) not kept live. Tried: direct ItemTable indexing (114), 128-bit locals as arrays (114), char[16] spills (95, kept), local entry pointer after delete (101), entry pointer at top (107).
+void PeddlerItems::ReplaceItem(int nItem) {
+    char saved80[16];
+    char saved90[16];
+
+    if (m_unk4 == 0) {
+        CdsAssert("Peddler.cpp", 0x6DF, "m_pItemNode");
+    }
+    if (m_unk0 == 0) {
+        CdsAssert("Peddler.cpp", 0x6E0, "m_pRotateNode");
+    }
+    Remove__6PArrayFPv((char *)m_unk0 + 0x14, m_unk4);
+    *(u_long128 *)saved80 = *(u_long128 *)((char *)m_unk4 + 0x80);
+    *(u_long128 *)saved90 = *(u_long128 *)((char *)m_unk4 + 0x90);
+    if (m_unk4 != 0) {
+        delete m_unk4;
+    }
+    m_unk4 = GetResource__16PResourceManagerFUib(&gEng, ItemTable[nItem & 0x3F].m_unk8, false);
+    if (m_unk4 == 0) {
+        CdsAssert("Peddler.cpp", 0x6EA, "m_pItemNode");
+    }
+    if (m_unk4->Slot20(GetResource__16PResourceManagerFUib(&gEng, ItemTable[nItem & 0x3F].m_unkC, false)) == 0 && "Couldn't add animation") {
+        CdsAssert("Peddler.cpp", 0x6EE, "!\"Couldn't add animation\"");
+    }
+    SetAnimLoopCount__6PMNodeFib(m_unk4, 0, true);
+    EnableAnim__6PMNodeFbb(m_unk4, true, true);
+    *(u_long128 *)((char *)m_unk4 + 0x80) = *(u_long128 *)saved80;
+    m_unk4->m_unk3E |= 8;
+    *(u_long128 *)((char *)m_unk4 + 0x90) = *(u_long128 *)saved90;
+    m_unk4->m_unk3E |= 8;
+    Add__6PArrayFPv((char *)m_unk0 + 0x14, m_unk4);
+}
+
 // FUNCTION: 0x001D0B80 CopyItemMesh__12PeddlerItemsFi
 PMNode *PeddlerItems::CopyItemMesh(int nIndex) {
     bool bOk = m_unk4 && m_unk0;
@@ -432,6 +488,40 @@ PeddlerItems::~PeddlerItems() {
     }
 }
 
+// DRAFT: 0x001D1360 __ct__12PeddlerItemsFi
+PeddlerItems::PeddlerItems(int nIndex) {
+    ItemEntry entry = ItemTable[nIndex & 0x3F];
+    *(u_long128 *)((char *)this + 0x10) = *(u_long128 *)&gUnitMatrix[12];
+    *(u_long128 *)((char *)this + 0x20) = *(u_long128 *)&gUnitMatrix[12];
+    m_unk8 = 0.0f;
+    m_unkC = 0.0f;
+    char *volatile pMesh = (char *)__nw__FUi(0x140);
+    if (pMesh != 0) {
+        char *volatile pNode = pMesh;
+        *(void **)pNode = (void *)__vt__9PResource;
+        *(int *)(pNode + 4) = 0;
+        *(void **)pNode = (void *)__vt__6PMNode;
+        __ct__6PArrayFv(pNode + 0x14);
+        sceVu0UnitMatrix(pNode + 0x40);
+        __ct__6PArrayFv(pNode + 0xD8);
+        InitMembers__6PMNodeFv(pNode);
+        *(void **)pMesh = (void *)__vt__9PMeshNode;
+        __ct__6PArrayFv(pMesh + 0x130);
+        InitMembers__9PMeshNodeFv(pMesh);
+    }
+    m_unk0 = (PMNode *)pMesh;
+    m_unk4 = (PMNode *)GetResource__16PResourceManagerFUib((void *)((char *)&gEng + 0x188A4), entry.m_unk8, false);
+    if (m_unk4 == 0) {
+        CdsAssert("Peddler.cpp", 0x60B, "m_pItemNode");
+    }
+    if (m_unk4->Slot20(GetResource__16PResourceManagerFUib((void *)((char *)&gEng + 0x188A4), entry.m_unkC, false)) == 0 && "Couldn't add animation") {
+        CdsAssert("Peddler.cpp", 0x60F, "!\"Couldn't add animation\"");
+    }
+    SetAnimLoopCount__6PMNodeFib(m_unk4, 0, true);
+    EnableAnim__6PMNodeFbb(m_unk4, true, true);
+    Add__6PArrayFPv((char *)m_unk0 + 0x14, m_unk4);
+}
+
 // DRAFT: 0x001D1550 LookAtPeddler__7PeddlerFv
 // note: 55 differing lines; 57.295776f is pooled (lwc1 gp) where the original uses lui/ori/mtc1; 12-byte size gap. Tried: s0 reuse for m_unk38 (56), split atan2 into a local (55), constant in a local (55).
 void Peddler::LookAtPeddler() {
@@ -469,6 +559,57 @@ void Peddler::LookAtPeddler() {
     sceVu0AddVector(afPos, afPos, afVec);
     SetCameraLookAtParams__9CameraAPIFP15EntityBaseClassPfPf(&mCameraAPI__13EntityManager, this, afPos, afVec);
     gInterface[0x1997] = 0;
+}
+
+// DRAFT: 0x001D16A0 AnimateItems__7PeddlerFv
+// note: DIFF 24. Remaining: bDone init daddiu vs addiu, slti at vs v0 at loop top, float ternary arg order (original loads the -16.5/-14.0 pair first), tail call order. Tried: declaration order, fA local (DIFF 58), split assert (124), tail reorder.
+int Peddler::AnimateItems() {
+    int nSlot;
+    int nStep;
+    int bDone;
+
+    nSlot = m_unk248;
+    nStep = 0;
+    bDone = 1;
+    do {
+        if (!(nSlot < 5 && m_unk218[nSlot]->m_unk4 != 0)) {
+            CdsAssert("Peddler.cpp", 0x59F, "iItem < PEDDLER_MAX_ITEMS && m_pItems[iItem]->IsValid()");
+        }
+        bDone = bDone & m_unk218[nSlot]->Animate(
+            (nSlot == m_unk248) ? -16.5f : -14.0f,
+            90.0f + 360.0f * (float)nStep / 5.0f,
+            (nSlot == m_unk248) ? 6.0f : 2.5f,
+            (nSlot == m_unk248) ? 1.0f : 0.5f) & 0xFF;
+        nSlot = (nSlot + 1) % 5;
+        nStep++;
+        if (m_unk218[nSlot] == 0) {
+            break;
+        }
+        if (nSlot >= 5) {
+            break;
+        }
+    } while (nSlot != m_unk248);
+
+    if (bDone != 0) {
+        unsigned int nBits;
+        char *pState;
+
+        pState = (char *)mpEntMgr__15EntityBaseClass->m_unk505C;
+        nBits = *(unsigned short *)(pState + 0x1B8);
+        if (nBits == 0) {
+            nBits = *(unsigned short *)(pState + 0x1B0) & 0xA0;
+        }
+        if (nBits != 0) {
+            m_unk248 += (nBits & 0x80) ? 1 : -1;
+            if ((unsigned int)m_unk248 >= 5) {
+                m_unk248 = (nBits & 0x80) ? 0 : 4;
+                SetState__15EntityBaseClassFi(this, 0x13);
+            }
+            PlaySound__15EntityBaseClassFUi(this, 0x3A);
+            bDone = 0;
+        }
+    }
+    return bDone;
 }
 
 // DRAFT: 0x001D18A0 HideItems__7PeddlerFv
@@ -550,7 +691,7 @@ void Peddler::InitItems() {
             CheckVariable__15EntityBaseClassFii((void *)this, *pnId & 0x3F, 0x3C);
             pItem = (PeddlerItems *)__nw__FUi(0x30);
             if (pItem != 0) {
-                pItem = __ct__12PeddlerItemsFi(pItem, *pnId);
+                new (pItem) PeddlerItems(*pnId);
             }
             *ppSlot = pItem;
             (*ppSlot)->Reset(fAngle);

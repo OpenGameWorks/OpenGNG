@@ -21,6 +21,7 @@ public:
     int GetNextPosition(float (&afPos)[4]);
     int IsAlive();
     void LookAtPeddler();
+    int AnimateItems();
     void ExitPeddlerView();
     int OnHitEvent(EntityBaseClass *pEntity, int nArg1, unsigned int nEvent, unsigned int nArg2);
 
@@ -84,18 +85,23 @@ class PMNode;
 
 class PeddlerItems {
 public:
+    PeddlerItems(int nIndex);
     ~PeddlerItems();
     void EnableDisplay(bool bEnable);
     int AnimateFloat(float &fVal, float fTarget, float fStep);
     int AnimateVector(float (&afVec)[4], float (&afTarget)[4], float fStep);
+    int Animate(float fA, float fB, float fC, float fD);
     int Hide();
     void Reset(float fAngle);
     PMNode *CopyItemMesh(int nIndex);
+    void ReplaceItem(int nItem);
 
-    PMNode *m_unk0;                 // 0x000 item node
-    PMNode *m_unk4;                 // 0x004 rotate node
+    PMNode *m_unk0;                 // 0x000 rotate node (PArray at +0x14)
+    PMNode *m_unk4;                 // 0x004 item node
     float m_unk8;                   // 0x008 animated scale
     float m_unkC;                   // 0x00C animated fade
+    char _pad010[0x10];             // 0x010 unit matrix copy
+    char _pad020[0x10];             // 0x020 unit matrix copy
 };
 
 unsigned int GetItemID(unsigned int arg0);
