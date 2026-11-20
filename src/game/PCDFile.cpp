@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "PCDFile.h"
 
@@ -10,7 +11,13 @@ extern "C" int sceCdStatus(int *pStatus);
 extern "C" int sceCdRead(unsigned int lsn, unsigned int sectors, void *buf, void *mode);
 extern "C" int sceCdSearchFile(void *, const char *);
 extern "C" int sprintf(char *buf, const char *fmt, ...);
+extern "C" void memcpy(void *, const void *, unsigned int);
 void CdsAssert(char *pFile, int nLine, char *pExpr);
+
+// Byte-offset access to the parts of the file object that have no member yet.
+#define PCD_U32(off) (*(unsigned int *)((char *)this + (off)))
+#define PCD_PTR(off) (*(char **)((char *)this + (off)))
+#define CDS_ASSERT(line, cond, expr) ((cond) ? (void)0 : CdsAssert("PCDFile.cpp", line, expr))
 
 class Interface {
 public:
@@ -108,6 +115,79 @@ int PCDFile::ReadData(int arg0) {
         }
     } while (ErrorCheck() != 0);
     return 1;
+}
+
+// DRAFT: 0x0012C1C0 ReadEx__7PCDFileFPvUi
+// note: 371 words differ; ours has a 0xA0 frame with s0-s7 and fp, original 0x60 with s0-s4 and ra (code 0x490 vs 0x5E4). Tried unsigned sector count, block-scoped count, dropping dst, clamp 0x11: 371, 371, 372, 371.
+int PCDFile::ReadEx(void *buf, unsigned int size) {
+    unsigned int done;
+    unsigned int n;
+    unsigned int s0;
+    int idx;
+    char *dst;
+
+    CDS_ASSERT(0xB2, m_size, "CDFileDescriptor.size");
+    if (m_unk10038 >= m_size) {
+        printf("Read %s failed, no data left\n", (char *)this + 0x10008);
+        return 0;
+    }
+    idx = m_unk10030;
+    if (PCD_U32(0x10048 + idx * 4) == 0) {
+        CDS_ASSERT(0xCC, idx == 0, "nCurrentBuffer == 0");
+        s0 = ((m_size - m_unk10038) + 0x7FF) >> 11;
+        PCD_U32(0x10048 + idx * 4) = (s0 < 0x10) ? s0 : 0x10;
+        if (s0 >= 0x21) {
+            s0 = 0x20;
+        }
+        PCD_U32(0x10040 + idx * 4) = PCD_U32(0x10000) + m_unk1003C;
+        if (sceCdSync(1) != 0) {
+            do {
+                gInterface.LoadingDisplay(m_unk10050++, m_unk10054);
+            } while (sceCdSync(1) != 0);
+        }
+        ReadData(idx);
+        m_unk1003C += PCD_U32(0x10048 + idx * 4);
+        PCD_U32(0x10040 + (1 - idx) * 4) = PCD_U32(0x10000) + m_unk1003C;
+        PCD_U32(0x10048 + (1 - idx) * 4) = s0 - PCD_U32(0x10048 + idx * 4);
+        CDS_ASSERT(0xF2, PCD_U32(0x10048 + (1 - idx) * 4) <= PCD_U32(0x10048 + idx * 4), "nNumberOfSectors[1 - nCurrentBuffer] <= nNumberOfSectors[nCurrentBuffer]");
+        if (PCD_U32(0x10048 + (1 - idx) * 4) != 0) {
+            ReadData(1 - idx);
+            m_unk1003C += PCD_U32(0x10048 + (1 - idx) * 4);
+        }
+    }
+    if ((unsigned int)(m_size - m_unk10038) < size) {
+        size = m_size - m_unk10038;
+    }
+    if (size == 0) {
+        return 0;
+    }
+    dst = (char *)buf;
+    done = 0;
+    do {
+        n = 0x8000 - m_unk10034;
+        if (size - done < n) {
+            n = size - done;
+        }
+        memcpy(dst, PCD_PTR(0x10024 + idx * 4) + m_unk10034, n);
+        done += n;
+        m_unk10038 += n;
+        m_unk10034 += n;
+        dst += n;
+        if (m_unk10034 >= 0x8000) {
+            PCD_U32(0x10048 + idx * 4) = ((m_size + 0x7FF) >> 11) - m_unk1003C;
+            PCD_U32(0x10040 + idx * 4) = PCD_U32(0x10000) + m_unk1003C;
+            if (PCD_U32(0x10048 + idx * 4) != 0) {
+                if (PCD_U32(0x10048 + idx * 4) >= 0x11) {
+                    PCD_U32(0x10048 + idx * 4) = 0x10;
+                }
+                ReadData(idx);
+                m_unk1003C += PCD_U32(0x10048 + idx * 4);
+            }
+            idx = 1 - idx;
+            m_unk10034 = 0;
+        }
+    } while (done < size);
+    return done;
 }
 
 // DRAFT: 0x0012C7B0 Read__7PCDFileFPvUi
