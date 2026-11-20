@@ -91,7 +91,10 @@ def take(n: int) -> list[dict]:
                 pick.append((a, s, nm))
                 total += s
         if not pick:
-            continue
+            # Every function left in this file exceeds the byte budget; the smallest
+            # becomes a single-function job so large code still reaches a worker.
+            a, s, nm = min(cands[f], key=lambda x: x[1])
+            pick = [(a, s, nm)]
         stem = Path(f).stem
         jid = f"{stem}-{int(time.time()) % 100000}"
         jobs.append({"id": jid, "file": f"src/game/{f}", "header": f"src/game/{stem}.h",
