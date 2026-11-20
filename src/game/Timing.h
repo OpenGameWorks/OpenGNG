@@ -13,6 +13,7 @@ public:
     void StopTimer();
     int GenerateStringWSuffix(char *pOut, unsigned int nArg);
     void GenerateString(char *pOut, unsigned int nArg, unsigned int nArg2);
+    int GetTime();
 
     int m_unk000;               // 0x000 start counter sample, read by StopTimer
     unsigned int m_unk004;      // 0x004 one-frame value, cleared by ETiming::ZeroAllOneFrameVals
@@ -31,6 +32,7 @@ public:
 
 class ETiming {
 public:
+    void PrintPerformanceMeter(unsigned int nUnused, PMat4 *pMat);
     void PrintDisplayListStatusMeter(unsigned int nUnused, PMat4 *pMat);
     void PrintCalcTimings();
     void PrintRenderTimings();
@@ -40,10 +42,16 @@ public:
     int InitSubTimer(unsigned int nId, const char *pName, unsigned int nArg);
     int StopSubTimer(unsigned int nId);
     ESubTimer *FindTimer(unsigned int nId);
+    void MaxesUpdate();
+    void InitTimers();
 
     int m_unk0;                 // 0x000 header
     ESubTimer m_aTimers[0x16];  // 0x004 22 timers, 0x48 bytes each
-    char _pad634[0xD38 - 0x634];
+    char _pad634[0x640 - 0x634];
+    char m_unk640[0x890 - 0x640];  // 0x640 PProgressBar, first performance bar
+    char m_unk890[0xD30 - 0x890];  // 0x890 PProgressBar, second performance bar
+    unsigned int m_unkD30;      // 0xD30 ring index into the per-frame max history, wraps at 9
+    int m_unkD34;               // 0xD34 countdown, reset to 0x14 when it reaches zero
     int m_unkD38;               // 0xD38 frame value, read by the print functions
 };                              // size 0xD3C
 

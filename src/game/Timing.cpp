@@ -15,7 +15,8 @@ struct PGfxEngineRef {
     char *pDisplayList;
     char _pad04[0x10];
 };
-extern PGfxEngineRef gGfxEng;
+extern char gGfxEng[1504384];
+extern float GAME_FPS;
 extern "C" char *strcat(char *pDst, char *pSrc);
 extern "C" char *strcpy(char *pDst, const char *pSrc);
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
@@ -111,6 +112,17 @@ void ESubTimer::StopTimer() {
     }
 }
 
+// DRAFT: 0x00169910 StartTimer__9ESubTimerFv
+// note: bytes match (fncmp MATCH) with a .word counter read; kept DRAFT because inline asm is not a FUNCTION. Tried mfc0 mnemonic (extra insn), mfc0 sel 1 (unsupported), uninit local (stores v0).
+void ESubTimer::StartTimer() {
+    unsigned int nCounter = 1;
+    m_unk044 = nCounter;
+    asm {
+        .word 0x4003C801
+    }
+    m_unk000 = nCounter;
+}
+
 // FUNCTION: 0x001699C0 __ct__9ESubTimerFv
 ESubTimer::ESubTimer() {
     ZeroTimer();
@@ -119,11 +131,35 @@ ESubTimer::ESubTimer() {
     m_unk045 = 1;
 }
 
+// DRAFT: 0x00169A00 PrintPerformanceMeter__7ETimingFUiP5PMat4
+// note: 96 differing words; frame and saved registers match, but the first gGfxEng load uses a0 not a1 and the 0x158E14 load is scheduled after the division; reorder variants raised it to 99.
+void ETiming::PrintPerformanceMeter(unsigned int nUnused, PMat4 *pMat) {
+    int nDelta = *(int *)((char *)gGfxEng + 0x158E18) - *(int *)((char *)gGfxEng + 0x158E14);
+    float fFrame = (1000.0f / GAME_FPS) - 0.5f;
+    int nCount = *(int *)((char *)gGfxEng + 0x158E0C);
+    float fA;
+    if (nCount >= 0) {
+        fA = (float)nCount;
+    } else {
+        fA = 2.0f * (float)(((unsigned int)nCount >> 1) | (nCount & 1));
+    }
+    ((PProgressBar *)m_unk640)->SetReading(100.0f * ((((3.3333333f * fA) / 1000.0f) / 1000.0f) / fFrame));
+    float fB;
+    if (nDelta >= 0) {
+        fB = (float)nDelta;
+    } else {
+        fB = 2.0f * (float)(((unsigned int)nDelta >> 1) | (nDelta & 1));
+    }
+    ((PProgressBar *)m_unk890)->SetReading(100.0f * ((((3.3333333f * fB) / 1000.0f) / 1000.0f) / fFrame));
+    ((PProgressBar *)m_unk640)->Render();
+    ((PProgressBar *)m_unk890)->Render();
+}
+
 // DRAFT: 0x00169B70 PrintDisplayListStatusMeter__7ETimingFUiP5PMat4
 // note: 3 differing lines; compiler keeps this+0xAE0 in s0 (original keeps this in s0 and recomputes a0 per call). Tried pBar local (3), reordered nCount first (9), pSelf local (9), inline cast at both calls (9).
 void ETiming::PrintDisplayListStatusMeter(unsigned int nUnused, PMat4 *pMat) {
     PProgressBar *pBar = (PProgressBar *)((char *)this + 0xAE0);
-    int nCount = *(int *)(gGfxEng.pDisplayList + 0xA3340);
+    int nCount = *(int *)(((PGfxEngineRef *)gGfxEng)->pDisplayList + 0xA3340);
     pBar->SetReading(100.0f * ((float)nCount / 32768.0f));
     pBar->Render();
 }
@@ -191,6 +227,62 @@ void ETiming::ZeroAllOneFrameVals() {
     }
 }
 
+// DRAFT: 0x00169E70 MaxesUpdate__7ETimingFv
+// note: frame-count and ring-index logic matches the asm; the per-timer max loop still differs (see fncmp).
+void ETiming::MaxesUpdate() {
+    ESubTimer *pFrame = FindTimer(1);
+    if (pFrame != 0) {
+        int nTime = pFrame->GetTime();
+        float fTime;
+        if (nTime < 0) {
+            float fHalf = (float)(int)(((unsigned int)nTime >> 1) | (nTime & 1));
+            fTime = fHalf + fHalf;
+        } else {
+            fTime = (float)nTime;
+        }
+        float fScaled = fTime * gEng.m_unk1E8;
+        int nScaled;
+        if (!(fScaled >= 2.1474836e9f)) {
+            nScaled = (int)fScaled;
+        } else {
+            nScaled = (int)(fScaled - 2.1474836e9f) | 0x80000000;
+        }
+        if ((unsigned int)nScaled >= 0x3CF1U) {
+            m_unkD38 += 1;
+        }
+    }
+    m_unkD34 -= 1;
+    if (m_unkD34 <= 0) {
+        m_unkD34 = 0x14;
+        m_unkD30 += 1;
+        if (m_unkD30 >= 9U) {
+            m_unkD30 = 0;
+        }
+        ESubTimer *pEntry = m_aTimers;
+        ESubTimer *pEnd = (ESubTimer *)((char *)this + 0x634);
+        if (pEntry < pEnd) {
+            do {
+                pEntry->m_unk00C = pEntry->m_unk008;
+                *(int *)((char *)pEntry + 0x18 + m_unkD30 * 4) = (int)pEntry->m_unk008;
+                pEntry->m_unk008 = 0;
+                pEntry->m_unk010 = 0;
+                unsigned int *pWord = (unsigned int *)((char *)pEntry + 0x18);
+                unsigned int *pWordEnd = (unsigned int *)((char *)pEntry + 0x3C);
+                if (pWord < pWordEnd) {
+                    do {
+                        unsigned int nWord = *pWord;
+                        if (pEntry->m_unk010 < nWord) {
+                            pEntry->m_unk010 = nWord;
+                        }
+                        pWord++;
+                    } while (pWord < pWordEnd);
+                }
+                pEntry++;
+            } while (pEntry < pEnd);
+        }
+    }
+}
+
 // FUNCTION: 0x00169FF0 StopSubTimer__7ETimingFUi
 int ETiming::StopSubTimer(unsigned int nId) {
     if (nId >= 0x16) {
@@ -243,6 +335,25 @@ ESubTimer *ETiming::FindTimer(unsigned int nId) {
         return 0;
     }
     return pTimer;
+}
+
+// FUNCTION: 0x0016A170 InitTimers__7ETimingFv
+void ETiming::InitTimers() {
+    InitSubTimer(0U, "Render", 1U);
+    InitSubTimer(1U, "Game Loop", 0U);
+    InitSubTimer(2U, "Physics", 0U);
+    InitSubTimer(3U, "Collision", 0U);
+    InitSubTimer(4U, "Camera", 0U);
+    InitSubTimer(5U, "Level Animation", 0U);
+    InitSubTimer(6U, "Obj Animation", 0U);
+    InitSubTimer(7U, "Effects Update", 0U);
+    InitSubTimer(8U, "Main World", 0U);
+    InitSubTimer(9U, "Object", 0U);
+    InitSubTimer(0xAU, "Effect", 0U);
+    InitSubTimer(0xBU, "Interface", 0U);
+    InitSubTimer(0xCU, "Skybox", 0U);
+    InitSubTimer(0xDU, "Shadow", 0U);
+    InitSubTimer(0xEU, "Entity", 0U);
 }
 
 // FUNCTION: 0x0016A300 __dt__7ETimingFv
