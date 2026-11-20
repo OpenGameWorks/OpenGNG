@@ -5,6 +5,7 @@
 #include "PMNode.h"
 #include "PMeshNode.h"
 #include "PLightManager.h"
+#include "MathAPI.h"
 
 // TODO(header): foreign declarations
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int eLoadClass, unsigned int nFlags);
@@ -12,6 +13,14 @@ extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" int Render__15EntityBaseClassFP13PLightManager(void *pThis, PLightManager *pLights);
 extern "C" void __dl__FPv(void *);
 extern unsigned char __vt__6Bridge[];
+extern "C" void Animate__6PMNodeFffP5PMat4ib(void *pThis, float fA, float fB, void *pMat, int nArg, bool bFlag);
+extern float aAddHeight;
+extern float aAddHeightStart;
+extern void *mpResMgr__15EntityBaseClass;
+extern unsigned int BridgeRopeName[9];
+extern unsigned int BridgeName[9];
+extern "C" void *GetResource__16PResourceManagerFUib(void *pThis, unsigned int nId, bool bFlag);
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
 // Placeholder for the object at Bridge+0x3C: only the three words copied by Render are placed.
 class BridgeSource {
@@ -22,11 +31,14 @@ public:
     float m_unk78;
 };
 
-// Placeholder for the object at Bridge+0x34C: slot 0x08 is Release, slot 0x0C is Render.
+// Placeholder for the object at Bridge+0x34C: slot 0x08 is Release, slot 0x0C is Render,
+// slot 0x14 is CreateObjectDisplayList (virtual 3, as in the PMNode vtable).
 class BridgeView {
 public:
     virtual void Release(int nFlag);
     virtual int Render(PLightManager *pLights, unsigned int nFlags, int nArg);
+    virtual void Unk10();
+    virtual int CreateObjectDisplayList();
     char _pad004[0x6C];
     float m_unk70;
     float m_unk74;
@@ -58,6 +70,95 @@ int Bridge::Render(PLightManager *arg0) {
     return s0;
 }
 
+// FUNCTION: 0x001DC930 LoadBridgeRope__6BridgeFv
+void Bridge::LoadBridgeRope() {
+    if (m_unk1B0 == 1) {
+        BridgeView *p = m_unk34C;
+        if (p) {
+            if (p) {
+                p->Release(1);
+            }
+            m_unk34C = 0;
+        }
+        m_unk34C = (BridgeView *)GetResource__16PResourceManagerFUib(mpResMgr__15EntityBaseClass, 0x010002C4, 0);
+        if (!m_unk34C) {
+            CdsAssert__FPciPc("Bridge.cpp", 0x299, "m_pBridgeRope");
+        }
+    }
+    u_long128 *src = m_unk3C ? (u_long128 *)((char *)m_unk3C + 0x80) : (u_long128 *)m_unk190;
+    BridgeView *p = m_unk34C;
+    *(u_long128 *)((char *)p + 0x80) = *src;
+    ((PMNode *)p)->m_unk3E |= 8;
+    if (m_unk1B0 == 1) {
+        *(float *)((char *)m_unk34C + 0x84) += aAddHeightStart;
+    }
+    src = m_unk3C ? (u_long128 *)((char *)m_unk3C + 0x90) : (u_long128 *)m_unk1A0;
+    p = m_unk34C;
+    *(u_long128 *)((char *)p + 0x90) = *src;
+    ((PMNode *)p)->m_unk3E |= 8;
+    m_unk34C->CreateObjectDisplayList();
+    Animate__6PMNodeFffP5PMat4ib(m_unk34C, 0.0f, 0.0f, 0, 0, false);
+    for (int i = 0, off = 0; i < m_unk330; i++, off += 4) {
+        *(void **)((char *)this + off + 0x350) = ((PMNode *)m_unk34C)->Find(*(unsigned int *)((char *)BridgeRopeName + off));
+        *(float *)((char *)this + off + 0x374) = *(float *)((char *)*(void **)((char *)this + off + 0x350) + 0x84);
+    }
+}
+
+// DRAFT: 0x001DCAD0 LoadBridgeParts__6BridgeFv
+// note: 69 words differ; frame, saves and loop registers match. Remaining: branch layout of the ternaries (original beqz/b/nop placement), beqz offset 0x3F vs 0x3B, and the v[] load order (0x84,0x88,0x80 in original; reordering did not change the count).
+void Bridge::LoadBridgeParts() {
+    if (m_unk3C == 0) {
+        CdsAssert__FPciPc("Bridge.cpp", 0x262, "GetMeshNode()");
+    }
+    m_unk330 = 9;
+    int i = 1;
+    int off = 4;
+    int off2 = 0x20;
+    do {
+        *(void **)((char *)this + off + 0x1E0) = ((PMNode *)m_unk3C)->Find(*(unsigned int *)((char *)BridgeName + off - 4));
+        if (*(void **)((char *)this + off + 0x1E0) != 0) {
+            *(float *)((char *)this + off + 0x1BC) = *(float *)((char *)*(void **)((char *)this + off + 0x1E0) + 0x84);
+            float v[4];
+            v[0] = *(float *)((char *)*(void **)((char *)this + off + 0x1E0) + 0x80);
+            v[1] = *(float *)((char *)*(void **)((char *)this + off + 0x1E0) + 0x84);
+            v[2] = *(float *)((char *)*(void **)((char *)this + off + 0x1E0) + 0x88);
+            float *pv = m_unk3C ? (float *)((char *)m_unk3C + 0x90) : m_unk1A0;
+            MathAPI::VectorRotateY((float (*)[4])v, pv[1]);
+            *(float *)((char *)this + off2 + 0x1F0) = v[0] + (m_unk3C ? (float *)((char *)m_unk3C + 0x80) : m_unk190)[0];
+            *(float *)((char *)this + off2 + 0x1F4) = v[1] + (m_unk3C ? (float *)((char *)m_unk3C + 0x80) : m_unk190)[1];
+            *(float *)((char *)this + off2 + 0x1F8) = v[2] + (m_unk3C ? (float *)((char *)m_unk3C + 0x80) : m_unk190)[2];
+            *(int *)((char *)this + off2 + 0x200) = 0;
+            *(int *)((char *)this + off2 + 0x204) = 0;
+            *(int *)((char *)this + off2 + 0x208) = 0;
+            *(int *)((char *)this + off2 + 0x20C) = 0;
+        } else {
+            int t = i - 1;
+            if (t < m_unk330) {
+                m_unk330 = t;
+            }
+        }
+        i += 1;
+        off += 4;
+        off2 += 0x20;
+    } while (i < 10);
+}
+
+// DRAFT: 0x001DC850 UpdateBridgeRope__6BridgeFv
+// note: 42 words differ; original ternary has nops at 0x34/0x3C (ours none), which shifts everything after; if-override form gives 46; split temp still 42; aAddHeight gp load is -0x7E38 in original vs 0 in ours.
+void Bridge::UpdateBridgeRope() {
+    for (int i = 0, off = 0; i < m_unk330; i++) {
+        float *v = m_unk3C ? (float *)((char *)m_unk3C + 0x80) : (float *)((char *)this + 0x190);
+        char *t = (char *)this + off;
+        float f = *(float *)((char *)*(void **)(t + 0x1E4) + 0x84) + v[1] - *(float *)((char *)m_unk34C + 0x84);
+        if (m_unk1B0 == 1) {
+            *(float *)((char *)*(void **)(t + 0x350) + 0x84) = aAddHeight + (*(float *)(t + 0x374) + f);
+        }
+        off += 4;
+    }
+    Animate__6PMNodeFffP5PMat4ib(m_unk34C, 0.0f, 0.0f, 0, 0, false);
+    ((PMNode *)m_unk34C)->m_unk3E |= 8;
+}
+
 // DRAFT: 0x001DD830 Clamp__6BridgeFRf
 // note: original stores arg0 once and reloads it at 0x85C; ours forwards the value (15 words vs 0x54 size). Tried store/reload, volatile pointer reload (18), second compare on arg0 (15 best).
 void Bridge::Clamp(float &arg0) {
@@ -71,6 +172,13 @@ void Bridge::Clamp(float &arg0) {
     }
     v = arg0;
     arg0 = v;
+}
+
+// FUNCTION: 0x001DD8A0 OnTimerEvent__6BridgeFUi
+void Bridge::OnTimerEvent(unsigned int arg0) {
+    if (arg0 == m_unk344) {
+        m_unk344 = 0;
+    }
 }
 
 // FUNCTION: 0x001DDF70 __dt__6BridgeFv
