@@ -64,6 +64,56 @@ void PMat4::MakePerspectiveMatrix(float arg0, float arg1, float arg2, float arg3
     m_unk00[3][3] = 0.0f;
 }
 
+// DRAFT: 0x001308B0 MakeMayaMatrix__5PMat4Fv
+// note: MW folds literal-only float ops (1.4994709f/1.4f, 0.07257143f*1.0f) the original keeps as runtime div.s/mul.s; size 0x264 vs 0x3B8; tried 3 variants (float-only, lazy float, double chains)
+void PMat4::MakeMayaMatrix() {
+    float f20 = 0.07257143f * 1.0f;
+    float f21 = 1.4994709f / 1.4f;
+    float f25 = 0.0f;
+    if ((double)f21 > 1.0) {
+        f25 = f25 * (0.945f - 0.945f * f21) / 2.0f;
+    }
+    double d1 = -0.5 * (double)1.417f;
+    double d2 = d1 * 1.0;
+    double d3 = 0.0 + d2;
+    double d4 = 0.0 + d3;
+    float f22 = (float)((double)f20 * d4);
+    double d5 = 0.5 * (double)1.417f;
+    double d6 = d5 * 1.0;
+    double d7 = 0.0 + d6;
+    double d8 = 0.0 + d7;
+    float f23 = (float)((double)f20 * d8);
+    double e1 = -0.5 * (double)0.945f;
+    double e2 = e1 * (double)f21;
+    double e3 = 0.0 + e2;
+    double e4 = (double)f25 + e3;
+    float f24 = (float)((double)f20 * e4);
+    double g1 = 0.5 * (double)0.945f;
+    double g2 = g1 * (double)f21;
+    double g3 = 0.0 + g2;
+    double g4 = (double)f25 + g3;
+    float f0 = (float)((double)f20 * g4);
+    float f4 = f23 - f22;
+    float f3 = f23 + f22;
+    float f5 = f0 - f24;
+    m_unk00[0][0] = 0.2f / f4;
+    m_unk00[1][0] = 0.0f;
+    m_unk00[2][0] = f3 / f4;
+    m_unk00[3][0] = 0.0f;
+    m_unk00[0][1] = 0.0f;
+    m_unk00[1][1] = 0.2f / f5;
+    m_unk00[2][1] = (f0 + f24) / f5;
+    m_unk00[3][1] = 0.0f;
+    m_unk00[0][2] = 0.0f;
+    m_unk00[1][2] = 0.0f;
+    m_unk00[2][2] = 1.0001999f;
+    m_unk00[3][2] = -200.0f / 999.9f;
+    m_unk00[0][3] = 0.0f;
+    m_unk00[1][3] = 0.0f;
+    m_unk00[2][3] = 1.0f;
+    m_unk00[3][3] = 0.0f;
+}
+
 // FUNCTION: 0x00130C70 MakeMayaProjectionMatrix__5PMat4Fffffff
 void PMat4::MakeMayaProjectionMatrix(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5) {
     float proj[4][4];
