@@ -57,6 +57,8 @@ public:
     void ComboTarget(float arg0, float arg1, bool arg2);
     void HammerDSlashMove();
     void HammerSliceMove();
+    void HammerSlashMove();
+    void SwimMove();
     void ResetPling();
     void ResetShield();
     void InitCutScene();
@@ -96,6 +98,8 @@ public:
     void MBlowMove();
     void AirSlash2Move();
     void GetKeyMove();
+    void DialogMove();
+    void GrabObjectMove();
     void CatchIdleMove();
     void SetHeadCamera(bool arg0);
     void ReleaseHeadCamera();
@@ -117,6 +121,7 @@ public:
     void FreeJoint(int arg0);
     int FindCurrentItem(int arg0, bool arg1);
     void GetAttachableJointOffsets(int arg0, float (*arg1)[4]);
+    int GetAttachableJoint(int arg0);
     void FinishCutCamera(float (*arg0)[4]);
     void DuckLaunchMove();
     void MBlow2Move();
@@ -148,7 +153,9 @@ public:
     unsigned short m_unk1B2; // 0x1B2 bit 0x4000 is tested by CatchIdleMove
     signed char m_unk1B4;   // 0x1B4 compared against -74 and 75 by SpinCheck
     signed char m_unk1B5;   // 0x1B5 compared against -74 and 75 by SpinCheck
-    char _pad1B6[0x1BA - 0x1B6];
+    signed char m_unk1B6;   // 0x1B6 cleared by DialogMove
+    signed char m_unk1B7;   // 0x1B7 cleared by DialogMove
+    char _pad1B8[0x1BA - 0x1B8];
     unsigned short m_unk1BA; // 0x1BA nonzero keeps ReleaseCheck counting the caught state
     int m_unk1BC;          // 0x1BC compared with 0x32 and 0x64 by GetGroundAction
     char _pad1C0[0x1C4 - 0x1C0];
@@ -183,7 +190,8 @@ public:
     int m_unk260;           // 0x260
     int m_unk264;           // 0x264
     signed char m_unk268;   // 0x268 cleared by GrimIdleMove
-    char _pad269[0x26C - 0x269];
+    char _pad269[0x26B - 0x269];
+    unsigned char m_unk26B; // 0x26B tested by DialogMove
     signed char m_unk26C;   // 0x26C byte set by SetHeadCamera
     char _pad26D[0x270 - 0x26D];
     int m_unk270;           // 0x270 spin state, read and written by SpinCheck

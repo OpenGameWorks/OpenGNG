@@ -15,6 +15,7 @@ class Interface {
 public:
     char _pad000[0x10];
     void AddAbility(int arg0);
+    void UpdateStatus(unsigned int arg0, bool arg1);
     char _pad010[0x415];
     unsigned char m_unk425;
     enum eFadeColor { eFadeColor_Value0 = 0, eFadeColor_Value1 = 1, eFadeColor_Value2 = 2 };
@@ -97,6 +98,21 @@ public:
     virtual int Slot28();
 };
 
+// TODO(header): foreign declarations
+// AnimStateObject's vtable with Slot28 taking one int (the caller's a1), as SwimMove calls it.
+class AnimStateCall {
+public:
+    virtual void Slot08();
+    virtual void Slot0C();
+    virtual void Slot10();
+    virtual void Slot14();
+    virtual int Slot18();
+    virtual void Slot1C();
+    virtual void Slot20();
+    virtual void Slot24();
+    virtual int Slot28(int arg0);
+};
+
 class PMNode {
 public:
     virtual void Slot08();
@@ -107,7 +123,12 @@ public:
     virtual void Slot1C(int arg0);
     char _pad04[0x0C];
     void *m_unk10;
-    char _pad14[0x24 - 0x14];
+    struct {
+        int m_unk0;
+        int m_unk4;
+        void **m_unk8;
+    } m_unk14;              // 0x14 list header: count, index, data (0x18 and 0x1C)
+    char _pad20[0x24 - 0x20];
     AnimStateObject *m_unk24;
     char _pad28[0x3E - 0x28];
     unsigned char m_unk3E;
@@ -178,12 +199,15 @@ extern Debug gDebug;
 class Camera {
 public:
     int SetHeadCam(bool arg0);
+    int ControlledByApp(unsigned int arg0);
 };
 class PSound {
 public:
     char _pad000[0x18080];
     void PlaySoundApparition(unsigned int arg0, unsigned int arg1);
     void FadeOutAllMusic(unsigned int arg0);
+    enum EnumMusicSpecialVols { MUSIC_SPECIAL_VOLS_NONE = 0 };
+    void SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol);
 };
 extern PSound gSound;
 class EffectNode {
@@ -389,6 +413,11 @@ void Player::GetAttachableJointOffsets(int arg0, float (*arg1)[4]) {
     uVal = (unsigned char)m_pFreeJoints[arg0]._pad05[0];
     fVec[3] = (float)uVal;
     *(u_long128 *)arg1 = *(u_long128 *)fVec;
+}
+
+// FUNCTION: 0x001595D0 GetAttachableJoint__6PlayerFi
+int Player::GetAttachableJoint(int arg0) {
+    return m_pFreeJoints[arg0].m_unk00;
 }
 
 // DRAFT: 0x001595F0 RefreshAttachableJoints__6PlayerFv
@@ -829,7 +858,92 @@ void Player::ResurrectionMove() {
     }
 }
 
-// note: 1 word differs at 0x14: original copies this to s1 at entry and loads 0x328(s1); ours loads 0x328(a0). Tried hoisted id local, plain this, self pointer, and ((Player *)self) cast; all the same.
+// DRAFT: 0x0015B310 DialogMove__6PlayerFv
+// note: 58 words differ, size 0x14c vs 0x144; if-chain with gotos. Differs: first compare delay slot (nop vs next constant), a1=3 reused for the 0x250 store, case1 tail store placement, extra SetAction reloc at 0x134. Best variant in src/scratch/Player-72973/Player_dialog_v4_58.cpp.
+void Player::DialogMove() {
+    void *pApparition;
+    int state = m_unk250;
+    if (state == 3) {
+        goto case3;
+    }
+    if (state == 2) {
+        goto case2;
+    }
+    if (state == 1) {
+        goto case1;
+    }
+    if (state != 0) {
+        return;
+    }
+    if (m_unk335 & 4) {
+        m_unk335 = m_unk335 | 1;
+    }
+    m_unk250 = 1;
+case1:
+    m_unk1B6 = 0;
+    m_unk1B7 = 0;
+    m_unk1B0 &= 0xFBFF;
+    m_unk1B2 &= 0xFBFF;
+    pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk328);
+    if (!(m_unk335 & 5)) {
+        if (pApparition == 0 || *(unsigned char *)((char *)pApparition + 0x17A) == 0) {
+            m_unk250 = 2;
+        }
+    }
+    return;
+case2:
+    if (m_unk26B == 0) {
+        m_unk250 = 3;
+        m_unk264 = 0x4130;
+        *(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) = 0;
+        m_unk335 &= ~2;
+        pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk328);
+        if (pApparition != 0) {
+            *(signed char *)((char *)pApparition + 0xE8) = *(signed char *)((char *)pApparition + 0xE8) | 8;
+        }
+    }
+    return;
+case3: {
+    int action = GetGroundAction();
+    if (action != 0) {
+        m_unk335 = 0;
+        SetAction(action);
+    }
+    }
+}
+
+// DRAFT: 0x0015B460 GrabObjectMove__6PlayerFv
+// note: 72 words; m_unk328 and gp load order before the jal, assert delay slot nop vs lui, switch compare order differ
+void Player::GrabObjectMove() {
+    gInterface.UpdateStatus(3, true);
+    void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk328);
+    if (pApparition == 0) {
+        CdsAssert__FPciPc("Player.cpp", 0x1B7D, "pPling");
+    }
+    switch (m_unk250) {
+    case 0:
+        m_unk33B = 1;
+        ShowPlayer(0);
+        ((ApparitionVirtuals *)pApparition)->OnHitEvent(this, -1, 0x1FE, 0);
+        m_unk250 = 1;
+        return;
+    case 1:
+        if (((ApparitionVirtuals *)pApparition)->OnHitEvent(this, m_unk1B2, 0x1FE, 0) == 1) {
+            m_unk250 = 2;
+            gSound.SetMainMusicSpecialVolume(PSound::MUSIC_SPECIAL_VOLS_NONE);
+            return;
+        }
+        return;
+    case 2:
+        if (((Camera *)(gEng + 0x19760))->ControlledByApp(m_unk328) == 0) {
+            m_unk33B = 0;
+            ShowPlayer(1);
+            SetAction(0);
+        }
+        break;
+    }
+}
+
 // DRAFT: 0x0015B9B0 UnlockGateMove__6PlayerFv
 void Player::UnlockGateMove() {
     Player *self = this;
@@ -1407,6 +1521,54 @@ void Player::HammerDSlashMove() {
     }
 }
 
+// DRAFT: 0x0015DAD0 HammerSlashMove__6PlayerFv
+// note: 63 words; cancel-path shape and slti/bnez at branch form at t>=0x33 differ (tried 65 flat, 68 nested)
+void Player::HammerSlashMove() {
+    static unsigned char HammerSlashMoves[3] = {0x00, 0x00, 0x45};
+    int t;
+    int temp_a2;
+    int var_a1;
+    int var_a1_2;
+
+    if (m_unk250 == 0) {
+        m_unk250 = 1;
+        m_unk270 = -1;
+    }
+    t = (int)m_unk3C[13];
+    if (t >= 0x33) {
+        if (CancelAttack(0x30) != 0) {
+        }
+    } else if (t < 0x1B) {
+        if (SpinCheck() != 0) {
+            m_unk250 = 4;
+        }
+    } else {
+        temp_a2 = m_unk250;
+        if (temp_a2 == 4) {
+            var_a1 = 0x40;
+            if (m_unk1D0 & 0x20000) {
+                var_a1 = 0x41;
+                if (m_unk1FC == 3) {
+                    var_a1 = 0x42;
+                }
+            }
+            SetAction(var_a1);
+            return;
+        }
+        var_a1_2 = 0;
+        if (m_unk1B2 & 0x8000) {
+            var_a1_2 = 2;
+        }
+        if (temp_a2 < var_a1_2) {
+            m_unk250 = var_a1_2;
+        }
+        if ((t >= 0x22) && (m_unk250 >= 2)) {
+            ComboTarget(-1.0f, 100.0f, true);
+            SetAction(HammerSlashMoves[m_unk250]);
+        }
+    }
+}
+
 // FUNCTION: 0x0015DC20 CancelMove__6PlayerFv
 void Player::CancelMove() {
     if ((int)m_unk3C[13] >= ((unsigned char *)m_unk254)[4]) {
@@ -1677,6 +1839,56 @@ void Player::GrimRunMove() {
         SetFrameRate__6PMNodeFfb((PMNode *)fp, 0.5f, false);
     }
     GrimMove();
+}
+
+// FUNCTION: 0x0015F1E0 SwimMove__6PlayerFv
+void Player::SwimMove() {
+    int action = GetGroundAction();
+    switch (action) {
+    case 0:
+    case 10: {
+        PMNode *node = (PMNode *)m_unk3C;
+        int result = 0;
+        if (node->m_unk24 != 0) {
+            result = ((AnimStateCall *)node->m_unk24)->Slot28(action);
+        }
+        if (result != 0) {
+            return;
+        }
+        node->SetAnimLoopCount(1, false);
+        node->m_unk14.m_unk4 = 0;
+        void **hdr = (void **)&node->m_unk14;
+        void *p = (node->m_unk14.m_unk0 != 0) ? *(void **)hdr[2] : 0;
+        *(unsigned char *)((char *)p + 0x3D) = 6;
+        *(u_long128 *)m_unk38 = *(u_long128 *)&gUnitMatrix[12];
+        return;
+    }
+    default:
+        SetAction(action);
+        return;
+    case 11: {
+        PMNode *node = (PMNode *)m_unk3C;
+        int result = 0;
+        if (node->m_unk24 != 0) {
+            result = ((AnimStateCall *)node->m_unk24)->Slot28(action);
+        }
+        if (result == 0) {
+            int moving = 0;
+            if (node->m_unk24 != 0) {
+                moving = ((AnimStateCall *)node->m_unk24)->Slot18() != 0;
+            }
+            if (!(moving & 0xFF)) {
+                goto block_19;
+            }
+        } else {
+block_19:
+            SetAction(11);
+        }
+        Physics *phys = (Physics *)m_unk38;
+        phys->m_unk11C = Round180__Ff(m_unk1C4);
+        break;
+    }
+    }
 }
 
 // DRAFT: 0x0015F5E0 FootStepSound__6PlayerFPUs
