@@ -1,4 +1,5 @@
 #include "CameraFollow.h"
+#include "Debug.h"
 
 // TODO(header): foreign declarations
 extern "C" void sceVu0CopyVector(float *dst, float *src);
@@ -37,6 +38,9 @@ extern "C" void RotateX__5PMat4Ff(float *pMat, float angle);
 extern "C" void RotateY__5PMat4Ff(float *pMat, float angle);
 extern "C" void RotateZ__5PMat4Ff(float *pMat, float angle);
 extern "C" float sceVu0InnerProduct(float *a, float *b);
+extern "C" int sprintf(char *pDst, const char *pFmt, ...);
+extern "C" int fptodp(float f);
+extern Debug gDebug;
 
 class PVec3 {
 public:
@@ -78,6 +82,34 @@ public:
     float m_unk8;           // 0x008
     int m_unkC;             // 0x00C
 };
+
+// FUNCTION: 0x00173640 DrawTextDebug__12CameraFollowFv
+void CameraFollow::DrawTextDebug() {
+    sceVu0CopyVector(m_unk10, (float *)m_pCamera);
+    sprintf(m_unk639C, "Cam Pos = %f, %f, %f\n", fptodp(m_unk10[0]), fptodp(m_unk10[1]), fptodp(m_unk10[2]));
+    gDebug.DebugDisp(m_unk639C);
+    sceVu0CopyVector(m_unk10, (float *)((char *)m_pCamera + 0x20));
+    sprintf(m_unk639C, "Cam Rot = %f, %f, %f\n", fptodp(m_unk10[0]), fptodp(m_unk10[1]), fptodp(m_unk10[2]));
+    gDebug.DebugDisp(m_unk639C);
+    sprintf(m_unk639C, "Zoom = %f\n", fptodp(m_unk140));
+    gDebug.DebugDisp(m_unk639C);
+    sprintf(m_unk639C, "LOS Collide = %d\n", m_unk2C0);
+    gDebug.DebugDisp(m_unk639C);
+    if (m_unk210 != 0) {
+        sprintf(m_unk639C, "Cam box ID = %d\n", m_unk210);
+        gDebug.DebugDisp(m_unk639C);
+    }
+    sprintf(m_unk639C, "Against Wall = %d\n", m_unk62F0);
+    gDebug.DebugDisp(m_unk639C);
+    sprintf(m_unk639C, "Cam Version = %d\n", 14);
+    gDebug.DebugDisp(m_unk639C);
+    sprintf(m_unk639C, "Shake freeze = %d\n", m_unk62F8);
+    gDebug.DebugDisp(m_unk639C);
+    sprintf(m_unk639C, "Idle freeze = %d\n", m_unk6310);
+    gDebug.DebugDisp(m_unk639C);
+    sprintf(m_unk639C, "Player idle ctr = %d\n", m_unk6314);
+    gDebug.DebugDisp(m_unk639C);
+}
 
 // FUNCTION: 0x00173B30 AddControlPoint__12CameraSplineF5PVec3
 void CameraSpline::AddControlPoint(PVec3 arg0) {
@@ -205,6 +237,31 @@ int CameraFollow::CanDoHeadcam() {
     return 1;
 }
 
+// DRAFT: 0x00174FC0 CreatePathToPlayer__12CameraFollowFv
+// note: size 0x1D4 vs 0x1D0 (116 words); original frame 0xA0 keeps this in s2 and saves s0/s1 only, ours frame 0xB0 saves s3; tried local mid before/after copies, loop for m_unk10 copy: no change
+void CameraFollow::CreatePathToPlayer() {
+    ((CameraSpline *)_pad2D0)->Reset();
+    ((CameraSpline *)_pad2D0)->AddControlPoint(*(PVec3 *)m_unk20);
+    ((CameraSpline *)_pad2D0)->AddControlPoint(*(PVec3 *)m_unk20);
+    PVec3 mid;
+    mid.m_v[0] = m_unk20[0] + 0.5f * (m_unk2B0[0] - m_unk20[0]);
+    mid.m_v[1] = m_unk20[1] + 0.5f * (m_unk2B0[1] - m_unk20[1]);
+    mid.m_v[2] = m_unk20[2] + 0.5f * (m_unk2B0[2] - m_unk20[2]);
+    ((CameraSpline *)_pad2D0)->AddControlPoint(mid);
+    ((CameraSpline *)_pad2D0)->AddControlPoint(*(PVec3 *)m_unk2B0);
+    m_unk10[0] = m_unk180[0];
+    m_unk10[1] = m_unk180[1];
+    m_unk10[2] = m_unk180[2];
+    mid.m_v[0] = m_unk2B0[0] + 0.5f * (m_unk10[0] - m_unk2B0[0]);
+    mid.m_v[1] = m_unk2B0[1] + 0.5f * (m_unk10[1] - m_unk2B0[1]);
+    mid.m_v[2] = m_unk2B0[2] + 0.5f * (m_unk10[2] - m_unk2B0[2]);
+    ((CameraSpline *)_pad2D0)->AddControlPoint(mid);
+    ((CameraSpline *)_pad2D0)->Create();
+    m_unk6190 = 0;
+    m_unk6254 = 0x3F800000;
+    m_unk6258 = 0;
+}
+
 // DRAFT: 0x00175190 CalcNewCameraViewpointPos__12CameraFollowFv
 // note: 65 differing lines (was 97); size 0x174 vs 0x188, frame 0x80 matches but save slots, loop head, and PVec3 copy order differ, plus sceVu0CopyVector reloc at 0x14C; tried: separate int off for loop offset, explicit off += 0x10
 int CameraFollow::CalcNewCameraViewpointPos() {
@@ -228,7 +285,7 @@ int CameraFollow::CalcNewCameraViewpointPos() {
             float dot = sp40[0] * sp50[0] + sp40[2] * sp50[2];
             float angle = FastMath_Fabs__Ff(57.295776f * acosf(dot / (sqrtf(sp40[0] * sp40[0] + sp40[2] * sp40[2]) * sqrtf(sp50[0] * sp50[0] + sp50[2] * sp50[2]))));
             if (angle < 180.0f && !(angle < 30.0f)) {
-                sceVu0CopyVector((float *)_pad2B0, m_unk10);
+                sceVu0CopyVector(m_unk2B0, m_unk10);
                 return 1;
             }
         }
@@ -314,7 +371,7 @@ int CameraFollow::PlayerIsIdle() {
 void CameraFollow::ResetFromCamBox() {
     Init(true);
     m_unk17C = Distance__7MathAPIFPA4_fPA4_f((MathAPI *)m_unk20, (float (*)[4])m_unk40);
-    m_unk6398 = 0x3DAE147B;
+    m_unk6398 = 0.085f;
     m_unk140 = DistanceXZ__7MathAPIFPA4_fPA4_f((MathAPI *)m_unk20, (float (*)[4])m_unk40);
 }
 
@@ -362,7 +419,7 @@ void CameraFollow::ResetTrackingVars() {
     m_unk638C = m_unk6378;
     m_unk6390 = m_unk637C;
     m_unk6394 = m_unk6380;
-    m_unk6398 = 0x3F59999A;
+    m_unk6398 = 0.85f;
 }
 
 // FUNCTION: 0x00176170 GetGroundPos__7PhysicsFv
@@ -653,6 +710,72 @@ extern "C" CameraFollow *__dt__12CameraFollowFv(CameraFollow *pThis, short nFlag
         }
     }
     return pThis;
+}
+
+// FUNCTION: 0x00177CC0 Reset__12CameraFollowFv
+void CameraFollow::Reset() {
+    m_unk20[2] = 0.0f;
+    m_unk20[1] = 0.0f;
+    m_unk20[0] = 0.0f;
+    m_unk20[3] = 1.0f;
+    m_unk40[2] = 0.0f;
+    m_unk40[1] = 0.0f;
+    m_unk40[0] = 0.0f;
+    m_unk40[3] = 1.0f;
+    m_unk10[2] = 0.0f;
+    m_unk10[1] = 0.0f;
+    m_unk10[0] = 0.0f;
+    m_unk10[3] = 1.0f;
+    m_unk144 = 7.0f;
+    m_unk140 = 6.0f;
+    m_unk174 = 7.0f;
+    m_unk178 = 10.0f;
+    m_unk17C = 15.0f;
+    m_unk1F8 = 1;
+    m_unk2C0 = 0;
+    m_unk1F0 = 0;
+    m_unk1BB = 0;
+    m_unk120 = 1;
+    m_unk22C = 0;
+    m_unk220 = 0;
+    m_unk6318 = 0;
+    m_unk636C = 0;
+    m_unk160 = 0;
+    m_unk1BA = 0;
+    m_unk110 = 0;
+    m_unk6371 = 0;
+    m_unk62B0 = 0;
+    m_unk62F1 = 0;
+    m_unk6378 = 0.0f;
+    m_unk637C = 0.0f;
+    m_unk6380 = 0.0f;
+    m_unk6374 = 1.0f;
+    m_unk6384 = 0;
+    m_unk6398 = 0.01f;
+    m_unk62F4 = 0;
+    m_unk62F8 = 0;
+    m_unk148 = 0;
+    m_unk6290 = 0;
+    m_unk628C = 0;
+    m_unk170 = 0.0f;
+    m_unk180 = 0;
+    m_unk184 = 0;
+    m_unk188 = 0;
+    m_unk118 = 0;
+    m_unk210 = 0;
+    m_unk228 = 0;
+    m_unk218 = 5;
+    m_unk124 = 0.0f;
+    m_unk6360 = 0;
+    m_unk6310 = 0;
+    m_unk6314 = 0;
+    for (int i = 0; i < 10; i++) {
+        m_unk61A0[i][0] = 0.0f;
+        m_unk61A0[i][1] = 0.0f;
+        m_unk61A0[i][2] = 0.0f;
+        m_unk61A0[i][3] = 1.0f;
+    }
+    m_unk164 = 5.0f;
 }
 
 // DRAFT: 0x00177EA0 __ct__12CameraFollowFP6Camera
