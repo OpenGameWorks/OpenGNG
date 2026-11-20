@@ -15,13 +15,20 @@ extern "C" int GsCreateMoveRG2BAPacket__FiiiiiRi(int a0, int a1, int a2, int a3,
 extern "C" void GsSetTCC__FP23tagGsTextureEnvironmentb(void *pEnv, bool bFlag);
 extern "C" void MakeViewMatrix__5PMat4FPfPfPf(void *pThis, float *pEye, float *pView, float *pUp);
 extern "C" void MakeScreenMatrix__5PMat4Ffffffffff(void *pThis, float f0, float f1, float f2, float f3, float f4, float f5, float f6, float f7, float f8);
+extern "C" void BeginFxRender__10PGfxEngineFv(void *pThis);
+extern "C" void EndFxRender__10PGfxEngineFv(void *pThis);
+extern "C" void SetGsRegisters__12PDisplayListFP1i(void *pThis, u_long128 *pRegs, int nCount);
+extern "C" void SendGsPacket__12PDisplayListFPvib(void *pThis, void *pPacket, int nSize, bool bFlag);
+extern "C" void SetClipMatrix__10PGfxEngineFP5PMat4(void *pThis, void *pMatrix);
+extern "C" void SetScreenMatrix__10PGfxEngineFP5PMat4(void *pThis, void *pMatrix);
+extern "C" void SetViewMatrix__10PGfxEngineFP5PMat4(void *pThis, void *pMatrix);
 extern char gGfxEng[1504384];
 
 // Virtual numbers follow PParticleSystem's vtable: Start is slot 0x20, virtual number 6.
 class PParticleSystemView {
 public:
     virtual ~PParticleSystemView();
-    virtual void Slot1();
+    virtual void Slot1(float fStep);
     virtual void Render();
     virtual void ModifyPosition(void *pMatrix);
     virtual void FrustrumTest(void *pFrustrum, float fA, float fB, float fC);
@@ -83,6 +90,78 @@ void PParticleTexture::Reset() {
     if (m_unk4C4 != 0) {
         __dla__FPv(m_unk4C4);
         m_unk4C4 = 0;
+    }
+}
+
+// DRAFT: 0x001EFD40 Update__16PParticleTextureFf
+// note: DIFF 180 words; first diff at 0x28-0x40 (early-branch layout), folded vs unfolded gGfxEng+0x154C80 loads and aPacket build unresolved; tried || wrapper and goto layout, both 180.
+void PParticleTexture::Update(float fStep) {
+    PParticleMatrix sp50;
+    PParticleMatrix sp90;
+    long long aPacket[12];
+    void *pEnv0 = 0;
+    void *pEnv1 = 0;
+
+    if (m_unk0 == 0) {
+        return;
+    }
+    if (m_unk550 != 0 || m_unk554 != 0) {
+        BeginFxRender__10PGfxEngineFv(gGfxEng);
+        SetGsRegisters__12PDisplayListFP1i(*(void **)(gGfxEng + 0x154C80), (u_long128 *)m_unk10, 5);
+        SendGsPacket__12PDisplayListFPvib(*(void **)(gGfxEng + 0x154C80), _pad60, m_unk4C0, true);
+        sceVu0CopyMatrix((float (*)[4])&sp50, (float (*)[4])(gGfxEng + 0x16D380));
+        sceVu0CopyMatrix((float (*)[4])&sp90, (float (*)[4])(gGfxEng + 0x16D3C0));
+        SetScreenMatrix__10PGfxEngineFP5PMat4(gGfxEng, &m_unk510);
+        SetViewMatrix__10PGfxEngineFP5PMat4(gGfxEng, &m_unk4D0);
+        SetClipMatrix__10PGfxEngineFP5PMat4(gGfxEng, (char *)((int)gGfxEng + 0x16D340));
+        if (m_unk550 != 0) {
+            ((PParticleSystemView *)m_unk550)->Slot1(fStep);
+            int nHandle = *(int *)(gGfxEng + 0x16D408);
+            pEnv0 = GetTexEnv__15PTextureManagerFi(gGfxEng + 0x154C90, nHandle ? nHandle : *(int *)((char *)m_unk550 + 0x10));
+            GsSetTCC__FP23tagGsTextureEnvironmentb(pEnv0, false);
+            ((PParticleSystemView *)m_unk550)->Render();
+        }
+        if (m_unk554 != 0) {
+            ((PParticleSystemView *)m_unk554)->Slot1(fStep);
+            int nHandle = *(int *)(gGfxEng + 0x16D408);
+            pEnv1 = GetTexEnv__15PTextureManagerFi(gGfxEng + 0x154C90, nHandle ? nHandle : *(int *)((char *)m_unk554 + 0x10));
+            GsSetTCC__FP23tagGsTextureEnvironmentb(pEnv1, false);
+            ((PParticleSystemView *)m_unk554)->Render();
+        }
+        if (m_unk4C4 != 0) {
+            SendGsPacket__12PDisplayListFPvib(*(void **)(gGfxEng + 0x154C80), m_unk4C4, *(int *)_pad4C8, false);
+        }
+        {
+            char *pTable;
+            if (*(int *)(gGfxEng + 0x158DE0) & 1) {
+                pTable = gGfxEng + 0x158C10;
+            } else {
+                pTable = gGfxEng + 0x158D00;
+            }
+            aPacket[0] = 1;
+            aPacket[1] = 0x3F;
+            aPacket[2] = *(long long *)(pTable + 0x0);
+            aPacket[3] = 0x4C;
+            aPacket[4] = *(long long *)(pTable + 0x20);
+            aPacket[5] = 0x18;
+            aPacket[6] = *(long long *)(pTable + 0x30);
+            aPacket[7] = 0x40;
+            aPacket[8] = *(long long *)(pTable + 0x10);
+            aPacket[9] = 0x4E;
+            aPacket[10] = 0;
+            aPacket[11] = 0x4A;
+        }
+        SetGsRegisters__12PDisplayListFP1i(*(void **)(gGfxEng + 0x154C80), (u_long128 *)aPacket, 6);
+        EndFxRender__10PGfxEngineFv(gGfxEng);
+        SetScreenMatrix__10PGfxEngineFP5PMat4(gGfxEng, &sp90);
+        SetViewMatrix__10PGfxEngineFP5PMat4(gGfxEng, &sp50);
+        SetClipMatrix__10PGfxEngineFP5PMat4(gGfxEng, gGfxEng + 0x16D340);
+        if (pEnv0 != 0) {
+            GsSetTCC__FP23tagGsTextureEnvironmentb(pEnv0, true);
+        }
+        if (pEnv1 != 0) {
+            GsSetTCC__FP23tagGsTextureEnvironmentb(pEnv1, true);
+        }
     }
 }
 
