@@ -90,6 +90,13 @@ extern "C" void *__ct__16PParticleRipplesFv(void *pThis);
 extern "C" void *__ct__13PFireDamageFxFv(void *pThis);
 extern "C" void *__ct__16PResourceManagerFv(void *pThis);
 extern char DEF_FX_RESOURCE_PRS_FILE_NAME[0x18];
+extern "C" void sceVu0CopyVector(float *dst, float *src);
+extern "C" void SetCameraPosRot__13PParticleRainFPA4_fPA4_f(PParticleRain *pThis, float (*pA)[4], float (*pB)[4]);
+extern "C" void SetCameraPosRot__22PParticleBlowingLeavesFPA4_fPA4_f(PParticleBlowingLeaves *pThis, float (*pA)[4], float (*pB)[4]);
+extern "C" void Animate__18PParticleMovingFogFf(PParticleMovingFog *pThis, float fDt);
+extern "C" void FrustrumTest__18PParticleMovingFogFP9PFrustrumPfff(PParticleMovingFog *pThis, PFrustrum *pFrustrum, float *pVec, float fA, float fB);
+extern "C" void FrustrumTest__12PParticleFogFP9PFrustrumPfffP5PMat4(PParticleFog *pThis, PFrustrum *pFrustrum, float *pVec, float fA, float fB, void *pMat);
+extern "C" void Animate__12PFlashScreenFv(void *pThis);
 
 class PParticleRain {
 public:
@@ -968,6 +975,91 @@ int PParticleManager::IsValid(PParticleSystem *pSystem) {
         return 1;
     }
     return 0;
+}
+
+// FUNCTION: 0x001B9FE0 Update__16PParticleManagerFfP6CameraP9PFrustrum8ePSLayer
+void PParticleManager::Update(float fDt, Camera *pCamera, PFrustrum *pFrustrum, ePSLayer eLayer) {
+    PParticleRain *pFx;
+    unsigned int nIdx;
+
+    if (pCamera) {
+        sceVu0CopyVector((float *)((char *)this + 0x680), (float *)pCamera);
+        sceVu0CopyVector((float *)((char *)this + 0x690), (float *)((char *)pCamera + 0x20));
+        m_unk4 = 0;
+    } else {
+        *(int *)((char *)this + 0x688) = 0;
+        *(int *)((char *)this + 0x684) = 0;
+        *(int *)((char *)this + 0x680) = 0;
+        *(float *)((char *)this + 0x68C) = 1.0f;
+        m_unk4 = 0;
+    }
+    pFx = (m_unk0 != 0) ? (PParticleRain *)m_unk8[0] : 0;
+    while (pFx) {
+        if (eLayer == pFx->m_unkD4) {
+            if (pFx->m_unkC == 8) {
+                SetCameraPosRot__13PParticleRainFPA4_fPA4_f(pFx, (float (*)[4])((char *)this + 0x680), (float (*)[4])((char *)this + 0x690));
+            } else if (pFx->m_unkC == 0x15) {
+                SetCameraPosRot__22PParticleBlowingLeavesFPA4_fPA4_f((PParticleBlowingLeaves *)pFx, (float (*)[4])((char *)this + 0x680), (float (*)[4])((char *)this + 0x690));
+            } else if (pFx->m_unkC == 0x18) {
+                *(u_long128 *)((char *)pFx + 0x100) = *(u_long128 *)((char *)this + 0x680);
+                *(u_long128 *)((char *)pFx + 0x110) = *(u_long128 *)((char *)this + 0x690);
+            }
+            ((PEweedFx *)pFx)->Slot04(pFrustrum, (float *)((char *)this + 0x680), *(float *)((char *)this + 0x6A0), *(float *)((char *)this + 0x6A4));
+            ((PParticleSystem *)pFx)->Slot01(fDt);
+        }
+        nIdx = m_unk4 + 1;
+        m_unk4 = nIdx;
+        pFx = (nIdx < m_unk0) ? (PParticleRain *)m_unk8[m_unk4] : 0;
+    }
+    if (eLayer == 2) {
+        AnimateGroundDustFx(pFrustrum, fDt);
+        AnimateSulphurReactionFx(pFrustrum, fDt);
+        AnimateEweedReactionFx(pFrustrum, fDt);
+        m_unk24 = 0;
+        pFx = (m_unk20 != 0) ? (PParticleRain *)m_unk28[0] : 0;
+        while (pFx) {
+            FrustrumTest__12PParticleFogFP9PFrustrumPfffP5PMat4((PParticleFog *)pFx, pFrustrum, m_unk680, *(float *)&m_unk6A0, *(float *)&m_unk6A4, 0);
+            nIdx = m_unk24 + 1;
+            m_unk24 = nIdx;
+            pFx = (nIdx < m_unk20) ? (PParticleRain *)m_unk28[m_unk24] : 0;
+        }
+        if (m_unk9B4) {
+            Animate__18PParticleMovingFogFf((PParticleMovingFog *)m_unk9B4, fDt);
+            FrustrumTest__18PParticleMovingFogFP9PFrustrumPfff((PParticleMovingFog *)m_unk9B4, pFrustrum, m_unk680, *(float *)&m_unk6A0, *(float *)&m_unk6A4);
+        }
+        ((PEweedFx *)m_unkED0)->Slot04(pFrustrum, m_unk680, *(float *)&m_unk6A0, *(float *)&m_unk6A4);
+        ((PParticleSystem *)m_unkED0)->Slot01(fDt);
+        ((PEweedFx *)m_unk1790)->Slot04(pFrustrum, m_unk680, *(float *)&m_unk6A0, *(float *)&m_unk6A4);
+        ((PParticleSystem *)m_unk1790)->Slot01(fDt);
+        UpdateMasterParticleInstances(fDt, pFrustrum);
+    }
+    if (eLayer == 2) {
+        Animate__12PFlashScreenFv((char *)this + 0x6B0);
+    }
+    m_unk4 = 0;
+    pFx = (m_unk0 != 0) ? (PParticleRain *)m_unk8[0] : 0;
+    while (pFx) {
+        if (*((unsigned char *)pFx + 0x16) != 0) {
+            Remove((PParticleSystem *)pFx);
+        }
+        nIdx = m_unk4 + 1;
+        m_unk4 = nIdx;
+        pFx = (nIdx < m_unk0) ? (PParticleRain *)m_unk8[m_unk4] : 0;
+    }
+    m_unk14 = 0;
+    pFx = (m_unk10 != 0) ? (PParticleRain *)m_unk18[0] : 0;
+    while (pFx) {
+        if (pFx) {
+            ((PParticleSystem *)pFx)->Slot00(1);
+        }
+        nIdx = m_unk14 + 1;
+        m_unk14 = nIdx;
+        pFx = (nIdx < m_unk10) ? (PParticleRain *)m_unk18[m_unk14] : 0;
+    }
+    if (m_unk18) {
+        m_unk10 = 0;
+        m_unk14 = 0;
+    }
 }
 
 // DRAFT: 0x001BA3F0 UpdateMasterParticleInstances__16PParticleManagerFfP9PFrustrum

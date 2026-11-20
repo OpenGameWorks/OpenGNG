@@ -21,6 +21,7 @@ struct tagParticleGasParams;
 struct tagParticleMovingFogParams;
 struct tagParticleFogData;
 class PPakFile;
+class Camera;
 
 // Effect type selector for EnableFxByType. Enumerator values are not yet
 // recovered; the placeholder only gives the enum a definition.
@@ -97,6 +98,7 @@ public:
     void RemoveAllParticleSystems(ePSLayer eLayer);
     void RemoveAllFogObjects();
     void UpdateMasterParticleInstances(float fDt, PFrustrum *pFrustrum);
+    void Update(float fDt, Camera *pCamera, PFrustrum *pFrustrum, ePSLayer eLayer);
     void *InitRingMeshPacket(int &nOut, int nCount, bool bFlag, float fA, float fB, int nC, int nD);
     int CreateRingTriStrip(int nCount, float fA, float fB, float fC, float fD, int nE, int nF, float (*pA)[4], float (*pB)[4], float (*pC)[4]);
     void InitShockwaveRings();
@@ -120,7 +122,9 @@ public:
     char _pad44[0x50 - 0x44];
     char m_unk50[0x620];        // 0x50 GS frame buffer copy packet, sent with size 0x620
     int m_unk670;               // 0x670
-    char _pad674[0x6A0 - 0x674];
+    char _pad674[0x680 - 0x674];
+    float m_unk680[4];          // 0x680 camera matrix row block, copied from pCamera
+    float m_unk690[4];          // 0x690 camera matrix row block, copied from pCamera + 0x20
     int m_unk6A0;               // 0x6A0 float constant, stored by Init
     int m_unk6A4;               // 0x6A4 float constant, stored by Init
     PParticleRain *m_pRain;     // 0x6A8
