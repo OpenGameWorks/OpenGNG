@@ -71,6 +71,7 @@ public:
     void CreateHitMarkFx(float (*arg0)[4], eHitObjectType arg1, eHitWeaponType arg2, bool arg3);
     void CreateSplash(float arg0, bool arg1, bool arg2);
     EntityBaseClass *SpawnPickups(int arg0, int arg1, float (*arg2)[4], bool arg3);
+    void SpawnBonus(float *arg0, int arg1, int arg2);
     void OnInnocentAttack(EntityBaseClass *arg0, int arg1);
     PZinDamageFx *CreateDamageFx(float arg0, unsigned int arg1);
     void ShakeScreen(int arg0, int arg1, int arg2, int arg3, float arg4, int arg5);
@@ -168,7 +169,11 @@ public:
     char _pad179[0x2];          // 0x179..0x17A
     unsigned char m_unk17B;     // 0x17B ShakeScreen active flag
     int m_unk17C;               // 0x17C ShakeScreen frame that triggered
-    char _pad180[0x10];         // 0x180..0x18F; MathAPI matrix block at 0x190
+    char _pad180[0x6];          // 0x180..0x185
+    unsigned char m_unk186;     // 0x186 ability/spawn enable flag
+    unsigned char m_unk187;     // 0x187 combo bonus flag
+    unsigned char m_unk188;     // 0x188
+    char _pad189[0x7];          // 0x189..0x18F; vec4 at 0x190 is reached through a cast
 };
 
 #endif

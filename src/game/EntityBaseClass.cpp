@@ -209,6 +209,39 @@ public:
     void AddToRenderList(EntityBaseClass *arg0);
 };
 
+// Pickup is the spawned object; only the members SpawnBonus writes or reads are placed.
+class Pickup {
+public:
+    void SetAbilityType(int arg0);
+    void SetBonusVelocity(float (*arg0)[4], float *arg1, float arg2);
+    char _pad000[0x3C];
+    char *m_unk3C;
+    char _pad040[0x150];
+    float m_unk190[4];
+    char _pad1A0[0x10];
+    int m_unk1B0;
+    char _pad1B4[0x1C];
+    float m_unk1D0[4];
+    int m_unk1E0;
+};
+
+// Player is reached through the m_unk505C pointer of mpEntMgr; only the three calls SpawnBonus makes are declared.
+class Player {
+public:
+    int OnGunDeck();
+    int GetAbility();
+    int GetComboLevel();
+};
+
+// One entry per bonus gem kind: a count and a value, 8 bytes each.
+struct BonusGemEntry {
+    int count;
+    int value;
+};
+extern BonusGemEntry BonusGems[3];
+extern int aiSoulStonePickups[4];
+extern int miAbilityCount__15EntityBaseClass;
+
 // TimerAPI is only needed for the apparition-timer kill call; its size is not recovered, so the placeholder keeps the global complete.
 class TimerAPI {
 public:
@@ -1072,6 +1105,91 @@ int EntityBaseClass::PlaySoundUbiquitous(unsigned int arg0) {
 // FUNCTION: 0x0014C260 PlaySound__15EntityBaseClassFUi
 int EntityBaseClass::PlaySound(unsigned int arg0) {
     return gSound.PlaySoundWPitch(arg0, m_unk04, 0U, 0x10U, 0U);
+}
+
+// DRAFT: 0x0014C280 SpawnBonus__15EntityBaseClassFPfii
+// note: DIFF 109; idx lands in s1 (orig s0 shared with loop i), index-selection and second-block branch layout, sceVu0CopyVector reloc None; tried goto post_combo, q/off order, idx order, subtraction in q block, increment order, if/else index (113).
+void EntityBaseClass::SpawnBonus(float *arg0, int arg1, int arg2) {
+    int ability;
+    int i;
+    int q;
+    int off;
+    int cnt;
+    int idx;
+    BonusGemEntry *gem;
+    float fwd[4];
+    float vel[4];
+    float c;
+    float s;
+    char *src;
+
+    if (m_unk186 != 0 && ((Player *)mpEntMgr__15EntityBaseClass->m_unk505C)->OnGunDeck() == 0) {
+        miAbilityCount__15EntityBaseClass++;
+        if (miAbilityCount__15EntityBaseClass >= 4) {
+            miAbilityCount__15EntityBaseClass -= 4;
+            ability = ((Player *)mpEntMgr__15EntityBaseClass->m_unk505C)->GetAbility();
+            if (ability != 0x20) {
+                Pickup *spawned = (Pickup *)((EntityManager *)mpEntMgr__15EntityBaseClass)->Spawn(8, false, 0);
+                if (spawned == 0) {
+                    CdsAssert__FPciPc("EntityBaseClass.cpp", 0x72E, "pBonusEnt");
+                }
+                spawned->SetAbilityType(ability);
+                spawned->SetBonusVelocity((float (*)[4])(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190), arg0, 0.0f);
+                goto post_combo;
+            }
+        }
+        if (m_unk187 != 0) {
+            arg2 += ((Player *)mpEntMgr__15EntityBaseClass->m_unk505C)->GetComboLevel();
+            for (i = 0, off = 0; i < 3 && arg2 > 0; off += 8, i++) {
+                gem = (BonusGemEntry *)((char *)BonusGems + off);
+                cnt = gem->count;
+                q = arg2 / cnt;
+                if (q != 0) {
+                    SpawnPickups(gem->value, q, 0, false);
+                    arg2 -= cnt * q;
+                }
+            }
+        }
+post_combo:
+        if (!m_unk166) {
+            return;
+        }
+    }
+    if (!m_unk188) {
+        return;
+    }
+    if (arg1 == 0) {
+        return;
+    }
+    if (((Player *)mpEntMgr__15EntityBaseClass->m_unk505C)->OnGunDeck() != 0) {
+        return;
+    }
+    idx = (arg1 < 4) ? 0 : ((arg1 < 6) ? 1 : 2);
+    MathAPI::GetForwardVector(this, fwd);
+    fwd[0] = fwd[0] * 0.1f;
+    fwd[1] = 0.4f;
+    fwd[2] = fwd[2] * 0.1f;
+    {
+        Pickup *spawned = (Pickup *)((EntityManager *)mpEntMgr__15EntityBaseClass)->Spawn(8, false, 0);
+        if (spawned == 0) {
+            return;
+        }
+        spawned->m_unk1B0 = aiSoulStonePickups[idx];
+        src = m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190;
+        if (spawned->m_unk3C != 0) {
+            *(u_long128 *)(spawned->m_unk3C + 0x80) = *(u_long128 *)src;
+            spawned->m_unk3C[0x3E] |= 8;
+        } else {
+            *(u_long128 *)spawned->m_unk190 = *(u_long128 *)src;
+        }
+        spawned->m_unk1E0 = arg1;
+        c = cosf(0.017453292f * m_fYAngle__15EntityBaseClass);
+        s = sinf(0.017453292f * m_fYAngle__15EntityBaseClass);
+        vel[0] = fwd[2] * s + fwd[0] * c;
+        vel[2] = fwd[2] * c - fwd[0] * s;
+        vel[1] = fwd[1] + MathAPI::RandomFloatRange(0.0f, 0.3f);
+        sceVu0CopyVector(spawned->m_unk1D0, vel);
+    }
 }
 
 // DRAFT: 0x0014C620 FaceHitDirection__15EntityBaseClassFP15EntityBaseClass
