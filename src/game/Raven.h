@@ -15,6 +15,7 @@ public:
     void OutputDebug();
     int CanAttack();
     void FlyAway();
+    void FlyToFlyToPos(int nMode);
     void SetEditableVars(char *pArg);
     void OnTimerEvent(unsigned int nId);
     int OnHitEvent(EntityBaseClass *pAttacker, int nDamage, unsigned int nA, unsigned int nB);
@@ -48,9 +49,13 @@ public:
     int m_unk1C8;                   // 0x1C8
     char _pad1CC[0x1E0 - 0x1CC];
     float m_unk1E0[4];              // 0x1E0 position (16 bytes, passed to MathAPI::DistanceXZ)
-    char _pad1F0[0x244 - 0x1F0];
+    char _pad1F0[0x210 - 0x1F0];
+    float m_unk210[4];              // 0x210 direction vector (16 bytes); m_unk210[1] is 0x214
+    char _pad220[0x240 - 0x220];
+    float m_unk240;                 // 0x240 scale applied to the direction
     int m_unk244;                   // 0x244
-    char _pad248[0x250 - 0x248];
+    float m_unk248;                 // 0x248 turn rate
+    char _pad24C[0x250 - 0x24C];
     int m_unk250;                   // 0x250
     char _pad254[0x258 - 0x254];
     int m_unk258;                   // 0x258
