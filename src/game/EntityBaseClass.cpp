@@ -1,6 +1,7 @@
 // FLAGS: -Cpp_exceptions off -str readonly
 #include "types.h"
 #include "EntityBaseClass.h"
+#include "CameraAPI.h"
 
 // TODO(header): foreign declarations
 // PSound size is unknown; the placeholder member only keeps gSound out of small data (threshold 8 bytes).
@@ -11,6 +12,7 @@ public:
     void PauseAmbientSoundsByOriginatorRef(unsigned int arg0, unsigned int arg1);
     void StopAmbientSoundsByOriginatorRef(unsigned int arg0, unsigned int arg1);
     void StopSoundsByOriginatorRef(unsigned int arg0, unsigned int arg1, unsigned int arg2);
+    int PlaySoundWPitch(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4);
     char _pad000[0x10];
 };
 extern PSound gSound;
@@ -37,8 +39,16 @@ public:
     void CreateFireDamageFx(PMNode *arg0, unsigned int arg1);
     PParticleSystem *CreateFrozenFx(PMNode *arg0, float arg1, float arg2);
     int IsValid(PParticleSystem *pSystem);
+    PParticleSystem *Create(unsigned int arg0, float arg1, float arg2, float arg3, PMNode *arg4, bool arg5);
+    void CreateEweedReaction(float *arg0);
 };
 extern char gGfxEng[1504384];
+
+class PParticleRipples {
+public:
+    void Create(float *arg0, float arg1, float arg2, float arg3);
+    char _pad000[0x10];
+};
 
 // PZinDamageFx size is 0xF0 (the operator new argument); the placeholder keeps the allocation size.
 class PZinDamageFx {
@@ -52,6 +62,7 @@ class MathAPI {
 public:
     static float Distance(float (*arg0)[4], float (*arg1)[4]);
     static float GetAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]);
+    static float RandomFloatRange(float arg0, float arg1);
 };
 
 extern EntityBaseClass *mPlayerAPI__13EntityManager;
@@ -61,9 +72,11 @@ class PArray {
 public:
     void Remove(void *arg0);
     void Add(void *arg0);
+    void Allocate(unsigned int arg0);
     char _pad000[0x10];
 };
 extern PArray mBGAnimList__7Physics;
+extern PArray mTempArray__15EntityBaseClass;
 
 class PMeshNode {
 public:
@@ -98,6 +111,7 @@ public:
     PMNode *FindAnimNode(unsigned int arg0);
     void EnableOneRenderPassOnly(int arg0);
     void DestroyFxTriggersBySpawnFrame(float arg0, bool arg1);
+    float GetFrameTime();
     char _pad04[0x24];
     float (*m_unk28)[2][4];
     char _pad2C[0x10];
@@ -144,6 +158,7 @@ public:
     float m_unk5074;
 };
 extern EntityAttackManager *mpEntMgr__15EntityBaseClass;
+extern PFrustrum *mpFrustum__15EntityBaseClass;
 
 class TriggerSystemWakeKillRec;
 
@@ -162,6 +177,7 @@ public:
     char _pad00[0x28];
 };
 extern TimerAPI mTimerAPI__13EntityManager;
+extern CameraAPI mCameraAPI__13EntityManager;
 
 // DrawObj is the base of the object stored at m_unk3C; only its virtual destructor is called.
 class DrawObj {
@@ -390,6 +406,55 @@ PZinDamageFx *EntityBaseClass::CreateDamageFx(float arg0, unsigned int arg1) {
     return pFx;
 }
 
+// FUNCTION: 0x0014AD50 ShakeScreen__15EntityBaseClassFiiiifi
+void EntityBaseClass::ShakeScreen(int arg0, int arg1, int arg2, int arg3, float arg4, int arg5) {
+    int frame = (int)((PMNode *)m_unk3C)->GetFrameTime();
+    if (m_unk17B == 0) {
+        if (arg0 != 0 && frame == arg0) {
+            m_unk17C = arg0;
+            m_unk17B = 1;
+            if (arg5 == 0) {
+                mCameraAPI__13EntityManager.ShakeScreen(0.0f, arg4, 3.0f, 0U);
+            } else {
+                mCameraAPI__13EntityManager.ShakeScreenUsingTable(0, 0U);
+            }
+            return;
+        }
+        if (arg1 != 0 && frame == arg1) {
+            m_unk17C = arg1;
+            m_unk17B = 1;
+            if (arg5 == 0) {
+                mCameraAPI__13EntityManager.ShakeScreen(0.0f, arg4, 3.0f, 0U);
+            } else {
+                mCameraAPI__13EntityManager.ShakeScreenUsingTable(0, 0U);
+            }
+            return;
+        }
+        if (arg2 != 0 && frame == arg2) {
+            m_unk17C = arg2;
+            m_unk17B = 1;
+            if (arg5 == 0) {
+                mCameraAPI__13EntityManager.ShakeScreen(0.0f, arg4, 3.0f, 0U);
+            } else {
+                mCameraAPI__13EntityManager.ShakeScreenUsingTable(0, 0U);
+            }
+            return;
+        }
+        if (arg3 != 0 && frame == arg3) {
+            m_unk17C = arg3;
+            m_unk17B = 1;
+            if (arg5 == 0) {
+                mCameraAPI__13EntityManager.ShakeScreen(0.0f, arg4, 3.0f, 0U);
+            } else {
+                mCameraAPI__13EntityManager.ShakeScreenUsingTable(0, 0U);
+            }
+            return;
+        }
+    } else if (frame != m_unk17C) {
+        m_unk17B = 0;
+    }
+}
+
 // DRAFT: 0x0014AF60 PlaySoundOnFrame__15EntityBaseClassFUiUi
 // note: 55 words differ: float value/constant register (orig value f1, const f0), c.le.s operand order and branch sense, subtract-path regs, missing dsll32/dsra32 flag pair, addiu vs daddiu for inRange=1; tried f>=2^31 first (67), g-before-f with f<2^31 (55), (signed char) flag cast (56).
 int EntityBaseClass::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
@@ -605,6 +670,48 @@ void EntityBaseClass::UpdateSulphurFx(float arg0) {
     ((PParticleManager *)gGfxEng)->CreateSulphurReaction(pos, 1.0f);
 }
 
+// DRAFT: 0x0014B8D0 UpdateRipple__15EntityBaseClassFfUib
+// note: 106 words differ (re-measured; 105 earlier); original keeps gGfxEng in s0 across calls, ours rematerializes lui/addiu per call; copy reg v1 vs a0. Tried: gfx local (117), u_long128 posq temp (kept), gfx before sq (106), reload global per use (131).
+void EntityBaseClass::UpdateRipple(float arg0, unsigned int arg1, bool arg2) {
+    float pos[4];
+    float v[4];
+    float r;
+    PParticleSystem *p;
+    float (*src)[4];
+    char *gfx;
+
+    if (this->m_unk3C != 0) {
+        src = (float (*)[4])(this->m_unk3C + 0x80);
+    } else {
+        src = (float (*)[4])((char *)this + 0x190);
+    }
+    u_long128 posq = *(u_long128 *)src;
+    *(u_long128 *)pos = posq;
+    gfx = gGfxEng;
+    pos[1] = arg0;
+    r = MathAPI::RandomFloatRange(120.0f, 150.0f);
+    ((PParticleRipples *)(gfx + 0x1790))->Create(pos, 1.0f, 12.0f, r);
+    ((PParticleRipples *)(gfx + 0xED0))->Create(pos, 1.0f, 12.0f, r);
+    if (arg1 != 0) {
+        p = ((PParticleManager *)gfx)->Create(0x83000088U, pos[0], pos[1], pos[2], 0, true);
+        if (p != 0 && ((PParticleManager *)gfx)->IsValid(p)) {
+            p->Start();
+        }
+        if (p != 0 && ((PParticleManager *)gfx)->IsValid(p)) {
+            p->FadeAndDie(0);
+        }
+        v[0] = pos[0] + MathAPI::RandomFloatRange(-3.0f, 3.0f);
+        v[1] = pos[1];
+        v[2] = pos[2] + MathAPI::RandomFloatRange(-3.0f, 3.0f);
+        r = MathAPI::RandomFloatRange(60.0f, 90.0f);
+        ((PParticleRipples *)(gfx + 0x1790))->Create(v, 0.5f, 8.0f, r);
+        ((PParticleRipples *)(gfx + 0xED0))->Create(v, 0.5f, 8.0f, r);
+    }
+    if (arg2) {
+        ((PParticleManager *)gfx)->CreateEweedReaction(pos);
+    }
+}
+
 // FUNCTION: 0x0014BFA0 FacePlayer__15EntityBaseClassFf
 void EntityBaseClass::FacePlayer(float arg0) {
     EntityBaseClass *player = mPlayerAPI__13EntityManager;
@@ -681,6 +788,16 @@ void EntityBaseClass::StopAmbientSoundsByObject() {
 // FUNCTION: 0x0014C210 StopAllSoundsByObject__15EntityBaseClassFv
 void EntityBaseClass::StopAllSoundsByObject() {
     gSound.StopSoundsByOriginatorRef(m_unk04, 0x10U, 3U);
+}
+
+// FUNCTION: 0x0014C240 PlaySoundUbiquitous__15EntityBaseClassFUi
+int EntityBaseClass::PlaySoundUbiquitous(unsigned int arg0) {
+    return gSound.PlaySoundWPitch(arg0, m_unk04, 0U, 0x210U, 0U);
+}
+
+// FUNCTION: 0x0014C260 PlaySound__15EntityBaseClassFUi
+int EntityBaseClass::PlaySound(unsigned int arg0) {
+    return gSound.PlaySoundWPitch(arg0, m_unk04, 0U, 0x10U, 0U);
 }
 
 // DRAFT: 0x0014C620 FaceHitDirection__15EntityBaseClassFP15EntityBaseClass
@@ -1412,6 +1529,14 @@ void EntityBaseClass::InitLoadSystem() {
     mLoadTable__15EntityBaseClass[5].m4 = 0x64;
     mLoadTable__15EntityBaseClass[6].m4 = 0x64;
     mLoadTable__15EntityBaseClass[6].m0 = 0;
+}
+
+// FUNCTION: 0x0014EFF0 InitStatic__15EntityBaseClassFP16PResourceManagerP13EntityManagerP9PFrustrum
+void EntityBaseClass::InitStatic(PResourceManager *arg0, EntityManager *arg1, PFrustrum *arg2) {
+    mpResMgr__15EntityBaseClass = arg0;
+    mpEntMgr__15EntityBaseClass = (EntityAttackManager *)arg1;
+    mpFrustum__15EntityBaseClass = arg2;
+    mTempArray__15EntityBaseClass.Allocate(0x20U);
 }
 
 // FUNCTION: 0x0014F010 ModifyLoadClass__15EntityBaseClassFQ215EntityBaseClass9LoadClass

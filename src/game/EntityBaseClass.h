@@ -11,6 +11,9 @@ class PZinDamageFx;
 class TriggerSystemWakeKillRec;
 class PLightManager;
 class Shadow;
+class PResourceManager;
+class EntityManager;
+class PFrustrum;
 
 class EntityBaseClass {
 public:
@@ -33,6 +36,7 @@ public:
     void TriggerBGAnim(unsigned int arg0, int arg1, bool arg2, unsigned int arg3, TriggerSystemWakeKillRec *arg4);
     int MusicChangePrimary(unsigned int arg0, unsigned int arg1);
     void UpdateSulphurFx(float arg0);
+    void UpdateRipple(float arg0, unsigned int arg1, bool arg2);
     void FacePlayer(float arg0);
     void FaceHitDirection(EntityBaseClass *arg0);
     void ProcessMeshFade();
@@ -60,14 +64,17 @@ public:
     void SetShadowVolume(float arg0);
     void SetFreeze(float arg0);
     int PlaySound(unsigned int arg0);
+    int PlaySoundUbiquitous(unsigned int arg0);
     int PlaySoundOnFrame(unsigned int arg0, unsigned int arg1);
     void CreateHitMarkFx(float (*arg0)[4], eHitObjectType arg1, eHitWeaponType arg2, bool arg3);
     void OnInnocentAttack(EntityBaseClass *arg0, int arg1);
     PZinDamageFx *CreateDamageFx(float arg0, unsigned int arg1);
+    void ShakeScreen(int arg0, int arg1, int arg2, int arg3, float arg4, int arg5);
     void CheckVariable(int arg0, int arg1);
     void RequestAttack(EntityBaseClass *arg0, unsigned int arg1);
     void CreateFireDamageFx(float arg0);
     void InitLoadSystem();
+    static void InitStatic(PResourceManager *arg0, EntityManager *arg1, PFrustrum *arg2);
     void RestoreOnWake();
     int WantsToWake();
     void FadeMesh(short arg0, short arg1, unsigned int arg2);
@@ -154,7 +161,10 @@ public:
     float m_unk170;             // 0x170 mesh fade timer
     float m_unk174;             // 0x174 mesh fade accumulator
     unsigned char m_unk178;     // 0x178 mesh fade active flag
-    char _pad179[0x17];         // 0x179..0x18F; MathAPI matrix block at 0x190
+    char _pad179[0x2];          // 0x179..0x17A
+    unsigned char m_unk17B;     // 0x17B ShakeScreen active flag
+    int m_unk17C;               // 0x17C ShakeScreen frame that triggered
+    char _pad180[0x10];         // 0x180..0x18F; MathAPI matrix block at 0x190
 };
 
 #endif
