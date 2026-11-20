@@ -1,15 +1,15 @@
 // FLAGS: -str readonly
 #include "PIOPFile.h"
 #include "Interface.h"
+#include "IOPTransactionManager.h"
 
 // TODO(header): foreign declarations
 extern Interface gInterface;
+extern IOPTransactionManager gIOPTransactionManager;
 void CdsAssert(char *pFile, int nLine, char *pExpr);
-class IOP_Tran {
-public:
-    char _pad[0x28];
-};
 extern "C" void *__ct__8IOP_TranFv(IOP_Tran *pThis);
+extern "C" void IOP_TranSet__8IOP_TranFUiUiUiUiUiUiUi(IOP_Tran *pThis, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" int printf(const char *fmt, ...);
 extern "C" int sprintf(char *pDst, const char *fmt, ...);
 extern "C" char *strcpy(char *pDst, const char *pSrc);
@@ -20,6 +20,9 @@ extern "C" void __dl__FPv(void *pMem);
 extern "C" int SOUND_MakeSoundStreamRef();
 extern "C" int SOUND_MakeStreamTransactionID();
 extern "C" int SOUND_DataDestEEBuffered(unsigned int, int, unsigned int, unsigned int, int, unsigned int, unsigned int, short, long long, long long);
+extern "C" void FlushCache(int nMode);
+extern "C" int TranProcess__21IOPTransactionManagerFP8IOP_TranUi(IOPTransactionManager *pThis, IOP_Tran *pTran, unsigned int nTranID);
+extern "C" void IOP_TranReset__8IOP_TranFv(IOP_Tran *pThis);
 
 // FUNCTION: 0x001DAAC0 FrameMaintenacePartA__8PIOPFileFv
 void PIOPFile::FrameMaintenacePartA() {
@@ -59,6 +62,94 @@ int PIOPFile::GetSize() {
     }
     printf("PIOPFile::GetSize = %u\n", m_unk10C);
     return m_unk10C;
+}
+
+// DRAFT: 0x001DABD0 RequestNextBuf__8PIOPFileFUi
+// note: 69 words differ; the store, search loop and an 8-byte size deficit remain (unsigned guard tried, byte-offset store tried)
+int PIOPFile::RequestNextBuf(unsigned int nBuf) {
+    IOP_Tran tran;
+    __ct__8IOP_TranFv(&tran);
+    if ((unsigned int)m_unk130 < (unsigned int)m_unk10C && m_unk118 == 0) {
+        unsigned int nSize = m_unk10C - m_unk130;
+        if (nSize > 0x8000) {
+            nSize = 0x8000;
+        }
+        *(m_unk144 + nBuf) = 2;
+        m_unk118 = SOUND_MakeStreamTransactionID();
+        if (nBuf != 0 && nBuf != 1) {
+            CdsAssert("PIOPFile.cpp", 0x219, "0");
+        }
+        IOP_TranSet__8IOP_TranFUiUiUiUiUiUiUi(&tran, m_unk118, m_unk114, (&m_unk1C4)[nBuf], m_unk130, nSize, 0, nBuf);
+        unsigned int i = 0;
+        IOP_Tran *pSlot;
+        do {
+            pSlot = (IOP_Tran *)(m_unk174 + (m_unk170 + i) * 0x28);
+            if (pSlot->m_unk0 == 0) {
+                break;
+            }
+            i++;
+        } while (i < 2);
+        if (i >= 2) {
+            CdsAssert("PIOPFile.cpp", 0x22A, "ii < kNEEBuffers");
+        }
+        memcpy(pSlot, &tran, 0x28);
+        gIOPTransactionManager.TranAdd(&tran);
+    }
+    return 0;
+}
+
+// DRAFT: 0x001DAD40 WaitOnBufferFill__8PIOPFileFv
+// note: 131 words differ; the loop entry lacks the `b` to the bottom test (ours folds bLoop==1), so every later instruction is shifted by one; `!= 0`, the delay-slot bLoop and post-ctor bLoop variants tried
+int PIOPFile::WaitOnBufferFill() {
+    int bLoop = 1;
+    IOP_Tran tran;
+    __ct__8IOP_TranFv(&tran);
+    FlushCache(0);
+    asm {
+        sync
+        sync.p
+    }
+    if (m_unk170 < 0) {
+        CdsAssert("PIOPFile.cpp", 0x1BD, "mTranIDRingHead >= 0");
+    }
+    unsigned int nTranID = ((IOP_Tran *)(m_unk174 + m_unk170 * 0x28))->m_unk0;
+    IOP_Tran *pSlot = (IOP_Tran *)(m_unk174 + m_unk170 * 0x28);
+    m_unk168 = 0;
+    while (bLoop) {
+        gInterface.LoadingDisplay(m_unk168++, 0);
+        FlushCache(0);
+        asm {
+            sync
+        }
+        m_unk16C++;
+        char *pEntry = gSndEEDSSR + (m_unk110 - 2) * 0x24;
+        if (*(int *)pEntry == m_unk114 && (*(int *)(pEntry + 0xC) & 0x18) == 0x18) {
+            if (TranProcess__21IOPTransactionManagerFP8IOP_TranUi(&gIOPTransactionManager, &tran, nTranID) == 0) {
+                if (tran.m_unk24 != m_unk154) {
+                    CdsAssert("PIOPFile.cpp", 0x1D5, "retrievedIOP_Tran.mTranEEBufNum == muTranEEBufNum");
+                }
+                if (m_unk144[m_unk154] != 2) {
+                    CdsAssert("PIOPFile.cpp", 0x1D6, "kBufStatusFilling == muBufStatus[muTranEEBufNum]");
+                }
+                m_unk134[m_unk154] = m_unk130;
+                m_unk13C[m_unk154] = tran.m_unk20;
+                m_unk144[m_unk154] = 1;
+                m_unk150++;
+                m_unk130 += tran.m_unk20;
+                m_unk15C += 0x7FFF;
+                m_unk15C++;
+                m_unk11C = m_unk118;
+                m_unk118 = 0;
+                m_unk154 = (m_unk154 == 0);
+                if (tran.m_unk20 < 0x8000 && m_unk130 != m_unk10C) {
+                    CdsAssert("PIOPFile.cpp", 0x1E6, "muLogicalCachePosLim == muFileSize");
+                }
+                IOP_TranReset__8IOP_TranFv(pSlot);
+                bLoop = 0;
+            }
+        }
+    }
+    return 0;
 }
 
 // FUNCTION: 0x001DB360 Read__8PIOPFileFPvUi
@@ -119,7 +210,7 @@ int PIOPFile::OpenEx() {
     m_unk118 = 0;
     m_unk100 = 1;
     m_unk10C = *(int *)(pEntry + 8);
-    m_unk144 = 2;
+    m_unk144[0] = 2;
     return 0;
 }
 
