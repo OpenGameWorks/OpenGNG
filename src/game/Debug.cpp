@@ -163,13 +163,12 @@ void Debug::DispDebugTimer() {
     }
 }
 
-// DRAFT: 0x16A940 StopDebugTimer__5DebugFPv
-// note: 1 differing line: compiler keeps the mfc0 counter in v0, original uses a3 for the subu; tried decl order, initialized counter (folds to negu), register keyword.
+// FUNCTION: 0x16A940 StopDebugTimer__5DebugFPv
 void Debug::StopDebugTimer(void *pArg) {
     unsigned int nNow;
     unsigned int nDelta;
 
-    asm { .word 0x4007C801 }
+    asm { mfpc nNow, 0 }
     nDelta = nNow - this->m_unk10;
     if (nDelta < this->m_unk14) {
         this->m_unk14 = nDelta;
@@ -181,12 +180,11 @@ void Debug::StopDebugTimer(void *pArg) {
     this->m_unk1C += nDelta;
 }
 
-// DRAFT: 0x16A990 StartDebugTimer__5DebugFv
-// note: 1 differing line: mfc0 counter (.word 0x4003C801, v1 in original) lands in v0; the .word stands in for mfc0 and the store order alone is correct; reordering the increment before the store gives 4 differing words.
+// FUNCTION: 0x16A990 StartDebugTimer__5DebugFv
 void Debug::StartDebugTimer() {
     unsigned int nNow;
 
-    asm { .word 0x4003C801 }
+    asm { mfpc nNow, 0 }
     this->m_unk10 = nNow;
     this->m_unk20++;
 }
@@ -275,7 +273,7 @@ void Debug::LineFeed(char *pStr) {
 }
 
 // DRAFT: 0x16ACE0 FrameEnd__5DebugFv
-// note: 49 differing words: frame 0x70 vs 0x60 (extra s3 save), this/table/index in s1/s3/s2 vs s2/s0/s1, nCount takes a saved reg so mfc0 counter is copied via s0 into a2. Tried loop decl orders (no change).
+// note: 42 differing words: prologue matches; this is in s0 vs s2 (original copies a0 to s2 first), so the loop pointer is in s2 vs s0 (index s1 matches); the asm mfpc counter needs a copy into a2 that the original does not. Tried: p/i decl order and for-header init (42 best, 44 others), while loop, Debug *self local, nCount at function top, index at function top (42 or 44).
 void Debug::FrameEnd() {
     char buf[0x20];
 
@@ -285,9 +283,9 @@ void Debug::FrameEnd() {
     }
     gbApparition = 1;
     if (this->m_unk2C == 0) {
-        DebugTblEntry *p = DebugTbl;
-        unsigned int i = 0;
-        for (; i < 0x1A; i++, p++) {
+        unsigned int i;
+        DebugTblEntry *p;
+        for (i = 0, p = DebugTbl; i < 0x1A; i++, p++) {
             if (p->pFn != 0) {
                 p->pFn();
             }
@@ -295,7 +293,7 @@ void Debug::FrameEnd() {
     }
     if (mDebugTime != 0) {
         unsigned int nCount;
-        asm { .word 0x4006C803 }
+        asm { mfpc nCount, 1 }
         sprintf(buf, "D cache miss : %d\n", nCount);
         this->DebugDisp(buf);
         this->m_unk0C->ZeroAllOneFrameVals();
