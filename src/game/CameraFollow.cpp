@@ -757,6 +757,102 @@ void CameraFollow::IdleFreezeCheck() {
     }
 }
 
+// DRAFT: 0x00175BD0 KeepUpWithPlayer__12CameraFollowFv
+// note: compiles; not matched. Body follows the mapped asm, but f21 register reuse (m140, ground Y, m160/m180) and the blend store order differ. Tried one variant only.
+void CameraFollow::KeepUpWithPlayer() {
+    float sp40[4];
+    float tgt[4];
+    float sp90[4];
+    float spA0[4];
+    float sp50, sp58, sp60, sp68, sp70, sp78;
+    float angle;
+    float f20, f21, f22, f4, d;
+    PGroundPos gp;
+
+    f22 = GetAngleBetweenCamAndPlayer(angle);
+    __mi__5PVec3FR5PVec3(spA0, m_unk20, m_unk40);
+    sceVu0CopyVector(m_unk10, spA0);
+    m_unk10[1] = 0.0f;
+    if (f22 < 90.0f) {
+        sp40[0] = m_unkA0[8];
+        sp40[1] = 0.0f;
+        sp40[2] = m_unkA0[10];
+        sceVu0Normalize(sp40, sp40);
+    }
+    f20 = sqrtf(m_unk10[0] * m_unk10[0] + m_unk10[2] * m_unk10[2]);
+    f21 = m_unk140;
+    sceVu0Normalize(m_unk10, m_unk10);
+    if (f22 < 90.0f && m_unk1A0 > 0.04f) {
+        sp50 = m_unk40[0] + sp40[0] * f21;
+        sp58 = m_unk40[2] + sp40[2] * f21;
+        sp60 = m_unk40[0] + m_unk10[0] * f21;
+        sp68 = m_unk40[2] + m_unk10[2] * f21;
+        sp70 = sp50 - sp60;
+        sp78 = sp58 - sp68;
+        tgt[0] = sp60 + 0.085f * sp70;
+        tgt[2] = sp68 + 0.085f * sp78;
+    } else {
+        tgt[0] = m_unk40[0] + m_unk10[0] * f21;
+        tgt[2] = m_unk40[2] + m_unk10[2] * f21;
+    }
+    if (m_unk6250 != -1000.0f && !(m_unk20[1] <= m_unk6250 - 1.0f)) {
+        m_unk144 -= 0.1f * m_unk16C;
+    }
+    {
+        unsigned int u = m_unk148;
+        float t = m_unk144 + (float)u;
+        m_unk220 = t;
+        if (t < 3.0f) {
+            m_unk220 = 3.0f;
+        }
+    }
+    {
+        void *p = *(void **)((char *)m_unk114 + 0x38);
+        gp = ((Physics *)p)->GetGroundPos();
+    }
+    f21 = gp.y;
+    if (gp.y == -1000.0f) {
+        f21 = m_unk160;
+    } else if (m_unk180[1] - gp.y < 0.5f) {
+        m_unk160 = gp.y;
+    } else {
+        f21 = (m_unk160 == 0.0f) ? m_unk180[1] : m_unk160;
+    }
+    sceVu0CopyVector(m_unk10, m_unk20);
+    m_unk10[1] -= 100.0f;
+    ((BGCollision *)mBGCollision__15EntityBaseClass)->FindIntersect(*(PVec3 *)m_unk20, *(PVec3 *)m_unk10, 2, 0);
+    if (m_unk10[1] != -1000.0f) {
+        m_unk15C = m_unk10[1];
+    }
+    m_unk224 = (f21 < m_unk15C) ? m_unk15C : f21;
+    if (m_unk140 < 5.0f) {
+        if (m_unk20[1] > m_unk40[1]) {
+            m_unk224 = 1.0f + m_unk180[1];
+        }
+    }
+    tgt[1] = m_unk224 + m_unk220;
+    sceVu0SubVector(sp90, tgt, m_unk20);
+    f4 = f20 / m_unk140;
+    if (f4 < 1.0f) {
+        f4 = 1.0f;
+    }
+    if (m_unk6310 == 0) {
+        m_unk20[0] += sp90[0] * ((0.15f * f4) * m_unk16C);
+        m_unk20[1] += sp90[1] * ((0.05f * f4) * m_unk16C);
+        m_unk20[2] += sp90[2] * ((0.15f * f4) * m_unk16C);
+    }
+    d = Distance__7MathAPIFPA4_fPA4_f((MathAPI *)m_unk20, (float (*)[4])m_unk40);
+    if (d > m_unk17C) {
+        sceVu0SubVector(m_unk10, m_unk20, m_unk40);
+        sceVu0Normalize(m_unk10, m_unk10);
+        sceVu0ScaleVector(m_unk10, m_unk10, m_unk17C);
+        sceVu0AddVector(m_unk20, m_unk40, m_unk10);
+    }
+    if (FastMath_Fabs__Ff(m_unk17C - 15.0f) > 0.1f) {
+        m_unk17C += 0.02f * (15.0f - m_unk17C);
+    }
+}
+
 // DRAFT: 0x00176170 GetGroundPos__7PhysicsFv
 // note: 1 word differs: ours sets v0 to the result pointer; the original returns without it. Tried member-init and field-copy constructors, a local copy, a destructor. The earlier whole-asm body copied C-emittable instructions and does not count.
 PGroundPos Physics::GetGroundPos() {

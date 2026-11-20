@@ -108,11 +108,12 @@ public:
     float m_unk130[4];      // 0x130
     float m_unk140;         // 0x140
     float m_unk144;         // 0x144
-    short m_unk148;         // 0x148
+    unsigned short m_unk148; // 0x148
     char _pad14A[0x14C - 0x14A];
     float m_unk14C;         // 0x14C
-    char _pad150[0x160 - 0x150];
-    int m_unk160;           // 0x160
+    char _pad150[0x15C - 0x150];
+    float m_unk15C;         // 0x15C
+    float m_unk160;         // 0x160
     float m_unk164;         // 0x164
     float m_unk168;         // 0x168
     float m_unk16C;         // 0x16C
@@ -159,7 +160,7 @@ public:
     float m_unk214;         // 0x214
     int m_unk218;           // 0x218
     char _pad21C[0x220 - 0x21C];
-    int m_unk220;           // 0x220
+    float m_unk220;         // 0x220
     float m_unk224;         // 0x224
     int m_unk228;           // 0x228
     unsigned char m_unk22C; // 0x22C
