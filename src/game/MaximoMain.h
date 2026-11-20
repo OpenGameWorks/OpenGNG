@@ -4,6 +4,7 @@
 #include "types.h"
 
 class PMNode;
+class PArray;
 struct LevelFiles;
 
 struct CutSlot {
@@ -15,6 +16,8 @@ class MaximoMain {
 public:
     MaximoMain();
     void InitGameTimes();
+    void UpdateGameTimes();
+    void LoadTitleMesh();
     int LoadGame();
     void InitPlayDemo(int arg0);
     void InitStaticDemo();
@@ -27,6 +30,8 @@ public:
     void SetLevelClear();
     void *GetLevelFile(int arg0);
     PMNode *SetMarker(PMNode *arg0, int arg1, PMNode *arg2);
+    void SetMarkerAsMastered(PMNode *arg0, PMNode *arg1);
+    void GetMapScreenPath(PMNode *arg0, int arg1, PArray &arg2, bool arg3);
     int InitCutSceneIfDialogReady();
     int StartCutScene(int arg0);
     unsigned int FindFirstDialog(LevelFiles const *arg0, bool arg1);
@@ -57,7 +62,10 @@ public:
     int m_unk19AAC;        // 0x19AAC, cleared by SetLevelClear
     char _pad19AB0[0x19AC4 - 0x19AB0];
     void *m_unk19AC4;       // 0x19AC4, press-start FontNode, cleared by DeletePressStart
-    char _pad19AC8[0x19B44 - 0x19AC8];
+    PMNode *m_unk19AC8;     // 0x19AC8, title mesh root loaded by LoadTitleMesh
+    PMNode *m_unk19ACC;     // 0x19ACC, title animation node found by LoadTitleMesh
+    PMNode *m_unk19AD0;     // 0x19AD0, copyright node found by LoadTitleMesh
+    char _pad19AD4[0x19B44 - 0x19AD4];
     int m_unk19B44;         // 0x19B44, cleared by the constructor
     int m_unk19B48;         // 0x19B48, cleared by the constructor
     int m_unk19B4C;         // 0x19B4C, cleared by the constructor

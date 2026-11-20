@@ -47,6 +47,24 @@ extern "C" unsigned char PlayingCutCamera__6CameraFv(void *);
 extern "C" void __ct__9MaxEngineFv(void *);
 extern "C" void __ct__13EntityManagerFv(void *);
 extern "C" void __ct__6CameraFv(void *);
+extern int U_MILLISEC_PER_FRAME_HI;
+extern int U_MILLISEC_PER_FRAME_LO;
+extern "C" PMNode *Load__9InterfaceFPCc(void *, char const *);
+extern "C" void *__nw__FUi(unsigned int);
+extern unsigned char __vt__6PMNode[16];
+extern unsigned char __vt__9PMeshNode[16];
+extern "C" void __ct__6PArrayFv(void *pThis);
+extern "C" void sceVu0UnitMatrix(void *pMat);
+extern "C" void InitMembers__6PMNodeFv(void *pThis);
+extern "C" void InitMembers__9PMeshNodeFv(void *pThis);
+extern "C" void CopyMNode__6PMNodeFR6PMNodeb(void *pThis, void *pSrc, bool bFlag);
+extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
+extern "C" void Allocate__6PArrayFUi(void *pThis, unsigned int nCount);
+struct PMChildList {
+    unsigned int count;     // child count
+    unsigned int m_unk4;
+    PMNode **children;      // child array
+};
 class PMNode {
 public:
     virtual void Slot0();
@@ -55,15 +73,43 @@ public:
     virtual void Slot3();
     virtual void Slot4(int, float, float, int, int);
     PMNode *Find(unsigned int id);
+    void SetAnimLoopCount(int arg0, bool arg1);
+    void EnableAnim(bool arg0, bool arg1);
     char _pad000[0x10];
-    struct {
-        unsigned int count;     // child count
-        unsigned int m_unk4;
-        PMNode **children;      // child array
-    } m_unk14;
-    char _pad020[0x3E - 0x20];
+    PMChildList m_unk14;
+    char _pad020[0x2C - 0x20];
+    int m_unk2C;            // 0x2C, zeroed by LoadTitleMesh
+    char _pad030[0x3E - 0x30];
     unsigned char m_unk3E;  // flags
 };
+
+// FUNCTION: 0x00134940 UpdateGameTimes__10MaximoMainFv
+void MaximoMain::UpdateGameTimes() {
+    unsigned int old;
+
+    m_unk19B6C += U_MILLISEC_PER_FRAME_HI;
+    old = m_unk19B70;
+    m_unk19B70 += U_MILLISEC_PER_FRAME_LO;
+    if ((unsigned int)m_unk19B70 < old) {
+        m_unk19B6C++;
+    }
+    if (!(m_unk19A7C & 4)) {
+        m_unk19B74 += U_MILLISEC_PER_FRAME_HI;
+        old = m_unk19B78;
+        m_unk19B78 += U_MILLISEC_PER_FRAME_LO;
+        if ((unsigned int)m_unk19B78 < old) {
+            m_unk19B74++;
+        }
+    }
+    if (!(m_unk19A7C & 8)) {
+        m_unk19B7C += U_MILLISEC_PER_FRAME_HI;
+        old = m_unk19B80;
+        m_unk19B80 += U_MILLISEC_PER_FRAME_LO;
+        if ((unsigned int)m_unk19B80 < old) {
+            m_unk19B7C++;
+        }
+    }
+}
 
 // FUNCTION: 0x00134AE0 InitGameTimes__10MaximoMainFv
 void MaximoMain::InitGameTimes() {
@@ -98,6 +144,36 @@ int MaximoMain::LoadGame() {
         }
         Render__9InterfaceFi(gInterface, 0);
     }
+}
+
+// FUNCTION: 0x00137560 LoadTitleMesh__10MaximoMainFv
+void MaximoMain::LoadTitleMesh() {
+    static char TITLE[] = "PSXDATA\\GAME\\TITLE.PAK";
+    static unsigned int Copyrights[2] = {0x6214ECB4, 0xCC8B1693};
+    PMNode *node;
+    int i;
+    int off;
+
+    m_unk19AC8 = Load__9InterfaceFPCc(gInterface, TITLE);
+    m_unk19AC8->SetAnimLoopCount(0, true);
+    m_unk19ACC = m_unk19AC8->Find(0xC72EE251);
+    if (m_unk19ACC != 0) {
+        m_unk19ACC->SetAnimLoopCount(1, true);
+    }
+    i = 0;
+    off = 0;
+    do {
+        node = m_unk19AC8->Find(*(unsigned int *)((char *)Copyrights + off));
+        if (node != 0) {
+            node->m_unk2C = 0;
+            if (i == 1) {
+                m_unk19AD0 = node;
+            }
+        }
+        i++;
+        off += 4;
+    } while (i < 2);
+    m_unk19AC8->EnableAnim(true, true);
 }
 
 // FUNCTION: 0x00137540 InitStaticDemo__10MaximoMainFv
@@ -184,6 +260,36 @@ int MaximoMain::MapscreenOpenBonusExists() {
     return 0;
 }
 
+// DRAFT: 0x0013C9F0 SetMarkerAsMastered__10MaximoMainFP6PMNodeP6PMNode
+// note: 79 words differ; original inlines the PMeshNode ctor chain with this spilled to 0x5C(sp) and frame 0x60, ours uses manual __ct calls and frame 0x50 (stand-in PMNode has no embedded PArray member).
+void MaximoMain::SetMarkerAsMastered(PMNode *arg0, PMNode *arg1) {
+    if (arg1 != 0) {
+        PMNode *found = arg0->Find(0xA5D4D353U);
+        if (found == 0) {
+            CdsAssert__FPciPc((char *)"MaximoMain.cpp", 0x7F1, (char *)"aMastery");
+        }
+        PMNode *node = (PMNode *)__nw__FUi(0x140);
+        if (node != 0) {
+            *(void **)node = __vt__9PResource;
+            *(int *)((char *)node + 4) = 0;
+            *(void **)node = __vt__6PMNode;
+            __ct__6PArrayFv((char *)node + 0x14);
+            sceVu0UnitMatrix((char *)node + 0x40);
+            __ct__6PArrayFv((char *)node + 0xD8);
+            InitMembers__6PMNodeFv(node);
+            *(void **)node = __vt__9PMeshNode;
+            __ct__6PArrayFv((char *)node + 0x130);
+            InitMembers__9PMeshNodeFv(node);
+        }
+        CopyMNode__6PMNodeFR6PMNodeb(node, found, true);
+        *(u_long128 *)((char *)node + 0x80) = *(u_long128 *)((char *)arg1 + 0x80);
+        *((unsigned char *)node + 0x3E) |= 8;
+        node->Slot4(0, 0.0f, 0.0f, 0, 0);
+        Add__6PArrayFPv((char *)arg0 + 0x14, node);
+        arg0->Slot4(0, 0.0f, 0.0f, 0, 0);
+    }
+}
+
 // FUNCTION: 0x0013CB80 __dt__9PResourceFv
 extern "C" void *__dt__9PResourceFv(void *pThis, short nFlag) {
     if (pThis != 0) {
@@ -194,6 +300,37 @@ extern "C" void *__dt__9PResourceFv(void *pThis, short nFlag) {
         }
     }
     return pThis;
+}
+
+// DRAFT: 0x0013CBD0 GetMapScreenPath__10MaximoMainFP6PMNodeiR6PArrayb
+// note: 16 words differ, all the s1/s2 swap (original PArray in s2, bool in s1); a bool local copy, reordered locals, and a PArray pointer local all leave 16.
+void MaximoMain::GetMapScreenPath(PMNode *arg0, int arg1, PArray &arg2, bool arg3) {
+    unsigned int i;
+    int idx;
+    PMNode *node;
+    PMChildList *list;
+    PMNode *child;
+
+    node = arg0->Find(*(unsigned int *)(LevelTable + (arg1 << 7)));
+    if (node != 0) {
+        list = &node->m_unk14;
+        Allocate__6PArrayFUi(&arg2, list->count);
+        if (!arg3) {
+            for (i = 0; i < list->count; i++) {
+                child = (i < list->count) ? list->children[i] : 0;
+                if (child != 0) {
+                    Add__6PArrayFPv(&arg2, child);
+                }
+            }
+        } else {
+            for (idx = (int)list->count - 2; idx >= 0; idx--) {
+                child = ((unsigned int)idx < list->count) ? list->children[idx] : 0;
+                if (child != 0) {
+                    Add__6PArrayFPv(&arg2, child);
+                }
+            }
+        }
+    }
 }
 
 // FUNCTION: 0x0013CCF0 PlayMarkerSound__10MaximoMainFi

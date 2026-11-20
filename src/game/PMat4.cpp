@@ -7,13 +7,88 @@ extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void sceVu0InversMatrix(float (*)[4], float (*)[4]);
 extern "C" void sceVu0MulMatrix(float (*)[4], float (*)[4], float (*)[4]);
 extern "C" void sceVu0TransMatrix(PMat4 *m0, PMat4 *m1, float *trans);
+extern "C" void sceVu0CopyMatrix(float (*)[4], float (*)[4]);
+extern int SCREEN_WIDTH;
+extern int SCREEN_HEIGHT;
 float Round180(float arg0);
 void FastMath_MatRotateZ(float (*arg0)[4], float (*arg1)[4], float arg2);
 void FastMath_MatRotateY(float (*arg0)[4], float (*arg1)[4], float arg2);
 void FastMath_MatRotateX(float (*arg0)[4], float (*arg1)[4], float arg2);
 
+// FUNCTION: 0x00130C70 MakeMayaProjectionMatrix__5PMat4Fffffff
+void PMat4::MakeMayaProjectionMatrix(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5) {
+    float proj[4][4];
+    float tmp[4][4];
+
+    sceVu0UnitMatrix(&tmp[0][0]);
+    ((PMat4 *)&tmp[0][0])->MakeMayaMatrix();
+    MakeProjectionMatrix(proj, arg0, arg1, (int)arg2, (int)arg3, (int)arg4, (int)arg5);
+    sceVu0MulMatrix((float (*)[4])this, proj, tmp);
+}
+
 // FUNCTION: 0x00130D30 __dt__5PMat4Fv
 PMat4::~PMat4() {
+}
+
+// DRAFT: 0x00130D80 MakeOrthographicMatrix__5PMat4FPA4_fffffff
+// note: 9 words differ; store of [2][2] scheduled before the sw $zero,0x2C and the neg.s placement on the last division differ. Tried neg on [3][2] numerator (10 words), operand orders (11 to 9).
+void PMat4::MakeOrthographicMatrix(float (*arg0)[4], float arg1, float arg2, float arg3, float arg4, float arg5, float arg6) {
+    arg0[0][0] = 2.0f / (arg2 - arg1);
+    arg0[0][1] = 0.0f;
+    arg0[0][2] = 0.0f;
+    arg0[0][3] = 0.0f;
+    arg0[1][0] = 0.0f;
+    arg0[1][1] = 2.0f / (arg3 - arg4);
+    arg0[1][2] = 0.0f;
+    arg0[1][3] = 0.0f;
+    arg0[2][0] = 0.0f;
+    arg0[2][1] = 0.0f;
+    arg0[2][2] = 2.0f / (arg6 - arg5);
+    arg0[2][3] = 0.0f;
+    arg0[3][0] = -(arg2 + arg1) / (arg2 - arg1);
+    arg0[3][1] = -(arg3 + arg4) / (arg3 - arg4);
+    arg0[3][2] = -(arg6 + arg5) / (arg6 - arg5);
+    arg0[3][3] = 1.0f;
+}
+
+// FUNCTION: 0x00130E10 MakeParallelProjectionMatrix__5PMat4Ffffffffffff
+void PMat4::MakeParallelProjectionMatrix(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5, float arg6, float arg7, float arg8, float arg9, float arg10, float arg11) {
+    float ortho[4][4];
+    float proj[4][4];
+
+    MakeOrthographicMatrix(ortho, arg6, arg7, arg8, arg9, arg10, arg11);
+    MakeProjectionMatrix(proj, arg0, arg1, (int)arg2, (int)arg3, (int)arg4, (int)arg5);
+    sceVu0MulMatrix((float (*)[4])this, proj, ortho);
+}
+
+// FUNCTION: 0x00130EE0 MakeScreenMatrix2__5PMat4Ffffffff
+void PMat4::MakeScreenMatrix2(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5, float arg6, float arg7) {
+    float proj[4][4];
+    float persp[4][4];
+
+    sceVu0UnitMatrix(&persp[0][0]);
+    ((PMat4 *)&persp[0][0])->MakePerspectiveMatrix(arg0, arg1, arg6, arg7);
+    MakeProjectionMatrix(proj, arg2, arg3, SCREEN_WIDTH, SCREEN_HEIGHT, (int)arg4, (int)arg5);
+    sceVu0MulMatrix((float (*)[4])this, proj, persp);
+}
+
+// DRAFT: 0x001310F0 InverseByRT__5PMat4FPfPf
+// note: DIFF 46 words; first version without the sq/lq copy layout (sp+0x40/0x50/0x60) and with the wrong this+0x30 store; asm fold order not reproduced.
+void PMat4::InverseByRT(float *arg0, float *arg1) {
+    float vec[4];
+    float out[4];
+
+    sceVu0UnitMatrix((float *)this);
+    vec[0] = -arg1[0];
+    vec[1] = -arg1[1];
+    vec[2] = -arg1[2];
+    vec[3] = 1.0f;
+    RotateZ(-arg0[2]);
+    RotateY(-arg0[1]);
+    RotateX(-arg0[0]);
+    MulVector(out, vec);
+    out[3] = 1.0f;
+    *(u_long128 *)m_unk00[3] = *(u_long128 *)out;
 }
 
 // FUNCTION: 0x001311B0 Inverse__5PMat4FP5PMat4
