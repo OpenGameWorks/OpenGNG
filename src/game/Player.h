@@ -152,7 +152,7 @@ public:
     char _pad054[0x70 - 0x54];
     int m_unk70;            // 0x070 set to 1.0f bits (0x3F800000) by Render
     char _pad074[0x80 - 0x74];
-    u_long128 m_unk80;      // 0x080 copy of m_unk380 by Render
+    u_long128 m_unk80;      // 0x080 copy of the m_unk380 vector by Render
     char _pad090[0xD0 - 0x90];
     signed char m_unkD0;    // 0x0D0 set to 1 by Render
     char _padD1[0xD4 - 0xD1];
@@ -265,8 +265,8 @@ public:
         PMNode *node;       // 0x00 owner, null when the slot is free
         float r2;           // 0x04 squared radius
     } m_unk360[4];          // 0x360 bounding spheres set by SetBoundingSphere
-    float m_unk380;         // 0x380 float advanced by m_unk23C0 in Render
-    char _pad384[0x23C0 - 0x384];
+    float m_unk380[4];      // 0x380 vector; [0] is advanced by m_unk23C0 in Render
+    char _pad390[0x23C0 - 0x390];
     float m_unk23C0;        // 0x23C0 float step added to m_unk380 in Render
     char _pad23C4[0x23C8 - 0x23C4];
     void *m_unk23C8;        // 0x23C8 shadow object, cleared or set by EnablePlayerShadow

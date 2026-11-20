@@ -2931,8 +2931,7 @@ void Player::RenderCutScene() {
     ((CutSceneObject *)m_unk284)->Slot04(0, 0x80, 0);
 }
 
-// DRAFT: 0x001640B0 Render__6PlayerFP13PLightManager
-// note: 1 word differs at 0x8C: add.s operands are f1,f2,f1 in ours, f1,f1,f2 in the original; tried a+b, b+a, a+=b, temp b, member +=
+// FUNCTION: 0x001640B0 Render__6PlayerFP13PLightManager
 int Player::Render(PLightManager *pLightMgr) {
     int total;
     int i;
@@ -2942,10 +2941,9 @@ int Player::Render(PLightManager *pLightMgr) {
         memset((char *)this + 0x40, 0, 0x90);
         m_unk50 = 0xBF800000;
         m_unk70 = 0x3F800000;
-        *(u_long128 *)&m_unk80 = *(u_long128 *)&m_unk380;
-        float t = m_unk23C0 + m_unk380;
-        m_unk380 = t;
-        if (t < 50.0f || !(t < 128.0f)) m_unk23C0 = -m_unk23C0;
+        *(u_long128 *)&m_unk80 = *(u_long128 *)m_unk380;
+        m_unk380[0] += m_unk23C0;
+        if (m_unk380[0] < 50.0f || !(m_unk380[0] < 128.0f)) m_unk23C0 = -m_unk23C0;
         total = ((EntityBaseClass *)this)->Render(pLightMgr);
         ((PDynamicSplinePatch *)((char *)this + 0x390))->Render();
     } else {
