@@ -9,6 +9,7 @@ class PArray;
 class PAnim;
 class AnimData;
 class PPakFile;
+class PMat4;
 // TODO(header): eBoxIntersect belongs to the owner header of the box-test enum. Placeholder until that header defines it; only the name matters for mangling.
 enum eBoxIntersect { eBoxIntersect_Placeholder = 0 };
 
@@ -38,6 +39,7 @@ public:
     void *GetFirstMesh();
     void StopAmbientSoundsByObject();
     int CreateObjectDisplayList();
+    void *AttachFx(unsigned int uID, float fA, float fB, float fC, float fD, bool bFlag);
     void CopyFxTriggers(PMNode &src);
     void BuildDispList(PArray *pArr);
     void AddBoneMatrixToDisplayList(bool bRecurse);
@@ -60,7 +62,12 @@ public:
     int LoadAnim(PPakFile *pFile);
     int CheckAnimated();
     int RecurseSetAnimFlagsByID(unsigned int uID, AnimData *pAnim);
+    int RecurseApplyAnimFlagsByID(unsigned int uID, bool bA, int nB);
     void EnableAnim(bool bA, bool bB);
+    int RecurseSetLoopRateByID(unsigned int uID, int nCount, float fRate);
+    int RecurseResetAnimByID(unsigned int uID);
+    void ProcessFxTriggers(float fTime, PMat4 *pMat, bool bA, bool bB);
+    void DebugDrawBox(int nMode);
 
     int m_unk04;           // 0x004 state; 2 skips frustum test
     int m_unk08;            // 0x008 zeroed by InitMembers
@@ -99,6 +106,8 @@ public:
     unsigned char m_unkF4;  // 0x0F4
     char _padF5[0x3];
     PObjectDisplayList *m_pObjDisplayList; // 0x0F8
+    char _pad0FC[0x14];
+    float m_unk110[2][4];                  // 0x110 box used by DebugDrawBox
 };
 
 #endif

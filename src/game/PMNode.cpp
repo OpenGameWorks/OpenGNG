@@ -37,6 +37,19 @@ struct PGfxEngineRef {
     char _pad04[0x10];
 };
 extern PGfxEngineRef gGfxEng;
+// PGfxEngine methods used by DebugDrawBox; gGfxEng is passed as (PGfxEngine *)&gGfxEng.
+class PGfxEngine {
+public:
+    void BeginDebugRender();
+    void DrawBox(float (*pBox)[2][4], float fA, float fB, float fC);
+    void EndDebugRender();
+};
+// TODO(header): PParticleManager and PParticleSystem belong to the particle headers; only IsValid is called here.
+class PParticleSystem;
+class PParticleManager {
+public:
+    int IsValid(PParticleSystem *pSystem);
+};
 // PSound size is unknown; the placeholder member only keeps gSound out of small data (threshold 8 bytes).
 class PSound {
 public:
@@ -98,13 +111,60 @@ public:
     virtual void Slot11(int nCount);
     virtual float Slot12();
     virtual void Slot13();
-    virtual void Slot14();
+    virtual void Slot14(int nArg);
     virtual void Slot15();
-    virtual void Slot16();
+    virtual void Slot16(float fRate);
     virtual float GetFrameRate();
     int m_unk04;            // 0x04 state; 0x3E8 and 1 are excluded from CheckAnimated
     char _pad08[2];
     unsigned char m_unk0A;  // 0x0A nonzero keeps the object alive in RemoveNullAnimation
+};
+
+// Same vtable as PFrameSource. Slot13 (0x38) takes an int at the RecurseSetLoopRateByID call site, and no argument at RecurseSetAnimFlagsByID.
+class PFrameSourceArgView {
+public:
+    virtual ~PFrameSourceArgView();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual void Slot04();
+    virtual void Slot05();
+    virtual void Slot06();
+    virtual void Slot07();
+    virtual void Slot08();
+    virtual void Slot09();
+    virtual void Slot10(AnimData *pAnim);
+    virtual void Slot11(int nCount);
+    virtual float Slot12();
+    virtual void Slot13(int nArg);
+};
+
+// Same vtable as PFrameSource. Slot06 (0x1C) takes a float at the RecurseResetAnimByID call site, and no argument at SetFrameTime.
+class PFrameSourceFloatView {
+public:
+    virtual ~PFrameSourceFloatView();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual void Slot04();
+    virtual void Slot05();
+    virtual void Slot06(float fArg);
+};
+
+// Same vtable as PFrameSource. Slot13 (0x38) takes a bool at the RecurseApplyAnimFlagsByID call site; passing it as int adds an andi.
+class PFrameSourceBoolView {
+public:
+    virtual ~PFrameSourceBoolView();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual void Slot04();
+    virtual void Slot05();
+    virtual void Slot06();
+    virtual void Slot07();
+    virtual void Slot08();
+    virtual void Slot09();
+    virtual void Slot10(AnimData *pAnim);
+    virtual void Slot11(int nCount);
+    virtual float Slot12();
+    virtual void Slot13(bool bArg);
 };
 
 // FUNCTION: 0x00191830 PlaySound__6PMNodeFUi
@@ -167,6 +227,49 @@ store:
     }
 }
 
+// DRAFT: 0x00191A90 DebugDrawBox__6PMNodeFi
+// note: DIFF 68 words; original keeps this in a0 and reloads m_unk04 into a1, zero-inits sit after the bFlags test; tried 3/2 order, zero-init placement, pBox placement.
+void PMNode::DebugDrawBox(int nMode) {
+    float (*pBox)[2][4];
+    unsigned char bFlags;
+    int nA;
+    int nB;
+    int nC;
+    if (nMode == 3 || nMode == 2) {
+        if (m_unk04 == 2 || m_unk04 == 1) {
+            pBox = &m_unk110;
+            bFlags = 0x20;
+        } else {
+            return;
+        }
+    } else if (nMode == 1) {
+        pBox = (float (*)[2][4])m_unk28;
+        bFlags = m_unk3C;
+    } else {
+        return;
+    }
+    if (bFlags == 0) {
+        return;
+    }
+    nA = 0;
+    nB = 0;
+    nC = 0;
+    unsigned int uMask = bFlags & 0xE0;
+    if (uMask == 0x40) {
+        nC = 0x80;
+        nB = 0x80;
+    } else if (uMask == 0x80) {
+        nA = 0x80;
+    } else if (uMask == 0x20) {
+        nB = 0x80;
+    } else {
+        return;
+    }
+    ((PGfxEngine *)&gGfxEng)->BeginDebugRender();
+    ((PGfxEngine *)&gGfxEng)->DrawBox(pBox, (float)nA, (float)nB, (float)nC);
+    ((PGfxEngine *)&gGfxEng)->EndDebugRender();
+}
+
 // FUNCTION: 0x001919E0 CreateObjectDisplayList__6PMNodeFv
 int PMNode::CreateObjectDisplayList() {
     PObjectDisplayList *p = m_pObjDisplayList;
@@ -188,6 +291,34 @@ int PMNode::CreateObjectDisplayList() {
         return 0;
     }
     return 1;
+}
+
+// FUNCTION: 0x00192820 AttachFx__6PMNodeFUiffffb
+void *PMNode::AttachFx(unsigned int uID, float fA, float fB, float fC, float fD, bool bFlag) {
+    char *pBlk;
+    PParticleManager *pMgr = (PParticleManager *)&gGfxEng;
+    if (pMgr == 0) {
+        CdsAssert__FPciPc("PMNode.cpp", 0x7B3, "apParticleMgr");
+    }
+    if (pMgr->IsValid((PParticleSystem *)uID) != 0) {
+        pBlk = (char *)__nw__FUi(0x28);
+        if (pBlk == 0) {
+            CdsAssert__FPciPc("PMNode.cpp", 0x7B8, "apTrigger");
+        }
+        *(int *)(pBlk + 0xC) = 0;
+        *(int *)(pBlk + 0x8) = 0;
+        *(int *)(pBlk + 0x4) = 0;
+        *(float *)(pBlk + 0x10) = fA;
+        *(float *)(pBlk + 0x14) = fB;
+        *(float *)(pBlk + 0x18) = fC;
+        *(float *)(pBlk + 0x1C) = fD;
+        *(unsigned int *)(pBlk + 0x20) = uID;
+        *(int *)(pBlk + 0x0) = 0;
+        *(int *)(pBlk + 0x24) = bFlag ? 4 : 0;
+        ((PArray *)((char *)this + 0xD8))->Add(pBlk);
+        return pBlk;
+    }
+    return 0;
 }
 
 // DRAFT: 0x00192CC0 CopyFxTriggers__6PMNodeFR6PMNode
@@ -310,7 +441,7 @@ void PMNode::SetFrameRate(float fRate, bool bFlag) {
     PMNode *pChild;
     void *pObj = m_unk24;
     if (pObj != 0) {
-        ((PFrameSource *)pObj)->Slot16();
+        ((PFrameSource *)pObj)->Slot16(fRate);
     }
     m_unk18 = 0;
     pChild = 0;
@@ -1017,6 +1148,60 @@ void PMNode::RecurseSetFade(float fFade) {
     }
 }
 
+// FUNCTION: 0x00195350 RecurseSetLoopRateByID__6PMNodeFUiif
+int PMNode::RecurseSetLoopRateByID(unsigned int uID, int nCount, float fRate) {
+    PMNode *pChild;
+    unsigned int idx;
+    if (m_unk24 != 0 && uID == ((PFrameSource *)m_unk24)->m_unk04) {
+        ((PFrameSource *)m_unk24)->Slot11(nCount);
+        ((PFrameSource *)m_unk24)->Slot16(fRate);
+        ((PFrameSourceArgView *)m_unk24)->Slot13(1);
+        m_unk3F |= 1;
+    }
+    m_unk18 = 0;
+    pChild = (m_unk14 != 0) ? *m_unk1C : 0;
+    if (pChild != 0) {
+        do {
+            if (pChild->RecurseSetLoopRateByID(uID, nCount, fRate) != 0) {
+                m_unk3F |= 2;
+            }
+            idx = m_unk18 + 1;
+            m_unk18 = idx;
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+    return m_unk3F;
+}
+
+// FUNCTION: 0x00195560 RecurseResetAnimByID__6PMNodeFUi
+int PMNode::RecurseResetAnimByID(unsigned int uID) {
+    PMNode *pChild;
+    unsigned int idx;
+    if (m_unk24 != 0 && (uID == 0 || uID == ((PFrameSource *)m_unk24)->m_unk04)) {
+        ((PFrameSourceArgView *)m_unk24)->Slot13(0);
+        ((PFrameSourceFloatView *)m_unk24)->Slot06(0.0f);
+        m_unk34 = 0;
+        *(unsigned int *)&m_unk38 = 0xC61C4000;
+        m_unk3F = 0;
+        m_unk3E |= 8;
+        m_unk3F |= 1;
+        ProcessFxTriggers(-1.0f, 0, 0, 0);
+    }
+    m_unk18 = 0;
+    pChild = (m_unk14 != 0) ? *m_unk1C : 0;
+    if (pChild != 0) {
+        do {
+            if (pChild->RecurseResetAnimByID(uID) != 0) {
+                m_unk3F |= 2;
+            }
+            idx = m_unk18 + 1;
+            m_unk18 = idx;
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+    return m_unk3F;
+}
+
 // FUNCTION: 0x001956A0 RecurseSetAnimFlagsByID__6PMNodeFUiP8AnimData
 int PMNode::RecurseSetAnimFlagsByID(unsigned int uID, AnimData *pAnim) {
     PMNode *pChild;
@@ -1031,6 +1216,30 @@ int PMNode::RecurseSetAnimFlagsByID(unsigned int uID, AnimData *pAnim) {
     if (pChild != 0) {
         do {
             if (pChild->RecurseSetAnimFlagsByID(uID, pAnim) != 0) {
+                m_unk3F |= 2;
+            }
+            idx = m_unk18 + 1;
+            m_unk18 = idx;
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+    return m_unk3F;
+}
+
+// FUNCTION: 0x00195920 RecurseApplyAnimFlagsByID__6PMNodeFUibi
+int PMNode::RecurseApplyAnimFlagsByID(unsigned int uID, bool bA, int nB) {
+    PMNode *pChild;
+    unsigned int idx;
+    if (m_unk24 != 0 && uID == ((PFrameSource *)m_unk24)->m_unk04) {
+        ((PFrameSourceBoolView *)m_unk24)->Slot13(bA);
+        ((PFrameSource *)m_unk24)->Slot11(nB);
+        m_unk3F |= 1;
+    }
+    m_unk18 = 0;
+    pChild = (m_unk14 != 0) ? *m_unk1C : 0;
+    if (pChild != 0) {
+        do {
+            if (pChild->RecurseApplyAnimFlagsByID(uID, bA, nB) != 0) {
                 m_unk3F |= 2;
             }
             idx = m_unk18 + 1;
