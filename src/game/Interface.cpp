@@ -608,24 +608,18 @@ void HudGrim::Delete() {
     }
 }
 
-// Cover element IDs; the original local object GrimCover$1444 at 0x241200 (12 bytes).
-static unsigned int GrimCover_1444[3] = {0x0D3B7139, 0x2F38C229, 0xC132DB59};
-
-// DRAFT: 0x1401C0 Init__7HudGrimFP9PMeshNodeP7HudData
-// note: 10 words differ; GrimCover table reloc names GrimCover_1444 (original GrimCover$1444, '$' rejected), and the Find arg setup and store address order differ. Tried: static table, do/while with offset walk.
+// FUNCTION: 0x001401C0 Init__7HudGrimFP9PMeshNodeP7HudData
 void HudGrim::Init(PMeshNode *meshNode, HudData *hud) {
+    // Cover element IDs; the original local object GrimCover$1444 at 0x241200 (12 bytes).
+    static unsigned int GrimCover[3] = {0x0D3B7139, 0x2F38C229, 0xC132DB59};
     ((GameHud *)this)->Init(meshNode, hud);
     m_unk10 = ((PMNode *)meshNode)->Find(0x303B74C6);
     if (m_unk4 != 0) {
         m_unk4->RecurseSetSTAnimOptions(false);
     }
-    int n = 0;
-    int off = 0;
-    do {
-        n++;
-        *(void **)((char *)m_unk14 + off) = ((PMNode *)meshNode)->Find(*(unsigned int *)((char *)GrimCover_1444 + off));
-        off += 4;
-    } while (n < 3);
+    for (int i = 0, off = 0; i < 3; i++, off += 4) {
+        *(void **)((char *)this + off + 0x14) = ((PMNode *)meshNode)->Find(*(unsigned int *)((char *)GrimCover + off));
+    }
     m_unk20 = 0;
 }
 
@@ -1941,7 +1935,7 @@ void HudInventory::UpdateGroup(int arg0) {
 }
 
 // DRAFT: 0x143510 Reset__12HudInventoryFv
-// note: 8 words differ; size 0x88 vs 0x8c. The original has an extra nop before the loop bnez, and the call-site reloc set is otherwise equal. Tried: pointer local for this+4 (CSE into s0), member m_unk4, for-loop form (16 words), UpdateGroup(i++) (12 words).
+// note: 8 words differ; the original has an extra nop between the loop's slti and bnez (ours has none; its delay-slot nop matches). Tried: pointer local for this+4, member m_unk4, for-loop (16 words), UpdateGroup(i++) (12), five loop-shape variants, while(i<4) and while(true)+break (8 each).
 void HudInventory::Reset() {
     if (m_unk4 != 0) {
         ((PVirtObj *)m_unk4)->Slot05((int)&DefaultLoopAnim);
@@ -2645,11 +2639,11 @@ PMNode *Interface::Load(const char *arg0) {
     return (PMNode *)m_unk1C4;
 }
 
-// DRAFT: 0x001450D0 ProcessScreenFade__9InterfaceFv
-// note: 2 words differ, mul.s operand order and c.eq.s operand order; tried swapped mul operands, read-modify-write form, local temp (4), and both branch forms
+// FUNCTION: 0x001450D0 ProcessScreenFade__9InterfaceFv
 void Interface::ProcessScreenFade() {
     if (*(unsigned char *)&m_unk425 != 0) {
-        *(float *)&m_unk41C += *(float *)(gEng + 0x1E8) * *(float *)&m_unk418;
+        float scale = *(float *)(gEng + 0x1E8);
+        *(float *)&m_unk41C += *(float *)&m_unk418 * scale;
         if (((*(float *)&m_unk418 < 0.0f) && (*(float *)&m_unk41C <= *(float *)&m_unk420)) ||
             (!(*(float *)&m_unk418 <= 0.0f) && !(*(float *)&m_unk41C < *(float *)&m_unk420))) {
             *(float *)&m_unk41C = *(float *)&m_unk420;
@@ -2658,7 +2652,8 @@ void Interface::ProcessScreenFade() {
         DisplayFadeRectangle();
         return;
     }
-    if (*(float *)&m_unk41C != 0.0f) {
+    float zero = 0.0f;
+    if (*(float *)&m_unk41C != zero) {
         DisplayFadeRectangle();
     }
 }
@@ -2687,8 +2682,7 @@ void Interface::DisplayFadeRectangle() {
                          rgb[2], (char)(int)*(float *)&m_unk41C, 0x3F800000);
 }
 
-// DRAFT: 0x1452A0 FadeScreen__9InterfaceFffbQ29Interface10eFadeColor
-// note: 1 differing line, c.eq.s operand order (orig $f20,$f0 vs ours $f0,$f20); tried 0.0f!=v, arg1!=0, inverted ==0 layout (18 diffs), !(v==0).
+// FUNCTION: 0x1452A0 FadeScreen__9InterfaceFffbQ29Interface10eFadeColor
 void Interface::FadeScreen(float arg0, float arg1, bool arg2, eFadeColor arg3) {
     float var_f20 = arg1;
     if ((int)arg3 >= 2) {
@@ -2696,7 +2690,8 @@ void Interface::FadeScreen(float arg0, float arg1, bool arg2, eFadeColor arg3) {
     }
     m_unk426 = (signed char)arg3;
     m_unk424 = arg2;
-    if (!(var_f20 == 0.0f)) {
+    float zero = 0.0f;
+    if (!(var_f20 == zero)) {
         m_unk425 = 1;
         *(float *)&m_unk420 = arg0;
         if (arg0 < *(float *)&m_unk41C) {
