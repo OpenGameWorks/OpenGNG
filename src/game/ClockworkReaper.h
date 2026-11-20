@@ -7,10 +7,12 @@
 // declared here, so every member is named by its offset from the object start.
 class PMNode;
 class Shadow;
+class EntityBaseClass;
 
 class ClockworkReaper {
 public:
     ClockworkReaper();
+    int OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3);
     void SetRiseAndAttack(float (*arg0)[4], float arg1, float arg2);
     void AttachSoulStoneEffect(PMNode *arg0);
     int AnimationViewer(int arg0);
@@ -35,7 +37,8 @@ public:
 
     char _pad000[0x4];
     int m_unk4;             // 0x004 compared with the player's 0x1CC by CheckBlockAttack
-    char _pad008[0x20 - 0x8];
+    int m_unk8;             // 0x008 compared with 0x6C and 0x1D by OnHitEvent
+    char _pad00C[0x20 - 0xC];
     int m_unk20;           // 0x020 state
     char _pad024[0x38 - 0x24];
     void *m_unk38;          // 0x038 object whose float at 0x11C FaceHit writes
@@ -44,7 +47,9 @@ public:
     Shadow *m_unkD4;        // 0x0D4 shadow object, LoadCorrectMesh
     char _pad0D8[0xF4 - 0xD8];
     int m_unkF4;            // 0x0F4 nonzero makes CheckBlockAttack return 0
-    char _pad0F8[0x163 - 0xF8];
+    char _pad0F8[0x10C - 0xF8];
+    unsigned int m_unk10C;  // 0x10C, masked by OnHitEvent
+    char _pad110[0x163 - 0x110];
     unsigned char m_unk163; // 0x163
     char _pad164[0x190 - 0x164];
     u_long128 m_unk190;     // 0x190 spawn copy target, SetSpawnedFromEntity
@@ -74,15 +79,22 @@ public:
     unsigned char m_unk218; // 0x218, set by OnTimerEvent
     char _pad219[0x220 - 0x219];
     int m_unk220;           // 0x220 timer id
-    char _pad224[0x240 - 0x224];
+    int m_unk224;           // 0x224 stored by OnHitEvent
+    int m_unk228;           // 0x228 stored by OnHitEvent
+    int m_unk22C;           // 0x22C stored by OnHitEvent
+    char _pad230[0x240 - 0x230];
     unsigned char m_unk240; // 0x240, set by OnTimerEvent
-    char _pad241[0x24D - 0x241];
+    char _pad241[0x248 - 0x241];
+    int m_unk248;           // 0x248 compared by OnHitEvent
+    unsigned char m_unk24C; // 0x24C
     unsigned char m_unk24D; // 0x24D, set by OnTimerEvent
     char _pad24E[0x250 - 0x24E];
     int m_unk250;           // 0x250 timer id
     char _pad254[0x255 - 0x254];
     unsigned char m_unk255; // 0x255, tested by LoadCorrectMesh
-    char _pad256[0x290 - 0x256];
+    char _pad256[0x278 - 0x256];
+    signed char m_unk278;   // 0x278 select stored by OnHitEvent
+    char _pad279[0x290 - 0x279];
     float m_unk290[4];      // 0x290 position tested by PlayerInAttackRadius
     u_long128 m_unk2A0;     // 0x2A0 MathAPI-sized copy target, Stalled
     char _pad2B0[0x2B6 - 0x2B0];
@@ -96,7 +108,9 @@ public:
     int m_unk2C8;           // 0x2C8, cleared by CheckBlockAttack
     char _pad2CC[0x2E0 - 0x2CC];
     unsigned char m_unk2E0; // 0x2E0, set by AttachSoulStoneEffect
-    char _pad2E1[0x2E8 - 0x2E1];
+    char _pad2E1[0x2E6 - 0x2E1];
+    signed char m_unk2E6;   // 0x2E6 cleared by OnHitEvent
+    char _pad2E7[0x2E8 - 0x2E7];
     int m_unk2E8;           // 0x2E8 timer id
     int m_unk2EC;           // 0x2EC effect handle
     int m_unk2F0;           // 0x2F0 effect handle

@@ -6,6 +6,17 @@
 class EntityBaseClass {
 public:
     void SequenceViewer(unsigned int **arg0, int arg1);
+    char _pad000[8];
+    int m_unk8;
+    char _pad00C[0x3C - 0xC];
+    void *m_unk3C;
+    char _pad040[0x10C - 0x40];
+    unsigned int m_unk10C;
+    char _pad110[0x163 - 0x110];
+    unsigned char m_unk163;
+    char _pad164[0x190 - 0x164];
+    u_long128 m_unk190;
+    u_long128 m_unk1A0;
 };
 
 extern unsigned int ClockworkReaper_ViewerIdleGruntSeq[];
@@ -97,11 +108,16 @@ class EffectAPI {
 public:
     char _pad000[20];
     void DeleteEffect(unsigned int);
+    int CreateOneshot(unsigned int, unsigned int, float (*)[4], float (*)[4], EntityBaseClass *, float, bool, int, bool);
 };
 
 extern EffectAPI mEffectAPI__13EntityManager;
 extern "C" void SetState__15EntityBaseClassFi(void *, int);
+extern "C" void RemoveFromAttackSystem__15EntityBaseClassFv(void *);
+extern "C" int CreateDamageFx__15EntityBaseClassFfUi(void *, float, unsigned int);
+extern "C" void ChangeDamageFxInterval__15EntityBaseClassFUif(void *, unsigned int, float);
 extern "C" void DestroyDamageFx__15EntityBaseClassFUi(void *, unsigned int);
+extern unsigned int ClockworkReaper_JoltOnGround[];
 extern void *mpEntMgr__15EntityBaseClass;
 extern "C" void GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(void *, float *);
 extern "C" float Round180__Ff(float);
@@ -794,6 +810,196 @@ void ClockworkReaper::OnTimerEvent(unsigned int arg0) {
     if (arg0 == m_unk250) {
         m_unk24D = 1;
     }
+}
+
+// DRAFT: 0x001C0B60 OnHitEvent__15ClockworkReaperFP15EntityBaseClassiUiUi
+// note: DIFF 455 words, size 0x73c vs 0x750; frame 0x90 vs 0xA0 with f20 (20.0f, hoisted in original) not spilled; per-path returns and store order differ; tried /2.0f to *0.5f (457 to 455).
+int ClockworkReaper::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3) {
+    int ret;
+    int state;
+    unsigned int masked;
+    char *pick0;
+    char *pick1;
+
+    if (m_unkF4 != 0) {
+        m_unk208 -= arg1;
+        if (m_unk208 > 0) {
+            return 1;
+        }
+        m_unk224 = arg2;
+        masked = arg2 & -0x5C1;
+        m_unk228 = masked;
+        SetState__15EntityBaseClassFi(this, 9);
+        return 2;
+    }
+
+    state = m_unk20;
+    if (state == 0x21) {
+        if (GetFrameTime__6PMNodeFv(m_unk3C) < 10.0f) {
+            return 0;
+        }
+    }
+    if (state == 7 || state == 0x14 || state == 0x2A) {
+        if (*(int *)((char *)m_unk38 + 0xC0) == 0) {
+            return 0;
+        }
+    }
+    RemoveFromAttackSystem__15EntityBaseClassFv(this);
+    DeleteEffects();
+
+    if (arg0->m_unk8 == 0x1D) {
+        m_unk224 = 0;
+        m_unk228 = 0;
+        m_unk208 = 0;
+        pick0 = arg0->m_unk3C ? (char *)arg0->m_unk3C + 0x80 : (char *)&arg0->m_unk190;
+        pick1 = m_unk3C ? (char *)m_unk3C + 0x80 : (char *)&m_unk190;
+        *(float *)(pick1 + 4) = 2.0f + *(float *)(pick0 + 4);
+        SetState__15EntityBaseClassFi(this, 9);
+        return 2;
+    }
+
+    if (state == 2 || state == 6) {
+        pick1 = m_unk3C ? (char *)m_unk3C + 0x80 : (char *)&m_unk190;
+        *(u_long128 *)m_unk290 = *(u_long128 *)pick1;
+    }
+    masked = arg2 & -0x5C1;
+    if (state == 0x1F || state == 0x22) {
+        if (masked != 2 && (arg2 & 0x40) == 0) {
+            SetState__15EntityBaseClassFi(this, 0x20);
+            return 4;
+        }
+    }
+    if (state == 9 && m_unk24C != 0) {
+        m_unk10C &= 0xF8FFFFFF;
+        SetState__15EntityBaseClassFi(this, 0x12);
+        return 5;
+    }
+    if (state == 0xF) {
+        ret = 1;
+        if (GetFrameTime__6PMNodeFv(m_unk3C) < 30.0f) {
+            m_unk278 = (arg2 & 0x200) ? ret : 0;
+            m_unk22C = arg2;
+            m_unk208 -= arg1;
+            if (m_unk208 > 0) {
+                SetState__15EntityBaseClassFi(this, 0x10);
+                return ret;
+            }
+            m_unk224 = arg2;
+            m_unk228 = masked;
+            SetState__15EntityBaseClassFi(this, 9);
+            return 2;
+        }
+    }
+    if (state == 0x10) {
+        if (GetFrameTime__6PMNodeFv(m_unk3C) < 20.0f) {
+            m_unk278 = (arg2 & 0x200) ? 1 : 0;
+            m_unk22C = arg2;
+            m_unk208 -= arg1;
+            if (m_unk208 > 0) {
+                SetState__15EntityBaseClassFi(this, 0x10);
+                return 1;
+            }
+            m_unk224 = arg2;
+            m_unk228 = masked;
+            SetState__15EntityBaseClassFi(this, 9);
+            return 2;
+        }
+    }
+
+    if (m_unk240 == 0 && !(GetFrameTime__6PMNodeFv(m_unk3C) < (float)m_unk248)) {
+        if (masked == 2) {
+            m_unk208 = 0;
+            m_unk10C &= 0xFDFFFFFF;
+            SetState__15EntityBaseClassFi(this, 0xE);
+            return 2;
+        }
+        if (masked == 1 || masked == 0x220 || masked == 0x201 ||
+            (arg2 & -0x101) == 0x44 || (arg2 & -0x101) == 0x4F) {
+            m_unk208 -= arg1;
+            PlaySequence__15EntityBaseClassFPUi((EntityBaseClass *)this, ClockworkReaper_JoltOnGround);
+            if (m_unk208 <= 0) {
+                m_unk208 = 0;
+                m_unk10C &= 0xFDFFFFFF;
+                SetState__15EntityBaseClassFi(this, 0xE);
+            }
+            return 2;
+        }
+        return 3;
+    }
+
+    if ((arg0->m_unk10C & 1) == 0 && arg0->m_unk163 == 4) {
+        m_unk22C = 8;
+        m_unk2E6 = 0;
+        SetState__15EntityBaseClassFi(this, 4);
+        return 1;
+    }
+
+    FaceHit();
+    m_unk208 -= arg1;
+    if (m_unk2F8 == 0) {
+        if ((float)m_unk208 <= (float)m_unk210 * 0.5f) {
+            m_unk2F8 = CreateDamageFx__15EntityBaseClassFfUi(this, 90.0f, 0);
+        }
+    }
+    if (m_unk2F8 != 0 && (float)m_unk208 <= (float)m_unk210 / 4.0f) {
+        ChangeDamageFxInterval__15EntityBaseClassFUif(this, m_unk2F8, 20.0f);
+    }
+
+    if (m_unk208 > 0) {
+        if (m_unk2B6 != 0 && m_unk2B8 == 0 && !(m_unk210 / 2 < m_unk208)) {
+            PMNode *head;
+            PMNode *headJoint;
+            PMNode *headNode;
+            void *headMesh;
+            int pass;
+
+            m_unk2B8 = 1;
+            pick0 = m_unk3C ? (char *)m_unk3C + 0x90 : (char *)&m_unk1A0;
+            pick1 = m_unk3C ? (char *)m_unk3C + 0x80 : (char *)&m_unk190;
+            pass = GetRenderPassIndex();
+            mEffectAPI__13EntityManager.CreateOneshot(0x81000082, 0x8200011A, (float (*)[4])pick1,
+                                                      (float (*)[4])pick0, 0, 0.5f, true, pass, false);
+
+            head = m_unk3C;
+            if (head == 0) {
+                CdsAssert("ClockworkReaper.cpp", 0xAB5, "pSkeleton");
+            }
+            headJoint = Find__6PMNodeFUi(head, 0x8EA3DD30);
+            if (headJoint == 0) {
+                CdsAssert("ClockworkReaper.cpp", 0xAB8, "pHeadJoint");
+            }
+            headNode = GetResource__16PResourceManagerFUib(mpResMgr__15EntityBaseClass, 0x81000197, true);
+            if (headNode == 0) {
+                CdsAssert("ClockworkReaper.cpp", 0xABB, "pHeadNode");
+            }
+            headNode = Find__6PMNodeFUi(headNode, 0x8EA3DD30);
+            if (headNode == 0) {
+                CdsAssert("ClockworkReaper.cpp", 0xABE, "pNewHeadJoint");
+            }
+
+            headMesh = headNode->m_unk10;
+            headJoint->m_unk10 = headMesh;
+            *((unsigned char *)headJoint + 0x3E) &= 0xEF;
+            if (headMesh != 0) {
+                if (*((unsigned char *)headMesh + 0xC) != 0) {
+                    *((unsigned char *)headJoint + 0x3E) |= 0x10;
+                }
+            }
+            AttachSoulStoneEffect(headJoint);
+            BuildDispList__9PSkeletonFv(head);
+        }
+        m_unk22C = arg2;
+    } else {
+        m_unk224 = arg2;
+        m_unk228 = masked;
+        SetState__15EntityBaseClassFi(this, 9);
+        ret = 2;
+        return ret;
+    }
+
+    m_unk2E6 = (arg0->m_unk8 == 0x6C);
+    SetState__15EntityBaseClassFi(this, 4);
+    return ret;
 }
 
 // FUNCTION: 0x001C12B0 OnStopAttack__15ClockworkReaperFv
