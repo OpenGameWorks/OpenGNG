@@ -21,7 +21,7 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 4. Each callee's declaration is checked with `grep -rn "NAME" src include < /dev/null | head -5`; its return type and arity follow the callee's asm, since a wrong one shifts registers and schedule.
 5. Change one thing, rerun `fncmp.py -q`, and keep a variant only when the differing-line count drops. Orderings with many candidates (stores, local declarations) are brute-forced by a short Python script over a copy in `src/scratch/<job-id>/`; the script never rewrites files under `src/game` and finishes before the report.
 6. A match is C++ that the compiler turns into the original bytes. An `asm` body or inline `asm` copied from `disasm.py` never counts as a FUNCTION.
-7. Stop on a function after 8 attempts without progress. Variants the note lists as tried are not repeated.
+7. The best-scoring variant is copied to `src/scratch/<job-id>/` before the next attempt, and the final DRAFT keeps the lowest count reached. Stop on a function after 8 attempts without progress. Variants the note lists as tried are not repeated.
 
 ## CodeWarrior Idioms
 
