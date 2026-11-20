@@ -18,6 +18,18 @@ extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" float sqrtf(float);
 extern unsigned char __vt__13PParticleAura[];
 extern char gGfxEng[1504384];
+extern float GAME_FPS;
+
+struct tagVuParticle {
+    float unk0;
+    float unk4;
+    float unk8;
+    float unkC;
+    float unk10;
+    float unk14;
+    float unk18;
+    float unk1C;
+};
 
 // FUNCTION: 0x001DB7D0 SetPosition__13PParticleAuraFPfPf
 void PParticleAura::SetPosition(float *pPos, float *pUnused) {
@@ -30,6 +42,57 @@ void PParticleAura::ModifyPosition(PMat4 *pMat) {
     if (pMat != 0) {
         MulVector__5PMat4FPfPf(pMat, m_unk120, m_unkE0);
         sceVu0CopyVector(&m_unk80, m_unk120);
+    }
+}
+
+// DRAFT: 0x001DB860 Animate__13PParticleAuraFf
+// note: 51 words vs 134-word original (ours 131 words); branch sense at clamp and compare, m_unk130 cached not reloaded per tail store, add.s and compare operand orders tried (flip worse or equal)
+void PParticleAura::Animate(float fDelta) {
+    if (m_unk130 != 0) {
+        if (m_unk17 == 0 && m_unkA4 == 0) {
+            ((tagVuParticle *)m_unk130)->unkC = 0;
+            return;
+        }
+        if (m_unk18 == 0) {
+            m_unk15 = 0;
+        }
+        if (m_unk15 == 0) {
+            ((tagVuParticle *)m_unk130)->unkC = 0;
+        } else {
+            ((tagVuParticle *)m_unk130)->unkC = m_unkE0[8];
+        }
+        if (m_unkE0[9] != 0.0f && m_unk17 == 0 && fDelta != 0.0f) {
+            m_unk138 = m_unk134 + m_unk138;
+            if (m_unk138 <= 0.61f * m_unkE0[7] || !(m_unk138 < m_unkE0[7])) {
+                m_unk134 = -m_unk134;
+            }
+            goto block_24;
+        }
+        if (m_unk17 != 0 && fDelta != 0.0f) {
+            float fTime = m_unk138;
+            if (!(fTime <= 0.0f)) {
+                float fLeft = fTime - m_unkE0[7] / (0.5f * GAME_FPS);
+                if (fLeft <= 0.0f) {
+                    fLeft = 0.0f;
+                }
+                m_unk138 = fLeft;
+                goto block_24;
+            }
+            FreeAuraParticle__16PParticleManagerFP13tagVuParticle(gGfxEng + 0x154F00, m_unk130);
+            m_unk130 = 0;
+            m_unk16 = 1;
+            m_unk15 = 0;
+            return;
+        }
+        m_unk138 = m_unkE0[7];
+block_24:
+        ((tagVuParticle *)m_unk130)->unk0 = m_unk120[0];
+        ((tagVuParticle *)m_unk130)->unk4 = m_unk120[1];
+        ((tagVuParticle *)m_unk130)->unk8 = m_unk120[2];
+        ((tagVuParticle *)m_unk130)->unk10 = m_unkE0[4];
+        ((tagVuParticle *)m_unk130)->unk14 = m_unkE0[5];
+        ((tagVuParticle *)m_unk130)->unk18 = m_unkE0[6];
+        ((tagVuParticle *)m_unk130)->unk1C = m_unk138 * m_unkCC;
     }
 }
 
