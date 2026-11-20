@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+class Physics;
+
 // Pickup entity. Only the fields read or written by the recovered functions are named;
 // the rest of the object is kept as padding.
 class Pickup {
@@ -19,6 +21,7 @@ public:
     int SetAbilityType(int arg0);
     int SoulSuckerInRange();
     void OnTouchEvent(class EntityBaseClass *arg0);
+    void Execute();
     static signed char GetVarType(int arg0);
     static void *GetPickupData(int arg0);
 
@@ -27,9 +30,19 @@ public:
     unsigned char m_unk18;          // 0x018 read by the ctor
     char _pad019[0x20 - 0x19];
     int m_unk20;                    // 0x020 state; 8 selects FlyToApparition
-    char _pad024[0x3C - 0x24];
+    char _pad024[0x38 - 0x24];
+    Physics *m_unk38;               // 0x038 physics object, allocated by Execute
     void *m_unk3C;                  // 0x03C; when non-null, OnSleepEvent copies from +0x80
-    char _pad040[0x190 - 0x40];
+    char _pad040[0xD2 - 0x40];
+    unsigned char m_unkD2;          // 0x0D2 set to 0x80 by Execute (case 5)
+    char _pad0D3[0xE9 - 0xD3];
+    unsigned char m_unkE9;          // 0x0E9 nonzero selects the case 4 apparition path
+    char _pad0EA[0x103 - 0xEA];
+    unsigned char m_unk103;         // 0x103 state byte written by Execute
+    unsigned int m_unk104;          // 0x104 written by Execute
+    unsigned int m_unk108;          // 0x108 written by Execute
+    unsigned int m_unk10C;          // 0x10C flags, masked and or'd by Execute
+    char _pad110[0x190 - 0x110];
     u_long128 m_unk190;             // 0x190 16-byte record copied by OnSleepEvent
     char _pad1A0[0x1B0 - 0x1A0];
     int m_unk1B0;                   // 0x1B0 ability index written by SetAbilityType
@@ -50,9 +63,11 @@ public:
     unsigned char m_unk1EC;         // 0x1EC cleared by the ctor
     unsigned char m_unk1ED;         // 0x1ED cleared by the ctor
     unsigned char m_unk1EE;         // 0x1EE cleared by the ctor
-    char _pad1EF[0x1];
+    unsigned char m_unk1EF;         // 0x1EF set by Execute
     int m_unk1F0;                   // 0x1F0 cleared by the ctor
-    char _pad1F4[0x200 - 0x1F4];
+    void *m_unk1F4;                 // 0x1F4 apparition found by ApparitionIsValid in Execute
+    int m_unk1F8;                   // 0x1F8 ability index used by Execute case 4
+    char _pad1FC[0x200 - 0x1FC];
     int m_unk200;                   // 0x200 cleared by the ctor
     char _pad204[0x20A - 0x204];
     short m_unk20A;                 // 0x20A set to 0x800 by the ctor

@@ -23,6 +23,20 @@ extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(unsigned int nId);
 extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
 extern "C" float sinf(float x);
 extern "C" float cosf(float x);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__7PhysicsFv(void *pThis);
+extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(Physics *pThis, unsigned int nType, float (*pMatrix)[4]);
+extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, bool bA, bool bB);
+extern "C" int PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nId);
+extern "C" int PlaySequence__15EntityBaseClassFPUi(void *pThis, unsigned int *pId);
+extern "C" signed char ReadApparitionData__15EntityBaseClassFiUi(void *pThis, int nIndex, unsigned int nFlags);
+extern "C" void WriteApparitionData__15EntityBaseClassFicUi(void *pThis, int nIndex, char nValue, unsigned int nFlags);
+extern "C" int CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(void *pThis, unsigned int nA, unsigned int nB, float (*pA)[4], float (*pB)[4], void *pEntity, float fScale, bool bA, int nC, bool bB);
+extern "C" void ScaleSet__6PMNodeFffff(void *pThis, float fA, float fB, float fC, float fD);
+extern "C" int CheckDuplicate__6PlayerFi(void *pThis, int nId);
+extern "C" int NeedSuperMeter__6PlayerFv(void *pThis);
+extern "C" int GameVarSub__6PlayerFUii(void *pThis, unsigned int nId, int nValue);
+extern "C" unsigned char mEffectAPI__13EntityManager[0x10];
 
 // FUNCTION: 0x0019CF40 __dt__6PickupFv
 Pickup::~Pickup() {
@@ -143,6 +157,167 @@ tail:
 void Pickup::OnEffectDelete(unsigned int arg0) {
     if (arg0 == (unsigned int)this->m_unk234) {
         ((EntityBaseClass *)this)->SetState(-2);
+    }
+}
+
+// DRAFT: 0x0019D340 Execute__6PickupFv
+// note: cases 0,1,2,7,8,9,10,13 left as break; frame 0x120 vs 0x80 and this kept in s0 vs s2 (locals and register allocation); extra $f20 save; CreateOneshot args 4-7 are placeholders; 1842 words differ.
+void Pickup::Execute() {
+    int rec;
+    void *pPlayer;
+    void *pNode;
+    if (this->m_unk1B0 == 0xE) {
+        pNode = this->m_unk3C;
+        if (pNode != 0 && *(float *)((char *)pNode + 0xA0) != 1.5f) {
+            ScaleSet__6PMNodeFffff(pNode, 1.5f, 1.5f, 1.5f, 1.0f);
+        }
+    }
+    switch (this->m_unk20) {
+    case -1:
+        rec = this->m_unk1B0 * 24;
+        if (PickUpData[rec] == 0) {
+            printf("\nInvalid pickup type found\n");
+            ((EntityBaseClass *)this)->SetState(-2);
+            return;
+        }
+        if (PickUpData[rec + 5] != 0 && CheckDuplicate__6PlayerFi(*(void **)((char *)mpEntMgr__15EntityBaseClass + 0x505C), PickUpData[rec + 4]) != 0) {
+            WriteApparitionData__15EntityBaseClassFicUi(this, 0, 2, 0U);
+            ((EntityBaseClass *)this)->SetState(-2);
+            return;
+        }
+        if (this->m_unk1B8 != 0 || this->m_unk18 == 0) {
+            if (this->m_unk38 == 0) {
+                void *pPhys = __nw__FUi(0x120U);
+                if (pPhys != 0) {
+                    pPhys = __ct__7PhysicsFv(pPhys);
+                }
+                this->m_unk38 = (Physics *)pPhys;
+                if (this->m_unk38 == 0) {
+                    CdsAssert__FPciPc("Pickup.cpp", 0x1D0, "mpPhysics");
+                }
+            }
+            SetPhysicsType__7PhysicsFUiPA4_f(this->m_unk38, 0x12U, 0);
+            this->m_unk20A = 0x12;
+        }
+        if (this->m_unk1ED != 0) {
+            EnableSleep__15EntityBaseClassFbb(this, false, false);
+            this->m_unk10C &= 0xF8FFFFFF;
+            this->m_unk103 = 0x10;
+            this->m_unk1B4 = 1;
+            this->m_unk1EF = 0;
+            ((EntityBaseClass *)this)->SetState(4);
+            return;
+        }
+        this->m_unk103 = (this->m_unk18 == 0) ? 0x10 : 0x11;
+        if ((unsigned int)this->m_unk1B0 >= 0x27U) {
+            CdsAssert__FPciPc("Pickup.cpp", 0x1E5, "mEVars.m_iPickupType < PICKUP_MAX");
+        }
+        this->m_unk10C |= 0x05000000;
+        this->m_unk104 = 0;
+        this->m_unk108 = 0;
+        if (this->m_unk18 == 0) {
+            ((EntityBaseClass *)this)->SetState(0);
+            if (PickUpData[this->m_unk1B0 * 24] == -3) {
+                this->m_unk1B4 = 0;
+            }
+            EnableSleep__15EntityBaseClassFbb(this, false, false);
+        } else {
+            if ((signed char)ReadApparitionData__15EntityBaseClassFiUi(this, 3, 0U) == 1) {
+                ((EntityBaseClass *)this)->SetState(5);
+                return;
+            }
+            ((EntityBaseClass *)this)->SetState(1);
+        }
+        if (this->m_unk1CF == 0) {
+            ((EntityBaseClass *)this)->SetState(1);
+            this->m_unk1B4 = 0;
+        }
+        return;
+    case 3:
+    case 14:
+        rec = this->m_unk1B0 * 24;
+        PlaySound__15EntityBaseClassFUi(this, *(unsigned int *)(PickUpData + rec + 0x14));
+        {
+            u_long128 sp80;
+            void *pSrc;
+            pNode = this->m_unk3C;
+            if (pNode != 0) {
+                pSrc = (char *)pNode + 0x80;
+            } else {
+                pSrc = &this->m_unk190;
+            }
+            sp80 = *(u_long128 *)pSrc;
+            ((float *)&sp80)[1] += 2.0f;
+            CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib((void *)mEffectAPI__13EntityManager, 0x81000026U, 0x82000061U, (float (*)[4])&sp80, 0, 0, 0.5f, false, 0, false);
+        }
+        ((EntityBaseClass *)this)->SetState(-2);
+        return;
+    case 4:
+        if (this->m_unkE9 != 0) {
+            if (this->m_unk1F0 == 0) {
+                ((EntityBaseClass *)this)->SetState(-2);
+                return;
+            }
+            this->m_unk10C &= 0xF8FFFFFF;
+            if (this->m_unk1F8 >= 0x27) {
+                CdsAssert__FPciPc("Pickup.cpp", 0x554, "m_iPickupTypeFromParent < PICKUP_MAX");
+            }
+            rec = this->m_unk1F8 * 24;
+            *(unsigned int *)((char *)this->m_unk38 + 0x10C) = *(unsigned int *)(PickUpData + rec + 0x10);
+            if (this->m_unk1EE != 0) {
+                pPlayer = *(void **)((char *)mpEntMgr__15EntityBaseClass + 0x505C);
+                if (pPlayer == 0) {
+                    CdsAssert__FPciPc("Pickup.cpp", 0x55D, "pPlayer");
+                }
+                GameVarSub__6PlayerFUii(pPlayer, (unsigned int)PickUpData[rec + 1], (int)PickUpData[rec + 2]);
+            }
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)(PickUpData + rec + 0xC));
+        }
+        pNode = ApparitionIsValid__15EntityBaseClassFUi(this->m_unk1F0);
+        this->m_unk1F4 = pNode;
+        if (pNode != 0) {
+            u_long128 sp110;
+            void *pSrc;
+            Pickup *pOther = (Pickup *)pNode;
+            if (pOther->m_unk3C != 0) {
+                pSrc = (char *)pOther->m_unk3C + 0x80;
+            } else {
+                pSrc = &pOther->m_unk190;
+            }
+            sp110 = *(u_long128 *)pSrc;
+            ((float *)&sp110)[1] -= 1.0f;
+            if (this->m_unk3C != 0) {
+                *(u_long128 *)((char *)this->m_unk3C + 0x80) = sp110;
+                *(unsigned char *)((char *)this->m_unk3C + 0x3E) |= 8;
+            } else {
+                this->m_unk190 = sp110;
+            }
+        } else {
+            this->m_unk1EF = 1;
+        }
+        if (this->m_unk1EF != 0) {
+            SetPhysicsType__7PhysicsFUiPA4_f(this->m_unk38, 0x12U, 0);
+            this->m_unk20A = 0x12;
+            *(unsigned int *)((char *)this + 0x1D0) = 0;
+            *(unsigned int *)((char *)this + 0x1D4) = 0;
+            *(unsigned int *)((char *)this + 0x1D8) = 0;
+            *(unsigned int *)this->m_unk38 = *(unsigned int *)((char *)this + 0x1D0);
+            this->m_unk10C |= 0x05000000;
+            this->m_unk104 = 0x3F333333;
+            this->m_unk108 = 0x3F333333;
+            this->m_unk1B0 = this->m_unk1F8;
+            ((EntityBaseClass *)this)->SetState(1);
+        }
+        break;
+    case 5:
+        if (this->m_unk1B0 == 5 && NeedSuperMeter__6PlayerFv(*(void **)((char *)mpEntMgr__15EntityBaseClass + 0x505C)) != 0) {
+            this->m_unkD2 = 0x80;
+            ((EntityBaseClass *)this)->SetState(1);
+            return;
+        }
+        break;
+    default:
+        break;
     }
 }
 
