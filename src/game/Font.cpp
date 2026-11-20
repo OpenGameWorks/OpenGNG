@@ -73,6 +73,11 @@ extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *pThis, int nTexture, fl
 extern "C" void SetMaterial__10PGfxEngineFPfbUlUl(void *pThis, float *pColor, bool bFlag, unsigned long nArg4, unsigned long nArg5);
 extern "C" void DrawSprites__10PGfxEngineFP11tagVuSpriteib(void *pThis, tagVuSprite *pSprite, int nCount, bool bFlag);
 extern "C" int Find__6PArrayFPv(void *pThis, void *pItem);
+extern "C" void *__nwa__FUi(unsigned int nSize);
+extern "C" unsigned int strlen(const char *pStr);
+extern unsigned char FontStyles[96];
+extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
+extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
 class TextBoxVtbl {
 public:
     virtual void Reserved();
@@ -453,6 +458,118 @@ FontNode *FontManager::DisplayString(int nX, int nY, int nZ, bool bFlag) {
         m_unk12 = 0;
     }
     return pFirst;
+}
+
+// DRAFT: 0x00133960 __ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb
+// note: 215 words, size 0x480 vs 0x4A0; zero-store order, lbu at 0xC0, m_unkE reload, dispatch order differ. Tried: while loop (248), vCur[3] first (216), unsigned char temp (215).
+extern "C" FontNode *__ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(FontNode *pThis, FontManager *pMgr, char *pStr, float fX, float fY, unsigned short nArg4, int nZ, FontColor nColor, FontAlign nAlign, bool bFlag) {
+    float vCur[4];
+    float fMaxW;
+    float fScale;
+    float fAdv;
+    float fW;
+    char *pEntry;
+    char *pTable;
+    char *pEnt;
+    char *pBlk;
+    char *pRun;
+    unsigned short nFirst;
+    unsigned short nLen;
+    unsigned int nCnt;
+    unsigned int nN;
+    int nState;
+    unsigned char c;
+
+    pThis->m_unk4 = 0;
+    pThis->m_unk8 = 1.0f;
+    pThis->m_unk6 = nArg4;
+    vCur[0] = 0.0f;
+    vCur[1] = 0.0f;
+    vCur[2] = 10.0f;
+    vCur[3] = 0.0f;
+    fMaxW = 0.0f;
+    ((nZ < 0xC) ? (void)0 : CdsAssert("Font.cpp", 0x1C8, "iFontStyle < MAX_FONT_STYLE"));
+    fScale = *(float *)(FontStyles + nZ * 8 + 4);
+    pThis->m_unkE = FontStyles[nZ * 8];
+    ((pThis->m_unkE <= 0) ? (void)0 : CdsAssert("Font.h", 0x9A, "iFontSet < MaxFontSet"));
+    pEntry = (char *)pMgr + 12 * pThis->m_unkE;
+    pTable = *(char **)(pEntry + 0x104);
+    nFirst = *(unsigned short *)(pEntry + 0x108);
+    nLen = *(unsigned short *)(pEntry + 0x10A) - nFirst;
+    nN = strlen(pStr);
+    pBlk = (char *)__nwa__FUi(nN << 6);
+    ((pBlk != 0) ? (void)0 : CdsAssert("Font.cpp", 0x215, "pSprite"));
+    pThis->m_unk0 = pBlk;
+    nState = nColor;
+    if (*pStr) {
+        do {
+            c = (unsigned char)*pStr;
+            pStr++;
+            if (c == 0x96) {
+                c = 0x2D;
+            }
+            if (c == 0 || c == 0x0A) {
+                if (!(vCur[0] <= fMaxW)) {
+                    fMaxW = vCur[0];
+                }
+                vCur[0] = 0.0f;
+                vCur[1] -= 3.0f;
+            } else if (c == 0x3D) {
+                nState = 4;
+            } else if (c == 0x3C) {
+                nState = 3;
+            } else if (c == 0x3B) {
+                nState = 2;
+            } else if (c == 0x2A) {
+                nState = 1;
+            } else if (c == 0x7E) {
+                nState = 0;
+            } else if (c == 0xA0 || c == 0x20) {
+                vCur[0] += 1.0f;
+            } else {
+                if ((unsigned char)(c - nFirst) <= nLen) {
+                    pEnt = pTable + (c << 5) - ((unsigned int)nFirst << 5);
+                    if (*(float *)(pEnt + 0xC) == 1.0f) {
+                        *(u_long128 *)(pBlk + 0x30) = *(u_long128 *)pEnt;
+                        fAdv = *(float *)pEnt;
+                        if (c == 0x31) {
+                            fAdv += 0.3f;
+                        }
+                        vCur[0] += fAdv;
+                        *(u_long128 *)pBlk = *(u_long128 *)vCur;
+                        ((float *)pBlk)[1] += *(float *)(pEnt + 8);
+                        vCur[0] += fAdv;
+                        *(u_long128 *)(pBlk + 0x10) = *(u_long128 *)(pEnt + 0x10);
+                        *(u_long128 *)(pBlk + 0x20) = *(u_long128 *)(FontColors + nState * 16);
+                        pBlk += 0x40;
+                        pThis->m_unk4++;
+                    }
+                }
+            }
+        } while (c != 0);
+    }
+    vCur[0] = 0.1f * fX;
+    vCur[1] = 0.1f * fY;
+    fW = fMaxW * fScale;
+    if (nAlign == 2) {
+        vCur[0] -= fW;
+    } else if (nAlign == 1) {
+        vCur[0] -= 0.5f * fW;
+    }
+    pRun = pThis->m_unk0;
+    for (nCnt = pThis->m_unk4; nCnt != 0; nCnt--) {
+        sceVu0ScaleVectorXYZ((float *)pRun, (float *)pRun, fScale);
+        sceVu0AddVector((float *)pRun, (float *)pRun, vCur);
+        sceVu0ScaleVectorXYZ((float *)(pRun + 0x30), (float *)(pRun + 0x30), fScale);
+        pRun += 0x40;
+    }
+    mTextBox__8FontNode[0] = *(float *)pThis->m_unk0 - *(float *)(pThis->m_unk0 + 0x30);
+    mTextBox__8FontNode[1] = *(float *)(pThis->m_unk0 + 4) - *(float *)(pThis->m_unk0 + 0x34);
+    mTextBox__8FontNode[3] = *(float *)(pThis->m_unk0 + 4) + *(float *)(pThis->m_unk0 + 0x34);
+    pEnt = pThis->m_unk0 + (pThis->m_unk4 << 6);
+    mTextBox__8FontNode[2] = *(float *)(pEnt - 0x40) + *(float *)(pEnt - 0x10);
+    pThis->m_unkC = bFlag ? 0 : pThis->m_unk4;
+    return pThis;
 }
 
 // FUNCTION: 0x133E00 __dt__8FontNodeFv
