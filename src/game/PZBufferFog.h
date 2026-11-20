@@ -3,7 +3,28 @@
 
 #include "types.h"
 
-struct tagClutFogData;
+struct tagClutFogData {
+    float unk0;
+    float unk4;
+    float unk8;
+    float unkC;
+    float unk10;
+    float unk14;
+    float unk18;
+    float unk1C;
+    float unk20;
+    float unk24;
+    float unk28;
+    float unk2C;
+    float unk30;
+    float unk34;
+    float unk38;
+    float unk3C;
+    float unk40;
+    float unk44;
+    float unk48;
+    float unk4C;
+};
 struct GsRGBA;
 
 class PZBufferFog {

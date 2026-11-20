@@ -39,6 +39,85 @@ public:
     void SetCurFrameBufferAs8BitTexture(tagGsClut256 *pClut);
 };
 
+#define CLUT_U8(v) ((v) >= 2147483648.0f ? ((int)((v) - 2147483648.0f) | 0x80000000) : (int)(v))
+#define CLUT_LERP(a, b, t) ((a) + (t) * ((b) - (a)))
+
+// DRAFT: 0x001CD8C0 SetClutFogTable__11PZBufferFogFP14tagClutFogData
+// note: 561 words differ; x loaded into f0 not f1 and 2^31 into f1 (c.lt.s f0,f1 vs original c.le.s f0,f1); big-path andi 0xFF extra; tried direct aClut entries (615), pDst entries (621), no casts (615)
+void PZBufferFog::SetClutFogTable(tagClutFogData *pData) {
+    unsigned char aClut[0x400];
+    unsigned char *pDst;
+    int t0;
+    int t1;
+    float fT;
+
+    pDst = aClut;
+    pDst[0] = (unsigned char)CLUT_U8(255.0f * pData->unk40);
+    pDst[1] = (unsigned char)CLUT_U8(255.0f * pData->unk44);
+    pDst[2] = (unsigned char)CLUT_U8(255.0f * pData->unk48);
+    pDst[3] = (unsigned char)CLUT_U8(128.0f * pData->unk4C);
+
+    t0 = 1;
+    t1 = 4;
+    do {
+        fT = (float)t0 / 32.0f;
+        pDst = aClut + t1;
+        pDst[0] = (unsigned char)CLUT_U8(255.0f * CLUT_LERP(pData->unk40, pData->unk30, fT));
+        pDst[1] = (unsigned char)CLUT_U8(255.0f * CLUT_LERP(pData->unk44, pData->unk34, fT));
+        pDst[2] = (unsigned char)CLUT_U8(255.0f * CLUT_LERP(pData->unk48, pData->unk38, fT));
+        pDst[3] = (unsigned char)CLUT_U8(128.0f * CLUT_LERP(pData->unk4C, pData->unk3C, fT));
+        t0 += 1;
+        t1 += 4;
+    } while (t0 < 0x20);
+
+    t0 = 0x20;
+    t1 = 0x80;
+    do {
+        fT = (float)(t0 - 0x20) / 32.0f;
+        pDst = aClut + t1;
+        pDst[0] = (unsigned char)CLUT_U8(255.0f * CLUT_LERP(pData->unk30, pData->unk20, fT));
+        pDst[1] = (unsigned char)CLUT_U8(255.0f * CLUT_LERP(pData->unk34, pData->unk24, fT));
+        pDst[2] = (unsigned char)CLUT_U8(255.0f * CLUT_LERP(pData->unk38, pData->unk28, fT));
+        pDst[3] = (unsigned char)CLUT_U8(128.0f * CLUT_LERP(pData->unk3C, pData->unk2C, fT));
+        t0 += 1;
+        t1 += 4;
+    } while (t0 < 0x40);
+
+    t0 = 0x40;
+    t1 = 0x100;
+    do {
+        fT = (float)(t0 - 0x40) / 32.0f;
+        pDst = aClut + t1;
+        pDst[0] = (unsigned char)CLUT_U8(255.0f * CLUT_LERP(pData->unk20, pData->unk10, fT));
+        pDst[1] = (unsigned char)CLUT_U8(255.0f * CLUT_LERP(pData->unk24, pData->unk14, fT));
+        pDst[2] = (unsigned char)CLUT_U8(255.0f * CLUT_LERP(pData->unk28, pData->unk18, fT));
+        pDst[3] = (unsigned char)CLUT_U8(128.0f * CLUT_LERP(pData->unk2C, pData->unk1C, fT));
+        t0 += 1;
+        t1 += 4;
+    } while (t0 < 0x60);
+
+    t0 = 0x60;
+    t1 = 0x180;
+    do {
+        fT = (float)(t0 - 0x60) / 32.0f;
+        pDst = aClut + t1;
+        pDst[0] = (unsigned char)CLUT_U8(255.0f * CLUT_LERP(pData->unk10, pData->unk0, fT));
+        pDst[1] = (unsigned char)CLUT_U8(255.0f * CLUT_LERP(pData->unk14, pData->unk4, fT));
+        pDst[2] = (unsigned char)CLUT_U8(255.0f * CLUT_LERP(pData->unk18, pData->unk8, fT));
+        pDst[3] = (unsigned char)CLUT_U8(128.0f * CLUT_LERP(pData->unk1C, pData->unkC, fT));
+        t0 += 1;
+        t1 += 4;
+    } while (t0 < 0x7F);
+
+    pDst = aClut + 0x1FC;
+    pDst[0] = (unsigned char)CLUT_U8(255.0f * pData->unk0);
+    pDst[1] = (unsigned char)CLUT_U8(255.0f * pData->unk4);
+    pDst[2] = (unsigned char)CLUT_U8(255.0f * pData->unk8);
+    pDst[3] = (unsigned char)CLUT_U8(128.0f * pData->unkC);
+
+    SetClutFogTable((GsRGBA *)aClut);
+}
+
 // FUNCTION: 0x1CE1B0 TweenClutFog__11PZBufferFogFP14tagClutFogDataP14tagClutFogDataf
 void PZBufferFog::TweenClutFog(tagClutFogData *pStart, tagClutFogData *pEnd, float fTime) {
     if (pStart == 0) {
