@@ -55,16 +55,17 @@ int PTextureDmaChain::NextBatch() {
     return 1;
 }
 
-// DRAFT: 0x00189230 AllocEntries__16PTextureDmaChainFi
-// note: 5 words differ. Original keeps nOld in a2 and the sum in v1, stores 0x7080 before the sll, and exits through a shared jr ra with v0 zeroed in the beqz delay slot. Eight variants tried.
+// FUNCTION: 0x00189230 AllocEntries__16PTextureDmaChainFi
 void *PTextureDmaChain::AllocEntries(int nCount) {
-    unsigned int nOld = m_unk7080;
-    unsigned int nNew = nOld + nCount;
+    unsigned int nNew;
+    unsigned int nOld;
+    nOld = m_unk7080;
     void *pEntry = 0;
-    if (nNew < 0x700) {
+    nNew = nOld + nCount;
+    if (0x700 > nNew) {
         m_unk7080 = nNew;
-        pEntry = m_unk40 + (nOld << 4);
         m_unk7084 += nCount;
+        pEntry = m_unk40 + (nOld << 4);
     }
     return pEntry;
 }
