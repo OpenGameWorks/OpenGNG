@@ -120,13 +120,12 @@ int PParticleBubbles::Create(tagParticleBubblesParams *pParams, float fX, float 
     return 1;
 }
 
-// DRAFT: 0x002023A0 Animate__16PParticleBubblesFf
-// note: DIFF 1 word, the fDelta != 0.0f float compare orders operands as c.eq.s $f0,$f20 where the original has $f20,$f0; the combined early return matches the rest. Tried: separate returns, nested if, if/else return, flat, operand swap.
+// FUNCTION: 0x002023A0 Animate__16PParticleBubblesFf
 void PParticleBubbles::Animate(float fDelta) {
     if (m_unk15 == 0 || m_unk16 != 0) {
         return;
     }
-    if (m_unk18C < m_unk04 && 0.0f != fDelta) {
+    if (m_unk18C < m_unk04 && fDelta) {
         m_unk190 -= 1;
         if (m_unk190 <= 0) {
             SpawnBubble(m_unk188 + m_unk18C);
