@@ -61,7 +61,8 @@ public:
     char *m_unk98;              // 0x098
     int m_unk9C;                // 0x09C
     int m_unkA0;                // 0x0A0
-    char _padA4[0xC0 - 0xA4];
+    char _padA4[0xB0 - 0xA4];
+    float m_unkB0[4];           // 0x0B0
     int m_unkC0;                // 0x0C0
     float m_unkC4;              // 0x0C4
     unsigned char m_unkC8;      // 0x0C8

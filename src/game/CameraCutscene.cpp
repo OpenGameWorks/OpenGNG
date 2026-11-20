@@ -30,6 +30,9 @@ extern int InnocentDialogID[0x100];
 extern "C" void *__nw__FUi(unsigned int);
 // MemMgr is 908 bytes; the field at offset 0x18 is saved and cleared around the allocation.
 extern char MemMgr[908];
+extern unsigned char gPad[448];
+extern "C" void __mi__5PVec3FR5PVec3(float *pRet, float *pLhs, float *pRhs);
+extern "C" float sqrtf(float x);
 
 class FontManager {
 public:
@@ -83,6 +86,20 @@ public:
     float m_unk70[4];
     float m_unk80[4];
     float m_unk90[4];
+    float m_unkA0;
+    float m_unkA4;
+    float m_unkA8;
+    char _padAC[0x4];
+    float m_unkB0[4];
+    float m_unkC0[4];
+    float m_unkD0[4];
+    float m_unkE0;
+    float m_unkE4;
+    float m_unkE8;
+    float m_unkEC;
+    float m_unkF0;
+    float m_unkF4;
+    float m_unkF8;
 };
 
 // DRAFT: 0x0017A9A0 CutCameraMovesPlayer__16CameraCutManagerFUi
@@ -386,6 +403,156 @@ void CameraCutManager::GetTargetPositionFromInstance(unsigned int nInstance, PVe
         arg1.m_v[1] = pSrc[1];
         arg1.m_v[2] = pSrc[2];
     }
+}
+
+// DRAFT: 0x0017B2A0 ProcessCutCamera__16CameraCutManagerFv
+// note: DIFF 349 words. Compare order 3,2,1 matches the asm (357 with order 1,2,3); state bodies are guessed arithmetic, so temps, float op order and arg shapes differ, and the original lays out state 1, 2, 3 physically while source order gives 3, 2, 1. Variants: dispatch order, scratch copies in src/scratch/CameraCutscene-76304/.
+bool CameraCutManager::ProcessCutCamera() {
+    float t40[4];
+    float t50[4];
+    float t60[4];
+    float t70[4];
+    float t80[4];
+    float t90[4];
+    float tA0[4];
+    float tB0[4];
+    float tC0[4];
+    CutSceneCamera_Generic *cam;
+    int s2;
+    float t;
+
+    if (m_unkCA == 0) {
+        if (*(unsigned short *)(gPad + 0x10C) & 1) {
+            m_unkC8 = 1;
+            return false;
+        }
+    }
+
+    cam = (CutSceneCamera_Generic *)m_pCurrentCamera;
+    if (cam->m_unk10 == 3) {
+        if (!cam->m_unk8) {
+            __mi__5PVec3FR5PVec3(t90, cam->m_unk70, cam->m_unk60);
+            sceVu0CopyVector(&cam->m_unkA0, t90);
+            cam->m_unkE0 = sqrtf(cam->m_unkA0 * cam->m_unkA0 + cam->m_unkA4 * cam->m_unkA4 + cam->m_unkA8 * cam->m_unkA8);
+            cam->m_unkE8 = 0.0f;
+            cam->m_unkE4 = cam->m_unkE0 / (60.0f * cam->m_unk0);
+            __mi__5PVec3FR5PVec3(tA0, cam->m_unk90, cam->m_unk80);
+            sceVu0CopyVector(cam->m_unkB0, tA0);
+            cam->m_unkEC = sqrtf(cam->m_unkB0[0] * cam->m_unkB0[0] + cam->m_unkB0[1] * cam->m_unkB0[1] + cam->m_unkB0[2] * cam->m_unkB0[2]);
+            cam->m_unkF4 = 0.0f;
+            cam->m_unkF0 = cam->m_unkEC / (60.0f * cam->m_unk0);
+            cam->m_unk8 = 1;
+            cam->m_unkF8 = 0.0f;
+        }
+        cam->m_unkF8 = cam->m_unkF8 + 1.0f;
+        cam->m_unkE8 = cam->m_unkE8 + cam->m_unkE4;
+        cam->m_unkF4 = cam->m_unkF4 + cam->m_unkF0;
+        s2 = 0;
+        if (cam->m_unkE8 == 0.0f || cam->m_unkE0 == 0.0f) {
+            sceVu0CopyVector(cam->m_unkC0, cam->m_unk60);
+            s2++;
+        } else {
+            t = cam->m_unkE8 / cam->m_unkE0;
+            if (t <= 1.0f) {
+                cam->m_unkC0[0] = cam->m_unk60[0] + cam->m_unkA0 * t;
+                cam->m_unkC0[1] = cam->m_unk60[1] + cam->m_unkA4 * t;
+                cam->m_unkC0[2] = cam->m_unk60[2] + cam->m_unkA8 * t;
+            } else {
+                s2++;
+            }
+        }
+        if (cam->m_unkF4 == 0.0f || cam->m_unkEC == 0.0f) {
+            sceVu0CopyVector(cam->m_unkD0, cam->m_unk80);
+            s2++;
+        } else {
+            t = cam->m_unkF4 / cam->m_unkEC;
+            if (t <= 1.0f) {
+                cam->m_unkD0[0] = cam->m_unk80[0] + cam->m_unkB0[0] * t;
+                cam->m_unkD0[1] = cam->m_unk80[1] + cam->m_unkB0[1] * t;
+                cam->m_unkD0[2] = cam->m_unk80[2] + cam->m_unkB0[2] * t;
+            } else {
+                s2++;
+            }
+        }
+        tB0[0] = cam->m_unkC0[0];
+        tB0[1] = cam->m_unkC0[1];
+        tB0[2] = cam->m_unkC0[2];
+        tB0[3] = cam->m_unkC0[3];
+        tC0[0] = cam->m_unkD0[0];
+        tC0[1] = cam->m_unkD0[1];
+        tC0[2] = cam->m_unkD0[2];
+        tC0[3] = cam->m_unkD0[3];
+        SetSourceTarget(*(PVec3 *)tB0, *(PVec3 *)tC0);
+        if (s2 == 2) {
+            if (!(cam->m_unkF8 < 60.0f * cam->m_unk0)) {
+                if (cam->m_unk4 <= 0.0f) {
+                    cam->m_unk8 = 0;
+                    return false;
+                }
+                cam->m_unk4 = cam->m_unk4 - *(float *)(gEng + 0x1E8);
+            }
+        }
+        return true;
+    } else if (cam->m_unk10 == 2) {
+        if (!cam->m_unk8) {
+            __mi__5PVec3FR5PVec3(t60, cam->m_unk70, cam->m_unk60);
+            sceVu0CopyVector(cam->m_unk90, t60);
+            cam->m_unkA0 = sqrtf(cam->m_unk90[0] * cam->m_unk90[0] + cam->m_unk90[1] * cam->m_unk90[1] + cam->m_unk90[2] * cam->m_unk90[2]);
+            cam->m_unkA8 = 0.0f;
+            cam->m_unkA4 = cam->m_unkA0 / (60.0f * cam->m_unk0);
+            cam->m_unk8 = 1;
+        }
+        cam->m_unkA8 = cam->m_unkA8 + cam->m_unkA4;
+        t = cam->m_unkA8 / cam->m_unkA0;
+        if (t <= 1.0f) {
+            m_unkB0[0] = cam->m_unk60[0] + cam->m_unk90[0] * t;
+            m_unkB0[1] = cam->m_unk60[1] + cam->m_unk90[1] * t;
+            m_unkB0[2] = cam->m_unk60[2] + cam->m_unk90[2] * t;
+            if (cam->m_unkC) {
+                GetTargetPositionFromInstance(cam->m_unkC, *(PVec3 *)cam->m_unk80);
+            }
+            t70[0] = m_unkB0[0];
+            t70[1] = m_unkB0[1];
+            t70[2] = m_unkB0[2];
+            t70[3] = m_unkB0[3];
+            t80[0] = cam->m_unk80[0];
+            t80[1] = cam->m_unk80[1];
+            t80[2] = cam->m_unk80[2];
+            t80[3] = cam->m_unk80[3];
+            SetSourceTarget(*(PVec3 *)t70, *(PVec3 *)t80);
+            return true;
+        }
+        if (cam->m_unk4 <= 0.0f) {
+            cam->m_unk8 = 0;
+            return false;
+        }
+        cam->m_unk4 = cam->m_unk4 - *(float *)(gEng + 0x1E8);
+        return true;
+    } else if (cam->m_unk10 == 1) {
+        if (!cam->m_unk8) {
+            cam->m_unk8 = 1;
+        }
+        if (cam->m_unkC) {
+            GetTargetPositionFromInstance(cam->m_unkC, *(PVec3 *)cam->m_unk70);
+        }
+        t40[0] = cam->m_unk60[0];
+        t40[1] = cam->m_unk60[1];
+        t40[2] = cam->m_unk60[2];
+        t40[3] = cam->m_unk60[3];
+        t50[0] = cam->m_unk70[0];
+        t50[1] = cam->m_unk70[1];
+        t50[2] = cam->m_unk70[2];
+        t50[3] = cam->m_unk70[3];
+        SetSourceTarget(*(PVec3 *)t40, *(PVec3 *)t50);
+        if (m_unkA0 < *(int *)(gEng + 0x19A80)) {
+            cam->m_unk8 = 0;
+            return false;
+        }
+        return true;
+    } else {
+        CdsAssert__FPciPc("CameraCutscene.cpp", 0x32E, "Invalid cut camera type");
+    }
+    return true;
 }
 
 // FUNCTION: 0x0017B880 SetSourceTarget__16CameraCutManagerF5PVec35PVec3
