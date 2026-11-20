@@ -2,6 +2,14 @@
 #include "Peddler.h"
 
 // TODO(header): foreign declarations
+extern "C" void FillItems__6PlayerFPib(void *pThis, int *pItems, bool bArg);
+extern "C" tagWaypointGroup *GetWaypointGroupInfo__15WaypointManagerFUi(void *pThis, unsigned int iGroupId);
+class Physics {
+public:
+    Physics();
+    void SetPhysicsType(unsigned int nType, float (*pPos)[4]);
+    char _pad[0x120];
+};
 class EntityBaseClass;
 // The second argument is not set by the caller; the original passes a1 through unchanged.
 extern "C" int InstanceIsValid__15EntityBaseClassFUi(EntityBaseClass *pEntity);
@@ -30,6 +38,7 @@ void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern int mbHard__15EntityBaseClass;
 extern "C" void memcpy(void *, const void *, unsigned int);
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("Peddler.cpp", line, #cond))
+#define PFLD(T, off) (*(T *)((char *)this + (off)))
 // Player is declared only for ValidateItem; the entity manager state at 0x505C is passed as its this.
 class Player {
 public:
@@ -920,6 +929,111 @@ void Peddler::ValidateItems() {
         *pSlot = nIndex;
         nOff += 4;
     } while (i < 5);
+}
+
+// DRAFT: 0x001D2100 Execute__7PeddlerFv
+// note: switch on m_unk20; only case -1 transcribed (1498 diff words); cases 0-5, 11, 12, 15, 16, 18-22 are empty breaks, so the jump table and most of the function still differ.
+void Peddler::Execute() {
+    switch (this->m_unk20) {
+    case -1: {
+        int nItem;
+        int nCount;
+        int nOff;
+        int nValid;
+        unsigned int i;
+        unsigned int nOffset;
+        int *pSlot;
+        int nWaypoint;
+        char spC0[0x20];
+        FillItems__6PlayerFPib(mpEntMgr__15EntityBaseClass->m_unk505C, (int *)((char *)this + 0x1B0), m_unk1C4 != 0);
+        pSlot = (int *)((char *)this + 0x1B0);
+        nCount = 0;
+        nOff = 0;
+        do {
+            *pSlot = (int)GetItemID(*pSlot);
+            nCount += 1;
+            PFLD(int, 0x230 + nOff) = *pSlot;
+            nOff += 4;
+            pSlot += 1;
+        } while (nCount < 5);
+        PFLD(unsigned int, 0x10C) &= 0xF8FFFFFF;
+        PFLD(unsigned int, 0x10C) |= 0x03000000;
+        WriteApparitionData(3, ReadApparitionData(0, 0U), 0U);
+        if (PFLD(Physics *, 0x38) == 0) {
+            PFLD(Physics *, 0x38) = new Physics;
+        }
+        ((PFLD(Physics *, 0x38) != 0) ? (void)0 : CdsAssert("Peddler.cpp", 0x1A9, "mpPhysics"));
+        PFLD(Physics *, 0x38)->SetPhysicsType(0x12U, 0);
+        PFLD(unsigned char, 0x103) = 0xFE;
+        PFLD(int, 0x104) = 0x40000000;
+        PFLD(int, 0x108) = 0x40800000;
+        m_unk2A7 = 1;
+        PFLD(int, 0x2B0) = 0;
+        m_unk2D8 = 1;
+        PFLD(int, 0x2DC) = 0;
+        m_unk294 = 0;
+        nValid = 0;
+        for (i = 0, nOffset = 0; i < 3U; i++, nOffset += 4) {
+            EntityBaseClass *pInst = (EntityBaseClass *)PFLD(EntityBaseClass *, 0x2C8 + nOffset);
+            if (pInst != 0 && InstanceIsValid__15EntityBaseClassFUi(pInst) != 0) {
+                m_unk294 += 1;
+            }
+        }
+        m_unk2A6 = (m_unk294 == 0) ? 1U : 0U;
+        SetState(0);
+        nWaypoint = PFLD(int, 0x1D0);
+        if (nWaypoint >= 0) {
+            m_unk284 = GetWaypointGroupInfo__15WaypointManagerFUi((char *)mpEntMgr__15EntityBaseClass + 0x30, (unsigned int)nWaypoint);
+            if (m_unk284 == 0) {
+                sprintf(spC0, "Innocent refers to bad waypoint group ( group id = %d )", PFLD(int, 0x1D0));
+                CdsAssert("Peddler.cpp", 0x1CA, spC0);
+            }
+        }
+        PFLD(unsigned char, 0x29F) = 0;
+        PFLD(unsigned char, 0x2A2) = 0;
+        m_unk288 = 0;
+        if (m_unk284 != 0) {
+            m_unk28C = *(int *)((char *)m_unk284 + 4);
+        } else {
+            m_unk28C = 0;
+        }
+        m_unk246 = 0;
+        return;
+    }
+    case 0:
+        break;
+    case 1:
+        break;
+    case 2:
+        break;
+    case 3:
+        break;
+    case 4:
+        break;
+    case 5:
+        break;
+    case 11:
+        break;
+    case 12:
+        break;
+    case 15:
+        break;
+    case 16:
+        break;
+    case 18:
+        break;
+    case 19:
+        break;
+    case 20:
+        break;
+    case 21:
+        break;
+    case 22:
+        break;
+    default:
+        m_unk246 = 0;
+        return;
+    }
 }
 
 // DRAFT: 0x001D3870 __dt__7PeddlerFv
