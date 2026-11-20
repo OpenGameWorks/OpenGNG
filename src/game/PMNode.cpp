@@ -840,8 +840,7 @@ int PMNode::LoadFxTriggers(PPakFile *pFile) {
     return 1;
 }
 
-// DRAFT: 0x00192FD0 SetAllFade__6PMNodeFf
-// note: 5 words differ, the join nop at 0x84 before the epilogue and the f20 copy of fFade in the first beqz delay slot. Tried: local float copy (5), do-while on child count (30).
+// FUNCTION: 0x00192FD0 SetAllFade__6PMNodeFf
 void PMNode::SetAllFade(float fFade) {
     PMNode *pChild;
     unsigned int idx;
@@ -857,11 +856,7 @@ void PMNode::SetAllFade(float fFade) {
             pChild->SetAllFade(fFade);
             idx = m_unk18 + 1;
             m_unk18 = idx;
-            if (idx < m_unk14) {
-                pChild = m_unk1C[m_unk18];
-            } else {
-                pChild = 0;
-            }
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
         } while (pChild != 0);
     }
 }
@@ -1261,8 +1256,7 @@ int PMNode::CalculateMatrix(float fA, PMNode *pNode, float (*pOut)[4][4]) {
     return 0;
 }
 
-// DRAFT: 0x00194340 DisableAllHitBox__6PMNodeFv
-// note: 5 words differ, all the join nop at 0x84 before the epilogue; original has it, this does not. Tried: else-arm reorder (30), pChild=0 after m_unk18 (5, kept), trailing return (5), while form (25), nested if (27), ternary tail (12).
+// FUNCTION: 0x00194340 DisableAllHitBox__6PMNodeFv
 void PMNode::DisableAllHitBox() {
     PMNode *pChild;
     unsigned int idx;
@@ -1279,11 +1273,7 @@ void PMNode::DisableAllHitBox() {
             pChild->DisableAllHitBox();
             idx = m_unk18 + 1;
             m_unk18 = idx;
-            if (idx < m_unk14) {
-                pChild = m_unk1C[m_unk18];
-            } else {
-                pChild = 0;
-            }
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
         } while (pChild != 0);
     }
 }
@@ -1466,8 +1456,7 @@ PMNode *PMNode::Find(unsigned int uID) {
     return 0;
 }
 
-// DRAFT: 0x00194920 Find__6PMNodeFP6PMNode
-// note: 2 words differ at the loop-exit beqz delay slot (original nop, ours daddu $v0,$zero,$zero); tried while, result var with break, idx indexing, early return guard.
+// FUNCTION: 0x00194920 Find__6PMNodeFP6PMNode
 int PMNode::Find(PMNode *pNode) {
     PMNode *pChild;
     if (this == pNode) {
@@ -1486,11 +1475,7 @@ int PMNode::Find(PMNode *pNode) {
             }
             unsigned int idx = m_unk18 + 1;
             m_unk18 = idx;
-            if (idx < m_unk14) {
-                pChild = m_unk1C[m_unk18];
-            } else {
-                pChild = 0;
-            }
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
         } while (pChild != 0);
     }
     return 0;
@@ -1531,8 +1516,7 @@ unsigned char PMNode::RecurseSetSTAnimOptions(bool bFlag) {
     return bResult;
 }
 
-// DRAFT: 0x00194AD0 GetFirstMesh__6PMNodeFv
-// note: 2 lines differ; zero-v0 move sits in the delay slot of the pChild guard beqz, original branches to a separate zero move with nop delay. Tried: pResult+break (larger), early return 0 with duplicated tail (26).
+// FUNCTION: 0x00194AD0 GetFirstMesh__6PMNodeFv
 void *PMNode::GetFirstMesh() {
     PMNode *pChild;
     unsigned int idx;
@@ -1554,11 +1538,7 @@ void *PMNode::GetFirstMesh() {
             }
             idx = m_unk18 + 1;
             m_unk18 = idx;
-            if (idx < m_unk14) {
-                pChild = m_unk1C[m_unk18];
-            } else {
-                pChild = 0;
-            }
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
         } while (pChild != 0);
     }
     return 0;
