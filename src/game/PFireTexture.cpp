@@ -1,14 +1,31 @@
 // FLAGS: -str readonly
 #include "PFireTexture.h"
 #include "PArray.h"
+#include "PParticleManager.h"
+#include "PParticleTexture.h"
 
 // TODO(header): foreign declarations
+extern char gGfxEng[1504384];
 extern "C" void Reset__16PParticleTextureFv(void *pThis);
 extern "C" void Update__16PParticleTextureFf(void *pThis, float fStep);
 extern "C" void __ct__16PParticleTextureFv(void *pThis);
 extern "C" void __dt__16PParticleTextureFv(void *pThis, short nFlags);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0UnitMatrix(float (*pMatrix)[4]);
+
+// Leading virtuals of PParticleSystem's vtable (__vt__15PParticleSystem). Slot 0x20
+// is index 6 counting the destructor as 0; a call through this view loads it into
+// $t9 as the original's virtual call does.
+class PParticleSystemVirtuals {
+public:
+    virtual ~PParticleSystemVirtuals();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void Slot3();
+    virtual void Slot4();
+    virtual void Slot5();
+    virtual void Start();
+};
 
 // FUNCTION: 0x001EF270 Reset__12PFireTextureFv
 void PFireTexture::Reset()
@@ -55,6 +72,22 @@ int PFireTexture::Init(struct tagProceduralTextureData *pData, PArray *pArray)
         nResult = Init(nIndex);
     }
     return nResult;
+}
+
+// FUNCTION: 0x001EF3D0 Init__12PFireTextureFi
+int PFireTexture::Init(int nIndex)
+{
+    m_unk0 = nIndex;
+    if (m_unk0 != 0) {
+        PParticleManager *pMgr = (PParticleManager *)(gGfxEng + 0x154F00);
+        m_unk5F0 = (PFireTextureHandle *)pMgr->Create(0x83000144U, 0.0f, -4.0f, 0.0f, 0, false);
+        if (m_unk5F0 == 0) {
+            CdsAssert__FPciPc("PFireTexture.cpp", 0x1F, "mpFireFx");
+        }
+        ((PParticleSystemVirtuals *)m_unk5F0)->Start();
+        ((PParticleTexture *)m_unk10)->Init(m_unk0, (PParticleSystem *)m_unk5F0, 0, false);
+    }
+    return 1;
 }
 
 // FUNCTION: 0x001EF480 __dt__12PFireTextureFv
