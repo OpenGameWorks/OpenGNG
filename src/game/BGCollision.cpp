@@ -456,6 +456,69 @@ void BGCollision::BGDetectionAnim(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo 
     }
 }
 
+// DRAFT: 0x0016D780 BoxBoxCheck__FPA2_A4_fPA2_A4_fPA4_A4_fPA4_A4_f
+// note: first-pass C from the m2c draft; the 9 cross-axis tests are a loop, not unrolled, and the madd/msub/mula fusion is not written yet.
+int BoxBoxCheck(float (*pBoxA)[2][4], float (*pBoxB)[2][4], float (*pMatA)[4][4], float (*pMatB)[4][4])
+{
+    float vA[4];
+    float vB[4];
+    float vD[4];
+    float fE[3][4];
+    float fAbs[3][4];
+    float fDot[3];
+    int bParallel = 0;
+    int r;
+    int c;
+    int r1;
+    int r2;
+    int c1;
+    int c2;
+    float ra;
+    float rb;
+    float t;
+
+    sceVu0ApplyMatrix(vA, (float *)pMatA, (float *)pBoxA);
+    sceVu0ApplyMatrix(vB, (float *)pMatB, (float *)pBoxB);
+    sceVu0SubVector(vD, vB, vA);
+    for (r = 0; r < 3; r++) {
+        for (c = 0; c < 3; c++) {
+            fE[r][c] = sceVu0InnerProduct((float *)pMatA[0][r], (float *)pMatB[0][c]);
+            fAbs[r][c] = FastMath_Fabs(fE[r][c]);
+            if (!(fAbs[r][c] <= 0.999999f)) {
+                bParallel = 1;
+            }
+        }
+        fDot[r] = sceVu0InnerProduct((float *)pMatA[0][r], vD);
+        if (!(FastMath_Fabs(fDot[r]) <= (pBoxA[0][1][r] + sceVu0InnerProduct((float *)pBoxB[0][1], fAbs[r])))) {
+            return 0;
+        }
+    }
+    for (c = 0; c < 3; c++) {
+        fDot[0] = sceVu0InnerProduct((float *)pMatB[0][c], vD);
+        if (!(FastMath_Fabs(fDot[0]) <= (pBoxB[0][1][c] + fAbs[0][c] * pBoxA[0][1][0] + fAbs[1][c] * pBoxA[0][1][1] + fAbs[2][c] * pBoxA[0][1][2]))) {
+            return 0;
+        }
+    }
+    if (bParallel) {
+        return 1;
+    }
+    for (r = 0; r < 3; r++) {
+        for (c = 0; c < 3; c++) {
+            r1 = (r + 1) % 3;
+            r2 = (r + 2) % 3;
+            c1 = (c + 1) % 3;
+            c2 = (c + 2) % 3;
+            ra = pBoxA[0][1][r1] * fAbs[r2][c] + pBoxA[0][1][r2] * fAbs[r1][c];
+            rb = pBoxB[0][1][c1] * fAbs[r][c2] + pBoxB[0][1][c2] * fAbs[r][c1];
+            t = fDot[r2] * fE[r1][c] - fDot[r1] * fE[r2][c];
+            if (!(FastMath_Fabs(t) <= ra + rb)) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
 // DRAFT: 0x0016E1E0 BGDetectionST__11BGCollisionFPA2_A4_fP5PMat4P11SurfaceInfoi
 // note: 270 words; original keeps pArr in fp and spills pMat/nFlag/this at 0xC8/0xC4/0xCC, ours uses fp=pMat and spills 0xBC/0xB8; frame 0x130 vs 0x140; vE0 at 0xE0 vs 0xD0; nCount spilled. Tried node-array-first and node-array-last local order (count unchanged).
 void BGCollision::BGDetectionST(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo *pSurf, int nFlag)
