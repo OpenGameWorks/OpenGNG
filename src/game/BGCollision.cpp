@@ -2,6 +2,10 @@
 #include "BGCollision.h"
 
 // TODO(header): foreign declarations
+class PVec3 {
+public:
+    float m_v[4];
+};
 extern "C" void __dl__FPv(void *);
 extern float vUp_1253[4];
 extern float vGDown[4];
@@ -173,6 +177,141 @@ int BGCollision::BGIntersect(PVec3 &rPos, float fRadius, unsigned int nFlags)
         }
     }
     return 0;
+}
+
+// DRAFT: 0x0016CDC0 CameraBGIntersect__11BGCollisionFR5PVec35PVec3fUiRfPA4_f
+// note: 315 words; frame 0x1C0 vs 0x1B0, t0/t1 spills at 0xB8/0xB4 not 0xBC/0xB0, a1/a2 kept in other saved regs, acc zeroing order; tried struct copies, u_long128 copies, local order, in-place normalize.
+int BGCollision::CameraBGIntersect(PVec3 &rPos, PVec3 rTo, float fRadius, unsigned int nFlags, float &rT, float (*pOut)[4])
+{
+    float sph[2][4];
+    float nrm[4];
+    float r;
+    float acc[4];
+    float scaled[4];
+    float e0[4];
+    float e1[4];
+    float mat[4][4];
+    float box[2][4];
+    int nX;
+    int nZ;
+    char *pNode;
+    char *pCell;
+    int nCount;
+
+    nCount = 0;
+    acc[0] = 0.0f;
+    acc[1] = 0.0f;
+    acc[2] = 0.0f;
+    if (m_unk40 != 0) {
+        FindGrid((float (*)[4])&rPos, nX, nZ);
+        if (!((unsigned int)nX < m_unk38 && (unsigned int)nZ < m_unk3C)) {
+            return 0;
+        }
+        pCell = (char *)((int *)m_unk40)[nZ * m_unk38 + nX];
+        if (pCell == 0) {
+            return 0;
+        }
+        unsigned int nItems = BGS_U(pCell, 8);
+        void **pItem = (void **)(pCell + 0xC);
+        for (; nItems != 0; nItems--, pItem++) {
+            STCollisionPoly *pPoly = (STCollisionPoly *)*pItem;
+            if ((BGS_U(pPoly, 0xC) & nFlags) == 0) {
+                continue;
+            }
+            *(PVec3 *)sph[0] = rPos;
+            *(PVec3 *)sph[1] = rTo;
+            r = SphereIntersect(pPoly, sph, fRadius * fRadius);
+            if (r > 0.0f) {
+                *(u_long128 *)nrm = *(u_long128 *)((char *)pPoly + 0x10);
+                sceVu0Normalize(nrm, nrm);
+                sceVu0ScaleVector(scaled, nrm, r);
+                acc[0] += scaled[0];
+                acc[1] += scaled[1];
+                acc[2] += scaled[2];
+                nCount++;
+            }
+        }
+    }
+
+    m_unk70.m_unk4 = 0;
+    pNode = (m_unk70.m_unk0 != 0) ? (char *)m_unk70.m_unk8[0] : 0;
+    for (; pNode != 0; m_unk70.m_unk4++, pNode = (m_unk70.m_unk4 < m_unk70.m_unk0) ? (char *)m_unk70.m_unk8[m_unk70.m_unk4] : 0) {
+        if (BGS_F(pNode, 0x2C) < 0.5f) {
+            continue;
+        }
+        if (BGS_B(pNode, 0x3E) & 0x20) {
+            continue;
+        }
+        {
+            void *pGate = BGS_P(pNode, 0x24);
+            if (pGate != 0 && BGS_U(pGate, 4) == 0x207) {
+                continue;
+            }
+        }
+        CDS_ASSERT_TXT(0xAF7, BGS_P(pNode, 0x104) != 0, "node->m_unk104 != 0");
+        if ((nFlags & 0x40000000) && BGS_H(pNode, 0x100) != 0) {
+            continue;
+        }
+        if (BGS_B(pNode, 0x3E) & 4) {
+            InversMatrix(&mat, (float (*)[4][4])((char *)pNode + 0x40));
+        } else {
+            sceVu0InversMatrix((float *)mat, (float *)((char *)pNode + 0x40));
+        }
+        sceVu0ApplyMatrix(e0, (float *)mat, (float *)&rPos);
+        sceVu0ApplyMatrix(e1, (float *)mat, (float *)&rTo);
+        {
+            float *pA = e0;
+            float *pB = e1;
+            asm {
+                lqc2 vf26, 0x0(pA)
+                lqc2 vf27, 0x0(pB)
+                vsub.xyzw vf27, vf27, vf26
+            }
+        }
+        *(u_long128 *)box[0] = *(u_long128 *)((char *)pNode + 0x110);
+        *(u_long128 *)box[1] = *(u_long128 *)((char *)pNode + 0x120);
+        box[1][0] = box[1][0] + fRadius;
+        box[1][1] = box[1][1] + fRadius;
+        box[1][2] = box[1][2] + fRadius;
+        if (!BoxLineCheck(&box)) {
+            continue;
+        }
+        {
+            unsigned int nInner = BGS_U(BGS_P(pNode, 0x104), 8);
+            void **pInner = (void **)((char *)BGS_P(pNode, 0x104) + 0xC);
+            for (; nInner != 0; nInner--, pInner++) {
+                STCollisionPoly *pPoly = (STCollisionPoly *)*pInner;
+                if ((BGS_U(pPoly, 0xC) & nFlags) == 0) {
+                    continue;
+                }
+                *(u_long128 *)sph[0] = *(u_long128 *)e0;
+                *(u_long128 *)sph[1] = *(u_long128 *)e1;
+                r = SphereIntersect(pPoly, sph, fRadius * fRadius);
+                if (r > 0.0f) {
+                    *(u_long128 *)nrm = *(u_long128 *)((char *)pPoly + 0x10);
+                    sceVu0ApplyMatrix(nrm, (float *)((char *)pNode + 0x40), nrm);
+                    sceVu0ScaleVector(scaled, nrm, r);
+                    acc[0] += scaled[0];
+                    acc[1] += scaled[1];
+                    acc[2] += scaled[2];
+                    nCount++;
+                }
+            }
+        }
+    }
+
+    rPos.m_v[0] += acc[0];
+    rPos.m_v[1] += acc[1];
+    rPos.m_v[2] += acc[2];
+    if (pOut != 0) {
+        *(u_long128 *)pOut = *(u_long128 *)acc;
+    }
+    if (nCount == 0) {
+        rT = 0.0f;
+    } else {
+        rT = sqrtf(sceVu0InnerProduct(acc, acc));
+    }
+    return nCount;
 }
 
 // DRAFT: 0x0016D2D0 BGDetectionAnim__11BGCollisionFPA2_A4_fP5PMat4P11SurfaceInfoiP9PMeshNode
