@@ -92,6 +92,16 @@ public:
     void DestroyFxTriggers(bool bA, bool bB, bool bC);
 };
 extern "C" void ScaleSet__6PMNodeFffff(PMNode *pThis, float a, float b, float c, float d);
+extern "C" void CopyMNode__6PMNodeFR6PMNodeb(PMNode *pThis, PMNode *pSrc, bool bFlag);
+extern "C" void InitMembers__6PMNodeFv(PMNode *pThis);
+extern "C" void Add__6PArrayFPv(void *pArray, void *pItem);
+extern "C" void __ct__6PArrayFv(void *pArray);
+extern "C" void sceVu0UnitMatrix(float (*)[4]);
+extern "C" void BuildDispList__9PSkeletonFv(void *pSkeleton);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" char __vt__9PResource[];
+extern "C" char __vt__6PMNode[];
+extern unsigned int DamageNames[4];
 
 // DRAFT: 0x001DE0C0 LoadCorrectMesh__16ClockworkPuncherFv
 // note: 32 words differ; branch layout (outer bnez target, siege block as beq target, normal lui in b delay slot). Tried if==1 siege-first, !=1 normal-first (32), early return (32), literal fixes.
@@ -147,6 +157,51 @@ void ClockworkPuncher::ChooseNextState() {
     SetState__15EntityBaseClassFi(this, 0);
 }
 
+// FUNCTION: 0x001DE2F0 ChooseAttack__16ClockworkPuncherFv
+void ClockworkPuncher::ChooseAttack() {
+    float fDist;
+    char *pPlayerPt = *(char **)((char *)mPlayerAPI__13EntityManager + 0x3C);
+    pPlayerPt = pPlayerPt ? pPlayerPt + 0x80 : (char *)mPlayerAPI__13EntityManager + 0x190;
+    fDist = Distance__7MathAPIFPA4_fPA4_f(
+        (float (*)[4])(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190), (float (*)[4])pPlayerPt);
+    if (fDist > 4.0f) {
+        if (fDist > 9.0f) {
+            if (m_unk1B4 == 1) {
+                if (RandomIntRange__7MathAPIFii(1, 100) < 0x4B) {
+                    SetState__15EntityBaseClassFi(this, 0x19);
+                    return;
+                }
+            } else {
+                float fLimit = m_unk1D4;
+                if (50.0f < fLimit) {
+                    fLimit = 50.0f;
+                }
+                if (fDist < fLimit) {
+                    if (RandomIntRange__7MathAPIFii(1, 100) & 1) {
+                        SetState__15EntityBaseClassFi(this, 0x15);
+                        return;
+                    }
+                }
+            }
+        }
+        if (m_unk1B4 == 1) {
+            if (RandomIntRange__7MathAPIFii(1, 100) < 0x4B) {
+                m_unk276 = 1;
+                SetState__15EntityBaseClassFi(this, 0x10);
+                return;
+            }
+        }
+        SetState__15EntityBaseClassFi(this, 0x14);
+    } else {
+        miRandom__7MathAPI = miRandom__7MathAPI * 0x343FD + 0x269EC3;
+        if (miRandom__7MathAPI & 1) {
+            SetState__15EntityBaseClassFi(this, 0x16);
+        } else {
+            SetState__15EntityBaseClassFi(this, 0x18);
+        }
+    }
+}
+
 // DRAFT: 0x001DE4A0 AttachSparkEffect__16ClockworkPuncherFv
 // note: 1.56f is pooled (lwc1 from gp) but the original builds 0x3FC7AE14 with lui/ori/mtc1; the bit-cast variant spills to the stack; RandomFloatRange argument registers are swapped (v0/v1 order); 31 differing lines.
 void ClockworkPuncher::AttachSparkEffect() {
@@ -169,6 +224,45 @@ void ClockworkPuncher::AttachSparkEffect() {
         AttachDamageEffect(m_unk2B4, 0x8300015A, vec[0], vec[1], vec[2]);
         PlaySound__15EntityBaseClassFUi((void *)this, 0x100);
     }
+}
+
+// DRAFT: 0x001DE5A0 AttachDamageMesh__16ClockworkPuncherFv
+// note: 71 words differ. Original frame is 0x50 with pNew spilled to 0x4C(sp) and this in s1; ours is 0x40 with this in s0. Tried decl swap and a separate new temporary; neither changed the diff.
+void ClockworkPuncher::AttachDamageMesh() {
+    char *pNew;
+    PMNode *pFound;
+    char *pSkeleton;
+
+    m_unk2B8 += RandomIntRange__7MathAPIFii(0, 2);
+    if (m_unk2B8 >= 4) {
+        m_unk2B8 -= 4;
+    }
+    pFound = Find__6PMNodeFUi((PMNode *)m_unk2C0, DamageNames[m_unk2B8]);
+    if (pFound == 0) {
+        CdsAssert__FPciPc("ClockworkPuncher.cpp", 0xA33, "aNextJoint");
+    }
+    if (m_unk2B4 != 0) {
+        pNew = (char *)__nw__FUi(0x100);
+        if (pNew != 0) {
+            *(char **)pNew = __vt__9PResource + 0x970;
+            *(int *)(pNew + 4) = 0;
+            *(char **)pNew = __vt__6PMNode + 0xE00;
+            __ct__6PArrayFv(pNew + 0x14);
+            sceVu0UnitMatrix((float (*)[4])(pNew + 0x40));
+            __ct__6PArrayFv(pNew + 0xD8);
+            InitMembers__6PMNodeFv((PMNode *)pNew);
+        }
+        if (pNew == 0) {
+            CdsAssert__FPciPc("ClockworkPuncher.cpp", 0xA37, "pNew");
+        }
+        CopyMNode__6PMNodeFR6PMNodeb((PMNode *)pNew, pFound, true);
+        Add__6PArrayFPv((char *)m_unk2B4 + 0x14, pNew);
+    }
+    pSkeleton = m_unk3C;
+    if (pSkeleton == 0) {
+        CdsAssert__FPciPc("ClockworkPuncher.cpp", 0xA3F, "pSkeleton");
+    }
+    BuildDispList__9PSkeletonFv(pSkeleton);
 }
 
 // FUNCTION: 0x001DE730 AttachDamageEffect__16ClockworkPuncherFP6PMNodeUifff

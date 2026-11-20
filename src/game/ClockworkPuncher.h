@@ -11,6 +11,7 @@ class ClockworkPuncher {
 public:
     ClockworkPuncher();
     void AttachSparkEffect();
+    void AttachDamageMesh();
     void AttachDamageEffect(class PMNode *pNode, unsigned int nId, float fA, float fB, float fC);
     int Stalled(float fDist);
     int PlayerFacingUs();
@@ -32,6 +33,7 @@ public:
     void SetSpawnedFromEntity(float *pPos, float *pAlt, int nType);
     void LoadCorrectMesh();
     void ChooseNextState();
+    void ChooseAttack();
     void SetEffectsFrameRate(float fRate);
 
     void *m_unk0;            // 0x000 vtable pointer
