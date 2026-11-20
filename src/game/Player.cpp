@@ -43,6 +43,22 @@ struct SpinEffectEntry {
     unsigned int b;
 };
 extern "C" void SetFrameRate__6PMNodeFfb(PMNode *, float, bool);
+struct SwordEntry {
+    unsigned int uId;
+    char _pad004[3];
+    signed char b7;
+    char _pad008[4];
+    float fC;
+};
+extern SwordEntry SwordTbl[4];
+extern "C" void SetShadowCaster__13PShadowVolumeFP6PMNode(void *pVol, void *pNode);
+class VirtualSlot14Object {
+public:
+    virtual void Slot08(int arg0);
+    virtual void Slot0C();
+    virtual void Slot10();
+    virtual void Slot14(void *arg0);
+};
 extern "C" void sceVu0UnitMatrix(float (*)[4]);
 extern "C" void CalculateMatrix__6PMNodeFfP6PMNodePA4_A4_f(PMeshNode *, float, PMNode *, float (*)[4][4]);
 extern "C" void SetHolyGround__13EntityManagerFPA4_ffb(void *, float (*)[4], float, bool);
@@ -50,6 +66,9 @@ extern float GRIM_AIRATTACKG;
 extern float GRIM_AIRATTACKV;
 extern float GRIM_AIRATTACKY;
 extern float GRIM_JUMPG;
+extern int HEAD_BUTT_COUNT;
+extern void *mCameraAPI__13EntityManager;
+extern "C" void ShakeScreenUsingTable__9CameraAPIFiUi(void *pThis, int nA, unsigned int nB);
 class Interface {
 public:
     char _pad000[0x10];
@@ -1908,6 +1927,79 @@ void Player::Over3Move() {
     MultipleAttack(&Over3Attacks[0]);
 }
 
+// DRAFT: 0x0015CEC0 MTapMove__6PlayerFv
+// note: 108 words differ; prologue saves s1/s2 in another order, the 0x270 test and s0 load are scheduled differently, branch targets at 0x002C/0x0030 differ. 6 of 8 attempts used.
+void Player::MTapMove() {
+    static unsigned int MTapEffects[4] = {0x8100006B, 0x820000BD, 0x81000327, 0x82000558};
+    static int MTapTable[5] = {0x13, 0x1B, 0x23, 0x2B, 0xFFFF};
+    static unsigned short MTapAttack[9] = {0x13, 0x12, 0x1B, 0x12, 0x23, 0x12, 0x34, 0x13, 0xFFFF};
+    PMNode *node;
+    int v;
+    int state;
+    int limit;
+    unsigned int c;
+    float f;
+
+    state = m_unk270;
+    node = (PMNode *)m_unk3C;
+    if (state != 0) {
+        v = state - 1;
+        if (m_unk1B2 & 0x8000) {
+            v = m_unk274;
+        }
+        m_unk270 = v;
+    }
+    if (node->m_unk3F & 4) {
+        m_unk27C = 0;
+        m_unk250 = 1;
+        m_unk274 -= 1;
+        if (ComboTarget(-1.0f, 100.0f, true) != 0) {
+            ((Physics *)m_unk38)->m_unk11C = Round180__Ff(m_unk1C4);
+        }
+        if (m_unk274 >= HEAD_BUTT_COUNT) {
+            goto block8;
+        }
+        goto block15;
+    }
+block8:
+    state = m_unk250;
+    limit = (int)node->m_unk34;
+    switch (state) {
+    case 5:
+        break;
+    case 4:
+        if (limit >= 0x30) {
+            m_unk250 = state + 1;
+            ((EntityBaseClass *)this)->PlaySound(0x13C);
+        }
+        break;
+    default:
+        if (limit >= MTapTable[state]) {
+            m_unk250 = state + 1;
+            if (m_unk270 == 0) {
+block15:
+                m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(MTapEffects[m_unk1FC * 2], MTapEffects[m_unk1FC * 2 + 1], 0, 0, (EntityBaseClass *)this, m_unk24C, false, 0, false);
+                m_unk250 = 4;
+                c = ((unsigned char *)m_unk254)[5];
+                f = (float)c;
+                node->Slot10(f);
+                node->SetAnimLoopCount(1, false);
+                m_unk27C = 6;
+                if (ComboTarget(-1.0f, 100.0f, true) != 0) {
+                    ((Physics *)m_unk38)->m_unk11C = Round180__Ff(m_unk1C4);
+                }
+            }
+        }
+        break;
+    }
+    if (MultipleAttack(MTapAttack) != 0) {
+        ((EntityBaseClass *)this)->PlaySound(m_unk1FC == 0 ? 0x24U : 0xB0U);
+        if (m_unk27C == 8) {
+            ShakeScreenUsingTable__9CameraAPIFiUi((void *)&mCameraAPI__13EntityManager, 0, 0U);
+        }
+    }
+}
+
 // DRAFT: 0x0015D140 DSlashMove__6PlayerFv
 // note: DIFF 111 words; size 0x244 vs 0x258; lhu/andi register swap (flags s0, spin s4 in original), TAP_COUNT/TAP_TIMER reloc form differs; tried reorders of decls and v1/CancelAttack (120, 133)
 void Player::DSlashMove() {
@@ -3048,6 +3140,86 @@ void Player::EnablePlayerShadow(bool arg0) {
             sub = *(char **)(b + 0xC);
             if (sub != 0) {
                 *(bool *)(sub + 0x18) = arg0;
+            }
+        }
+    }
+}
+
+// DRAFT: 0x00160320 SetSword__6PlayerFv
+// note: 101 words differ; child lands in v1 not a0 (register swap at 0x00D0-0x00D8), 0x284 not reloaded before the 0x110/0x124/0x144 calls, branch targets at 0x002C/0x003C, size 0x268 vs 0x280. Literal pool order, SwordTbl and mpResMgr relocations also differ. 7 of 8 attempts used.
+void Player::SetSword() {
+    m_unk1D0 &= ~2;
+    if (m_unk284 != 0 && m_unk229 != 4) {
+        unsigned int s0 = m_unk1FC;
+        ((s0 < 4) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x1004, "iSword < SwordPowerupMax"));
+        if (m_unk288 != 0) {
+            if (m_unk288 != 0) {
+                ((VirtualSlot14Object *)m_unk288)->Slot08(1);
+            }
+            m_unk288 = 0;
+        }
+        SwordEntry *s1 = &SwordTbl[s0];
+        PMNode *s2 = mpResMgr__15EntityBaseClass->GetResource(s1->uId, false);
+        ((s2 != 0) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x100C, "pSword"));
+        void *child = s2->m_unk10;
+        *((char *)child + 0xE) = 0;
+        PMNode *node = (PMNode *)m_unk284;
+        node->m_unk10 = child;
+        node->m_unk3E &= 0xEF;
+        if (child != 0 && *(int *)((char *)child + 0xC) != 0) {
+            node->m_unk3E |= 0x10;
+        }
+        void *a1 = (char *)child + 0x10;
+        *((unsigned char *)node + 0x3C) = 0;
+        *(void **)((char *)node + 0x28) = a1;
+        *(bool *)((char *)node + 0xD4) = true;
+        *((unsigned char *)node + 0xD5) = 1;
+        *((unsigned char *)node + 0xD6) = 1;
+        *((unsigned char *)node + 0xD7) = 1;
+        node->m_unk3E &= 0x7F;
+        ((VirtualSlot14Object *)node)->Slot14(a1);
+        *(float *)((char *)m_unk3C + 0x12C) = s1->fC;
+        if (s0 != 0) {
+            m_unk288 = s2;
+            if (s1->b7 == 1) {
+                m_unk1D0 |= 2;
+            }
+        }
+        if (s2 != 0) {
+            ((VirtualSlot14Object *)s2)->Slot08(1);
+        }
+        void *p23C8 = m_unk23C8;
+        if (p23C8 != 0) {
+            void *p23CC = m_unk23CC;
+            if (p23CC != 0) {
+                if ((int)m_unk1FC >= 2) {
+                    void *sub = *(void **)((char *)p23C8 + 0xC);
+                    if (sub != 0) {
+                        SetShadowCaster__13PShadowVolumeFP6PMNode(sub, (void *)m_unk284);
+                    }
+                } else {
+                    void *sub = *(void **)((char *)p23CC + 0xC);
+                    if (sub != 0) {
+                        SetShadowCaster__13PShadowVolumeFP6PMNode(sub, (void *)m_unk284);
+                    }
+                }
+            }
+        }
+        EnablePlayerShadow(*(bool *)m_unkD4);
+    }
+    if (m_unk229 == 4) {
+        void *p = m_unk23C8;
+        if (p != 0 && m_unk23CC != 0) {
+            *(char *)p = 0;
+            void *q = *(void **)((char *)p + 0xC);
+            if (q != 0) {
+                *((char *)q + 0x18) = 0;
+            }
+            p = m_unk23CC;
+            *(char *)p = 0;
+            q = *(void **)((char *)p + 0xC);
+            if (q != 0) {
+                *((char *)q + 0x18) = 0;
             }
         }
     }

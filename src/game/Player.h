@@ -124,6 +124,7 @@ public:
     void OpenDoorMove();
     void OpenChestMove();
     void Over3Move();
+    void MTapMove();
     void LoadPlayerData(PlayerData *arg0);
     static void ResetPlayerData(PlayerData *arg0);
     int GetComboLevel();
