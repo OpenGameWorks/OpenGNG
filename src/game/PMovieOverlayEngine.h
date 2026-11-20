@@ -9,7 +9,9 @@ struct tagGsMaterial;
 
 class PMovieOverlayEngine {
 public:
+    PMovieOverlayEngine();
     ~PMovieOverlayEngine();
+    void BeginSprites();
     void BeginRender(unsigned int nFlags);
     void SetMaterial(int nIndex, float *pColor, bool bFlag, unsigned long nA, unsigned long nB);
     int InitTextures(int *pData, int nCount);

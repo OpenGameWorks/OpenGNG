@@ -19,6 +19,7 @@ public:
     void KickVifDmaChain(bool bWait);
     void SetVu1Microcode(void *pMicrocode);
     void SetMaterials(tagGsMaterial *pMat, int nIndex, bool bA, bool bB, float *pF, unsigned long *pC, unsigned long *pD);
+    void BeginFxLoop(unsigned int nAddr);
     char _padA0000[0xA3348];
     int m_unkA3348;             // 0xA3348
 };
@@ -28,6 +29,7 @@ extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void __dl__FPv(void *pMem);
 extern char gGfxEng[1504384];
 extern char vu_fx_microcode_dma_packet[];
+extern char fx_sprite_noclip_init[];
 
 // DRAFT: 0x0020DA20 BeginRender__19PMovieOverlayEngineFUi
 // note: 3 words differ: mask -0x200 and flag 0x1FF swap v0/v1; tried swapped operands (4 words), explicit 0xFFFFFE00 (4), hoisted flag temp (4), mask temp (3).
@@ -35,6 +37,11 @@ void PMovieOverlayEngine::BeginRender(unsigned int nFlags) {
     unsigned int nOld = m_unk10;
     m_unk10 = (nFlags & 0x1FF) | (nOld & ~0x1FF);
     m_unk4->SetGsRegisters((u_long128 *)&m_unk10, 8);
+}
+
+// FUNCTION: 0x0020DA70 BeginSprites__19PMovieOverlayEngineFv
+void PMovieOverlayEngine::BeginSprites() {
+    m_unk4->BeginFxLoop(((unsigned int)(fx_sprite_noclip_init + 0x150)) >> 3);
 }
 
 // DRAFT: 0x0020DA90 SetMaterial__19PMovieOverlayEngineFiPfbUlUl
@@ -88,4 +95,11 @@ extern "C" PMovieOverlayEngine *__dt__19PMovieOverlayEngineFv(PMovieOverlayEngin
         }
     }
     return pThis;
+}
+
+// FUNCTION: 0x0020DD70 __ct__19PMovieOverlayEngineFv
+PMovieOverlayEngine::PMovieOverlayEngine() {
+    m_unk0 = 0;
+    m_unk4 = 0;
+    m_unk90 = 0;
 }
