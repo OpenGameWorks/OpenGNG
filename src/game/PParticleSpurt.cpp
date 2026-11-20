@@ -16,6 +16,13 @@ extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" int rand(void);
 extern "C" float FastMath_Fabs__Ff(float fValue);
+extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, unsigned int nCount, int nType);
+extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
+extern "C" void DmaScratchPadToMainMem__FPvPvsbb(void *pSpad, void *pMain, short nSize, bool bFlagA, bool bFlagB);
+extern "C" float FastMath_Sin180__Ff(float fAngle);
+extern "C" float FastMath_Cos180__Ff(float fAngle);
+extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
+extern char gGfxEng[1504384];
 
 // DRAFT: 0x001CAED0 SetupBoundingBox__14PParticleSpurtFv
 // note: 42 differing words; scale bits need mfc1 (every C float-to-int cast spills, so mfc1 is asm and not counted); VU0 blocks in asm; reg/order differ (0.5 in f2 not f1, sb in v0 not t0)
@@ -207,6 +214,190 @@ void PParticleSpurt::ModifyPosition(PMat4 *pMat) {
         SetupBoundingBox();
     } else {
         sceVu0CopyMatrix((float (*)[4])&m_unk40, (float (*)[4])pMat);
+    }
+}
+
+// DRAFT: 0x001CB130 Animate__14PParticleSpurtFf
+// note: 725 differing words; frame is 0x110 in the original and the prologue saves s0-s7/fp, so every word shifts; VU0 blocks (lqc2/vcallms/sqc2) replaced by C lerps. Tried: adding a spC local (no change)
+void PParticleSpurt::Animate(float fDt) {
+    float spA0[4];
+    float spB0[4];
+    float spD[4];
+    float spE0[4];
+    float spF[4];
+    float v100[4];
+    float fRange;
+    float fRange2;
+    float f22;
+    float fLerp;
+    float fTmp;
+    float fTmp2;
+    float fOut;
+    float fA7;
+    float fA7b;
+    float fA1;
+    float fA2;
+    float fA1n;
+    float fT22;
+    float fT24;
+    float fT25;
+    float fS;
+    float *pRnd;
+    float *pVec;
+    char *pBuf;
+    char *pEl;
+    int nZero;
+    int nRnd;
+    int nRnd2;
+    unsigned int i;
+    unsigned int nDone;
+
+    if (m_unk15 != 0) {
+        if (m_unk16 != 0) {
+            return;
+        }
+        if (m_unk17 != 0 || m_unkA4 != 0) {
+            m_unkD0 = m_unk1E4;
+            fRange = m_unk178 - m_unk174;
+            fRange2 = m_unk17C - m_unk178;
+            sceVu0SubVector(spA0, m_unk110, m_unk100);
+            sceVu0SubVector(spB0, m_unk120, m_unk110);
+            nZero = 0;
+            if (m_unk130[0] == 0.0f && m_unk130[1] == 0.0f && m_unk130[2] == 0.0f) {
+                nZero = 1;
+            }
+            pBuf = (char *)AllocParticles__12PDisplayListFii(*(void **)(gGfxEng + 0x154C80), m_unk04, 2);
+            if (pBuf == 0) {
+                CdsAssert__FPciPc("PParticleSpurt.cpp", 0xB2, "apVuParticles");
+            }
+            m_unk08 = pBuf;
+            if (m_unk04 < 0x101) {
+                pBuf = (char *)0x70001000;
+                if ((m_unk04 << 5) >= 0x2001) {
+                    CdsAssert__FPciPc("PParticleSpurt.cpp", 0xBA, "(sizeof(VuParticle) * muNumParticles) <= SPAD_TEMP_BUFFER_SIZE");
+                }
+            }
+            spD[0] = 0.0f;
+            spD[1] = 0.0f;
+            spD[2] = 0.0f;
+            spD[3] = 0.0f;
+            nDone = 0;
+            i = 0;
+            while (i < m_unk04) {
+                pEl = pBuf + (i << 5);
+                pRnd = (float *)((char *)m_unkE0 + i * 4);
+                if (m_unk18 != 0) {
+                    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                    *pRnd = *pRnd + fDt * (m_unk180[2] + (1.0f - m_unk180[2]) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+                } else {
+                    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                    *pRnd = *pRnd + fDt * (0.6f + 0.39999998f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+                }
+                fTmp = m_unk1E0;
+                if (!(*pRnd < fTmp)) {
+                    *pRnd = fTmp;
+                    if (m_unk17 != 0 || m_unk18 == 0) {
+                        nDone++;
+                        if (nDone >= m_unk170) {
+                            m_unk16 = m_unk17;
+                            m_unk15 = 0;
+                            return;
+                        }
+                    } else {
+                        *pRnd -= m_unk1E0;
+                        if (m_unk19C != 0) {
+                            *(u_long128 *)((char *)m_unkE8 + (i << 4)) = *(u_long128 *)m_unk1B0;
+                            *(u_long128 *)((char *)m_unkE4 + (i << 4)) = *(u_long128 *)m_unk1C0;
+                        }
+                    }
+                }
+                f22 = *pRnd / m_unk1E0;
+                if (!(f22 < 0.9999999f)) {
+                    f22 = 0.9999999f;
+                }
+                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                fTmp = f22 * (0.5f + 3.5f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+                fTmp2 = fTmp - (float)(int)fTmp;
+                if (fTmp2 <= 0.5f) {
+                    fOut = 0.3f * (-1.0f + 4.0f * fTmp2) * m_unk190;
+                } else {
+                    fOut = 0.3f * (1.0f + (-4.0f * (fTmp2 - 0.5f))) * m_unk190;
+                }
+                spD[0] = f22;
+                spD[1] = f22 * f22;
+                spD[2] = f22 * fOut;
+
+                if (m_unk19C != 0) {
+                    if (nZero != 0) {
+                        *(u_long128 *)spE0 = *(u_long128 *)((char *)m_unkE4 + (i << 4));
+                    } else {
+                        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                        spE0[0] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
+                        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                        spE0[1] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
+                        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                        spE0[2] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
+                    }
+                    pVec = (float *)((char *)m_unkE8 + (i << 4));
+                } else {
+                    if (nZero != 0) {
+                        *(u_long128 *)spE0 = *(u_long128 *)m_unk1C0;
+                    } else {
+                        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                        spE0[0] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
+                        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                        spE0[1] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
+                        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                        spE0[2] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
+                    }
+                    pVec = m_unk1B0;
+                }
+                *(u_long128 *)v100 = *(u_long128 *)pVec;
+
+                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                spF[0] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
+                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                spF[1] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
+                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                spF[2] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
+
+                ((float *)pEl)[0] = v100[0] + (spE0[0] - v100[0]) * f22;
+                ((float *)pEl)[1] = v100[1] + (spE0[1] - v100[1]) * f22;
+                ((float *)pEl)[2] = v100[2] + (spE0[2] - v100[2]) * f22;
+
+                fTmp2 = 0.75f * m_unk180[3];
+                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                if (f22 <= 0.5f) {
+                    fLerp = m_unk174 + 2.0f * (f22 * fRange);
+                } else {
+                    fLerp = m_unk178 + 2.0f * ((f22 - 0.5f) * fRange2);
+                }
+                ((float *)pEl)[3] = (1.0f + (-fTmp2 + (2.0f * fTmp2 * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF))))) * fLerp;
+
+                if (m_unk19 != 0) {
+                    fA7 = 30.0f * (float)m_unk2C;
+                    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                    nRnd = m_unkD0;
+                    m_unkD0 = nRnd * 0x343FD + 0x269EC3;
+                    nRnd2 = m_unkD0;
+                    fA7b = 0.001f + (0.0139999995f * (float)m_unk28);
+                    fA1 = 0.2f * fA7b;
+                    fA2 = 2.0f * fA1;
+                    fA1n = -fA1;
+                    m_unkD0 = nRnd2 * 0x343FD + 0x269EC3;
+                    fT24 = 180.0f * ((((float)((int)((fA7 + ((0.5f * fA7 - fA7) * (0.000030517578f * (float)((nRnd >> 16) & 0x7FFF)))) * *pRnd) % 360)) / 180.0f) - 1.0f);
+                    fT22 = fA7b + (fA1n + (fA2 * (0.000030517578f * (float)((nRnd2 >> 16) & 0x7FFF))));
+                    fT25 = fA7b + (fA1n + (fA2 * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF))));
+                    fS = FastMath_Sin180__Ff(fT24);
+                    ((float *)pEl)[4] = fT22 * FastMath_Cos180__Ff(fT24);
+                    ((float *)pEl)[5] = fT25 * fS;
+                }
+                i++;
+            }
+            if (((int)pBuf & 0x70000000) == 0x70000000) {
+                DmaScratchPadToMainMem__FPvPvsbb(pBuf, m_unk08, (short)(m_unk04 * 2), false, false);
+            }
+        }
     }
 }
 
