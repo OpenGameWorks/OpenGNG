@@ -6,6 +6,7 @@ class PMNode;
 class PMeshFragment;
 struct tagGsClut256;
 struct tagVuFxLine;
+struct tagVuParticle;
 struct tagVuLightingInfo;
 // TODO(header): eBoxIntersect belongs to PMNode.h. Placeholder until that header is included; only the name matters for mangling.
 #ifndef PMNODE_H
@@ -42,6 +43,7 @@ public:
     void ResetVuLightingInfo();
     void CopyVuLightingInfo(struct tagVuLightingInfo *pDst, struct tagVuLightingInfo *pSrc);
     void BeginSplinePatch();
+    void DrawSplinePatch(struct tagVuSplinePatchKey *pKey, int nA, int nB, float fC, bool bFlag);
     void SetScreenMatrix(PMat4 *pMat);
     void SetViewMatrix(PMat4 *pMat);
     void SetClipMatrix(PMat4 *pMat);
@@ -66,17 +68,22 @@ public:
     void SetWorldMatrix(PMat4 *pMat);
     void SetOverrideTexture(int nIndex);
     void BeginFxInstances(void *pData, int nSize, bool bFlag);
+    void BeginHeatHazeInstances(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag);
+    void BeginParticleInstances(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag);
     void BeginStaticInstances(void *pData, int nSize);
     int AddBlendedFragment(PMeshFragment *pFrag, int nIdx, bool *pOut, bool bFlag);
     void DrawFragment(PMeshFragment *pFrag, bool bFlag, int nIdx, bool *pOut);
     void ErrorRefreshDisplay(bool bFlag);
+    void SetTvOffset(int nX, int nY);
 
     char _pad000[0x154C80];
     struct PDisplayList *m_unk154C80;   // 0x154C80
     char _pad154C84[0x154C90 - 0x154C84];
     char m_unk154C90[0x158B00 - 0x154C90]; // 0x154C90, PTextureManager (SetTexture)
     char m_unk158B00[0x158BB0 - 0x158B00]; // 0x158B00, material block (SetMaterial copies from +0x60..+0xA0)
-    char m_unk158BB0[0x158C10 - 0x158BB0]; // 0x158BB0, sceGsDBuff passed to GsSwapDBuff
+    char m_unk158BB0[0x158BE8 - 0x158BB0]; // 0x158BB0, sceGsDBuff passed to GsSwapDBuff; second display block at +0x28
+    unsigned short m_unk158BE8;         // 0x158BE8, display size field masked by SetTvOffset
+    char _pad158BEA[0x158C10 - 0x158BEA];
     char m_unk158C10[0x158C90 - 0x158C10]; // 0x158C10, display target used on even ErrorRefreshDisplay frames
     unsigned long long m_unk158C90;     // 0x158C90, GS register value 0x30001
     char _pad158C98[0x158D00 - 0x158C98];
@@ -84,14 +91,21 @@ public:
     unsigned long long m_unk158D80;     // 0x158D80, GS register value 0x30001
     char _pad158D88[0x158DE0 - 0x158D88];
     int m_unk158DE0;                    // 0x158DE0, ErrorRefreshDisplay frame counter
-    char _pad158DE4[0x158DEC - 0x158DE4];
+    int m_unk158DE4;                    // 0x158DE4, TV offset X (SetTvOffset)
+    int m_unk158DE8;                    // 0x158DE8, TV offset Y (SetTvOffset)
     unsigned char m_unk158DEC;          // 0x158DEC, set from the sceGsSyncV result (1 when zero)
     char _pad158DED[0x158DF0 - 0x158DED];
     int m_unk158DF0;                    // 0x158DF0, non-zero skips the frame-buffer size term in SetPrevFrameBufferAsTexture
-    char _pad158DF4[0x158E02 - 0x158DF4];
+    int m_unk158DF4;                    // 0x158DF4, INTC handler id for line 5, removed by the destructor
+    int m_unk158DF8;                    // 0x158DF8, INTC handler id for line 3, removed by the destructor
+    char _pad158DFC[0x158DFE - 0x158DFC];
+    short m_unk158DFE;                 // 0x158DFE, display x passed to sceGsSetDefDispEnv
+    char _pad158E00[0x158E02 - 0x158E00];
     short m_unk158E02;                 // 0x158E02
     unsigned int m_unk158E04;           // 0x158E04
-    char _pad158E08[0x158E14 - 0x158E08];
+    short m_unk158E08;                  // 0x158E08, display width used by SetTvOffset
+    short m_unk158E0A;                  // 0x158E0A, display height used by SetTvOffset
+    char _pad158E0C[0x158E14 - 0x158E0C];
     unsigned int m_unk158E14;           // 0x158E14, Count sampled by Vif1InterruptHandler on the 0x1000 DMA tag
     unsigned int m_unk158E18;           // 0x158E18, Count sampled by Vif1InterruptHandler on the 0x2000 DMA tag
     void *m_unk158E1C;                  // 0x158E1C

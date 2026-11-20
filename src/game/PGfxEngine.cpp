@@ -21,6 +21,8 @@ extern char vu_noclip_microcode_dma_packet[];
 extern char clip_unlit_spline_patch_init[];
 extern char dbg_display_init[];
 extern char fx_instance_mesh_init[];
+extern char fx_instance_heathaze_init[];
+extern char fx_instance_particle_init[];
 extern char fx_instance_screen_st_mesh_init[];
 extern char noclip_static_instance_cull_mesh_init[];
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
@@ -31,12 +33,26 @@ extern float GAME_FPS;
 extern float gUnitMatrix[16];
 extern char shared_vertices_start[];
 extern "C" void sceVu0CopyVector(float *dst, float *src);
+extern "C" void sceGsSetDefDispEnv(void *, short, short, short, short, short);
+extern unsigned char MODE_PAL;
+extern "C" void DisableIntc(int nLine);
+extern "C" void RemoveIntcHandler(int nLine, int nId);
+extern "C" void __destroy_arr(void *pBlock, void *(*pDtor)(void *, short), int nSize, int nCount);
+extern "C" void __dl__FPv(void *pMem);
+extern "C" void __dt__5PGridFv(void *pThis, short nFlag);
+extern "C" void *__dt__5PMat4Fv(void *pThis, short nFlag);
+extern "C" void *__dt__Q210PGfxEngine22tagBlendedFragmentInfoFv(void *pThis, short nFlag);
+extern "C" void __dt__13PShadowBufferFv(void *pThis, short nFlag);
+extern "C" void __dt__16PParticleManagerFv(void *pThis, short nFlag);
+extern "C" void __dt__15PTextureManagerFv(void *pThis, short nFlag);
+extern "C" void __dt__12PDisplayListFv(void *pThis, short nFlag);
 class PMat4;
 
 class PDisplayList {
 public:
     void SetVu1Microcode(void *pMicrocode);
     void DrawParticles(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag, int nMode);
+    void DrawSplinePatch(struct tagVuSplinePatchKey *pKey, int nA, int nB, float fC, bool bFlag, int nMode);
     void WriteToVu1Mem(unsigned int nAddr, u_long128 *pData, int nCount);
     void SetViewMatrix(PMat4 *pMat);
     void SetClipMatrix(PMat4 *pMat);
@@ -250,6 +266,11 @@ int Vif1InterruptHandler(int nIrq) {
     return 0;
 }
 
+// FUNCTION: 0x184980 DrawSplinePatch__10PGfxEngineFP19tagVuSplinePatchKeyiifb
+void PGfxEngine::DrawSplinePatch(struct tagVuSplinePatchKey *pKey, int nA, int nB, float fC, bool bFlag) {
+    m_unk154C80->DrawSplinePatch(pKey, nA, nB, fC, bFlag, 0x10);
+}
+
 // FUNCTION: 0x1849A0 BeginSplinePatch__10PGfxEngineFv
 void PGfxEngine::BeginSplinePatch() {
     if (m_unk158E1C != &vu_noclip_microcode_dma_packet) {
@@ -258,6 +279,70 @@ void PGfxEngine::BeginSplinePatch() {
         m_unk154C80->SetVu1Microcode(m_unk158E1C);
     }
     m_unk154C80->BeginMesh((unsigned int)(clip_unlit_spline_patch_init + 0x1880) >> 3);
+}
+
+// DRAFT: 0x00184A40 BeginHeatHazeInstances__10PGfxEngineFP13tagVuParticleiffb
+// note: frame 0x50 vs 0x60; fA/fB kept in f20/f21 instead of spilled to 0x48/0x4C; tried struct reorder, float locals, address-taken locals; still 80 words
+void PGfxEngine::BeginHeatHazeInstances(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag) {
+    float fLocalA = fA;
+    float fLocalB = fB;
+    struct {
+        int n;
+        float b;
+        float a;
+        int z;
+    } sBuf;
+
+    if (pParticles == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x881, "pParticles");
+    }
+    if (nCount == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x882, "iNumParticles");
+    }
+    if (m_unk158E1C != vu_fx_microcode_dma_packet) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x883, "mpvCurVu1CodeBank == FX_MICROCODE_PACKET");
+    }
+    if (nCount >= 0x15) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x884, "iNumParticles <= fx_i_heathaze_instance_max_vertices");
+    }
+    sBuf.n = nCount;
+    sBuf.z = 0;
+    sBuf.a = fLocalA;
+    sBuf.b = fLocalB;
+    m_unk154C80->WriteToVu1Mem(0x328, (u_long128 *)&sBuf, 1);
+    m_unk154C80->AddVifPacket((u_long128 *)pParticles, nCount * 2, 0, ((unsigned int)(nCount << 17)) | 0x6C000329);
+    m_unk154C80->BeginFxLoop(((unsigned int)(fx_instance_heathaze_init + 0x35D0)) >> 3);
+}
+
+// DRAFT: 0x00184B90 BeginParticleInstances__10PGfxEngineFP13tagVuParticleiffb
+// note: frame 0x40 vs 0x60; fA/fB kept in f20/f21 instead of spilled to 0x48/0x4C and reloaded via lw; same 80-word diff as BeginHeatHazeInstances; tried direct fA/fB, local float pair
+void PGfxEngine::BeginParticleInstances(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag) {
+    struct {
+        int n;
+        float b;
+        float a;
+        int z;
+    } sBuf;
+
+    if (pParticles == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x869, "pParticles");
+    }
+    if (nCount == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x86A, "iNumParticles");
+    }
+    if (m_unk158E1C != vu_fx_microcode_dma_packet) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x86B, "mpvCurVu1CodeBank == FX_MICROCODE_PACKET");
+    }
+    if (nCount >= 0x29) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x86C, "iNumParticles <= fx_i_particle_instance_max_vertices");
+    }
+    sBuf.n = nCount;
+    sBuf.z = 0;
+    sBuf.a = fA;
+    sBuf.b = fB;
+    m_unk154C80->WriteToVu1Mem(0x288, (u_long128 *)&sBuf, 1);
+    m_unk154C80->AddVifPacket((u_long128 *)pParticles, nCount * 2, 0, ((unsigned int)(nCount << 17)) | 0x6C000289);
+    m_unk154C80->BeginFxLoop(((unsigned int)(fx_instance_particle_init + 0x2FE0)) >> 3);
 }
 
 // FUNCTION: 0x00184CE0 BeginFxInstances__10PGfxEngineFPvib
@@ -788,6 +873,27 @@ void PGfxEngine::FadeFullScreenMotionBlur(char cTarget, int nFrames) {
     m_unk16D404 = cTarget;
 }
 
+// DRAFT: 0x001876F0 SetTvOffset__10PGfxEngineFii
+// note: 7 words differ, all in the tail; the compiler hoists the lhu of m_unk158BE8 above the mult (original mults first). Tried /64 /32 fixups, inline and temp product, mask-then-or, height temp reuse (21 words).
+void PGfxEngine::SetTvOffset(int nX, int nY) {
+    int nWidth;
+    int nHeight;
+    int nProd;
+
+    m_unk158DE4 = nX;
+    m_unk158DE8 = nY;
+    if (MODE_PAL != 0) {
+        m_unk158DE4 += 8;
+        m_unk158DE8 -= 8;
+    }
+    sceGsSetDefDispEnv(m_unk158BB0, m_unk158DFE, m_unk158E08, m_unk158E0A, m_unk158DE4, m_unk158DE8);
+    sceGsSetDefDispEnv(m_unk158BB0 + 0x28, m_unk158DFE, m_unk158E08, m_unk158E0A, m_unk158DE4, m_unk158DE8);
+    nWidth = (m_unk158E08 + 0x3F) / 64;
+    nHeight = (m_unk158E0A + 0x1F) / 32;
+    nProd = (nWidth * nHeight) & 0x1FF;
+    m_unk158BE8 = (m_unk158BE8 & 0xFFFFFE00) | nProd;
+}
+
 // FUNCTION: 0x00187F30 ErrorRefreshDisplay__10PGfxEngineFb
 void PGfxEngine::ErrorRefreshDisplay(bool bFlag) {
     m_unk158C90 = 0x30001;
@@ -804,6 +910,31 @@ void PGfxEngine::ErrorRefreshDisplay(bool bFlag) {
     }
     m_unk158DF0 = GsSwapDBuff((sceGsDBuff *)m_unk158BB0, m_unk158DE0);
     sceGsSyncPath(0, 0);
+}
+
+// FUNCTION: 0x001887A0 __dt__10PGfxEngineFv
+extern "C" PGfxEngine *__dt__10PGfxEngineFv(PGfxEngine *pThis, short nFlag) {
+    if (pThis) {
+        sceGsSyncPath(0, 0);
+        DisableIntc(5);
+        DisableIntc(3);
+        RemoveIntcHandler(5, pThis->m_unk158DF4);
+        RemoveIntcHandler(3, pThis->m_unk158DF8);
+        pThis->m_unk158DF4 = -1;
+        pThis->m_unk158DF8 = -1;
+        __dt__5PGridFv(pThis->m_unk16D410, -1);
+        __destroy_arr(pThis->m_unk169320, __dt__5PMat4Fv, 0x40, 0x100);
+        __destroy_arr(pThis->m_unk159310, __dt__Q210PGfxEngine22tagBlendedFragmentInfoFv, 0x100, 0x100);
+        __dt__13PShadowBufferFv((char *)pThis + 0x157000, -1);
+        __dt__16PParticleManagerFv((char *)pThis + 0x154F00, -1);
+        __dt__15PTextureManagerFv(pThis->m_unk154C90, -1);
+        __dt__12PDisplayListFv((char *)pThis + 0xAA640, -1);
+        __dt__12PDisplayListFv(pThis, -1);
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
 }
 
 // FUNCTION: 0x188900 __dt__Q210PGfxEngine22tagBlendedFragmentInfoFv
