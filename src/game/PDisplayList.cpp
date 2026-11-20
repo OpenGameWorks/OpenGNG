@@ -365,6 +365,113 @@ void PDisplayList::SetTexSyncPacket() {
     }
 }
 
+#define CDS_ASSERT(line, cond, text) ((cond) ? (void)0 : CdsAssert("PDisplayList.cpp", line, text))
+// DRAFT: 0x00181380 SetMaterials__12PDisplayListFP13tagGsMaterialibbPfPUlPUlPb
+// note: DIFF 229 words; frame 0xC0 vs 0xD0, this kept in s6 not spilled to 0xC8(sp), bA/bB spilled to stack; tried count-before-copy (kept), aFlags normalized store (kept), flag test on stored array (231, rejected)void PDisplayList::SetMaterials(struct tagGsMaterial *pMat, int nCount, bool bA, bool bB, float *pScale, unsigned long *pTagA, unsigned long *pTagB, bool *pFlags) {
+void PDisplayList::SetMaterials(struct tagGsMaterial *pMat, int nCount, bool bA, bool bB, float *pScale, unsigned long *pTagA, unsigned long *pTagB, bool *pFlags) {
+    unsigned char aFlags[4];
+    int nFlagged = 0;
+    int nVif;
+    int nAlloc;
+    int nOffset;
+    int nTag;
+    int nFirst = 0;
+    int nBase;
+    int i;
+    char *pWrite;
+    char *pDst;
+    char *pSrc;
+    char *pElem;
+    unsigned int nShared;
+
+    CDS_ASSERT(0x6A4, pMat != 0, "pMaterials");
+    CDS_ASSERT(0x6A5, nCount > 0 && nCount < 5, "iNumPasses > 0 && iNumPasses <= MAX_PASSES_PER_SHADER");
+    CDS_ASSERT(0x6A6, pFlags != 0, "pbRenderPassStatus");
+    for (i = 0; i < nCount; i++) {
+        if (pFlags[i]) {
+            nFlagged++;
+        }
+        aFlags[i] = pFlags[i] ? 1 : 0;
+    }
+    if (nFlagged == 0) {
+        aFlags[0] = 1;
+        aFlags[1] = 0;
+        aFlags[2] = 0;
+        aFlags[3] = 0;
+        nFlagged = 1;
+    }
+    nVif = (m_unkA3348 == 2) ? 0x3AC : 0x372;
+    CDS_ASSERT(0x6C1, nCount == 1, "iNumPasses == 1");
+    if (bA) {
+        SetTexSyncPacket();
+    }
+    nAlloc = nFlagged * 19 + 1;
+    nBase = AllocEntries(nAlloc + 1);
+    CDS_ASSERT(0x6D6, nBase != 0, "0");
+    ((unsigned int *)nBase)[4] = nFlagged - 1;
+    pWrite = (char *)nBase + 0x20;
+    ((unsigned int *)nBase)[5] = 0;
+    nTag = nVif + 1;
+    ((unsigned int *)nBase)[6] = 0;
+    ((unsigned int *)nBase)[7] = 0;
+    nShared = ((unsigned int)(shared_vertices_start + 0x2C10)) >> 3;
+    nOffset = 0;
+    for (i = 0; i < nCount; i++) {
+        if (aFlags[i] == 0) {
+            continue;
+        }
+        pElem = (char *)pMat + i * 160;
+        pDst = pWrite;
+        nFirst++;
+        ((unsigned int *)pDst)[0] = 0;
+        ((unsigned int *)pDst)[1] = 0;
+        ((unsigned int *)pDst)[2] = 0;
+        ((unsigned int *)pDst)[3] = nTag | (((*(int *)(pElem + 0x90)) != 0 ? 0x12 : 0x0E) << 16) | 0x6C000000;
+        pSrc = *(char **)(pElem + 4);
+        *(u_long128 *)(pDst + 0x10) = *(u_long128 *)(pSrc + 0x00);
+        *(u_long128 *)(pDst + 0x20) = *(u_long128 *)(pSrc + 0x10);
+        *(u_long128 *)(pDst + 0x30) = *(u_long128 *)(pSrc + 0x20);
+        *(u_long128 *)(pDst + 0x40) = *(u_long128 *)(pSrc + 0x30);
+        *(u_long128 *)(pDst + 0x50) = *(u_long128 *)(pSrc + 0x40);
+        *(u_long128 *)(pDst + 0x60) = *(u_long128 *)(pSrc + 0x50);
+        *(u_long128 *)(pDst + 0x70) = *(u_long128 *)(pElem + 0x10);
+        *(u_long128 *)(pDst + 0x80) = *(u_long128 *)(pElem + 0x20);
+        *(u_long128 *)(pDst + 0x90) = *(u_long128 *)(pElem + 0x30);
+        *(u_long128 *)(pDst + 0xA0) = *(u_long128 *)(pElem + 0x40);
+        *(u_long128 *)(pDst + 0xB0) = *(u_long128 *)(pElem + 0x50);
+        *(u_long128 *)(pDst + 0xC0) = *(u_long128 *)(pElem + 0x60);
+        *(u_long128 *)(pDst + 0xD0) = *(u_long128 *)(pElem + 0x70);
+        *(u_long128 *)(pDst + 0xE0) = *(u_long128 *)(pElem + 0x80);
+        if (nFirst == 1 && bB) {
+            *(unsigned int *)(pDst + 0xD0) = 0;
+            *(unsigned int *)(pDst + 0xD4) = nShared;
+        }
+        pWrite = pDst + 0xF0;
+        if (pTagB != 0) {
+            *(u_long128 *)(pWrite + 0x00) = *(u_long128 *)((char *)pTagB + 0x00);
+            *(u_long128 *)(pWrite + 0x10) = *(u_long128 *)((char *)pTagB + 0x10);
+            *(u_long128 *)(pWrite + 0x20) = *(u_long128 *)((char *)pTagB + 0x20);
+            *(u_long128 *)(pWrite + 0x30) = *(u_long128 *)((char *)pTagB + 0x30);
+            pWrite += 0x40;
+        }
+        nOffset += 4;
+        if (pScale != 0) {
+            *(float *)(pDst + 0xCC) = pScale[i];
+            *(unsigned long *)(pDst + 0x90) = pTagA[i];
+            *(unsigned long *)(pDst + 0xB0) = pTagB[i];
+        }
+        nTag += 0x12;
+    }
+    *(long long *)nBase = (long long)(nAlloc - nOffset) | 0x10000000LL;
+    ((unsigned int *)nBase)[2] = 0x10000000;
+    ((unsigned int *)nBase)[3] = nVif | 0x6C010000;
+    DeAllocEntries(nOffset);
+    asm {
+        sync
+    }
+}
+#undef CDS_ASSERT
+
 // DRAFT: 0x00181770 SetMaterials__12PDisplayListFP13tagGsMaterialibbPfPUlPUl
 // note: DIFF 193 words, size 0x284 vs 0x340; prologue saves/spills differ (this in s5 not fp, pTagB spilled), nHeader in s1 not stack, DeAllocEntries reloc at 0x023c/0x0304 misplaced; tried nHeader ternary vs if/else (same count 197 in the other body)
 void PDisplayList::SetMaterials(struct tagGsMaterial *pMat, int nCount, bool bA, bool bB, float *pScale, unsigned long *pTagA, unsigned long *pTagB) {
