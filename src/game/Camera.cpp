@@ -1,8 +1,12 @@
 // FLAGS: -str readonly
 #include "Camera.h"
 #include "PMat4.h"
+#include "MathAPI.h"
+#include "pad.h"
 
 // TODO(header): foreign declarations
+extern "C" float FastMath_Fabs__Ff(float fValue);
+extern Pad gPad;
 extern "C" float atan2f(float y, float x);
 extern "C" float Round180__Ff(float fAngle);
 extern "C" float sceVu0InnerProduct(float *a, float *b);
@@ -102,6 +106,42 @@ public:
     void Init(PVec3 arg0);
     void Update(bool arg0);
 };
+
+// DRAFT: 0x00177F80 ClosestPointOnLine__6CameraF8CVector38CVector38CVector3
+// note: DIFF 153; frame 0x254 vs 0x270 and extra stack temporaries; the original copies each argument into locals before use and returns through the hidden pointer. Tried v1 (155), v2 (153, kept), v3 (156), v4 (164).
+CVector3 Camera::ClosestPointOnLine(CVector3 arg0, CVector3 arg1, CVector3 arg2) {
+    CVector3 start = arg0;
+    CVector3 end = arg1;
+    CVector3 pt = arg2;
+    CVector3 base = start;
+    CVector3 rel;
+    CVector3 base2 = base;
+    rel.m_unk0 = pt.m_unk0 - base.m_unk0;
+    rel.m_unk4 = pt.m_unk4 - base.m_unk4;
+    rel.m_unk8 = pt.m_unk8 - base.m_unk8;
+    CVector3 dir;
+    dir.m_unk0 = end.m_unk0 - base2.m_unk0;
+    dir.m_unk4 = end.m_unk4 - base2.m_unk4;
+    dir.m_unk8 = end.m_unk8 - base2.m_unk8;
+    CVector3 n = Normalize(dir);
+    float len = Distance(start, end);
+    float t = Dot(n, rel);
+    if (t <= 0.0f) {
+        return start;
+    }
+    if (!(t < len)) {
+        return end;
+    }
+    CVector3 scaled;
+    scaled.m_unk0 = n.m_unk0 * t;
+    scaled.m_unk4 = n.m_unk4 * t;
+    scaled.m_unk8 = n.m_unk8 * t;
+    CVector3 res;
+    res.m_unk0 = scaled.m_unk0 + start.m_unk0;
+    res.m_unk4 = scaled.m_unk4 + start.m_unk4;
+    res.m_unk8 = scaled.m_unk8 + start.m_unk8;
+    return res;
+}
 
 // FUNCTION: 0x001781F0 Distance__6CameraF8CVector38CVector3
 float Camera::Distance(CVector3 arg0, CVector3 arg1) {
@@ -408,6 +448,78 @@ int Camera::ShakeScreenTable(PVec3 &arg0, PVec3 &arg1, bool arg2) {
             return 1;
         }
         m_unk128 = 1;
+    }
+    return 0;
+}
+
+// DRAFT: 0x00179C10 ShakeScreen__6CameraFR5PVec3R5PVec3b
+// note: DIFF 155; the fFrameDelay test polarity is fixed (> 0 takes -=), but the static is gp-relative in ours (-0x7BC8) vs 0x0($gp) in the original, constants load into v1 not v0, the case-0 branch layout differs, and the SetVibrate relocation is missing.
+bool Camera::ShakeScreen(PVec3 &arg0, PVec3 &arg1, bool arg2) {
+    static float fFrameDelay;
+
+    if (m_unk170 != 0) {
+        switch (m_unk148) {
+        case 0:
+            if (fFrameDelay > 0.0f) {
+                fFrameDelay -= 60.0f / GAME_FPS;
+                return 0;
+            }
+            fFrameDelay += 2.0f;
+            if (m_unk154 > 0.0f) {
+                m_unk154 -= 1.0f;
+            }
+            if (m_unk178 != 0) {
+                float t = m_unk154 / m_unk15C;
+                m_unk160 = MathAPI::RandomFloatRange(0.0f, 0.2f) * m_unk174 * t;
+                m_unk168 = MathAPI::RandomFloatRange(0.0f, 0.2f) * m_unk174 * t;
+                m_unk178 = 0;
+            } else {
+                float v;
+                m_unk178 = 1;
+                v = -m_unk160;
+                if (m_unk160 < 0.0f) {
+                    v = FastMath_Fabs__Ff(m_unk160);
+                }
+                m_unk160 = v;
+                v = -m_unk168;
+                if (m_unk168 < 0.0f) {
+                    v = FastMath_Fabs__Ff(m_unk168);
+                }
+                m_unk168 = v;
+            }
+            arg0.m_v[0] += m_unk160;
+            arg0.m_v[2] += m_unk168;
+            arg1.m_v[0] += m_unk160;
+            arg1.m_v[2] += m_unk168;
+            return 0;
+        case 1:
+            if (ShakeScreenTable(arg0, arg1, arg2) != 0) {
+                return 1;
+            }
+            return 0;
+        }
+    } else {
+        switch (m_unk148) {
+        case 0:
+            if (m_unk158 > 0.0f) {
+                m_unk158 -= 1.0f;
+            } else {
+                fFrameDelay = 2.0f;
+                m_unk178 = 1;
+                m_unk15C = m_unk15C / 2.0f;
+                m_unk154 = m_unk15C;
+                m_unk170 = 1;
+                gPad.SetVibrate((Pad::VibType)1, (unsigned char)(int)m_unk15C);
+            }
+            break;
+        case 1:
+            m_unk128 = 1;
+            m_unk144 = 0;
+            m_unk170 = 1;
+            m_unk15C = 0.5f * GAME_FPS / 2.0f;
+            gPad.SetVibrate((Pad::VibType)1, (unsigned char)(int)m_unk15C);
+            break;
+        }
     }
     return 0;
 }

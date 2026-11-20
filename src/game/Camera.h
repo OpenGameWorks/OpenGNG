@@ -14,6 +14,7 @@ public:
     float Distance(CVector3 arg0, CVector3 arg1);
     float Dot(CVector3 arg0, CVector3 arg1);
     float Magnitude(CVector3 arg0);
+    CVector3 ClosestPointOnLine(CVector3 arg0, CVector3 arg1, CVector3 arg2);
     void SetEntityYOffset(unsigned short arg0);
     unsigned short GetEntityYOffset();
     int ControlledByApp(unsigned int arg0);
@@ -86,14 +87,18 @@ public:
     int m_unk144;           // 0x144
     int m_unk148;           // 0x148
     int m_unk14C;           // 0x14C
-    char _pad150[0x158 - 0x150];
+    char _pad150[0x154 - 0x150];
+    float m_unk154;         // 0x154
     float m_unk158;         // 0x158
     float m_unk15C;         // 0x15C
-    char _pad160[0x170 - 0x160];
+    float m_unk160;         // 0x160
+    char _pad164[0x168 - 0x164];
+    float m_unk168;         // 0x168
+    char _pad16C[0x170 - 0x16C];
     unsigned char m_unk170; // 0x170
     char _pad171[0x174 - 0x171];
     float m_unk174;         // 0x174
-    char _pad178[0x179 - 0x178];
+    unsigned char m_unk178; // 0x178
     unsigned char m_unk179; // 0x179
     char _pad17A[0x17C - 0x17A];
     int m_unk17C[3];        // 0x17C
