@@ -300,7 +300,7 @@ void PParticleManager::InitHeatHazeBuffer() {
 }
 
 // DRAFT: 0x001B76B0 UpdateHeatHazeBuffer__16PParticleManagerFv
-// note: DIFF 6 words in GS block: 0x18/0x1B load into swapped v0/v1, sp+0x50 base and 1 load order; tried direct aGs[1]/aGs[2] stores (19), pEnt declared before aGs (6), unsigned long long fields (6), flat long long aGs[6] (6), single pEnt walked with ++ (many diffs)
+// note: DIFF 6 words in GS block: 0x18/0x1B load into swapped v0/v1, sp+0x50 base and 1 load order; tried direct aGs[1]/aGs[2] stores (19), pEnt declared before aGs (6), unsigned long long fields (6), flat long long aGs[6] (6), single pEnt walked with ++ (many diffs), variants V0-V5 from perm_hh.py (6 or 18-19)
 void PParticleManager::UpdateHeatHazeBuffer() {
     bool bFlag = false;
     int nTex = AllocRenderedTexture__15PTextureManagerFiiRbb(gGfxEng + 0x154C90, m_unk670, 0x2000, bFlag, false);
@@ -627,7 +627,7 @@ void PParticleManager::DestroyGroundDustFx() {
 }
 
 // DRAFT: 0x001B85B0 InitGroundDustFx__16PParticleManagerFv
-// note: DIFF 5: this/off registers swapped (ours s1=off s0=this, original s1=this s0=off); tried pSelf copy, counter-first order (7), unsigned int counter (6), off assigned after counter (7), for/while forms (5-7)
+// note: DIFF 5: this/off registers swapped (ours s1=off s0=this, original s1=this s0=off); DIFF 5 after 13 variants: tried i-first (7), decl-late (7), offcast (7), off-after-i (7), unsigned (7), pSelf (5), pBase (5), this-first (5), off=off+4 (5), int-cast (5), counter-first (7), unsigned counter (6), for/while (5-7)
 void PParticleManager::InitGroundDustFx() {
     int off = 0;
     int i = 0;
@@ -923,8 +923,7 @@ int PParticleManager::LoadFogObjects(PPakFile *pFile, ePsx2FileVersion nVersion)
     return 1;
 }
 
-// DRAFT: 0x001B90B0 CreateFog__16PParticleManagerFP18tagParticleFogData
-// note: DIFF 6; original shares one GetFxTexture call with a0 set in both arms; tried if/else, inverted test, short-circuit ||, empty-then (DIFF 47-52).
+// FUNCTION: 0x001B90B0 CreateFog__16PParticleManagerFP18tagParticleFogData
 int PParticleManager::CreateFog(tagParticleFogData *pData) {
     PParticleFog *pObj;
     int nTex;
@@ -938,11 +937,9 @@ int PParticleManager::CreateFog(tagParticleFogData *pData) {
     if (m_unk20 >= 0x100) {
         CdsAssert("PParticleManager.cpp", 0x3C0, "moFogList.GetCount() < MAX_FOGS");
     }
-    nTex = 0;
-    if (pData->m_unk45 != 0) {
+    if (pData->m_unk45 != 0 && m_unk2060 != 0) {
         nTex = m_unk2060;
-    }
-    if (nTex == 0) {
+    } else {
         nTex = GetFxTexture(0x84000002);
     }
     pObj = (PParticleFog *)__nw__FUi(0x60);
@@ -1543,8 +1540,7 @@ void PParticleManager::AddMasterParticleInstance(PParticleSystem *pFx) {
     ((PArray *)((char *)this + 0x2078))->Add(pFx);
 }
 
-// DRAFT: 0x001BA5F0 RemoveAllFogObjects__16PParticleManagerFv
-// note: 8 lines: original reloads 0x24 after the store (sw v1 then lw a1); ours reuses the register; postfix ++ same count
+// FUNCTION: 0x001BA5F0 RemoveAllFogObjects__16PParticleManagerFv
 void PParticleManager::RemoveAllFogObjects() {
     PParticleFog *pFog;
     m_unk24 = 0;
@@ -1556,11 +1552,7 @@ void PParticleManager::RemoveAllFogObjects() {
     if (pFog != 0) {
         do {
             __dt__12PParticleFogFv(pFog, 1);
-            ++m_unk24;
-            pFog = 0;
-            if (m_unk24 < m_unk20) {
-                pFog = m_unk28[m_unk24];
-            }
+            pFog = (++m_unk24 < m_unk20) ? m_unk28[m_unk24] : 0;
         } while (pFog != 0);
     }
     if (m_unk28 != 0) {
