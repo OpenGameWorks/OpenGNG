@@ -4,13 +4,18 @@
 #include "types.h"
 
 class PSTAnim;
+class PPakFile;
+class PArray;
 
 // Embedded at offset 0x0C of each PMeshFragment; size 0x58.
 class PShader {
 public:
     PShader();
+    void Render(int nArg, bool bFlag, bool *pbOut);
     void Animate(float fTime, bool bFlag);
     void SetSTAnimOptions(bool bFlag);
+    int Load(PPakFile *pPakFile, PArray *pTextures, bool bFlag);
+    int LoadRenderPass(PPakFile *pPakFile, PArray *pTextures, unsigned int nIndex, bool bFlag);
     void Destroy();
 
     void *m_unk0;              // 0x00 heap block, freed with __dla__FPv
