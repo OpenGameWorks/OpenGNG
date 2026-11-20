@@ -3,6 +3,9 @@
 
 // TODO(header): foreign declarations
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
+extern "C" void sceVu0MulVector(float *pDst, float *pSrc, float *pW);
+extern "C" void sceVu0UnitMatrix(void *pMat);
+extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void iFlushCache(int nMode);
 extern char vu_clip_microcode_dma_packet[];
 extern char vu_shadow_microcode_dma_packet[];
@@ -261,6 +264,22 @@ void PGfxEngine::CopyVuLightingInfo(struct tagVuLightingInfo *pDst, struct tagVu
     *(u_long128 *)((char *)pDst + 0xC0) = *(u_long128 *)((char *)pSrc + 0xC0);
 }
 
+// FUNCTION: 0x1859F0 GetLightingInfo__10PGfxEngineFP5PMat4P5PMat4PA4_f
+void PGfxEngine::GetLightingInfo(PMat4 *pA, PMat4 *pB, float (*pOut)[4]) {
+    if (pA == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x6A0, "pLightDirMat");
+    }
+    if (pB == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x6A1, "pLightColorMat");
+    }
+    if (pOut == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x6A2, "pAmbientLight");
+    }
+    memcpy(pA, m_unk158E30, 0x40);
+    memcpy(pB, m_unk158E70, 0x40);
+    *(u_long128 *)pOut = *(u_long128 *)m_unk158EB0;
+}
+
 // FUNCTION: 0x185CF0 UpdateLights__10PGfxEngineFv
 void PGfxEngine::UpdateLights() {
     if (m_unk158E23 != 0) {
@@ -268,6 +287,17 @@ void PGfxEngine::UpdateLights() {
         return;
     }
     m_unk154C80->WriteToVu1Mem(0x35E, (u_long128 *)m_unk158E30, 9);
+}
+
+// FUNCTION: 0x185D70 ModulateAllLights__10PGfxEngineFPf
+void PGfxEngine::ModulateAllLights(float *pVec) {
+    sceVu0MulVector((float *)&m_unk158E70[0], (float *)&m_unk158E70[0], pVec);
+    sceVu0MulVector((float *)&m_unk158E70[1], (float *)&m_unk158E70[1], pVec);
+    sceVu0MulVector((float *)&m_unk158E70[2], (float *)&m_unk158E70[2], pVec);
+    sceVu0MulVector((float *)&m_unk158E70[3], (float *)&m_unk158E70[3], pVec);
+    sceVu0MulVector(m_unk158EB0, m_unk158EB0, pVec);
+    sceVu0MulVector((float *)((char *)this + 0x158ED0), (float *)((char *)this + 0x158ED0), pVec);
+    sceVu0MulVector((float *)((char *)this + 0x158EF0), (float *)((char *)this + 0x158EF0), pVec);
 }
 
 // FUNCTION: 0x185E50 SetFullAmbientLight__10PGfxEngineFv
@@ -308,6 +338,28 @@ void PGfxEngine::SetDirLightColor(int nIndex, float fR, float fG, float fB) {
     }
 }
 
+// FUNCTION: 0x1867B0 ResetBlendedFragmentTable__10PGfxEngineFv
+void PGfxEngine::ResetBlendedFragmentTable() {
+    int i;
+    int nOff;
+
+    memset((char *)this + 0x158F04, 0, 0x400);
+    memset((char *)this + 0x159310, 0, 0x10000);
+    m_unk169310 = 0;
+    m_unk16D320 = 0;
+    m_unk16D324 = 0;
+    m_unk16D40C = 0;
+    i = 0;
+    nOff = 0;
+    do {
+        sceVu0UnitMatrix((char *)this + nOff + 0x169320);
+        i++;
+        nOff += 0x40;
+    } while (i < 256);
+    m_unk16D328 = 4;
+    m_unk16D400 = 0;
+}
+
 // FUNCTION: 0x1869D0 SetScreenMatrix__10PGfxEngineFP5PMat4
 void PGfxEngine::SetScreenMatrix(PMat4 *pMat) {
     m_unk154C80->SetScreenMatrix(pMat);
@@ -335,6 +387,27 @@ void PGfxEngine::SetClipMatrix(PMat4 *pMat) {
     m_unk154C80->SetClipMatrix(pMat);
     u_long128 *pDst = (u_long128 *)m_unk16D340;
     u_long128 *pSrc = (u_long128 *)pMat;
+    pDst[0] = pSrc[0];
+    pDst[1] = pSrc[1];
+    pDst[2] = pSrc[2];
+    pDst[3] = pSrc[3];
+}
+
+// FUNCTION: 0x186B20 SetWorldMatrix__10PGfxEngineFP5PMat4
+void PGfxEngine::SetWorldMatrix(PMat4 *pMat) {
+    u_long128 *pDst;
+    u_long128 *pSrc;
+
+    m_unk154C80->SetWorldMatrix(pMat);
+    if (m_unk16D324 > 0) {
+        m_unk16D320 += 1;
+        m_unk16D324 = 0;
+    }
+    if (m_unk16D320 >= 0x100) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x4A9, "miCurWorldMatrixIndex < MAX_BLENDED_FRAGMENTS");
+    }
+    pDst = (u_long128 *)(m_unk169320 + (m_unk16D320 << 6));
+    pSrc = (u_long128 *)pMat;
     pDst[0] = pSrc[0];
     pDst[1] = pSrc[1];
     pDst[2] = pSrc[2];
@@ -415,6 +488,25 @@ void PGfxEngine::SetTexture(int nIndex) {
         m_unk154C80->SetTexSyncPacket();
     }
     m_unk154C80->SetGsRegisters((u_long128 *)((char *)pEnv + 0x10), 5);
+}
+
+// DRAFT: 0x187620 SetOverrideTexture__10PGfxEngineFi
+// note: DIFF 3 words; pEnv sits at sp+0x20, original at sp+0x28 (bFlag at 0x2F matches). Tried swapping locals and adding unused pad locals; the optimizer drops both, so the slot does not move.
+void PGfxEngine::SetOverrideTexture(int nIndex) {
+    tagGsTextureEnvironment *pEnv;
+    bool bFlag;
+
+    m_unk16D408 = nIndex;
+    if (m_unk16D408 != 0) {
+        bFlag = false;
+        pEnv = 0;
+        ((PTextureManager *)m_unk154C90)->SetTexture(m_unk16D408, m_unk154C80, &pEnv, bFlag);
+        if (bFlag) {
+            ((PTextureDmaChain *)((char *)m_unk154C80 + 0xA3380))->NextBatch();
+            m_unk154C80->SetTexSyncPacket();
+        }
+        m_unk154C80->SetGsRegisters((u_long128 *)((char *)pEnv + 0x10), 5);
+    }
 }
 
 // FUNCTION: 0x187880 EnableFullScreenFx__10PGfxEngineFb

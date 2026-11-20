@@ -54,6 +54,11 @@ public:
     void SetMaterial(int nIndex, float *pVec, unsigned long nA, unsigned long nB, unsigned int *pC, unsigned int *pD, float (*pMat)[4][4]);
     void SetPrevFrameBufferAsTexture();
     void SetTexture(int nIndex);
+    void GetLightingInfo(PMat4 *pA, PMat4 *pB, float (*pOut)[4]);
+    void ModulateAllLights(float *pVec);
+    void ResetBlendedFragmentTable();
+    void SetWorldMatrix(PMat4 *pMat);
+    void SetOverrideTexture(int nIndex);
 
     char _pad000[0x154C80];
     struct PDisplayList *m_unk154C80;   // 0x154C80
@@ -79,7 +84,14 @@ public:
     float m_unk158EB0[4];               // 0x158EB0
     char _pad158EC0[0x158F00 - 0x158EC0];
     unsigned char m_unk158F00;          // 0x158F00, material flag, saved and restored around SetMaterial
-    char _pad158F01[0x16D328 - 0x158F01];
+    char _pad158F01[0x158F04 - 0x158F01];
+    char m_unk158F04[0x159310 - 0x158F04]; // 0x158F04, cleared by ResetBlendedFragmentTable
+    char m_unk159310[0x10000];          // 0x159310, cleared by ResetBlendedFragmentTable
+    int m_unk169310;                    // 0x169310
+    char _pad169314[0x169320 - 0x169314];
+    char m_unk169320[0x4000];           // 0x169320, 256 world matrices of 0x40 bytes, indexed by m_unk16D320
+    int m_unk16D320;                    // 0x16D320, world matrix index
+    int m_unk16D324;                    // 0x16D324, set when a world matrix is pending
     int m_unk16D328;                    // 0x16D328, last eBoxIntersect passed to BeginMesh
     char _pad16D32C[0x16D340 - 0x16D32C];
     char m_unk16D340[0x40];             // 0x16D340, copy of a PMat4 (clip)
@@ -91,7 +103,7 @@ public:
     char m_unk16D406;                   // 0x16D406
     char _pad16D407[1];
     int m_unk16D408;                    // 0x16D408, material index override (0 = use argument)
-    char _pad16D40C[0x16D410 - 0x16D40C];
+    int m_unk16D40C;                    // 0x16D40C, cleared by ResetBlendedFragmentTable
     char m_unk16D410[0x202C];           // 0x16D410, PGrid
     float m_unk16F43C;                  // 0x16F43C
 };
