@@ -31,11 +31,16 @@ extern char gGfxEng[1504384];
 extern char vu_fx_microcode_dma_packet[];
 extern char fx_sprite_noclip_init[];
 
-// DRAFT: 0x0020DA20 BeginRender__19PMovieOverlayEngineFUi
-// note: 3 words differ: mask -0x200 and flag 0x1FF swap v0/v1; tried swapped operands (4 words), explicit 0xFFFFFE00 (4), hoisted flag temp (4), mask temp (3).
+// The halfword at 0x10 holds a 9-bit field in its low bits. BeginRender writes it
+// as a bitfield: the hand-written mask-and-or form allocates v0/v1 the other way.
+struct PMovieOverlayRenderBits {
+    unsigned short nLow : 9;
+    unsigned short nHigh : 7;
+};
+
+// FUNCTION: 0x0020DA20 BeginRender__19PMovieOverlayEngineFUi
 void PMovieOverlayEngine::BeginRender(unsigned int nFlags) {
-    unsigned int nOld = m_unk10;
-    m_unk10 = (nFlags & 0x1FF) | (nOld & ~0x1FF);
+    ((PMovieOverlayRenderBits *)&m_unk10)->nLow = nFlags;
     m_unk4->SetGsRegisters((u_long128 *)&m_unk10, 8);
 }
 
