@@ -17,6 +17,13 @@ class MathAPI;
 extern MathAPI *mPlayerAPI__13EntityManager;
 extern "C" void ShellSort__FPFPvPv_bPPvi(bool (*pCompare)(void *, void *), void **ppItems, int nCount);
 int CompareDistToCam(void *pA, void *pB);
+extern "C" char *strcpy(char *pDst, const char *pSrc);
+extern "C" char *strcat(char *pDst, const char *pSrc);
+extern "C" unsigned int strlen(const char *pStr);
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
+extern "C" CEifFile *__ct__8CEifFileFv(void *pThis);
+extern int mbHard__15EntityBaseClass;
+extern int TypeSizeTable[17];
 
 class PList {
 public:
@@ -223,12 +230,20 @@ public:
     virtual int GetTallyType();
     virtual void Slot02();
     virtual void OutputDebug();
-    virtual void Slot04();
+    virtual char *Slot04();
     virtual void SetEditableVars(char *);
     virtual void SetDefaultVars();
     virtual void OnTimerEvent(unsigned int);
     virtual int Render(void *);
     virtual void Animate(int, float);
+    virtual void Slot10();
+    virtual void Slot11();
+    virtual void Slot12();
+    virtual void Slot13();
+    virtual void Slot14();
+    virtual int Slot15();
+    virtual int Slot16();
+    virtual unsigned char Slot17();
 };
 
 class MemMgrType {
@@ -301,6 +316,7 @@ public:
     unsigned short m_unk184;    // 0x184 camera Y offset applied when in range
     char _pad186[0x190 - 0x186];
     float m_unk190[4];          // 0x190
+    float m_unk1A0[4];          // 0x1A0
 };
 
 class Player {
@@ -337,7 +353,12 @@ class CEifInstance {
 public:
     int GetEntityID();
     int GetInstanceID();
+    int GetFlags();
+    int GetNumEditVars();
+    char *GetInstanceName();
     void SetStartPosition(float arg0, float arg1, float arg2);
+    void GetStartPosition(float &arg0, float &arg1, float &arg2);
+    void GetStartOrientation(float &arg0, float &arg1, float &arg2);
     void *GetEditVarData(int arg0);
 };
 
@@ -349,6 +370,7 @@ public:
 
 class CEifFile {
 public:
+    int Load(const char *arg0);
     int GetNumInstanceGroups();
     CEifInstanceGroup *GetInstanceGroup(int arg0);
 };
@@ -987,7 +1009,7 @@ void EntityManager::SetHolyGround(float (*arg0)[4], float arg1, bool arg2) {
     int flag;
 
     m_unk5070 = arg2;
-    *(u_long128 *)_pad5060 = *(u_long128 *)arg0;
+    *(u_long128 *)&m_unk5060 = *(u_long128 *)arg0;
     m_unk506C = arg1;
     ValidateDependencyList();
     {
@@ -1283,6 +1305,206 @@ void EntityManager::AfterSpawnEditedInstances() {
         } while (idx < iNTerminated);
     }
     gSound.AfterSpawnEditedInstances();
+}
+
+// DRAFT: 0x00148240 SpawnEditedInstances__13EntityManagerFPcb
+// note: DIFF 348; bool copy of arg1 keeps andi (orig daddu), block layout differs at 0x40/0x12C (Load-fail path), 0x5050 tail and loop head; tried bool var_fp (390, reverted), new-file temp (349->348 kept)
+void EntityManager::SpawnEditedInstances(char *arg0, bool arg1) {
+    char sFile[0x100];
+    char sp1D0[0x200];
+    float sp1C0[4];
+    float sp3D8;
+    float sp3DC;
+    float sp3E0;
+    float sp3E4;
+    float sp3E8;
+    float sp3EC;
+    int var_fp;
+    int spA0;
+    int var_s7;
+    CEifInstanceGroup *pGroup;
+    CEifInstance *pInst;
+    EntityBaseClass *pEnt;
+    int flags;
+    int entityID;
+    int nEditVars;
+    int nTotalSize;
+    int nSize;
+    int nTally;
+    int nSavedMem;
+    int i;
+    char *pVar;
+    char *pDst;
+    CEifFile *pNewFile;
+
+    var_fp = arg1;
+    if ((var_fp != 0) || (m_unk5194 == 0)) {
+        if (m_unk5194 != 0) {
+            __dt__8CEifFileFv(m_unk5194, 1);
+        }
+        pNewFile = (CEifFile *)__nw__FUi(0x330);
+        if (pNewFile != 0) {
+            pNewFile = __ct__8CEifFileFv(pNewFile);
+        }
+        m_unk5194 = pNewFile;
+        if (m_unk5194 == 0) {
+            CdsAssert("EntityManager.cpp", 0x2D0, "mpEifFile");
+        }
+        if (arg0 == 0) {
+            CdsAssert("EntityManager.cpp", 0x2D3, "pPsxFilename");
+        }
+        strcpy(sFile, arg0);
+        sFile[strlen(sFile)] = 0;
+        strcat(sFile, "EIF");
+        if (strlen(sFile) >= 0x100U) {
+            CdsAssert("EntityManager.cpp", 0x2D7, "strlen( pFileName ) < 256");
+        }
+        if (m_unk5194->Load(sFile) == 0) {
+            __dt__8CEifFileFv(m_unk5194, 1);
+            m_unk5194 = 0;
+            return;
+        }
+        strcpy(m_unk5C10, arg0);
+        m_unk5B24[0].m_unk00 = 0;
+        m_unk5B24[0].m_unk04 = 0;
+        m_unk5B24[1].m_unk00 = 0;
+        m_unk5B24[1].m_unk04 = 0;
+        m_unk5B24[2].m_unk00 = 0;
+        m_unk5B24[2].m_unk04 = 0;
+        m_unk5B24[3].m_unk00 = 0;
+        m_unk5B24[3].m_unk04 = 0;
+        m_unk5B24[4].m_unk00 = 0;
+        m_unk5B24[4].m_unk04 = 0;
+        var_fp = 1;
+    }
+    spA0 = 0;
+    m_unk5050 = 1;
+    while (spA0 < m_unk5194->GetNumInstanceGroups()) {
+        pGroup = m_unk5194->GetInstanceGroup(spA0);
+        if (pGroup == 0) {
+            CdsAssert("EntityManager.cpp", 0x2EB, "pEifInstanceGroup");
+        }
+        var_s7 = 0;
+        if (pGroup->GetNumInstances() > 0) {
+            do {
+                pInst = pGroup->GetInstanceData(var_s7);
+                if (pInst == 0) {
+                    CdsAssert("EntityManager.cpp", 0x2F0, "pEifInstance");
+                }
+                flags = pInst->GetFlags();
+                if (!(flags & 1)) {
+                    if (((mbHard__15EntityBaseClass == 0) && (flags & 2)) || ((signed char)m_unk53A1[m_unk5050 * 4] < -1)) {
+                        m_unk5050 += 1;
+                    } else {
+                        entityID = pInst->GetEntityID();
+                        pEnt = (EntityBaseClass *)Spawn(entityID, true, pInst->GetNumEditVars());
+                        if (entityID >= 0x80U) {
+                            CdsAssert("EntityManager.cpp", 0x304, "iClassID < MAX_ENTITY_ID");
+                        }
+                        m_unk5B90[entityID] = ((EntityBaseVirtuals *)pEnt)->Slot17();
+                        if (entityID == 3) {
+                            if (var_fp == 0) {
+                                *(u_long128 *)sp1C0 = *(u_long128 *)&m_unk5060;
+                                sp1C0[3] = 1.0f;
+                                *(u_long128 *)pEnt->m_unk190 = *(u_long128 *)sp1C0;
+                                sp1C0[0] = 0.0f;
+                                sp1C0[1] = m_unk506C;
+                                sp1C0[2] = 0.0f;
+                                sp1C0[3] = 0.0f;
+                                *(u_long128 *)pEnt->m_unk1A0 = *(u_long128 *)sp1C0;
+                                ((EntityBaseVirtuals *)pEnt)->Slot02();
+                            } else {
+                                pInst->GetStartPosition(m_unk5060, m_unk5064, m_unk5068);
+                                pInst->GetStartOrientation(sp3E4, m_unk506C, sp3EC);
+                                goto block_32;
+                            }
+                        } else {
+block_32:
+                            pInst->GetStartPosition(sp3D8, sp3DC, sp3E0);
+                            sp1C0[0] = sp3D8;
+                            sp1C0[1] = sp3DC;
+                            sp1C0[2] = sp3E0;
+                            sp1C0[3] = 1.0f;
+                            *(u_long128 *)pEnt->m_unk190 = *(u_long128 *)sp1C0;
+                            pInst->GetStartOrientation(sp3E4, sp3E8, sp3EC);
+                            sp1C0[0] = sp3E4;
+                            sp1C0[1] = sp3E8;
+                            sp1C0[2] = sp3EC;
+                            if ((pEnt->m_unk10 != 6) && (pEnt->m_unk10 != 3)) {
+                            } else if ((sp1C0[0] != 0.0f) || (sp1C0[2] != 0.0f)) {
+                                char *pName = ((EntityBaseVirtuals *)pEnt)->Slot04();
+                                printf("%s has BAD ROTATION ( %s )\n", pName, pInst->GetInstanceName());
+                                sp1C0[0] = 0.0f;
+                                sp1C0[1] = 0.0f;
+                                sp1C0[2] = 0.0f;
+                                sp1C0[3] = 0.0f;
+                            }
+                            *(u_long128 *)pEnt->m_unk1A0 = *(u_long128 *)sp1C0;
+                            nEditVars = pInst->GetNumEditVars();
+                            if (nEditVars > 0) {
+                                nSize = 0;
+                                i = 0;
+                                if (nEditVars > 0) {
+                                    do {
+                                        pVar = (char *)pInst->GetEditVarData(i);
+                                        if (pVar == 0) {
+                                            CdsAssert("EntityManager.cpp", 0x344, "pVarData");
+                                        }
+                                        i += 1;
+                                        nSize += TypeSizeTable[*pVar];
+                                    } while (i < nEditVars);
+                                }
+                                if (nSize >= 0x200U) {
+                                    CdsAssert("EntityManager.cpp", 0x348, "iTotalSize < sizeof(VarStore)");
+                                }
+                                pDst = sp1D0;
+                                i = 0;
+                                if (nEditVars > 0) {
+                                    do {
+                                        pVar = (char *)pInst->GetEditVarData(i);
+                                        if (pVar == 0) {
+                                            CdsAssert("EntityManager.cpp", 0x34F, "pVarData");
+                                        }
+                                        nTotalSize = TypeSizeTable[*pVar];
+                                        memcpy(pDst, pVar + 8, nTotalSize);
+                                        i += 1;
+                                        pDst += nTotalSize;
+                                    } while (i < nEditVars);
+                                }
+                            }
+                            ((EntityBaseVirtuals *)pEnt)->SetEditableVars(sp1D0);
+                            if (var_fp != 0) {
+                                nTally = ((EntityBaseVirtuals *)pEnt)->GetTallyType();
+                                if (nTally > 0) {
+                                    m_unk5B24[nTally].m_unk04 += 1;
+                                }
+                                if (*((char *)this + m_unk5050 * 4 + 0x539C) != 0) {
+                                    *((char *)this + m_unk5050 * 4 + 0x539C) = nTally;
+                                }
+                            }
+                            if ((((EntityBaseVirtuals *)pEnt)->Slot15() != 0) || (((EntityBaseVirtuals *)pEnt)->Slot16() != 0)) {
+                                pEnt->m_unk1A = 0;
+                            }
+                            if (pInst->GetInstanceID() != 0) {
+                                pEnt->m_unk0C = pInst->GetInstanceID();
+                                nSavedMem = MemMgr.m_unk18;
+                                MemMgr.m_unk18 = 0;
+                                ((PHashTable *)m_unk5094)->Add((void *)pInst->GetInstanceID(), pEnt);
+                                MemMgr.m_unk18 = nSavedMem;
+                            }
+                        }
+                    }
+                }
+                var_s7 += 1;
+            } while (var_s7 < pGroup->GetNumInstances());
+        }
+        spA0 += 1;
+    }
+    m_unk5054 = m_unk5050;
+    if (m_unk5054 >= 0x180U) {
+        CdsAssert("EntityManager.cpp", 0x380, "m_iEditedInstances < MAX_EDITED_INSTANCES");
+    }
+    AfterSpawnEditedInstances();
 }
 
 // FUNCTION: 0x00148960 GetPtrToInstance__13EntityManagerFUi

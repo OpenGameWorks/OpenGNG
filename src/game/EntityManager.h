@@ -72,6 +72,7 @@ public:
     void SetEifPosition(unsigned int arg0, unsigned int arg1, float (*arg2)[4]);
     void ModifyEifPosition();
     int SetEifWoken(unsigned int arg0, bool arg1, unsigned int arg2);
+    void SpawnEditedInstances(char *arg0, bool arg1);
     void AfterSpawnEditedInstances();
     void RunPhysics(float arg0);
     void Animate(int arg0, float arg1);
@@ -92,7 +93,9 @@ public:
     unsigned int m_unk5054;     // 0x5054 bound for dependency flag indices
     int m_unk5058;              // 0x5058 physics pass argument, not yet named
     void *m_unk505C;            // 0x505C player entity, stored by Spawn for arg0 == 3
-    char _pad5060[0xC];         // 0x5060 16-byte copy from the SetHolyGround argument
+    float m_unk5060;            // 0x5060 16-byte copy from the SetHolyGround argument, also written by SpawnEditedInstances
+    float m_unk5064;            // 0x5064
+    float m_unk5068;            // 0x5068
     float m_unk506C;            // 0x506C holy ground value, stored by SetHolyGround
     unsigned char m_unk5070;    // 0x5070 holy ground flag, stored by SetHolyGround
     char _pad5071[0x5078 - 0x5071];
@@ -139,7 +142,8 @@ public:
     BGAnimNode *m_unk5B84;      // 0x5B84 BG animation list head
     char _pad5B88[4];
     BGAnimNode *m_unk5B8C;      // 0x5B8C BG animation list cursor
-    char _pad5B90[0x5D48 - 0x5B90];
+    char m_unk5B90[0x80];       // 0x5B90 spawned entity class table, indexed by class id (< 0x80)
+    char m_unk5C10[0x5D48 - 0x5C10];    // 0x5C10 level EIF filename, strcpy target
     int m_unk5D48;              // 0x5D48 countdown, decremented by ProcessApparitions
     int m_unk5D4C;              // 0x5D4C cleared by LoadOverlay
     char _pad5D50[0x5F54 - 0x5D50];
