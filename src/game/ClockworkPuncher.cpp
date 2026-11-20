@@ -9,6 +9,28 @@ extern "C" void sceVu0Normalize(float *, float *);
 extern "C" void sceVu0ScaleVector(float *, float *, float);
 extern "C" void SetState__15EntityBaseClassFi(void *, int);
 extern "C" void PlaySound__15EntityBaseClassFUi(void *, unsigned int);
+extern "C" int RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(void *, void *, unsigned int);
+extern "C" void RemoveFromAttackSystem__15EntityBaseClassFv(void *);
+extern "C" void *InstanceIsValid__15EntityBaseClassFUi(unsigned int);
+
+// Slot numbers are declaration order; Slot13 is the call at vtable offset 0x3C.
+class EntityVirtualSlots {
+public:
+    virtual void Slot0();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void Slot3();
+    virtual void Slot4();
+    virtual void Slot5();
+    virtual void Slot6();
+    virtual void Slot7();
+    virtual void Slot8();
+    virtual void Slot9();
+    virtual void Slot10();
+    virtual void Slot11();
+    virtual void Slot12();
+    virtual int Slot13();
+};
 
 class EntityBaseClass {
 public:
@@ -39,6 +61,7 @@ class TimerAPI {
 public:
     char _pad000[40];
     void KillTimer(unsigned int);
+    unsigned int CreateTimer(unsigned int, unsigned int, bool);
 };
 extern TimerAPI mTimerAPI__13EntityManager;
 
@@ -48,6 +71,11 @@ public:
     void DeleteEffect(unsigned int);
 };
 extern EffectAPI mEffectAPI__13EntityManager;
+extern "C" void *EffectValid__9EffectAPIFUi(EffectAPI *, unsigned int);
+extern "C" void SetFrameRate__6PMNodeFfb(PMNode *, float, bool);
+extern "C" void SetVelocity__7PhysicsFff(void *, float, float);
+extern "C" PMNode *Find__6PMNodeFUi(PMNode *, unsigned int);
+extern int miRandom__7MathAPI;
 extern "C" void __dl__FPv(void *);
 extern "C" void DestroyDamageFx__15EntityBaseClassFUi(void *, unsigned int);
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
@@ -78,6 +106,45 @@ void ClockworkPuncher::LoadCorrectMesh() {
             ScaleSet__6PMNodeFffff((PMNode *)m_unk3C, 1.4f, 1.4f, 1.4f, 1.0f);
         }
     }
+}
+
+// FUNCTION: 0x001DE170 ChooseNextState__16ClockworkPuncherFv
+void ClockworkPuncher::ChooseNextState() {
+    float fDist;
+    RemoveFromAttackSystem__15EntityBaseClassFv(this);
+    char *pPlayerPt = *(char **)((char *)mPlayerAPI__13EntityManager + 0x3C);
+    pPlayerPt = pPlayerPt ? pPlayerPt + 0x80 : (char *)mPlayerAPI__13EntityManager + 0x190;
+    if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pPlayerPt, (float (*)[4])_pad200) < m_unk1D4) {
+        fDist = Distance__7MathAPIFPA4_fPA4_f(
+            (float (*)[4])(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190),
+            (float (*)[4])(*(char **)((char *)mPlayerAPI__13EntityManager + 0x3C)
+                               ? *(char **)((char *)mPlayerAPI__13EntityManager + 0x3C) + 0x80
+                               : (char *)mPlayerAPI__13EntityManager + 0x190));
+        if (m_unk280 != 0) {
+            void *pValid = InstanceIsValid__15EntityBaseClassFUi((unsigned int)m_unk280);
+            if (pValid != 0 && ((EntityVirtualSlots *)pValid)->Slot13() != 0) {
+                char *pOtherPt = ((ClockworkPuncher *)pValid)->m_unk3C;
+                pOtherPt = pOtherPt ? pOtherPt + 0x80 : (char *)pValid + 0x190;
+                if (Distance__7MathAPIFPA4_fPA4_f(
+                        (float (*)[4])(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190),
+                        (float (*)[4])pOtherPt) < fDist) {
+                    SetState__15EntityBaseClassFi(this, 4);
+                    return;
+                }
+            }
+        }
+        if (m_unk276 == 0) {
+            if (fDist > 10.0f) {
+                SetState__15EntityBaseClassFi(this, 2);
+                return;
+            }
+            SetState__15EntityBaseClassFi(this, 0xF);
+            return;
+        }
+        SetState__15EntityBaseClassFi(this, 0x10);
+        return;
+    }
+    SetState__15EntityBaseClassFi(this, 0);
 }
 
 // DRAFT: 0x001DE4A0 AttachSparkEffect__16ClockworkPuncherFv
@@ -131,6 +198,37 @@ void ClockworkPuncher::AttachDamageEffect(PMNode *pNode, unsigned int nId, float
         trig.z2 = 0;
         trig.z3 = 0;
         pNode->AddFxTrigger((struct tagParticleFxTrigger *)&trig, 0);
+    }
+}
+
+// DRAFT: 0x001DE790 SetEffectsFrameRate__16ClockworkPuncherFf
+// note: the first load uses a0 where the original uses s0, and mov.s f20 / lui a0 are swapped (3 lines); local handle and API-pointer variants did not change it.
+void ClockworkPuncher::SetEffectsFrameRate(float fRate) {
+    void *pFx;
+
+    pFx = EffectValid__9EffectAPIFUi(&mEffectAPI__13EntityManager, m_unk298);
+    if (pFx != 0) {
+        SetFrameRate__6PMNodeFfb(*(PMNode **)((char *)pFx + 4), fRate, true);
+    }
+    pFx = EffectValid__9EffectAPIFUi(&mEffectAPI__13EntityManager, m_unk29C);
+    if (pFx != 0) {
+        SetFrameRate__6PMNodeFfb(*(PMNode **)((char *)pFx + 4), fRate, true);
+    }
+    pFx = EffectValid__9EffectAPIFUi(&mEffectAPI__13EntityManager, m_unk2A4);
+    if (pFx != 0) {
+        SetFrameRate__6PMNodeFfb(*(PMNode **)((char *)pFx + 4), fRate, true);
+    }
+    pFx = EffectValid__9EffectAPIFUi(&mEffectAPI__13EntityManager, m_unk2A8);
+    if (pFx != 0) {
+        SetFrameRate__6PMNodeFfb(*(PMNode **)((char *)pFx + 4), fRate, true);
+    }
+    pFx = EffectValid__9EffectAPIFUi(&mEffectAPI__13EntityManager, m_unk2A0);
+    if (pFx != 0) {
+        SetFrameRate__6PMNodeFfb(*(PMNode **)((char *)pFx + 4), fRate, true);
+    }
+    pFx = EffectValid__9EffectAPIFUi(&mEffectAPI__13EntityManager, m_unk2AC);
+    if (pFx != 0) {
+        SetFrameRate__6PMNodeFfb(*(PMNode **)((char *)pFx + 4), fRate, true);
     }
 }
 
@@ -266,6 +364,30 @@ void ClockworkPuncher::CheckBlockAttack() {
     }
 }
 
+// FUNCTION: 0x001DECD0 CanAttackPlayer__16ClockworkPuncherFv
+int ClockworkPuncher::CanAttackPlayer() {
+    if (m_unk272 != 0) {
+        char *pThisPt = m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190;
+        char *pPlayerPt = *(char **)((char *)mPlayerAPI__13EntityManager + 0x3C);
+        pPlayerPt = pPlayerPt ? pPlayerPt + 0x80 : (char *)mPlayerAPI__13EntityManager + 0x190;
+        if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pPlayerPt, (float (*)[4])pThisPt) <= 30.0f) {
+            int nRoll = RandomIntRange__7MathAPIFii(1, 100);
+            if (nRoll < 0x33) {
+                if (RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(this, mPlayerAPI__13EntityManager, 0)) {
+                    m_unk272 = 0;
+                    m_unk214 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, RandomIntRange__7MathAPIFii(1, 2), false);
+                    return 1;
+                }
+            }
+            if (nRoll > 0x32) {
+                m_unk272 = 0;
+                m_unk214 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, RandomIntRange__7MathAPIFii(1, 2), false);
+            }
+        }
+    }
+    return 0;
+}
+
 // FUNCTION: 0x001DEE00 SetRiseAndAttack__16ClockworkPuncherFPA4_fff
 void ClockworkPuncher::SetRiseAndAttack(float (*arg0)[4], float arg1, float arg2) {
     m_unk1B8[0] = arg0[0][0];
@@ -322,6 +444,66 @@ void ClockworkPuncher::SetEditableVars(char *arg0) {
     memcpy((char *)this + 0x1B0, arg0, 0x4C);
     m_unk1FC = 1000;
     m_unk210 = m_unk1FC;
+}
+
+// DRAFT: 0x001DEF60 OnTimerEvent__16ClockworkPuncherFUi
+// note: 5 lines differ; original hoists mtc1 $zero,$f12 above the m_unk38 null test (delay slot mov.s). Tried local pointer, local float zero, literal zeros: all 5 lines.
+void ClockworkPuncher::OnTimerEvent(unsigned int nHandle) {
+    if (nHandle == m_unk214) {
+        m_unk272 = 1;
+        return;
+    }
+    if (nHandle == m_unk27C) {
+        m_unk278 = 1;
+        return;
+    }
+    if (nHandle == m_unk288) {
+        m_unkDC = 0;
+        if (m_unk38 != 0) {
+            SetVelocity__7PhysicsFff(m_unk38, 0.0f, 0.0f);
+        }
+        if (m_unk2B4 != 0) {
+            if (m_unk2B4 == 0) {
+                CdsAssert__FPciPc("ClockworkPuncher.cpp", 0x882, "m_pBackjoint");
+            }
+            *(float *)((char *)m_unk2B4 + 0x90) = m_unk290;
+        }
+        if (m_unk3C != 0) {
+            SetFrameRate__6PMNodeFfb((PMNode *)m_unk3C, m_unk284, true);
+        }
+        SetEffectsFrameRate(m_unk284);
+        static signed char init;
+        static int aAFTERpausesec;
+        if (init == 0) {
+            aAFTERpausesec = 5;
+            init = 1;
+        }
+        m_unk28C = mTimerAPI__13EntityManager.CreateTimer(m_unk4, aAFTERpausesec, true);
+        m_unk288 = 0;
+        return;
+    }
+    if (nHandle == m_unk28C) {
+        m_unk28C = 0;
+    }
+}
+
+// FUNCTION: 0x001DF080 OnWakeEvent__16ClockworkPuncherFv
+void ClockworkPuncher::OnWakeEvent() {
+    if (m_unk3C != 0) {
+        m_unk2B4 = Find__6PMNodeFUi((PMNode *)m_unk3C, 0xAB4BE7B1);
+        if (m_unk2B4 == 0) {
+            CdsAssert__FPciPc("ClockworkPuncher.cpp", 0x862, "m_pBackjoint");
+        }
+    }
+    if (m_unk2BC != 0) {
+        miRandom__7MathAPI = miRandom__7MathAPI * 0x343FD + 0x269EC3;
+        if (miRandom__7MathAPI & 1) {
+            AttachDamageEffect(Find__6PMNodeFUi((PMNode *)m_unk3C, 0xF9D9DD15), 0x83000154, 0.0f, 0.0f, 0.0f);
+        } else {
+            AttachDamageEffect(Find__6PMNodeFUi((PMNode *)m_unk3C, 0x3EAD836C), 0x83000154, 0.0f, 0.0f, 0.0f);
+        }
+        AttachDamageEffect(Find__6PMNodeFUi((PMNode *)m_unk3C, 0xFEE57AF8), 0x83000154, 0.0f, 0.0f, 0.0f);
+    }
 }
 
 // FUNCTION: 0x001DF1B0 OnSleepEvent__16ClockworkPuncherFv
