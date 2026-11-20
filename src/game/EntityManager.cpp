@@ -160,9 +160,26 @@ class Debug {
 public:
     void StartTimer(unsigned int nId);
     void StopTimer(unsigned int nId);
+    void StartDebugTimer();
+    void StopDebugTimer(void *arg0);
     char _pad000[0x10];         // placeholder size, keeps gDebug out of small data
 };
 extern Debug gDebug;
+// Leading virtuals of EntityBaseClass's vtable (slot 0x2C is virtual #9); a call
+// through this view loads the slot into $t9 as the original's virtual calls do.
+class EntityBaseVirtuals {
+public:
+    virtual ~EntityBaseVirtuals();
+    virtual int GetTallyType();
+    virtual void Slot02();
+    virtual void OutputDebug();
+    virtual void Slot04();
+    virtual void SetEditableVars(char *);
+    virtual void SetDefaultVars();
+    virtual void OnTimerEvent(unsigned int);
+    virtual void Render(void *);
+    virtual void Animate(int, float);
+};
 
 class MemMgrType {
 public:
@@ -231,6 +248,7 @@ public:
     char _pad000[20];
 };
 extern "C" void EnableParticleFx__9EffectAPIFb(EffectAPI *pApi, bool arg0);
+extern "C" void Animate__9EffectAPIFf(EffectAPI *pApi, float arg0);
 extern EffectAPI mEffectAPI__13EntityManager;
 extern char gGfxEng[1504384];
 
@@ -239,6 +257,7 @@ public:
     int GetEntityID();
     int GetInstanceID();
     void SetStartPosition(float arg0, float arg1, float arg2);
+    void *GetEditVarData(int arg0);
 };
 
 class CEifInstanceGroup {
@@ -883,6 +902,44 @@ next:
     m_unk5D4C = 0;
 }
 
+struct EditVarData {
+    int m_unk00;                // 0x00 data type, 1 is DT_BOOL
+    char _pad04[4];
+    bool m_unk08;               // 0x08 value written by SetEifWoken
+};
+
+// FUNCTION: 0x00147DF0 SetEifWoken__13EntityManagerFUibUi
+int EntityManager::SetEifWoken(unsigned int arg0, bool arg1, unsigned int arg2) {
+    int numGroups = m_unk5194->GetNumInstanceGroups();
+    for (int g = 0; g < numGroups; g++) {
+        CEifInstanceGroup *pGroup = m_unk5194->GetInstanceGroup(g);
+        if (pGroup == 0) {
+            CdsAssert("EntityManager.cpp", 0x414, "pEifInstanceGroup");
+        }
+        int numInst = pGroup->GetNumInstances();
+        for (int i = 0; i < numInst; i++) {
+            CEifInstance *pInst = pGroup->GetInstanceData(i);
+            if (arg2 != 0 && arg2 != (unsigned int)pInst->GetEntityID()) {
+                break;
+            }
+            if (arg0 == (unsigned int)pInst->GetInstanceID()) {
+                signed char slot = *(signed char *)((char *)this + pInst->GetEntityID() + 0x5B90);
+                if (slot >= 0) {
+                    EditVarData *pVarData = (EditVarData *)pInst->GetEditVarData(slot);
+                    if (pVarData == 0) {
+                        CdsAssert("EntityManager.cpp", 0x41F, "pVarData");
+                    }
+                    if (pVarData->m_unk00 != 1) {
+                        CdsAssert("EntityManager.cpp", 0x420, "pVarData->eType == DT_BOOL");
+                    }
+                    pVarData->m_unk08 = arg1;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
 // FUNCTION: 0x00148960 GetPtrToInstance__13EntityManagerFUi
 void *EntityManager::GetPtrToInstance(unsigned int arg0) {
     void *pValue;
@@ -899,6 +956,53 @@ void *EntityManager::GetPtrToApparition(unsigned int arg0) {
         return pValue;
     }
     return 0;
+}
+
+// DRAFT: 0x001489E0 Animate__13EntityManagerFif
+// note: 3 words differ: outer-exit beqz target (005C) and nop/bnez placement at 012C-0130; original has one extra slot after the lw, ours has an extra nop before bnez. Tried: ternary tail (19), flags-first order (20), if/else tail (35), if tail with original order (3, kept).
+void EntityManager::Animate(int arg0, float arg1) {
+    ParticleSubList *pList;
+    void *pEnt;
+    int flags;
+    unsigned int i;
+
+    gDebug.StartTimer(6);
+    flags = arg0 | m_unk5058;
+    m_unk50A4 = 0;
+    pList = 0;
+    if (m_unk50A0 != 0) {
+        pList = (ParticleSubList *)m_unk50A8[0];
+    }
+    while (pList != 0) {
+        pList->m_unk04 = 0;
+        pEnt = 0;
+        if (pList->m_unk00 != 0) {
+            pEnt = pList->m_unk08[0];
+        }
+        while (pEnt != 0) {
+            gDebug.StartDebugTimer();
+            ((EntityBaseVirtuals *)pEnt)->Animate(flags, arg1);
+            gDebug.StopDebugTimer(pEnt);
+            i = pList->m_unk04 + 1;
+            pList->m_unk04 = i;
+            pEnt = 0;
+            if (i < pList->m_unk00) {
+                pEnt = pList->m_unk08[pList->m_unk04];
+            }
+        }
+        i = m_unk50A4 + 1;
+        m_unk50A4 = i;
+        pList = 0;
+        if (i < m_unk50A0) {
+            pList = (ParticleSubList *)m_unk50A8[m_unk50A4];
+        }
+    }
+    gDebug.StopTimer(6);
+    gDebug.StartTimer(7);
+    if (!(flags & 1)) {
+        Animate__9EffectAPIFf(&mEffectAPI__13EntityManager, arg1);
+    }
+    gDebug.StopTimer(7);
 }
 
 // FUNCTION: 0x00148B90 ObjectCollision__13EntityManagerFv
@@ -1057,6 +1161,48 @@ void EntityManager::AddToRenderList(EntityBaseClass *arg0) {
     }
     pNew->Add(arg0);
     ((PArray *)&m_unk50A0)->Add(pNew);
+}
+
+// FUNCTION: 0x00149370 RemoveFromRenderList__13EntityManagerFP15EntityBaseClass
+void EntityManager::RemoveFromRenderList(EntityBaseClass *arg0) {
+    int key;
+    PArray *pList;
+    unsigned int i;
+
+    if (((PArray *)&m_unk50B0)->Remove(arg0) != 0) {
+        key = arg0->m_unk08;
+        m_unk50A4 = 0;
+        pList = (m_unk50A0 != 0) ? (PArray *)m_unk50A8[0] : 0;
+        while (pList != 0) {
+            EntityBaseClass *pEnt;
+            pList->m_unk4 = 0;
+            pEnt = (pList->m_unk0 != 0) ? (EntityBaseClass *)pList->m_unk8[0] : 0;
+            if (pEnt == 0) {
+                CdsAssert("EntityManager.cpp", 0x14A, "pEnt");
+            }
+            if (key == pEnt->m_unk08 && pEnt != 0) {
+                for (;;) {
+                    if (pEnt == arg0) {
+                        pList->RemoveCurrent();
+                        if (pList->m_unk0 == 0) {
+                            ((PArray *)&m_unk50A0)->RemoveCurrent();
+                            delete pList;
+                        }
+                        return;
+                    }
+                    i = pList->m_unk4 + 1;
+                    pList->m_unk4 = i;
+                    pEnt = (i < pList->m_unk0) ? (EntityBaseClass *)pList->m_unk8[pList->m_unk4] : 0;
+                    if (pEnt == 0) {
+                        break;
+                    }
+                }
+            }
+            i = m_unk50A4 + 1;
+            m_unk50A4 = i;
+            pList = (i < m_unk50A0) ? (PArray *)m_unk50A8[m_unk50A4] : 0;
+        }
+    }
 }
 
 // FUNCTION: 0x00149500 Destroy__13EntityManagerFUiUi

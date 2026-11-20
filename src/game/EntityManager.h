@@ -68,7 +68,9 @@ public:
     void SaveApparitionData(int arg0);
     void SetEifPosition(unsigned int arg0, unsigned int arg1, float (*arg2)[4]);
     void ModifyEifPosition();
+    int SetEifWoken(unsigned int arg0, bool arg1, unsigned int arg2);
     void RunPhysics(float arg0);
+    void Animate(int arg0, float arg1);
     void ObjectCollision();
     void Process();
     void ProcessTrigger();
