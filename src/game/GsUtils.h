@@ -89,4 +89,16 @@ typedef struct tagMoveRgToBaPacket {
 void GsInitMoveRG2BAPacket(tagMoveRgToBaPacket *pPacket, short nA, short nB, short nC, short nD);
 tagMoveRgToBaPacket *GsCreateMoveRG2BAPacket(int nA, int nB, int nC, int nD, int nE, int &rSize);
 
+typedef struct tagGsFullScreenSprites {
+    u_long128 m_unk00;          // 0x00 GIF tag
+    long long m_unk10;          // 0x10 zero
+    long long m_unk18;          // 0x18 register 0x1A
+    long long m_unk20;          // 0x20 packed colour and flags
+    long long m_unk28;          // 0x28 register 0x1B
+    u_long128 m_unk30;          // 0x30 GIF tag, NLOOP 6
+    char _pad040[0x640];        // 0x40 sprite pairs, stride 0x50 per row of 20
+} tagGsFullScreenSprites;       // size >= 0x680
+
+void GsSetFullScreenSprites(tagGsFullScreenSprites *pInfo, char cA, char cB, char cC, char cD, bool bA, bool bB, bool bC);
+
 #endif

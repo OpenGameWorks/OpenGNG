@@ -507,6 +507,78 @@ void GsInitMoveRG2BAPacket(tagMoveRgToBaPacket *pPacket, short nA, short nB, sho
     pPacket->m_unkAC8 = 0x40;
 }
 
+// DRAFT: 0x0017F100 GsSetFullScreenSprites__FP22tagGsFullScreenSpritesccccbbb
+// note: size 0x3B4 vs 0x3E4; frame 0xF0 vs 0xE0, char spill order, FTOI4 reloc; six short locals tried (228 words)
+void GsSetFullScreenSprites(tagGsFullScreenSprites *pInfo, char cA, char cB, char cC, char cD, bool bA, bool bB, bool bC) {
+    float aSrc[4];
+    int aDst[4];
+    unsigned char *pB;
+    unsigned char *pE;
+    short sHalfW;
+    short sHalfH;
+    short sStep;
+    short sX;
+    short sY;
+    short sH;
+    int i;
+
+    CDS_ASSERT(0x211, pInfo);
+    *(u_long128 *)pInfo = 0;
+    pB = (unsigned char *)pInfo;
+    *(unsigned short *)pB = (*(unsigned short *)pB & 0x8000) | 2;
+    pB[1] = (pB[1] & 0x7F) | ((0 & 1) << 7);
+    pB[7] = (pB[7] & 0xF0) | 0x10;
+    pB[8] = (pB[8] & 0xF0) | 0x0E;
+    *(long long *)(pB + 0x10) = 0;
+    *(long long *)(pB + 0x18) = 0x1A;
+    *(long long *)(pB + 0x20) = ((long long)(bC & 0xFF) << 9) | ((long long)(bA & 0xFF) << 4) | ((long long)(bB & 0xFF) << 6) | 0x100;
+    *(long long *)(pB + 0x28) = 0x1B;
+    *(u_long128 *)(pB + 0x30) = 0;
+    *(long long *)(pB + 0x30) = (*(long long *)(pB + 0x30) & 0xFC007FFFFFFFFFFFLL) | (6LL << 47);
+    pB[0x35] = (pB[0x35] & 0xBF) | 0x40;
+    *(unsigned short *)(pB + 0x30) = (*(unsigned short *)(pB + 0x30) & 0x8000) | 0x14;
+    pB[0x31] = (pB[0x31] & 0x7F) | 0x80;
+    pB[0x37] = (pB[0x37] & 0xF0) | 0x50;
+    pB[0x37] = (pB[0x37] & 0xF3) | ((0 & 3) * 4);
+    pB[0x38] = (pB[0x38] & 0xF0) | 3;
+    pB[0x38] = (pB[0x38] & 0x0F) | 0x10;
+    pB[0x39] = (pB[0x39] & 0xF0) | 5;
+    pB[0x39] = (pB[0x39] & 0x0F) | 0x30;
+    pB[0x3A] = (pB[0x3A] & 0xF0) | 5;
+
+    sH = SCREEN_HEIGHT;
+    sHalfW = SCREEN_WIDTH / 2;
+    sStep = SCREEN_WIDTH / 20;
+    sHalfH = SCREEN_HEIGHT / 2;
+    sX = 0x800 - sHalfW;
+    sY = 0x800 - sHalfH;
+    aSrc[0] = 0.0f;
+    aSrc[1] = 0.0f;
+    aSrc[2] = 0.0f;
+    aSrc[3] = (float)SCREEN_HEIGHT;
+    for (i = 0; i < 20; i++) {
+        pE = (unsigned char *)pInfo + i * 0x50;
+        FTOI4((float *)aDst, aSrc);
+        *(int *)(pE + 0x40) = aDst[0];
+        *(int *)(pE + 0x44) = aDst[1];
+        *(int *)(pE + 0x50) = cA;
+        *(int *)(pE + 0x54) = cB;
+        *(int *)(pE + 0x58) = cC;
+        *(int *)(pE + 0x5C) = cD;
+        *(int *)(pE + 0x60) = sX * 0x10;
+        *(int *)(pE + 0x64) = sY * 0x10;
+        *(int *)(pE + 0x68) = 0;
+        *(int *)(pE + 0x70) = aDst[2];
+        *(int *)(pE + 0x74) = aDst[3];
+        *(int *)(pE + 0x80) = (sX + sStep) * 0x10;
+        *(int *)(pE + 0x84) = (sY + sH) * 0x10;
+        *(int *)(pE + 0x88) = 0;
+        sX += sStep;
+        aSrc[0] += 32.0f;
+        aSrc[2] += 32.0f;
+    }
+}
+
 // FUNCTION: 0x0017FA00 GsSwapDBuff__FP10sceGsDBuffi
 int GsSwapDBuff(sceGsDBuff *pDBuff, int nIdx) {
     int nBuf = nIdx & 1;
