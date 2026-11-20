@@ -54,6 +54,8 @@ extern "C" void MakeViewMatrix__5PMat4FPfPfPf(float *pMat, float *pA, float *pB,
 extern "C" void Mul__5PMat4F5PMat4(float *pOut, float *pA, float *pB);
 extern "C" void SetPosAndRot__6CameraFPA4_fPA4_f(void *pThis, float (*pPos)[4], float (*pRot)[4]);
 extern "C" int _dpfge(long long a, long long b);
+extern "C" int IsHanging__6PlayerFv(void *pPlayer);
+extern "C" void QuatSlerp__7MathAPIFP9tag_EQuatP9tag_EQuatfP9tag_EQuat(void *pA, void *pB, float t, void *pOut);
 
 class PVec3 {
 public:
