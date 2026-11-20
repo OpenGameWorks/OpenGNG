@@ -25,12 +25,16 @@ extern signed char fst_bCalledByDebug;
 extern "C" void FlushIOPCommand(int, int, int);
 extern "C" void SOUND_CopyIOPBuffer();
 extern char gEng[105360];
+extern "C" unsigned int EngGenerateUniqueID__9MaxEngineFv(void *pThis);
 extern unsigned char MODE_PAL;
 extern "C" void SOUND_FadeOutAllMusic(short);
 extern "C" void SOUND_MusicAddExciteHits(int);
 extern "C" void __ct__14PFadeMsecFloatFv(void *);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
+extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(void *pThis, unsigned int arg);
+extern "C" int GetWorldMeshCenter__6PMNodeFPf(void *pThis, float *pOut);
+extern "C" void *GetWorldPos__20GameSoundTrigletPawnFv(void *pThis);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 struct tagFLOAT3D;
@@ -39,6 +43,16 @@ extern "C" void __dl__FPv(void *pMem);
 extern "C" int SOUND_StopStream(unsigned int);
 extern "C" void SOUND_CloseStreamBuffer(int);
 extern "C" void sceGsSyncV(int);
+extern "C" int SOUND_InitIOP();
+extern "C" void SOUND_InitSPU();
+extern "C" void SOUND_ClearReverbWorkArea(int, int);
+extern char gSOUND_EETransferStart[64];
+extern char gSOUND_EETransferFinish[64];
+extern "C" void SOUND_SetEETransferNotifyAdrs(void *, void *);
+extern "C" void SOUND_SetChanUse(int, unsigned int, unsigned int, unsigned int, unsigned int);
+extern "C" void SOUND_InitStreamData(int);
+extern "C" void SOUND_SetLanguage(unsigned int);
+extern "C" void SOUND_AllocateStreamBuffer(int, unsigned int, unsigned int);
 extern int fst_ADSR_Translate_Attack[16];
 extern int fst_ADSR_Translate_Release[16];
 extern char fst_Usage[24000];
@@ -208,6 +222,71 @@ unsigned int PSound::FindFreeAmbientChannel() {
     return -1;
 }
 
+// DRAFT: 0x001A3F90 DelinkChannelState__6PSoundFPPQ26PSound19AmbientChannelStatePQ26PSound12AmbientEntry
+// note: DIFF 36; register map swapped (original pFound=t1 pPrev=t2 pCur=t0 pNewHead=a3); goto-fail exit used; tried decl orders (DIFF 55/60/46), nKey hoist gave 36; 8 attempts.
+int PSound::DelinkChannelState(AmbientChannelState **ppHead, AmbientEntry *pEntry) {
+    AmbientChannelState *pHead;
+    AmbientChannelState *pFound = 0;
+    AmbientChannelState *pPrev = 0;
+    AmbientChannelState *pCur;
+    AmbientChannelState *pNewHead;
+    AmbientEntry *pChain;
+    short nKey;
+
+    if (pEntry == 0) {
+        goto fail;
+    }
+    nKey = pEntry->m_unk18;
+    pHead = (AmbientChannelState *)pEntry->m_unk4C;
+    if (pHead == 0) {
+        goto fail;
+    }
+    pChain = (AmbientEntry *)pHead->m_unk08;
+    pNewHead = pHead;
+    pCur = pHead;
+    while (pCur != 0) {
+        if (nKey == pCur->m_unk06) {
+            pHead->m_unk10 = pHead->m_unk10 - 1;
+            if ((unsigned short)pCur->m_unk04 & 0x4000) {
+                pHead->m_unk14 = pHead->m_unk14 - 1;
+            }
+            if (pPrev != 0) {
+                pPrev->m_unk1C = pCur->m_unk1C;
+            } else {
+                pNewHead = (AmbientChannelState *)pCur->m_unk1C;
+                pEntry->m_unk4C = (int)pNewHead;
+            }
+            pCur->m_unk1C = 0;
+            pFound = pCur;
+            break;
+        }
+        pPrev = pCur;
+        pCur = (AmbientChannelState *)pCur->m_unk1C;
+    }
+    if (pFound == 0) {
+        goto fail;
+    }
+    if (pNewHead != pHead) {
+        if (pNewHead != 0) {
+            pNewHead->m_unk04 = pHead->m_unk04;
+            pNewHead->m_unk0C = pHead->m_unk0C;
+            pNewHead->m_unk10 = pHead->m_unk10;
+            pNewHead->m_unk14 = pHead->m_unk14;
+            pNewHead->m_unk08 = pHead->m_unk08;
+        }
+        while (pChain != 0) {
+            pChain->m_unk4C = (int)pNewHead;
+            pChain = pChain->m_unk50;
+        }
+    }
+    if (ppHead != 0) {
+        *ppHead = pFound;
+    }
+    return 0;
+fail:
+    return -1;
+}
+
 // FUNCTION: 0x001A40C0 GetTrayRelated__6PSoundFPiPiPiPi
 void PSound::GetTrayRelated(int *pTrayOpen, int *pStatus, int *pReady, int *pType) {
     int nTrayOpen;
@@ -347,6 +426,51 @@ void PSound::CutSceneLeave(unsigned int nArg) {
     }
     SetMainMusicSpecialVolume((EnumMusicSpecialVols)0);
     PauseByCategories(0);
+}
+
+// FUNCTION: 0x001A44F0 CutSceneEnter__6PSoundFPUiUiUiUi
+void PSound::CutSceneEnter(unsigned int *pOut, unsigned int nArg, unsigned int nFlags, unsigned int nVolume) {
+    unsigned int nLevel;
+    unsigned int nID;
+    int bSkip;
+
+    unsigned int nTrack = nFlags & 0x1FFFFFFF;
+    m_unk2E68 = m_unk1C;
+    m_unk2E6C = m_unk2E68;
+    m_unk2E70 = nFlags;
+    if (nTrack != 0) {
+        m_unk2E6C = nTrack;
+        if (m_unk2E6C != m_unk2E68) {
+            PlayMusic(m_unk2E6C);
+        }
+    }
+    if (nFlags & 0x20000000) {
+        PauseByCategories(0x82);
+    } else {
+        PauseByCategories(0x80);
+        bSkip = 0;
+        if (gPSndDbg[20] != 0) {
+            nLevel = gPSndDbg[21];
+        } else if (nVolume == 0) {
+            SetMainMusicSpecialVolume((EnumMusicSpecialVols)1);
+            bSkip = 1;
+        } else {
+            nLevel = nVolume;
+        }
+        if (bSkip == 0) {
+            if (nLevel >= 100) {
+                nLevel = 100;
+            }
+            m_unk40 = nLevel * 10;
+            InternalUpdateRelVolumes();
+        }
+    }
+    nID = EngGenerateUniqueID__9MaxEngineFv(gEng);
+    if (pOut != 0) {
+        *pOut = nID;
+    }
+    m_unk2E64 = nID;
+    StartPreppedDialog(nArg);
 }
 
 // FUNCTION: 0x001A4640 StartPreppedDialog__6PSoundFUi
@@ -698,6 +822,56 @@ int PSound::ProcessMusic() {
         }
     }
     return 0;
+}
+
+// DRAFT: 0x001A7060 GetOriginatorPos__6PSoundFPfUiUiUi
+// note: DIFF 56 (best of 4 variants: v1 69, v2 56, v3 58, v4 74); original shares an addiu v0,-1 delay-slot exit at the pSrc failure path, ours is one instruction longer.
+int PSound::GetOriginatorPos(float *pOut, unsigned int nFlags, unsigned int nOriginator, unsigned int nNode) {
+    if (nFlags & 0x10) {
+        if (nOriginator != 0x80000000) {
+            void *pOrig = ApparitionIsValid__15EntityBaseClassFUi((void *)nOriginator, (unsigned int)pOut);
+            if (pOrig != 0) {
+                int nSub = *(int *)((char *)pOrig + 0x3C);
+                char *pSrc = (nSub != 0) ? ((char *)nSub + 0x80) : ((char *)pOrig + 0x190);
+                if (pSrc != 0) {
+                    memcpy(pOut, pSrc, 0x10);
+                    return 0;
+                }
+            }
+            return -1;
+        }
+        return 0;
+    }
+    if (nFlags & 0x20) {
+        if (nOriginator == 0x80000000) {
+            return 0;
+        }
+        float vLocal[4];
+        if (nNode != 0 && GetWorldMeshCenter__6PMNodeFPf((void *)nNode, vLocal) >= 0) {
+            *(u_long128 *)pOut = *(u_long128 *)vLocal;
+            return 0;
+        }
+        return -1;
+    }
+    if (nFlags & 0x40) {
+        if (nOriginator == 0x80000000) {
+            return 0;
+        }
+        if (nNode != 0) {
+            void *pWorld = GetWorldPos__20GameSoundTrigletPawnFv((void *)nNode);
+            if (pWorld != 0) {
+                memcpy(pOut, pWorld, 0x10);
+                return 0;
+            }
+        }
+        return -1;
+    }
+    return -1;
+}
+
+// FUNCTION: 0x001A71B0 PlaySoundUbiquitous__6PSoundFUi
+int PSound::PlaySoundUbiquitous(unsigned int nSound) {
+    return PlaySoundWPitch(nSound, 0x80000000, 0, 0x200, 0);
 }
 
 // FUNCTION: 0x001A71D0 PlaySoundTrigletUbiquitous__6PSoundFUiUiPC20GameSoundTrigletPawn
@@ -1996,4 +2170,29 @@ unsigned int PSound::DebugChangeParam(unsigned int nValue, int nStep, unsigned i
         return nClamp;
     }
     return nVal;
+}
+
+// FUNCTION: 0x001A9F10 PSoundInit__6PSoundFUi
+int PSound::PSoundInit(unsigned int nFlag) {
+    if (m_unk00 != 0) {
+        return 0;
+    }
+    if (SOUND_InitIOP() < 0) {
+        return 0;
+    }
+    SOUND_InitSPU();
+    SOUND_ReverbSetAdrs(0x1FFFFF, 0x1DFFFF);
+    SOUND_ClearReverbWorkArea(0, 5);
+    SOUND_ClearReverbWorkArea(1, 5);
+    SOUND_SetEETransferNotifyAdrs(gSOUND_EETransferStart, gSOUND_EETransferFinish);
+    SOUND_SetChanUse(0, m_unk2E20, m_unk2E28, m_unk2E30, m_unk2E38);
+    SOUND_InitStreamData(0);
+    SOUND_SetLanguage(nFlag);
+    SOUND_AllocateStreamBuffer(0, 0x5010, 0x19000);
+    SOUND_AllocateStreamBuffer(1, 0x1E010, 0x19000);
+    SOUND_AllocateStreamBuffer(2, 0x37010, 0x10000);
+    PSoundFlushIOPCommandsWaitFinish();
+    PSoundReInitSubWSoundCalls();
+    m_unk00 = 2;
+    return 1;
 }

@@ -123,6 +123,7 @@ public:
     void AbilityScreenEnter();
     void AbilityScreenLeave();
     void CutSceneLeave(unsigned int nArg);
+    void CutSceneEnter(unsigned int *pOut, unsigned int nArg, unsigned int nFlags, unsigned int nVolume);
     void SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol);
     int PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType);
     int CheckAllChannelsMatchSub();
@@ -147,6 +148,9 @@ public:
     void SetEffectsRelVolume(unsigned int nVolume);
     int StopSoundBySoundRefIfAmbient(unsigned int nSoundRef);
     unsigned int FindFreeAmbientChannel();
+    int DelinkChannelState(AmbientChannelState **ppHead, AmbientEntry *pEntry);
+    int GetOriginatorPos(float *pOut, unsigned int nFlags, unsigned int nOriginator, unsigned int nNode);
+    int PSoundInit(unsigned int nFlag);
     int StartAndHoldDialog(unsigned int nArg);
     int PrepDialog(unsigned int nArg);
     int StartPreppedDialog(unsigned int nArg);
@@ -292,12 +296,15 @@ public:
     int m_unk0EC;           // 0x0EC
     int m_unk0F0;           // 0x0F0
     AmbientEntry *m_unkF4;  // 0x0F4, head of the ambient entry list (AddAEToFreeList passes &m_unkF4)
-    char m_unkF8[0x2E28 - 0x0F8];   // 0x0F8, AmbientChannelState array of stride 0x20, FindFadingAmbientChannel scans it
+    char m_unkF8[0x2E20 - 0x0F8];   // 0x0F8, AmbientChannelState array of stride 0x20, FindFadingAmbientChannel scans it
+    unsigned int m_unk2E20; // 0x2E20, PSoundInit passes it to SOUND_SetChanUse
+    char _pad2E24[0x2E28 - 0x2E24];
     unsigned int m_unk2E28; // 0x2E28, FindFadingAmbientChannel start index
     unsigned int m_unk2E2C; // 0x2E2C, FindFadingAmbientChannel limit
     unsigned int m_unk2E30; // 0x2E30, StopSoundBySoundRef loop start index
     unsigned int m_unk2E34; // 0x2E34, StopSoundBySoundRef loop limit (inclusive)
-    char _pad2E38[0x2E48 - 0x2E38];
+    unsigned int m_unk2E38; // 0x2E38, PSoundInit passes it to SOUND_SetChanUse
+    char _pad2E3C[0x2E48 - 0x2E3C];
     int m_unk2E48;          // 0x2E48, SoundEditLeave copies 0x2E4C here
     int m_unk2E4C;          // 0x2E4C, SoundEditLeave/Enter category mask
     int m_unk2E50[4];       // 0x2E50, PSoundStopDialog zeroes 0x2E50..0x2E5C
