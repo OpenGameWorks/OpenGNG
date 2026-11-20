@@ -13,11 +13,14 @@ struct PHashNode {
 
 class PHashTable {
 public:
+    PHashTable();
     ~PHashTable();
     void *GetNodeAt(void *pKey, unsigned int &uIndex);
     bool Lookup(void *pKey, void *&pValue);
+    bool Add(void *pKey, void *pValue);
     void *Remove(void *pKey);
-    void RemoveAll();   // 0x130180, owned by another job
+    void RemoveAll();
+    bool Create(unsigned int nBuckets);
     void Destroy();
 
     unsigned int m_unk0;    // 0x00 bucket count
