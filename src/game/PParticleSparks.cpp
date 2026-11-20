@@ -24,6 +24,69 @@ extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, unsigned int nCount, int nType);
+extern "C" void sceVu0Normalize(float *dst, float *src);
+extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
+
+// DRAFT: 0x001F7F10 InitSparkDirections__15PParticleSparksFv
+// note: DIFF 191, size 0x344 vs 0x32C; frame 0xB0 with s4..s6 saved vs 0x70 with s0..s3 only. Tried bool flag (218), function-scope i (192, frame 0x80), locals moved after the Normalize call, nBits in loop.
+void PParticleSparks::InitSparkDirections() {
+    u_long128 vTmp;
+    float vec[4];
+    int nBits;
+    int bRandom = 0;
+    if (m_unk140 == 0) CdsAssert__FPciPc("PParticleSparks.cpp", 0xE2, "mpDirections");
+    if (m_unkF0 == 0.0f) {
+        if (m_unkF4 == 0.0f) {
+            if (m_unkF8 == 0.0f) bRandom = 1;
+        }
+    }
+    for (int i = 0; i < m_unk118; i++) {
+        float *pS2 = (float *)((char *)m_unk140 + (i << 5));
+        float *pT = (float *)&vTmp;
+        float *pA2 = (float *)&m_unk150;
+        float fScale = m_unk128;
+        if (bRandom) {
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            vec[0] = 2.0f * (3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF)) - 1.0f;
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            vec[1] = 2.0f * (3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF)) - 1.0f;
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            vec[2] = 2.0f * (3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF)) - 1.0f;
+        } else {
+            float t = m_unk11C;
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            float u = 3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF);
+            vec[0] = m_unkF0 + (-t + (t + t) * u);
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            u = 3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF);
+            vec[1] = m_unkF4 + (-t + (t + t) * u);
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            u = 3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF);
+            vec[2] = m_unkF8 + (-t + (t + t) * u);
+        }
+        sceVu0Normalize(pS2, vec);
+        asm {
+            lqc2 vf1, 0x0(pS2)
+            lqc2 vf2, 0x0(pA2)
+            lqc2 vf5, 0x0(pT)
+            mfc1 nBits, fScale
+            qmtc2.i nBits, vf3
+            vmulx.xyz vf4, vf1, vf3x
+            vnop
+            vnop
+            vnop
+            vadd.xyz vf5, vf4, vf2
+            vnop
+            vnop
+            vnop
+            sqc2 vf5, 0x0(pT)
+        }
+        ((float *)&vTmp)[1] = ((float *)&vTmp)[1] - m_unk12C;
+        sceVu0SubVector(vec, pT, pA2);
+        sceVu0Normalize(vec, vec);
+        sceVu0SubVector(pS2 + 4, vec, pS2);
+    }
+}
 
 // FUNCTION: 0x001F8240 ModifyPosition__15PParticleSparksFP5PMat4
 void PParticleSparks::ModifyPosition(PMat4 *pMat) {

@@ -29,15 +29,18 @@ public:
     void InitSparkDirections();
 
     u_long128 m_unkE0;          // 0x0E0 spark vector
-    char _padF0[0x20];
+    float m_unkF0;              // 0x0F0 base direction x in InitSparkDirections
+    float m_unkF4;              // 0x0F4 base direction y in InitSparkDirections
+    float m_unkF8;              // 0x0F8 base direction z in InitSparkDirections
+    char _padFC[0x14];
     float m_unk110;             // 0x110 lower bound of the random spark scale in Animate
     float m_unk114;             // 0x114 upper bound of the random spark scale in Animate
     int m_unk118;               // 0x118 loop count limit in Animate
-    char _pad11C[4];
+    float m_unk11C;             // 0x11C spread factor in InitSparkDirections
     float m_unk120;             // 0x120 spark speed in Animate
     float m_unk124;             // 0x124 input to the loop length in Create
     float m_unk128;             // 0x128 extent value copied to 0x90..0x98 by Create
-    char _pad12C[4];
+    float m_unk12C;             // 0x12C offset subtracted from y in InitSparkDirections
     float m_unk130;             // 0x130 mix factor in Animate
     char _pad134[0xC];
     void *m_unk140;             // 0x140 spark buffer, released by the destructor
