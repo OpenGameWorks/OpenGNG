@@ -9,6 +9,8 @@ extern "C" void sceVu0SubVector(float *, float *, float *);
 extern "C" float sceVu0InnerProduct(float *, float *);
 extern "C" float sqrtf(float);
 extern "C" void sceVu0ScaleVectorXYZ(float *, float *, float);
+extern "C" void sceVu0AddVector(float *, float *, float *);
+extern "C" void sceVu0ScaleVector(float *, float *, float);
 float FastMath_Fabs(float f);
 float Fabs(float f);
 struct STCollisionPoly;
@@ -333,6 +335,57 @@ STCollisionPoly *BGCollision::FindIntersectST(int nX, int nZ, float (*pA)[4], fl
         }
     }
     return pRet;
+}
+
+// DRAFT: 0x0016FB60 FindIntersect__11BGCollisionFR5PVec3R5PVec3UiPA4_f
+// note: DIFF 149; prologue saves and nRet=0 placement (hoisted, DIFF 173 when moved before m_unk40) still differ; pF/pT locals replaced by reference casts (152 to 149)
+int BGCollision::FindIntersect(PVec3 &rFrom, PVec3 &rTo, unsigned int nFlags, float (*pOut)[4])
+{
+    float diff[4];
+    float fT;
+    int x0, z0, x1, z1;
+    int nRet = 0;
+    ((float *)&rTo)[3] = 1.0f;
+    ((float *)&rFrom)[3] = 1.0f;
+    sceVu0SubVector(diff, ((float *)&rTo), ((float *)&rFrom));
+    float fLen = sceVu0InnerProduct(diff, diff);
+    fT = fLen;
+    if (fLen > 10000.0f) {
+        sceVu0ScaleVector(diff, diff, 100.0f / sqrtf(fLen));
+        sceVu0AddVector(((float *)&rTo), ((float *)&rFrom), diff);
+        fT = 10000.0f;
+    }
+    if (m_unk40 != 0) {
+        FindGrid((float (*)[4])((float *)&rFrom), x0, z0);
+        m_unk50 = m_unk0 + ((float)x0 + 0.5f) * m_unk30;
+        m_unk58 = m_unk8 + ((float)z0 + 0.5f) * m_unk34;
+        FindGrid((float (*)[4])((float *)&rTo), x1, z1);
+        bool bFlag = !(Fabs(diff[0]) < Fabs(diff[2]));
+        for (;;) {
+            STCollisionPoly *pPoly = FindIntersectST(x0, z0, (float (*)[4])((float *)&rFrom), (float (*)[4])diff, fT, nFlags);
+            if (pPoly != 0) {
+                nRet = 1;
+                sceVu0ScaleVectorXYZ(diff, diff, fT / sqrtf(fT));
+                sceVu0AddVector(((float *)&rTo), ((float *)&rFrom), diff);
+                if (pOut != 0) {
+                    *(u_long128 *)pOut = *(u_long128 *)((char *)pPoly + 0x10);
+                }
+                break;
+            }
+            int dx = x1 - x0;
+            int dz = z1 - z0;
+            if (dx == 0 && dz == 0) {
+                break;
+            }
+            FindNextGrid(x0, z0, dx, dz, (float (*)[4])((float *)&rFrom), (float (*)[4])diff, bFlag);
+        }
+    }
+    if (FindIntersectAnim((float (*)[4])((float *)&rFrom), (float (*)[4])diff, fT, nFlags, pOut)) {
+        sceVu0ScaleVectorXYZ(diff, diff, fT / sqrtf(fT));
+        sceVu0AddVector(((float *)&rTo), ((float *)&rFrom), diff);
+        return 1;
+    }
+    return nRet;
 }
 
 // FUNCTION: 0x001701E0 FindGrid__11BGCollisionFPA4_fRiRi
