@@ -2,6 +2,9 @@
 #include "PFrozenFx.h"
 #include "PMNode.h"
 #include "PArray.h"
+#include "PGfxEngine.h"
+#include "PDisplayList.h"
+#include "PShader.h"
 
 // TODO(header): foreign declarations
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
@@ -9,7 +12,10 @@ extern "C" void *__dt__15PParticleSystemFv(void *, short);
 extern "C" void __dl__FPv(void *);
 extern "C" void __dla__FPv(void *);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
+extern "C" void sceVu0CopyVector(float *dst, float *src);
 extern unsigned char __vt__9PFrozenFx[];
+extern char gGfxEng[1504384];
+extern float gUnitMatrix[16];
 
 // Child object stored at m_unk1F0. Only the slots this file calls are named;
 // slot N is virtual number (N - 8) / 4.
@@ -112,6 +118,53 @@ void PFrozenFx::FadeAndDie(unsigned int nFlag) {
     if (m_unk1F0 != 0) {
         UpdateFxInstances();
         ((PFrozenFxChild *)m_unk1F0)->Slot5(nFlag);
+    }
+}
+
+// Shader and fx-instance list at m_unk1EC: shader pointer at 0, count at 8, entries at 0xC.
+struct PFrozenFxFxEntry {
+    int nSize;                  // 0x0
+    void *pData;                // 0x4
+};
+
+struct PFrozenFxFxList {
+    PShader *pShader;           // 0x0
+    int m_unk4;                 // 0x4
+    int nCount;                 // 0x8
+    PFrozenFxFxEntry *pEntries; // 0xC
+};
+
+// DRAFT: 0x001FA320 Render__9PFrozenFxFv
+// note: DIFF 85; original keeps this in s2 and i in s0 and reloads the list from m_unk1EC at the loop bottom, ours keeps this in s0; frame 0x264 vs 0x26c. Tried: decl order, pList local (DIFF 122 without, 85 with), pList inside loop (120), signed index (85), -str readonly not needed.
+void PFrozenFx::Render() {
+    if (m_unk1EC != 0 && m_unk15 != 0 && m_unkA4 != 0) {
+        ((PGfxEngine *)gGfxEng)->SetZBufferUpdate(true, (eGsContext)0);
+        ((PGfxEngine *)gGfxEng)->SetWorldMatrix((PMat4 *)gUnitMatrix);
+        ((PFrozenFxFxList *)m_unk1EC)->pShader->Render(0x80, true, 0);
+        PFrozenFxFxList *pList = (PFrozenFxFxList *)m_unk1EC;
+        for (unsigned int i = 0; i < (unsigned int)((PFrozenFxFxList *)m_unk1EC)->nCount; i++) {
+            int nSize = (i < (unsigned int)pList->nCount) ? pList->pEntries[i].nSize : 0;
+            void *pData = (i < (unsigned int)pList->nCount) ? pList->pEntries[i].pData : 0;
+            ((PGfxEngine *)gGfxEng)->BeginFxInstances(pData, nSize, false);
+            (*(PDisplayList **)(gGfxEng + 0x154C80))->DrawFxInstances((struct tagVuFxInstance *)m_unk1E0, m_unk1E4, false);
+        }
+        ((PGfxEngine *)gGfxEng)->SetZBufferUpdate(false, (eGsContext)0);
+    }
+    if (m_unk1F0 != 0 && ((PParticleSystem *)m_unk1F0)->m_unk15 != 0 && m_unkA4 != 0) {
+        float aVec[4];
+        sceVu0CopyVector(aVec, &((PParticleSystem *)m_unk1F0)->m_unkC0);
+        ((PGfxEngine *)gGfxEng)->SetMaterial((int)((PParticleSystem *)m_unk1F0)->m_unk10, aVec, true, ((PParticleSystem *)m_unk1F0)->m_unk30, 0x50000);
+        unsigned int nRemain = ((PParticleSystem *)m_unk1F0)->m_unk04;
+        unsigned int nChunks = nRemain / 40 + ((nRemain % 40) ? 1 : 0);
+        char *pBase = (char *)((PParticleSystem *)m_unk1F0)->m_unk08;
+        int nOff = 0;
+        for (unsigned int i = 0; i < nChunks; i++) {
+            unsigned int nCount = (nRemain < 0x28) ? nRemain : 0x28;
+            nRemain -= nCount;
+            ((PGfxEngine *)gGfxEng)->BeginParticleInstances((struct tagVuParticle *)(pBase + nOff), nCount, ((PParticleSystem *)m_unk1F0)->m_unkB8, ((PParticleSystem *)m_unk1F0)->m_unkBC, false);
+            (*(PDisplayList **)(gGfxEng + 0x154C80))->DrawStaticInstances((struct tagVuStaticInstance *)m_unk1F4, m_unk1F8, 0x28, 0, 1, false);
+            nOff += 0x500;
+        }
     }
 }
 
