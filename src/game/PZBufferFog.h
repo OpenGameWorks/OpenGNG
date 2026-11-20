@@ -17,6 +17,8 @@ public:
     void SetClutFogAlpha(float fAlpha);
     void SetDensity(float fDensity, bool bFlag, float fTime);
     void Animate(float fDelta);
+    void Render();
+    void Init();
 
     char _pad0000[0x12F0];                      // 0x0000
     char m_unk12F0[0x60];                       // 0x12F0 tagGsClut256

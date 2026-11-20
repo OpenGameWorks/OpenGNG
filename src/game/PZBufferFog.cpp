@@ -16,6 +16,28 @@ extern "C" float FastMath_Fabs__Ff(float f);
 extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
 extern "C" void sceVu0ClampVector(float *pDst, float *pSrc, float fMin, float fMax);
 extern "C" void sceVu0InterVector(float *pDst, float *pA, float *pB, float fT);
+extern char gGfxEng[1504384];
+extern int SCREEN_WIDTH;
+extern int SCREEN_HEIGHT;
+struct tagFogSpritePacket;
+struct tagTexturedFogSpritePacket;
+struct tagMoveRgToBaPacket;
+void GsInitMoveRG2BAPacket(tagMoveRgToBaPacket *pPacket, short nA, short nB, short nC, short nD);
+void GsInitFogSprite(tagFogSpritePacket *pPacket, char nA, char nB, char nC, unsigned int nD);
+void GsInitTexturedFogSprite(tagTexturedFogSpritePacket *pPacket, char nA, char nB, char nC, unsigned int nD);
+void GsInitClut256(tagGsClut256 *pClut);
+enum eGsContext { eGsContext_Placeholder = 0 };
+class PDisplayList {
+public:
+    void SetGsRegisters(u_long128 *pRegData, int nNumRegs);
+    void SetVifCodes(unsigned int nA, unsigned int nB);
+    void SendGsPacket(void *pData, int nSize, bool bFlag);
+};
+class PGfxEngine {
+public:
+    void SetZBufferUpdate(bool bEnable, eGsContext eCtx);
+    void SetCurFrameBufferAs8BitTexture(tagGsClut256 *pClut);
+};
 
 // FUNCTION: 0x1CE1B0 TweenClutFog__11PZBufferFogFP14tagClutFogDataP14tagClutFogDataf
 void PZBufferFog::TweenClutFog(tagClutFogData *pStart, tagClutFogData *pEnd, float fTime) {
@@ -127,6 +149,50 @@ void PZBufferFog::SetColor(float *pColor, bool bFlag, float fTime) {
     m_unk17A0 = 0;
 }
 
+#define PZ_FLOAT_TO_S8(v) ((unsigned char)(((v) < 2147483648.0f) ? (int)(v) : ((int)((v) - 2147483648.0f) | 0x80000000)))
+
+// DRAFT: 0x1CE630 Render__11PZBufferFogFv
+void PZBufferFog::Render() {
+    unsigned long long aRegs[4];
+    if (m_unk17A9 != 0 && m_unk1754 != 0.0f) {
+        aRegs[0] = 1;
+        aRegs[1] = 0x1A;
+        aRegs[2] = 0;
+        aRegs[3] = 0x1B;
+        (*(PDisplayList **)(gGfxEng + 0x154C80))->SetGsRegisters((u_long128 *)aRegs, 2);
+        int nX = *(int *)(gGfxEng + 0x158DF0);
+        int nA = (nX < 0 ? nX + 0x1FFF : nX) >> 13;
+        int nW = (SCREEN_WIDTH < 0 ? SCREEN_WIDTH + 0x3F : SCREEN_WIDTH) >> 6;
+        *(long long *)((char *)this + 0x10) = (long long)(short)nA | ((long long)nW << 16) | 0x3FFF00000000LL | 0x02000000LL;
+        (*(PDisplayList **)(gGfxEng + 0x154C80))->SendGsPacket((void *)this, 0xAD0, true);
+        (*(PDisplayList **)(gGfxEng + 0x154C80))->SetVifCodes(0x13000000U, 0x13000000U);
+        ((PGfxEngine *)gGfxEng)->SetZBufferUpdate(false, (eGsContext)0);
+        aRegs[0] = 0x80ULL << 32;
+        aRegs[1] = 0x3B;
+        (*(PDisplayList **)(gGfxEng + 0x154C80))->SetGsRegisters((u_long128 *)aRegs, 1);
+        if (m_unk17AA != 0) {
+            *((unsigned char *)this + 0xDE0) = PZ_FLOAT_TO_S8(((float *)m_unk1770)[0]);
+            *((unsigned char *)this + 0xDE1) = PZ_FLOAT_TO_S8(((float *)m_unk1770)[1]);
+            *((unsigned char *)this + 0xDE2) = PZ_FLOAT_TO_S8(((float *)m_unk1770)[2]);
+            *((unsigned char *)this + 0xDE3) = m_unk17AB;
+            ((PGfxEngine *)gGfxEng)->SetCurFrameBufferAs8BitTexture((tagGsClut256 *)m_unk12F0);
+            (*(PDisplayList **)(gGfxEng + 0x154C80))->SendGsPacket((void *)((char *)this + 0xDA0), 0x550, true);
+        } else {
+            *((unsigned char *)this + 0xB10) = PZ_FLOAT_TO_S8(((float *)m_unk1770)[0]);
+            *((unsigned char *)this + 0xB11) = PZ_FLOAT_TO_S8(((float *)m_unk1770)[1]);
+            *((unsigned char *)this + 0xB12) = PZ_FLOAT_TO_S8(((float *)m_unk1770)[2]);
+            *((unsigned char *)this + 0xB13) = 0x80;
+            (*(PDisplayList **)(gGfxEng + 0x154C80))->SendGsPacket((void *)((char *)this + 0xAD0), 0x2D0, true);
+        }
+        ((PGfxEngine *)gGfxEng)->SetZBufferUpdate(true, (eGsContext)0);
+        aRegs[0] = 0;
+        aRegs[1] = 0x1A;
+        aRegs[2] = 0x18;
+        aRegs[3] = 0x1B;
+        (*(PDisplayList **)(gGfxEng + 0x154C80))->SetGsRegisters((u_long128 *)aRegs, 2);
+    }
+}
+
 // DRAFT: 0x1CEA10 Animate__11PZBufferFogFf
 // note: 95 words differ; our body is 3 instructions short; beqz/blez targets and bc1t/bc1f polarity at 0x5C/0x74 differ; tried ladder store placement (98), ladder ternary (95), else-arm inline (95), direct m_unk1850 read (95)
 void PZBufferFog::Animate(float fDelta) {
@@ -180,6 +246,78 @@ void PZBufferFog::Animate(float fDelta) {
             m_unk17AC = 0;
         }
     }
+}
+
+// DRAFT: 0x1CEC10 Init__11PZBufferFogFv
+void PZBufferFog::Init() {
+    int nX = *(int *)(gGfxEng + 0x158E04);
+    int nA = (nX < 0 ? nX + 0x1FFF : nX) >> 13;
+    int nY = *(int *)(gGfxEng + 0x158DF0);
+    int nB = (nY < 0 ? nY + 0x1FFF : nY) >> 13;
+    GsInitMoveRG2BAPacket((tagMoveRgToBaPacket *)this, (short)(nA << 5), (short)nB, (short)nA, (short)(SCREEN_HEIGHT << 1));
+    GsInitFogSprite((tagFogSpritePacket *)((char *)this + 0xAD0), 0, 0, 0, 0x7FFF);
+    m_unk17AA = 0;
+    GsInitClut256((tagGsClut256 *)m_unk12F0);
+    GsInitTexturedFogSprite((tagTexturedFogSpritePacket *)((char *)this + 0xDA0), 0, 0, 0, 0x7FFF);
+    int nGroup = 0;
+    int nOff = 0;
+    do {
+        char *pRow = (char *)this + nOff;
+        pRow[0x1350] = (char)0x80;
+        pRow[0x1351] = (char)0x80;
+        pRow[0x1352] = (char)0x80;
+        pRow[0x1353] = (char)(0x81 - nGroup);
+        pRow[0x1354] = (char)0x80;
+        pRow[0x1355] = (char)0x80;
+        pRow[0x1356] = (char)0x80;
+        pRow[0x1357] = (char)(0x81 - (nGroup + 1));
+        pRow[0x1358] = (char)0x80;
+        pRow[0x1359] = (char)0x80;
+        pRow[0x135A] = (char)0x80;
+        pRow[0x135B] = (char)(0x81 - (nGroup + 2));
+        pRow[0x135C] = (char)0x80;
+        pRow[0x135D] = (char)0x80;
+        pRow[0x135E] = (char)0x80;
+        pRow[0x135F] = (char)(0x81 - (nGroup + 3));
+        pRow[0x1360] = (char)0x80;
+        pRow[0x1361] = (char)0x80;
+        pRow[0x1362] = (char)0x80;
+        pRow[0x1363] = (char)(0x81 - (nGroup + 4));
+        pRow[0x1364] = (char)0x80;
+        pRow[0x1365] = (char)0x80;
+        pRow[0x1366] = (char)0x80;
+        pRow[0x1367] = (char)(0x81 - (nGroup + 5));
+        pRow[0x1368] = (char)0x80;
+        pRow[0x1369] = (char)0x80;
+        pRow[0x136A] = (char)0x80;
+        pRow[0x136B] = (char)(0x81 - (nGroup + 6));
+        pRow[0x136C] = (char)0x80;
+        pRow[0x136D] = (char)0x80;
+        pRow[0x136E] = (char)0x80;
+        pRow[0x136F] = (char)(0x81 - (nGroup + 7));
+        nOff += 0x20;
+        nGroup += 8;
+    } while (nGroup < 0x80);
+    m_unk1350[0] = (char)0x80;
+    m_unk1350[1] = (char)0x80;
+    m_unk1350[2] = (char)0x80;
+    m_unk1350[3] = 0;
+    GsSwizzleClut((tagGsClut256 *)m_unk12F0);
+    *(long long *)((char *)this + 0xDC0) = 0x44;
+    m_unk1750 = 0x4B800000;
+    m_unk1754 = 0.0f;
+    m_unk1758 = 0.0f;
+    m_unk1770[2] = 0;
+    m_unk1770[1] = 0;
+    m_unk1770[0] = 0;
+    m_unk1770[3] = 0x3F800000;
+    m_unk1780[3] = 0x3F800000;
+    m_unk1780[2] = 0;
+    m_unk1780[1] = 0;
+    m_unk1780[0] = 0;
+    m_unk17A9 = 0;
+    m_unk17A4 = 0;
+    m_unk17A0 = 0;
 }
 
 // FUNCTION: 0x1CEE20 __dt__11PZBufferFogFv
