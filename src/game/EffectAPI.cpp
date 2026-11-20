@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "EffectAPI.h"
 
@@ -87,14 +88,45 @@ enum eBoxIntersect {
     eBoxIntersect_Unknown = 0
 };
 
+class EntityBaseClass {
+public:
+    char _pad00[4];
+    int m_unk4;
+};
+
 class PMNode {
 public:
+    virtual ~PMNode();
+    virtual void Unk0C();
+    virtual void Unk10();
+    virtual void Unk14();
+    virtual void Unk18();
+    virtual void Unk1C();
+    virtual void Unk20(void *arg0);
     void SetAllFrustrumTest(eBoxIntersect arg0);
     void *GetFirstMesh();
     void EnableFx(bool arg0, bool arg1);
+    void SetAnimLoopCount(int nCount, bool bFlag);
+    void EnableAnim(bool bA, bool bB);
+    void SetFrameRate(float fRate, bool bFlag);
+    void EnableOneRenderPassOnly(int nPass);
+
+    char _pad04[8];
+    int m_unkC;
+    char _pad10[0x2E];
+    unsigned char m_unk3E;
+    char _pad3F[0x41];
+    u_long128 m_unk80;
+};
+
+class PResourceManager {
+public:
+    PMNode *GetResource(unsigned int arg0, bool arg1);
 };
 
 extern PFrustrum *mpFrustum__15EntityBaseClass;
+extern PResourceManager *mpResMgr__15EntityBaseClass;
+extern unsigned char __vt__11PlingEffect[0x20];
 
 extern "C" void __ct__6PArrayFv(void *);
 extern "C" void Allocate__6PArrayFUi(void *, unsigned int);
@@ -124,6 +156,37 @@ extern unsigned char mEffectAPI__13EntityManager[0x10];
 extern unsigned char __vt__10EffectNode[0x40];
 extern unsigned char __vt__11GhostEffect[0x20];
 extern unsigned char __vt__13OneshotEffect[0x20];
+extern unsigned char __vt__16MotionBlurEffect[0x20];
+extern "C" int Create__16MotionBlurEffectFP6PMNodeUii(void *pThis, PMNode *arg0, unsigned int arg1, int arg2);
+extern "C" void *__ct__11PMotionBlurFv(void *pThis);
+
+// DRAFT: 0x155980 CreateMotionBlurEffect__9EffectAPIFP6PMNodeUii
+// note: 64 words differ: original frame 0x70 spills pEffect to 0x6C(sp) (cleanup scope of a member with a dtor); ours 0x60 keeps it in s0. Tried: PMotionBlur member class, vtable store reorder, assign-in-condition null check (65->64).
+MotionBlurEffect *EffectAPI::CreateMotionBlurEffect(PMNode *arg0, unsigned int arg1, int arg2) {
+    MotionBlurEffect *pEffect;
+    if ((pEffect = (MotionBlurEffect *)__nw__FUi(0xC0)) != 0) {
+        *(void **)pEffect = __vt__10EffectNode;
+        *(void **)pEffect = __vt__16MotionBlurEffect;
+        pEffect->m_unk4 = 0;
+        pEffect->m_unkC = 0;
+        __ct__11PMotionBlurFv(&pEffect->m_unk10);
+        pEffect->m_unk4 = 0;
+    }
+    if (pEffect != 0) {
+        if (m_unk0 >= 0x80) {
+            CdsAssert("EffectAPI.cpp", 0x2D5, "mEffectList.GetCount() < MAX_EFFECTS");
+        }
+        if (Create__16MotionBlurEffectFP6PMNodeUii(pEffect, arg0, arg1, arg2) == 0) {
+            delete pEffect;
+            return 0;
+        }
+        Add__6PArrayFPv(this, pEffect);
+        int nId = m_unk10;
+        m_unk10 = nId + 1;
+        pEffect->m_unk8 = nId;
+    }
+    return pEffect;
+}
 
 // FUNCTION: 0x155C70 FindPling__9EffectAPIFP15EntityBaseClass
 EffectNode *EffectAPI::FindPling(EntityBaseClass *arg0) {
@@ -143,6 +206,35 @@ EffectNode *EffectAPI::FindPling(EntityBaseClass *arg0) {
         } while (pNode != 0);
     }
     return 0;
+}
+
+// DRAFT: 0x155D70 __ct__11PlingEffectFP15EntityBaseClassPA4_fUiUib
+// note: 2 differing words: mtc1 zero goes to f0 (original f1), and the m_unk20[0] lwc1 goes to f1 (original f0), so c.eq.s operands are swapped. Tried: 0.0f!=x, !(x==0), float local (all still 2 words).
+PlingEffect::PlingEffect(EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4) {
+    m_unkC = arg4;
+    m_unk10 = arg0;
+    m_unk18 = (arg0 != 0) ? arg0->m_unk4 : 0;
+    m_unk14 = 0;
+    m_unk4 = (int)mpResMgr__15EntityBaseClass->GetResource(arg2, 0);
+    if (m_unk4 == 0) {
+        CdsAssert("EffectAPI.cpp", 0x1BC, "mpMeshNode");
+    }
+    if (arg3 != 0) {
+        PMNode *pAnim = mpResMgr__15EntityBaseClass->GetResource(arg3, 0);
+        if (pAnim == 0) {
+            CdsAssert("EffectAPI.cpp", 0x1BF, "pAnim");
+        }
+        ((PMNode *)m_unk4)->Unk20(pAnim);
+        ((PMNode *)m_unk4)->SetAnimLoopCount(0, true);
+        ((PMNode *)m_unk4)->EnableAnim(true, true);
+    }
+    *(u_long128 *)m_unk20 = *(u_long128 *)arg1;
+    m_unk2C = 0;
+    if (m_unk20[0] != 0.0f) {
+        PMNode *pNode = (PMNode *)m_unk4;
+        *(u_long128 *)&pNode->m_unk80 = *(u_long128 *)m_unk20;
+        pNode->m_unk3E |= 8;
+    }
 }
 
 // DRAFT: 0x155F00 CreatePling__9EffectAPIFP15EntityBaseClassPA4_fUiUib
@@ -188,11 +280,11 @@ int GhostEffect::Render(PLightManager *arg0) {
     sceVu0UnitMatrix((PMat4 *)mat);
     int size = 0x28;
     u_long128 *pVec = m_unk10;
-    unsigned char *pFlag = &m_unk90;
+    unsigned char *pFlag = m_unk90;
     if (m_unk9F != 0) {
         int off = 8 - m_unk9C;
         pVec = m_unk10 + off;
-        pFlag = &m_unk90 + off;
+        pFlag = m_unk90 + off;
     }
     int i;
     for (i = 0; i < m_unk9C; i++, size -= 4, pVec++, pFlag++) {
@@ -207,8 +299,58 @@ int GhostEffect::Render(PLightManager *arg0) {
     return total;
 }
 
+// DRAFT: 0x156150 Update__11GhostEffectFf
+// note: 65 words differ; frame and parity match, but call position (0x60 vs 0x58) and wrap-return branch shape differ.
+int GhostEffect::Update(float arg0) {
+    u_long128 sp50;
+    float mat[4][4];
+    int par = (unsigned char)(m_unk9E + 1);
+    m_unk9E = par;
+    if ((par & 1) == 0) {
+        return 1;
+    }
+    if (m_unk9F != 0) {
+        short n = m_unk9C - 1;
+        m_unk9C = n;
+        if (n == 0) {
+            return 0;
+        }
+        return 1;
+    }
+    sceVu0UnitMatrix((PMat4 *)mat);
+    sp50 = *(u_long128 *)&((PMNode *)m_unk4)->m_unk80;
+    int var = ((PMNode *)m_unk4)->m_unkC;
+    if (var == 4) {
+        var = 0;
+    }
+    if (m_unk9C < 8) {
+        m_unk90[m_unk9C] = var;
+        int old = m_unk9C;
+        m_unk9C = old + 1;
+        m_unk10[old] = sp50;
+    } else {
+        m_unk10[0] = m_unk10[1];
+        m_unk90[0] = m_unk90[1];
+        m_unk10[1] = m_unk10[2];
+        m_unk90[1] = m_unk90[2];
+        m_unk10[2] = m_unk10[3];
+        m_unk90[2] = m_unk90[3];
+        m_unk10[3] = m_unk10[4];
+        m_unk90[3] = m_unk90[4];
+        m_unk10[4] = m_unk10[5];
+        m_unk90[4] = m_unk90[5];
+        m_unk10[5] = m_unk10[6];
+        m_unk90[5] = m_unk90[6];
+        m_unk10[6] = m_unk10[7];
+        m_unk90[6] = m_unk90[7];
+        m_unk90[7] = var;
+        m_unk10[7] = sp50;
+    }
+    return 1;
+}
+
 // DRAFT: 0x1562B0 __ct__11GhostEffectFP9PMeshNode
-// note: 50 words differ; post-assert reload of m_unk98 and "mpMesh" literal placement (gp-relative here, lui/addiu in original).
+// note: 63 words differ; post-assert reload of m_unk98 and "mpMesh" literal placement (gp-relative here, lui/addiu in original).
 GhostEffect::GhostEffect(PMeshNode *arg0) {
     *(void **)this = __vt__10EffectNode;
     m_unk4 = 0;
@@ -220,16 +362,16 @@ GhostEffect::GhostEffect(PMeshNode *arg0) {
         CdsAssert("EffectAPI.cpp", 0x14D, "mpMesh");
     }
     m_unk9C = 0;
-    _pad09E[0] = 0;
+    m_unk9E = 0;
     m_unk9F = 0;
-    m_unk90 = 0;
-    _pad091[0] = 0;
-    _pad091[1] = 0;
-    _pad091[2] = 0;
-    _pad091[3] = 0;
-    _pad091[4] = 0;
-    _pad091[5] = 0;
-    _pad091[6] = 0;
+    m_unk90[0] = 0;
+    m_unk90[1] = 0;
+    m_unk90[2] = 0;
+    m_unk90[3] = 0;
+    m_unk90[4] = 0;
+    m_unk90[5] = 0;
+    m_unk90[6] = 0;
+    m_unk90[7] = 0;
 }
 
 // FUNCTION: 0x156390 CreateGhost__9EffectAPIFP9PMeshNode
@@ -259,6 +401,30 @@ void EffectNode::SendDeleteEvent(int arg0) {
     if (pTarget != 0) {
         pTarget->SendDeleteEvent(m_unk8);
     }
+}
+
+// FUNCTION: 0x001566B0 __ct__13OneshotEffectFUiUiP5PMat4P15EntityBaseClassfib
+OneshotEffect::OneshotEffect(unsigned int arg0, unsigned int arg1, PMat4 *arg2, EntityBaseClass *arg3, float arg4, int arg5, bool arg6) {
+    m_unkC = 0;
+    m_unk1C = arg6;
+    m_unk14 = arg3;
+    m_unk18 = (arg3 != 0) ? arg3->m_unk4 : 0;
+    m_unk10 = (int)arg2;
+    m_unk4 = (int)mpResMgr__15EntityBaseClass->GetResource(arg0, 0);
+    if (m_unk4 == 0) {
+        CdsAssert("EffectAPI.cpp", 0xFC, "mpMeshNode");
+    }
+    PMNode *pAnim = mpResMgr__15EntityBaseClass->GetResource(arg1, 0);
+    if (pAnim == 0) {
+        CdsAssert("EffectAPI.cpp", 0xFE, "pAnim");
+    }
+    ((PMNode *)m_unk4)->Unk20(pAnim);
+    ((PMNode *)m_unk4)->EnableAnim(true, true);
+    if (arg4 != 0.5f) {
+        ((PMNode *)m_unk4)->SetFrameRate(arg4, true);
+    }
+    ((PMNode *)m_unk4)->EnableOneRenderPassOnly(arg5);
+    ((PMNode *)m_unk4)->Unk14();
 }
 
 // DRAFT: 0x00156490 Update__13OneshotEffectFf
