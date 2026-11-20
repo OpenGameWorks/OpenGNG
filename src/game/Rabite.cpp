@@ -202,7 +202,7 @@ int Rabite::OnHitEvent(EntityBaseClass *pAttacker, int nDamage, unsigned int nA,
 }
 
 // DRAFT: 0x001FBF20 Execute__6RabiteFv
-// note: all switch cases transcribed; size 0xEA0 vs 0xDE4, DIFF 910 words. First diff: prologue init-branch delay slot (nop vs lui) and static gp offsets.
+// note: all switch cases transcribed; size 0xE98 vs 0xDE4, DIFF 907 words. Default return moved last. Original shares one epilogue at 0xDD0; ours duplicates it after case 10. Prologue delay slot (nop vs lui) and static gp offsets also differ. Tried: case -2 label, local float temp, !init, case 10 return.
 void Rabite::Execute() {
     static float SCALESCALESCALE;
     static signed char init;
@@ -332,8 +332,6 @@ void Rabite::Execute() {
                 return;
             }
         }
-        return;
-    default:
         return;
     case 9:
         if (m_unkE9 != 0) {
@@ -679,6 +677,8 @@ void Rabite::Execute() {
             SetState__15EntityBaseClassFi(this, -2);
         }
         break;
+    default:
+        return;
     }
 }
 
