@@ -31,6 +31,9 @@ extern "C" void DrawSplineParticles__12PDisplayListFP14tagVuSplineKeyiifbi(void 
 extern "C" void ComputeVuSplineKeys__21PParticleEnergyStreamFP13tagVuParticleiP14tagVuSplineKeyi(void *, void *, int, void *, int);
 extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *, int, float *, bool, unsigned long, unsigned long);
 extern "C" void SetWorldMatrix__10PGfxEngineFP5PMat4(void *, void *);
+extern "C" int rand(void);
+extern "C" float FastMath_Sin180__Ff(float fValue);
+extern "C" float FastMath_Cos180__Ff(float fValue);
 
 // FUNCTION: 0x001F5510 ComputeVuSplineKeys__21PParticleEnergyStreamFP13tagVuParticleiP14tagVuSplineKeyi
 void PParticleEnergyStream::ComputeVuSplineKeys(tagVuParticle *pParticles, int nUnused, tagVuSplineKey *pKeys, int nCount) {
@@ -127,6 +130,108 @@ void PParticleEnergyStream::Render() {
         int nWidth = m_unk120;
         DrawSplineParticles__12PDisplayListFP14tagVuSplineKeyiifbi(gGfxEng.m_unk154C80, pKeys, nCount, nWidth, 1.0f / (float)nWidth, 0, 30);
     }
+}
+
+// DRAFT: 0x001F5A20 Animate__21PParticleEnergyStreamFf
+// note: DIFF 329 words; original frame is 0x90 with s0..s6 live (draft uses 0x60, s0..s3); the operand swap of fDelta == 0.0f changed nothing.
+void PParticleEnergyStream::Animate(float fDelta) {
+    if (m_unk15 == 0 || m_unk16 != 0 || fDelta == 0.0f) {
+        return;
+    }
+    if (m_unk17 == 0 && m_unkA4 != 0) {
+        m_unkD0 = *(int *)((char *)this + 0x170);
+        float fTime = m_unk19C + 15.0f * *(float *)((char *)this + 0x144);
+        if (fTime < 360.0f) {
+            m_unk19C = fTime;
+        } else {
+            m_unk19C = 0.0f;
+        }
+        int nStep = m_unk04 - 1;
+        float fStep = 1.0f / (float)(nStep + nStep);
+        float fAcc = 0.0f;
+        float fAngle = m_unk19C;
+        if (*(float *)((char *)this + 0x140) != 0.0f) {
+            float fA = m_unk194 + m_unk198;
+            if (fA > 0.0f) {
+                m_unk194 = fA;
+                if (fA < 1.0f) {
+                    float fR = (float)rand() / 2147483648.0f;
+                    *(int *)((char *)this + 0x170) = (int)(0.5f + (12340.0f + fR * 41920.0f));
+                } else {
+                    m_unk198 = -m_unk198;
+                }
+            }
+            if (*(unsigned char *)((char *)this + 0x1A0) != 0) {
+                for (int i = 0; i < 4; i++) {
+                    float fR = (float)rand() / 2147483648.0f;
+                    m_unk110[i] = -1.0f + 2.0f * fR;
+                }
+            }
+            {
+                int sb;
+                float fScale = m_unk128;
+                float *pA = (float *)((char *)this + 0x110);
+                float *pB = (float *)((char *)this + 0xE0);
+                float *pD = (float *)((char *)this + 0x180);
+                asm { mfc1 sb, fScale }
+                asm {
+                    lqc2 vf1, 0x0(pA)
+                    lqc2 vf2, 0x0(pB)
+                    lqc2 vf5, 0x0(pD)
+                    qmtc2.i sb, vf3
+                    vmulx.xyz vf4, vf1, vf3x
+                    vadd.xyz vf5, vf4, vf2
+                    sqc2 vf5, 0x0(pD)
+                }
+            }
+            m_unk80 = (m_unk180[0] + m_unkE0[0]) * 0.5f;
+            m_unk84 = (m_unk180[1] + m_unkE0[1]) * 0.5f;
+            m_unk88 = (m_unk180[2] + m_unkE0[2]) * 0.5f;
+            int nCount = (*(unsigned char *)((char *)this + 0x1A0) != 0) ? m_unk04 - 1 : m_unk04;
+            for (int s0 = 1; s0 < nCount; s0++) {
+                fAcc += fStep;
+                float fScale = m_unk128 * fAcc;
+                float *pP = (float *)((char *)m_unk08 + (s0 << 5));
+                int sb;
+                float *pA = (float *)((char *)this + 0x110);
+                float *pB = (float *)((char *)this + 0xE0);
+                asm { mfc1 sb, fScale }
+                asm {
+                    lqc2 vf1, 0x0(pA)
+                    lqc2 vf2, 0x0(pB)
+                    lqc2 vf5, 0x0(pP)
+                    qmtc2.i sb, vf3
+                    vmulx.xyz vf4, vf1, vf3x
+                    vadd.xyz vf5, vf4, vf2
+                    sqc2 vf5, 0x0(pP)
+                }
+                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                float fU = (float)((m_unkD0 >> 16) & 0x7FFF) * 0.000030517578f;
+                fAngle += -60.0f + 120.0f * fU;
+                if (fAngle < 0.0f) {
+                    fAngle += 360.0f;
+                } else if (fAngle > 360.0f) {
+                    fAngle -= 360.0f;
+                }
+                float fSin = FastMath_Sin180__Ff(fAngle - 180.0f);
+                float fCos = FastMath_Cos180__Ff(fAngle - 180.0f);
+                float fR2 = 2.0f * *(float *)((char *)this + 0x12C);
+                pP[0] = pP[0] + fR2 * fSin;
+                pP[1] = pP[1] + (fSin * fCos) * fR2;
+                pP[2] = pP[2] + fR2 * fCos;
+            }
+        }
+    }
+    if (m_unk18 != 0 && m_unk17 != 0) {
+        float fLeft = m_unk190 - *(float *)((char *)this + 0x13C);
+        if (fLeft > 0.0f) {
+            m_unk190 = fLeft;
+        } else {
+            m_unk190 = 0.0f;
+        }
+    }
+    m_unk15 = 0;
+    m_unk16 = m_unk17;
 }
 
 // FUNCTION: 0x001F6560 __dt__21PParticleEnergyStreamFv

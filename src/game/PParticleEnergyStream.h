@@ -17,6 +17,7 @@ public:
     void SetPosition(float *pFrom, float *pTo);
     void Start();
     void Render();
+    void Animate(float fDelta);
 
     float m_unkE0[4];           // 0x0E0 source vector copied by SetPosition
     char _pad0F0[0x20];         // 0x0F0
@@ -30,8 +31,8 @@ public:
     float m_unk180[4];          // 0x180 target vector copied by SetPosition
     float m_unk190;             // 0x190 set to 1.0f by Start
     float m_unk194;             // 0x194 set to 1.0f by Start
-    int m_unk198;               // 0x198
-    int m_unk19C;               // 0x19C cleared by Start
+    float m_unk198;             // 0x198 step added to m_unk194 each Animate
+    float m_unk19C;             // 0x19C cleared by Start; advanced by Animate
 };
 
 #endif
