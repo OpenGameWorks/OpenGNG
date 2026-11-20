@@ -7,6 +7,9 @@
 
 // TODO(header): foreign declarations
 void CdsAssert(char *pFile, int nLine, char *pExpr);
+extern "C" void SOUND_PlaySFXRelVol(int, unsigned int, int, int, unsigned int);
+extern "C" void SOUND_SetChannelPitch(unsigned int, int);
+extern "C" void SOUND_SetChanRelVol(unsigned int, int, int);
 class Debug {
 public:
     // Debug size is unknown; the placeholder keeps gDebug out of small data (threshold 8 bytes).
@@ -36,7 +39,6 @@ extern "C" void SOUND_StopAllStreams();
 extern signed char fst_bCalledByDebug;
 extern "C" void FlushIOPCommand(int, int, int);
 extern "C" void SOUND_CopyIOPBuffer();
-extern "C" void ProcessSFXChannels__6PSoundFv(PSound *);
 extern "C" void ProcessAmbientChannels__6PSoundFv(PSound *);
 extern "C" void PlayEffect__6PSoundFUiUi(PSound *, unsigned int, unsigned int);
 extern "C" void SOUND_GetStatusPatient();
@@ -1064,7 +1066,7 @@ int PSound::OneFrameHasElapsed_R(float *pElapsed, float fFrame, int &rA, int &rB
     }
     ProcessMusic();
     ProcessTriglets();
-    ProcessSFXChannels__6PSoundFv(this);
+    ProcessSFXChannels();
     ProcessAmbientChannels__6PSoundFv(this);
     if (m_unkC0[0] || m_unkC0[1]) {
         SOUND_ResumeMultipleSounds(m_unkC0[0], m_unkC0[1]);
@@ -1184,6 +1186,75 @@ int PSound::ProcessMusic() {
         }
     }
     return 0;
+}
+
+// DRAFT: 0x001A6D40 ProcessSFXChannels__6PSoundFv
+// note: DIFF 117 words: frame 0xC0 vs 0xB0, sll s2 vs s0, key-table reloc (lui/addiu 0x4B3E50), lbu/lh register choice, assert+Init block order; tried unsigned char key and fPos moved into branch, no change
+void PSound::ProcessSFXChannels() {
+    unsigned int nOff = m_unk2E30 << 6;
+    OneShotChannelState *pChan = (OneShotChannelState *)((char *)this + nOff + 0x2220);
+    for (unsigned int nIdx = m_unk2E30; nIdx <= m_unk2E34; nIdx++, nOff += 0x40, pChan = (OneShotChannelState *)((char *)pChan + 0x40)) {
+        float fPos[3];
+        float fA, fB, fC;
+        unsigned int nVolA, nVolB, nS5;
+        if (pChan->m_unk2C != 0) {
+            pChan->m_unk2C--;
+        }
+        int nKey = SOUND_SPUKeyStatus[nIdx];
+        if (nKey == 0 && !(pChan->m_unk14 & 0x8000) && pChan->m_unk2C == 0) {
+            pChan->Init();
+            continue;
+        }
+        if (nKey == 1 || (pChan->m_unk14 & 0x8000)) {
+            SpotInfo *pSpot = (SpotInfo *)pChan->m_unk28;
+            if (pSpot == 0) {
+                pChan->Init();
+                continue;
+            }
+            if (pChan->m_unk10 != pSpot->m_unk00) {
+                pChan->Init();
+                continue;
+            }
+            ((pSpot) ? (void)0 : CdsAssert("PSound.cpp", 0x1929, "pSpot"));
+            unsigned int nVol = (unsigned char)pSpot->m_unk10;
+            if (nVol > 100) {
+                nVol = 100;
+            }
+            if (pChan->m_unk14 & 0x200) {
+                unsigned int nDiv = (unsigned int)(m_unk48 * (int)(nVol * 10)) / 1000u;
+                if (nDiv >= 1001) {
+                    nDiv = 1000;
+                }
+                nVolA = nDiv;
+                nVolB = nDiv;
+            } else {
+                nS5 = (unsigned int)(m_unk44 * (int)(nVol * 10)) / 1000u;
+                if (GetOriginatorPos(fPos, (unsigned short)pChan->m_unk14, pChan->m_unk18, pChan->m_unk1C) < 0) {
+                    continue;
+                }
+                CalculatePositionalVolume(fA, fB, fC, fPos, nS5, false, pChan->m_unk10, pSpot, pChan->m_unk1C, pChan->m_unk20);
+                AdjustEffectVolumes(nVolA, nVolB, fB, fC);
+            }
+            if (pChan->m_unk14 & 0x8000) {
+                nS5 = TranslateIntoADSR((unsigned char)pSpot->m_unk12);
+                SendStops();
+                SOUND_PlaySFXRelVol(pChan->m_unk10, nIdx, nVolA, nVolB, nS5);
+                pChan->m_unk2C = 3;
+                if (pSpot != 0) {
+                    int nPitch;
+                    if ((unsigned short)pChan->m_unk16 == 0) {
+                        nPitch = pSpot->PossiblyRandomPitch();
+                    } else {
+                        nPitch = (unsigned short)pChan->m_unk16;
+                    }
+                    SOUND_SetChannelPitch(nIdx, nPitch);
+                }
+            } else {
+                SOUND_SetChanRelVol(nIdx, nVolA, nVolB);
+            }
+        }
+        *(unsigned short *)((char *)this + nOff + 0x2234) &= 0x7FFF;
+    }
 }
 
 // DRAFT: 0x001A7060 GetOriginatorPos__6PSoundFPfUiUiUi

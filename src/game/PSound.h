@@ -164,6 +164,8 @@ public:
     unsigned int FindFreeAmbientChannel();
     int DelinkChannelState(AmbientChannelState **ppHead, AmbientEntry *pEntry);
     int GetOriginatorPos(float *pOut, unsigned int nFlags, unsigned int nOriginator, unsigned int nNode);
+    void CalculatePositionalVolume(float &fA, float &fB, float &fC, const float *pPos, unsigned int nFlags, bool bFlag, unsigned int nHandle, SpotInfo *pSpot, unsigned int nArg1C, unsigned int nArg20);
+    void ProcessSFXChannels();
     int PSoundInit(unsigned int nFlag);
     int StartAndHoldDialog(unsigned int nArg);
     int PrepDialog(unsigned int nArg);
