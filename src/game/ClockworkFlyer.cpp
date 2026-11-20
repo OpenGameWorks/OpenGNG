@@ -192,7 +192,7 @@ int ClockworkFlyer::InCameraView() {
     float afFwd[4];
     float afVec[4];
     char *pPos;
-    char *pCam = gEng;
+    char *pCam = gEng + 0x19760;
     GetForwardVector__6CameraFRA4_f(pCam, &afFwd);
     if (m_unk3C != 0) {
         pPos = m_unk3C + 0x80;

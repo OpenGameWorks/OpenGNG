@@ -16,7 +16,7 @@ public:
     void DrawVertices(void *pvData, int iSize);
 };
 
-// gGfxEng is a PGfxEngine object; the original reads its first word as the display list pointer.
+// gGfxEng is a PGfxEngine object; the display list pointer is its m_unk154C80 member at offset 0x154C80.
 extern char gGfxEng[1504384];
 
 extern "C" int Load__7PShaderFP8PPakFileP6PArrayb(void *pThis, PPakFile *pPakFile, PArray *pTextures, bool bFlag);
@@ -92,7 +92,7 @@ void PMeshFragment::Render(bool bFlag, int nArg, bool *pbOut) {
         CdsAssert__FPciPc("PMeshFragment.cpp", 0x57, "mpvVertexData");
     }
     Render__7PShaderFibPb(m_unkC, nArg, bFlag, pbOut);
-    ((PDisplayList *)*(void **)gGfxEng)->DrawVertices(m_unk0, m_unk4);
+    ((PDisplayList *)*(void **)(gGfxEng + 0x154C80))->DrawVertices(m_unk0, m_unk4);
 }
 
 // FUNCTION: 0x001900D0 Destroy__13PMeshFragmentFv

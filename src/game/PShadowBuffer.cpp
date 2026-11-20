@@ -146,7 +146,7 @@ void PShadowBuffer::AddShadowVolume(PShadowVolume *pVolume) {
 // FUNCTION: 0x001D85D0 Destroy__13PShadowBufferFv
 void PShadowBuffer::Destroy() {
     if (m_unk34 != 0) {
-        DestroyRenderedTexture__15PTextureManagerFi(gGfxEng, m_unk34);
+        DestroyRenderedTexture__15PTextureManagerFi(gGfxEng + 0x154C90, m_unk34);
         m_unk34 = 0;
     }
     if (m_unk8 != 0) {

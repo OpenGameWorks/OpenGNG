@@ -272,7 +272,7 @@ void Innocent::OnTimerEvent(unsigned int nTimer) {
     }
     if (nTimer == m_unk2A0) {
         EnableSleep__15EntityBaseClassFbb(this, false, false);
-        StartCutCamera__6CameraFUib(&gEng, m_unk20C, false);
+        StartCutCamera__6CameraFUib((char *)&gEng + 0x19760, m_unk20C, false);
         m_unk17A = 0;
         return;
     }

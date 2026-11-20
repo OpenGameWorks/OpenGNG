@@ -100,13 +100,13 @@ extern "C" PFrustrum *__dt__9PFrustrumFv(PFrustrum *pThis, short nFlag) {
 extern "C" PFrustrum *__ct__9PFrustrumFv(PFrustrum *pThis) {
     char *base = (char *)pThis;
     memset(base + 0x80, 0, 0x50);
-    *(u_long128 *)(base + 0x00) = *(u_long128 *)gUnitMatrix;
-    *(u_long128 *)(base + 0x40) = *(u_long128 *)gUnitMatrix;
-    *(u_long128 *)(base + 0x10) = *(u_long128 *)gUnitMatrix;
-    *(u_long128 *)(base + 0x50) = *(u_long128 *)gUnitMatrix;
-    *(u_long128 *)(base + 0x20) = *(u_long128 *)gUnitMatrix;
-    *(u_long128 *)(base + 0x60) = *(u_long128 *)gUnitMatrix;
-    *(u_long128 *)(base + 0x30) = *(u_long128 *)gUnitMatrix;
-    *(u_long128 *)(base + 0x70) = *(u_long128 *)gUnitMatrix;
+    *(u_long128 *)(base + 0x00) = *(u_long128 *)&gUnitMatrix[12];
+    *(u_long128 *)(base + 0x40) = *(u_long128 *)&gUnitMatrix[12];
+    *(u_long128 *)(base + 0x10) = *(u_long128 *)&gUnitMatrix[12];
+    *(u_long128 *)(base + 0x50) = *(u_long128 *)&gUnitMatrix[12];
+    *(u_long128 *)(base + 0x20) = *(u_long128 *)&gUnitMatrix[12];
+    *(u_long128 *)(base + 0x60) = *(u_long128 *)&gUnitMatrix[12];
+    *(u_long128 *)(base + 0x30) = *(u_long128 *)&gUnitMatrix[12];
+    *(u_long128 *)(base + 0x70) = *(u_long128 *)&gUnitMatrix[12];
     return pThis;
 }

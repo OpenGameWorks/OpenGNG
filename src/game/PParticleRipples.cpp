@@ -171,7 +171,7 @@ void PParticleRipples::Animate(float fArg) {
         m_unk8B1 = 0;
         return;
     }
-    m_unk8A8 = (char *)AllocParticles__12PDisplayListFii(*(void **)&gGfxEng, m_unk860, 6);
+    m_unk8A8 = (char *)AllocParticles__12PDisplayListFii(*(void **)((char *)&gGfxEng + 0x154C80), m_unk860, 6);
     if (m_unk8A8 == 0) {
         CdsAssert__FPciPc("PParticleRipples.cpp", 0xA4, "mpFxInstances");
     }

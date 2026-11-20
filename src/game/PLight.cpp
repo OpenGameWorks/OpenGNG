@@ -83,9 +83,9 @@ PLight::~PLight() {
 
 // FUNCTION: 0x0018E7F0 __ct__6PLightFv
 PLight::PLight() {
-    m_unk10 = *(u_long128 *)gUnitMatrix;
-    m_unk0 = *(u_long128 *)gUnitMatrix;
-    m_unk20 = *(u_long128 *)gUnitMatrix;
+    m_unk10 = *(u_long128 *)&gUnitMatrix[12];
+    m_unk0 = *(u_long128 *)&gUnitMatrix[12];
+    m_unk20 = *(u_long128 *)&gUnitMatrix[12];
     memset(m_unk30, 0, 16);
     m_unk40 = 1000.0f;
     m_unk44 = 0;

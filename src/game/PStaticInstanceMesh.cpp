@@ -56,7 +56,7 @@ int PStaticInstanceMesh::Load(PPakFile *pFile, PArray *pArray, ePsx2FileVersion 
         return 0;
     }
     if (hdr.flag) {
-        PParticleOneShot *pFx = ((PParticleManager *)gGfxEng)->Create(hdr.flag, 0.0f, 0.0f, 0.0f, 0, false);
+        PParticleOneShot *pFx = ((PParticleManager *)(gGfxEng + 0x154F00))->Create(hdr.flag, 0.0f, 0.0f, 0.0f, 0, false);
         m_unk10 = pFx;
         if (!m_unk10) {
             return 0;

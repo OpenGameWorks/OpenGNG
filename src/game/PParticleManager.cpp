@@ -1207,7 +1207,7 @@ void PParticleManager::Shutdown() {
     DestroySulphurReactionFx();
     DestroyEweedReactionFx();
     if (m_unk670 != 0) {
-        DestroyRenderedTexture__15PTextureManagerFi(gGfxEng, m_unk670);
+        DestroyRenderedTexture__15PTextureManagerFi(gGfxEng + 0x154C90, m_unk670);
         m_unk670 = 0;
     }
 }

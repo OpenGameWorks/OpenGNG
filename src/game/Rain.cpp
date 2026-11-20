@@ -36,7 +36,7 @@ void Rain::Execute() {
 
 // FUNCTION: 0x001CD5B0 __dt__4RainFv
 Rain::~Rain() {
-    void *apParticleMgr = gGfxEng;
+    void *apParticleMgr = gGfxEng + 0x154F00;
     CDS_ASSERT(0x12, apParticleMgr);
     DestroyRain__16PParticleManagerFv(apParticleMgr);
 }

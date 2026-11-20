@@ -94,7 +94,7 @@ CamBox::CamBox() : EntityBaseClass((EntityBaseClass::LoadClass)4, 0) {
 
 // FUNCTION: 0x0019C7E0 OnSleepEvent__6CamBoxFv
 void CamBox::OnSleepEvent() {
-    Camera *pCam = (Camera *)gEng;
+    Camera *pCam = (Camera *)(gEng + 0x19760);
     CDS_ASSERT(0x127, pCam);
     if (pCam->m_unk2BC != 0 && pCam->m_unk2BC == (int)this) {
         pCam->m_unk2BC = 0;

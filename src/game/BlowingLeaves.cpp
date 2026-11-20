@@ -59,7 +59,7 @@ void BlowingLeaves::Execute() {
 BlowingLeaves::~BlowingLeaves() {
     m_unk0 = __vt__13BlowingLeaves;
     if (m_unk1F0 != 0) {
-        void *mgr = gGfxEng;
+        void *mgr = gGfxEng + 0x154F00;
         if (mgr == 0) {
             CdsAssert__FPciPc("BlowingLeaves.cpp", 0x14, "apParticleMgr");
         }
