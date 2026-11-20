@@ -6,6 +6,28 @@
 class PFrustrum;
 class PMat4;
 
+// Fog volume creation data read by PParticleFog::Create. Offsets 0x00 to 0x0C
+// give the centre, 0x10 to 0x18 the half extents, 0x20 a vector copied to
+// m_unk10, 0x30 to 0x38 the scale values, 0x3C an index into a table of 64-bit
+// values, 0x40 the particle count limit and 0x44 a random-placement flag.
+struct tagParticleFogData {
+    float unk0;
+    float unk4;
+    float unk8;
+    char _pad0C[4];
+    float unk10;
+    float unk14;
+    float unk18;
+    float unk1C;
+    u_long128 unk20;
+    float unk30;
+    float unk34;
+    float unk38;
+    int unk3C;
+    unsigned int unk40;
+    unsigned char unk44;
+};
+
 // Fog particle volume. Offsets 0x00 to 0x0C hold the particle output array,
 // count and size values; 0x10 holds a vector passed to DrawFogParticles;
 // 0x20 is the fog alpha written by FrustrumTest; 0x30 holds two 4x4 boxes
@@ -14,6 +36,7 @@ class PParticleFog {
 public:
     PParticleFog();
     ~PParticleFog();
+    int Create(tagParticleFogData *pData, int nMode);
     void Render(PMat4 *pMat);
     void FrustrumTest(PFrustrum *pFrustum, float *pPos, float fNear, float fFar, PMat4 *pMat);
 
