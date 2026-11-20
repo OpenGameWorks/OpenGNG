@@ -7,6 +7,12 @@ extern "C" void sceVu0MulVector(float *pDst, float *pSrc, float *pW);
 extern "C" void sceVu0UnitMatrix(void *pMat);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void iFlushCache(int nMode);
+extern "C" void FlushCache(int nMode);
+extern "C" void sceGsSyncPath(int nMode, int nArg);
+extern "C" int sceGsSyncV(int nMode);
+extern "C" void sceGsSetHalfOffset(void *pBuf, int nW, int nH, unsigned char nFlag);
+struct sceGsDBuff;
+int GsSwapDBuff(sceGsDBuff *pBuf, int nIdx);
 extern char vu_clip_microcode_dma_packet[];
 extern char vu_shadow_microcode_dma_packet[];
 extern char vu_fx_microcode_dma_packet[];
@@ -14,6 +20,9 @@ extern char vu_debug_microcode_dma_packet[];
 extern char vu_noclip_microcode_dma_packet[];
 extern char clip_unlit_spline_patch_init[];
 extern char dbg_display_init[];
+extern char fx_instance_mesh_init[];
+extern char fx_instance_screen_st_mesh_init[];
+extern char noclip_static_instance_cull_mesh_init[];
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern int gCDSVBlankCount[1];
@@ -36,6 +45,8 @@ public:
     void SetGsRegisters(u_long128 *pRegData, int nNumRegs);
     void SetWorldMatrix(PMat4 *pMat);
     void BeginMesh(unsigned int nFlags);
+    void AddVifPacket(u_long128 *pData, int nCount, unsigned int nA, unsigned int nTag);
+    void BeginFxLoop(unsigned int nAddr);
     void SetTexSyncPacket();
     void SetMaterials(struct tagGsMaterial *pMat, int nIndex, bool bA, bool bB, float *pF, unsigned long *pC, unsigned long *pD);
     void SendGsPacket(void *pData, int nSize, bool bFlag);
@@ -76,6 +87,21 @@ unsigned int GsGetBufferWidth(unsigned int nWidth, unsigned int nDepth);
 extern int SCREEN_WIDTH;
 extern int SCREEN_HEIGHT;
 
+// TODO(header): foreign declarations (PMeshFragment layout as used here; PMesh.h owns the full class)
+class PMeshFragment {
+public:
+    char _pad000[0xC];
+    char m_unkC[4];                     // 0x0C, sub-block whose address DrawFragment checks
+    char _pad010[0x4C - 0x10];
+    int m_unk4C;                        // 0x4C, fragment type (5 = blended)
+    char _pad050[0x64 - 0x50];
+    int m_unk64;                        // 0x64, matrix pointer, or 0 / -1 for the slot matrix
+    char _pad068[0x70 - 0x68];
+    float m_unk70[4];                   // 0x70, vector
+    char _pad080[0x90 - 0x80];
+    void Render(bool bFlag, int nIdx, bool *pOut);
+};
+
 // FUNCTION: 0x00184640 ComputeDistanceSq__FPfPfPA4_A4_fPA4_A4_fPfPf
 void ComputeDistanceSq(float *pA, float *pB, float (*pMatA)[4][4], float (*pMatB)[4][4], float *pSrc, float *pDst)
 {
@@ -115,6 +141,37 @@ void ComputeDistanceSq(float *pA, float *pB, float (*pMatA)[4][4], float (*pMatB
         jr ra
         nop
     }
+}
+
+// DRAFT: 0x001846D0 ZCompareFragments__FPvPv
+// note: 26 words differ: fDist at sp+0x18 (orig sp+0x10); matrix branch order; bc1t vs bc1f on the return compare. Tried: scratch vector, member-array slot bases, hoisted vec loads (53->29), int returns (->26), fDist first (no change), flipped 158F01 test (27), flipped pMat0 test (no change).
+int ZCompareFragments(void *pIdx0, void *pIdx1)
+{
+    float fDist[2];
+    char *pSlot0 = gpGfxEngine->m_unk159310 + ((int)pIdx0 << 8);
+    char *pSlot1 = gpGfxEngine->m_unk159310 + ((int)pIdx1 << 8);
+    PMeshFragment *pFrag0 = *(PMeshFragment **)pSlot0;
+    PMeshFragment *pFrag1 = *(PMeshFragment **)pSlot1;
+    float *pVec0 = pFrag0->m_unk70;
+    float *pVec1 = pFrag1->m_unk70;
+    float (*pMat0)[4][4];
+    float (*pMat1)[4][4];
+
+    if (pFrag0->m_unk64 != 0 && pFrag0->m_unk64 != -1) {
+        pMat0 = (float (*)[4][4])(pFrag0->m_unk64 + 0x40);
+    } else {
+        pMat0 = (float (*)[4][4])(gpGfxEngine->m_unk169320 + (*(int *)(pSlot0 + 4) << 6));
+    }
+    if (pFrag1->m_unk64 != 0 && pFrag1->m_unk64 != -1) {
+        pMat1 = (float (*)[4][4])(pFrag1->m_unk64 + 0x40);
+    } else {
+        pMat1 = (float (*)[4][4])(gpGfxEngine->m_unk169320 + (*(int *)(pSlot1 + 4) << 6));
+    }
+    ComputeDistanceSq(pVec0, pVec1, pMat0, pMat1, gpGfxEngine->m_unk16D330, fDist);
+    if (gpGfxEngine->m_unk158F01 != 0) {
+        return fDist[0] > fDist[1] ? 1 : 0;
+    }
+    return fDist[0] <= fDist[1] ? 1 : 0;
 }
 
 // DRAFT: 0x184800 VBlankEndInterruptHandler__Fi
@@ -201,6 +258,42 @@ void PGfxEngine::BeginSplinePatch() {
         m_unk154C80->SetVu1Microcode(m_unk158E1C);
     }
     m_unk154C80->BeginMesh((unsigned int)(clip_unlit_spline_patch_init + 0x1880) >> 3);
+}
+
+// FUNCTION: 0x00184CE0 BeginFxInstances__10PGfxEngineFPvib
+void PGfxEngine::BeginFxInstances(void *pData, int nSize, bool bFlag) {
+    if (pData == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x852, "pvMasterMeshPacket");
+    }
+    if (nSize == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x853, "iSize");
+    }
+    if (m_unk158E1C != vu_fx_microcode_dma_packet) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x854, "mpvCurVu1CodeBank == FX_MICROCODE_PACKET");
+    }
+    m_unk154C80->AddVifPacket((u_long128 *)pData, nSize >> 4, 0x11000000, ((unsigned int)((nSize >> 4) << 16)) | 0x6C000207);
+    if (bFlag) {
+        m_unk154C80->BeginFxLoop(((unsigned int)(fx_instance_screen_st_mesh_init + 0x26F0)) >> 3);
+        return;
+    }
+    m_unk154C80->BeginFxLoop(((unsigned int)(fx_instance_mesh_init + 0x2B78)) >> 3);
+}
+
+// FUNCTION: 0x00184E10 BeginStaticInstances__10PGfxEngineFPvi
+void PGfxEngine::BeginStaticInstances(void *pData, int nSize) {
+    if (pData == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x83D, "pvMasterMeshPacket");
+    }
+    if (nSize == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x83E, "iSize");
+    }
+    m_unk154C80->AddVifPacket((u_long128 *)pData, nSize >> 4, 0x11000000, ((unsigned int)((nSize >> 4) << 16)) | 0x6C000218);
+    if (m_unk158E1C != vu_noclip_microcode_dma_packet) {
+        m_unk154C80->m_unkA3348 = 1;
+        m_unk158E1C = vu_noclip_microcode_dma_packet;
+        m_unk154C80->SetVu1Microcode(m_unk158E1C);
+    }
+    m_unk154C80->BeginMesh(((unsigned int)(noclip_static_instance_cull_mesh_init + 0x2248)) >> 3);
 }
 
 // FUNCTION: 0x184F40 EndShadowRender__10PGfxEngineFv
@@ -457,6 +550,31 @@ void PGfxEngine::ResetBlendedFragmentTable() {
     m_unk16D400 = 0;
 }
 
+// DRAFT: 0x00186890 DrawFragment__10PGfxEngineFP13PMeshFragmentbiPb
+// note: 37 words differ; frame is 0x70 with s0..s5 vs original 0x60 with s0..s4, and m_unk4C loads fold onto a saved pFrag+0xC. Tried: array/int m_unkC, &-address check, early and late m_unk4C local (37 best, 78 otherwise).
+void PGfxEngine::DrawFragment(PMeshFragment *pFrag, bool bFlag, int nIdx, bool *pOut) {
+    if (pFrag == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x4E6, "pFragment");
+    }
+    int nType = pFrag->m_unk4C;
+    if (pFrag->m_unkC == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x4E9, "apShader");
+    }
+    if (nType == 5 && m_unk16D408 == 0) {
+        if (AddBlendedFragment(pFrag, nIdx, pOut, true) != 0) {
+            m_unk16D40C++;
+        }
+    } else {
+        if (bFlag) {
+            if (m_unk16D408 == 0) {
+                AddBlendedFragment(pFrag, nIdx, pOut, false);
+                return;
+            }
+        }
+        pFrag->Render(false, nIdx, pOut);
+    }
+}
+
 // FUNCTION: 0x1869D0 SetScreenMatrix__10PGfxEngineFP5PMat4
 void PGfxEngine::SetScreenMatrix(PMat4 *pMat) {
     m_unk154C80->SetScreenMatrix(pMat);
@@ -668,6 +786,24 @@ void PGfxEngine::FadeFullScreenMotionBlur(char cTarget, int nFrames) {
         return;
     }
     m_unk16D404 = cTarget;
+}
+
+// FUNCTION: 0x00187F30 ErrorRefreshDisplay__10PGfxEngineFb
+void PGfxEngine::ErrorRefreshDisplay(bool bFlag) {
+    m_unk158C90 = 0x30001;
+    m_unk158D80 = 0x30001;
+    sceGsSyncPath(0, 0);
+    int *pCounter = &m_unk158DE0;
+    *pCounter = *pCounter + 1;
+    m_unk158DEC = ((sceGsSyncV(0) != 0) ^ 1);
+    sceGsSetHalfOffset((m_unk158DE0 & 1) ? (void *)m_unk158D00 : (void *)m_unk158C10, 0x800, 0x800, m_unk158DEC);
+    if (bFlag) {
+        iFlushCache(0);
+    } else {
+        FlushCache(0);
+    }
+    m_unk158DF0 = GsSwapDBuff((sceGsDBuff *)m_unk158BB0, m_unk158DE0);
+    sceGsSyncPath(0, 0);
 }
 
 // FUNCTION: 0x188900 __dt__Q210PGfxEngine22tagBlendedFragmentInfoFv

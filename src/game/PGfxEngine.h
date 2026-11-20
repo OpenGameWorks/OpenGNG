@@ -3,6 +3,7 @@
 
 class PMat4;
 class PMNode;
+class PMeshFragment;
 struct tagGsClut256;
 struct tagVuFxLine;
 struct tagVuLightingInfo;
@@ -64,12 +65,28 @@ public:
     void ResetBlendedFragmentTable();
     void SetWorldMatrix(PMat4 *pMat);
     void SetOverrideTexture(int nIndex);
+    void BeginFxInstances(void *pData, int nSize, bool bFlag);
+    void BeginStaticInstances(void *pData, int nSize);
+    int AddBlendedFragment(PMeshFragment *pFrag, int nIdx, bool *pOut, bool bFlag);
+    void DrawFragment(PMeshFragment *pFrag, bool bFlag, int nIdx, bool *pOut);
+    void ErrorRefreshDisplay(bool bFlag);
 
     char _pad000[0x154C80];
     struct PDisplayList *m_unk154C80;   // 0x154C80
     char _pad154C84[0x154C90 - 0x154C84];
     char m_unk154C90[0x158B00 - 0x154C90]; // 0x154C90, PTextureManager (SetTexture)
-    char m_unk158B00[0x158DF0 - 0x158B00]; // 0x158B00, material block (SetMaterial copies from +0x60..+0xA0)
+    char m_unk158B00[0x158BB0 - 0x158B00]; // 0x158B00, material block (SetMaterial copies from +0x60..+0xA0)
+    char m_unk158BB0[0x158C10 - 0x158BB0]; // 0x158BB0, sceGsDBuff passed to GsSwapDBuff
+    char m_unk158C10[0x158C90 - 0x158C10]; // 0x158C10, display target used on even ErrorRefreshDisplay frames
+    unsigned long long m_unk158C90;     // 0x158C90, GS register value 0x30001
+    char _pad158C98[0x158D00 - 0x158C98];
+    char m_unk158D00[0x158D80 - 0x158D00]; // 0x158D00, display target used on odd ErrorRefreshDisplay frames
+    unsigned long long m_unk158D80;     // 0x158D80, GS register value 0x30001
+    char _pad158D88[0x158DE0 - 0x158D88];
+    int m_unk158DE0;                    // 0x158DE0, ErrorRefreshDisplay frame counter
+    char _pad158DE4[0x158DEC - 0x158DE4];
+    unsigned char m_unk158DEC;          // 0x158DEC, set from the sceGsSyncV result (1 when zero)
+    char _pad158DED[0x158DF0 - 0x158DED];
     int m_unk158DF0;                    // 0x158DF0, non-zero skips the frame-buffer size term in SetPrevFrameBufferAsTexture
     char _pad158DF4[0x158E02 - 0x158DF4];
     short m_unk158E02;                 // 0x158E02
@@ -92,7 +109,8 @@ public:
     float m_unk158EB0[4];               // 0x158EB0
     unsigned int m_unk158EC0[16];       // 0x158EC0, four (0, 0, 0, 1.0f) vectors written by ResetVuLightingInfo
     unsigned char m_unk158F00;          // 0x158F00, material flag, saved and restored around SetMaterial
-    char _pad158F01[0x158F04 - 0x158F01];
+    unsigned char m_unk158F01;          // 0x158F01, selects comparison direction in ZCompareFragments
+    char _pad158F02[0x158F04 - 0x158F02];
     char m_unk158F04[0x159310 - 0x158F04]; // 0x158F04, cleared by ResetBlendedFragmentTable
     char m_unk159310[0x10000];          // 0x159310, cleared by ResetBlendedFragmentTable
     int m_unk169310;                    // 0x169310
@@ -101,7 +119,8 @@ public:
     int m_unk16D320;                    // 0x16D320, world matrix index
     int m_unk16D324;                    // 0x16D324, set when a world matrix is pending
     int m_unk16D328;                    // 0x16D328, last eBoxIntersect passed to BeginMesh
-    char _pad16D32C[0x16D340 - 0x16D32C];
+    char _pad16D32C[0x16D330 - 0x16D32C];
+    float m_unk16D330[4];               // 0x16D330, scratch vector passed to ComputeDistanceSq
     char m_unk16D340[0x40];             // 0x16D340, copy of a PMat4 (clip)
     char m_unk16D380[0x40];             // 0x16D380, copy of a PMat4 (view)
     char m_unk16D3C0[0x40];             // 0x16D3C0, copy of a PMat4 (screen)
