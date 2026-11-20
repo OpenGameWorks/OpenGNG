@@ -3,6 +3,7 @@
 #include "EntityBaseClass.h"
 #include "PResourceManager.h"
 #include "PMeshNode.h"
+#include "PArray.h"
 
 // TODO(header): foreign declarations
 extern PResourceManager *mpResMgr__15EntityBaseClass;
@@ -15,6 +16,13 @@ extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" int printf(const char *fmt, ...);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern unsigned char __vt__6Pickup[];
+extern void *mpEntMgr__15EntityBaseClass;
+extern PArray mTempArray__15EntityBaseClass;
+extern "C" void GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(void *pThis, int nLoadClass, PArray *pList, float (*pBox)[4], float fRadius, int nFilter, bool bA, bool bB);
+extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(unsigned int nId);
+extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
+extern "C" float sinf(float x);
+extern "C" float cosf(float x);
 
 // FUNCTION: 0x0019CF40 __dt__6PickupFv
 Pickup::~Pickup() {
@@ -31,6 +39,28 @@ void Pickup::FlyToApparition(unsigned int arg0, float arg1) {
     }
 }
 
+// DRAFT: 0x0019D020 SoulSuckerInRange__6PickupFv
+// note: 10-word diff; count reload at bottom test uses v0 (orig v1), sltu source reg, return-0 daddu not in bnez delay slot; tried while/ternary forms, (0<x)!=0 wrap, local bool.
+int Pickup::SoulSuckerInRange() {
+    float (*pBox)[4];
+    if (mTempArray__15EntityBaseClass.m_unk8 != 0) {
+        mTempArray__15EntityBaseClass.m_unk0 = 0;
+        mTempArray__15EntityBaseClass.m_unk4 = 0;
+    }
+    if (this->m_unk3C != 0) {
+        pBox = (float (*)[4])((char *)this->m_unk3C + 0x80);
+    } else {
+        pBox = (float (*)[4])&this->m_unk190;
+    }
+    GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 3, &mTempArray__15EntityBaseClass, pBox, 17.0f, 0x6B, true, false);
+    while ((0 < mTempArray__15EntityBaseClass.m_unk0) != 0) {
+        int bHas = (0 < mTempArray__15EntityBaseClass.m_unk0) != 0;
+        ApparitionIsValid__15EntityBaseClassFUi(bHas ? (unsigned int)mTempArray__15EntityBaseClass.m_unk8[0] : 0U);
+        return 1;
+    }
+    return 0;
+}
+
 // DRAFT: 0x0019D0D0 AdjustPickupBox__6PickupFv
 // note: 21-word diff; original enters the loop with a `b` to the bottom test that for-loop, do-while and while forms do not emit (constant 0<1 folded); outer pNode and byte-offset induction variants tried too.
 void Pickup::AdjustPickupBox() {
@@ -43,6 +73,15 @@ void Pickup::AdjustPickupBox() {
             ((PMeshNode *)pNode)->AdjustPickup();
         }
     }
+}
+
+// FUNCTION: 0x0019D140 SetDefaultVars__6PickupFv
+void Pickup::SetDefaultVars() {
+    this->m_unk1B0 = 0;
+    this->m_unk1B4 = 1;
+    this->m_unk1B8 = 0;
+    this->m_unk1BC = 0;
+    this->m_unk1C0 = 0;
 }
 
 // FUNCTION: 0x0019D160 SetEditableVars__6PickupFPc
@@ -66,11 +105,65 @@ void Pickup::OnSleepEvent() {
     this->m_unk190 = *src;
 }
 
+// DRAFT: 0x0019D200 OnTouchEvent__6PickupFP15EntityBaseClass
+// note: 36-word diff; original tests type 5 before 3 and branches forward into the record block (ours bnez/bne sense differs); switch dispatch 3/5 with shared tail beats else-if (41); testing 5 first gives 45.
+void Pickup::OnTouchEvent(EntityBaseClass *arg0) {
+    if (this->m_unk1CC == 0) {
+        if (this->m_unk1B0 == 0x26) {
+            if (*(int *)((char *)arg0 + 8) == 5 && *(int *)(*(char **)((char *)mpEntMgr__15EntityBaseClass + 0x505C) + 0x210) == 1) {
+                ((EntityBaseClass *)this)->SetState(2);
+            }
+        } else if (this->m_unk1B0 != 0x25) {
+            switch (*(int *)((char *)arg0 + 8)) {
+            case 3:
+                goto tail;
+            case 5: {
+                signed char *pRec = PickUpData + this->m_unk1B0 * 24 + 1;
+                if (*pRec == 4) {
+                    goto tail;
+                }
+                if (*pRec == 3) {
+                    if (*(int *)(*(char **)((char *)mpEntMgr__15EntityBaseClass + 0x505C) + 0x210) == 1) {
+                        goto tail;
+                    }
+                }
+                break;
+            }
+            }
+            return;
+tail:
+            if (this->m_unk20 != 5) {
+                ((EntityBaseClass *)this)->SetState(2);
+            }
+        }
+    }
+}
+
 // FUNCTION: 0x0019D310 OnEffectDelete__6PickupFUi
 void Pickup::OnEffectDelete(unsigned int arg0) {
     if (arg0 == (unsigned int)this->m_unk234) {
         ((EntityBaseClass *)this)->SetState(-2);
     }
+}
+
+// FUNCTION: 0x0019F020 SetBonusVelocity__6PickupFPA4_fPff
+void Pickup::SetBonusVelocity(float (*arg0)[4], float *arg1, float arg2) {
+    u_long128 tmp;
+    float fCos;
+    void *pTemp;
+    sceVu0AddVector((float *)&tmp, (float *)arg0, arg1);
+    pTemp = this->m_unk3C;
+    if (pTemp != 0) {
+        *(u_long128 *)((char *)pTemp + 0x80) = tmp;
+        *(unsigned char *)((char *)pTemp + 0x3E) |= 8;
+    } else {
+        this->m_unk190 = tmp;
+    }
+    fCos = cosf(arg2);
+    *(float *)((char *)this + 0x1D0) = 0.1f * sinf(arg2);
+    *(float *)((char *)this + 0x1D8) = 0.1f * fCos;
+    *(int *)((char *)this + 0x1D4) = 0x3ECCCCCD;
+    *(int *)((char *)this + 0x1DC) = 0x3F800000;
 }
 
 // FUNCTION: 0x0019F0D0 SetAbilityType__6PickupFi

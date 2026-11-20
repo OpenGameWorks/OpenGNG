@@ -14,7 +14,11 @@ public:
     void FlyToApparition(unsigned int arg0, float arg1);
     void OnSleepEvent();
     void OnEffectDelete(unsigned int arg0);
+    void SetDefaultVars();
+    void SetBonusVelocity(float (*arg0)[4], float *arg1, float arg2);
     int SetAbilityType(int arg0);
+    int SoulSuckerInRange();
+    void OnTouchEvent(class EntityBaseClass *arg0);
     static signed char GetVarType(int arg0);
     static void *GetPickupData(int arg0);
 
@@ -30,7 +34,9 @@ public:
     char _pad1A0[0x1B0 - 0x1A0];
     int m_unk1B0;                   // 0x1B0 ability index written by SetAbilityType
     int m_unk1B4;                   // 0x1B4 set to 1 by the ctor when m_unk18 is 0
-    char _pad1B8[0x1C4 - 0x1B8];
+    int m_unk1B8;                   // 0x1B8 cleared by SetDefaultVars
+    int m_unk1BC;                   // 0x1BC cleared by SetDefaultVars
+    int m_unk1C0;                   // 0x1C0 cleared by SetDefaultVars
     int m_unk1C4;                   // 0x1C4 cleared by the ctor
     int m_unk1C8;                   // 0x1C8 cleared by the ctor
     unsigned char m_unk1CC;         // 0x1CC set to 0x14 by the ctor
