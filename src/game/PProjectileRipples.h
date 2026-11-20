@@ -30,6 +30,7 @@ public:
     void Create(tagProjectileRippesParams *pParams);
     void FadeAndDie(unsigned int uArg);
     void Render();
+    void Animate(float arg0);
 
     void *m_unk000;
     char _pad004[0x08];
@@ -37,7 +38,8 @@ public:
     int m_unk10;
     unsigned char m_unk14;
     unsigned char m_unk15;
-    char _pad16[0x02];
+    unsigned char m_unk16;
+    unsigned char m_unk17;
     unsigned char m_unk18;
     unsigned char m_unk19;
     char _pad1A[0x16];
@@ -46,7 +48,11 @@ public:
     float m_unk40[4][4];
     char _pad80[0x50];
     int m_unkD0;
-    char _padD4[0x34];
+    char _padD4[0x0C];
+    float m_unkE0[4];
+    float m_unkF0[4];
+    float m_unk100;
+    float m_unk104;
     float m_unk108;
     int m_unk10C;
     unsigned char m_unk110;

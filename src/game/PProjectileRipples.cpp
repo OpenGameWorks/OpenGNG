@@ -19,6 +19,8 @@ extern "C" void sceVu0CopyVector(float *dst, float *src);
 extern "C" void sceVu0OuterProduct(float *dst, float *a, float *b);
 extern "C" void sceVu0Normalize(float *dst, float *src);
 extern "C" float FastMath_Fabs__Ff(float f);
+extern "C" float FastMath_Sin180__Ff(float f);
+extern "C" float FastMath_Cos180__Ff(float f);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void *__nwa__FUi(unsigned int);
 extern "C" void QwordCopy__FP1P1Ui(u_long128 *, u_long128 *, unsigned int);
@@ -26,6 +28,48 @@ extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void *memset(void *, int, unsigned int);
 extern "C" int rand(void);
 extern "C" void sceVu0UnitMatrix(float (*pMatrix)[4]);
+extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
+extern "C" void sceVu0MulMatrix(float (*dst)[4], float (*a)[4], float (*b)[4]);
+extern "C" void *AllocParticles__12PDisplayListFii(void *, int, int);
+extern "C" float FastMath_IntSin180__Fi(int);
+extern "C" float FastMath_IntCos180__Fi(int);
+
+// FUNCTION: 0x002175C0 CreateRingTriStrip__18PProjectileRipplesFiffiiPA4_fPA4_fPA4_f
+int PProjectileRipples::CreateRingTriStrip(int arg0, float arg1, float arg2, int arg3, int arg4, float (*arg5)[4], float (*arg6)[4], float (*arg7)[4]) {
+    int count = arg0 * 2 + 2;
+    int i;
+    float angle = 0.0f;
+    float step = 360.0f / (float)arg0;
+    for (i = 0; i < count; i += 2) {
+        float s = FastMath_Sin180__Ff(angle - 180.0f);
+        float c = FastMath_Cos180__Ff(angle - 180.0f);
+        arg5[i][0] = arg1 * c;
+        arg5[i][1] = arg1 * s;
+        arg5[i][2] = 0.0f;
+        arg5[i][3] = 1.0f;
+        angle += step;
+        float half = 0.5f * (arg1 / arg2);
+        arg6[i][0] = 0.5f + c * half;
+        arg6[i][1] = 0.5f + s * half;
+        int (*ci)[4] = (int (*)[4])arg7;
+        ci[i][0] = 0x80;
+        ci[i][1] = 0x80;
+        ci[i][2] = 0x80;
+        ci[i][3] = arg3;
+        int (*cn)[4] = ci + (i + 1);
+        cn[0][0] = 0x80;
+        cn[0][1] = 0x80;
+        cn[0][2] = 0x80;
+        cn[0][3] = arg4;
+        arg5[i + 1][0] = arg2 * c;
+        arg5[i + 1][1] = arg2 * s;
+        arg5[i + 1][2] = 0.0f;
+        arg5[i + 1][3] = 1.0f;
+        arg6[i + 1][0] = 0.5f + 0.5f * c;
+        arg6[i + 1][1] = 0.5f + 0.5f * s;
+    }
+    return count;
+}
 
 // DRAFT: 0x00217790 FindFreeRing__18PProjectileRipplesFv
 // note: loop shape differs; original has an extra nop before the bottom slt and a b to jr ra at +0x48 (ours +0x44); tried index, running offset, while, break, continue, comma increment
@@ -160,6 +204,76 @@ void PProjectileRipples::Render() {
                 BeginFxInstances__10PGfxEngineFPvib(gGfxEng, m_unk12C, m_unk130, m_unk19);
                 DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(*(void **)gDisplayListPtr, m_unk134, m_unk138, false);
             }
+        }
+    }
+}
+
+// DRAFT: 0x00217B90 Animate__18PProjectileRipplesFf
+// note: VU0 lqc2/vmulx/vadd/sqc2 run replaced by sceVu0 calls, so the vector bytes differ; scalar gates, loop and ring writes follow the asm
+void PProjectileRipples::Animate(float arg0) {
+    float scale = arg0;
+    float angle = 0.0f;
+    float &rot = *(float *)&m_unk128;
+    float sub[4];
+    float mtx[4][4];
+    int i;
+
+    if (m_unk15 == 0) {
+        return;
+    }
+    if (m_unk18 == 0) {
+        scale *= 4.0f;
+    }
+    if (m_unk124 == 0) {
+        m_unk16 = m_unk17;
+        m_unk15 = m_unk18;
+        return;
+    }
+    m_unk134 = AllocParticles__12PDisplayListFii(*(void **)gGfxEng, m_unk124, 6);
+    if (m_unk134 == 0) {
+        CdsAssert__FPciPc("PProjectileRipples.cpp", 0x6B, "mpFxInstances");
+    }
+    m_unk138 = 0;
+    if (m_unk19 != 0) {
+        rot = rot + 3.0f * scale;
+        if (!(rot < 360.0f)) {
+            rot = rot - 360.0f;
+        }
+        angle = rot;
+    }
+    sceVu0SubVector(sub, m_unkF0, m_unkE0);
+    float diff = m_unk104 - m_unk100;
+    for (i = 0; i < m_unk10C; i++) {
+        PProjectileRing *ring = m_unk120 + i;
+        if (m_unk19 != 0) {
+            angle += 25.0f;
+            if (!(angle < 360.0f)) {
+                angle -= 360.0f;
+            }
+        }
+        if (ring->m_unk50 != 0) {
+            PProjectileRing *out = (PProjectileRing *)((char *)m_unk134 + m_unk138 * 0x60);
+            float f3 = ring->m_unk40;
+            float f1 = f3 + ring->m_unk44 * scale;
+            float x = m_unk100 + diff * f3;
+            ring->m_unk40 = f1;
+            if (!(f1 < 1.0f)) {
+                ring->m_unk50 = 0;
+                x = 0.0f;
+                m_unk124 -= 1;
+            }
+            sceVu0UnitMatrix(mtx);
+            out->m_unk00[0] = x;
+            out->m_unk10[1] = x;
+            sceVu0CopyVector(&out->m_unk40, mtx[0]);
+            sceVu0MulMatrix((float (*)[4])out, (float (*)[4])ring, (float (*)[4])out);
+            if (m_unk19 != 0) {
+                float a = angle - 180.0f;
+                float s = FastMath_IntSin180__Fi((int)a);
+                *(float *)&out->m_unk50 = ring->m_unk48 * FastMath_IntCos180__Fi((int)a);
+                *(float *)((char *)out + 0x54) = ring->m_unk4C * s;
+            }
+            m_unk138 += 1;
         }
     }
 }
