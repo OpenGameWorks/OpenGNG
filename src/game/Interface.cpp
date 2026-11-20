@@ -14,6 +14,8 @@ extern "C" void CopyMNode__6PMNodeFR6PMNodeb(PMNode *pThis, PMNode *src, bool fl
 extern "C" void DestroyChildren__6PMNodeFv(PMNode *pThis);
 extern PMNode *mpNumbers__7GameHud[10];
 extern float HINT_X;
+// TODO(header): CursorPos is 36 entries of 8-byte float pairs (x, y); the array is reached via lui/addiu.
+extern char CursorPos[0x120];
 extern "C" void __dt__11FontManagerFv(void *pThis, short nFlag);
 extern "C" void __dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" int sprintf(char *buf, const char *fmt, ...);
@@ -75,6 +77,8 @@ extern float fst_fAvgCallsPerFrame;
 class Pad {
 public:
     void PauseVibrate(bool flag);
+    int ReadPush();
+    int ReadNew();
 
     char _pad000[0x110];
     unsigned short m_unk110;    // 0x110 button state
@@ -153,8 +157,11 @@ public:
     int m_unk14;                // 0x014 element count of the walk list
     int m_unk18;                // 0x018 walk index
     PMNode **m_unk1C;           // 0x01C element pointer array
-    char _pad020[0x60];
+    char _pad020[0x1E];
+    unsigned char m_unk3E;      // 0x03E
+    char _pad03F[0x41];
     float m_unk80;              // 0x080
+    float m_unk84;              // 0x084
 };
 
 // Same vtable as PMNode; the slot at 0x18 takes four arguments at this call site.
@@ -240,7 +247,8 @@ public:
     signed char m_unkE;         // 0x00E
     signed char m_unkF;         // 0x00F
     unsigned char m_unk10;      // 0x010
-    char _pad011[0x3];
+    signed char m_unk11;        // 0x011
+    char _pad012[0x2];
     PMNode *m_unk14;            // 0x014 first group node, PArray at +0x14
     PMNode *m_unk18;            // 0x018 second group node
     void *m_unk1C;              // 0x01C element with a PArray at 0x14 (index 0x18, storage 0x1C)
@@ -1371,6 +1379,110 @@ int HudInventory::SwapCheck(unsigned int arg0) {
     ((Player *)*(char **)(gEng + 0x1883C))->SwapAbility(icon);
     m_unk40 = *(int *)(IconTable + 0x1008 + (group << 5));
     return 1;
+}
+
+// DRAFT: 0x00142A60 InfoScreen__12HudInventoryFv
+// note: 170 words differ: ReadNew path uses one andi (original: andi 0xFFFF then 0xA0, bnez delay slot filled with next lui); switch layout and case 1 tail differ. Tried: case reorder, nPress/nStart/nNew temp, case 2 test before switch (197 words).
+void HudInventory::InfoScreen() {
+    unsigned int nPress;
+    int nRepeat;
+    signed char nCount;
+    int nCursor;
+    int nStart;
+    int nDir;
+    int nCol;
+    float fCell;
+    bool bDirty;
+
+    nPress = gPad.ReadPush() & 0xFFFF;
+    if (!(nPress & 0xA0)) {
+        nRepeat = gPad.ReadNew() & 0xFFFF & 0xA0;
+        if (nRepeat != 0) {
+            nCount = m_unk11 - 1;
+            m_unk11 = nCount;
+            if (nCount <= 0) {
+                nPress |= nRepeat;
+            }
+        }
+    }
+
+    bDirty = false;
+    switch (m_unk3C) {
+    case 0:
+        m_unk3C = 1;
+        bDirty = true;
+        m_unk38->m_unkC = 1;
+        break;
+    case 1:
+        if (nPress & 0x1001) {
+            m_unk38->m_unkC = 0;
+            DisplayInfo(-1);
+            ((PVirtObjBool *)this)->Slot05(true);
+            ((FontManager *)((char *)&gInterface + 0x80))->RemoveText((unsigned short)0x15);
+            return;
+        }
+        if (nPress & 0x800) {
+            m_unk3C = 2;
+            ((HudHint *)((char *)&gInterface + 0x32C))->Init(*(unsigned int *)((char *)mpPlayerData__7GameHud + 0x54));
+            return;
+        }
+        if (SwapCheck(nPress) != 0) {
+            bDirty = true;
+        } else if (nPress & 0x50) {
+            nCursor = m_unk40;
+            do {
+                nDir = 0xC;
+                if (!(nPress & 0x40)) {
+                    nDir = -0xC;
+                }
+                nCursor += nDir;
+                if (nCursor >= 0x24) {
+                    nCursor -= 0x24;
+                } else if (nCursor < 0) {
+                    nCursor += 0x24;
+                }
+            } while (*(float *)(CursorPos + nCursor * 8) == 0.0f);
+            m_unk40 = nCursor;
+            bDirty = true;
+        } else if (nPress & 0xA0) {
+            nStart = m_unk40;
+            do {
+                do {
+                    nDir = 1;
+                    if (!(nPress & 0x20)) {
+                        nDir = -1;
+                    }
+                    nCol = (m_unk40 % 12) + nDir;
+                    if ((unsigned int)nCol >= 12) {
+                        if (nCol < 0) {
+                            nCol = 0xB;
+                        } else {
+                            nCol = 0;
+                        }
+                    }
+                    m_unk40 = nCol + (m_unk40 / 12) * 12;
+                    fCell = *(float *)(CursorPos + m_unk40 * 8);
+                } while (fCell == 0.0f);
+                bDirty = true;
+            } while (*(float *)(CursorPos + nStart * 8) == fCell);
+        }
+        break;
+    case 2:
+        if (gInterface.m_unk425 == 0) {
+            m_unk3C = 1;
+        }
+        return;
+    }
+
+    if (bDirty) {
+        m_unk38->m_unk80 = *(float *)(CursorPos + m_unk40 * 8);
+        m_unk38->m_unk84 = *(float *)(CursorPos + m_unk40 * 8 + 4);
+        m_unk38->m_unk3E |= 8;
+        m_unk11 = 0x10;
+        DisplayInfo(m_unk40);
+        gSound.PlaySoundUbiquitous(0x3D);
+    }
+    m_unk38->Slot04(0.0f, 1.0f, 0, 0, false);
 }
 
 // DRAFT: 0x00142DD0 Update__12HudInventoryFi
