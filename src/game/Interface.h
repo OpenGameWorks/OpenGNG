@@ -80,17 +80,28 @@ public:
 class HudHint {
 public:
     void Init(unsigned int arg0);
+    void InitHint();
+    void DisplayTitle(int arg0);
     void WriteHint();
     void InitNode(PMeshNode *node);
     void EnableBG(bool arg0);
 
     int m_unk0;                 // 0x000
     int m_unk4;                 // 0x004
-    unsigned int m_unk8;        // 0x008
+    unsigned int m_unk8;        // 0x008 bitmask of hint slots
     int m_unkC;                 // 0x00C index into m_unk38
-    char _pad010[0x28];
-    int m_unk38[1];             // 0x038 indexed by m_unkC, values index HintTable
-    char _pad03C[0x78];
+    int m_unk10;                // 0x010
+    int m_unk14;                // 0x014
+    int m_unk18;                // 0x018
+    int m_unk1C;                // 0x01C
+    int m_unk20;                // 0x020
+    int m_unk24;                // 0x024
+    int m_unk28;                // 0x028
+    int m_unk2C;                // 0x02C
+    int m_unk30;                // 0x030
+    int m_unk34;                // 0x034
+    int m_unk38[0x1E];          // 0x038 indexed by m_unkC, values index HintTable
+    int m_unkB0;                // 0x0B0 count of set bits written into m_unk38
     PMNode *m_unkB4;            // 0x0B4 node found by InitNode
 };
 
@@ -110,8 +121,15 @@ public:
     unsigned char m_unkF;       // 0x00F
 };
 
+// Zero-cost member whose type declares a destructor; it makes the Interface constructor spill `this` to the stack.
+class InterfaceSpillGuard {
+public:
+    ~InterfaceSpillGuard() {}
+};
+
 class Interface {
 public:
+    Interface();
     void SoundGainEEControl();
     void WaitForEEControl();
     void LoadingDisplay(unsigned int arg0, int arg1);
@@ -126,6 +144,7 @@ public:
     void DisplayLevelName(int arg0, int arg1);
     void Init();
     void Destroy();
+    PMNode *Load(const char *arg0);
     void InitMatrices();
     void SetPause();
     void InitRender();
@@ -141,14 +160,15 @@ public:
     enum eFadeColor { eFadeColor_Value0 = 0, eFadeColor_Value1 = 1, eFadeColor_Value2 = 2 };
     void FadeScreen(float arg0, float arg1, bool arg2, eFadeColor arg3);
 
-    char _pad000[0x80];
+    InterfaceSpillGuard m_spill000;
+    char _pad001[0x7F];
     int m_unk80;                // 0x080 first word of the embedded FontManager
     char _pad084[0x134];
     int m_unk1B8;               // 0x1B8
     int m_unk1BC;               // 0x1BC
     int m_unk1C0;               // 0x1C0
     void *m_unk1C4;             // 0x1C4 pointer to a list object (PArray at 0x14) walked by HudHint::EnableBG
-    char _pad1C8[0x4];
+    void *m_unk1C8;             // 0x1C8 polymorphic element cleared by Load; deleted via virtual slot 8 (a1=1)
     void *m_unk1CC;             // 0x1CC embedded object; its vtable slot 4 (offset 0x18) is called with &m_unk1CC
     char _pad1D0[0xC];
     void *m_unk1DC;             // 0x1DC same element kind as 0x1CC
@@ -174,10 +194,13 @@ public:
     unsigned char m_unk2F7;     // 0x2F7
     char _pad2F8[0x2C];
     int m_unk324;               // 0x324 sign tested by AbilityScreen
-    char _pad328[0xDC];
+    char _pad328[0xBC];
+    char mName[0x20];           // 0x3E4 level name copied by Load
     int m_unk404;               // 0x404 mesh layer list count, then entries (PArray)
     unsigned int m_unk408;      // 0x408 loop index into the mesh layer list
-    char _pad40C[0xC];
+    char _pad40C[0x8];
+    short m_unk414;             // 0x414 cleared by Load
+    short m_unk416;             // 0x416 cleared by Load
     int m_unk418;               // 0x418
     int m_unk41C;               // 0x41C
     int m_unk420;               // 0x420

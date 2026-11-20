@@ -145,6 +145,21 @@ extern int SCREEN_WIDTH;
 extern int SCREEN_HEIGHT;
 // PMat4 member; the call passes the matrix object as pThis. PMat4.h has no declaration for it.
 extern "C" void MakeParallelProjectionMatrix__5PMat4Fffffffffffff(void *pThis, float, float, float, float, float, float, float, float, float, float, float, float);
+extern "C" void EnableAllText__11FontManagerFb(void *pThis, bool bFlag);
+extern "C" void DisplayString__11FontManagerFPcffi9FontColor9FontAlign(void *pThis, char *pStr, float fX, float fY, int nZ, int nColor, int nAlign);
+extern "C" int printf(const char *fmt, ...);
+extern "C" int strcasecmp(const char *pA, const char *pB);
+extern "C" unsigned int strlen(const char *pStr);
+extern "C" char *strcpy(char *pDst, const char *pSrc);
+extern "C" void scePcStart(int nMode, int nA, int nB);
+extern "C" void scePcStop(void);
+extern "C" PMNode *Load__6PWorldFPCcb13eTextureGroup(void *pThis, const char *pName, bool bFlag, eTextureGroup eGroup);
+extern "C" void RemoveNullAnimation__6PMNodeFv(PMNode *pThis);
+// Owns a virtual destructor as its first slot (slot 8); delete through it reaches the deleting destructor.
+class PDeletable {
+public:
+    virtual ~PDeletable();
+};
 
 class HudData {
 public:
@@ -217,6 +232,10 @@ extern "C" void vu1ClearZBuffer__Fv(void);
 extern "C" void vu1SetScreenMatrix__FP5PMat4(void *pMat);
 extern "C" void vu1SetViewMatrix__FP5PMat4(void *pMat);
 extern "C" void vu1SetClipMatrix__FP5PMat4(void *pMat);
+extern "C" void sceVu0UnitMatrix(void *pMat);
+extern "C" void __ct__11FontManagerFv(void *pThis);
+extern "C" void __ct__6PArrayFv(void *pThis);
+extern "C" void __ct__12HudInventoryFv(void *pThis);
 
 // FUNCTION: 0x13F800 __dt__7HudGrimFv
 extern "C" HudGrim *__dt__7HudGrimFv(HudGrim *pThis, short nFlag) {
@@ -945,6 +964,45 @@ void HudHint::WriteHint() {
     fm->DisplayString(HintTable[m_unk38[m_unkC]] + 1, 0, 10, false);
 }
 
+// FUNCTION: 0x143FF0 InitHint__7HudHintFv
+void HudHint::InitHint() {
+    FontManager *fm = (FontManager *)((char *)&gInterface + 0x80);
+    EnableAllText__11FontManagerFb(fm, false);
+    fm->DisplayString(0xD4, 0, 0, false);
+    m_unkC = 0;
+    m_unkB0 = 0;
+    for (int i = 0; i < 0x1E; i++) {
+        if (m_unk8 & (1 << i)) {
+            m_unk38[m_unkB0++] = i;
+        }
+    }
+    m_unk10 = 0;
+    m_unk14 = 0;
+    m_unk18 = 0;
+    m_unk1C = 0;
+    m_unk20 = 0;
+    m_unk24 = 0;
+    m_unk28 = 0;
+    m_unk2C = 0;
+    m_unk30 = 0;
+    m_unk34 = 0;
+    DisplayTitle(0);
+    if (m_unkB0 != 0) {
+        WriteHint();
+    }
+    char buf[5];
+    char *p = buf;
+    if (m_unkB0 >= 10) {
+        *p++ = (char)(m_unkB0 / 10 + '0');
+    }
+    *p++ = (char)(m_unkB0 % 10 + '0');
+    *p++ = '/';
+    *p++ = '3';
+    *p++ = '0';
+    *p = 0;
+    DisplayString__11FontManagerFPcffi9FontColor9FontAlign(fm, buf, -200.0f, 50.0f, 0, 0, 2);
+}
+
 // FUNCTION: 0x144180 Init__7HudHintFUi
 void HudHint::Init(unsigned int arg0) {
     m_unk0 = 0;
@@ -1145,6 +1203,44 @@ void Interface::Destroy() {
     *(short *)((char *)this + 0x416) = 0;
 }
 
+// FUNCTION: 0x00144F10 Load__9InterfaceFPCc
+PMNode *Interface::Load(const char *arg0) {
+    m_unk1C0 |= 4;
+    *(short *)((char *)this + 0x414) = 0;
+    *(short *)((char *)this + 0x416) = 0;
+    if (strcasecmp(arg0, mName) == 0) {
+        return (PMNode *)m_unk1C4;
+    }
+    if (m_unk1C4 != 0) {
+        delete (PDeletable *)m_unk1C4;
+        m_unk1C4 = 0;
+        ((PVirtObj *)((char *)this + 0x2E8))->Slot01();
+        ((PVirtObj *)((char *)this + 0x22C))->Slot01();
+        ((PVirtObj *)((char *)this + 0x290))->Slot01();
+        ((PTextureManager *)(gGfxEng + 0x154C90))->UnloadDynamicTextures((eTextureGroup)0x6A);
+    }
+    if (m_unk1C8 != 0) {
+        delete (PDeletable *)m_unk1C8;
+        m_unk1C8 = 0;
+    }
+    if (strlen(arg0) >= 0x20U) {
+        CdsAssert__FPciPc("Interface.cpp", 0x1AD, "strlen(pName) < sizeof(mName)");
+    }
+    strcpy(mName, arg0);
+    SoundGainEEControl();
+    m_unk1C4 = Load__6PWorldFPCcb13eTextureGroup(gEng, arg0, false, (eTextureGroup)0x6A);
+    if (m_unk1C4 == 0) {
+        printf("%s Load Error\n", arg0);
+        CdsAssert__FPciPc("Interface.cpp", 0x1B4, "0");
+    }
+    RemoveNullAnimation__6PMNodeFv((PMNode *)m_unk1C4);
+    ((PMNode *)m_unk1C4)->SetAllFrustrumTest((eBoxIntersect)1);
+    scePcStart(0x8008003E, 0, 0);
+    scePcStop();
+    *(float *)(gEng + 0x1E8) = 1.0f;
+    return (PMNode *)m_unk1C4;
+}
+
 // DRAFT: 0x001450D0 ProcessScreenFade__9InterfaceFv
 // note: 2 words differ, mul.s operand order and c.eq.s operand order; tried swapped mul operands, read-modify-write form, local temp (4), and both branch forms
 void Interface::ProcessScreenFade() {
@@ -1287,6 +1383,57 @@ void Interface::Init() {
     ((FontManager *)((char *)this + 0x80))->Init();
     ((PArray *)((char *)this + 0x404))->Allocate(8);
     InitMatrices();
+}
+
+// DRAFT: 0x145CA0 __ct__9InterfaceFv
+// note: DIFF 99 words; frame and this spill now match via InterfaceSpillGuard, but the six vtable lui/addiu pairs are scheduled and register-assigned differently (original keeps this in t0 for the first stores) and each store reloads this. Tried: spill guard member (100 -> 99).
+Interface::Interface() {
+    sceVu0UnitMatrix(this);
+    sceVu0UnitMatrix((char *)this + 0x40);
+    __ct__11FontManagerFv((char *)this + 0x80);
+    m_unk1CC = __vt__7GameHud;
+    *(int *)((char *)this + 0x1D0) = 0;
+    m_unk1CC = __vt__9HudHealth;
+    m_unk1DC = __vt__7GameHud;
+    *(int *)((char *)this + 0x1E0) = 0;
+    m_unk1DC = __vt__8HudSuper;
+    m_unk1EC = __vt__7GameHud;
+    *(int *)((char *)this + 0x1F0) = 0;
+    m_unk1FC = __vt__7GameHud;
+    *(int *)((char *)this + 0x200) = 0;
+    m_unk20C = __vt__7GameHud;
+    *(int *)((char *)this + 0x210) = 0;
+    m_unk21C = __vt__7GameHud;
+    *(int *)((char *)this + 0x220) = 0;
+    m_unk22C = __vt__7GameHud;
+    *(int *)((char *)this + 0x230) = 0;
+    m_unk22C = __vt__7HudGrim;
+    *(int *)((char *)this + 0x24C) = 0;
+    *(int *)((char *)this + 0x230) = 0;
+    m_unk250 = __vt__7GameHud;
+    *(int *)((char *)this + 0x254) = 0;
+    m_unk250 = __vt__12HudBossMeter;
+    m_unk270 = __vt__7GameHud;
+    *(int *)((char *)this + 0x274) = 0;
+    m_unk270 = __vt__12HudBossMeter;
+    m_unk290 = __vt__7GameHud;
+    *(int *)((char *)this + 0x294) = 0;
+    m_unk290 = __vt__8HudCombo;
+    __ct__12HudInventoryFv((char *)this + 0x2E8);
+    __ct__6PArrayFv((char *)this + 0x404);
+    m_unk1C4 = 0;
+    m_unk1C8 = 0;
+    *(int *)((char *)this + 0x428) = 0;
+    m_unk1B8 = 0;
+    m_unk1BC = 0;
+    m_unk1C0 = 9;
+    mName[0] = 0;
+    m_unk414 = 0;
+    m_unk416 = 0;
+    InitScreenFadeVars();
+    m_unk427 = 0;
+    *(int *)((char *)this + 0x42C) = 0;
+    *(int *)((char *)this + 0xA50) = 0;
 }
 
 // FUNCTION: 0x145E40 __dt__12HudInventoryFv
