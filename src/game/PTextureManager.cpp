@@ -3,6 +3,7 @@
 #include "PTextureManager.h"
 #include "PPakFile.h"
 #include "PTextureDmaChain.h"
+#include "MemoryManager.h"
 
 // TODO(header): foreign declarations
 extern "C" void FlushCache(int nMode);
@@ -21,6 +22,7 @@ extern "C" void memset(void *, int, unsigned int);
 extern "C" void __ct__6PArrayFv(void *pThis);
 extern "C" void Allocate__6PArrayFUi(void *pThis, unsigned int nSize);
 extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
+extern MemoryManager MemMgr;
 void GsSetTexBaseAddr(tagGsTextureEnvironment *pEnv, unsigned int nBase);
 void GsSetClutBaseAddr(tagGsTextureEnvironment *pEnv, unsigned int nBase);
 extern "C" int sceDmaGetChan(int nChannel);
@@ -357,6 +359,71 @@ void PTextureManager::FlipTextureBuffers() {
             m_aBuf1.m_apTex[i]->m_unkA8 = 0;
         }
     }
+}
+
+// DRAFT: 0x0018A020 UploadDynamicTexturesToVram__15PTextureManagerFPiiiib
+// note: 109 words differ, size 0x3B0 vs 0x3A0; s0/s1 and s2/s3 roles swapped, break-branch layout differs. Tried decl order, nBitsB after nSize break (109, kept), pHdr before nBitsB (110).
+void PTextureManager::UploadDynamicTexturesToVram(int *pArray, int nCount, int nA, int nB, bool bFlag) {
+    PTexture::eTextureType eType = PTexture::eTextureType_Unknown;
+    int nIndex = -1;
+    bool bLocal = false;
+    char *pImg = 0;
+    int nBitsB = 0;
+    int nBitsA = 0;
+    CDS_ASSERT_MSG(0x565, pArray, "phTextures");
+    CDS_ASSERT_MSG(0x566, nCount, "iNumTextures");
+    int nSize = nCount << 10;
+    int nRemain = nB - nSize;
+    int nPtrB = nA + nSize;
+    CDS_ASSERT_MSG(0x571, nRemain > 0, "aiImageBufferSize > 0");
+    char *pBuf = (char *)MemMgr.AllocateAligned((((nCount * 8 - nCount) * 2 + 2) << 4) + 0x40, 0x40);
+    CDS_ASSERT_MSG(0x577, pBuf, "apDmaChain");
+    int nSlot = 0;
+    for (int i = 0; i < nCount; i++) {
+        DecodeTextureHandle(pArray[i], bLocal, eType, nIndex);
+        CDS_ASSERT_MSG(0x57D, nIndex >= 0, "aiIndex >= 0");
+        if (!bLocal) {
+            PTexture *pTex = GetTexture(bLocal, eType, nIndex);
+            CDS_ASSERT_MSG(0x585, pTex, "apoTexture");
+            nBitsA = pTex->m_unk4[5] << 8;
+            if (nSize < nBitsA) break;
+            nBitsB = (*(short *)&pTex->m_unk4[0x26] - pTex->m_unk4[5]) << 8;
+            tagPs2TexDataHeader *pHdr = (tagPs2TexDataHeader *)pTex->m_unk4;
+            if (nRemain < nBitsB) break;
+            char *pClut = 0;
+            if (pHdr->type == 0x14 || pHdr->type == 0x13) {
+                pClut = pBuf + (nSlot << 4);
+                nSlot += 7;
+            }
+            pImg = pBuf + (nSlot << 4);
+            nSlot += 7;
+            if (pClut) {
+                int nClutW = (pHdr->type == 0x14) ? 8 : 0x10;
+                PrepareImageDmaPacket((tagImageDmaPacket *)pClut, pTex->m_unk30, *(short *)&pTex->m_unk4[0x24], nClutW, nClutW, 0, nA / 256);
+                GsSetClutBaseAddr((tagGsTextureEnvironment *)pTex->m_unk40, nA);
+            }
+            int nW, nH;
+            if (pHdr->unk6 && pHdr->unk7) {
+                nW = 1 << pHdr->unk6;
+                nH = 1 << pHdr->unk7;
+            } else {
+                nW = 1 << pHdr->unk0;
+                nH = 1 << pHdr->unk1;
+            }
+            PrepareImageDmaPacket((tagImageDmaPacket *)pImg, pTex->m_unk34, *(int *)&pTex->m_unk4[8], nW, nH, pHdr->unk4, nPtrB / 256);
+            GsSetTexBaseAddr((tagGsTextureEnvironment *)pTex->m_unk40, nPtrB);
+            nA += nBitsA;
+            nPtrB += nBitsB;
+        }
+    }
+    char *pTag1 = pBuf + (nSlot << 4);
+    char *pTag2 = pBuf + ((nSlot + 1) << 4);
+    *(u_long128 *)pTag1 = 0;
+    *(long long *)pTag1 = 0x70000001LL;
+    *(u_long128 *)pTag2 = 0;
+    *(long long *)pTag2 = 0x8000LL;
+    KickDmaChain(pBuf, bFlag);
+    MemMgr.DeAllocateAligned(pBuf);
 }
 
 // DRAFT: 0x0018A3C0 AllocRenderedTexture__15PTextureManagerFiiRbb
