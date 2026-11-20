@@ -33,7 +33,7 @@ public:
     char _pad104[0x10C - 0x104];
     int m_unk10C;               // 0x10C flag word (bits 0x200 and 0x400 set by Execute)
     char _pad110[0x1B0 - 0x110];
-    char m_unk1B0[4];           // 0x1B0 copied from SetEditableVars arg (0x24 bytes)
+    int m_unk1B0;               // 0x1B0 copied from SetEditableVars arg (0x24 bytes)
     int m_unk1B4;               // 0x1B4 state selector read by OnHitEvent
     int m_unk1B8;               // 0x1B8 index into AnimTable
     int m_unk1BC;               // 0x1BC linked animation node id
