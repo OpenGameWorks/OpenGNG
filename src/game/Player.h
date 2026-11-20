@@ -8,6 +8,7 @@ class PlingEffect;
 class FontNode;
 class PMNode;
 class PMeshNode;
+class PMat4;
 class EntityBaseClass;
 class GunTurret;
 class PSkeleton;
@@ -126,6 +127,7 @@ public:
     void DetachJoint(int arg0);
     void FreeJoint(int arg0);
     int FindCurrentItem(int arg0, bool arg1);
+    signed char GetAbility();
     void GetAttachableJointOffsets(int arg0, float (*arg1)[4]);
     int GetAttachableJoint(int arg0);
     void FinishCutCamera(float (*arg0)[4]);
@@ -170,10 +172,12 @@ public:
     float m_unk1C8;         // 0x1C8 running float, updated by JogLandMove
     char _pad1CC[0x1D0 - 0x1CC];
     int m_unk1D0;           // 0x1D0
-    char _pad1D4[0x1D8 - 0x1D4];
+    int m_unk1D4;           // 0x1D4 compared against m_unk1DC by GetAbility
     int m_unk1D8;           // 0x1D8 cleared by ForceDie
     int m_unk1DC;           // 0x1DC index into MaximoArmor, read by BackToMaximo
-    char _pad1E0[0x1F8 - 0x1E0];
+    char _pad1E0[0x1F0 - 0x1E0];
+    int m_unk1F0;           // 0x1F0 count of key-slot meshes, read by UpdateKey
+    int m_unk1F4;           // 0x1F4 flag, UpdateKey takes the first key mesh when set
     int m_unk1F8;           // 0x1F8 remaining-lives counter, decremented by SetDeath
     int m_unk1FC;           // 0x1FC compared with 2 by MightyBlowCheck
     char _pad200[0x20C - 0x200];
@@ -209,7 +213,8 @@ public:
     int m_unk284;           // 0x284 object address with a vtable, Slot04 called by RenderCutScene; +0x40 is a PMat4 read by UpdatePlayerFx
     void *m_unk288;         // 0x288 PMNode *
     void *m_unk28C;         // 0x28C object with a vtable, Slot04 called by RenderCutScene
-    char _pad290[0x2A4 - 0x290];
+    char _pad290[0x298 - 0x290];
+    PMNode *m_unk298[3];    // 0x298 key-slot PMNodes, updated by UpdateKey
     Shield *m_unk2A4;       // 0x2A4 shield object, DeleteShield'd by ResetShield
     int m_unk2A8;           // 0x2A8 effect id stored by Over3Move from CreateOneshot
     unsigned int m_unk2AC;  // 0x2AC effect id, EffectValid and DeleteEffect by InitCutScene
@@ -257,6 +262,7 @@ public:
     signed char m_unk23D1;  // 0x23D1 cleared by InitAttachableJoints
     char _pad23D2[2];
     int m_unk23D4;          // 0x23D4 set to 5 by InitAttachableJoints
+    void FinishCutScene(PMeshNode *arg0, PMat4 *arg1, int arg2);
 };
 
 #endif

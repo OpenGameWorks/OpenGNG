@@ -11,6 +11,9 @@ struct SpinEffectEntry {
     unsigned int b;
 };
 extern "C" void SetFrameRate__6PMNodeFfb(PMNode *, float, bool);
+extern "C" void sceVu0UnitMatrix(float (*)[4]);
+extern "C" void CalculateMatrix__6PMNodeFfP6PMNodePA4_A4_f(PMeshNode *, float, PMNode *, float (*)[4][4]);
+extern "C" void SetHolyGround__13EntityManagerFPA4_ffb(void *, float (*)[4], float, bool);
 class Interface {
 public:
     char _pad000[0x10];
@@ -191,6 +194,7 @@ public:
     float m_unk11C;
     void SetPhysicsType(unsigned int arg0, float (*arg1)[4]);
     void SetVelocity(float arg0, float arg1);
+    void ResetPhysics(PMeshNode *pNode);
 };
 class Debug {
 public:
@@ -249,6 +253,7 @@ class MathAPI {
 public:
     static int RandomIntRange(int arg0, int arg1);
     static void GetForwardVector(EntityBaseClass *arg0, float (&arg1)[4]);
+    static void VectorRotateY(float (*arg0)[4], float arg1);
 };
 struct AttachableJoint {
     int m_unk00;
@@ -261,6 +266,7 @@ extern AttachableJoint m_AttachableJoints[5];
 extern "C" void *GetPtrToApparition__13EntityManagerFUi(void *, unsigned int);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
+extern "C" float FastMath_Fabs__Ff(float fValue);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
 extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
 extern "C" void sceVu0ApplyMatrix(float *pDst, float *pMat, float *pSrc);
@@ -558,6 +564,36 @@ void Player::FinishCutCamera(float (*arg0)[4]) {
     }
 }
 
+// DRAFT: 0x00159C50 FinishCutScene__6PlayerFP9PMeshNodeP5PMat4i
+// note: arg1 copy into s2 sinks to the ternary delay slot (original copies a2 to s2 at entry); 86 differing words, size 0x17c vs 0x180; tried PMat4* and float(*)[4] locals, no gain.
+void Player::FinishCutScene(PMeshNode *arg0, PMat4 *arg1, int arg2) {
+    PMNode *obj = (PMNode *)m_unk3C;
+    obj->m_unk14.m_unk4 = 0;
+    PMNode *node = (obj->m_unk14.m_unk0 != 0) ? (PMNode *)obj->m_unk14.m_unk8[0] : 0;
+    float mtx[4][4];
+    sceVu0UnitMatrix(mtx);
+    sceVu0CopyMatrix(mtx, (float (*)[4])arg1);
+    CalculateMatrix__6PMNodeFfP6PMNodePA4_A4_f(arg0, 5000.0f, node, &mtx);
+    mtx[3][1] -= 2.5f;
+    *(u_long128 *)&obj->m_unk80 = *(u_long128 *)mtx[3];
+    obj->m_unk3E |= 8;
+    float ang = 57.295776f * atan2f(mtx[2][0], mtx[2][2]);
+    obj->m_unk94 = ang;
+    obj->m_unk3E |= 8;
+    m_unk1C4 = ang;
+    ResetEye(true);
+    *(u_long128 *)m_unk38 = *(u_long128 *)&gUnitMatrix[12];
+    ((Physics *)m_unk38)->m_unk11C = Round180__Ff(m_unk1C4);
+    if (arg2 != 0) {
+        SetHolyGround__13EntityManagerFPA4_ffb(mpEntMgr__15EntityBaseClass, mtx + 3, ang, false);
+    }
+    SetAction(0);
+    ((Physics *)m_unk38)->ResetPhysics((PMeshNode *)obj);
+    m_unk26C = 0;
+    EnablePlayerShadow(true);
+    m_unk33B = 0;
+}
+
 // FUNCTION: 0x00159DD0 GetKeyMove__6PlayerFv
 void Player::GetKeyMove() {
     if (m_unk250 == 0 && (int)((PMNode *)m_unk3C)->GetFrameTime() >= 2) {
@@ -810,6 +846,59 @@ int Player::FindCurrentItem(int arg0, bool arg1) {
     return -1;
 }
 
+// DRAFT: 0x0015ACE0 GetAbility__6PlayerFv
+// note: 69 words differ; prologue schedules BonusTable load before sq s0, mbHard loaded at 0x18 not 0x10, value reg t5 vs t6, slti/bnez form in cases 30/31, loop-tail store order.
+signed char Player::GetAbility() {
+    static signed char BonusTable[16] = {
+        32, 30, 30, 20, 31, 30, 26, 15, 32, 30, 30, 15, 31, 30, 26, 10
+    };
+    signed char buf[32];
+    int sum = 0;
+    int i;
+    int row = mbHard__15EntityBaseClass * 8;
+    for (i = 0; i < 16; i += 2) {
+        signed char type = BonusTable[row + i];
+        signed char value = BonusTable[row + i + 1];
+        buf[i + 1] = type;
+        switch (type) {
+        case 30:
+            if (m_unk1D8 % 200 >= 0x65) {
+                value = 1;
+            }
+            break;
+        case 31:
+            if (m_unk20C >= 0x301) {
+                value = 1;
+            }
+            break;
+        case 26:
+            if (m_unk1DC >= m_unk1D4) {
+                value = 0;
+            }
+            break;
+        case 32:
+            break;
+        }
+        buf[i] = value;
+        sum += value;
+    }
+    int r = MathAPI::RandomIntRange(0, sum);
+    if (i > 0) {
+        int j = 0;
+        do {
+            if (buf[j] != 0) {
+                r -= buf[j];
+                if (r <= 0) {
+                    return buf[j + 1];
+                }
+            }
+            j += 2;
+        } while (j < i);
+    }
+    CdsAssert__FPciPc("Player.cpp", 0x1D82, "0");
+    return 0;
+}
+
 // DRAFT: 0x0015AE60 SetPowerupMotion__6PlayerFi
 // note: original keeps 0x3D in v0 and uses a shared jr-ra exit (size 0x80); ours uses v1/a2 and separate epilogues (size 0x6c). Tried separate returns (28 words), goto exit (27), nested with result (27), reversed compare (27).
 int Player::SetPowerupMotion(int arg0) {
@@ -954,6 +1043,75 @@ void Player::GrabObjectMove() {
             SetAction(0);
         }
         break;
+    }
+}
+
+// DRAFT: 0x0015B6D0 AlignPosition__6PlayerFP15EntityBaseClass
+// note: 93 words; the literal copy is a static (reloc kIdentity$458) not the rodata at 0x244220, and the frame keeps an extra s2 save
+void Player::AlignPosition(EntityBaseClass *arg0) {
+    float sp40[4];
+    float sp50[4];
+    float *vecA;
+    float *vecB;
+    float *dir;
+    float *pv;
+    float dot;
+    float fScale;
+    char *temp;
+    static const float kIdentity[4] = {1.0f, 0.0f, 0.0f, 0.0f};
+
+    if (arg0 != 0) {
+        temp = (char *)m_unk3C;
+        vecA = m_unk190;
+        if (temp != 0) {
+            vecA = (float *)(temp + 0x80);
+        }
+        temp = *(char **)((char *)arg0 + 0x3C);
+        vecB = (float *)((char *)arg0 + 0x190);
+        if (temp != 0) {
+            vecB = (float *)(temp + 0x80);
+        }
+        sceVu0SubVector(sp40, vecB, vecA);
+
+        temp = *(char **)((char *)arg0 + 0x3C);
+        if (temp != 0) {
+            dir = (float *)(temp + 0x40);
+        } else {
+            *(u_long128 *)sp50 = *(u_long128 *)kIdentity;
+            temp = *(char **)((char *)arg0 + 0x3C);
+            if (temp != 0) {
+                pv = (float *)(temp + 0x90);
+            } else {
+                pv = (float *)((char *)arg0 + 0x1A0);
+            }
+            MathAPI::VectorRotateY((float (*)[4])sp50, pv[1]);
+            dir = sp50;
+        }
+
+        dot = sceVu0InnerProduct(sp40, dir);
+        if (!(FastMath_Fabs__Ff(dot) <= 0.1f)) {
+            *(u_long128 *)sp40 = *(u_long128 *)dir;
+            if (dot < 0.0f) {
+                fScale = -0.05f;
+            } else {
+                fScale = 0.05f;
+            }
+            sceVu0ScaleVector(sp40, sp40, fScale);
+            temp = (char *)m_unk3C;
+            vecA = m_unk190;
+            if (temp != 0) {
+                vecA = (float *)(temp + 0x80);
+            }
+            sceVu0AddVector(sp40, sp40, vecA);
+            *(int *)&sp40[3] = 0x3F800000;
+            temp = (char *)m_unk3C;
+            if (temp != 0) {
+                *(u_long128 *)(temp + 0x80) = *(u_long128 *)sp40;
+                ((unsigned char *)temp)[0x3E] = ((unsigned char *)temp)[0x3E] | 8;
+                return;
+            }
+            *(u_long128 *)m_unk190 = *(u_long128 *)sp40;
+        }
     }
 }
 
@@ -2285,6 +2443,54 @@ extern "C" void *__dt__10PAnimFrameFv(void *pThis, short nFlag) {
         }
     }
     return pThis;
+}
+
+// DRAFT: 0x00160D30 UpdateKey__6PlayerFv
+// note: 40 words differ: early-exit branch target, register choice (res/mesh/offset temp), epilogue placement; tried split locals, m2 rename, sel split, dropping i reset (91)
+void Player::UpdateKey() {
+    int i = 0;
+    int n;
+    PMNode *res;
+    PMesh *mesh;
+    PMNode *pk;
+    if (m_unk298[0] != 0) {
+        i = 0;
+        if (m_unk1F4 != 0) {
+            res = mpResMgr__15EntityBaseClass->GetResource(0x81000024, true);
+            if (res == 0) {
+                CdsAssert__FPciPc("Player.cpp", 0xEDF, "pKey");
+            }
+            PMesh *m1 = (PMesh *)res->m_unk10;
+            m1->m_unkE = 0;
+            pk = m_unk298[0];
+            pk->m_unk10 = m1;
+            pk->m_unk3E &= 0xEF;
+            if (m1 != 0 && m1->m_unkC != 0) {
+                pk->m_unk3E |= 0x10;
+            }
+            i++;
+        }
+        res = mpResMgr__15EntityBaseClass->GetResource(0x81000023, true);
+        if (res == 0) {
+            CdsAssert__FPciPc("Player.cpp", 0xEE8, "pKey");
+        }
+        mesh = (PMesh *)res->m_unk10;
+        mesh->m_unkE = 0;
+        if (i < 3) {
+            n = m_unk1F0;
+            do {
+                PMNode *node = m_unk298[i];
+                PMesh *sel = (n > 0) ? mesh : 0;
+                node->m_unk10 = sel;
+                node->m_unk3E &= 0xEF;
+                if (sel != 0 && sel->m_unkC != 0) {
+                    node->m_unk3E |= 0x10;
+                }
+                i++;
+                n--;
+            } while (i < 3);
+        }
+    }
 }
 
 // DRAFT: 0x00161F20 GuardCheck__6PlayerFP15EntityBaseClass
