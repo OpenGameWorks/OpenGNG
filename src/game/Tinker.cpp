@@ -31,6 +31,17 @@ extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __dl__FPv(void *pMem);
 extern unsigned char Tinker_AttackSeq[0x10];
 extern unsigned char Tinker_Attack2Seq[0x10];
+extern "C" void PlaySequence__15EntityBaseClassFPUi(void *pThis, void *pSeq);
+extern "C" void PlingInnocent__15EntityBaseClassFv(void *pThis);
+extern "C" void DisplayString__11FontManagerFiiib(void *pThis, int nId, int nA, int nB, bool bFlag);
+extern int InnocentDialogID[256];
+extern "C" int IsPauseDisabled__6PlayerFv(void *pThis);
+extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*arg0)[4], float (*arg1)[4]);
+extern char *mPlayerAPI__13EntityManager;
+extern "C" void SetupInnocentCamera__15EntityBaseClassFv(void *pThis);
+extern "C" void *GetPickupData__6PickupFi(int nIndex);
+extern "C" void GameVarAdd__6PlayerFUiii(void *pThis, unsigned int nVar, int nDelta, int nFlag);
+extern "C" void SetAbility__6PlayerFii(void *pThis, int nIndex, int nFlag);
 extern unsigned char Manda_AttackSeq[0x10];
 extern unsigned char Baron_WalkSeq[0x10];
 extern unsigned char Baron_RunSeq[0x10];
@@ -81,6 +92,8 @@ extern unsigned char BGuard_DieSeq[0x10];
 extern unsigned char BGuard_DeadSeq[0x10];
 extern unsigned char BGuard_TransitionToIdleSeq[0x10];
 extern "C" int RandomIntRange__7MathAPIFii(int nMin, int nMax);
+extern "C" float RandomFloatRange__7MathAPIFff(float fMin, float fMax);
+extern "C" float Round180__Ff(float);
 extern "C" void PlaySoundOnFrame__15EntityBaseClassFUiUi(void *pThis, unsigned int nSound, unsigned int nFrame);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 struct tagWaypointGroup { char _pad000[4]; unsigned int m_unk4; };
@@ -101,6 +114,20 @@ extern int mbHard__15EntityBaseClass;
 extern "C" void FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(void *pThis, EntityBaseClass *pOther);
 extern "C" void CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(void *pThis, float (*pBox)[4], int nObjType, int nWeaponType, bool bFlag);
 extern "C" void SetValue__12HudBossMeterFs(void *pThis, short nValue);
+extern "C" void PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
+extern "C" int CreateTimer__8TimerAPIFUiUib(void *pThis, unsigned int nId, int nTime, bool bFlag);
+extern "C" void *GetWaypointGroupInfo__15WaypointManagerFUi(void *pThis, unsigned int nIndex);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__7PhysicsFv(void *pThis);
+extern "C" void *__ct__6ShadowFQ26Shadow10ShadowTypeUi(void *pThis, int nType, unsigned int nFlags);
+extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *pThis, unsigned int nType, float (*pBox)[4]);
+extern "C" int sprintf(char *pBuf, const char *pFmt, ...);
+extern "C" int printf(const char *pFmt, ...);
+extern unsigned char mTimerAPI__13EntityManager[0x40];
+extern "C" float GetFrameTime__6PMNodeFv(void *pThis);
+
+// Stab frame thresholds for the Baron attack sequence; 0xFFFF marks the end of the list.
+static int StabFrames[9] = {0x12, 0x16, 0x1A, 0x1E, 0x22, 0xFFFF, 0x1, 0x10002F5, 0xFF};
 
 // Apparition objects are reached through a virtual table; slot 12 sits at offset 0x30.
 class ApparitionVirtual {
@@ -769,7 +796,7 @@ int Tinker::ActivatedEnemiesDead() {
 class TinkerVirtual {
 public:
     virtual void Slot0();
-    virtual void Slot1();
+    virtual int Slot1();
     virtual void Slot2();
     virtual void Slot3();
     virtual void Slot4();
@@ -853,6 +880,677 @@ void Tinker::OnTimerEvent(unsigned int arg0) {
         Kill__6PlayerFv(*(void **)((char *)mpEntMgr__15EntityBaseClass + 0x505C));
     } else if (arg0 == m_unk294) {
         m_unk294 = 0;
+    }
+}
+
+// DRAFT: 0x0020A6C0 Execute__6TinkerFv
+// note: all cases transcribed and compiling, DIFF 1637 (size 0x18A4 vs 0x1A90, frame 0x80 vs 0x140); the 14/3/4/19 additions raised it from 1480; case 20 sits before 13 here, not in draft order.
+void Tinker::Execute() {
+    if ((m_unk20 >= 0) && (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) == 0)) {
+        FootstepSound();
+        if ((m_unk1B0 == 1) && (m_unk22C == 0) && (m_unk284 == 0)) {
+            unsigned int nSound = 0;
+            float fPct = (100.0f * (float)m_unk1B8) / (float)m_unk288;
+            if (!(fPct < 75.0f)) {
+                nSound = 0x15B;
+            } else if (!(fPct < 40.0f)) {
+                nSound = 0x15D;
+            } else if (((TinkerVirtual *)this)->Slot13() != 0) {
+                nSound = !(RandomIntRange__7MathAPIFii(0, 100) & 1) ? 0x167U : 0x15EU;
+            }
+            if (nSound != 0) {
+                PlaySound__15EntityBaseClassFUi(this, nSound);
+            }
+            m_unk284 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk04,RandomIntRange__7MathAPIFii(4, 8), 0);
+        }
+    }
+    switch (m_unk20) {
+    case -1:
+        m_unk10C &= 0xF8FFFFFF;
+        m_unk10C |= 0x07000000;
+        if (m_unk38 == 0) {
+            void *pPhys = __nw__FUi(0x120);
+            if (pPhys != 0) {
+                pPhys = __ct__7PhysicsFv(pPhys);
+            }
+            m_unk38 = (Physics *)pPhys;
+            if (m_unk38 == 0) {
+                CdsAssert__FPciPc("Tinker.cpp", 0x2F5, "mpPhysics");
+            }
+        }
+        SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12, 0);
+        if (m_unkD4 == 0) {
+            void *pShadow = __nw__FUi(0x10);
+            if (pShadow != 0) {
+                pShadow = __ct__6ShadowFQ26Shadow10ShadowTypeUi(pShadow, 1, 0x87000006);
+            }
+            m_unkD4 = (char *)pShadow;
+            if (m_unkD4 == 0) {
+                CdsAssert__FPciPc("Tinker.cpp", 0x2FD, "mpShadow");
+            }
+        }
+        if (m_unkD4 != 0) {
+            *(unsigned char *)m_unkD4 = 1;
+            char *pShadowSub = *(char **)(m_unkD4 + 0xC);
+            if (pShadowSub != 0) {
+                *(unsigned char *)(pShadowSub + 0x18) = 1;
+            }
+        }
+        m_unk2A8 = 0;
+        m_unk2E8 = 0;
+        m_unk280 = (TrappedEntityRemoved() & 0xFF) == 0;
+        m_unk2BC = 0;
+        {
+            int nIdx = 0;
+            do {
+                if (m_unk2AC[nIdx] != 0 && InstanceIsValid__15EntityBaseClassFUi(m_unk2AC[nIdx]) != 0) {
+                    m_unk2BC++;
+                }
+                nIdx++;
+            } while (nIdx < 4);
+        }
+        m_unk2C0 = (m_unk2BC != 0) ? 0 : 1;
+        SetState__15EntityBaseClassFi(this, 0);
+        if (m_unk1B0 == 0 || m_unk1B0 == 1) {
+            m_unk28C = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk04, 2, 1);
+        }
+        if (m_unk1BC >= 0) {
+            m_unk2A8 = GetWaypointGroupInfo__15WaypointManagerFUi((char *)mpEntMgr__15EntityBaseClass + 0x30, (unsigned int)m_unk1BC);
+            if (m_unk2A8 == 0) {
+                char sMsg[0x40];
+                sprintf(sMsg, "Tinker refers to bad waypoint group ( group id = %d )", m_unk1BC);
+                CdsAssert__FPciPc("Tinker.cpp", 0x32E, sMsg);
+            }
+        }
+        if (m_unk2D0.m_unk8 != 0) {
+            m_unk2D0.m_unk0 = 0;
+            m_unk2D0.m_unk4 = 0;
+        }
+        m_unk2E0 = 0;
+        if (m_unk2A8 != 0) {
+            m_unk2C8 = *(unsigned int *)((char *)m_unk2A8 + 4);
+        } else {
+            m_unk2C8 = 0;
+        }
+        switch (m_unk200) {
+        case 7:
+        case 8:
+            m_unk2C1 = (ReadApparitionData__15EntityBaseClassFiUi(this, 1, 0) == 0) ? 0 : 1;
+            return;
+        default:
+            m_unk2C1 = (ReadApparitionData__15EntityBaseClassFiUi(this, 3, 0) == 0) ? 0 : 1;
+            return;
+        }
+        break;
+    case 0:
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            int nMode = m_unk1B4;
+            if (nMode != 2 && nMode != 0) {
+                if (nMode != 1) {
+                    CdsAssert__FPciPc("Tinker.cpp", 0x37B, "Invalid Tinker AI mode");
+                } else {
+                    if ((int)m_unk2CC < 0) {
+                        m_unk2C0 = 0;
+                        m_unk2CC = 0;
+                    }
+                    if (m_unk2BC != 0 && ActivatedEnemiesDead() != 0 && TrappedEntityRemoved() != 0) {
+                        CdsAssert__FPciPc("Tinker.cpp", 0x358, "false");
+                    }
+                }
+            }
+        }
+        PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+        SetState__15EntityBaseClassFi(this, 1);
+        return;
+    case 1:
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            m_unkE8 = 3;
+            if (m_unk1B4 != 2 && m_unk1B4 != 0 && m_unk1B4 != 1) {
+                CdsAssert__FPciPc("Tinker.cpp", 0x3A5, "Invalid Tinker AI mode");
+            } else {
+                PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+            }
+        }
+        FacePlayer(0.04f);
+        if (m_unk2C0 == 0) {
+            char *pPlayer = mPlayerAPI__13EntityManager;
+            char *pBox = pPlayer + 0x190;
+            char *pTrack = *(char **)(pPlayer + 0x3C);
+            if (pTrack != 0) {
+                pBox = pTrack + 0x80;
+            }
+            if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pBox, (float (*)[4])&m_unk240) < m_unk1CC) {
+                EnableSleep__15EntityBaseClassFbb(this, false, false);
+                ActivateAttackingEnemies();
+                return;
+            }
+        } else {
+            if (IsPauseDisabled__6PlayerFv(mPlayerAPI__13EntityManager) != 0 && m_unk230 != 0) {
+                EnableSleep__15EntityBaseClassFbb(this, false, false);
+                m_unkE8 |= 8;
+                switch (m_unk1B4) {
+                case 2:
+                    SetState__15EntityBaseClassFi(this, 6);
+                    return;
+                case 0:
+                    SetState__15EntityBaseClassFi(this, 0x15);
+                    return;
+                case 1:
+                    SetState__15EntityBaseClassFi(this, 0x11);
+                    return;
+                }
+            }
+        }
+        break;
+    case 21:
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            m_unk2A0 = 0;
+            m_unk2A4 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk04, 3, 0);
+        }
+        if (m_unk2A0 != 0) {
+            SetState__15EntityBaseClassFi(this, 5);
+            return;
+        }
+        break;
+    case 5:
+        if (EnemiesInCheckRadius() != 0) {
+            SetState__15EntityBaseClassFi(this, 7);
+            return;
+        }
+        SetState__15EntityBaseClassFi(this, 0xB);
+        return;
+    case 17:
+        if (TrappedEntityRemoved() != 0) {
+            if (m_unk280 != 0) {
+                if (m_unk228 != 0) {
+                    EntityBaseClass *pValid = (EntityBaseClass *)InstanceIsValid__15EntityBaseClassFUi(m_unk228);
+                    if (pValid != 0) {
+                        if (((ApparitionVirtual *)pValid)->Slot17() == 0) {
+                            pValid->m_unk1A = 1;
+                        }
+                    } else {
+                        printf("Instance ID %d could not be woken (called from trapped Tinker)\n", m_unk228);
+                    }
+                }
+                m_unk280 = 0;
+                SetAsActivatedEnemyTarget();
+            }
+            int nLoadClass = 3;
+            unsigned int nFlags = 0;
+            if (m_unk1B4 == 1 && m_unk1B0 == 0) {
+                nLoadClass = 5;
+                nFlags = 0x1E;
+            }
+            float (*pBox)[4] = (m_unk3C != 0) ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190);
+            if (FindClosestEnemy(pBox, (EntityBaseClass::LoadClass)nLoadClass, nFlags) != 0) {
+                SetState__15EntityBaseClassFi(this, 7);
+            } else if (GetNextPosition(m_unk260) != 0) {
+                SetState__15EntityBaseClassFi(this, 0x12);
+            } else if (ActivatedEnemiesDead() != 0) {
+                SetState__15EntityBaseClassFi(this, (m_unk224 == 0) ? 0x14 : 0xD);
+            } else {
+                SetState__15EntityBaseClassFi(this, 0xB);
+            }
+        } else {
+            if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+                PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+            }
+            if ((m_unk3C[0x3F] & 4) && m_unk294 == 0) {
+                if (m_unk1B0 != 2 && m_unk1B0 != 3) {
+                    CdsAssert__FPciPc("Tinker.cpp", 0x445, "(mEVars.m_iType == TYPE_MANDA) || (mEVars.m_iType == TYPE_RANDY)");
+                }
+                unsigned int nSound = 0x4E67;
+                if (m_unk1B0 == 2) {
+                    nSound = 0x4E63;
+                }
+                PlaySound__15EntityBaseClassFUi(this, nSound);
+                m_unk294 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk04, RandomIntRange__7MathAPIFii(5, 0xF), 0);
+            }
+        }
+        FacePlayer(0.04f);
+        return;
+    case 18:
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            void *pSeq = GetAnimSequence(m_unk20);
+            if ((int)pSeq != m_unk140) {
+                PlaySequence__15EntityBaseClassFPUi(this, pSeq);
+            }
+        }
+        m_unk298 = MoveTo((float (*)[4])m_unk260, 1.0f);
+        if (m_unk298 & 2) {
+            m_unk270 = 0;
+            SetState__15EntityBaseClassFi(this, 7);
+            return;
+        }
+        if (m_unk298 & 0xC) {
+            m_unk274 -= 1;
+            if (m_unk274 == 0) {
+                m_unk274 = 5;
+                float fOffset = 180.0f + RandomFloatRange__7MathAPIFff(-20.0f, 20.0f);
+                if (m_unk3C != 0) {
+                    ((float *)(m_unk3C + 0x90))[1] = ((float *)(m_unk3C + 0x90))[1] - fOffset;
+                } else {
+                    m_unk1A0[1] = m_unk1A0[1] - fOffset;
+                }
+                if (m_unk3C != 0) {
+                    *(float *)((char *)m_unk38 + 0x11C) = Round180__Ff(((float *)(m_unk3C + 0x90))[1]);
+                } else {
+                    *(float *)((char *)m_unk38 + 0x11C) = Round180__Ff(m_unk1A0[1]);
+                }
+                return;
+            }
+        }
+        break;
+    case 7:
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            int nLoadClass = 3;
+            unsigned int nFlags = 0;
+            if (m_unk1B4 == 1 && m_unk1B0 == 0) {
+                nLoadClass = 5;
+                nFlags = 0x1E;
+            }
+            float (*pBox)[4] = (m_unk3C != 0) ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190);
+            EntityBaseClass *pFound = (EntityBaseClass *)FindClosestEnemy(pBox, (EntityBaseClass::LoadClass)nLoadClass, nFlags);
+            if (pFound != 0) {
+                PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+                int nId = pFound->m_unk04;
+                SetAsEnemyTarget(m_unk2E4, false);
+                m_unk2E4 = nId;
+                SetAsEnemyTarget(m_unk2E4, true);
+            } else {
+                m_unk2E4 = 0;
+                m_unk2E8 = 0;
+                int nState = 0xB;
+                if (m_unk1B4 == 1) {
+                    nState = 0x11;
+                }
+                SetState__15EntityBaseClassFi(this, nState);
+                return;
+            }
+        }
+        {
+            EntityBaseClass *pApp = (EntityBaseClass *)GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk2E4);
+            if (pApp != 0) {
+                float (*pTarget)[4] = (pApp->m_unk3C != 0) ? (float (*)[4])(pApp->m_unk3C + 0x80) : (float (*)[4])((char *)pApp + 0x190);
+                m_unk298 = MoveTo(pTarget, 4.0f);
+                if (m_unk298 & 2) {
+                    m_unk270 = 0;
+                    SetState__15EntityBaseClassFi(this, 8);
+                    return;
+                }
+                if (m_unk298 & 0xD) {
+                    m_unk270 += 1;
+                    if ((unsigned int)m_unk270 >= 4U) {
+                        SetState__15EntityBaseClassFi(this, 0xF);
+                        return;
+                    }
+                }
+            } else {
+                int nState = 5;
+                if (m_unk1B4 == 1) {
+                    nState = 0x11;
+                }
+                SetState__15EntityBaseClassFi(this, nState);
+                return;
+            }
+        }
+        break;
+    case 8: {
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            m_unk2E8 = 0;
+            PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+            m_unk27C = 0;
+            if (m_unk1B4 == 0) {
+                m_unk2C4 = -1;
+                if (m_unk2D0.m_unk8 != 0) {
+                    m_unk2D0.m_unk0 = 0;
+                    m_unk2D0.m_unk4 = 0;
+                }
+                m_unk2E0 = 0;
+            }
+            if (m_unk294 == 0) {
+                unsigned int nSnd = 0;
+                switch (m_unk1B0) {
+                case 2:
+                    nSnd = 0x4E63;
+                    break;
+                case 3:
+                    nSnd = 0x4E67;
+                    break;
+                }
+                if (nSnd != 0) {
+                    PlaySound(nSnd);
+                    m_unk294 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk04, RandomIntRange__7MathAPIFii(2, 7), 0);
+                }
+            }
+        }
+        EntityBaseClass *pApp = (EntityBaseClass *)GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk2E4);
+        if (pApp != 0) {
+            float (*pAppBox)[4] = (pApp->m_unk3C != 0) ? (float (*)[4])(pApp->m_unk3C + 0x80) : (float (*)[4])((char *)pApp + 0x190);
+            RotateTo(GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, pAppBox), 0.04f);
+        }
+        AttackSound();
+        if (m_unk140 == (int)Baron_AttackSeq) {
+            int nStab = m_unk27C;
+            if ((int)GetFrameTime__6PMNodeFv(m_unk3C) >= StabFrames[nStab]) {
+                m_unk27C = nStab + 1;
+                ResetCollisions();
+                if (StabFrames[m_unk27C] == 0xFFFF) {
+                    PlaySound(0x13CU);
+                }
+            }
+        }
+        if (m_unk160 == 0) {
+            int nOk = 1;
+            if (pApp != 0 && pApp->m_unk163 != 6 && *(int *)((char *)pApp + 0x1C) == 0) {
+                float (*pAppBox2)[4] = (pApp->m_unk3C != 0) ? (float (*)[4])(pApp->m_unk3C + 0x80) : (float (*)[4])((char *)pApp + 0x190);
+                RotateTo(GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, pAppBox2), 0.04f);
+                float (*pSelfBox)[4] = (m_unk3C != 0) ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190);
+                if (Distance__7MathAPIFPA4_fPA4_f(pSelfBox, pAppBox2) <= 6.0f) {
+                    nOk = 0;
+                }
+            }
+            if (nOk != 0) {
+                SetState((m_unk1B4 != 0) ? 0x11 : 5);
+                return;
+            }
+            SetState(9);
+            return;
+        }
+        break;
+    }
+    case 9:
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+            m_unk2A0 = 0;
+            m_unk2A4 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk04, 0xF, 1);
+        }
+        if (m_unk2A0 != 0) {
+            SetState(8);
+            return;
+        }
+        break;
+    case 12: {
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+            EntityBaseClass *pPlayer = (EntityBaseClass *)mPlayerAPI__13EntityManager;
+            float (*pBox)[4] = (pPlayer->m_unk3C != 0) ? (float (*)[4])(pPlayer->m_unk3C + 0x80) : (float (*)[4])((char *)pPlayer + 0x190);
+            *(u_long128 *)m_unk260 = *(u_long128 *)pBox;
+        }
+        m_unk298 = MoveTo((float (*)[4])m_unk260, 4.0f);
+        if (m_unk298 & 0xF) {
+            SetState((m_unk224 == 0) ? 0x14 : 0xD);
+            return;
+        }
+        break;
+    }
+    case 15: {
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+            if (!(GetClosestWaypoint(m_unk260, 1) & 0xFF)) {
+                EntityBaseClass *pPlayer = (EntityBaseClass *)mPlayerAPI__13EntityManager;
+                float (*pBox)[4] = (pPlayer->m_unk3C != 0) ? (float (*)[4])(pPlayer->m_unk3C + 0x80) : (float (*)[4])((char *)pPlayer + 0x190);
+                *(u_long128 *)m_unk260 = *(u_long128 *)pBox;
+            }
+            m_unk274 = 5;
+        }
+        m_unk298 = MoveTo((float (*)[4])m_unk260, 1.0f);
+        int nMove = m_unk298;
+        if (nMove & 2) {
+            if (m_unk2E0 != 0) {
+                GetClosestWaypoint(m_unk260, 1);
+                return;
+            }
+            int nState = 5;
+            if (m_unk1B4 == 1) {
+                nState = 0x11;
+            }
+            SetState(nState);
+            return;
+        }
+        if (nMove & 1) {
+            m_unk270 = 0;
+            m_unk2C4 = -1;
+            if (m_unk2D0.m_unk8 != 0) {
+                m_unk2D0.m_unk0 = 0;
+                m_unk2D0.m_unk4 = 0;
+            }
+            SetState(0xA);
+            return;
+        }
+        if (nMove & 0xC) {
+            m_unk274 -= 1;
+            if (m_unk274 == 0) {
+                m_unk274 = 5;
+                float fOffset = 180.0f + RandomFloatRange__7MathAPIFff(-20.0f, 20.0f);
+                float *pTgt = (m_unk3C != 0) ? (float *)(m_unk3C + 0x90) : m_unk1A0;
+                pTgt[1] = pTgt[1] - fOffset;
+                float *pSelf = (m_unk3C != 0) ? (float *)(m_unk3C + 0x90) : m_unk1A0;
+                *(float *)((char *)m_unk38 + 0x11C) = Round180__Ff(pSelf[1]);
+                GetClosestWaypoint(m_unk260, 1);
+                return;
+            }
+        }
+        break;
+    }
+    case 10:
+    case 11: {
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            void *pSeq = GetAnimSequence(m_unk20);
+            if (m_unk140 != (int)pSeq) {
+                PlaySequence__15EntityBaseClassFPUi(this, pSeq);
+            }
+            float (*pBox)[4] = (m_unk3C != 0) ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190);
+            m_unk2F4 = (FindClosestEnemy(pBox, (EntityBaseClass::LoadClass)3, 0) != 0);
+            m_unk278 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk04, 2, 0);
+        }
+        FacePlayer(0.04f);
+        if (m_unk2F4 != 0 && *(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) == 0) {
+            float (*pBox2)[4] = (m_unk3C != 0) ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190);
+            if (FindClosestEnemy(pBox2, (EntityBaseClass::LoadClass)3, 0) != 0) {
+                SetState((m_unk1B4 != 0) ? 0x11 : 5);
+                return;
+            }
+            if (ActivatedEnemiesDead() != 0) {
+                SetState(0xC);
+                return;
+            }
+            m_unk2F4 = 0;
+            m_unk278 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk04, 2, 0);
+            if (m_unk20 != 0xA) {
+                SetState(0xA);
+            }
+        }
+        if (m_unk20 == 0xA) {
+            PlingInnocent__15EntityBaseClassFv(this);
+            return;
+        }
+        break;
+    }
+    case 6:
+    case 16: {
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            m_unk2F4 = 0;
+            m_unk278 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk04, 2, 0);
+            PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+            EnableSleep__15EntityBaseClassFbb(this, 1, 0);
+        }
+        PlingInnocent__15EntityBaseClassFv(this);
+        if (m_unk2F4 != 0 && *(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) == 0) {
+            float (*pBox)[4] = (m_unk3C != 0) ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190);
+            if (FindClosestEnemy(pBox, (EntityBaseClass::LoadClass)3, 0) != 0) {
+                SetState((m_unk1B4 != 0) ? 0x11 : 5);
+            }
+            m_unk2F4 = 0;
+            m_unk278 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk04, 2, 0);
+            return;
+        }
+        break;
+    }
+    case 20: {
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+            if (!(ActivatedEnemiesDead() & 0xFF)) {
+                unsigned int nDialog = m_unk214;
+                if (nDialog < 0x100U) {
+                    DisplayString__11FontManagerFiiib(gInterface + 0x80, InnocentDialogID[nDialog], -1, 0, false);
+                }
+                *(unsigned char *)(*(char **)((char *)mpEntMgr__15EntityBaseClass + 0x505C) + 0x335) &= ~4;
+            }
+        }
+        if (m_unk160 == 0) {
+            SetState((ActivatedEnemiesDead() == 0) ? 0xE : 6);
+            return;
+        }
+        break;
+    }
+    case 13: {
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            EnableSleep__15EntityBaseClassFbb(this, false, false);
+            PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+            unsigned int nDialog = m_unk20C;
+            int nAward = AwardCheck() & 0xFF;
+            if ((nDialog < 0x100U) && (m_unk224 == 0)) {
+                if (nAward == 0) {
+                    nDialog = m_unk210;
+                }
+                DisplayString__11FontManagerFiiib(gInterface + 0x80, InnocentDialogID[nDialog], -1, 0, false);
+            }
+            if ((nAward != 0) && (m_unk218 != 0)) {
+                float fTime = m_unk21C;
+                if (fTime == 0.0f) {
+                    EnableSleep__15EntityBaseClassFbb(this, false, false);
+                    StartCutCamera__6CameraFUib(gEng + 0x19760, m_unk218, false);
+                } else {
+                    float fFrames = 60.0f * fTime;
+                    int nTime;
+                    if (!(fFrames >= 2.1474836e9f)) {
+                        nTime = (int)fFrames;
+                    } else {
+                        nTime = (int)(fFrames - 2.1474836e9f) | 0x80000000;
+                    }
+                    m_unk2EC = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk04, nTime, true);
+                    *(unsigned char *)((char *)this + 0x17A) = 1;
+                }
+            } else if (m_unk224 == 0) {
+                SetupInnocentCamera__15EntityBaseClassFv(this);
+            }
+            if (nAward != 0) {
+                EntityBaseClass *pTarget = m_unk220;
+                if (pTarget != 0) {
+                    m_unk2F0 = (EntityBaseClass *)InstanceIsValid__15EntityBaseClassFUi(pTarget);
+                    if (m_unk2F0 != 0) {
+                        m_unk2F0->m_unk1A = 1;
+                        EnableSleep__15EntityBaseClassFbb(m_unk2F0, false, false);
+                    }
+                }
+            }
+            if (m_unk2C1 != 0) {
+                *(unsigned char *)(*(char **)((char *)mpEntMgr__15EntityBaseClass + 0x505C) + 0x335) &= ~4;
+            }
+        }
+        FacePlayer(0.04f);
+        if ((m_unk2C1 == 0) && !(GetFrameTime__6PMNodeFv(m_unk3C) < 0.0f)) {
+            int nPickup = m_unk200;
+            if (nPickup != -1) {
+                char *pPickup = (char *)GetPickupData__6PickupFi(nPickup);
+                int nIndex = 0;
+                while (nIndex < m_unk204) {
+                    signed char nVar = *(signed char *)(pPickup + 1);
+                    if (nVar != -1) {
+                        GameVarAdd__6PlayerFUiii(*(char **)((char *)mpEntMgr__15EntityBaseClass + 0x505C), (unsigned int)nVar, *(short *)(pPickup + 2), 1);
+                    } else {
+                        SetAbility__6PlayerFii(*(char **)((char *)mpEntMgr__15EntityBaseClass + 0x505C), *(signed char *)(pPickup + 4), 1);
+                    }
+                    nIndex++;
+                }
+            }
+            if (m_unk1B0 == 0 || m_unk1B0 == 1) {
+                WriteApparitionData__15EntityBaseClassFicUi(this, 2, 1, 0U);
+            } else {
+                switch (m_unk200) {
+                case 7:
+                case 8:
+                    WriteApparitionData__15EntityBaseClassFicUi(this, 1, 1, 0U);
+                    break;
+                default:
+                    WriteApparitionData__15EntityBaseClassFicUi(this, 3, 1, 0U);
+                    break;
+                }
+            }
+            int nFlag = ((TinkerVirtual *)this)->Slot1();
+            if (nFlag != 0) {
+                WriteApparitionData__15EntityBaseClassFicUi(this, 0, (char)nFlag, 0U);
+            }
+            if (m_unk1B0 == 0) {
+                WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0U);
+            }
+            *(unsigned char *)(*(char **)((char *)mpEntMgr__15EntityBaseClass + 0x505C) + 0x335) &= ~4;
+            m_unk2C1 = 1;
+        }
+        if (m_unk160 == 0) {
+            SetState(0x10);
+            return;
+        }
+        break;
+    }
+    case 14: {
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+        }
+        if (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) == 0) {
+            SetState(0xA);
+            return;
+        }
+        break;
+    }
+    case 3: {
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+        }
+        if (m_unk160 == 0) {
+            if (m_unk29C == 0xB || m_unk29C == 0xA) {
+                int nNew = 5;
+                if (m_unk1B4 == 1) {
+                    nNew = 0x11;
+                }
+                m_unk29C = nNew;
+            }
+            SetState(m_unk29C);
+            return;
+        }
+        break;
+    }
+    case 4: {
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            EnableSleep__15EntityBaseClassFbb(this, false, false);
+            m_unk10C &= 0xF8FFFFFF;
+            *(int *)((char *)m_unk38 + 0x118) = 0;
+            if (m_unk38 != 0 && *(int *)((char *)m_unk38 + 0xCC) == 0) {
+                if (m_unk38 != 0) {
+                    __dl__FPv(m_unk38);
+                }
+                m_unk38 = 0;
+            }
+            m_unk290 = 0;
+            PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+        }
+        if (m_unk160 == 0) {
+            if ((m_unk1B0 == 0) || (m_unk1B0 == 1)) {
+                m_unk290 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk04, 1, false);
+            }
+            SetState(0x13);
+            return;
+        }
+        break;
+    }
+    case 19: {
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            EnableSleep__15EntityBaseClassFbb(this, true, false);
+            PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
+        }
+        break;
+    }
     }
 }
 

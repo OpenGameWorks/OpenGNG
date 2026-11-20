@@ -30,36 +30,45 @@ public:
     void OnDestroyEvent();
     void OnTimerEvent(unsigned int arg0);
     int OnHitEvent(EntityBaseClass *pOther, int arg1, unsigned int arg2, unsigned int arg3);
+    void Execute();
 
     float m_unk190[4];                  // 0x190
-    char _pad1A0[0x1B0 - 0x1A0];
+    float m_unk1A0[4];                  // 0x1A0
     int m_unk1B0;                       // 0x1B0
     int m_unk1B4;                       // 0x1B4
     int m_unk1B8;                       // 0x1B8
-    char _pad1BC[0x1C0 - 0x1BC];
+    int m_unk1BC;                       // 0x1BC
     float m_unk1C0;                     // 0x1C0
     float m_unk1C4;                     // 0x1C4
     float m_unk1C8;                     // 0x1C8
-    char _pad1CC[0x1D0 - 0x1CC];
+    float m_unk1CC;                     // 0x1CC
     float m_unk1D0[4];                  // 0x1D0
     EntityBaseClass *m_unk1E0[4];       // 0x1E0, attacking enemies
     EntityBaseClass *m_unk1F0[4];       // 0x1F0
     int m_unk200;                       // 0x200
-    char _pad204[0x210 - 0x204];
+    int m_unk204;                       // 0x204
+    char _pad208[0x4];
+    unsigned int m_unk20C;              // 0x20C
     int m_unk210;                       // 0x210
-    char _pad214[0x218 - 0x214];
+    unsigned int m_unk214;              // 0x214
     unsigned int m_unk218;              // 0x218
-    char _pad21C[0x228 - 0x21C];
+    float m_unk21C;                     // 0x21C
+    EntityBaseClass *m_unk220;          // 0x220
+    int m_unk224;                       // 0x224
     EntityBaseClass *m_unk228;          // 0x228
-    char _pad22C[0x240 - 0x22C];
+    int m_unk22C;                       // 0x22C
+    int m_unk230;                       // 0x230
+    char _pad234[0x240 - 0x234];
     float m_unk240;                     // 0x240
     float m_unk244;                     // 0x244
     float m_unk248;                     // 0x248
     char _pad24C[0x250 - 0x24C];
     float m_unk250[4];                  // 0x250
-    char _pad260[0x278 - 0x260];
+    float m_unk260[4];                  // 0x260
+    int m_unk270;                       // 0x270
+    int m_unk274;                       // 0x274
     int m_unk278;                       // 0x278
-    char _pad27C[0x280 - 0x27C];
+    int m_unk27C;                       // 0x27C
     unsigned char m_unk280;             // 0x280
     char _pad281[0x284 - 0x281];
     int m_unk284;                       // 0x284
@@ -67,7 +76,7 @@ public:
     int m_unk28C;                       // 0x28C
     int m_unk290;                       // 0x290
     int m_unk294;                       // 0x294
-    char _pad298[0x29C - 0x298];
+    int m_unk298;                       // 0x298
     int m_unk29C;                       // 0x29C
     unsigned char m_unk2A0;             // 0x2A0
     char _pad2A1[0x2A4 - 0x2A1];
@@ -87,7 +96,7 @@ public:
     unsigned int m_unk2E4;              // 0x2E4
     int m_unk2E8;                       // 0x2E8
     int m_unk2EC;                       // 0x2EC
-    int m_unk2F0;                       // 0x2F0
+    EntityBaseClass *m_unk2F0;          // 0x2F0
     unsigned char m_unk2F4;             // 0x2F4
 };
 
