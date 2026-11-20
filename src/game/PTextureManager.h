@@ -10,7 +10,7 @@ struct tagPs2TexDataHeader {
     char type;                  // 0x02 texture type, 0x13 and 0x14 carry a CLUT
     char cNumMipMaps;           // 0x03
     char unk4;                  // 0x04
-    char _pad5;                 // 0x05
+    char unk5;                  // 0x05
     char unk6;                  // 0x06
     char unk7;                  // 0x07
     int unk8;                   // 0x08 image data size
@@ -55,6 +55,7 @@ public:
     int m_unkA0;               // 0x0A0
     int m_unkA4;               // 0x0A4
     char m_unkA8;              // 0x0A8
+    int m_unkAC;               // 0x0AC
 };
 
 // One of the two per-frame texture lists owned by PTextureManager.
@@ -91,9 +92,10 @@ public:
     void UnloadAllDynamicTextures();
     void UnloadAllRenderedTextures();
     void UnloadDynamicTextures(eTextureGroup eGroup);
+    int LoadDynamicTextures(PPakFile *poFile, eTextureGroup eGroup, PArray *pArray);
     void PrepareImageXferInfo(tagGsImageXferInfo *pInfo, int nWidth, int nHeight, int nPsm, int nBase);
     void PrepareImageDmaPacket(tagImageDmaPacket *pPacket, void *pData, int nSize, int nWidth, int nHeight, int nPsm, int nBase);
-    void AddTexture(PTexture *pTex, PArray *pArray);
+    int AddTexture(PTexture *pTex, PArray *pArray);
     int AllocRenderedTexture(int nHandle, int nSecond, bool &bOut, bool bFlag);
     int AllocDynamicVramForTexture(tagPs2TexDataHeader *pHeader, int nSecond, int &nVram, int &nTmp, bool &bOut, bool bFlag);
     void PrepareDynamicClutPacket(tagGsClut256 *pClut, tagGsTextureEnvironment *pTexEnv, bool bFlag, PDisplayList *pDisplayList);
@@ -121,7 +123,7 @@ public:
     int m_unk254;               // 0x254
     PTexture **m_apRendered;    // 0x258 PArray element storage
     int m_unk25C;               // 0x25C PArray capacity
-    char m_unk260;              // 0x260 set to 1 by the constructor
+    unsigned char m_unk260;     // 0x260 set to 1 by the constructor
 };
 
 #endif

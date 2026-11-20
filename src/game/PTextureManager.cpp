@@ -13,6 +13,8 @@ extern "C" void CdsAssert__FPciPc(char *, int, char *);
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PTextureManager.cpp", line, #cond))
 #define CDS_ASSERT_TEX(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PTexture.h", line, #cond))
+// Assert whose message text is not the stringified condition.
+#define CDS_ASSERT_MSG(line, cond, msg) ((cond) ? (void)0 : CdsAssert__FPciPc("PTextureManager.cpp", line, msg))
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void memset(void *, int, unsigned int);
 extern "C" void __ct__6PArrayFv(void *pThis);
@@ -23,6 +25,9 @@ void GsSetClutBaseAddr(tagGsTextureEnvironment *pEnv, unsigned int nBase);
 extern "C" int sceDmaGetChan(int nChannel);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void __dl__FPv(void *pMem);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" char __vt__8PTexture[0x10];
+extern "C" int Read__7PCDFileFPvUi(void *pThis, void *pBuf, unsigned int nSize);
 enum eGsContext {
     eGsContext_0 = 0
 };
@@ -245,7 +250,7 @@ int PTextureManager::LoadTexture(PPakFile *poFile, tagPs2TexDataHeader *pTexHead
 
 // DRAFT: 0x00189BF0 AddTexture__15PTextureManagerFP8PTextureP6PArray
 // note: 54 differing lines; loop guard is slt/beqz with count in a0 but entry delay slot and b to bottom test differ; tried while (55), comma init (55), i++ placement (54)
-void PTextureManager::AddTexture(PTexture *pTex, PArray *pArray) {
+int PTextureManager::AddTexture(PTexture *pTex, PArray *pArray) {
     int nOff;
     int nCount;
     unsigned int i;
@@ -268,8 +273,7 @@ void PTextureManager::AddTexture(PTexture *pTex, PArray *pArray) {
             if (i < pArray->m_nCapacity) {
                 pArray->m_apItems[i] = pTex;
             }
-            EncodeTextureHandle(0, (PTexture::eTextureType)pTex->m_unkA4, i);
-            return;
+            return EncodeTextureHandle(0, (PTexture::eTextureType)pTex->m_unkA4, i);
         }
         i++;
         nOff += 4;
@@ -278,7 +282,58 @@ void PTextureManager::AddTexture(PTexture *pTex, PArray *pArray) {
         CdsAssert__FPciPc("PTextureManager.cpp", 0x66F, "poTextureArray->GetCount() <= poTextureArray->GetSize()");
     }
     Add__6PArrayFPv(pArray, pTex);
-    EncodeTextureHandle(0, (PTexture::eTextureType)pTex->m_unkA4, pArray->m_nCount - 1);
+    return EncodeTextureHandle(0, (PTexture::eTextureType)pTex->m_unkA4, pArray->m_nCount - 1);
+}
+
+// FUNCTION: 0x00189D30 AllocDynamicVramForTexture__15PTextureManagerFP19tagPs2TexDataHeaderiRiRiRbb
+int PTextureManager::AllocDynamicVramForTexture(tagPs2TexDataHeader *pHeader, int nSecond, int &nVram, int &nTmp, bool &bOut, bool bFlag) {
+    int nSize;
+    int nShift5;
+    PTextureBuffer *pBuf;
+
+    ((pHeader != 0) ? (void)0 : CdsAssert__FPciPc("PTextureManager.cpp", 0x60C, "pTexInfo"));
+    ((m_aBuf0.m_unk4 == m_aBuf1.m_unk4) ? (void)0 : CdsAssert__FPciPc("PTextureManager.cpp", 0x60D, "mDynamicBuffer1.ImageBuffer.iSize == mDynamicBuffer2.ImageBuffer.iSize"));
+    ((m_aBuf0.m_unk10 == m_aBuf1.m_unk10) ? (void)0 : CdsAssert__FPciPc("PTextureManager.cpp", 0x60E, "mDynamicBuffer1.ClutBuffer.iSize == mDynamicBuffer2.ClutBuffer.iSize"));
+
+    bOut = false;
+    nTmp = -1;
+    nVram = -1;
+    nShift5 = pHeader->unk5 << 8;
+    nSize = nSecond + ((pHeader->unk26 - pHeader->unk5) << 8);
+    if (m_unk260 == 0) {
+        if ((nSize + nShift5) < m_unkC) {
+            nVram = m_aBuf0.m_unk0;
+            nTmp = nVram + nSize;
+            if (nSecond != 0) {
+                nVram = nSecond * ((nVram + nSecond - 1) / nSecond);
+            }
+            bOut = true;
+            FlipTextureBuffers();
+            return 1;
+        }
+        return 0;
+    }
+    pBuf = m_pCurBuf;
+    if (pBuf->m_unk4 < nSize) {
+        return 0;
+    }
+    if (!bFlag) {
+        if (((pBuf->m_unk8 + nSize) >= (pBuf->m_unk0 + pBuf->m_unk4)) || ((pBuf->m_unk14 + nShift5) >= (pBuf->m_unkC + pBuf->m_unk10))) {
+            goto flip;
+        }
+    } else {
+flip:
+        bOut = true;
+        FlipTextureBuffers();
+    }
+    nVram = m_pCurBuf->m_unk8;
+    nTmp = m_pCurBuf->m_unk14;
+    if (nSecond != 0) {
+        nVram = nSecond * ((nVram + nSecond - 1) / nSecond);
+    }
+    m_pCurBuf->m_unk8 = m_pCurBuf->m_unk8 + nSize;
+    m_pCurBuf->m_unk14 = m_pCurBuf->m_unk14 + nShift5;
+    return 1;
 }
 
 // FUNCTION: 0x00189F80 FlipTextureBuffers__15PTextureManagerFv
@@ -471,6 +526,61 @@ void PTextureManager::UnloadDynamicTextures(eTextureGroup eGroup) {
             nOff += 4;
         } while ((int)i < nCount);
     }
+}
+
+// Header of a dynamic texture file, read as one 0x20-byte block.
+struct tagDynTexFileHeader {
+    int iMagic;                 // 0x00 must be 0x13246879
+    int unk4;                   // 0x04
+    int iNumTextures;           // 0x08
+    char _pad0C[0x20 - 0x0C];   // 0x0C
+};
+
+// DRAFT: 0x0018AD70 LoadDynamicTextures__15PTextureManagerFP8PPakFile13eTextureGroupP6PArray
+// note: DIFF 152; frame 0x238 vs 0x264, prologue keeps 7 saves (original 9: fp, s7..s0) and maps eGroup/pArray to s3/s2; piCount, local reorder and in-loop clut/image zeroing did not change the count.
+int PTextureManager::LoadDynamicTextures(PPakFile *poFile, eTextureGroup eGroup, PArray *pArray) {
+    tagDynTexFileHeader aFileHeader;
+    tagPs2TexDataHeader aTexHeader;
+    char aTexEnv[0x60];
+    void *pvTexClutPacket;
+    void *pvTexImagePacket;
+    PTexture *pTex;
+    int i;
+
+    CDS_ASSERT_MSG(0x433, poFile, "pMemFile");
+    CDS_ASSERT_MSG(0x434, pArray, "pTextureHandles");
+    if (Read__7PCDFileFPvUi((void *)poFile, &aFileHeader, 0x20) != 0x20) {
+        CdsAssert__FPciPc("PTextureManager.cpp", 0x43A, "0");
+        return 0;
+    }
+    if (aFileHeader.iMagic == 0x13246879) {
+        for (i = 0; i < aFileHeader.iNumTextures; i++) {
+            if (!LoadTexture(poFile, &aTexHeader, &pvTexClutPacket, &pvTexImagePacket)) {
+                return 0;
+            }
+            GsInitTexEnv((tagGsTextureEnvironment *)aTexEnv, aTexHeader.unk0, aTexHeader.unk1, aTexHeader.type, false, (eGsContext)0);
+            pTex = (PTexture *)__nw__FUi(0xB0);
+            if (pTex != 0) {
+                *(void **)pTex = (void *)__vt__8PTexture;
+                pTex->m_unk30 = 0;
+                pTex->m_unk34 = 0;
+                pTex->m_unkA4 = 0;
+                pTex->m_unkA8 = 0;
+                pTex->m_unkAC = 0;
+            }
+            CDS_ASSERT_MSG(0x452, pTex, "apoTexture");
+            CDS_ASSERT_TEX(0x3D, pvTexImagePacket);
+            memcpy(pTex->m_unk4, &aTexHeader, 0x2C);
+            memcpy(pTex->m_unk40, aTexEnv, 0x60);
+            pTex->m_unk30 = pvTexClutPacket;
+            pTex->m_unk34 = pvTexImagePacket;
+            pTex->m_unkA0 = (int)eGroup;
+            pTex->m_unkA4 = 1;
+            Add__6PArrayFPv(pArray, (void *)AddTexture(pTex, (PArray *)&m_nDynCount));
+        }
+    }
+    CDS_ASSERT_MSG(0x45D, pArray->m_nCount == aFileHeader.iNumTextures, "pTextureHandles->GetCount() == aFileHeader.iNumTextures");
+    return 1;
 }
 
 // FUNCTION: 0x0018AFE0 UnloadStaticTextures__15PTextureManagerFv
