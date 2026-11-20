@@ -90,9 +90,9 @@ void PSpacePartitionTree::RenderShaderGroups(bool bFlag) {
                 nFrag = 0;
                 nByte = 0;
                 while (nFrag < *(int *)(pSlot + 0x304)) {
-                    PMeshFragment *pFrag = *(PMeshFragment **)(pSlot + nByte + 4);
-                    CDS_ASSERT(0x1BA, pFrag);
-                    gGfxEng.m_unk154C80->DrawVertices(pFrag->m_unk0, pFrag->m_unk4);
+                    PMeshFragment *apFrag = *(PMeshFragment **)(pSlot + nByte + 4);
+                    CDS_ASSERT(0x1BA, apFrag);
+                    gGfxEng.m_unk154C80->DrawVertices(apFrag->m_unk0, apFrag->m_unk4);
                     nByte += 4;
                     nFrag++;
                 }
@@ -113,9 +113,9 @@ void PSpacePartitionTree::RenderShaderGroups(bool bFlag) {
                 nFrag = 0;
                 nByte = 0;
                 while (nFrag < *(int *)(pSlot + 0x308)) {
-                    PMeshFragment *pFrag = *(PMeshFragment **)(pSlot + nByte + 0x184);
-                    CDS_ASSERT(0x1D1, pFrag);
-                    gGfxEng.m_unk154C80->DrawVertices(pFrag->m_unk0, pFrag->m_unk4);
+                    PMeshFragment *apFrag = *(PMeshFragment **)(pSlot + nByte + 0x184);
+                    CDS_ASSERT(0x1D1, apFrag);
+                    gGfxEng.m_unk154C80->DrawVertices(apFrag->m_unk0, apFrag->m_unk4);
                     nByte += 4;
                     nFrag++;
                 }

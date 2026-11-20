@@ -60,7 +60,7 @@ int PAnimFrame::Load(PPakFile *pFile, tagMeshNodeAnimationHeader *pHeader) {
 
 // FUNCTION: 0x0018CFD0 SetAllAnimFlags__10PAnimFrameFP8AnimData
 void PAnimFrame::SetAllAnimFlags(AnimData *pData) {
-    static AnimData Default = {0, 0, 0, 0, 0, {0, 0}, 0.0f};
+    static AnimData Default = {0, -1, 0, -1, 1, {3, 0}, 0.5f};
     if (!pData) {
         pData = &Default;
     }

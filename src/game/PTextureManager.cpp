@@ -268,8 +268,8 @@ PTexture::~PTexture() {
 
 // FUNCTION: 0x0018A8E0 InitRendered__8PTextureFP19tagPs2TexDataHeaderP23tagGsTextureEnvironment13eTextureGroup
 int PTexture::InitRendered(tagPs2TexDataHeader *pTexHeader, tagGsTextureEnvironment *pTexEnv, eTextureGroup eGroup) {
-    CDS_ASSERT_TEX(0x4D, pTexHeader != 0);
-    CDS_ASSERT_TEX(0x4E, pTexEnv != 0);
+    CDS_ASSERT_TEX(0x4D, pTexHeader);
+    CDS_ASSERT_TEX(0x4E, pTexEnv);
     memcpy(m_unk4, pTexHeader, 0x2C);
     memcpy(m_unk40, pTexEnv, 0x60);
     m_unkA0 = eGroup;
