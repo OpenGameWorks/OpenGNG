@@ -5,6 +5,21 @@
 // TODO(header): foreign declarations
 struct tagParticleRainParams;
 class PFlashScreen;
+struct tagParticleMovingFogParams;
+class PParticleMovingFog {
+public:
+    PParticleMovingFog();
+    virtual ~PParticleMovingFog();
+    void Create(tagParticleMovingFogParams *pParams);
+    char _pad004[0x4B0 - 4];
+};
+struct tagParticleFogData {
+    char _pad000[0x60];
+};
+class PCDFile {
+public:
+    int Read(void *pBuf, unsigned int nSize);
+};
 
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" PParticleRain *__ct__13PParticleRainFv(PParticleRain *pThis);
@@ -68,7 +83,7 @@ public:
     virtual void Slot06();
     virtual void Slot07();
     virtual void Slot08();
-    virtual void Slot09();
+    virtual void Slot09(bool bFlag);
 };
 
 class PEweedFx {
@@ -146,6 +161,18 @@ void PParticleManager::RenderAuraParticles() {
         BeginParticles__10PGfxEngineF13eBoxIntersect(gGfxEng, 1);
         DrawParticles__10PGfxEngineFP13tagVuParticleiffb(gGfxEng, (char *)this + 0x9C0, 0x28, 1.0f, 1.0f, true);
         EndParticles__10PGfxEngineFv(gGfxEng);
+    }
+}
+
+// FUNCTION: 0x001B7EC0 InitShockwaveRings__16PParticleManagerFv
+void PParticleManager::InitShockwaveRings() {
+    m_unk2050 = (void *)InitRingMeshPacket(*(int *)&m_unk2054, 0xC, false, 0.3f, 0.5f, 0, 0xFF);
+    if (m_unk2050 == 0) {
+        CdsAssert("PParticleManager.cpp", 0x5D9, "mpDistortionShockwaveMesh");
+    }
+    m_unk2058 = (void *)InitRingMeshPacket(*(int *)&m_unk205C, 0xC, false, 0.3f, 0.5f, 0xFF, 0xFF);
+    if (m_unk2058 == 0) {
+        CdsAssert("PParticleManager.cpp", 0x5DF, "mpHilightShockwaveMesh");
     }
 }
 
@@ -266,6 +293,22 @@ void PParticleManager::RenderGroundDustFx() {
     }
 }
 
+// FUNCTION: 0x001B8480 AnimateGroundDustFx__16PParticleManagerFP9PFrustrumf
+void PParticleManager::AnimateGroundDustFx(PFrustrum *pFrustrum, float fDt) {
+    int i = 0;
+    int off = 0;
+    do {
+        PEweedFx **pp = (PEweedFx **)((char *)this + off + 0x208C);
+        PEweedFx *pFx = *pp;
+        if (pFx->m_unk15 != 0) {
+            pFx->Slot04(pFrustrum, (float *)((char *)this + 0x680), *(float *)((char *)this + 0x6A0), *(float *)((char *)this + 0x6A4));
+            (*pp)->Slot01(fDt);
+        }
+        i++;
+        off += 4;
+    } while (i < 12);
+}
+
 // FUNCTION: 0x001B8540 DestroyGroundDustFx__16PParticleManagerFv
 void PParticleManager::DestroyGroundDustFx() {
     int i = 0;
@@ -278,6 +321,29 @@ void PParticleManager::DestroyGroundDustFx() {
         i++;
         off += 4;
     } while (i < 12);
+}
+
+// DRAFT: 0x001B8690 EnableFxByType__16PParticleManagerF7ePSTypeb
+// note: DIFF 6: exit beqz target +0x17 vs +0x18, index temp a0 vs a1, loop-bottom bnez and nop placement; tried loop-tail reload, m_unk4++, nIdx forms, swapped declarations, for-loop.
+void PParticleManager::EnableFxByType(ePSType eType, bool bFlag) {
+    unsigned int nIdx;
+    PParticleSystem *pFx;
+    m_unk4 = 0;
+    if (m_unk0 != 0) {
+        pFx = (PParticleSystem *)m_unk8[0];
+    } else {
+        pFx = 0;
+    }
+    while (pFx != 0) {
+        if ((int)eType == *(int *)((char *)pFx + 0xC)) {
+            pFx->Slot09(bFlag);
+        }
+        nIdx = ++m_unk4;
+        pFx = 0;
+        if (nIdx < m_unk0) {
+            pFx = (PParticleSystem *)m_unk8[m_unk4];
+        }
+    }
 }
 
 // FUNCTION: 0x001B8750 CreateEweedReaction__16PParticleManagerFPf
@@ -372,6 +438,24 @@ void PParticleManager::DestroyMovingFog() {
     }
 }
 
+// FUNCTION: 0x001B8B20 CreateMovingFog__16PParticleManagerFP26tagParticleMovingFogParams
+void PParticleManager::CreateMovingFog(tagParticleMovingFogParams *pParams) {
+    if (pParams == 0) {
+        CdsAssert("PParticleManager.cpp", 0x47A, "pParams");
+    }
+    if (m_unk9B4 != 0) {
+        if (m_unk9B4 != 0) {
+            m_unk9B4->Slot00(1);
+        }
+        m_unk9B4 = 0;
+    }
+    m_unk9B4 = (PMovingFog *)new PParticleMovingFog;
+    if (m_unk9B4 == 0) {
+        CdsAssert("PParticleManager.cpp", 0x483, "mpMovingFog");
+    }
+    ((PParticleMovingFog *)m_unk9B4)->Create(pParams);
+}
+
 // FUNCTION: 0x001B8CF0 SetLightningDensity__16PParticleManagerFf
 void PParticleManager::SetLightningDensity(float fDensity) {
     if (m_pRain != 0) {
@@ -418,6 +502,35 @@ PParticleRain *PParticleManager::CreateRain(tagParticleRainParams *pParams) {
         pResult = pRain;
     }
     return pResult;
+}
+
+// DRAFT: 0x001B8FE0 LoadFogObjects__16PParticleManagerFP8PPakFile16ePsx2FileVersion
+// note: DIFF 32; original keeps this in s2, pFile in s1, index in s0 (ours this s1, pFile s0, index s2); prologue saves and frame -0xB0 vs -0xC0 differ. Tried: header struct instead of count, header/record/index declaration orders.
+int PParticleManager::LoadFogObjects(PPakFile *pFile, ePsx2FileVersion nVersion) {
+    struct {
+        unsigned int nCount;
+        char _pad[0x1C];
+    } hdr;
+    tagParticleFogData rec;
+    unsigned int nIndex;
+
+    if (pFile == 0) {
+        CdsAssert("PParticleManager.cpp", 0x3DF, "poFile");
+    }
+    nIndex = 0;
+    if (((PCDFile *)pFile)->Read(&hdr, 0x20) != 0x20) {
+        return 0;
+    }
+    while (nIndex < hdr.nCount) {
+        if (((PCDFile *)pFile)->Read(&rec, 0x60) != 0x60) {
+            return 0;
+        }
+        if (CreateFog(&rec) == 0) {
+            return 0;
+        }
+        nIndex++;
+    }
+    return 1;
 }
 
 // FUNCTION: 0x001B92E0 CreateOneShot__16PParticleManagerFUifff

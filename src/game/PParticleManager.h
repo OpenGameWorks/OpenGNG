@@ -14,12 +14,31 @@ class PParticleSystem;
 class PFrustrum;
 struct tagVuParticle;
 struct tagParticleRainParams;
+struct tagParticleMovingFogParams;
+struct tagParticleFogData;
+class PPakFile;
+
+// Effect type selector for EnableFxByType. Enumerator values are not yet
+// recovered; the placeholder only gives the enum a definition.
+enum ePSType {
+    ePSType_Unknown = 0
+};
+
+// File version selector for pak loaders. Enumerator values are not yet
+// recovered; same placeholder as PWorld.h.
+enum ePsx2FileVersion {
+    ePsx2FileVersion_Placeholder = 0
+};
 
 class PParticleManager {
 public:
+    void EnableFxByType(ePSType eType, bool bFlag);
     void *AllocAuraParticle();
     void FreeAuraParticle(tagVuParticle *pParticle);
     void DestroyMovingFog();
+    void CreateMovingFog(tagParticleMovingFogParams *pParams);
+    int CreateFog(tagParticleFogData *pData);
+    int LoadFogObjects(PPakFile *pFile, ePsx2FileVersion nVersion);
     void SetLightningDensity(float fDensity);
     void SetRainDensity(float fDensity, bool bFlag);
     void SetRainDensity(unsigned int hRain, float fDensity, bool bFlag);
@@ -56,8 +75,14 @@ public:
     void RemoveAllParticleSystems();
     void RemoveAllFogObjects();
     void UpdateMasterParticleInstances(float fDt, PFrustrum *pFrustrum);
+    int InitRingMeshPacket(int &nOut, int nCount, bool bFlag, float fA, float fB, int nC, int nD);
+    void InitShockwaveRings();
+    void AnimateGroundDustFx(PFrustrum *pFrustrum, float fDt);
 
-    char _pad000[0x20];
+    unsigned int m_unk0;        // 0x00 list count
+    unsigned int m_unk4;        // 0x04 list index
+    void **m_unk8;              // 0x08 list storage of PParticleSystem pointers
+    char _pad00C[0x20 - 0x0C];
     unsigned int m_unk20;       // 0x20
     unsigned int m_unk24;       // 0x24
     PParticleFog **m_unk28;     // 0x28
