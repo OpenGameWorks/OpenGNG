@@ -30,6 +30,7 @@ public:
     void BGDetection(float (*pArr)[2][4], PMat4 *pMat, float fLen, SurfaceInfo &rSurf, int nFlag, PMeshNode *pMesh);
     void BGDetectionST(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo *pSurf, int nFlag);
     void BGDetectionAnim(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo *pSurf, int nFlag, PMeshNode *pMesh);
+    int AreaCheckSub(float (*pA)[2][4], float (*pB)[4][4], float (*pC)[2][4], float (*pD)[4][4], int nFlag, int nBit);
     int ReadCollisionData(char *pName, PMeshNode *pMesh);
     int GridCheck(float (*pArr)[2][4], PMat4 *pMat, STCollisionNode **ppOut, float *pOut);
 

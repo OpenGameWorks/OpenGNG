@@ -45,6 +45,142 @@ int BGCollision::CheckCeiling(float (*pVec)[4])
 #define BGS_U(p, off) (*(unsigned int *)((char *)(p) + (off)))
 #define BGS_P(p, off) (*(void **)((char *)(p) + (off)))
 
+// DRAFT: 0x0016D2D0 BGDetectionAnim__11BGCollisionFPA2_A4_fP5PMat4P11SurfaceInfoiP9PMeshNode
+// note: size 0x4cc vs 0x4ac, 300 words: prologue spills this/pMat (original keeps s5/fp), pCell in s0 not s3, sceVu0 call order differs; asm blocks ruled out (no-asm copy still differs in prologue).
+void BGCollision::BGDetectionAnim(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo *pSurf, int nFlag, PMeshNode *pMesh)
+{
+    float vT100[4];
+    float vT110[4];
+    float vT120[4];
+    float vT130[4];
+    float vT140[4];
+    float vT150[4];
+    float vT160[4];
+    float vT170[4];
+    float fSum;
+    float fS21;
+    float fHit;
+    float fT;
+    char *pCell;
+    char *pNode;
+    char *pNodes;
+    void **pCursor;
+    unsigned int nCount;
+    unsigned int nS1;
+    unsigned int nS7;
+    unsigned int nB0;
+    unsigned int nD0;
+    int nRet;
+
+    fSum = BGS_F(pMat, 0x34) + (*pArr)[0][1];
+    BGS_U(this, 0x74) = 0;
+    if (BGS_U(this, 0x70) != 0) {
+        pCell = *(char **)BGS_P(this, 0x78);
+    } else {
+        pCell = 0;
+    }
+    sceVu0SubVector(vT120, (float *)pSurf, (float *)((char *)pMat + 0x30));
+    while (pCell != 0) {
+        if (pCell != (char *)pMesh) {
+            if (BGS_F(pCell, 0x2C) >= 1.0f || (*(unsigned char *)(pCell + 0x3E) & 0x20)) {
+                CDS_ASSERT(0x930, BGS_P(pCell, 0x104));
+                nRet = AreaCheckSub((float (*)[2][4])(pCell + 0x110), (float (*)[4][4])(pCell + 0x40), pArr, (float (*)[4][4])pMat, nFlag, *(unsigned char *)(pCell + 0x3E) & 4);
+                if (nRet != 0) {
+                    nB0 = (nRet & 1) ? (BGS_U(pSurf, 0x4C) & 0x110041) : 0;
+                    nD0 = (nRet & 2) ? (BGS_U(pSurf, 0x4C) & 0x8098) : 0;
+                    {
+                        float *pV = vT100;
+                        asm {
+                            vmulax.xyzw ACC, vf18, vf16x
+                            vmadday.xyzw ACC, vf19, vf16y
+                            vmaddaz.xyzw ACC, vf20, vf16z
+                            vmaddw.xyzw vf1, vf21, vf16w
+                            lqc2 vf2, 0x20(pV)
+                            sqc2 vf1, 0x0(pV)
+                            vmulax.xyzw ACC, vf22, vf2x
+                            vmadday.xyzw ACC, vf23, vf2y
+                            vmaddaz.xyzw ACC, vf24, vf2z
+                            vmaddw.xyzw vf2, vf25, vf2w
+                            vadd.xyzw vf1, vf1, vf2
+                            sqc2 vf1, 0x10(pV)
+                        }
+                    }
+                    fS21 = (*pArr)[1][2];
+                    pNodes = (char *)BGS_P(pCell, 0x104);
+                    pCursor = (void **)(pNodes + 0xC);
+                    nCount = BGS_U(pNodes, 0x8);
+                    fS21 = fS21 * fS21;
+                    while (nCount != 0) {
+                        pNode = (char *)*pCursor;
+                        nS1 = BGS_U(pNode, 0xC);
+                        *(u_long128 *)vT130 = *(u_long128 *)(pNode + 0x10);
+                        nS7 = nS1 & nD0;
+                        BGS_U(vT130, 0xC) = 0;
+                        if (nS7 != 0) {
+                            if ((nS7 & 0x8) == 0) {
+                                fHit = SphereIntersect((STCollisionPoly *)pNode, (float (*)[4])vT100, fS21);
+                                if (fHit != 0.0f) {
+                                    BGS_P(pSurf, 0x44) = pNode;
+                                    if (nS7 & 0x90) {
+                                        BGS_P(pSurf, 0x40) = pCell;
+                                    }
+                                    sceVu0ScaleVector(vT150, vT130, fHit);
+                                    asm {
+                                        vadd.xyz vf26, vf26, vf6
+                                    }
+                                    sceVu0AddVector(vT100, vT100, vT150);
+                                    BGS_U(vT100, 0xC) = 0x3F800000;
+                                    sceVu0ApplyMatrix(vT160, (float *)(pCell + 0x40), vT130);
+                                    sceVu0ScaleVector(vT150, vT160, fHit);
+                                    sceVu0AddVector((float *)((char *)pMat + 0x30), (float *)((char *)pMat + 0x30), vT150);
+                                    BGS_F(pSurf, 0x10) = BGS_F(pSurf, 0x10) + vT150[0];
+                                    BGS_F(pSurf, 0x18) = BGS_F(pSurf, 0x18) + vT150[2];
+                                }
+                            }
+                        }
+                        if (nS1 & nB0) {
+                            sceVu0ApplyMatrix(vT140, (float *)(pCell + 0x40), vT130);
+                            if (vT140[1] > 0.0f) {
+                                if (FindGroundPos((STCollisionPoly *)pNode, (float (*)[4])vT170) != 0) {
+                                    sceVu0ApplyMatrix(vT140, (float *)(pCell + 0x40), vT170);
+                                    fT = BGS_F(pMat, 0x34) + (*pArr)[0][1];
+                                    if (nS1 & 0x110001) {
+                                        if (vT140[1] > BGS_F(pSurf, 0x24)) {
+                                            BGS_F(pSurf, 0x24) = vT140[1];
+                                            BGS_U(pSurf, 0x48) = (BGS_U(pSurf, 0x48) & 0xFFEEFFFE) | nS1;
+                                        }
+                                    } else if (vT140[1] < fT && vT140[1] > BGS_F(pSurf, 0x14)) {
+                                        BGS_F(pSurf, 0x14) = vT140[1];
+                                        *(u_long128 *)((char *)pSurf + 0x30) = *(u_long128 *)vT170;
+                                        BGS_P(pSurf, 0x2C) = pCell;
+                                        BGS_P(pSurf, 0x20) = pNode;
+                                        BGS_U(pSurf, 0x48) = (BGS_U(pSurf, 0x48) & 0x110001) | nS1;
+                                    }
+                                }
+                            } else if ((BGS_U(pSurf, 0x4C) & 0x80000000) != 0) {
+                                if (FindGroundPos((STCollisionPoly *)pNode, (float (*)[4])vT140) != 0) {
+                                    sceVu0ApplyMatrix(vT140, (float *)(pCell + 0x40), vT140);
+                                    if (vT140[1] < BGS_F(pSurf, 0x28) && fSum < vT140[1]) {
+                                        BGS_F(pSurf, 0x28) = vT140[1];
+                                    }
+                                }
+                            }
+                        }
+                        nCount--;
+                        pCursor++;
+                    }
+                }
+            }
+        }
+        BGS_U(this, 0x74) = BGS_U(this, 0x74) + 1;
+        if (BGS_U(this, 0x74) < BGS_U(this, 0x70)) {
+            pCell = *(char **)((char *)BGS_P(this, 0x78) + BGS_U(this, 0x74) * 4);
+        } else {
+            pCell = 0;
+        }
+    }
+}
+
 // DRAFT: 0x0016E1E0 BGDetectionST__11BGCollisionFPA2_A4_fP5PMat4P11SurfaceInfoi
 // note: 270 words; original keeps pArr in fp and spills pMat/nFlag/this at 0xC8/0xC4/0xCC, ours uses fp=pMat and spills 0xBC/0xB8; frame 0x130 vs 0x140; vE0 at 0xE0 vs 0xD0; nCount spilled. Tried node-array-first and node-array-last local order (count unchanged).
 void BGCollision::BGDetectionST(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo *pSurf, int nFlag)
