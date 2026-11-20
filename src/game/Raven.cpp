@@ -3,6 +3,7 @@
 #include "types.h"
 
 // TODO(header): foreign declarations
+extern unsigned char jtbl_00269CE0[64];
 class Player;
 class EntityBaseClass {
 public:
@@ -86,8 +87,8 @@ extern "C" long long fptodp(float arg0);
 extern "C" void PlaySequence__15EntityBaseClassFPUi(void *pThis, unsigned int *pSeq);
 extern "C" void GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(void *pThis, float *pOut);
 extern "C" void sceVu0ScaleVector(float *pOut, float *pIn, float fScale);
-extern unsigned int BlueRaven_Init[4];
-extern unsigned int SeaGull_Init[4];
+extern unsigned int BlueRaven_Init[5];
+extern unsigned int SeaGull_Init[5];
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" int printf(const char *pFmt, ...);
 extern "C" void CheckVariable__15EntityBaseClassFii(void *pThis, int nA, int nB);
@@ -97,6 +98,35 @@ extern "C" void sceVu0SubVector(float *pOut, float *pA, float *pB);
 extern "C" void sceVu0Normalize(float *pOut, float *pIn);
 extern "C" float DistanceXZ__7MathAPIFPA4_fPA4_f(float (*pA)[4], float (*pB)[4]);
 extern float mHitPos__15EntityBaseClass[4];
+extern unsigned char mTimerAPI__13EntityManager[40];
+extern unsigned char mEffectAPI__13EntityManager[20];
+extern unsigned int Raven_Idle1[13];
+extern unsigned int Raven_Idle2[13];
+extern unsigned int Raven_Rise[13];
+extern unsigned int Raven_Fly[13];
+extern unsigned int Raven_Glide[13];
+extern unsigned int Raven_Grab[13];
+extern unsigned int Raven_Land[13];
+extern unsigned int Raven_Damage[13];
+extern unsigned int BlueRaven_Dead[15];
+extern unsigned int SeaGull_Dead[15];
+extern float BonusSpawnOffset[4];
+extern "C" int CreateTimer__8TimerAPIFUiUib(void *pThis, unsigned int, unsigned int, bool);
+extern "C" int CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(void *pThis, unsigned int, unsigned int, float (*)[4], float (*)[4], void *, float, bool, int, bool);
+extern "C" void *Spawn__13EntityManagerFUibi(void *pThis, unsigned int, bool, int);
+extern "C" void Destroy__13EntityManagerFUiUi(void *pThis, unsigned int, unsigned int);
+extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(void *pThis, unsigned int);
+extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*pA)[4], float (*pB)[4]);
+extern "C" float GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *pEnt, float (*pPos)[4]);
+extern "C" float FastMath_Fabs__Ff(float fVal);
+extern "C" void PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nId);
+extern "C" int PlaySoundOnFrame__15EntityBaseClassFUiUi(void *pThis, unsigned int nId, unsigned int nFrame);
+extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *pThis, unsigned int nType, float (*pPos)[4]);
+extern "C" int RandomIntRange__7MathAPIFii(int nMin, int nMax);
+extern "C" void WriteApparitionData__15EntityBaseClassFicUi(void *pThis, int nA, char cB, unsigned int nC);
+extern "C" void SpawnBonus__15EntityBaseClassFPfii(void *pThis, float *pOffset, int nA, int nB);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__7PhysicsFv(void *pThis);
 
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Raven.cpp", line, #cond))
@@ -321,6 +351,359 @@ void Raven::OnTouchEvent(EntityBaseClass *pArg) {
         mHitPos__15EntityBaseClass[2] = f1;
         mHitPos__15EntityBaseClass[3] = f0;
         ((EntityBaseView *)pArg)->OnHitEvent((EntityBaseClass *)this, 0, 0x1001, 0);
+    }
+}
+
+#define RAVEN_SELF_POS (m_unk3C ? (float (*)[4])((char *)m_unk3C + 0x80) : (float (*)[4])m_unk190)
+#define RAVEN_PLAYER_POS (mPlayerAPI__13EntityManager->m_unk3C ? (float (*)[4])((char *)mPlayerAPI__13EntityManager->m_unk3C + 0x80) : (float (*)[4])mPlayerAPI__13EntityManager->m_unk190)
+#define RAVEN_PM_BITS4 ((*((signed char *)m_unk3C + 0x3F) & 7) & 4)
+
+// DRAFT: 0x001B2E80 Execute__5RavenFv
+// note: DIFF 1010 words; added case -2 to the switch and the 0xEC clear as an int lw/and/sw on m_unk38 (was 1030); outer range check matches now, the rest of the jump-table bodies and branch shapes differ, CreateOneshot trailing args guessed.
+void Raven::Execute() {
+    float (*pPos)[4];
+    unsigned int nSound;
+
+    switch (m_unk20) {
+    case -1:
+        m_unk254 = 0;
+        m_unk15C = 0;
+        m_unk15E = 0;
+        SetState__15EntityBaseClassFi(this, 0);
+        return;
+    case 0:
+        m_unk10C &= 0xF8FFFFFF;
+        m_unk10C |= 0x02000000;
+        m_unk104 = 0x3F800000;
+        m_unk108 = 0x3F000000;
+        m_unk1D0[0] = m_unk1B0;
+        m_unk1D0[1] = m_unk1B4;
+        m_unk1D0[2] = m_unk1B8;
+        m_unk1D0[3] = 1.0f;
+        m_unk1CC = m_unk1BC;
+        m_unk1C4 = 1;
+        if (m_unk38 == 0) {
+            m_unk38 = (Physics *)__ct__7PhysicsFv(__nw__FUi(0x120));
+            CDS_ASSERT(0xBC, m_unk38 != 0);
+            *(int *)((char *)m_unk38 + 0xEC) &= 0xFFFFFF7F;
+        }
+        switch (m_unk1C0) {
+        case 0:
+        case 1:
+            PlaySequence__15EntityBaseClassFPUi(this, BlueRaven_Init);
+            break;
+        case 2:
+            PlaySequence__15EntityBaseClassFPUi(this, SeaGull_Init);
+            break;
+        default:
+            CDS_ASSERT(0xD0, 0);
+            break;
+        }
+        *(u_long128 *)m_unk1E0 = *(u_long128 *)RAVEN_PLAYER_POS;
+        m_unk1C5 = 1;
+        m_unk1C6 = 0;
+        m_unk248 = 0.01f;
+        m_unk244 = 100;
+        SetState__15EntityBaseClassFi(this, 1);
+        return;
+    case 1:
+        if (m_unkE9) {
+            m_unk103 = 0xFE;
+            m_unk10C |= 0x01000000;
+            SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x10, 0);
+            PlaySequence__15EntityBaseClassFPUi(this, Raven_Idle1);
+            m_unk1C4 = 0;
+        }
+        if (CanAttack() && m_unk1C5) {
+            if (Distance__7MathAPIFPA4_fPA4_f(RAVEN_PLAYER_POS, &m_unk1D0) <= m_unk1CC &&
+                !(DistanceXZ__7MathAPIFPA4_fPA4_f(RAVEN_PLAYER_POS, &m_unk1E0) <= 10.0f)) {
+                m_unk103 = 0x10;
+                SetState__15EntityBaseClassFi(this, 2);
+                return;
+            }
+        }
+        if (m_unk160 == 0) {
+            PlaySound__15EntityBaseClassFUi(this, GetSoundID(m_unk20));
+        }
+        if (m_unk1C4) {
+            PlaySequence__15EntityBaseClassFPUi(this, Raven_Idle1);
+            m_unk1C4 = 0;
+        } else {
+            PlaySequence__15EntityBaseClassFPUi(this, Raven_Idle2);
+            m_unk1C4 = 1;
+        }
+        return;
+    case -2:
+    default:
+        return;
+    case 2:
+        if (m_unkE9) {
+            m_unk10C &= 0xFEFFFFFF;
+            PlaySequence__15EntityBaseClassFPUi(this, Raven_Rise);
+        }
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, GetSoundID(m_unk20), 9U);
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, GetSoundID(m_unk20), 0xFU);
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, GetSoundID(m_unk20), 0x18U);
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, 4);
+            return;
+        }
+        break;
+    case 3:
+        if (m_unkE9) {
+            PlaySequence__15EntityBaseClassFPUi(this, Raven_Rise);
+        }
+        if (m_unk160 == 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, Raven_Fly);
+        }
+        if (m_unk140 == Raven_Fly) {
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, GetSoundID(m_unk20), 5U);
+        } else {
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, GetSoundID(m_unk20), 9U);
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, GetSoundID(m_unk20), 0xFU);
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, GetSoundID(m_unk20), 0x18U);
+        }
+        FlyAway();
+        return;
+    case 4:
+        if (m_unkE9) {
+            PlaySequence__15EntityBaseClassFPUi(this, Raven_Fly);
+            m_unk248 = 0.03f;
+            m_unk240 = 0.18f;
+            m_unk1C6 = 0;
+            m_unk258 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk4, 5U, false);
+            m_unk260 = 0xF0;
+        }
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, GetSoundID(m_unk20), 5U);
+        FlyToFlyToPos(0);
+        if (!(m_unk1C6 == 0 && Distance__7MathAPIFPA4_fPA4_f(RAVEN_SELF_POS, &m_unk1D0) <= m_unk1CC)) {
+            if (!(Distance__7MathAPIFPA4_fPA4_f(RAVEN_PLAYER_POS, &m_unk1D0) <= m_unk1CC)) {
+                SetState__15EntityBaseClassFi(this, 5);
+                return;
+            }
+        }
+        if (GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, RAVEN_PLAYER_POS) < 45.0f &&
+            DistanceXZ__7MathAPIFPA4_fPA4_f(RAVEN_PLAYER_POS, &m_unk1E0) <= 10.0f) {
+            SetState__15EntityBaseClassFi(this, 6);
+            return;
+        }
+        if (RAVEN_PM_BITS4 && (RandomIntRange__7MathAPIFii(0, 100) & 1)) {
+            PlaySound__15EntityBaseClassFUi(this, GetSoundID(1U));
+        }
+        if (m_unk260 != 0) {
+            m_unk260--;
+            return;
+        }
+        SetState__15EntityBaseClassFi(this, 5);
+        return;
+    case 6:
+        if (m_unkE9) {
+            if (m_unk140 != Raven_Fly) {
+                PlaySequence__15EntityBaseClassFPUi(this, Raven_Fly);
+            }
+            m_unk248 = 0.05f;
+        }
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, GetSoundID(m_unk20), 5U);
+        FlyToFlyToPos(0);
+        if (!(m_unk1C6 == 0 && Distance__7MathAPIFPA4_fPA4_f(RAVEN_SELF_POS, &m_unk1D0) <= m_unk1CC)) {
+            if (!(Distance__7MathAPIFPA4_fPA4_f(RAVEN_PLAYER_POS, &m_unk1D0) <= m_unk1CC)) {
+                SetState__15EntityBaseClassFi(this, 5);
+                return;
+            }
+            if (!(FastMath_Fabs__Ff(GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, RAVEN_PLAYER_POS)) <= 55.0f)) {
+                SetState__15EntityBaseClassFi(this, 5);
+                return;
+            }
+        }
+        if (Distance__7MathAPIFPA4_fPA4_f(RAVEN_PLAYER_POS, RAVEN_SELF_POS) < 10.0f) {
+            SetState__15EntityBaseClassFi(this, 0xD);
+            return;
+        }
+        if (RAVEN_PM_BITS4 && (RandomIntRange__7MathAPIFii(0, 100) & 1)) {
+            PlaySound__15EntityBaseClassFUi(this, GetSoundID(1U));
+            return;
+        }
+        break;
+    case 13:
+        if (m_unkE9) {
+            m_unk10C |= 0x04000000;
+            m_unk240 = 0.18f;
+            m_unk248 = 0.0f;
+            PlaySequence__15EntityBaseClassFPUi(this, Raven_Glide);
+            m_unk1C7 = 0;
+            m_unk25C = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk4, 2U, false);
+        }
+        FlyToFlyToPos(0);
+        if (m_unk1C7 != 0) {
+            m_unk10C &= 0xFBFFFFFF;
+            SetState__15EntityBaseClassFi(this, 5);
+            return;
+        }
+        break;
+    case 7:
+        if (m_unkE9) {
+            PlaySequence__15EntityBaseClassFPUi(this, Raven_Grab);
+        }
+        if (!(GetFrameTime__6PMNodeFv(m_unk3C) <= 5.0f)) {
+            if (CanAttack()) {
+                int nLevel = mPlayerAPI__13EntityManager->m_unk1E0;
+                void *pNode;
+                m_unk250 = (EntityBaseClass *)Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 8U, false, 0);
+                CDS_ASSERT(0x1F8, m_unk250 != 0);
+                pNode = *(void **)((char *)m_unk250 + 0x3C);
+                if (pNode != 0) {
+                    *(u_long128 *)((char *)pNode + 0x80) = *(u_long128 *)RAVEN_SELF_POS;
+                    *((unsigned char *)pNode + 0x3E) |= 8;
+                } else {
+                    *(u_long128 *)((char *)m_unk250 + 0x190) = *(u_long128 *)RAVEN_SELF_POS;
+                }
+                m_unk254 = *(EntityBaseClass **)((char *)m_unk250 + 4);
+                *(int *)((char *)m_unk250 + 0x1F0) = m_unk4;
+                *((unsigned char *)m_unk250 + 0x1ED) = 1;
+                if (nLevel >= 0xB) {
+                    *(int *)((char *)m_unk250 + 0x1F8) = 0xA;
+                } else if (nLevel >= 6) {
+                    *(int *)((char *)m_unk250 + 0x1F8) = 1;
+                } else {
+                    *(int *)((char *)m_unk250 + 0x1F8) = 0;
+                }
+                *((unsigned char *)m_unk250 + 0x1EE) = 1;
+                m_unk240 = 0.12f;
+            }
+            SetState__15EntityBaseClassFi(this, 5);
+            return;
+        }
+        break;
+    case 5:
+        if (m_unkE9) {
+            m_unk1C6 = 0;
+            m_unk258 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk4, 3U, false);
+            m_unk248 = 0.02f;
+            PlaySequence__15EntityBaseClassFPUi(this, Raven_Fly);
+        }
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, GetSoundID(m_unk20), 5U);
+        if (m_unk250 == 0 && m_unk1C6 != 0 && CanAttack()) {
+            if (Distance__7MathAPIFPA4_fPA4_f(RAVEN_PLAYER_POS, &m_unk1D0) <= m_unk1CC) {
+                SetState__15EntityBaseClassFi(this, 4);
+                return;
+            }
+        }
+        if (DistanceXZ__7MathAPIFPA4_fPA4_f(RAVEN_SELF_POS, &m_unk1E0) < 7.0f) {
+            if (m_unk250 != 0 && ApparitionIsValid__15EntityBaseClassFUi(m_unk254, 0U) != 0) {
+                Destroy__13EntityManagerFUiUi(mpEntMgr__15EntityBaseClass, (unsigned int)m_unk254, 0U);
+                m_unk250 = 0;
+                m_unk254 = 0;
+            }
+        }
+        if (!(DistanceXZ__7MathAPIFPA4_fPA4_f(RAVEN_PLAYER_POS, &m_unk1E0) <= 5.0f)) {
+            m_unk248 = 0.1f;
+            SetState__15EntityBaseClassFi(this, 8);
+            return;
+        }
+        FlyToFlyToPos(1);
+        if (RAVEN_PM_BITS4 && (RandomIntRange__7MathAPIFii(0, 100) & 1)) {
+            PlaySound__15EntityBaseClassFUi(this, GetSoundID(1U));
+            return;
+        }
+        break;
+    case 8:
+        pPos = RAVEN_PLAYER_POS;
+        if (m_unkE9) {
+            PlaySequence__15EntityBaseClassFPUi(this, Raven_Land);
+            SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 1, 0);
+            m_unk210[2] = m_unk210[1] = m_unk210[0] = 0.0f;
+            *(float **)m_unk38 = m_unk210;
+            *(u_long128 *)m_unk220 = *(u_long128 *)pPos;
+            sceVu0SubVector(m_unk230, m_unk1E0, (float *)pPos);
+            m_unk24C = 0.01f;
+        }
+        Distance__7MathAPIFPA4_fPA4_f(pPos, &m_unk1E0);
+        if (m_unk160 == 0 && !(m_unk24C <= 1.0f)) {
+            if (m_unk3C != 0) {
+                *(u_long128 *)((char *)m_unk3C + 0x80) = *(u_long128 *)m_unk1E0;
+                *((unsigned char *)m_unk3C + 0x3E) |= 8;
+            } else {
+                *(u_long128 *)m_unk190 = *(u_long128 *)m_unk1E0;
+            }
+            m_unk1C5 = 0;
+            m_unk1C8 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk4, 1U, false);
+            RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (float *)pPos), m_unk248);
+            SetState__15EntityBaseClassFi(this, 1);
+            return;
+        }
+        if (m_unk24C <= 1.0f) {
+            m_unk210[0] = m_unk220[0] + m_unk230[0] * m_unk24C;
+            m_unk210[1] = m_unk220[1] + m_unk230[1] * m_unk24C;
+            m_unk210[2] = m_unk220[2] + m_unk230[2] * m_unk24C;
+            m_unk24C += 0.02f;
+            if (m_unk3C != 0) {
+                *(u_long128 *)((char *)m_unk3C + 0x80) = *(u_long128 *)m_unk210;
+                *((unsigned char *)m_unk3C + 0x3E) |= 8;
+            } else {
+                *(u_long128 *)m_unk190 = *(u_long128 *)m_unk210;
+            }
+            return;
+        }
+        break;
+    case 10:
+        if (m_unkE9) {
+            if (m_unk254 != 0 && ApparitionIsValid__15EntityBaseClassFUi(m_unk254, (unsigned int)jtbl_00269CE0) != 0) {
+                *((unsigned char *)m_unk254 + 0x1EF) = 1;
+            }
+            m_unk250 = 0;
+            m_unk254 = 0;
+            PlaySound__15EntityBaseClassFUi(this, GetSoundID(m_unk20));
+            switch (m_unk1C0) {
+            case 0:
+            case 1:
+                nSound = 0x01000370;
+                break;
+            case 2:
+                nSound = 0x0100039C;
+                break;
+            default:
+                CDS_ASSERT(0x2A5, 0);
+                break;
+            }
+            CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(mEffectAPI__13EntityManager, nSound, 0x020005E7U,
+                RAVEN_PLAYER_POS, &m_unk1E0, this, 0.5f, false, 0, false);
+        }
+        PlaySequence__15EntityBaseClassFPUi(this, Raven_Damage);
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, 5);
+            return;
+        }
+        break;
+    case 12:
+        if (m_unkE9) {
+            if (m_unk254 != 0 && ApparitionIsValid__15EntityBaseClassFUi(m_unk254, (unsigned int)jtbl_00269CE0) != 0) {
+                *((unsigned char *)m_unk254 + 0x1EF) = 1;
+            }
+            if (m_unk38 != 0) {
+                __dl__FPv(m_unk38);
+                m_unk38 = 0;
+            }
+            PlaySound__15EntityBaseClassFUi(this, GetSoundID(m_unk20));
+            switch (m_unk1C0) {
+            case 0:
+            case 1:
+                PlaySequence__15EntityBaseClassFPUi(this, BlueRaven_Dead);
+                break;
+            case 2:
+                PlaySequence__15EntityBaseClassFPUi(this, SeaGull_Dead);
+                break;
+            default:
+                CDS_ASSERT(0x2DB, 0);
+                break;
+            }
+        }
+        WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0U);
+        WriteApparitionData__15EntityBaseClassFicUi(this, 0, 1, 0U);
+        SpawnBonus__15EntityBaseClassFPfii(this, BonusSpawnOffset, 1, 1);
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, -2);
+        }
+        break;
     }
 }
 
