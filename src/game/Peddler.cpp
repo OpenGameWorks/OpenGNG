@@ -497,7 +497,7 @@ int Peddler::HideItems() {
 }
 
 // DRAFT: 0x001D1950 ExitPeddlerView__7PeddlerFv
-// note: 45 diff lines; this stays in s3 (orig s0), frame 0x60 (orig 0x50) from the spilled 0.85f bit pattern. Tried: 3 declaration orders (no change), bit-pattern 0.85f (55 to 45).
+// note: DIFF 24 words with the plain 0.85f literal (was 56 with the bit pattern); remaining differences are register allocation (this in s3, orig s0) and frame size. Tried 3 declaration orders.
 void Peddler::ExitPeddlerView() {
     int i;
     unsigned int nOff;
@@ -511,8 +511,7 @@ void Peddler::ExitPeddlerView() {
         }
         m_unk22C = 0;
     }
-    unsigned int nFadeBits = 0x3F59999Au;
-    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, *(float *)&nFadeBits, 1, 0);
+    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 0.85f, 1, 0);
     ReleaseControlOfCamera__9CameraAPIFP15EntityBaseClassb(&mCameraAPI__13EntityManager, this, 1);
 
     i = 0;

@@ -1,4 +1,4 @@
-// FLAGS: -Cpp_exceptions off
+// FLAGS: -Cpp_exceptions off -str readonly
 #include "types.h"
 #include "EntityBaseClass.h"
 
@@ -71,8 +71,14 @@ public:
     PMNode *FindAnimNode(unsigned int arg0);
     void EnableOneRenderPassOnly(int arg0);
     void DestroyFxTriggersBySpawnFrame(float arg0, bool arg1);
-    char _pad04[0x3B];
+    char _pad04[0x24];
+    float (*m_unk28)[2][4];
+    char _pad2C[0x10];
+    unsigned char m_3C;
+    char _pad3D[0x1];
+    unsigned char m_3E;
     signed char m_3F;
+    float m_unk40[4][4];
 };
 // gEng is a pointer; the placeholder pads it past the small-data threshold so the load is absolute.
 struct PMNodeHolder {
@@ -81,6 +87,8 @@ struct PMNodeHolder {
     float m_unk1E8;
 };
 extern PMNodeHolder gEng;
+
+int NormalizedBox(float (*arg0)[2][4], float (&arg1)[2][4], float (*arg2)[4][4], float (&arg3)[4][4]);
 
 // mLoadTable entries are 12 bytes; the array extent is unknown, the declared extent only keeps the table a complete object.
 struct LoadEntry {
@@ -133,6 +141,30 @@ public:
     virtual void Slot2();
     virtual void Slot3();
     virtual const char *GetName();
+    virtual void Slot5();
+    virtual void Slot6();
+    virtual void Slot7();
+    virtual void Slot8();
+    virtual void Slot9();
+    virtual void Slot10();
+    virtual void Slot11();
+    virtual void Slot12();
+    virtual void Slot13();
+    virtual void Slot14();
+    virtual void Slot15();
+    virtual void Slot16();
+    virtual void Slot17();
+    virtual void Slot18();
+    virtual void Slot19();
+    virtual void Slot20();
+    virtual void Slot21();
+    virtual void Slot22();
+    virtual void Slot23();
+    virtual void Slot24();
+    virtual void Slot25();
+    virtual void Slot26();
+    virtual void Slot27();
+    virtual void OnWakeEvent();
 };
 
 float Round180(float arg0);
@@ -260,6 +292,33 @@ int EntityBaseClass::AddToLoad() {
     return 1;
 }
 
+// FUNCTION: 0x0014B3E0 RestoreOnWake__15EntityBaseClassFv
+void EntityBaseClass::RestoreOnWake() {
+    char *blk;
+    char *sub;
+
+    this->m_unk163 = 0;
+    this->m_unk24 = -2;
+    if (this->m_unk1F == 0) {
+        SetState(-1);
+        this->m_unk163 = 0;
+    } else {
+        LoadMesh(this->m_unk28, 0, 1);
+        blk = this->m_unkD4;
+        if (blk != 0) {
+            *blk = 1;
+            sub = *(char **)(blk + 0xC);
+            if (sub != 0) {
+                sub[0x18] = 1;
+            }
+        }
+        ResumeAmbientSoundsByObject();
+        SetState(this->m_unk2C);
+        this->m_unk163 = 0;
+    }
+    ((EntityBaseClassVirtuals *)this)->OnWakeEvent();
+}
+
 // FUNCTION: 0x0014B880 UpdateSulphurFx__15EntityBaseClassFf
 void EntityBaseClass::UpdateSulphurFx(float arg0) {
     float pos[4];
@@ -313,6 +372,19 @@ void EntityBaseClass::ProcessMeshFade() {
         }
         this->m_unk178 = 0;
     }
+}
+
+// FUNCTION: 0x0014C0B0 FadeMesh__15EntityBaseClassFssUi
+void EntityBaseClass::FadeMesh(short arg0, short arg1, unsigned int arg2) {
+    if (this->m_unk178 != 0) {
+        return;
+    }
+    short v = (arg0 == -1) ? this->m_unkD2 : arg0;
+    this->m_unk168 = v;
+    this->m_unk170 = (float)(arg2 * 60) / 1000.0f;
+    this->m_unk16C = (float)(arg1 - this->m_unk168) / this->m_unk170;
+    this->m_unk174 = 0.0f;
+    this->m_unk178 = 1;
 }
 
 // FUNCTION: 0x0014C160 MusicChangePrimary__15EntityBaseClassFUiUi
@@ -413,6 +485,29 @@ void EntityBaseClass::RotateTo(float arg0, float arg1) {
         *(float *)((char *)phys + 0x11C) = Round180(arg0);
         *(float *)((char *)this->m_unk38 + 0x118) = arg1;
     }
+}
+
+// DRAFT: 0x0014CD10 SkeletonCollision__15EntityBaseClassFP6PMNodeP15EntityBaseClass
+// note: DIFF 39 words; register allocation differs (original ret=s0, flags=s1, arg1=s2), the original ORs the call result into ret, and an andi on the u8 flag|0x20 argument is extra. Tried: ret|= (40), unsigned int flags (no gain), hoisted u8 flag|0x20 (42), early return (40).
+int EntityBaseClass::SkeletonCollision(PMNode *arg0, EntityBaseClass *arg1) {
+    float local40[2][4];
+    float local60[4][4];
+    int ret = 0;
+
+    if (arg0->m_unk28 != 0) {
+        unsigned char flags = arg0->m_3C;
+
+        if (flags != 0) {
+            if (arg0->m_3E & 4) {
+                if (NormalizedBox(arg0->m_unk28, local40, &arg0->m_unk40, local60)) {
+                    ret = arg1->MeshNodeCollision((PMNode *)arg1->m_unk3C, &local40, local60, flags | 0x20);
+                }
+            } else {
+                ret = arg1->MeshNodeCollision((PMNode *)arg1->m_unk3C, arg0->m_unk28, arg0->m_unk40, flags | 0x20);
+            }
+        }
+    }
+    return ret;
 }
 
 // FUNCTION: 0x0014D620 RadiusAdjust__15EntityBaseClassFfPA4_f
@@ -584,6 +679,30 @@ void EntityBaseClass::AddToBGAnimList() {
     }
 }
 
+// DRAFT: 0x0014E250 PlaySequence__15EntityBaseClassFPUi
+// note: DIFF 2 words; original fills the ProcessSequence delay slot with sb zero,0x162 and computes a0 before jal, ours fills it with the a0 daddu. Tried: this->ProcessSequence() (no gain).
+int EntityBaseClass::PlaySequence(unsigned int *arg0) {
+    if (arg0 == 0) {
+        CdsAssert__FPciPc("EntityBaseClass.cpp", 0x28D, "pSeq");
+    }
+    if ((int)arg0 != m_unk13C) {
+        m_unk13C = (int)arg0;
+        m_unk140 = m_unk13C;
+        m_unk14C = 0;
+        m_unk148 = 0;
+        if (m_unk158 != 0) {
+            StopSoundBySoundRef(m_unk158);
+            m_unk158 = 0;
+        }
+        m_unk144 = 0;
+        m_unk160 = 1;
+        ProcessSequence();
+        m_unk162 = 0;
+        return 1;
+    }
+    return 0;
+}
+
 // FUNCTION: 0x0014E2F0 FreezeCheck__15EntityBaseClassFP15EntityBaseClassi
 void EntityBaseClass::FreezeCheck(EntityBaseClass *arg0, int arg1) {
     if (arg0->m_unkF4 == 0) {
@@ -661,4 +780,15 @@ void EntityBaseClass::InitLoadSystem() {
     mLoadTable__15EntityBaseClass[5].m4 = 0x64;
     mLoadTable__15EntityBaseClass[6].m4 = 0x64;
     mLoadTable__15EntityBaseClass[6].m0 = 0;
+}
+
+// FUNCTION: 0x0014F010 ModifyLoadClass__15EntityBaseClassFQ215EntityBaseClass9LoadClass
+void EntityBaseClass::ModifyLoadClass(LoadClass arg0) {
+    if ((int)arg0 != this->m_unk10 && this->m_unk19 != 0) {
+        mLoadTable__15EntityBaseClass[this->m_unk10].m0 -= this->m_unk14;
+        mLoadTable__15EntityBaseClass[this->m_unk10].m8 -= 1;
+        mLoadTable__15EntityBaseClass[(int)arg0].m0 += this->m_unk14;
+        mLoadTable__15EntityBaseClass[(int)arg0].m8 += 1;
+        this->m_unk10 = (int)arg0;
+    }
 }

@@ -3,24 +3,35 @@
 
 #include "types.h"
 
+class EntityBaseClass;
+
 class ClockworkFlyer {
 public:
     void SetSpawnedFromEntity(float *pPos, float *pAlt, int nType);
     int GetNextPosition(float (&rOut)[4]);
+    int InCameraView();
     void FaceTarget(float fAngle);
     ClockworkFlyer *GetTarget();
+    int DetermineStateByDistance();
+    int FlyerPitchChange();
+    int FlyerFlyTo(float (*pDest)[4], float fDist, float fSpeed);
     void EscapeIfApproachStalled();
     void EscapeIfStalled();
     void InitStallData();
     void SetDefaultVars();
     void OnTimerEvent(unsigned int nId);
+    int OnHitEvent(EntityBaseClass *pOther, int nDmg, unsigned int a, unsigned int b);
 
     char _pad000[0x4];                  // 0x000 vtable
     unsigned int m_unk4;                // 0x004 owner id passed to CreateTimer
     char _pad008[0x3C - 0x8];
     char *m_unk3C;                      // 0x03C target entity pointer; +0x80 used when non-null
-    char _pad040[0x190 - 0x40];
-    char _pad190[0x1B0 - 0x190];        // 0x190 embedded EntityBaseClass, address taken
+    char _pad040[0xF4 - 0x40];
+    int m_unkF4;                        // 0x0F4 nonzero selects the damage-absorb path in OnHitEvent
+    char _pad0F8[0x190 - 0xF8];
+    char _pad190[0x1A0 - 0x190];        // 0x190 embedded EntityBaseClass, address taken
+    float m_unk1A0;                     // 0x1A0 position read by FlyerPitchChange
+    char _pad1A4[0x1B0 - 0x1A4];
     int m_unk1B0;                       // 0x1B0 type argument of SetSpawnedFromEntity
     char _pad1B4[0x1BC - 0x1B4];
     int m_unk1BC;                       // 0x1BC
@@ -41,12 +52,17 @@ public:
     int m_unk200;                       // 0x200
     char _pad204[0x230 - 0x204];
     int m_unk230;                       // 0x230 timer id slot
-    char _pad234[0x248 - 0x234];
+    unsigned int m_unk234;              // 0x234 state-change argument set by OnHitEvent on death
+    unsigned int m_unk238;              // 0x238 argument set by OnHitEvent on hit
+    char _pad23C[0x248 - 0x23C];
     char *m_unk248;                     // 0x248 target entity read by GetTarget
     char _pad24C[0x250 - 0x24C];
     u_long128 m_unk250;                 // 0x250 16-byte copy of target block
     int m_unk260;                       // 0x260 timer id slot
-    char _pad264[0x28C - 0x264];
+    char _pad264[0x280 - 0x264];
+    float m_unk280;                     // 0x280 target position read by FlyerPitchChange
+    int m_unk284;                       // 0x284 hit points, reduced by OnHitEvent
+    char _pad288[0x28C - 0x288];
     char *m_unk28C;                     // 0x28C effect handle, destroyed in dtor
     char _pad290[0x2A0 - 0x290];
     int m_unk2A0;                       // 0x2A0 timer id slot
