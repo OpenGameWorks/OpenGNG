@@ -1,5 +1,8 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "EntityAttackManager.h"
+#include "Player.h"
+#include "Camera.h"
 
 // TODO(header): foreign declarations
 class EntityBaseClass {
@@ -7,6 +10,10 @@ public:
     float GetDistFromPlayer();
 };
 class PLightManager;
+
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("EntityAttackManager.cpp", line, #cond))
+extern unsigned char gEng[0x1A000];
 
 // Leading virtuals of EntityBaseClass's vtable (__vt__15EntityBaseClass); a call
 // through this view loads the slot into $t9 as the original's virtual calls do.
@@ -27,7 +34,6 @@ public:
     virtual void OnStopAttack();
 };
 
-extern "C" void __ct__5PListFv(void *);
 
 // FUNCTION: 0x00154AF0 CallAllOnStopAttack__19EntityAttackManagerFv
 void EntityAttackManager::CallAllOnStopAttack() {
@@ -109,6 +115,60 @@ EntityBaseClass *EntityAttackManager::RequestCloserThanAttacking(float fDist) {
     return 0;
 }
 
+// DRAFT: 0x00154D50 RequestAttack__19EntityAttackManagerFP15EntityBaseClassfUiP15EntityBaseClass
+// note: 78 words differ. Merging pause/flag/camera early returns into one || condition cut 83 to 78; tried separate returns (83), goto shared exit (89), char* gEng bases (83), dropping the pause cast (115), flag != 0 (78), camera before flag (113). Branch sense at 0x00A8 still differs.
+int EntityAttackManager::RequestAttack(EntityBaseClass *pEnemy, float fDist, unsigned int uDelay, EntityBaseClass *pVictim) {
+    Player *pPlayer;
+    EntityBaseClass *c;
+    PListNode *n;
+
+    CDS_ASSERT(0x27, pEnemy);
+    CDS_ASSERT(0x28, pVictim);
+    pPlayer = *(Player **)(gEng + 0x1883C);
+    CDS_ASSERT(0x2C, pPlayer);
+    if ((unsigned char)pPlayer->IsPauseDisabled() || (pPlayer->m_unk264 & 0x10000) || ((Camera *)(gEng + 0x19760))->PlayingCutCamera()) {
+        return 0;
+    }
+    if (*(int *)((char *)pVictim + 8) != 3) {
+        return 1;
+    }
+    if (m_unk20 != 0) {
+        if (*(unsigned int *)(gEng + 0x19A80) < (unsigned int)m_unk20) {
+            return 0;
+        }
+        m_unk20 = 0;
+    }
+    n = m_unk4;
+    while (n != 0) {
+        if (n->m_unk0 == pEnemy) {
+            return 1;
+        }
+        n = n->m_unk4;
+    }
+    if ((unsigned int)m_unk14 < (unsigned int)m_unk10) {
+        if (Add(pEnemy)) {
+            m_unk14++;
+        }
+        m_unk20 = uDelay ? uDelay + *(unsigned int *)(gEng + 0x19A80) : 0;
+        return 1;
+    }
+    c = RequestCloserThanAttacking(fDist);
+    if (c == 0) {
+        return 0;
+    }
+    if (((EntityBaseClassVirtuals *)c)->GetHealth() > 0) {
+        ((EntityBaseClassVirtuals *)c)->OnStopAttack();
+    }
+    if (Remove(c)) {
+        m_unk14--;
+    }
+    if (Add(pEnemy)) {
+        m_unk14++;
+    }
+    m_unk20 = uDelay ? uDelay + *(unsigned int *)(gEng + 0x19A80) : 0;
+    return 1;
+}
+
 // FUNCTION: 0x00154FD0 Reset__19EntityAttackManagerFv
 void EntityAttackManager::Reset() {
     m_unk14 = 0;
@@ -119,6 +179,5 @@ void EntityAttackManager::Reset() {
 
 // FUNCTION: 0x00154FF0 __ct__19EntityAttackManagerFv
 EntityAttackManager::EntityAttackManager() {
-    __ct__5PListFv(this);
     Reset();
 }

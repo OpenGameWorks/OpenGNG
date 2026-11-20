@@ -13,6 +13,7 @@ public:
     void CallAllOnStopAttack();
     void NotifyAttackManager(EntityBaseClass *pEntity);
     EntityBaseClass *RequestCloserThanAttacking(float fDist);
+    int RequestAttack(EntityBaseClass *pEnemy, float fDist, unsigned int uDelay, EntityBaseClass *pVictim);
 
     int m_unk10;            // 0x10 flag, set to 1 by Reset
     int m_unk14;            // 0x14 count, decremented by NotifyAttackManager
