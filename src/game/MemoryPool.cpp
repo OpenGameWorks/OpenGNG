@@ -1,11 +1,71 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "MemoryPool.h"
+#include "Debug.h"
 
 // TODO(header): foreign declarations
 extern "C" int sprintf(char *pBuf, const char *fmt, ...);
+extern "C" int printf(const char *fmt, ...);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
+extern "C" unsigned int fptodp(float);
+extern Debug gDebug;
+
+// FUNCTION: 0x0012AFE0 DisplayDebugPs2__10MemoryPoolFi
+void MemoryPool::DisplayDebugPs2(int arg0) {
+    char sp60[0x80];
+    float var_f0;
+    float var_f1;
+    unsigned int var_s0;
+    unsigned int var_s2;
+    Block *var_s3;
+    unsigned int temp_v0;
+
+    switch (arg0) {
+    case 0:
+        sprintf(sp60, "\nPool(%d) : MAIN\n", arg0);
+        gDebug.DebugDisp(sp60);
+        break;
+    case 1:
+        sprintf(sp60, "\nPool(%d) : IN GAME\n", arg0);
+        gDebug.DebugDisp(sp60);
+        break;
+    case 2:
+        sprintf(sp60, "\nPool(%d) : RESOURCE\n", arg0);
+        gDebug.DebugDisp(sp60);
+        break;
+    default:
+        sprintf(sp60, "\nPool(%d) : UNKNOWN TYPE\n", arg0);
+        gDebug.DebugDisp(sp60);
+        break;
+    }
+    sprintf(sp60, "Total Memory = %dK\n", (unsigned int)(m_unk100 * 0x10) >> 0xA);
+    gDebug.DebugDisp(sp60);
+    sprintf(sp60, "Memory Allocated = %dK\n", (unsigned int)((m_unk100 - m_unk104) * 0x10) >> 0xA);
+    gDebug.DebugDisp(sp60);
+    var_s0 = 0;
+    var_s3 = m_unk110->m_unk8;
+    var_s2 = 0;
+    while (var_s3 != m_unk110) {
+        temp_v0 = GetLength(var_s3);
+        if (temp_v0 == 0) {
+            printf("zero length at %x\n", var_s3);
+        }
+        if (var_s2 < temp_v0) {
+            var_s2 = temp_v0;
+        }
+        var_s3 = var_s3->m_unk8;
+        var_s0 += 1;
+    }
+    sprintf(sp60, "Largest Memory Block = %dK\n", (unsigned int)(var_s2 * 0x10) >> 0xA);
+    gDebug.DebugDisp(sp60);
+    var_f1 = (float)(unsigned int)(m_unk104 * 0x10);
+    var_f0 = (float)(unsigned int)(m_unk100 * 0x10);
+    sprintf(sp60, "%3.1f Percent Full\n", fptodp(100.0f * (1.0f - (var_f1 / var_f0))));
+    gDebug.DebugDisp(sp60);
+    sprintf(sp60, "Free List Length = %d\n", var_s0);
+    gDebug.DebugDisp(sp60);
+}
 
 // FUNCTION: 0x0012B290 DeletePoolContents__10MemoryPoolFv
 void MemoryPool::DeletePoolContents() {

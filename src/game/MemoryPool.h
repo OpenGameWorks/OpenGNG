@@ -31,6 +31,7 @@ public:
     void SetLength(Block *block, unsigned int len);
     void *Allocate(unsigned int size, int arg1);
     void DeAllocate(void *ptr, int arg1);
+    void DisplayDebugPs2(int arg0);
 
     char _pad000[0x100]; // 0x000
     int m_unk100;        // 0x100
