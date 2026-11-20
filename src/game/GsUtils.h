@@ -79,4 +79,13 @@ int GsInitClearPacket(tagGsClearSprites *pPacket, int nW, int nH, char cR, char 
 void GsInitTexturedFogSprite(tagTexturedFogSpritePacket *pPacket, char cR, char cG, char cB, unsigned int nZ);
 void GsInitFogSprite(tagFogSpritePacket *pPacket, char cR, char cG, char cB, unsigned int nZ);
 
+typedef struct tagMoveRgToBaPacket {
+    u_long128 m_unk00;          // 0x000 GIF tag
+    char _pad010[0xAB0];        // 0x010 register data slots and sprite pairs, stride 0x40
+    long long m_unkAC0;         // 0xAC0 packed SCREEN_WIDTH-1 and SCREEN_HEIGHT-1
+    long long m_unkAC8;         // 0xAC8 register data 0x40
+} tagMoveRgToBaPacket;          // size >= 0xAD0
+
+void GsInitMoveRG2BAPacket(tagMoveRgToBaPacket *pPacket, short nA, short nB, short nC, short nD);
+
 #endif

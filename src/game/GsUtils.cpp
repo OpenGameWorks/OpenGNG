@@ -342,6 +342,63 @@ void GsInitFogSprite(tagFogSpritePacket *pPacket, char cR, char cG, char cB, uns
     }
 }
 
+// DRAFT: 0x0017ED70 GsInitMoveRG2BAPacket__FP19tagMoveRgToBaPacketssss
+// note: DIFF 216 words, size 0x370 vs 0x390; prologue spill order and nD sign-extension (s5), constant-store order and per-use SCREEN_* reloads differ. Tried: locals removed (227->216), (short) casts on nD (220, reverted).
+void GsInitMoveRG2BAPacket(tagMoveRgToBaPacket *pPacket, short nA, short nB, short nC, short nD) {
+    int nBlk8 = SCREEN_WIDTH / 8;
+    int nX = 0;
+    int nOff = 8;
+    int nRow = 0;
+    int k;
+    sprite_tag sprite;
+
+    pPacket->m_unk00 = 0;
+    ((unsigned short *)pPacket)[0] = (((unsigned short *)pPacket)[0] & 0x8000) | ((((nBlk8 / 2) << 2) + 12) & 0x7FFF);
+    ((unsigned char *)pPacket)[1] = (((unsigned char *)pPacket)[1] & 0x7F) | 0x80;
+    ((unsigned char *)pPacket)[7] = (((unsigned char *)pPacket)[7] & 0x0F) | 0x10;
+    ((unsigned char *)pPacket)[8] = (((unsigned char *)pPacket)[8] & 0xF0) | 0x0E;
+    ((long long *)pPacket)[2] = (long long)nB | ((long long)(SCREEN_WIDTH / 64) << 16) | 0x2000000LL | (0x3FFFLL << 32);
+    ((long long *)pPacket)[3] = 0x4D;
+    ((long long *)pPacket)[8] = (long long)(SCREEN_OFFSET_X << 4) | ((long long)(SCREEN_OFFSET_Y << 4) << 32);
+    ((long long *)pPacket)[9] = 0x19;
+    ((long long *)pPacket)[10] = ((long long)(SCREEN_WIDTH - 1) << 16) | ((long long)(SCREEN_HEIGHT * 2 - 1) << 48);
+    ((long long *)pPacket)[4] = (long long)nC | (1LL << 32) | 0x31000000LL;
+    ((long long *)pPacket)[5] = 0x4F;
+    ((long long *)pPacket)[6] = 0x30000;
+    ((long long *)pPacket)[7] = 0x48;
+    ((long long *)pPacket)[11] = 0x41;
+    ((long long *)pPacket)[12] = 0;
+    ((long long *)pPacket)[13] = 0x3F;
+    ((long long *)pPacket)[14] = 0x80LL << 32;
+    ((long long *)pPacket)[15] = 0x3B;
+    ((long long *)pPacket)[16] = 0;
+    ((long long *)pPacket)[17] = 0x15;
+    ((long long *)pPacket)[18] = (long long)nA | ((long long)(SCREEN_WIDTH / 64) << 14) | (0xAB20LL << 16) | (0xELL << 32);
+    ((long long *)pPacket)[19] = 7;
+    ((long long *)pPacket)[20] = 0x316;
+    ((long long *)pPacket)[21] = 0;
+    ((long long *)pPacket)[22] = (0x3F80LL << 32) | 0x80808080LL;
+    ((long long *)pPacket)[23] = 1;
+
+    for (k = 0; k < nBlk8; k += 2) {
+        GsSetSpriteCoords(&sprite, (short)nX, 0, (short)(nX + 8), nD, nOff, 0, 8, nD, 1);
+        *(long long *)((char *)pPacket + nRow + 0xC0) = (long long)sprite.m_unk20 | ((long long)sprite.m_unk24 << 16);
+        *(long long *)((char *)pPacket + nRow + 0xC8) = 3;
+        *(long long *)((char *)pPacket + nRow + 0xD0) = (long long)sprite.m_unk10 | ((long long)sprite.m_unk14 << 16);
+        *(long long *)((char *)pPacket + nRow + 0xD8) = 5;
+        *(long long *)((char *)pPacket + nRow + 0xE0) = (long long)sprite.m_unk28 | ((long long)sprite.m_unk2C << 16);
+        *(long long *)((char *)pPacket + nRow + 0xE8) = 3;
+        *(long long *)((char *)pPacket + nRow + 0xF0) = (long long)sprite.m_unk18 | ((long long)sprite.m_unk1C << 16);
+        *(long long *)((char *)pPacket + nRow + 0xF8) = 5;
+        nX += 0x10;
+        nOff += 0x10;
+        nRow += 0x40;
+    }
+
+    pPacket->m_unkAC0 = ((long long)(SCREEN_WIDTH - 1) << 16) | ((long long)(SCREEN_HEIGHT - 1) << 48);
+    pPacket->m_unkAC8 = 0x40;
+}
+
 // FUNCTION: 0x0017FA00 GsSwapDBuff__FP10sceGsDBuffi
 int GsSwapDBuff(sceGsDBuff *pDBuff, int nIdx) {
     int nBuf = nIdx & 1;
