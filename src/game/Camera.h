@@ -14,6 +14,7 @@ public:
     float Distance(CVector3 arg0, CVector3 arg1);
     float Dot(CVector3 arg0, CVector3 arg1);
     float Magnitude(CVector3 arg0);
+    void SetEntityYOffset(unsigned short arg0);
     CVector3 Normalize(CVector3 arg0);
     void UpdateFromApparition();
     void CreateViewMatrix(PMat4 &arg0, PVec3 arg1, PVec3 arg2);
@@ -26,6 +27,7 @@ public:
     void CleanUpCutCameras();
     void RestoreCamBox();
     void StartCutCamera(unsigned int arg0, bool arg1);
+    void SetupCutCamera_Pan(unsigned int arg0, unsigned int arg1, float arg2, float arg3, PVec3 arg4, PVec3 arg5, PVec3 arg6, PVec3 arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, unsigned int arg11, bool arg12, PVec3 arg13, bool arg14, unsigned int arg15);
     void SetupCutCamera_Fixed(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, unsigned int arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, bool arg11, PVec3 arg12, bool arg13, unsigned int arg14);
     void SetupCutCamera_MoveTo(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, PVec3 arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, unsigned int arg11, bool arg12, PVec3 arg13, bool arg14, unsigned int arg15);
     void ResetAfterReposition();
@@ -34,6 +36,7 @@ public:
     void SetSourceTarget(float *arg0, float *arg1);
     void ModifyBossCamera(float arg0, float arg1, float arg2);
     void SetBossPosition(float (*arg0)[4]);
+    void SetPosAndRot(float (*arg0)[4], float (*arg1)[4]);
     void SetBossArenaValues(float (*arg0)[4], float arg1, float arg2, bool arg3, bool arg4, float arg5, float arg6, bool arg7);
     void SetCamBoxData(int arg0, void *arg1);
     void SetupShakeScreen(float arg0, float arg1, float arg2, int arg3, int arg4, unsigned int arg5);
@@ -46,10 +49,12 @@ public:
     void RestoreFollowCamPos(bool arg0);
     void SetCamMode(short arg0, bool arg1);
     void Init();
+    void Update();
+    int UpdateFromCamBox();
 
     float m_unk00[4];       // 0x000
     float m_unk10[4];       // 0x010
-    char _pad020[0x10];
+    float m_unk20[4];       // 0x020
     float m_unk30[4][4];    // 0x030 (sceVu0UnitMatrix target)
     float m_unk70[4][4];    // 0x070 (sceVu0UnitMatrix target)
     unsigned char m_unkB0;  // 0x0B0

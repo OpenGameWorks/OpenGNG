@@ -1,7 +1,12 @@
 // FLAGS: -str readonly
 #include "Camera.h"
+#include "PMat4.h"
 
 // TODO(header): foreign declarations
+extern "C" float atan2f(float y, float x);
+extern "C" float Round180__Ff(float fAngle);
+extern "C" float sceVu0InnerProduct(float *a, float *b);
+extern "C" void __mi__5PVec3FR5PVec3(float *ret, float *lhs, float *rhs);
 extern "C" void sceVu0CopyVector(float *dst, float *src);
 extern "C" float sqrtf(float x);
 extern "C" int printf(const char *fmt, ...);
@@ -14,6 +19,7 @@ extern "C" void *__ct__12CameraFollowFP6Camera(void *pThis, Camera *pCamera);
 extern "C" void *__ct__16CameraCutManagerFP6Camera(void *pThis, Camera *pCamera);
 extern "C" void *__ct__11CameraDebugFP6Camera(void *pThis, Camera *pCamera);
 extern "C" void sceVu0UnitMatrix(float (*pMatrix)[4]);
+extern "C" void InitFrustrum__6PWorldFP5PMat4PA4_f(void *pWorld, PMat4 *pMat, float (*pVec)[4]);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" int sprintf(char *buf, const char *fmt, ...);
 extern unsigned char gEng[0x1A000];
@@ -34,6 +40,15 @@ public:
     float m_v[4];
 };
 
+class Debug {
+public:
+    void StartTimer(unsigned int arg0);
+    void StopTimer(unsigned int arg0);
+    char _pad000[0x10];
+};
+
+extern Debug gDebug;
+
 class CameraCutManager {
 public:
     void CleanUpCutCameras();
@@ -41,6 +56,8 @@ public:
     void StartCutCamera(unsigned int arg0, bool arg1);
     void SetupCutCamera_Fixed(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, unsigned int arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, bool arg11, PVec3 arg12, bool arg13, unsigned int arg14);
     void SetupCutCamera_MoveTo(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, PVec3 arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, unsigned int arg11, bool arg12, PVec3 arg13, bool arg14, unsigned int arg15);
+    void SetupCutCamera_Pan(unsigned int arg0, unsigned int arg1, float arg2, float arg3, PVec3 arg4, PVec3 arg5, PVec3 arg6, PVec3 arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, unsigned int arg11, bool arg12, PVec3 arg13, bool arg14, unsigned int arg15);
+    void Update();
 
     char _pad000[0x85];
     unsigned char m_unk85;  // 0x085
@@ -61,11 +78,15 @@ public:
     int SetHeadCam(bool arg0);
     void DrawPolyDebug();
     void DrawTextDebug();
+    void Update();
+    void ResetFromCamBox();
 
     char _pad000[0x118];
     int m_unk118;           // 0x118
     int m_unk11C;           // 0x11C
-    char _pad120[0x178 - 0x120];
+    char _pad120[0x148 - 0x120];
+    unsigned short m_unk148; // 0x148
+    char _pad14A[0x178 - 0x14A];
     int m_unk178;           // 0x178 (float bits)
     char _pad17C[0x218 - 0x17C];
     int m_unk218;           // 0x218
@@ -77,6 +98,7 @@ class CameraDebug {
 public:
     void DrawTextDebug();
     void Init(PVec3 arg0);
+    void Update(bool arg0);
 };
 
 // FUNCTION: 0x001781F0 Distance__6CameraF8CVector38CVector3
@@ -103,6 +125,14 @@ CVector3 Camera::Normalize(CVector3 arg0) {
 // FUNCTION: 0x00178380 Magnitude__6CameraF8CVector3
 float Camera::Magnitude(CVector3 arg0) {
     return sqrtf(arg0.m_unk0 * arg0.m_unk0 + arg0.m_unk4 * arg0.m_unk4 + arg0.m_unk8 * arg0.m_unk8);
+}
+
+// FUNCTION: 0x001783F0 SetEntityYOffset__6CameraFUs
+void Camera::SetEntityYOffset(unsigned short arg0) {
+    CameraFollow *temp_v1 = (CameraFollow *)m_unkBC;
+    if (temp_v1 != 0) {
+        temp_v1->m_unk148 = arg0;
+    }
 }
 
 // FUNCTION: 0x001788E0 SetSourceTarget__6CameraFPfPf
@@ -157,6 +187,16 @@ void Camera::StartCutCamera(unsigned int arg0, bool arg1) {
     }
 }
 
+// DRAFT: 0x001785E0 SetupCutCamera_Pan__6CameraFUiUiff5PVec35PVec35PVec35PVec3UiUiUiUib5PVec3bUi
+// note: DIFF 71; same failure as MoveTo: the PVec3 copies to stack temps are hoisted above the m_unkC0 check (original copies inside it). Tried: forwarding call inside the if (71); cached cut pointer with early return (71).
+void Camera::SetupCutCamera_Pan(unsigned int arg0, unsigned int arg1, float arg2, float arg3, PVec3 arg4, PVec3 arg5, PVec3 arg6, PVec3 arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, unsigned int arg11, bool arg12, PVec3 arg13, bool arg14, unsigned int arg15) {
+    CameraCutManager *cut = (CameraCutManager *)m_unkC0;
+    if (cut == 0) {
+        return;
+    }
+    cut->SetupCutCamera_Pan(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
+}
+
 // DRAFT: 0x00178710 SetupCutCamera_MoveTo__6CameraFUiUiffUi5PVec35PVec35PVec3UiUiUiUib5PVec3bUi
 // note: DIFF 61; original copies the four PVec3 args inside the m_unkC0 check, ours hoists the copies above it (frame 0x90 matches). Tried: direct pass, locals before/inside the if, call-site PVec3 temporaries (107), cached cut pointer (61).
 void Camera::SetupCutCamera_MoveTo(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, PVec3 arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, unsigned int arg11, bool arg12, PVec3 arg13, bool arg14, unsigned int arg15) {
@@ -203,6 +243,12 @@ int Camera::FollowCamInBossMode() {
         return (temp_v0->m_unk6318 != 0) ? 1 : 0;
     }
     return 0;
+}
+
+// FUNCTION: 0x001789F0 SetPosAndRot__6CameraFPA4_fPA4_f
+void Camera::SetPosAndRot(float (*arg0)[4], float (*arg1)[4]) {
+    *(u_long128 *)m_unk00 = *(u_long128 *)arg0;
+    *(u_long128 *)m_unk20 = *(u_long128 *)arg1;
 }
 
 // FUNCTION: 0x00178A10 SetFollowCameraParams__6CameraFff
@@ -283,7 +329,7 @@ void Camera::UpdateFromApparition() {
     CheckCameraShake(*(PVec3 *)this, *(PVec3 *)&m_unk10, false);
     sp20 = *(PVec3 *)m_unk00;
     sp30 = *(PVec3 *)m_unk10;
-    CreateViewMatrix(*(PMat4 *)&_pad020[0x10], sp20, sp30);
+    CreateViewMatrix(*(PMat4 *)m_unk30, sp20, sp30);
 }
 
 // DRAFT: 0x00179930 SetupShakeScreen__6CameraFfffiiUi
@@ -430,6 +476,100 @@ void Camera::TextDebug() {
             break;
         }
     }
+}
+
+// DRAFT: 0x0017A330 CreateViewMatrix__6CameraFR5PMat45PVec35PVec3
+// note: DIFF 130; CW copies the by-value PVec3 args (arg1, arg2) into the frame at entry, original forwards $a2/$a3 with no copy; frame 0xB0 vs 0xA0, sd ra at 0x30 vs 0x40. Tried local pointer aliases (still 130).
+void Camera::CreateViewMatrix(PMat4 &arg0, PVec3 arg1, PVec3 arg2) {
+    float tmp[4];
+    float d[4];
+    float col0[4];
+    float col1[4];
+    float col2[4];
+
+    __mi__5PVec3FR5PVec3(tmp, arg2.m_v, arg1.m_v);
+    *(u_long128 *)d = *(u_long128 *)tmp;
+    m_unk20[0] = 57.295776f * atan2f(-d[1], sqrtf(d[2] * d[2] + d[0] * d[0]));
+    m_unk20[0] = Round180__Ff(m_unk20[0] + 180.0f);
+    m_unk20[1] = 57.295776f * atan2f(d[0], -d[2]);
+    m_unk20[1] = Round180__Ff(m_unk20[1]);
+    m_unk20[2] = *(float *)&m_unkD0;
+    m_unk20[2] = Round180__Ff(m_unk20[2]);
+    sceVu0UnitMatrix(arg0.m_unk00);
+    arg0.RotateY(m_unk20[1]);
+    arg0.RotateX(m_unk20[0]);
+    arg0.RotateZ(m_unk20[2]);
+    col0[0] = arg0.m_unk00[0][0];
+    col0[1] = arg0.m_unk00[1][0];
+    col0[2] = arg0.m_unk00[2][0];
+    col0[3] = 1.0f;
+    col1[0] = arg0.m_unk00[0][1];
+    col1[1] = arg0.m_unk00[1][1];
+    col1[2] = arg0.m_unk00[2][1];
+    col1[3] = 1.0f;
+    col2[0] = arg0.m_unk00[0][2];
+    col2[1] = arg0.m_unk00[1][2];
+    col2[2] = arg0.m_unk00[2][2];
+    col2[3] = 1.0f;
+    arg0.m_unk00[3][0] = -sceVu0InnerProduct(col0, arg1.m_v);
+    arg0.m_unk00[3][1] = -sceVu0InnerProduct(col1, arg1.m_v);
+    arg0.m_unk00[3][2] = -sceVu0InnerProduct(col2, arg1.m_v);
+    m_unk20[1] = Round180__Ff(57.295776f * atan2f(-arg0.m_unk00[0][2], -arg0.m_unk00[2][2]));
+}
+
+// FUNCTION: 0x0017A530 Update__6CameraFv
+void Camera::Update() {
+    gDebug.StartTimer(4);
+    if (!((unsigned int)m_unkB4 < 5)) {
+        CdsAssert__FPciPc("Camera.cpp", 0x5C, "m_iCameraMode < MAX_MODE");
+    }
+    switch (m_unkB4) {
+    case 0:
+        if (m_unkB0 != 0) {
+            if (m_unk2E4 != 0) {
+                UpdateFromApparition();
+            } else {
+                ((CameraFollow *)m_unkBC)->Update();
+            }
+        } else {
+            char *pMgr = (char *)gEng + 0x137E0;
+            if (pMgr == 0) {
+                CdsAssert__FPciPc("Camera.cpp", 0x72, "pEntityMgr");
+            }
+            char *pPlayer = *(char **)(pMgr + 0x505C);
+            if (pPlayer == 0) {
+                CdsAssert__FPciPc("Camera.cpp", 0x75, "pPlayer");
+            }
+            if (*(int *)(pPlayer + 0x3C) != 0) {
+                if (m_unkCC == 0) {
+                    m_unkB0 = 1;
+                    ((CameraFollow *)m_unkBC)->Init(false);
+                } else {
+                    m_unkCC--;
+                }
+            }
+        }
+        break;
+    case 4:
+        if (m_unk2E4 != 0) {
+            UpdateFromApparition();
+        } else if (UpdateFromCamBox() != 0) {
+            ((CameraFollow *)m_unkBC)->ResetFromCamBox();
+            m_unkB4 = 0;
+        }
+        break;
+    case 1:
+        ((CameraCutManager *)m_unkC0)->Update();
+        break;
+    case 3:
+        ((CameraDebug *)m_unkC4)->Update(false);
+        break;
+    case 2:
+        ((CameraDebug *)m_unkC4)->Update(true);
+        break;
+    }
+    InitFrustrum__6PWorldFP5PMat4PA4_f((void *)gEng, (PMat4 *)m_unk30, (float (*)[4])this);
+    gDebug.StopTimer(4);
 }
 
 // FUNCTION: 0x0017A710 __dt__6CameraFv
