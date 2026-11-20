@@ -36,6 +36,7 @@ extern "C" void SOUND_SetOverallMusicPitch(int, int);
 extern unsigned char SOUND_SPUKeyStatus[0x40];
 extern "C" int SOUND_MakeSoundStreamRef();
 extern "C" unsigned int SOUND_PlayDialogRelVol(unsigned int, unsigned int, unsigned int, short, unsigned int);
+extern "C" void SOUND_FadeMusicStream(unsigned int, unsigned int, int, unsigned int);
 class PTranslateATable {
 public:
     static int FindASubTableRandomItem(unsigned int *pOut, unsigned int nIdx, int (*pfnBank)(unsigned int), const unsigned int *pTable);
@@ -183,6 +184,22 @@ int PSound::StartAndHoldDialog(unsigned int nArg) {
     m_unk2E50[2] = nArg;
     SOUND_PlayDialogRelVol(0, nArg, m_unk2E50[0], 0x3E8, 6);
     m_unk2E60 = *(int *)(gEng + 0x137A4);
+    return 0;
+}
+
+// FUNCTION: 0x001A4830 PrepDialog__6PSoundFUi
+int PSound::PrepDialog(unsigned int nArg) {
+    if (nArg < 0xC8 || nArg >= 0xE4) {
+        return -1;
+    }
+    if (nArg == (unsigned int)m_unk2E50[2]) {
+        return 0;
+    }
+    if (GetDialogPlayingStatus() > 0) {
+        m_unk2E50[3] = nArg;
+        return 1;
+    }
+    StartAndHoldDialog(nArg);
     return 0;
 }
 
@@ -601,6 +618,25 @@ int PSound::SetStandardSecondaryMusicFileID(unsigned int id) {
     return (m_unk024 >= 0x21) ? -1 : 0;
 }
 
+// DRAFT: 0x001A95A0 FadeMusicOnStream__6PSoundFUiUiUi
+// note: 14 words differ: original clamp path re-shifts a3 (folded to 0x190 here); compare uses at not v0; sw before bnez. Tried n*10, t=n<<2 clamp, param clamp, store via int*.
+void PSound::FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned int nFrames) {
+    if (nStream < 2) {
+        unsigned int n = nFrames;
+        if (n >= 0x65) {
+            n = 0x64;
+        }
+        int ticks = n * 10;
+        SOUND_FadeMusicStream(nStream, nArg, ticks, n);
+        char *pState = (char *)this + (nStream << 5);
+        int *pTicks = (int *)(pState + 0x7C);
+        *pTicks = ticks;
+        if (ticks == 0) {
+            ((MusicStreamState *)(pState + 0x70))->ReInit();
+        }
+    }
+}
+
 // FUNCTION: 0x001A9800 PlayMusic__6PSoundFUi
 int PSound::PlayMusic(unsigned int nTrack) {
     if (nTrack < 0x21) {
@@ -930,6 +966,24 @@ void PSound::DebugClearPlayedInGame() {
     }
 }
 
+// FUNCTION: 0x001AB380 DebugStopAllDebugAmbients__6PSoundFv
+int PSound::DebugStopAllDebugAmbients() {
+    int count = 0;
+    AmbientEntry *p;
+    AmbientEntry *end = (AmbientEntry *)((char *)this + 0x2220);
+    p = (AmbientEntry *)((char *)this + 0x380);
+    if (p < end) {
+        do {
+            if ((unsigned short)p->m_unk14 & 0x800) {
+                StopAmbientEntry(p, 0);
+                count++;
+            }
+            p = (AmbientEntry *)((char *)p + 0x70);
+        } while (p < end);
+    }
+    return count;
+}
+
 // FUNCTION: 0x001AB400 DebugPlaySoundWPitch__6PSoundFUiUiUi
 int PSound::DebugPlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int p2) {
     int nRet;
@@ -963,6 +1017,48 @@ int PSound::WriteLineToPCFile(int nFd, char *pLine) {
         return -1;
     }
     return 0;
+}
+
+// FUNCTION: 0x001ACB40 DebugFindPrevID__6PSoundFPUiPUiUi
+int PSound::DebugFindPrevID(unsigned int *pValue, unsigned int *pIndex, unsigned int nBound) {
+    unsigned int i;
+    unsigned int nIdx = (unsigned int)-1;
+    unsigned int nMax = 0;
+    unsigned int *pRec = (unsigned int *)m_unk2EB4;
+    for (i = 0; i < m_unk14; i++, pRec += 6) {
+        unsigned int nID = *pRec;
+        if (nID < nBound && nMax < nID) {
+            nMax = nID;
+            nIdx = i;
+        }
+    }
+    if (nIdx < m_unk14) {
+        *pIndex = nIdx;
+        *pValue = nMax;
+        return 0;
+    }
+    return DebugFindLastID(pValue, pIndex);
+}
+
+// FUNCTION: 0x001ACBC0 DebugFindNextID__6PSoundFPUiPUiUi
+int PSound::DebugFindNextID(unsigned int *pValue, unsigned int *pIndex, unsigned int nBound) {
+    unsigned int i;
+    unsigned int nIdx = (unsigned int)-1;
+    unsigned int nMin = (unsigned int)-1;
+    unsigned int *pRec = (unsigned int *)m_unk2EB4;
+    for (i = 0; i < m_unk14; i++, pRec += 6) {
+        unsigned int nID = *pRec;
+        if (nBound < nID && nID < nMin) {
+            nMin = nID;
+            nIdx = i;
+        }
+    }
+    if (nIdx < m_unk14) {
+        *pIndex = nIdx;
+        *pValue = nMin;
+        return 0;
+    }
+    return DebugFindFirstID(pValue, pIndex);
 }
 
 // FUNCTION: 0x001ACC40 DebugFindLastID__6PSoundFPUiPUi

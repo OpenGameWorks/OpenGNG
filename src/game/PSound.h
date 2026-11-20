@@ -126,6 +126,9 @@ public:
     int StopSoundBySoundRefIfAmbient(unsigned int nSoundRef);
     unsigned int FindFreeAmbientChannel();
     int StartAndHoldDialog(unsigned int nArg);
+    int PrepDialog(unsigned int nArg);
+    int GetDialogPlayingStatus();
+    void FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned int nFrames);
     void AmbientFadeToFree(AmbientChannelState *pState);
     void PauseAllAmbientSounds();
     void ResumeAllAmbientSounds();
@@ -139,6 +142,7 @@ public:
     void AddAEToFreeList(AmbientEntry *pEntry);
     void DelinkAmbientEntry(AmbientEntry *pEntry);
     int PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag);
+    void StopAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag);
     AmbientEntry *FindAmbientEntry(unsigned int nID);
     int StartAESoftwareFadeout(unsigned int nID, unsigned int nArg);
     int StartAESoftwareFadeout(AmbientEntry *pEntry, unsigned int nArg);
@@ -172,7 +176,7 @@ public:
     void PSoundFlushIOPCommandsWaitFinish();
     void KillByCategories(unsigned int nCategory);
     void PauseByCategories(unsigned int nCategory);
-    void DebugStopAllDebugAmbients();
+    int DebugStopAllDebugAmbients();
     void SendStops();
     void SoundEditLeave();
     void SoundEditEnter();
@@ -186,6 +190,8 @@ public:
     void DebugRestartValues();
     int DebugFindLastID(unsigned int *pValue, unsigned int *pIndex);
     int DebugFindFirstID(unsigned int *pValue, unsigned int *pIndex);
+    int DebugFindPrevID(unsigned int *pValue, unsigned int *pIndex, unsigned int nBound);
+    int DebugFindNextID(unsigned int *pValue, unsigned int *pIndex, unsigned int nBound);
     int WriteLineToPCFile(int nFd, char *pLine);
 
     int m_unk00;            // 0x000, GetEEControlStatus tests it
