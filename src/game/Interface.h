@@ -42,6 +42,7 @@ public:
 class HudHealth {
 public:
     void Update(int arg0);
+    void Reset();
 
     char _pad000[0x4];
     void **m_unk4;              // 0x004 PMNode list object; its PArray at 0x14 holds the health nodes

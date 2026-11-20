@@ -890,6 +890,97 @@ void HudHealth::Update(int arg0) {
     }
 }
 
+// DRAFT: 0x00140D90 Reset__9HudHealthFv
+// note: first draft; the grow/shrink branch order, the do-while walk and register allocation are unverified.
+void HudHealth::Reset() {
+    PArray *pList;
+    PMNode *pLast;
+    PMNode *pNew;
+    PMNode *pCap;
+    PMNode *pBar;
+    PMNode *pNode;
+    unsigned int nCount;
+    unsigned int nWanted;
+    int nStep;
+    float fLevel;
+    float fRatio;
+
+    pList = (PArray *)((char *)m_unk4 + 0x14);
+    nCount = pList->m_unk0;
+    pLast = (nCount != 0) ? (PMNode *)pList->m_unk8[nCount - 1] : 0;
+    ((pLast != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x8F1, "pLast"));
+    pCap = pLast->Find(0x851A08AB);
+    ((pCap != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x8F3, "pCap"));
+    nWanted = *(unsigned int *)((char *)mpPlayerData__7GameHud + 0xC);
+    ((nWanted != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x8FA, "iMeter"));
+    m_unkC = *(short *)((char *)mpPlayerData__7GameHud + 8);
+    if (nWanted < nCount) {
+        ((PArray *)((char *)pLast + 0x14))->Remove(pCap);
+        while (nWanted < (unsigned int)pList->m_unk0) {
+            pNode = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[pList->m_unk0 - 1] : 0;
+            if (pNode != 0) {
+                delete (PDeletable *)pNode;
+            }
+            if (pList->m_unk0 != 0) {
+                pList->m_unk0 = pList->m_unk0 - 1;
+            }
+        }
+        pNode = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[pList->m_unk0 - 1] : 0;
+        ((PArray *)((char *)pNode + 0x14))->Add(pCap);
+    } else if (nCount < nWanted) {
+        ((PArray *)((char *)pLast + 0x14))->Remove(pCap);
+        fLevel = pLast->m_unk80;
+        while (pList->m_unk0 < nWanted) {
+            pNew = (PMNode *)__nw__FUi(0x100);
+            if (pNew != 0) {
+                *(void **)pNew = __vt__9PResource;
+                *(int *)((char *)pNew + 4) = 0;
+                *(void **)pNew = __vt__6PMNode;
+                __ct__6PArrayFv((char *)pNew + 0x14);
+                sceVu0UnitMatrix((char *)pNew + 0x40);
+                __ct__6PArrayFv((char *)pNew + 0xD8);
+                InitMembers__6PMNodeFv(pNew);
+            }
+            ((pNew != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x90C, "pTmp"));
+            CopyMNode__6PMNodeFR6PMNodeb(pNew, pLast, true);
+            fLevel += 3.3f;
+            pNew->m_unk80 = fLevel;
+            pList->Add(pNew);
+        }
+        m_unk8 = fLevel;
+        pNode = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[pList->m_unk0 - 1] : 0;
+        ((PArray *)((char *)pNode + 0x14))->Add(pCap);
+    }
+    pNode = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[pList->m_unk0 - 1] : 0;
+    m_unk8 = pNode->m_unk80;
+    pList->m_unk4 = 0;
+    pNode = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[0] : 0;
+    nStep = m_unkC;
+    if (nWanted != 0) {
+        do {
+            pBar = pNode->Find(0x3F379B9F);
+            ((pBar != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x91D, "pBar"));
+            if (nStep >= 200) {
+                fRatio = 0.915f;
+            } else if (nStep > 0) {
+                fRatio = 0.145f + ((0.77000004f * (float)nStep) / 200.0f);
+            } else {
+                fRatio = 0.0f;
+            }
+            *(float *)((char *)pBar + 0xA0) = fRatio;
+            pList->m_unk4 += 1;
+            nStep -= 200;
+            if ((unsigned int)pList->m_unk4 < pList->m_unk0) {
+                pNode = (PMNode *)pList->m_unk8[pList->m_unk4];
+            } else {
+                pNode = 0;
+            }
+            nWanted -= 1;
+        } while (nWanted != 0);
+    }
+    ((HudHealthList *)m_unk4)->Slot04(0, 8, 0, 0, 0);
+}
+
 // FUNCTION: 0x1411C0 AbilityScreen__9InterfaceFv
 int Interface::AbilityScreen() {
     int buttons = gPad.m_unk110;
