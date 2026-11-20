@@ -14,6 +14,7 @@ extern "C" void FastMath_ComputeMatrixLite__FPA4_A4_fPA4_fPA4_fPA4_fPA4_A4_f(voi
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, char *pExpr);
 extern "C" int rand(void);
+float FastMath_Sin180__Ff(float fAngle);
 
 // DRAFT: 0x00214BA0 AnimateFadingTiles__10PSlideShowFf
 // note: 67 words differ (was 74); prologue constant/seed scheduling and a0-a3 register allocation differ from the original; tried for-loop shape, hoisted poly base, seed store first, reordered locals, column counter outside, inverted fade test.
@@ -54,6 +55,80 @@ void PSlideShow::AnimateFadingTiles(float fTime)
             nCol++;
         }
         nRow++;
+    }
+}
+
+// DRAFT: 0x00215250 AnimateFallingTiles__10PSlideShowFf
+// note: 233 words; prologue saves fp (original saves only s0-s7), unk14/unk18/unk24 load into different a-regs, and the unk0 adda/madd/sin/mul/add order differs. Tried: pointer form for pPoly (233), split fBase sum (233), hoisted nRow/nFaded (236), inline poly base (288).
+void PSlideShow::AnimateFallingTiles(float fTime)
+{
+    m_unk38 = m_unk3C;
+    int nTotal = m_unk14 * m_unk18;
+    char *pPolyBase = (char *)m_unk24 + 0x10;
+    int nFaded = 0;
+    for (int nRow = 0; nRow < m_unk14; nRow++) {
+        for (int nCol = 0; nCol < m_unk18; nCol++) {
+            int nIdx = nCol + nRow * m_unk18;
+            tagTile *pTile = (tagTile *)((char *)m_unkC + nIdx * 0x30);
+            tagGsPoly *pPoly = (tagGsPoly *)(pPolyBase + nIdx * 0x90);
+            m_unk38 = m_unk38 * 0x343FD + 0x269EC3;
+            int r1 = m_unk38;
+            m_unk38 = m_unk38 * 0x343FD + 0x269EC3;
+            int r2 = m_unk38;
+            m_unk38 = m_unk38 * 0x343FD + 0x269EC3;
+            int r3 = m_unk38;
+            int r3Hi = (r3 >> 16) & 0x7FFF;
+            m_unk38 = m_unk38 * 0x343FD + 0x269EC3;
+            m_unk38 = m_unk38 * 0x343FD + 0x269EC3;
+            int r5 = ((int)m_unk38 >> 16) & 0x7FFF;
+            int nUnk20 = m_unk20;
+            int nHalf = nUnk20 >> 1;
+            if (nUnk20 < 0) {
+                nHalf = (nUnk20 + 1) >> 1;
+            }
+            float fF20 = 2.0f + 1.0f * (0.000030517578f * (float)r5);
+            if (pTile->m_fY < 16.0f + (2048.0f + (float)nHalf)) {
+                float fA = *(float *)&pTile->m_unk10 + (5.0f + (5.0f * (0.000030517578f * (float)((r1 >> 16) & 0x7FFF))));
+                *(float *)&pTile->m_unk10 = fA;
+                if (!(fA <= 180.0f)) {
+                    *(float *)&pTile->m_unk10 = fA - 360.0f;
+                } else if (fA < -180.0f) {
+                    *(float *)&pTile->m_unk10 = fA + 360.0f;
+                }
+                float fB = *(float *)&pTile->m_unk14 + (5.0f + (5.0f * (0.000030517578f * (float)((r2 >> 16) & 0x7FFF))));
+                *(float *)&pTile->m_unk14 = fB;
+                if (!(fB <= 180.0f)) {
+                    *(float *)&pTile->m_unk14 = fB - 360.0f;
+                } else if (fB < -180.0f) {
+                    *(float *)&pTile->m_unk14 = fB + 360.0f;
+                }
+                float fC = *(float *)&pTile->m_unk1C + (0.5f + (3.5f * (0.000030517578f * (float)r3Hi)));
+                *(float *)&pTile->m_unk1C = fC;
+                if (!(fC <= 180.0f)) {
+                    *(float *)&pTile->m_unk1C = fC - 360.0f;
+                } else if (fC < -180.0f) {
+                    *(float *)&pTile->m_unk1C = fC + 360.0f;
+                }
+                int nHalfC = m_unk1C >> 1;
+                if (m_unk1C < 0) {
+                    nHalfC = (m_unk1C + 1) >> 1;
+                }
+                pTile->m_fX = 16.0f + (2048.0f - (float)nHalfC) + 32.0f * (float)nCol + 32.0f * FastMath_Sin180__Ff(*(float *)&pTile->m_unk1C);
+                pTile->m_fY += fF20;
+                ApplyTileOnGsPoly(pPoly, pTile);
+            } else {
+                nFaded++;
+                pPoly->m_unkC = 0;
+                if (nFaded >= nTotal) {
+                    m_unk3C = (int)(0.5f + (12345.0f + (41976.0f * ((float)rand() / 2.1474836e9f))));
+                    ResetTiles();
+                    m_ucUnk41 = 0;
+                    m_unk04 = m_nNextImage;
+                    m_nNextImage = 0;
+                    return;
+                }
+            }
+        }
     }
 }
 
