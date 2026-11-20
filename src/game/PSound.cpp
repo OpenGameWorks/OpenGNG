@@ -7,6 +7,12 @@ void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern "C" void SOUND_StopAllSounds();
 extern "C" void SOUND_SetGlobalRelVols(int, int, int, int, int, int, int, int);
 extern int fst_ReverbRecProposed[5];
+extern int fst_ReverbRecOff[5];
+extern int fst_ReverbRecCur[5];
+extern int gSOUND_EEControlReq;
+extern "C" void SOUND_AllChannelReverbOff(int);
+extern "C" void SOUND_ReverbSetAdrs(int, int);
+extern "C" void SOUND_ClearIOPBuffer();
 extern int gPSndDbg[52];
 extern int fst_StartMultiple;
 extern "C" int sceWrite(int, char *, int);
@@ -19,6 +25,9 @@ extern signed char fst_bCalledByDebug;
 extern "C" void FlushIOPCommand(int, int, int);
 extern "C" void SOUND_CopyIOPBuffer();
 extern char gEng[105360];
+extern unsigned char MODE_PAL;
+extern "C" void SOUND_FadeOutAllMusic(short);
+extern "C" void SOUND_MusicAddExciteHits(int);
 extern "C" void __ct__14PFadeMsecFloatFv(void *);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
@@ -318,6 +327,28 @@ void PSound::AbilityScreenEnter() {
     SetMainMusicSpecialVolume((EnumMusicSpecialVols)1);
 }
 
+// FUNCTION: 0x001A4410 CutSceneLeave__6PSoundFUi
+void PSound::CutSceneLeave(unsigned int nArg) {
+    KillByCategories(0x20C);
+    if (nArg == (unsigned int)m_unk2E64) {
+        unsigned int nTrack = m_unk2E68;
+        if (nTrack != (unsigned int)m_unk2E6C && !(m_unk2E70 & 0xC0000000)) {
+            PlayMusic(nTrack);
+        }
+        if (m_unk2E70 & 0x80000000) {
+            PlayMusic(0);
+            *(int *)(gEng + 0x19B48) = 0;
+        }
+        if (m_unk2E70 & 0x40000000) {
+            *(int *)(gEng + 0x19B48) = m_unk2E6C;
+        }
+    } else {
+        CdsAssert("PSound.cpp", 0x238A, "0");
+    }
+    SetMainMusicSpecialVolume((EnumMusicSpecialVols)0);
+    PauseByCategories(0);
+}
+
 // FUNCTION: 0x001A4640 StartPreppedDialog__6PSoundFUi
 int PSound::StartPreppedDialog(unsigned int nArg) {
     int nReady;
@@ -415,6 +446,33 @@ void PSound::PauseByCategories(unsigned int nCategory) {
     }
     m_unk2E48 = nCategory;
     SOUND_SetPauseCategories(nCategory);
+}
+
+// FUNCTION: 0x001A49C0 KillByCategories__6PSoundFUi
+void PSound::KillByCategories(unsigned int nCategory) {
+    if (nCategory & 0x200) {
+        unsigned int i = m_unk2E30;
+        for (; m_unk2E34 >= i; i++) {
+            if (SOUND_SPUKeyStatus[i]) {
+                StopOneShot(i);
+            }
+        }
+    }
+    if (nCategory & 0x80) {
+        AmbientEntry *pEntry = (AmbientEntry *)((char *)this + 0x380);
+        AmbientEntry *pEnd = (AmbientEntry *)((char *)this + 0x2220);
+        if (pEntry < pEnd) {
+            do {
+                if (pEntry->m_unk10 != 0x3FFF && !((unsigned short)pEntry->m_unk14 & 0x400)) {
+                    StopAmbientEntry(pEntry, 1);
+                }
+                pEntry = (AmbientEntry *)((char *)pEntry + 0x70);
+            } while (pEntry < pEnd);
+        }
+    }
+    if (nCategory & 0xC) {
+        SOUND_StopStream(0);
+    }
 }
 
 // DRAFT: 0x001A4D80 PointInEnclosure__6PSoundFPfP16tagBOX_OR_SPHEREP14tagVuMatrixBox17EnumEnclosureType
@@ -609,6 +667,37 @@ void PSound::AdjustEffectVolumes(unsigned int &nOutA, unsigned int &nOutB, float
     }
     nOutA = nA;
     nOutB = nB;
+}
+
+// DRAFT: 0x001A6340 ProcessMusic__6PSoundFv
+// note: 38 words; this kept in s1 with 0x30 frame (orig s0, 0x20); table row addressing folds into lw/sw immediates in other forms (57 words); 8 attempts used
+
+int PSound::ProcessMusic() {
+    unsigned int idx = m_unk28;
+    if (idx < 2) {
+        char *pRow = (char *)this + 0x78;
+        int nHits = *(int *)(pRow + (idx << 5));
+        if (nHits > 0 && gPSndDbg[10] != 0) {
+            SOUND_MusicAddExciteHits(nHits);
+        }
+        char *pRow2 = (char *)this + 0x78;
+        *(int *)(pRow2 + (m_unk28 << 5)) = 0;
+    }
+    if (m_unkCD != 0) {
+        if (MODE_PAL != 0) {
+            m_unkDC = m_unkDC - 20.0f;
+        } else {
+            m_unkDC = m_unkDC - 16.666666f;
+        }
+        if (m_unkDC < 0.0f) {
+            m_unkCD = 0;
+            if (m_unk1C != 0 && m_unk1C < 0x21) {
+                m_unkCD = 0;
+                MusicSwitchToPrimary(m_unkE0);
+            }
+        }
+    }
+    return 0;
 }
 
 // FUNCTION: 0x001A71D0 PlaySoundTrigletUbiquitous__6PSoundFUiUiPC20GameSoundTrigletPawn
@@ -1250,6 +1339,34 @@ void PSound::FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned
     }
 }
 
+// DRAFT: 0x001A9630 FadeOutAllMusic__6PSoundFUi
+// note: 60 words; frame is 0x40 with s0/s1/s2 and the 0.8333 literal is built before the sign test in the original (we build it after); negative path add.s form gave 70 words, 2.0f* gives 60; size 0x114 vs 0xe8
+void PSound::FadeOutAllMusic(unsigned int nArg) {
+    unsigned int n = nArg;
+    if (MODE_PAL != 0) {
+        float f;
+        if ((int)n >= 0) {
+            f = (float)(int)n;
+        } else {
+            f = 2.0f * (float)((n >> 1) | (n & 1));
+        }
+        float t = 0.8333333f * f;
+        if (!(t >= 2147483648.0f)) {
+            n = (unsigned int)(int)t;
+        } else {
+            n = (unsigned int)(int)(t - 2147483648.0f) | 0x80000000;
+        }
+    }
+    SOUND_FadeOutAllMusic((short)n);
+    int i = 0;
+    int off = 0;
+    do {
+        ((MusicStreamState *)((char *)this + off + 0x70))->ReInit();
+        i++;
+        off += 0x20;
+    } while (i < 2);
+}
+
 // DRAFT: 0x001A9720 PlayMusicOnStream__6PSoundFUiUiUi
 // note: 2 words differ: clamp sltiu/bnez uses $v0 not $at; tried !(n<0x65), ternary, compare on param, empty-then if/else
 int PSound::PlayMusicOnStream(unsigned int arg0, unsigned int arg1, unsigned int arg2) {
@@ -1468,6 +1585,31 @@ void PSound::PSoundReInitMusic() {
     m_unkDC = 0;
     m_unkE0 = 0x3E8;
     m_unkCE = 0;
+}
+
+// FUNCTION: 0x001AA3A0 PSoundReInitSub__6PSoundFUi
+void PSound::PSoundReInitSub(unsigned int nMode) {
+    fst_bCalledByDebug = 0;
+    m_unk68 = 0;
+    m_unk6C = 0;
+    PSoundLevelClear();
+    PSoundReInitMusic();
+    StopAllSounds();
+    SOUND_AllChannelReverbOff(0);
+    SOUND_AllChannelReverbOff(1);
+    SOUND_ReverbSetAdrs(0x1FFFFF, 0x1DFFFF);
+    memcpy(fst_ReverbRecProposed, fst_ReverbRecOff, 0x14);
+    memcpy(fst_ReverbRecCur, fst_ReverbRecOff, 0x14);
+    if (nMode != 0) {
+        SOUND_ClearIOPBuffer();
+    }
+    memset(&m_unk1808C, 0, 0x30);
+    m_unk00 = 0;
+    m_unkCE = 0;
+    m_unkD1 = 1;
+    m_unk2E74 = 0;
+    gSOUND_EEControlReq = 0;
+    gSOUND_EEControlReqCallCnt = 0;
 }
 
 // FUNCTION: 0x001AA490 __dt__6PSoundFv

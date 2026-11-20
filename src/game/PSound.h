@@ -122,6 +122,7 @@ public:
     int RestartSuffix();
     void AbilityScreenEnter();
     void AbilityScreenLeave();
+    void CutSceneLeave(unsigned int nArg);
     void SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol);
     int PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType);
     int CheckAllChannelsMatchSub();
@@ -137,6 +138,7 @@ public:
     void PSoundReInitSoundRooms();
     void PSoundReInitSub(unsigned int nMode);
     void PSoundReInitSubWSoundCalls();
+    void FadeOutAllMusic(unsigned int nArg);
     int IsAmbientSoundByID(unsigned int nID);
     SpotInfo *GetSpotInfoPtrByPublicID(unsigned int nID);
     SpotInfo *GetSpotInfo(unsigned int nID);
@@ -155,6 +157,7 @@ public:
     void AmbientFadeToFree(AmbientChannelState *pState);
     void FadeAmbientChannel(AmbientChannelState *pState, unsigned int nChan);
     void AdjustEffectVolumes(unsigned int &nOutA, unsigned int &nOutB, float &fInA, float &fInB);
+    int ProcessMusic();
     int PauseAllAmbientSounds();
     int ResumeAllAmbientSounds();
     int StopAllSounds();
@@ -265,7 +268,8 @@ public:
     float m_unk5C;          // 0x05C, SetPositionalRangeAmbient sets it
     float m_unk60;         // 0x060, SetDistLinearPercent sets it
     float m_unk64;         // 0x064, SetDistLinearPercent sets it to 1 - m_unk60
-    char _pad068[0x070 - 0x068];
+    int m_unk68;            // 0x068, PSoundReInitSub clears it
+    int m_unk6C;            // 0x06C, PSoundReInitSub clears it
     unsigned int m_unk70[2][8]; // 0x070, music stream state table, 0x20 bytes per stream; word 0 is the music id
     int m_unkB0;            // 0x0B0, SendStops clears it
     int m_unkB4;            // 0x0B4, SendStops clears it
@@ -273,7 +277,7 @@ public:
     unsigned int m_unkC0[2];// 0x0C0, AddChanToMultipleResumes bit masks (index 1 for channels 0x18 and up)
     int m_unkC8;           // 0x0C8, SoundEditEnter sets 1, SoundEditLeave clears it
     char _padCC[0x0CD - 0x0CC];
-    char m_unkCD;           // 0x0CD, PSoundReInitMusic clears it
+    unsigned char m_unkCD;  // 0x0CD, PSoundReInitMusic clears it
     char m_unkCE;           // 0x0CE, PSoundReInitMusic clears it
     char m_unkCF;           // 0x0CF, PSoundStopDialog clears it
     bool m_unkD0;           // 0x0D0, ErrorRecovery reads it before PSoundRestart
@@ -282,7 +286,7 @@ public:
     int m_unkD4;            // 0x0D4, RestartSuffix copies gEng+0x19A80 here
     int m_unkD8;            // 0x0D8, RestartSuffix copies gEng+0x137A4 here
 
-    int m_unkDC;            // 0x0DC, PSoundReInitMusic clears it
+    float m_unkDC;          // 0x0DC, PSoundReInitMusic clears it, ProcessMusic counts it down by a frame time
     int m_unkE0;            // 0x0E0, PSoundReInitMusic sets 0x3E8
     char _pad0E4[0x0EC - 0x0E4];
     int m_unk0EC;           // 0x0EC
@@ -298,7 +302,10 @@ public:
     int m_unk2E4C;          // 0x2E4C, SoundEditLeave/Enter category mask
     int m_unk2E50[4];       // 0x2E50, PSoundStopDialog zeroes 0x2E50..0x2E5C
     int m_unk2E60;          // 0x2E60, StartAndHoldDialog stores its value
-    char _pad2E64[0x2E74 - 0x2E64];
+    int m_unk2E64;          // 0x2E64, CutSceneLeave compares its argument with this
+    unsigned int m_unk2E68; // 0x2E68, CutSceneLeave plays this track
+    int m_unk2E6C;          // 0x2E6C, CutSceneLeave compares m_unk2E68 with this
+    unsigned int m_unk2E70; // 0x2E70, CutSceneLeave flag bits 0x80000000/0x40000000/0xC0000000
     int m_unk2E74;          // 0x2E74, GetEEControlStatus stores its result
     char _pad2E78[0x2E7C - 0x2E78];
     int m_unk2E7C;          // 0x2E7C, RestartSuffix clears it
