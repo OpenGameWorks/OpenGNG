@@ -5,6 +5,12 @@
 // TODO(header): foreign declarations
 struct tagParticleRainParams;
 class PFlashScreen;
+extern "C" void *__dt__16PResourceManagerFv(void *pThis, short nFlags);
+extern "C" void *__dt__13PFireDamageFxFv(void *pThis, short nFlags);
+extern "C" void *__dt__6PArrayFv(void *pThis, short nFlags);
+extern "C" void *__dt__16PParticleRipplesFv(void *pThis, short nFlags);
+extern "C" void *__dt__12PFlashScreenFv(void *pThis, short nFlags);
+extern "C" void __dl__FPv(void *p);
 struct tagParticleMovingFogParams;
 class PParticleMovingFog {
 public:
@@ -30,11 +36,24 @@ extern "C" void BeginParticles__10PGfxEngineF13eBoxIntersect(void *, int);
 extern "C" void DrawParticles__10PGfxEngineFP13tagVuParticleiffb(void *, void *, int, float, float, bool);
 extern "C" void EndParticles__10PGfxEngineFv(void *);
 extern u_long128 lit_002487F0;
-extern unsigned char gGfxEng[0x10];
+extern char gGfxEng[1504384];
 extern float gUnitMatrix[16];
+extern int SCREEN_WIDTH;
+extern int SCREEN_HEIGHT;
 extern "C" void __dla__FPv(void *pMem);
 extern "C" void UnloadGlobalResource__16PResourceManagerFv(void *pThis);
 extern "C" void DestroyRenderedTexture__15PTextureManagerFi(void *pThis, int hTexture);
+extern "C" int CreateRenderedTexture__15PTextureManagerFsssss13eTextureGroupb(void *pThis, short nW, short nH, short nA, short nB, short nC, int eGroup, bool bFlag);
+extern "C" void *GetTexEnv__15PTextureManagerFi(void *pThis, int nHandle);
+extern "C" void GsSetTCC__FP23tagGsTextureEnvironmentb(void *pEnv, bool bFlag);
+extern "C" void GsInitFrameBufferCopyInfo__FP20tagGsFrameBufferCopyiiiiiiiiiis(void *pCopy, int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9, int a10, short a11);
+class PParticleLiteExplosion;
+struct tagParticleLiteExplosionParams;
+extern "C" PParticleLiteExplosion *__ct__22PParticleLiteExplosionFv(PParticleLiteExplosion *pThis);
+class PParticleGas;
+struct tagParticleGasParams;
+extern "C" PParticleGas *__ct__12PParticleGasFv(PParticleGas *pThis);
+extern "C" void Create__12PParticleGasFP20tagParticleGasParamsfff(PParticleGas *pThis, tagParticleGasParams *pParams, float fA, float fB, float fC);
 
 class PParticleRain {
 public:
@@ -125,8 +144,13 @@ public:
     virtual void Slot07();
     virtual void Slot08(float *pA, float *pB);
     void Start(float fScale);
-    char _pad004[0x11];
+    char _pad004[0x0C];
+    int m_unk10;                // 0x10
+    char _pad014[0x01];
     unsigned char m_unk15;      // 0x15
+    char _pad016[0x1A];
+    long long m_unk30;          // 0x30
+    void Create(tagParticleLiteExplosionParams *pParams, float fA, float fB, float fC);
 };
 
 class PStaticInstanceGroup {
@@ -150,6 +174,25 @@ struct tagVuParticle {
     char _pad010[0xC];
     int m_unk1C;                // 0x1C
 };
+
+// DRAFT: 0x001B75D0 InitHeatHazeBuffer__16PParticleManagerFv
+// note: DIFF 33: nHandle branch polarity and block order, m_unk670 reload and tail store order differ; tried m_unk670 ternary, pGfx for both calls (34), pGfx first call only (33)
+void PParticleManager::InitHeatHazeBuffer() {
+    if (m_unk670 == 0) {
+        char *pGfx = gGfxEng;
+        m_unk670 = CreateRenderedTexture__15PTextureManagerFsssss13eTextureGroupb(pGfx + 0x154C90, 0x100, 0x80, 8, 7, 0, 0x69, false);
+        int nHandle = *(int *)(gGfxEng + 0x16D408);
+        if (nHandle == 0) {
+            nHandle = m_unk670;
+        }
+        void *pEnv = GetTexEnv__15PTextureManagerFi((char *)gGfxEng + 0x154C90, nHandle);
+        if (pEnv != 0) {
+            GsSetTCC__FP23tagGsTextureEnvironmentb(pEnv, false);
+        }
+        m_unkEE0 = m_unk670;
+    }
+    GsInitFrameBufferCopyInfo__FP20tagGsFrameBufferCopyiiiiiiiiiis((char *)this + 0x50, 0, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0, 0x100, 0x80, 0);
+}
 
 // DRAFT: 0x001B77F0 RenderAuraParticles__16PParticleManagerFv
 // note: 37 words differ; literal 0x2487F0 loaded via lui/lq off $at (orig lui/addiu/lq via v0), early-return beqz one insn short; tried local pointer and if-block forms.
@@ -323,6 +366,29 @@ void PParticleManager::DestroyGroundDustFx() {
     } while (i < 12);
 }
 
+// DRAFT: 0x001B85B0 InitGroundDustFx__16PParticleManagerFv
+// note: DIFF 5: this/off registers swapped (ours s1=off s0=this, original s1=this s0=off); tried pSelf copy, counter-first order
+void PParticleManager::InitGroundDustFx() {
+    int off = 0;
+    int i = 0;
+    do {
+        PParticleLiteExplosion *pFx;
+        pFx = (PParticleLiteExplosion *)__nw__FUi(0x1D0);
+        if (pFx != 0) {
+            pFx = __ct__22PParticleLiteExplosionFv(pFx);
+        }
+        if (pFx == 0) {
+            CdsAssert("PParticleManager.cpp", 0x53E, "apFx");
+        }
+        pFx->Create((tagParticleLiteExplosionParams *)&gGroundDustParams, 0.0f, 0.0f, 0.0f);
+        pFx->m_unk10 = GetFxTexture(0x84000006);
+        pFx->m_unk30 = 0x44;
+        *(PParticleLiteExplosion **)((char *)this + off + 0x208C) = pFx;
+        off += 4;
+        i++;
+    } while (i < 12);
+}
+
 // DRAFT: 0x001B8690 EnableFxByType__16PParticleManagerF7ePSTypeb
 // note: DIFF 6: exit beqz target +0x17 vs +0x18, index temp a0 vs a1, loop-bottom bnez and nop placement; tried loop-tail reload, m_unk4++, nIdx forms, swapped declarations, for-loop.
 void PParticleManager::EnableFxByType(ePSType eType, bool bFlag) {
@@ -478,6 +544,39 @@ void PParticleManager::DestroyRain() {
     }
 }
 
+// FUNCTION: 0x001B8DB0 CreateRain__16PParticleManagerFf
+void PParticleManager::CreateRain(float fDensity) {
+    struct {
+        float fA;
+        float fB;
+        float fC;
+        float fD;
+        int nE;
+        float fF;
+        float fG;
+        float fH;
+    } params;
+
+    if (IsValid((PParticleSystem *)m_pRain) == 0) {
+        m_pRain = 0;
+    }
+    if (m_pRain != 0) {
+        SetRainDensity((unsigned int)m_pRain, fDensity / 100.0f, false);
+        return;
+    }
+    params.fA = -0.2f;
+    params.fB = -1.0f;
+    params.fC = 0.2f;
+    params.fD = 1.0f;
+    params.fF = 1.5f;
+    params.fG = 4.0f;
+    params.fH = 30.0f;
+    params.nE = 0xF5;
+    m_pRain = (PParticleRain *)CreateRain((tagParticleRainParams *)&params);
+    SetRainDensity((unsigned int)m_pRain, fDensity / 100.0f, false);
+    m_unk9B0 = 1;
+}
+
 // DRAFT: 0x001B8EB0 SetRainDensity__16PParticleManagerFUifb
 // note: 1 word differs at 0x1C; ours beqz $s0 (local pRain) vs original beqz $a1 (hRain). Tried nested if (6 words), and no local (6 words).
 void PParticleManager::SetRainDensity(unsigned int hRain, float fDensity, bool bFlag) {
@@ -531,6 +630,27 @@ int PParticleManager::LoadFogObjects(PPakFile *pFile, ePsx2FileVersion nVersion)
         nIndex++;
     }
     return 1;
+}
+
+// FUNCTION: 0x001B9200 CreateGasFx__16PParticleManagerFP20tagParticleGasParamsfff
+PParticleGas *PParticleManager::CreateGasFx(tagParticleGasParams *pParams, float fA, float fB, float fC) {
+    PParticleGas *pGas;
+    PParticleGas *pNew;
+
+    if (pParams == 0) {
+        CdsAssert("PParticleManager.cpp", 0x3AB, "pParams");
+    }
+    if ((pNew = (PParticleGas *)__nw__FUi(0x170)) != 0) {
+        pGas = __ct__12PParticleGasFv(pNew);
+    } else {
+        pGas = pNew;
+    }
+    if (pGas == 0) {
+        CdsAssert("PParticleManager.cpp", 0x3B1, "apFx");
+    }
+    Create__12PParticleGasFP20tagParticleGasParamsfff(pGas, pParams, fA, fB, fC);
+    Add((PParticleSystem *)pGas);
+    return pGas;
 }
 
 // FUNCTION: 0x001B92E0 CreateOneShot__16PParticleManagerFUifff
@@ -708,4 +828,22 @@ void PParticleManager::Shutdown() {
         DestroyRenderedTexture__15PTextureManagerFi(gGfxEng, m_unk670);
         m_unk670 = 0;
     }
+}
+
+// FUNCTION: 0x001BAE90 __dt__16PParticleManagerFv
+PParticleManager::~PParticleManager() {
+    Shutdown();
+    if (m_unk40 != 0) {
+        __dt__16PResourceManagerFv(m_unk40, 1);
+        m_unk40 = 0;
+    }
+    __dt__13PFireDamageFxFv((char *)this + 0x2088, -1);
+    __dt__6PArrayFv((char *)this + 0x2078, -1);
+    __dt__6PArrayFv((char *)this + 0x2068, -1);
+    __dt__16PParticleRipplesFv((char *)this + 0x1790, -1);
+    __dt__16PParticleRipplesFv((char *)this + 0xED0, -1);
+    __dt__12PFlashScreenFv((char *)this + 0x6B0, -1);
+    __dt__6PArrayFv((char *)this + 0x20, -1);
+    __dt__6PArrayFv((char *)this + 0x10, -1);
+    __dt__6PArrayFv(this, -1);
 }
