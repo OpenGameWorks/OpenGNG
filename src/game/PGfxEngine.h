@@ -7,7 +7,13 @@ class PMeshFragment;
 struct tagGsClut256;
 struct tagVuFxLine;
 struct tagVuParticle;
+struct tagVuRotatableParticle;
 struct tagVuLightingInfo;
+class PZBufferFog;
+// TODO(header): ePSLayer belongs to PParticleManager.h. Placeholder until that header is included; only the name matters for mangling.
+#ifndef PPARTICLEMANAGER_H
+enum ePSLayer { ePSLayer_2 = 2 };
+#endif
 // TODO(header): eBoxIntersect belongs to PMNode.h. Placeholder until that header is included; only the name matters for mangling.
 #ifndef PMNODE_H
 enum eBoxIntersect { eBoxIntersect_Placeholder = 0 };
@@ -26,11 +32,27 @@ class PGfxEngine {
 public:
     struct tagBlendedFragmentInfo {
         ~tagBlendedFragmentInfo();
+        PMeshFragment *m_unk0;              // 0x00
+        int m_unk4;                         // 0x04, shifted left 6 to index the world matrix block
+        int m_unk8;                         // 0x08, eBoxIntersect
+        int m_unkC;                         // 0x0C, int argument of PMeshFragment::Render
+        PMNode *m_unk10;                    // 0x10, non-null selects the shared-mesh path
+        char _pad14[0x20 - 0x14];
+        char m_unk20[0xF0 - 0x20];          // 0x20, tagVuLightingInfo block passed to UpdateLights
+        unsigned char m_unkF0;              // 0xF0, lighting flag
+        bool m_unkF1;                       // 0xF1, bFlag argument of AddBlendedFragment
+        unsigned char m_unkF2;              // 0xF2, selects the bool output pointer for Render
+        bool m_unkF3;                       // 0xF3, bool output of Render
     };
 
     void EndShadowRender();
     void BeginShadowRender();
     void DrawFxLines(struct tagVuFxLine *pLines, int nCount, float fA, float fB, bool bFlag);
+    void DrawHeatHaze(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag);
+    void DrawRotatableParticles(struct tagVuRotatableParticle *pParticles, int nCount, float fA, float fB, bool bFlag);
+    int RenderParticleSystems(ePSLayer eLayer, PZBufferFog *pFog);
+    void RenderBlendedFragments(float *pVec);
+    void RenderBlendedFragment(tagBlendedFragmentInfo *pInfo);
     void SetFullAmbientLight();
     void SetAmbientLight(float *pVec);
     void SetBlurHazeSourcePoint(float *pPos, float fW);
@@ -109,12 +131,13 @@ public:
     unsigned int m_unk158E14;           // 0x158E14, Count sampled by Vif1InterruptHandler on the 0x1000 DMA tag
     unsigned int m_unk158E18;           // 0x158E18, Count sampled by Vif1InterruptHandler on the 0x2000 DMA tag
     void *m_unk158E1C;                  // 0x158E1C
-    char _pad158E20[1];
+    bool m_unk158E20;                   // 0x158E20, set from PMeshFragment flag bit 4
     unsigned char m_unk158E21;          // 0x158E21
-    char _pad158E22[1];
+    unsigned char m_unk158E22;          // 0x158E22, copy of tagBlendedFragmentInfo::m_unkF0
     unsigned char m_unk158E23;          // 0x158E23
     unsigned char m_unk158E24;          // 0x158E24
-    char _pad158E25[0x158E30 - 0x158E25];
+    bool m_unk158E25;                   // 0x158E25, RenderParticleSystems flag (eLayer == 2 while m_unk16D40C is set)
+    char _pad158E26[0x158E30 - 0x158E26];
     float m_unk158E30[4];               // 0x158E30, VU lighting block (DMA source address only)
     float m_unk158E40[4];               // 0x158E40
     float m_unk158E50[4];               // 0x158E50

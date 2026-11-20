@@ -52,6 +52,7 @@ class PDisplayList {
 public:
     void SetVu1Microcode(void *pMicrocode);
     void DrawParticles(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag, int nMode);
+    void DrawRotatableParticles(struct tagVuRotatableParticle *pParticles, int nCount, float fA, float fB, bool bFlag, int nMode);
     void DrawSplinePatch(struct tagVuSplinePatchKey *pKey, int nA, int nB, float fC, bool bFlag, int nMode);
     void WriteToVu1Mem(unsigned int nAddr, u_long128 *pData, int nCount);
     void SetViewMatrix(PMat4 *pMat);
@@ -60,6 +61,9 @@ public:
     void SetVifCodes(unsigned int nA, unsigned int nB);
     void SetGsRegisters(u_long128 *pRegData, int nNumRegs);
     void SetWorldMatrix(PMat4 *pMat);
+    void BeginMatrixList();
+    void EndMatrixList();
+    void EndMesh();
     void BeginMesh(unsigned int nFlags);
     void AddVifPacket(u_long128 *pData, int nCount, unsigned int nA, unsigned int nTag);
     void BeginFxLoop(unsigned int nAddr);
@@ -104,11 +108,18 @@ extern int SCREEN_WIDTH;
 extern int SCREEN_HEIGHT;
 
 // TODO(header): foreign declarations (PMeshFragment layout as used here; PMesh.h owns the full class)
+class PMNode {
+public:
+    void AddBoneMatrixToDisplayList(bool bFlag);
+};
+
 class PMeshFragment {
 public:
     char _pad000[0xC];
     char m_unkC[4];                     // 0x0C, sub-block whose address DrawFragment checks
-    char _pad010[0x4C - 0x10];
+    int m_unk10;                        // 0x10, flag word (bit 2 and bit 7 read by RenderBlendedFragment)
+    unsigned int m_unk14;               // 0x14, element count walked by AddBlendedFragment
+    char _pad018[0x4C - 0x18];
     int m_unk4C;                        // 0x4C, fragment type (5 = blended)
     char _pad050[0x64 - 0x50];
     int m_unk64;                        // 0x64, matrix pointer, or 0 / -1 for the slot matrix
@@ -116,6 +127,20 @@ public:
     float m_unk70[4];                   // 0x70, vector
     char _pad080[0x90 - 0x80];
     void Render(bool bFlag, int nIdx, bool *pOut);
+};
+
+// TODO(header): foreign declarations for PZBufferFog and PParticleManager, which belong to their own headers.
+class PZBufferFog {
+public:
+    void Animate(float fDelta);
+    void Render();
+    char _pad0000[0x17A8];
+    unsigned char m_unk17A8;            // 0x17A8
+};
+
+class PParticleManager {
+public:
+    int Render(ePSLayer eLayer, bool bFlag);
 };
 
 // FUNCTION: 0x00184640 ComputeDistanceSq__FPfPfPA4_A4_fPA4_A4_fPfPf
@@ -398,6 +423,30 @@ void PGfxEngine::BeginShadowRender() {
     }
 }
 
+// FUNCTION: 0x00185010 RenderParticleSystems__10PGfxEngineF8ePSLayerP11PZBufferFog
+int PGfxEngine::RenderParticleSystems(ePSLayer eLayer, PZBufferFog *pFog) {
+    int nRet;
+
+    m_unk158E25 = (m_unk16D40C != 0) && (eLayer == ePSLayer_2);
+    RenderBlendedFragments(m_unk16D330);
+    if (pFog && eLayer == ePSLayer_2 && !pFog->m_unk17A8) {
+        pFog->Animate(1.0f);
+        pFog->Render();
+    }
+    BeginFxRender();
+    m_unk154C80->SetScreenMatrix((PMat4 *)m_unk16D3C0);
+    m_unk154C80->SetViewMatrix((PMat4 *)m_unk16D380);
+    m_unk154C80->SetClipMatrix((PMat4 *)m_unk16D340);
+    nRet = ((PParticleManager *)((char *)this + 0x154F00))->Render(eLayer, m_unk158E25);
+    m_unk158E25 = 0;
+    EndFxRender();
+    if (pFog && eLayer == ePSLayer_2 && pFog->m_unk17A8) {
+        pFog->Animate(1.0f);
+        pFog->Render();
+    }
+    return nRet;
+}
+
 // FUNCTION: 0x1851B0 DrawFxLines__10PGfxEngineFP11tagVuFxLineiffb
 void PGfxEngine::DrawFxLines(struct tagVuFxLine *pLines, int nCount, float fA, float fB, bool bFlag) {
     m_unk154C80->DrawParticles((struct tagVuParticle *)pLines, nCount, fB, fA, bFlag, 0x23);
@@ -421,6 +470,11 @@ void PGfxEngine::SetBlurHazeSourcePoint(float *pPos, float fW) {
     m_unk154C80->WriteToVu1Mem(0x3C7, (u_long128 *)aPos, 1);
 }
 
+// FUNCTION: 0x185260 DrawHeatHaze__10PGfxEngineFP13tagVuParticleiffb
+void PGfxEngine::DrawHeatHaze(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag) {
+    m_unk154C80->DrawParticles(pParticles, nCount, fA, fB, bFlag, 0x14);
+}
+
 // DRAFT: 0x1852D0 SetGlowSizeAndColor__10PGfxEngineFffPf
 // note: frame 0x40 matches with volatile colour copy; the four colour loads are one-at-a-time, original batches loads then stores (struct copy is dropped as dead without volatile).
 void PGfxEngine::SetGlowSizeAndColor(float fA, float fB, float *pColor) {
@@ -435,6 +489,11 @@ void PGfxEngine::SetGlowSizeAndColor(float fA, float fB, float *pColor) {
     aColor[2] = *(unsigned int *)&pColor[2];
     aColor[3] = *(unsigned int *)&pColor[3];
     m_unk154C80->WriteToVu1Mem(0x3C3, (u_long128 *)aData, 2);
+}
+
+// FUNCTION: 0x185390 DrawRotatableParticles__10PGfxEngineFP22tagVuRotatableParticleiffb
+void PGfxEngine::DrawRotatableParticles(struct tagVuRotatableParticle *pParticles, int nCount, float fA, float fB, bool bFlag) {
+    m_unk154C80->DrawRotatableParticles(pParticles, nCount, fA, fB, bFlag, 0x1E);
 }
 
 // FUNCTION: 0x185460 EndFxRender__10PGfxEngineFv
@@ -611,6 +670,79 @@ void PGfxEngine::SetDirLightColor(int nIndex, float fR, float fG, float fB) {
         pLight->m_fB = 128.0f * fB;
         pLight->m_nW = 0;
     }
+}
+
+// FUNCTION: 0x186240 RenderBlendedFragment__10PGfxEngineFPQ210PGfxEngine22tagBlendedFragmentInfo
+void PGfxEngine::RenderBlendedFragment(tagBlendedFragmentInfo *pInfo) {
+    m_unk158E22 = pInfo->m_unkF0;
+    PMeshFragment *pFrag = pInfo->m_unk0;
+    m_unk158E20 = (pFrag->m_unk10 & 4) != 0;
+    SetZBufferUpdate((pFrag->m_unk10 & 0x80) != 0, (eGsContext)0);
+    if (pInfo->m_unk10 != 0) {
+        m_unk154C80->BeginMatrixList();
+        pInfo->m_unk10->AddBoneMatrixToDisplayList(true);
+        m_unk154C80->EndMatrixList();
+        if (pInfo->m_unkF0 != 0) {
+            UpdateLights((tagVuLightingInfo *)pInfo->m_unk20);
+        }
+        BeginSharedMesh((eBoxIntersect)pInfo->m_unk8, m_unk16D400);
+        if (pInfo->m_unkF2 != 0) {
+            pInfo->m_unk0->Render(true, pInfo->m_unkC, &pInfo->m_unkF3);
+        } else {
+            pInfo->m_unk0->Render(true, pInfo->m_unkC, 0);
+        }
+        m_unk158E24 = 0;
+        m_unk16D400 = 0;
+        return;
+    }
+    m_unk154C80->SetWorldMatrix((PMat4 *)(m_unk169320 + (pInfo->m_unk4 << 6)));
+    if (pInfo->m_unkF0 != 0) {
+        UpdateLights((tagVuLightingInfo *)pInfo->m_unk20);
+    }
+    BeginMesh((eBoxIntersect)pInfo->m_unk8);
+    if (pInfo->m_unkF2 != 0) {
+        pInfo->m_unk0->Render(true, pInfo->m_unkC, &pInfo->m_unkF3);
+    } else {
+        pInfo->m_unk0->Render(true, pInfo->m_unkC, 0);
+    }
+    m_unk154C80->EndMesh();
+}
+
+// DRAFT: 0x1865F0 AddBlendedFragment__10PGfxEngineFP13PMeshFragmentiPbb
+// note: DIFF 27 vs original; original is 0x1BC bytes (ours 0x1AC), tail table address is (this+0x158F04)+idx*4 via lui 0x15 + addu and it reloads m_unk169310 and m_unk16D324 with fresh lui 0x17; return-0 branch targets 0x4A (ours 0x46). Tried: direct member index (DIFF 30), pointer local with m_unk169310 index (30), re-read counter with nIndex store (30), pointer local with nIndex index (30), pOut loop via pDst pointer (50), hoisted loop bound (51).
+int PGfxEngine::AddBlendedFragment(PMeshFragment *pFrag, int nIdx, bool *pOut, bool bFlag) {
+    if (pFrag == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x515, "pFragment");
+    }
+    int nCount = m_unk169310;
+    if (nCount >= 0x100) {
+        return 0;
+    }
+    tagBlendedFragmentInfo *pInfo = (tagBlendedFragmentInfo *)(m_unk159310 + (nCount << 8));
+    pInfo->m_unk0 = pFrag;
+    pInfo->m_unk8 = m_unk16D328;
+    pInfo->m_unk4 = m_unk16D320;
+    pInfo->m_unkC = nIdx;
+    pInfo->m_unk10 = m_unk16D400;
+    pInfo->m_unkF0 = m_unk158E22;
+    pInfo->m_unkF1 = bFlag;
+    pInfo->m_unkF2 = 0;
+    if (pInfo->m_unkF0 != 0) {
+        CopyVuLightingInfo((tagVuLightingInfo *)pInfo->m_unk20, (tagVuLightingInfo *)m_unk158E30);
+    }
+    if (pOut != 0) {
+        for (unsigned int i = 0; i < pFrag->m_unk14; i++) {
+            (&pInfo->m_unkF3)[i] = pOut[i];
+            if (pOut[i] == 0) {
+                pInfo->m_unkF2 = 1;
+            }
+        }
+    }
+    int nIndex = m_unk169310;
+    *(int *)&m_unk158F04[nIndex * 4] = nIndex;
+    m_unk169310 = nIndex + 1;
+    m_unk16D324 += 1;
+    return 1;
 }
 
 // FUNCTION: 0x1867B0 ResetBlendedFragmentTable__10PGfxEngineFv
