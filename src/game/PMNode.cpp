@@ -1134,29 +1134,29 @@ float PMNode::GetFrameTime() {
     return 0.0f;
 }
 
-// DRAFT: 0x00193960 SetAnimLoopCount__6PMNodeFib
-// note: 8 lines differ; the bool guard beqz at 0x38 has offset 0x1C vs original 0x1D, and the original has the join nop (0xAC) before the epilogue. Loop body matches.
+// FUNCTION: 0x00193960 SetAnimLoopCount__6PMNodeFib
 void PMNode::SetAnimLoopCount(int nCount, bool bFlag) {
     PMNode *pChild;
     void *pObj = m_unk24;
     if (pObj != 0) {
         ((PFrameSource *)pObj)->Slot11(nCount);
     }
-    if (bFlag) {
-        m_unk18 = 0;
-        pChild = 0;
-        if (m_unk14 != 0) {
-            pChild = m_unk1C[0];
-        }
-        if (pChild != 0) {
-            do {
-                unsigned int uNext;
-                pChild->SetAnimLoopCount(nCount, bFlag);
-                uNext = m_unk18 + 1;
-                m_unk18 = uNext;
-                pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
-            } while (pChild != 0);
-        }
+    if (!bFlag) {
+        return;
+    }
+    m_unk18 = 0;
+    pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            unsigned int uNext;
+            pChild->SetAnimLoopCount(nCount, bFlag);
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
     }
 }
 
@@ -1544,31 +1544,23 @@ void *PMNode::GetFirstMesh() {
     return 0;
 }
 
-// DRAFT: 0x00194B80 SetAllFrustrumTest__6PMNodeF13eBoxIntersect
-// note: 7 lines differ; beq offset 0x1C vs 0x1B at 0x24 and missing join nop at 0x94 before epilogue (rest is shift). Tried: early return on m_unk04==2 (also 7, reverted).
+// FUNCTION: 0x00194B80 SetAllFrustrumTest__6PMNodeF13eBoxIntersect
 void PMNode::SetAllFrustrumTest(eBoxIntersect eMode) {
     PMNode *pChild;
     unsigned int idx;
     m_unk0C = (int)eMode;
-    if (m_unk04 != 2) {
-        m_unk18 = 0;
-        if (m_unk14 != 0) {
-            pChild = *m_unk1C;
-        } else {
-            pChild = 0;
-        }
-        if (pChild != 0) {
-            do {
-                pChild->SetAllFrustrumTest(eMode);
-                idx = m_unk18 + 1;
-                m_unk18 = idx;
-                if (idx < m_unk14) {
-                    pChild = m_unk1C[m_unk18];
-                } else {
-                    pChild = 0;
-                }
-            } while (pChild != 0);
-        }
+    if (m_unk04 == 2) {
+        return;
+    }
+    m_unk18 = 0;
+    pChild = (m_unk14 != 0) ? *m_unk1C : 0;
+    if (pChild != 0) {
+        do {
+            pChild->SetAllFrustrumTest(eMode);
+            idx = m_unk18 + 1;
+            m_unk18 = idx;
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
     }
 }
 
@@ -1747,8 +1739,7 @@ void PMNode::DestroyMesh() {
     m_unk3C = 0;
 }
 
-// DRAFT: 0x001952B0 RecurseSetFade__6PMNodeFf
-// note: 5 words differ, the join nop at 0x84 before the epilogue, same shape as SetAllFade. Tried: same structure as SetAllFade (not separately varied).
+// FUNCTION: 0x001952B0 RecurseSetFade__6PMNodeFf
 void PMNode::RecurseSetFade(float fFade) {
     PMNode *pChild;
     unsigned int idx;
@@ -1764,11 +1755,7 @@ void PMNode::RecurseSetFade(float fFade) {
             pChild->RecurseSetFade(fFade);
             idx = m_unk18 + 1;
             m_unk18 = idx;
-            if (idx < m_unk14) {
-                pChild = m_unk1C[m_unk18];
-            } else {
-                pChild = 0;
-            }
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
         } while (pChild != 0);
     }
 }
@@ -2174,8 +2161,7 @@ void PMNode::InitMembers() {
     m_unkF4 = 0;
 }
 
-// DRAFT: 0x001962E0 RemoveNullAnimation__6PMNodeFv
-// note: 5 lines differ, all in the epilogue: original has the join nop at 0xB4 before the ld ra, ours does not. Guard, delete, child loop match. Tried: single delete without inner null check (kept, 5 lines from many).
+// FUNCTION: 0x001962E0 RemoveNullAnimation__6PMNodeFv
 void PMNode::RemoveNullAnimation() {
     PMNode *pChild;
     unsigned int idx;
@@ -2196,11 +2182,7 @@ void PMNode::RemoveNullAnimation() {
             pChild->RemoveNullAnimation();
             idx = m_unk18 + 1;
             m_unk18 = idx;
-            if (idx < m_unk14) {
-                pChild = m_unk1C[m_unk18];
-            } else {
-                pChild = 0;
-            }
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
         } while (pChild != 0);
     }
 }
