@@ -8,6 +8,7 @@ class PObjectDisplayList;
 class PArray;
 class PAnim;
 class AnimData;
+class PPakFile;
 // TODO(header): eBoxIntersect belongs to the owner header of the box-test enum. Placeholder until that header defines it; only the name matters for mangling.
 enum eBoxIntersect { eBoxIntersect_Placeholder = 0 };
 
@@ -50,6 +51,12 @@ public:
     void SetAllFrustrumTest(eBoxIntersect eMode);
     void InitMembers();
     void RemoveNullAnimation();
+    void UpdateCameraFade(bool bFlag);
+    int LoadFxTriggers(PPakFile *pFile);
+    void RecurseEnableBone(PArray *pArr, bool bFlag);
+    void EnableOneRenderPassOnly(int nPass);
+    void SetRenderPassStatus(bool bA, bool bB, bool bC, bool bD);
+    unsigned char RecurseSetSTAnimOptions(bool bFlag);
 
     int m_unk04;           // 0x004 state; 2 skips frustum test
     int m_unk08;            // 0x008 zeroed by InitMembers

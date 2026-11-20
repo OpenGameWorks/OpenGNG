@@ -5,12 +5,15 @@
 // TODO(header): foreign declarations
 extern "C" void sceVu0ApplyMatrix(float *, float (*)[4], float *);
 extern "C" void __dt__5PMeshFv(void *, short);
+extern "C" void SetSTAnimOptions__5PMeshFb(void *, bool);
 extern "C" void *__nw__FUi(unsigned int);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" PObjectDisplayList *__ct__18PObjectDisplayListFv(PObjectDisplayList *);
 extern "C" void __dt__18PObjectDisplayListFv(PObjectDisplayList *, short);
 extern "C" void *__dt__6PArrayFv(void *pThis, short nFlag);
+// TODO(header): PArray::Find is not declared in PArray.h; same declaration as Peddler.cpp.
+extern "C" int Find__6PArrayFPv(void *pThis, void *pItem);
 extern "C" char __vt__9PResource[];
 extern "C" int Create__18PObjectDisplayListFP6PMNodePb(PObjectDisplayList *, PMNode *, bool *);
 class PAnimFrame;
@@ -37,6 +40,12 @@ public:
 extern PSound gSound;
 // TODO(header): mst_NextPMNodeRef__6PMNode is a static PMNode counter; a 4-byte int keeps it gp-relative as the original does.
 extern "C" int mst_NextPMNodeRef__6PMNode;
+class PPakFile;
+// TODO(header): PCDFile is a foreign class; only Read is needed here.
+class PCDFile {
+public:
+    int Read(void *pBuf, unsigned int size);
+};
 
 class AnimData;
 #include "PArray.h"
@@ -109,6 +118,44 @@ int PMNode::PlaySound(unsigned int arg0) {
         m_unkEC = 0;
     }
     return m_unkEC;
+}
+
+// DRAFT: 0x001918F0 UpdateCameraFade__6PMNodeFb
+// note: 23 words differ: lb vs lbu on m_unk3E, extra andi after ori, nop/epilogue order; int local gives 50, bool-local goto variant is best.
+void PMNode::UpdateCameraFade(bool bFlag) {
+    bool bNext = bFlag;
+    unsigned char bVal;
+    if (bNext) {
+        bVal = m_unk3E | 0x20;
+        goto store;
+    }
+    {
+        void *pObj = m_unk24;
+        int nVal = 0;
+        if (pObj != 0) {
+            nVal = ((int *)pObj)[1];
+        }
+        if ((unsigned int)(nVal - 500) < 10) {
+            bNext = true;
+            bVal = m_unk3E | 0x20;
+store:
+            m_unk3E = bVal;
+        }
+    }
+    m_unk18 = 0;
+    PMNode *pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            unsigned int uNext;
+            pChild->UpdateCameraFade(bNext);
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
 }
 
 // FUNCTION: 0x001919E0 CreateObjectDisplayList__6PMNodeFv
@@ -185,6 +232,31 @@ int PMNode::AddFxTrigger(tagParticleFxTrigger *pTrigger, bool bFlag) {
     *(int *)(pBlk + 0x20) = 0;
     *(int *)(pBlk + 0x24) = bFlag ? 4 : 0;
     ((PArray *)((char *)this + 0xD8))->Add(pBlk);
+    return 1;
+}
+
+// DRAFT: 0x00192ED0 LoadFxTriggers__6PMNodeFP8PPakFile
+// note: 25 words differ: loop entry is a b to the bottom test in the original and the call-site arg order differs; while and for loop forms both give 25.
+int PMNode::LoadFxTriggers(PPakFile *pFile) {
+    unsigned int nCount = 0;
+    unsigned int idx;
+    char *pBlk;
+    DestroyFxTriggers(false, false, false);
+    if (((PCDFile *)pFile)->Read(&nCount, 4) != 4) {
+        return 0;
+    }
+    for (idx = 0; idx < nCount; idx++) {
+        pBlk = (char *)__nw__FUi(0x28);
+        if (pBlk == 0) {
+            CdsAssert__FPciPc("PMNode.cpp", 0x732, "apTrigger");
+        }
+        if (((PCDFile *)pFile)->Read(pBlk, 0x28) != 0x28) {
+            return 0;
+        }
+        *(int *)(pBlk + 0x20) = 0;
+        *(int *)(pBlk + 0x24) = 0;
+        ((PArray *)((char *)this + 0xD8))->Add(pBlk);
+    }
     return 1;
 }
 
@@ -275,6 +347,33 @@ PMNode *PMNode::FindBone(unsigned int uID) {
         } while (pChild != 0);
     }
     return 0;
+}
+
+// FUNCTION: 0x00193450 RecurseEnableBone__6PMNodeFP6PArrayb
+void PMNode::RecurseEnableBone(PArray *pArr, bool bFlag) {
+    if (m_unk10 != 0) {
+        if (Find__6PArrayFPv(pArr, this) >= 0) {
+            if (!bFlag) {
+                pArr->Remove(this);
+            }
+        } else if (bFlag) {
+            pArr->Add(this);
+        }
+    }
+    m_unk18 = 0;
+    PMNode *pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            unsigned int uNext;
+            pChild->RecurseEnableBone(pArr, bFlag);
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
 }
 
 // FUNCTION: 0x00193540 BuildDispList__6PMNodeFP6PArray
@@ -576,6 +675,34 @@ PMNode *PMNode::FindAnimNode(unsigned int uID) {
 }
 
 
+// DRAFT: 0x00194650 EnableOneRenderPassOnly__6PMNodeFi
+// note: 42 words differ. Args D5..D7 read via bool lvalues to skip sltu normalization; still differs in load order and the D4 store address form (addiu+addu vs addu). Tried: pointer-index store form (same 42).
+void PMNode::EnableOneRenderPassOnly(int nPass) {
+    if (nPass >= 4) {
+        CdsAssert__FPciPc("PMNode.cpp", 0x446, "iPassIndex < MAX_PASSES_PER_SHADER");
+    }
+    m_unkD4 = false;
+    m_unkD5 = 0;
+    m_unkD6 = 0;
+    m_unkD7 = 0;
+    (&m_unkD4)[nPass] = true;
+    m_unk3E |= 0x80;
+    m_unk18 = 0;
+    PMNode *pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            unsigned int uNext;
+            pChild->SetRenderPassStatus(m_unkD4, *(bool *)&m_unkD5, *(bool *)&m_unkD6, *(bool *)&m_unkD7);
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+}
+
 // DRAFT: 0x00194850 Find__6PMNodeFUi
 // note: 2 words differ. Original guards uID==0 with a branch to a shared return-0 tail; ours puts v0=0 in the guard delay slot. Tried: early return on child==0, nested uID!=0 body (worse), single-exit form.
 PMNode *PMNode::Find(unsigned int uID) {
@@ -634,6 +761,41 @@ int PMNode::Find(PMNode *pNode) {
         } while (pChild != 0);
     }
     return 0;
+}
+
+// DRAFT: 0x001949E0 RecurseSetSTAnimOptions__6PMNodeFb
+// note: 8 words differ; the original returns the byte from s0 without andi 0xFF masks, and the loop-exit delay slot differs. Tried: int local and return (31 words, reverted), unsigned char kept.
+unsigned char PMNode::RecurseSetSTAnimOptions(bool bFlag) {
+    unsigned char bResult = 0;
+    PMNode *pChild;
+    if (m_unk10 != 0) {
+        SetSTAnimOptions__5PMeshFb(m_unk10, bFlag);
+        bResult = *((unsigned char *)m_unk10 + 0xC);
+    }
+    m_unk18 = 0;
+    if (m_unk14 != 0) {
+        pChild = *m_unk1C;
+    } else {
+        pChild = 0;
+    }
+    if (pChild != 0) {
+        do {
+            if (pChild->RecurseSetSTAnimOptions(bFlag) != 0) {
+                bResult = 1;
+            }
+            unsigned int idx = m_unk18 + 1;
+            m_unk18 = idx;
+            if (idx < m_unk14) {
+                pChild = m_unk1C[m_unk18];
+            } else {
+                pChild = 0;
+            }
+        } while (pChild != 0);
+    }
+    if (bResult != 0) {
+        m_unk3E |= 0x10;
+    }
+    return bResult;
 }
 
 // DRAFT: 0x00194AD0 GetFirstMesh__6PMNodeFv
