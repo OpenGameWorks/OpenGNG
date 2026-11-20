@@ -33,7 +33,7 @@ void PRainSplatter::Render() {
 }
 
 // DRAFT: 0x001D0160 Animate__13PRainSplatterFf
-// note: DIFF 88 words. VU0 block (lqc2/vmulx/vadd/sqc2) is written as a scalar loop; constant register allocation, loop bottom b and bc1t layout differ.
+// note: DIFF 86 words. VU0 block is asm (lqc2/qmtc2.i/vmulx/vadd/sqc2) with xb read as int from pIn+0xC (lw, not mfc1), frame 0x40 matches; constant registers, loop bottom b and bc1t layout differ. Tried *(int*)&x (88, frame 0x50), union (88), x declared before if (89).
 void PRainSplatter::Animate(float fDelta) {
     float vec[4];
     sceVu0SubVector(vec, m_unk20, m_unk10);
@@ -54,9 +54,23 @@ void PRainSplatter::Animate(float fDelta) {
             *(float *)(pEl + 0x4) = *(float *)(pIn + 0x4);
             *(float *)(pEl + 0x8) = *(float *)(pIn + 0x8);
             *(float *)(pEl + 0xC) = 0.2f + 0.3f * *(float *)(pIn + 0xC);
-            float x = *(float *)(pIn + 0xC);
-            for (int k = 0; k < 4; k++) {
-                ((float *)(pEl + 0x10))[k] = vec[k] * x + m_unk10[k];
+            int xb = *(int *)(pIn + 0xC);
+            float *pSrc = m_unk10;
+            float *pDst = (float *)(pEl + 0x10);
+            float *pVec = vec;
+            asm {
+                lqc2 vf1, 0x0(pVec)
+                lqc2 vf2, 0x0(pSrc)
+                qmtc2.i xb, vf3
+                vmulx.xyzw vf4, vf1, vf3x
+                vnop
+                vnop
+                vnop
+                vadd.xyzw vf5, vf4, vf2
+                vnop
+                vnop
+                vnop
+                sqc2 vf5, 0x0(pDst)
             }
         }
     }
