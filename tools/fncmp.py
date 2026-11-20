@@ -52,6 +52,21 @@ def addend_ok(typ: int, have: int, want: int, s: int) -> bool:
     return True
 
 
+def original_offset(a: int, want: int, ofull, symaddr) -> int | None:
+    """Offset into its symbol of the original LO16 at a, paired with the preceding HI16 on the same base."""
+    typ, idx = ofull[a]
+    if typ != 6:
+        return None
+    base = (want >> 21) & 0x1F
+    for back in range(a - 4, a - 0x200, -4):
+        h = ofull.get(back)
+        w = disasm.word(back)
+        if h == (5, idx) and (w >> 16) & 0x1F == base:
+            lo = ((want & 0xFFFF) ^ 0x8000) - 0x8000
+            return ((w & 0xFFFF) << 16) + lo - symaddr[idx]
+    return None
+
+
 def compile_source(src: Path, out: Path) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     cmd = [sys.executable, str(ROOT / "tools/mwcc.py"), *srcmeta.compile_args(src), "-c", "-o", str(out), str(src)]
@@ -160,7 +175,9 @@ def compare(src: Path, key: str, obj: Path | None, quiet: bool) -> int:
             elif ok and have is not None and not r[1].startswith(".") and not addend_ok(r[0], have, want, symaddr[ofull[a][1]]):
                 # Same symbol, different offset into it (a member of a global, an array element).
                 ok = False
-                notes.append(f"{i * 4:#06x}: addend into {r[1]} differs")
+                off = original_offset(a, want, ofull, symaddr)
+                hint = "" if off is None else f", original is {r[1]} + {off:#x}"
+                notes.append(f"{i * 4:#06x}: addend into {r[1]} differs{hint}")
         diffs += not ok
         if not quiet:
             def dis(w, va):
