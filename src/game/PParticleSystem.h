@@ -16,6 +16,7 @@ public:
     void FadeAndDie(unsigned int nUnused);
     void FrustrumTest(PFrustrum *pFrustrum, float *pVec, float fNear, float fFar);
     void ModifyPosition(PMat4 *pMat);
+    void Render();
     int Create(unsigned int nNum, bool bAlloc);
 
     // 0x000 vtable pointer (__vt__15PParticleSystem), stored by the destructor.

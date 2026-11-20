@@ -1,9 +1,16 @@
 #include "PParticleSystem.h"
+#include "PGfxEngine.h"
 #include "types.h"
 
 // TODO(header): foreign declarations
 class PMat4;
 extern unsigned char __vt__15PParticleSystem[0x40];
+extern PGfxEngine gGfxEng; // TODO(header): PGfxEngine.h does not declare the global gGfxEng.
+extern "C" void BeginHeatHaze__10PGfxEngineFv(PGfxEngine *pEng);
+extern "C" void EndHeatHaze__10PGfxEngineFv(PGfxEngine *pEng);
+extern "C" void BeginParticles__10PGfxEngineF13eBoxIntersect(PGfxEngine *pEng, eBoxIntersect eBox);
+extern "C" void BeginRotatableParticles__10PGfxEngineFv(PGfxEngine *pEng);
+extern "C" void EndParticles__10PGfxEngineFv(PGfxEngine *pEng);
 extern "C" void __dla__FPv(void *pMem);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" float sqrtf(float x);
@@ -162,6 +169,39 @@ void PParticleSystem::ModifyPosition(PMat4 *pMat) {
     m_unk50 = *(u_long128 *)((char *)pMat + 0x10);
     m_unk60 = *(u_long128 *)((char *)pMat + 0x20);
     m_unk70 = *(u_long128 *)((char *)pMat + 0x30);
+}
+
+// DRAFT: 0x001B4F10 Render__15PParticleSystemFv
+// note: m_unk08 test laid out as beqz-to-end, original is bnez-to-body plus b-to-end; the body's delay slots and gGfxEng reloads also differ. Tried m_unk08 == 0 empty-then, != 0 wrap, and early return: all DIFF 87.
+void PParticleSystem::Render() {
+    if (m_unk15 == 0) return;
+    if (m_unk14 == 0) return;
+    if (m_unkA4 == 0) return;
+    if (m_unk08 != 0) {
+        if (m_unk19 != 0) {
+            m_unkC0 = 1.1f;
+            m_unkC4 = 1.1f;
+            m_unkC8 = 1.1f;
+            gGfxEng.SetMaterial(&m_unkC0, true, m_unk30, 0x50000);
+            gGfxEng.SetWorldMatrix((PMat4 *)&m_unk40);
+            BeginHeatHaze__10PGfxEngineFv(&gGfxEng);
+            gGfxEng.DrawHeatHaze((tagVuParticle *)m_unk08, m_unk04, m_unkB8, m_unkBC, m_unk1A);
+            EndHeatHaze__10PGfxEngineFv(&gGfxEng);
+        } else if (m_unk1B != 0) {
+            gGfxEng.SetMaterial(m_unk10, &m_unkC0, true, m_unk30, 0x50000);
+            gGfxEng.SetWorldMatrix((PMat4 *)&m_unk40);
+            BeginRotatableParticles__10PGfxEngineFv(&gGfxEng);
+            gGfxEng.DrawRotatableParticles((tagVuRotatableParticle *)m_unk08, m_unk04, m_unkB8, m_unkBC, m_unk1A);
+            EndParticles__10PGfxEngineFv(&gGfxEng);
+        } else {
+            gGfxEng.SetMaterial(m_unk10, &m_unkC0, true, m_unk30, 0x50000);
+            gGfxEng.SetWorldMatrix((PMat4 *)&m_unk40);
+            BeginParticles__10PGfxEngineF13eBoxIntersect(&gGfxEng, (eBoxIntersect)m_unkA4);
+            gGfxEng.DrawParticles((tagVuParticle *)m_unk08, m_unk04, m_unkB8, m_unkBC, m_unk1A);
+            EndParticles__10PGfxEngineFv(&gGfxEng);
+        }
+        if (m_unk1A == 0) m_unk08 = 0;
+    }
 }
 
 // FUNCTION: 0x001B50F0 Create__15PParticleSystemFUib
