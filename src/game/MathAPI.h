@@ -4,7 +4,11 @@
 #include "types.h"
 
 class EntityBaseClass;
-struct tagBOX;
+struct tagBOX {
+    float m_unk00[4];   // 0x00 centre
+    float m_unk10[4];   // 0x10 extent
+    float m_unk20[4];   // 0x20 angle
+};
 struct tagSPHERE;
 struct tagVuMatrixBox;
 struct tagFLOAT3D;
@@ -36,6 +40,8 @@ public:
     static float GetRelAngleYToPoint(float (*arg0)[4], float arg1, float (*arg2)[4]);
     static float RandomFloatRange(float arg0, float arg1);
     static int RandomIntRange(int arg0, int arg1);
+    static int PointInBoundBox(float (*arg0)[4], tagBOX arg1);
+    static float GetAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]);
 
     static int miRandom;
     float m_unk00[4];   // 0x00

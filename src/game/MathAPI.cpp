@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "MathAPI.h"
 
 // TODO(header): foreign declarations
@@ -22,7 +23,9 @@ public:
     void InverseByRT(float *arg0, float *arg1);
 };
 extern "C" void sceVu0UnitMatrix(PMat4 *m);
+extern "C" void Inverse__5PMat4Fv(float *dst, float *src);
 extern "C" void sceVu0ApplyMatrix(tagBOX *dst, float *m, float *src);
+extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, char *pExpr);
 extern "C" void FastMath_ComputeMatrixLite(float (*)[4], float (*)[4], float (*)[4], float (*)[4], int);
 bool FastMath_PointInSingleMatrixBox(float *arg0, tagVuMatrixBox *arg1);
 void FastMath_PointInMatrixBox(tagVuMatrixBox *arg0, int arg1, float *arg2, int *arg3);
@@ -273,6 +276,103 @@ bool MathAPI::PointInMatrixBoxWSphereCheck(float *arg0, tagVuMatrixBox *arg1, ta
     return sp5C != 0;
 }
 
+// DRAFT: 0x00157DF0 PointInBoundBox__7MathAPIFPA4_f6tagBOX
+// note: 205 words differ (size 0x35C vs 0x2F4); AABB early returns as ?: raised it to 207; the tail's register and branch layout still differs
+int MathAPI::PointInBoundBox(float (*arg0)[4], tagBOX arg1) {
+    float sp40[12];
+    float sp70[4];
+    float sp80[16];
+    float spC0[16];
+    float sp100[4];
+    float sp110[16];
+    float *box = (float *)&arg1;
+    float f20;
+    float f21;
+    float f22;
+    float f23;
+    float f24;
+    float f25;
+    float f26;
+    float f27;
+    float f28;
+
+    sp40[0] = box[0];
+    sp40[1] = box[1];
+    sp40[2] = box[2];
+    sp40[3] = box[3];
+    sp40[4] = box[4];
+    sp40[5] = box[5];
+    sp40[6] = box[6];
+    sp40[7] = box[7];
+    sp40[8] = box[8];
+    sp40[9] = box[9];
+    sp40[10] = box[10];
+    sp40[11] = box[11];
+    *(u_long128 *)sp70 = *(u_long128 *)arg0;
+    f20 = sp40[0] - sp40[4];
+    f23 = sp40[0] + sp40[4];
+    f21 = sp40[1] - sp40[5];
+    f24 = sp40[1] + sp40[5];
+    f22 = sp40[2] - sp40[6];
+    f25 = sp40[2] + sp40[6];
+    if (sp40[8] == 0.0f && sp40[9] == 0.0f && sp40[10] == 0.0f) {
+        if (sp70[0] < f20) {
+            return 0;
+        }
+        if (!(sp70[0] <= f23)) {
+            return 0;
+        }
+        if (sp70[1] < f21) {
+            return 0;
+        }
+        if (!(sp70[1] <= f24)) {
+            return 0;
+        }
+        if (sp70[2] < f22) {
+            return 0;
+        }
+        if (!(sp70[2] <= f25)) {
+            return 0;
+        }
+        return 1;
+    }
+    f26 = f20 + 0.5f * (f23 - f20);
+    sp70[0] = sp70[0] - f26;
+    f27 = f21 + 0.5f * (f24 - f21);
+    sp70[1] = sp70[1] - f27;
+    f28 = f22 + 0.5f * (f25 - f22);
+    sp70[2] = sp70[2] - f28;
+    sceVu0UnitMatrix((PMat4 *)sp80);
+    ((PMat4 *)sp80)->RotateX(sp40[8]);
+    ((PMat4 *)sp80)->RotateY(sp40[9]);
+    ((PMat4 *)sp80)->RotateZ(sp40[10]);
+    Inverse__5PMat4Fv(sp110, sp80);
+    sceVu0CopyMatrix((float (*)[4])spC0, (float (*)[4])sp110);
+    sceVu0ApplyMatrix((tagBOX *)sp100, spC0, sp70);
+    sp100[0] = sp100[0] + f26;
+    sp100[1] = sp100[1] + f27;
+    sp100[2] = sp100[2] + f28;
+    if (sp100[0] < f20) {
+        return 0;
+    }
+    if (!(sp100[0] <= f23)) {
+        return 0;
+    }
+    if (sp100[1] < f21) {
+        return 0;
+    }
+    if (!(sp100[1] <= f24)) {
+        return 0;
+    }
+    if (sp100[2] < f22) {
+        return 0;
+    }
+    if (!(sp100[2] <= f25)) {
+        return 0;
+    }
+    return 1;
+}
+
 // FUNCTION: 0x1580F0 DistanceSquared__7MathAPIFPA4_fPA4_f
 float MathAPI::DistanceSquared(float (*arg0)[4], float (*arg1)[4]) {
     float sp10[4];
@@ -368,6 +468,43 @@ float MathAPI::GetRelAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]) {
         return d;
     }
     return -d;
+}
+
+// DRAFT: 0x001584A0 GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f
+// note: 52 words differ; prologue reg order, ternary branch form (bc1t/bc1f), wrap-tail f2/f0 and neg placement remain; tried ?: compare swap (no change), clamp tail duplicated (66->52)
+float MathAPI::GetAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]) {
+    if (arg0 == 0) CdsAssert__FPciPc("MathAPI.cpp", 0x70, "pEnt");
+    char *self = (char *)arg0;
+    float *v0 = (float *)(self + 0x190);
+    int obj = *(int *)(self + 0x3C);
+    if (obj) v0 = (float *)(obj + 0x80);
+    float *v1;
+    if (obj) v1 = (float *)(obj + 0x90);
+    else v1 = (float *)(self + 0x1A0);
+    float dx = v0[0] - arg1[0][0];
+    float dz = v0[2] - arg1[0][2];
+    if (dx == 0.0f && dz == 0.0f) return v1[1];
+    float f20 = v1[1];
+    float f1 = 57.295776f * atan2f(dx, dz);
+    float f0 = (f20 < f1) ? f1 : f20;
+    float f2 = (f0 == f20) ? f1 : f20;
+    float f3 = f0 - f2;
+    float t = (360.0f - f0) + f2;
+    if (f3 > t) {
+        f3 = t;
+        f2 = f20 + f3;
+    } else {
+        f2 = f20 + f3;
+    }
+    if (f2 > 180.0f) {
+        if ((int)(f2 - 360.0f) != (int)f1) f3 = -f3;
+    } else {
+        if ((int)f2 != (int)f1) f3 = -f3;
+    }
+    f0 = f20 + f3;
+    if (f0 < -180.0f) f0 += 360.0f;
+    else if (f0 > 360.0f) f0 -= 360.0f;
+    return f0;
 }
 
 // FUNCTION: 0x1586B0 RandomFloatRange__7MathAPIFff
