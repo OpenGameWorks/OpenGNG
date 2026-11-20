@@ -8,7 +8,12 @@
 class PMidasShieldRings {
 public:
     PMidasShieldRings();
+    void Create(bool bFlag);
+    void Create(float fA, float fB, float fC, float *pA, float *pB, float *pC, float fD, float fE, float fF, int nA, int nB, bool bA, bool bB);
+    void *InitRingMeshPacket(int &nCount, int nSegs, bool bFlag);
+    int CreateRingTriStrip(int nSegs, float fA, float fB, int iC, int iD, float (*pA)[4], float (*pB)[4], float (*pC)[4]);
     int FindFreeRing();
+    int Emit();
     void FadeAndDie(unsigned int uArg);
     void Render();
 
@@ -22,7 +27,11 @@ public:
     unsigned char m_unk19;
     char _pad1A[0x16];
     unsigned long long m_unk30;
-    char _pad38[0x124];
+    char _pad38[0x98];
+    int m_unkD0;
+    char _pad0D4[0x6C];
+    float m_unk140;
+    char _pad144[0x18];
     unsigned char m_unk15C[0x90];
     int m_unk1EC;
     char _pad1F0[0x04];
