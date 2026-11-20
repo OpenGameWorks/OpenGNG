@@ -266,11 +266,10 @@ void PSound::DelinkAmbientEntry(AmbientEntry *pEntry) {
     }
 }
 
-// DRAFT: 0x001A3EE0 FindFadingAmbientChannel__6PSoundFv
-// note: 3 words differ; the 0x3FFE constant and loaded element swap a0/a1 at the compare (int*, unsigned int*, for-loop and while-loop variants tried, all DIFF 3 or worse).
+// FUNCTION: 0x001A3EE0 FindFadingAmbientChannel__6PSoundFv
 unsigned int PSound::FindFadingAmbientChannel() {
-    unsigned int idx = m_unk2E28;
     int *p = (int *)m_unkF8;
+    unsigned int idx = m_unk2E28;
     while (idx <= m_unk2E2C) {
         if (*p == 0x3FFE) {
             return idx;
@@ -1525,7 +1524,7 @@ void PSound::ResumeAmbientEntry(AmbientEntry *pEntry) {
 }
 
 // DRAFT: 0x001A8660 PauseAmbientEntry__6PSoundFPQ26PSound12AmbientEntryUi
-// note: 2 words differ: original keeps the flag compare in at (sltiu at / bnez at, store after inline return 0), ours compares into v0; tried if/else, result variable, nested return, inverted and local-load forms
+// note: 2 words differ: original keeps the compare in $at (sltiu at / bnez at), ours uses v0; tried nested positive if (DIFF 15), early-return positive if (DIFF 9), explicit return in store branch (DIFF 10), unsigned local with >= (DIFF 2), unsigned local with < (DIFF 9), `||` in one if (DIFF 15), int/bool local holding the compare (DIFF 2 each)
 int PSound::PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag) {
     if (pEntry == 0) {
         return 0;
@@ -2150,11 +2149,10 @@ void PSound::FadeOutAllMusic(unsigned int nArg) {
     } while (i < 2);
 }
 
-// DRAFT: 0x001A9720 PlayMusicOnStream__6PSoundFUiUiUi
-// note: 2 words differ: clamp sltiu/bnez uses $v0 not $at; tried !(n<0x65), ternary, compare on param, empty-then if/else
+// FUNCTION: 0x001A9720 PlayMusicOnStream__6PSoundFUiUiUi
 int PSound::PlayMusicOnStream(unsigned int arg0, unsigned int arg1, unsigned int arg2) {
-    if (arg2 >= 0x65U) {
-        arg2 = 0x64;
+    if (arg2 > 100U) {
+        arg2 = 100;
     }
     if (arg0 < 2U && arg1 < 0x21U) {
         unsigned int *pState = m_unk70[arg0];
@@ -2344,7 +2342,7 @@ int PSound::TranslateIntoADSR(unsigned int nArg) {
 }
 
 // DRAFT: 0x001A9E10 RestartSuffix__6PSoundFv
-// note: 2 words differ: the constant 1 goes to a0 instead of v0 (addiu at 0x38, sb at 0x4C); tried char/bool/uchar member, `= true`, moving the m_unk00 store, `return m_unkD1 = 1` (DIFF 10)
+// note: 2 words differ: the constant 1 goes to a0 instead of v0 (addiu at 0x38, sb at 0x4C; schedule otherwise identical); tried char/bool/uchar member, `= true`, moving the m_unk00 store, `return m_unkD1 = 1` (DIFF 10), `(char)1` (DIFF 2), int local holding 1 (DIFF 2)
 int PSound::RestartSuffix() {
     PSoundFlushIOPCommandsWaitFinish();
     WaitOnVSync();
