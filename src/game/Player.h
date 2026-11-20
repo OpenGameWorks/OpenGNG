@@ -37,6 +37,7 @@ public:
     int CheckAbility(int arg0);
     int CheckDuplicate(int arg0);
     int ValidateItem(int arg0);
+    void FillItems(int *arg0, bool arg1);
     void ForceDie(int arg0);
     void GetBoxer(int arg0);
     void SwapAbility(int arg0);
@@ -109,6 +110,7 @@ public:
     void SetHeadCamera(bool arg0);
     void ReleaseHeadCamera();
     void UpdateKey();
+    void UpdateDisplayList();
     void CatchLedgeMove();
     void ArmorUpMove();
     void CatchUpMove();
@@ -197,7 +199,8 @@ public:
     int m_unk218;           // 0x218 state, NotifyTreasure requires it to equal 1
     int m_unk21C;           // 0x21C cleared by SavePlayerData
     int m_unk220;          // 0x220 read by OutputDebug
-    char _pad224[0x229 - 0x224];
+    int m_unk224;           // 0x224 bitmask of owned items, tested by FillItems
+    char _pad228[0x229 - 0x228];
     signed char m_unk229;   // 0x229 state byte, compared with 4 by BackToMaximo
     signed char m_unk22A;   // 0x22A previous ability id, stored by SwapAbility
     char _pad22B[0x23B - 0x22B];

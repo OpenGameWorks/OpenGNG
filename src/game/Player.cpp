@@ -3,6 +3,9 @@
 #include "PResourceManager.h"
 
 // TODO(header): foreign declarations
+extern "C" void Add__6PArrayFPv(void *pArray, void *pItem);
+extern "C" void BuildDispList__9PSkeletonFv(void *pSkeleton);
+extern "C" void EnableOneRenderPassOnly__6PMNodeFi(void *pNode, int nPass);
 extern unsigned char gEng[0x1A000];
 extern PResourceManager *mpResMgr__15EntityBaseClass;
 extern char mMaximoData__6Player[0x100];
@@ -10,6 +13,8 @@ extern "C" float sqrtf(float x);
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void *__dt__6ShadowFv(void *pThis, short nFlag);
 extern "C" void *__dt__15PGrimReaperCapeFv(void *pThis, short nFlag);
+extern int PeddlerItems[14];
+extern int GuardItems[19];
 extern "C" void EnableFullScreenFx__10PGfxEngineFb(void *pThis, bool bEnable);
 extern unsigned char __vt__6Player[124];
 extern unsigned char gMC[0x1000];
@@ -805,6 +810,91 @@ void Player::ArmorUpMove() {
 void Player::SetProbe(float (*arg0)[4], float arg1) {
     *(float *)&m_unk344 = arg1 * arg1;
     *(u_long128 *)m_unk350 = *(u_long128 *)arg0;
+}
+
+// DRAFT: 0x0015A5D0 FillItems__6PlayerFPib
+// note: 91 words differ; frame -0x120 matches; andi before bool branch (original bare bnez), Guard block placement, global addend (addiu s0,s0,0 vs 0x44A0/0x44E0), this/arg0 registers swapped (s7/s5 original, s5/s4 ours); variants: swapped branch 119/118, !arg1 117+, cached mask 125
+void Player::FillItems(int *arg0, bool arg1) {
+    int spA0[32];
+    int *pTable;
+    int fp = 0;
+    int s1 = 0;
+    int s2 = 0;
+    int s6 = 1;
+    int s3;
+    int temp;
+    int a3;
+    unsigned int a2;
+    unsigned int t0;
+    int s1_2;
+    int i;
+
+    if (arg1 == 0) {
+        pTable = PeddlerItems;
+        a2 = 0;
+        a3 = 0;
+        for (;;) {
+            t0 = arg0[a3] - 1;
+            if (t0 < 0x1F) {
+                a2 = t0;
+                if ((m_unk224 & (1 << t0)) == 0) {
+                    fp = t0 + 0x25;
+                    break;
+                }
+            }
+            a3++;
+            if (a3 >= 5) {
+                fp = a2 + 0x25;
+                break;
+            }
+        }
+    } else {
+        pTable = GuardItems;
+    }
+    s1 = 0;
+    s6 = 1;
+    s2 = 0;
+    while ((s3 = *pTable++) != 0) {
+        if (s3 < 0) {
+            s3 = *pTable++;
+            s6 = 0;
+        }
+        if (s3 == 0x25) {
+            s3 = fp;
+        }
+        temp = CheckAbility(s3);
+        switch (temp) {
+        case -1:
+            arg0[s2] = s3;
+            s2++;
+            break;
+        case -2:
+        case -3:
+        case -4:
+            if (s6 != 0) {
+                arg0[s2] = s3;
+                s2++;
+            } else if (temp != -2) {
+                s1++;
+                spA0[s1 - 1] = s3;
+            }
+            break;
+        }
+        if (s2 >= 5) {
+            return;
+        }
+    }
+    s1_2 = s1 - 1;
+    if (s2 < 5) {
+        do {
+            if (s1_2 < 0) {
+                CdsAssert__FPciPc("Player.cpp", 0x1E9E, "iResItem >= 0");
+            }
+            arg0[s2] = spA0[s1_2];
+            s2++;
+            s1_2--;
+        } while (s2 < 5);
+    }
 }
 
 // FUNCTION: 0x0015A7F0 ValidateItem__6PlayerFi
@@ -2723,6 +2813,75 @@ void Player::UpdateKey() {
                 i++;
                 n--;
             } while (i < 3);
+        }
+    }
+}
+
+// DRAFT: 0x00160EB0 UpdateDisplayList__6PlayerFv
+// note: 122 words differ; frame -0x90 vs -0xA0, no s7/s0 D4 pointer precompute (addiu s2,v1,0xD4), reloads of m_unk284/m_unk28C after calls, assert literal addend, call reloc at 0x108/0x110/0x12C; variants: char* offsets 129, pointer locals 133, reloads 122, keep[4] 122
+void Player::UpdateDisplayList() {
+    void *keep[3];
+    char *sword;
+    char *shield;
+    int swordD4;
+    int shieldD4;
+    void *swordTex;
+    void *shieldTex;
+    char *node;
+    int i;
+
+    if (m_unk229 == 2) {
+        sword = (char *)m_unk284;
+        shield = (char *)m_unk28C;
+        if (sword == 0) {
+            CdsAssert__FPciPc("Player.cpp", 0xEAD, "mpSwordBone");
+        }
+        if (shield == 0) {
+            CdsAssert__FPciPc("Player.cpp", 0xEAE, "mpShieldBone");
+        }
+        swordD4 = *(int *)(sword + 0xD4);
+        shieldD4 = *(int *)(shield + 0xD4);
+        swordTex = *(void **)(sword + 0x10);
+        shieldTex = *(void **)(shield + 0x10);
+        *(void **)(sword + 0x10) = 0;
+        *(unsigned char *)(sword + 0x3E) &= 0xEF;
+        *(void **)(shield + 0x10) = 0;
+        *(unsigned char *)(shield + 0x3E) &= 0xEF;
+        for (i = 0; i < 3; i++) {
+            node = (char *)m_unk298[i];
+            keep[i] = *(void **)(node + 0x10);
+            if (keep[i] != 0) {
+                *(void **)(node + 0x10) = 0;
+                *(unsigned char *)(node + 0x3E) &= 0xEF;
+            }
+        }
+        if (m_unk218 < 4) {
+            EnableOneRenderPassOnly__6PMNodeFi(m_unk3C, m_unk218);
+        }
+        BuildDispList__9PSkeletonFv(m_unk3C);
+        Add__6PArrayFPv((char *)m_unk3C + 0x150, (void *)m_unk284);
+        *(int *)(sword + 0xD4) = swordD4;
+        *(int *)(shield + 0xD4) = shieldD4;
+        *(void **)((char *)m_unk284 + 0x10) = swordTex;
+        *(unsigned char *)((char *)m_unk284 + 0x3E) &= 0xEF;
+        if (swordTex != 0 && ((PMesh *)swordTex)->m_unkC != 0) {
+            *(unsigned char *)((char *)m_unk284 + 0x3E) |= 0x10;
+        }
+        *(void **)((char *)m_unk28C + 0x10) = shieldTex;
+        *(unsigned char *)((char *)m_unk28C + 0x3E) &= 0xEF;
+        if (shieldTex != 0 && ((PMesh *)shieldTex)->m_unkC != 0) {
+            *(unsigned char *)((char *)m_unk28C + 0x3E) |= 0x10;
+        }
+        for (i = 0; i < 3; i++) {
+            if (keep[i] == 0) {
+                break;
+            }
+            node = (char *)m_unk298[i];
+            *(void **)(node + 0x10) = keep[i];
+            *(unsigned char *)(node + 0x3E) &= 0xEF;
+            if (((PMesh *)keep[i])->m_unkC != 0) {
+                *(unsigned char *)(node + 0x3E) |= 0x10;
+            }
         }
     }
 }
