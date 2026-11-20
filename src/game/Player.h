@@ -99,6 +99,8 @@ public:
     void InitAttachableJoints();
     void RefreshAttachableJoints();
     void SetAbilityAction(PSkeleton *arg0, int arg1, int arg2);
+    int AnimationViewer(int arg0);
+    void UpdateBodyBox();
     void CyclockDamageMove();
     void MBlowMove();
     void AirSlash2Move();

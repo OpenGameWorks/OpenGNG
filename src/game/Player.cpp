@@ -8,7 +8,7 @@ extern "C" void BuildDispList__9PSkeletonFv(void *pSkeleton);
 extern "C" void EnableOneRenderPassOnly__6PMNodeFi(void *pNode, int nPass);
 extern unsigned char gEng[0x1A000];
 extern PResourceManager *mpResMgr__15EntityBaseClass;
-extern char mMaximoData__6Player[0x100];
+extern char mMaximoData__6Player[380];
 extern "C" float sqrtf(float x);
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void *__dt__6ShadowFv(void *pThis, short nFlag);
@@ -21,6 +21,9 @@ extern unsigned char gMC[0x1000];
 extern char gGfxEng[1504384];
 extern int miRandom__7MathAPI;
 extern "C" int rand();
+extern "C" int LoadMesh__15EntityBaseClassFUibb(void *pThis, unsigned int uId, bool bA, bool bB);
+extern "C" void SetAbilityAction__6PlayerFP9PSkeletonii(void *pSkeleton, int nIndex, int nRemain);
+extern float MIN_TOP;
 class VirtualSlot08Object {
 public:
     virtual void Slot08(int arg0);
@@ -510,6 +513,54 @@ void Player::InitAttachableJoints() {
     m_pFreeJoints[3].m_unk04 = 1;
     m_pFreeJoints[4].m_unk04 = 1;
     m_pFreeJoints[4].m_unk00 = 0;
+}
+
+// DRAFT: 0x00159790 AnimationViewer__6PlayerFi
+// note: 4 words differ: the four `addiu $s6,$zero,1` are `daddiu` in the original; pointer, 1LL, bool casts tried, no change
+int Player::AnimationViewer(int arg0) {
+    int nIndex = 0;
+    int nOffset = 0;
+    int nSum = 0;
+    do {
+        unsigned short nDur = *(unsigned short *)(mMaximoData__6Player + nOffset + 4);
+        if ((unsigned int)(arg0 - nSum) < nDur) break;
+        nIndex++;
+        nSum += nDur;
+        nOffset += 0x4C;
+    } while (nIndex < 5);
+    char *pIdBase = mMaximoData__6Player + 8;
+    if (LoadMesh__15EntityBaseClassFUibb(this, *(unsigned int *)(pIdBase + nIndex * 0x4C), false, true)) {
+        PMNode *pNode = (PMNode *)m_unk3C;
+        PMNode *pBuilt = 0;
+        PMNode *pEntry = pNode->Find(0xB5714B5AU);
+        if (pEntry) {
+            PMNode *pRes = mpResMgr__15EntityBaseClass->GetResource(0x81000001, true);
+            void *pMesh = pRes->m_unk10;
+            pEntry->m_unk10 = pMesh;
+            pEntry->m_unk3E &= 0xEF;
+            if (pMesh && ((unsigned char *)pMesh)[0xC]) pEntry->m_unk3E |= 0x10;
+            pBuilt = (PMNode *)1;
+        }
+        pEntry = pNode->Find(0x6499DC24U);
+        if (pEntry) {
+            pBuilt = mpResMgr__15EntityBaseClass->GetResource(0x81000002, true);
+            if (!pBuilt) CdsAssert__FPciPc("Player.cpp", 0x2189, "pShield");
+            void *pMesh = pBuilt->GetFirstMesh();
+            pEntry->m_unk10 = pMesh;
+            pEntry->m_unk3E &= 0xEF;
+            if (pMesh && ((unsigned char *)pMesh)[0xC]) pEntry->m_unk3E |= 0x10;
+            pBuilt = (PMNode *)1;
+        }
+        if (pBuilt) BuildDispList__9PSkeletonFv(pNode);
+    }
+    SetAbilityAction__6PlayerFP9PSkeletonii(m_unk3C, nIndex, arg0 - nSum);
+    int nTotal = 0;
+    nTotal += *(unsigned short *)(mMaximoData__6Player + 0x4);
+    nTotal += *(unsigned short *)(mMaximoData__6Player + 0x50);
+    nTotal += *(unsigned short *)(mMaximoData__6Player + 0x9C);
+    nTotal += *(unsigned short *)(mMaximoData__6Player + 0xE8);
+    nTotal += *(unsigned short *)(mMaximoData__6Player + 0x134);
+    return nTotal;
 }
 
 struct MaximoAbilityEntry {
@@ -3279,6 +3330,67 @@ void Player::ResetPling() {
             t->Slot00(1);
         }
         m_unk32C = 0;
+    }
+}
+
+// DRAFT: 0x00164E20 UpdateBodyBox__6PlayerFv
+// note: 98 words differ; float clamp block uses f1-f3 where original uses f20/f21, 6-arm exit layout and FastMath_Fabs reloc differ; tried switch form, else-first, and single-load case 6 (109)
+void Player::UpdateBodyBox() {
+    char *a3 = *(char **)((char *)this + 0x294);
+    if (a3 != 0) {
+        float *s0 = (float *)((char *)m_unk38 + 0x80);
+        switch (m_unk260) {
+        case 6:
+            s0[1] = s0[6];
+            s0[5] = s0[6];
+            break;
+        default: {
+            float f1 = *(float *)((char *)m_unk3C + 0x84);
+            float f2;
+            if ((m_unk1D0 & 4) || !(m_unk264 & 0x80)) {
+                f2 = 0.0f;
+            } else {
+                f2 = *(float *)(a3 + 0x74) - f1;
+            }
+            float f21 = *(float *)(*(char **)((char *)this + 0x290) + 0x74) - f1;
+            float f20 = f2;
+            if (f21 < f2) {
+                f20 = f21;
+                f21 = f2;
+            }
+            float c20 = f20 - 0.75f;
+            if (c20 < 0.0f) {
+                c20 = 0.0f;
+            }
+            float c21 = f21 + 1.0f;
+            float t0 = 2.0f + c20;
+            if (c21 < t0) {
+                c21 = t0;
+            }
+            if ((c20 == 0.0f) && (c21 < MIN_TOP)) {
+                c21 = MIN_TOP;
+            }
+            float t22 = s0[1] + s0[5];
+            float t23 = c21 - t22;
+            if (!(FastMath_Fabs__Ff(t23) <= 1.0f)) {
+                c21 = t22 - 1.0f;
+                if (!(t23 <= 0.0f)) {
+                    c21 = 1.0f + t22;
+                }
+            }
+            float t22b = s0[1] - s0[5];
+            float t23b = c20 - t22b;
+            if (!(FastMath_Fabs__Ff(t23b) <= 1.0f)) {
+                c20 = t22b - 1.0f;
+                if (!(t23b <= 0.0f)) {
+                    c20 = 1.0f + t22b;
+                }
+            }
+            float h = 0.5f * (c21 + c20);
+            s0[1] = h;
+            s0[5] = c21 - h;
+        }
+        }
     }
 }
 
