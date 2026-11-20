@@ -51,7 +51,9 @@ public:
     int m_unk104;                       // 0x104 float bits 3.0f (Execute case -1/9)
     int m_unk108;                       // 0x108 float bits 3.5f (Execute case -1/9)
     int m_unk10C;                       // 0x10C flag word, bits set by Execute case -1/9
-    char _pad110[0x15C - 0x110];
+    char _pad110[0x140 - 0x110];
+    void *m_unk140;                     // 0x140 sequence pointer, cases 13/23, 14/24, 17/27
+    char _pad144[0x15C - 0x144];
     short m_unk15C;                     // 0x15C
     short m_unk15E;                     // 0x15E
     int m_unk160;                       // 0x160 countdown; zero lets the state change
@@ -73,9 +75,9 @@ public:
     int m_unk1DC;                       // 0x1DC
     char _pad1E0[0x1E4 - 0x1E0];
     int m_unk1E4;                       // 0x1E4
-    int m_unk1E8;                       // 0x1E8
-    int m_unk1EC;                       // 0x1EC
-    int m_unk1F0;                       // 0x1F0
+    float m_unk1E8;                     // 0x1E8
+    float m_unk1EC;                     // 0x1EC
+    float m_unk1F0;                     // 0x1F0
     char _pad1F4[0x1F8 - 0x1F4];
     int m_unk1F8;                       // 0x1F8
     int m_unk1FC;                       // 0x1FC float bits 0.1f
@@ -86,14 +88,15 @@ public:
     int m_unk230;                       // 0x230 timer id slot
     unsigned int m_unk234;              // 0x234 state-change argument set by OnHitEvent on death
     unsigned int m_unk238;              // 0x238 argument set by OnHitEvent on hit
-    char _pad23C[0x240 - 0x23C];
+    int m_unk23C;                       // 0x23C written by Execute case 0/10 sub-switch 1/3
     float m_unk240;                     // 0x240 ground height copied from the GetGroundPos result
     char _pad244[0x248 - 0x244];
     char *m_unk248;                     // 0x248 target entity read by GetTarget
     char _pad24C[0x250 - 0x24C];
     u_long128 m_unk250;                 // 0x250 16-byte copy of target block
     int m_unk260;                       // 0x260 timer id slot
-    char _pad264[0x280 - 0x264];
+    char _pad264[0x270 - 0x264];
+    float m_unk270[4];                  // 0x270 vector, [1] is 0x274 (case 12/22 float)
     float m_unk280;                     // 0x280 target position read by FlyerPitchChange
     int m_unk284;                       // 0x284 hit points, reduced by OnHitEvent
     char _pad288[0x28C - 0x288];

@@ -11,6 +11,7 @@ extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
 extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
+extern "C" void sceVu0OuterProduct(float *pDst, float *pA, float *pB);
 class TimerAPI {
 public:
     char _pad000[40];
@@ -63,9 +64,52 @@ extern "C" void *__ct__6ShadowFQ26Shadow10ShadowTypeUi(void *pThis, int nType, u
 extern "C" void WriteApparitionData__15EntityBaseClassFicUi(void *pThis, int nA, char cB, unsigned int nC);
 extern "C" void PlaySequence__15EntityBaseClassFPUi(void *pThis, unsigned int *pSeq);
 extern "C" void PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
+extern "C" void StopAllSoundsByObject__15EntityBaseClassFv(void *pThis);
+extern "C" void SpawnBonus__15EntityBaseClassFPfii(void *pThis, float *pOffset, int nA, int nB);
+extern float m_vBonusSpawnOffset[4];
 extern "C" struct tagWaypointGroup *GetWaypointGroupInfo__15WaypointManagerFUi(void *pThis, unsigned int nGroupId);
 extern "C" int sprintf(char *pBuf, const char *pFmt, ...);
 extern char ClockworkFlyer_LoadMeshSeq[20];
+extern char ClockworkFlyer_DartLeftSeq[52];
+extern char ClockworkFlyer_DartRightSeq[52];
+extern char ClockworkFlyer_DartSeq[52];
+extern char ClockworkFlyer_DeadSeq[60];
+extern char ClockworkFlyer_DestroyedSeq[68];
+extern char ClockworkFlyer_DiveDownFromCheeseSeq[60];
+extern char ClockworkFlyer_DiveFinishLeftSeq[52];
+extern char ClockworkFlyer_DiveFinishRightSeq[52];
+extern char ClockworkFlyer_DivePoseSeq[52];
+extern char ClockworkFlyer_DivePrepSeq[52];
+extern char ClockworkFlyer_FlyNoZSeq[52];
+extern char ClockworkFlyer_HitSeq[60];
+extern char ClockworkFlyer_IdleSeq[52];
+extern char ClockworkFlyer_JumpFromShellSeq[60];
+extern char ClockworkFlyer_SlamFirstSeq[52];
+extern char ClockworkFlyer_SlamSecondSeq[52];
+extern char ClockworkFlyer_TauntSeq[52];
+extern char lit_0026C2B0[];
+extern char lit_0026C340[];
+extern char lit_0026C350[];
+extern u_long128 lit_004C9290;
+class ZinShell {
+public:
+    char _pad000[4];
+    unsigned int m_unk4;
+    char _pad008[0x224 - 0x008];
+    int m_unk224;
+    int m_unk228;
+    unsigned char m_unk22C;
+    unsigned char m_unk22D;
+};
+struct PosBlock { float x; float y; float z; };
+extern "C" ZinShell *Spawn__13EntityManagerFUibi(void *, unsigned int, int, bool);
+extern "C" void EnableSleep__15EntityBaseClassFbb(void *, bool, bool);
+extern "C" void SetShellStartAndDest__8ZinShellFRA4_fRA4_f(void *, float (*)[4], float (*)[4]);
+extern "C" void TriggerBGAnim__15EntityBaseClassFUiibUi(void *, unsigned int, int, bool, unsigned int);
+extern "C" ZinShell *GetPtrToApparition__13EntityManagerFUi(void *, unsigned int);
+extern "C" void RemoveFromAttackSystem__15EntityBaseClassFv(void *);
+extern "C" void GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(void *, float *);
+extern "C" float Round180__Ff(float f);
 struct tagWaypointGroup {
     char _pad000[4];
     unsigned int nCount;
@@ -505,7 +549,7 @@ int ClockworkFlyer::OnHitEvent(EntityBaseClass *pOther, int nDmg, unsigned int a
 }
 
 // DRAFT: 0x001E9C60 Execute__14ClockworkFlyerFv
-// note: prologue, block A/9, case -1/9 and default transcribed; cases 0/10 onward untranscribed
+// note: all cases except 12/22 transcribed; frame 0x100 vs 0x1F0 and prologue literal load differ; unused locals are dropped
 void ClockworkFlyer::Execute() {
     float sp1E0[4];
     char sp50[0x20];
@@ -513,7 +557,29 @@ void ClockworkFlyer::Execute() {
     char *var_a0;
     void *p;
     int nState;
+    unsigned int temp_v0_10;
+    ZinShell *temp_v0_11;
+    char *temp_v0_12;
+    float *var_v1;
+    float temp_f2;
+    float temp_f3;
+    float var_f0;
+    float sp150[4];
+    float sp160[4];
+    unsigned int temp_v1_6;
+    ZinShell *temp_v0_28;
+    float *temp_v1_7;
+    u_long128 sp40;
+    float sp170[4];
+    float sp180[4];
+    float sp190[4];
+    float sp1A0[4];
+    float fSave;
+    float sp1B0[4];
+    float sp1C0[4];
+    float sp1D0[4];
 
+    sp40 = lit_004C9290;
     if (m_unk38 != 0) {
         pTarget = m_unk3C;
         var_a0 = (char *)&_pad190;
@@ -652,6 +718,461 @@ void ClockworkFlyer::Execute() {
             }
         }
         break;
+    case 0:
+    case 10:
+        if (m_unkE9 != 0) {
+            temp_v0_10 = m_unk1E4;
+            switch (temp_v0_10) {
+            case 1:
+            case 3:
+                temp_v0_11 = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0xFU, 0, 0);
+                if (temp_v0_11 == 0) {
+                    CdsAssert__FPciPc(lit_0026C2B0, 0x1C5, lit_0026C340);
+                }
+                m_unk23C = temp_v0_11->m_unk4;
+                EnableSleep__15EntityBaseClassFbb(this, 0, 0);
+                if (m_unk1E4 == 3) {
+                    temp_v0_11->m_unk22C = 1;
+                    PlaySound__15EntityBaseClassFUi(this, 0x4DU);
+                }
+                temp_v0_12 = m_unk3C;
+                var_v1 = (float *)&_pad190;
+                if (temp_v0_12 != 0) {
+                    var_v1 = (float *)(temp_v0_12 + 0x80);
+                }
+                temp_f3 = m_unk1E8;
+                temp_f2 = var_v1[0];
+                if ((temp_f3 == temp_f2) && (m_unk1EC == var_v1[1]) && (m_unk1F0 == var_v1[2])) {
+                    sp150[0] = temp_f2;
+                    sp150[1] = 50.0f + var_v1[1];
+                    var_f0 = var_v1[2];
+                } else if ((temp_f3 == 0.0f) && (m_unk1EC == 0.0f) && (m_unk1F0 == 0.0f)) {
+                    sp150[0] = temp_f2;
+                    sp150[1] = 50.0f + var_v1[1];
+                    var_f0 = var_v1[2];
+                } else {
+                    sp150[0] = temp_f3;
+                    sp150[1] = m_unk1EC;
+                    var_f0 = m_unk1F0;
+                }
+                sp150[2] = var_f0;
+                sp160[0] = var_v1[0];
+                sp160[1] = var_v1[1];
+                sp160[2] = var_v1[2];
+                SetShellStartAndDest__8ZinShellFRA4_fRA4_f(temp_v0_11, &sp150, &sp160);
+                temp_v1_6 = m_unk1F8;
+                if (temp_v1_6 != 0) {
+                    temp_v0_11->m_unk224 = temp_v1_6;
+                    temp_v0_11->m_unk228 = m_unk4;
+                }
+                goto block_95;
+            case 2:
+                TriggerBGAnim__15EntityBaseClassFUiibUi(this, m_unk1F8, -1, 0, 0);
+                SetState__15EntityBaseClassFi(this, 1);
+                PlaySound__15EntityBaseClassFUi(this, 0x4DU);
+                return;
+            case 5:
+                TriggerBGAnim__15EntityBaseClassFUiibUi(this, m_unk1F8, -1, 0, 0);
+                SetState__15EntityBaseClassFi(this, 2);
+                PlaySound__15EntityBaseClassFUi(this, 0x4DU);
+                return;
+            case 4:
+                PlaySound__15EntityBaseClassFUi(this, 0x4DU);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_LoadMeshSeq);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_IdleSeq);
+                *(int *)((char *)m_unk38 + 0x84) = 0x40000000;
+                nState = DetermineStateByDistance();
+                SetState__15EntityBaseClassFi(this, nState);
+                return;
+            case 7:
+                TriggerBGAnim__15EntityBaseClassFUiibUi(this, m_unk1F8, -1, 0, 0);
+                SetState__15EntityBaseClassFi(this, 2);
+                PlaySound__15EntityBaseClassFUi(this, 0x4DU);
+                PlaySound__15EntityBaseClassFUi(this, 0x1F9U);
+                return;
+            case 0:
+            case 6:
+            default:
+                CdsAssert__FPciPc(lit_0026C2B0, 0x21C, lit_0026C350);
+                goto block_95;
+            }
+        } else {
+        block_95:
+            if (m_unk1E4 != 1) {
+                CdsAssert__FPciPc(lit_0026C2B0, 0x233, lit_0026C350);
+                return;
+            }
+            temp_v0_28 = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk23C);
+            if (temp_v0_28 == 0 || temp_v0_28->m_unk22D != 0) {
+                SetState__15EntityBaseClassFi(this, 3);
+                EnableSleep__15EntityBaseClassFbb(this, 1, 0);
+                PlaySound__15EntityBaseClassFUi(this, 0x4DU);
+                return;
+            }
+        }
+        break;
+    case 1:
+    case 11:
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_JumpFromShellSeq);
+        }
+        FaceTarget(0.05f);
+        if (m_unk160 == 0) {
+            *(int *)((char *)m_unk38 + 0x84) = 0x40000000;
+            SetState__15EntityBaseClassFi(this, DetermineStateByDistance());
+            return;
+        }
+        break;
+    case 2:
+    case 12:
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_DiveDownFromCheeseSeq);
+        }
+        FaceTarget(0.05f);
+        if (m_unk160 == 0) {
+            *(int *)((char *)m_unk38 + 0x84) = 0x40000000;
+            SetState__15EntityBaseClassFi(this, DetermineStateByDistance());
+            return;
+        }
+        break;
+    case 3:
+    case 13:
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_JumpFromShellSeq);
+        }
+        FaceTarget(0.05f);
+        if (m_unk160 == 0) {
+            *(int *)((char *)m_unk38 + 0x84) = 0x40000000;
+            SetState__15EntityBaseClassFi(this, DetermineStateByDistance());
+            return;
+        }
+        break;
+    case 4:
+    case 14:
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_DartSeq);
+        }
+        RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, &m_unk2B0), 0.05f);
+        if ((FlyerFlyTo(&m_unk2B0, 0.5f, 0.2f) != 0) && (GetNextPosition(m_unk2B0) == 0)) {
+            SetState__15EntityBaseClassFi(this, DetermineStateByDistance());
+            return;
+        }
+        break;
+    case 5:
+    case 15:
+        if (m_unkE9 != 0) {
+            RemoveFromAttackSystem__15EntityBaseClassFv(this);
+            EnableSleep__15EntityBaseClassFbb(this, 1, 0);
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_IdleSeq);
+            temp_v1_7 = m_unk38;
+            if (temp_v1_7 != 0) {
+                *(u_long128 *)temp_v1_7 = sp40;
+            }
+        }
+        PitchLevelOut();
+        FaceTarget(0.05f);
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, DetermineStateByDistance());
+            return;
+        }
+        break;
+    case 6:
+    case 16:
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_TauntSeq);
+            PlaySound__15EntityBaseClassFUi(this, 0x4E56U);
+        }
+        PitchLevelOut();
+        FaceTarget(0.05f);
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, DetermineStateByDistance());
+            return;
+        }
+        break;
+    case 7:
+    case 17:
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_FlyNoZSeq);
+        }
+        {
+            ClockworkFlyer *pTgt = GetTarget();
+            char *pQ = (pTgt->m_unk3C != 0) ? pTgt->m_unk3C + 0x80 : (char *)pTgt + 0x190;
+            if (!(Distance__7MathAPIFPA4_fPA4_f(m_unk220, (float (*)[4])pQ) <= *(float *)&m_unk1D8)) {
+                SetState__15EntityBaseClassFi(this, 5);
+                return;
+            }
+        }
+        {
+            ClockworkFlyer *pTgt2 = GetTarget();
+            char *pQ2 = (pTgt2->m_unk3C != 0) ? pTgt2->m_unk3C + 0x80 : (char *)pTgt2 + 0x190;
+            char *pR = (m_unk3C != 0) ? m_unk3C + 0x80 : (char *)this + 0x190;
+            if (Distance__7MathAPIFPA4_fPA4_f(pR, (float (*)[4])pQ2) < 15.0f) {
+                SetState__15EntityBaseClassFi(this, 9);
+                return;
+            }
+        }
+        PitchLevelOut();
+        GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(this, sp190);
+        sp1A0[0] = sp190[0];
+        sp1A0[2] = sp190[2];
+        {
+            ClockworkFlyer *pTgt3 = GetTarget();
+            char *pQ3 = (pTgt3->m_unk3C != 0) ? pTgt3->m_unk3C + 0x80 : (char *)pTgt3 + 0x190;
+            *(u_long128 *)sp170 = *(u_long128 *)pQ3;
+        }
+        sp170[1] += 6.0f;
+        {
+            char *pA2 = (m_unk3C != 0) ? m_unk3C + 0x80 : (char *)this + 0x190;
+            sceVu0SubVector(sp180, sp170, (float *)pA2);
+        }
+        sceVu0Normalize(sp180, sp180);
+        sp1A0[1] = 0.2f * sp180[1];
+        FaceTarget(0.05f);
+        fSave = sp1A0[1];
+        sceVu0ScaleVector(sp1A0, sp1A0, 0.2f);
+        sp1A0[1] = fSave;
+        if (m_unk38 != 0) {
+            *(u_long128 *)m_unk38 = *(u_long128 *)sp1A0;
+        }
+        EscapeIfApproachStalled();
+        return;
+    case 8:
+    case 18:
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_FlyNoZSeq);
+        }
+        {
+            char *pDist = (m_unk3C != 0) ? m_unk3C + 0x80 : (char *)this + 0x190;
+            if (Distance__7MathAPIFPA4_fPA4_f(pDist, (float (*)[4])m_unk220) <= 0.9f * *(float *)&m_unk1D8) {
+                SetState__15EntityBaseClassFi(this, DetermineStateByDistance());
+            }
+        }
+        PitchLevelOut();
+        GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(this, sp190);
+        sp1A0[0] = sp190[0];
+        sp1A0[2] = sp190[2];
+        *(u_long128 *)sp170 = *(u_long128 *)m_unk220;
+        sp170[1] += 6.0f;
+        {
+            char *pAim = (m_unk3C != 0) ? m_unk3C + 0x80 : (char *)this + 0x190;
+            sceVu0SubVector(sp180, sp170, (float *)pAim);
+        }
+        sceVu0Normalize(sp180, sp180);
+        sp1A0[1] = 0.2f * sp180[1];
+        RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, m_unk220), 0.05f);
+        fSave = sp1A0[1];
+        sceVu0ScaleVector(sp1A0, sp1A0, 0.2f);
+        sp1A0[1] = fSave;
+        if (m_unk38 != 0) {
+            *(u_long128 *)m_unk38 = *(u_long128 *)sp1A0;
+            return;
+        }
+        break;
+    case 19: {
+        if (m_unkE9 != 0) {
+            char *temp_v0_20;
+            char *var_a2_3;
+
+            SetupDartDest();
+            GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(this, sp1B0);
+            temp_v0_20 = m_unk3C;
+            var_a2_3 = (char *)&_pad190;
+            if (temp_v0_20 != 0) {
+                var_a2_3 = temp_v0_20 + 0x80;
+            }
+            sceVu0SubVector(sp1C0, m_unk290, (float *)var_a2_3);
+            sceVu0OuterProduct(sp1D0, sp1C0, sp1B0);
+            if (sp1D0[1] < 0.0f) {
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_DartLeftSeq);
+            } else {
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_DartRightSeq);
+            }
+            PlaySound__15EntityBaseClassFUi(this, 0x46U);
+        }
+        if (DoDartTasks() == 0 && m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, 0xA);
+            return;
+        }
+        break;
+    }
+    case 20: {
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_DartSeq);
+        }
+        if (DoDartTasks() != 0) {
+            return;
+        }
+        break;
+    }
+    case 21: {
+        if (m_unkE9 != 0) {
+            float *temp_a0_4;
+
+            temp_a0_4 = m_unk38;
+            if (temp_a0_4 != 0 && (*(unsigned short *)((char *)temp_a0_4 + 0x106) & 2)) {
+                SetPhysicsType__7PhysicsFUiPA4_f(temp_a0_4, 0x10U, 0);
+            }
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_DivePrepSeq);
+            PlaySound__15EntityBaseClassFUi(this, 0x4BU);
+        }
+        FaceTarget(0.05f);
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, 0xC);
+            return;
+        }
+        break;
+    }
+    case 23: {
+        if (m_unkE9 != 0) {
+            if (MathAPI::RandomIntRange(0, 1) == 0) {
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_DiveFinishLeftSeq);
+            } else {
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_DiveFinishRightSeq);
+            }
+        }
+        PitchLevelOut();
+        if (m_unk160 == 0) {
+            char *temp_v0_24;
+            char *temp_v0_25;
+            char *var_v0_8;
+            char *var_v0_9;
+
+            if (m_unk140 == ClockworkFlyer_DiveFinishLeftSeq) {
+                temp_v0_24 = m_unk3C;
+                var_v0_8 = (char *)&m_unk1A0;
+                if (temp_v0_24 != 0) {
+                    var_v0_8 = temp_v0_24 + 0x90;
+                }
+                RotateTo__15EntityBaseClassFff(this, Round180__Ff(*(float *)(var_v0_8 + 4) - 90.0f), 1.0f);
+            } else {
+                temp_v0_25 = m_unk3C;
+                var_v0_9 = (char *)&m_unk1A0;
+                if (temp_v0_25 != 0) {
+                    var_v0_9 = temp_v0_25 + 0x90;
+                }
+                RotateTo__15EntityBaseClassFff(this, Round180__Ff(90.0f + *(float *)(var_v0_9 + 4)), 1.0f);
+            }
+            SetState__15EntityBaseClassFi(this, DetermineStateByDistance());
+            return;
+        }
+        break;
+    }
+    case 24: {
+        if (m_unkE9 != 0) {
+            ClockworkFlyer *pTgt = GetTarget();
+            char *var_a1_6 = (char *)pTgt + 0x190;
+            if (pTgt->m_unk3C != 0) {
+                var_a1_6 = pTgt->m_unk3C + 0x80;
+            }
+            float *var_s0_3 = &m_unk1A0;
+            if (m_unk3C != 0) {
+                var_s0_3 = (float *)(m_unk3C + 0x90);
+            }
+            var_s0_3[1] = GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, var_a1_6);
+            switch (m_unk238 & ~0x180) {
+            case 0x220:
+                SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12U, 0);
+                *(int *)((char *)m_unk38 + 0x110) = 0x3DCCCCCD;
+                m_unk10C &= 0xFEFFFFFF;
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_SlamFirstSeq);
+                break;
+            default:
+            case 0x1:
+            case 0xA:
+            case 0xB:
+            case 0x9:
+            case 0x8:
+            case 0xC:
+            case 0x4:
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_HitSeq);
+                break;
+            }
+        }
+        FaceTarget(0.05f);
+        if (m_unk140 == (void *)&ClockworkFlyer_SlamFirstSeq) {
+            float *pPh = m_unk38;
+            if (!(*(int *)((char *)pPh + 0x108) & 1)) {
+                char *pPl = (char *)mPlayerAPI__13EntityManager;
+                char *var_v1_2 = (*(char **)(pPl + 0x3C) != 0) ? *(char **)(pPl + 0x3C) + 0x80 : pPl + 0x190;
+                char *var_a1_7 = (m_unk3C != 0) ? m_unk3C + 0x80 : (char *)this + 0x190;
+                if (((float *)var_a1_7)[1] < ((float *)var_v1_2)[1]) {
+                    goto block_236;
+                }
+            } else {
+block_236:
+                SetPhysicsType__7PhysicsFUiPA4_f(pPh, 0x10U, 0);
+                StopAllSoundsByObject__15EntityBaseClassFv(this);
+                PlaySound__15EntityBaseClassFUi(this, 0x47U);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_SlamSecondSeq);
+            }
+        }
+        {
+            void *pCur = m_unk140;
+            if (pCur == (void *)&ClockworkFlyer_SlamSecondSeq) {
+                char *pPl2 = (char *)mPlayerAPI__13EntityManager;
+                char *var_a0_4 = (*(char **)(pPl2 + 0x3C) != 0) ? *(char **)(pPl2 + 0x3C) + 0x80 : pPl2 + 0x190;
+                char *var_v1_3 = (m_unk3C != 0) ? m_unk3C + 0x80 : (char *)this + 0x190;
+                if (((float *)var_v1_3)[1] < ((float *)var_a0_4)[1] - 20.0f) {
+                    SetState__15EntityBaseClassFi(this, 0x11);
+                    return;
+                }
+            }
+            if (m_unk160 == 0) {
+                if (pCur == (void *)&ClockworkFlyer_SlamSecondSeq) {
+                    m_unk10C |= 0x01000000;
+                    PlaySound__15EntityBaseClassFUi(this, 0x4DU);
+                    SetState__15EntityBaseClassFi(this, DetermineStateByDistance());
+                    return;
+                }
+                if (pCur != (void *)&ClockworkFlyer_SlamFirstSeq) {
+                    SetState__15EntityBaseClassFi(this, DetermineStateByDistance());
+                    return;
+                }
+            }
+        }
+        break;
+    }
+    case 26: {
+        if (m_unkE9 != 0) {
+            SpawnBonus__15EntityBaseClassFPfii(this, m_vBonusSpawnOffset, 1, 1);
+            m_unk10C &= 0xF8FFFFFF;
+            if (MathAPI::RandomIntRange(0, 1) == 0) {
+                SetState__15EntityBaseClassFi(this, 0x11);
+                return;
+            }
+            if (m_unk38 != 0) {
+                SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12U, 0);
+            }
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_DeadSeq);
+        }
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, 0x11);
+            return;
+        }
+        break;
+    }
+    case 27: {
+        if (m_unkE9 != 0) {
+            m_unk10C &= 0xF8FFFFFF;
+            EnableSleep__15EntityBaseClassFbb(this, false, false);
+            WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0U);
+            WriteApparitionData__15EntityBaseClassFicUi(this, 0, 1, 0U);
+            StopAllSoundsByObject__15EntityBaseClassFv(this);
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_DestroyedSeq);
+            DestroyDamageFx__15EntityBaseClassFUi(this, (unsigned int)m_unk28C);
+            m_unk28C = 0;
+            if (m_unkD4 != 0) {
+                *(unsigned char *)m_unkD4 = 0;
+                if (*(char **)((char *)m_unkD4 + 0xC) != 0) {
+                    *(unsigned char *)(*(char **)((char *)m_unkD4 + 0xC) + 0x18) = 0;
+                }
+            }
+        }
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, -2);
+        }
+        break;
+    }
     default:
         return;
     }
