@@ -26,6 +26,7 @@ extern char *mPlayerAPI__13EntityManager;
 extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
 extern "C" float FastMath_Fabs__Ff(float fValue);
 extern "C" float sqrtf(float x);
+extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*arg0)[4], float (*arg1)[4]);
 
 // Placeholder for the object at Bridge+0x3C: only the three words copied by Render are placed.
 class BridgeSource {
@@ -196,6 +197,69 @@ void Bridge::LeanOnSides() {
         tmp[2] = f3;
         *(u_long128 *)((char *)*(void **)((char *)this + off + 0x1E4) + 0x90) = *(u_long128 *)tmp;
         ((PMNode *)*(void **)((char *)this + off + 0x1E4))->m_unk3E |= 8;
+    }
+}
+
+// DRAFT: 0x001DD400 PushPlank__6BridgeFiff
+// note: first C attempt, not yet compared against the asm.
+void Bridge::PushPlank(int arg0, float arg1, float arg2) {
+    static float aFakeDistance;
+    static char init583;
+    static float aFakeDistanceDelta;
+    static char init586;
+    if (init583 == 0) {
+        init583 = 1;
+    }
+    if (init586 == 0) {
+        init586 = 1;
+        aFakeDistanceDelta = 0.1f;
+    }
+    int s = arg0 << 5;
+    char *pushed = (char *)this + s;
+    float *seg = (float *)(pushed + 0x220);
+    aFakeDistance = 1.0f - aFakeDistanceDelta;
+    *seg = arg1;
+    Clamp(*seg);
+    *(float *)(pushed + 0x22C) = arg2;
+    *(float *)(pushed + 0x228) = FastMath_Fabs__Ff(*seg / m_unk348);
+    float f20 = Distance__7MathAPIFPA4_fPA4_f((float (*)[4])(pushed + 0x210), (float (*)[4])((char *)this + 0x210));
+    for (int i = arg0 - 1; i >= 0; i--) {
+        char *r = (char *)this + (i << 5);
+        *(float *)(r + 0x22C) = 1.0f - Distance__7MathAPIFPA4_fPA4_f((float (*)[4])(pushed + 0x210), (float (*)[4])(r + 0x210)) / f20;
+        float *v = (float *)(r + 0x220);
+        if (FastMath_Fabs__Ff(*v) > FastMath_Fabs__Ff(arg1 * aFakeDistance)) {
+            *v = -1.0f * FastMath_Fabs__Ff(*v);
+        } else {
+            *v = -1.0f * FastMath_Fabs__Ff(arg1 * aFakeDistance);
+        }
+        Clamp(*v);
+        *(float *)(r + 0x228) = FastMath_Fabs__Ff(*v / m_unk348);
+        aFakeDistance = aFakeDistance - aFakeDistanceDelta;
+        aFakeDistance = (0.0f <= aFakeDistance) ? aFakeDistance : 0.0f;
+    }
+    aFakeDistance = 1.0f - aFakeDistanceDelta;
+    float f20b = Distance__7MathAPIFPA4_fPA4_f((float (*)[4])(pushed + 0x210), (float (*)[4])((char *)this + ((m_unk330 - 1) << 5) + 0x210));
+    for (int j = arg0 + 1; j < m_unk330; j++) {
+        char *r = (char *)this + (j << 5);
+        *(float *)(r + 0x22C) = 1.0f - Distance__7MathAPIFPA4_fPA4_f((float (*)[4])(pushed + 0x210), (float (*)[4])(r + 0x210)) / f20b;
+        float *v = (float *)(r + 0x220);
+        if (FastMath_Fabs__Ff(*v) > FastMath_Fabs__Ff(arg1 * aFakeDistance)) {
+            *v = -1.0f * FastMath_Fabs__Ff(*v);
+        } else {
+            *v = -1.0f * FastMath_Fabs__Ff(arg1 * aFakeDistance);
+        }
+        Clamp(*v);
+        *(float *)(r + 0x228) = FastMath_Fabs__Ff(*v / m_unk348);
+        aFakeDistance = aFakeDistance - aFakeDistanceDelta;
+        aFakeDistance = (0.0f <= aFakeDistance) ? aFakeDistance : 0.0f;
+    }
+    for (int k = 0, off = 0; k < m_unk330; k++, off += 0x20) {
+        float *p = (float *)((char *)this + off + 0x220);
+        if (m_unk330 / 2 >= k) {
+            *p = *p * ((float)(k + 1) / (float)((m_unk330 + 1) / 2));
+        } else {
+            *p = *p * ((float)(m_unk330 - k) / (float)((m_unk330 + 1) / 2));
+        }
     }
 }
 

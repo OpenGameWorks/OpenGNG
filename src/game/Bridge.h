@@ -24,6 +24,7 @@ public:
     void LoadBridgeParts();
     void LeanOnSides();
     void OnTimerEvent(unsigned int arg0);
+    void PushPlank(int arg0, float arg1, float arg2);
 
     void *m_unk0;               // 0x000 vtable pointer (inherited from EntityBaseClass)
     char _pad004[0x3C - 0x04];
@@ -38,7 +39,7 @@ public:
     int m_unk330;               // 0x330 segment count
     char _pad334[0x344 - 0x334];
     int m_unk344;               // 0x344 timer-event id
-    char _pad348[0x34C - 0x348];
+    float m_unk348;             // 0x348 divisor for the per-segment fabs(lean / m_unk348)
     BridgeView *m_unk34C;       // 0x34C
     void *m_unk350[9];          // 0x350 per-segment PMNode pointers, +0x84 float
     float m_unk374[9];          // 0x374 per-segment float offsets
