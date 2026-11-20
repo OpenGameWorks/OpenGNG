@@ -48,6 +48,7 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4,p`) that `to
 - A callee defined in no source still links: `tools/link.py` resolves it by name from the original symbol table, so its declaration under `TODO(header)` is enough.
 - An embedded subobject reached through a cast `(T *)((char *)this + N)` is computed once into a saved register; a member array `char m_unkN[size];` used as `(T *)m_unkN` is recomputed (`addiu a0,s0,N`) before each call, as the original usually does (FontManager::Init in `src/game/Font.cpp`).
 - A function-local `static` compiles to `name$N` with a counter N that runs across the whole TU; `fncmp.py` and the linker accept `name$N` against the original's `name$M`, so only the bytes need to agree.
+- An access into a global is written as its offset from the symbol (`gInterface + 0x80`), never as the low half the original shows (`0x1790` = low bits of `0x301710 + 0x80`). `fncmp.py` checks each relocation's addend and reports `addend into X differs` for the copied form.
 - `fncmp.py`'s verdict line (`MATCH` or `DIFF N words`) is the difference count; counting `^!` lines is unreliable.
 - `src/game/PWorld.cpp` holds the first match and serves as a model.
 
