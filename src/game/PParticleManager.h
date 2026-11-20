@@ -9,6 +9,8 @@ class PMovingFog;
 class PParticleFog;
 class PStaticInstanceGroup;
 class PParticleOneShot;
+class PFrozenFx;
+class PParticleBlowingLeaves;
 class PMNode;
 class PParticleSystem;
 class PFrustrum;
@@ -50,7 +52,10 @@ public:
     int CreateEweedReaction(float *pPos);
     int CreateSulphurReaction(float *pPos, float fUnused);
     int CreateGroundDust(float *pPos, float fScale);
+    PFrozenFx *CreateFrozenFx(PMNode *pNode, float fA, float fB);
+    PParticleBlowingLeaves *CreateBlowingLeaves(float *pA, float *pB, float *pC, int nA, float fF, bool bFlag);
     void InitHeatHazeBuffer();
+    void UpdateHeatHazeBuffer();
     void RenderAuraParticles();
     void AnimateEweedReactionFx(PFrustrum *pFrustrum, float fDt);
     void RenderEweedReactionFx();
@@ -96,7 +101,8 @@ public:
     PParticleFog **m_unk28;     // 0x28
     char _pad02C[0x40 - 0x2C];
     void *m_unk40;              // 0x40
-    char _pad44[0x670 - 0x44];
+    char _pad44[0x50 - 0x44];
+    char m_unk50[0x620];        // 0x50 GS frame buffer copy packet, sent with size 0x620
     int m_unk670;               // 0x670
     char _pad674[0x6A8 - 0x674];
     PParticleRain *m_pRain;     // 0x6A8

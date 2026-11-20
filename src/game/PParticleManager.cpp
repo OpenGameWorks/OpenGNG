@@ -20,7 +20,9 @@ public:
     char _pad004[0x4B0 - 4];
 };
 struct tagParticleFogData {
-    char _pad000[0x60];
+    char _pad000[0x45];
+    unsigned char m_unk45;      // 0x45
+    char _pad046[0x60 - 0x46];
 };
 class PCDFile {
 public:
@@ -54,6 +56,21 @@ class PParticleGas;
 struct tagParticleGasParams;
 extern "C" PParticleGas *__ct__12PParticleGasFv(PParticleGas *pThis);
 extern "C" void Create__12PParticleGasFP20tagParticleGasParamsfff(PParticleGas *pThis, tagParticleGasParams *pParams, float fA, float fB, float fC);
+extern "C" int AllocRenderedTexture__15PTextureManagerFiiRbb(void *pThis, int nW, int nH, bool &bOut, bool bFlag);
+extern "C" void NextBatch__16PTextureDmaChainFv(void *pThis);
+extern "C" void SetTexSyncPacket__12PDisplayListFv(void *pThis);
+extern "C" void GsSetFrameBufferCopyInfo__FP20tagGsFrameBufferCopyii(void *pCopy, int a1, int a2);
+extern "C" void SetVifCodes__12PDisplayListFUiUi(void *pThis, unsigned int a1, unsigned int a2);
+extern "C" void SendGsPacket__12PDisplayListFPvib(void *pThis, void *pData, int nSize, bool bFlag);
+extern "C" void SetGsRegisters__12PDisplayListFP1i(void *pThis, u_long128 *pRegs, int nCount);
+class PFrozenFx;
+extern u_long128 lit_002487E0;
+extern "C" PFrozenFx *__ct__9PFrozenFxFv(PFrozenFx *pThis);
+extern "C" int Create__9PFrozenFxFP6PMNodePffff(PFrozenFx *pThis, PMNode *pNode, float *pVec, float fA, float fB, float fC);
+extern "C" PParticleFog *__ct__12PParticleFogFv(PParticleFog *pThis);
+extern "C" int Create__12PParticleFogFP18tagParticleFogDatai(PParticleFog *pThis, tagParticleFogData *pData, int nTex);
+extern "C" PParticleBlowingLeaves *__ct__22PParticleBlowingLeavesFv(PParticleBlowingLeaves *pThis);
+extern "C" void Create__22PParticleBlowingLeavesFPfPfPfifb(PParticleBlowingLeaves *pThis, float *pA, float *pB, float *pC, int nA, float fF, bool bFlag);
 
 class PParticleRain {
 public:
@@ -79,6 +96,7 @@ class PArray {
 public:
     int Find(void *pItem);
     void Add(void *pItem);
+    void InsertBefore(void *pItem);
     void Remove(void *pItem);
 };
 
@@ -130,6 +148,30 @@ public:
     virtual void Slot04();
     virtual void Slot05(int bFlag);
     virtual void Slot06();
+};
+
+class PFrozenFx {
+public:
+    virtual void Slot00(int nFlags);
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual void Slot04();
+    virtual void Slot05();
+    virtual void Slot06();
+};
+
+class PParticleBlowingLeaves {
+public:
+    virtual void Slot00();
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual void Slot04();
+    virtual void Slot05();
+    virtual void Slot06();
+    char _pad004[0x0C];
+    int m_unk10;                // 0x10
 };
 
 class PParticleLiteExplosion {
@@ -192,6 +234,36 @@ void PParticleManager::InitHeatHazeBuffer() {
         m_unkEE0 = m_unk670;
     }
     GsInitFrameBufferCopyInfo__FP20tagGsFrameBufferCopyiiiiiiiiiis((char *)this + 0x50, 0, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0, 0x100, 0x80, 0);
+}
+
+// DRAFT: 0x001B76B0 UpdateHeatHazeBuffer__16PParticleManagerFv
+// note: DIFF 6 words in GS block: 0x18/0x1B load into swapped v0/v1, sp+0x50 base and 1 load order; tried entry reorders, direct aGs[2] stores (worse, 18)
+void PParticleManager::UpdateHeatHazeBuffer() {
+    bool bFlag = false;
+    int nTex = AllocRenderedTexture__15PTextureManagerFiiRbb(gGfxEng + 0x154C90, m_unk670, 0x2000, bFlag, false);
+    if (bFlag) {
+        NextBatch__16PTextureDmaChainFv((char *)*(void **)(gGfxEng + 0x154C80) + 0xA3380);
+        SetTexSyncPacket__12PDisplayListFv(*(void **)(gGfxEng + 0x154C80));
+    }
+    GsSetFrameBufferCopyInfo__FP20tagGsFrameBufferCopyii(m_unk50, *(int *)(gGfxEng + 0x158DF0), nTex);
+    SetVifCodes__12PDisplayListFUiUi(*(void **)(gGfxEng + 0x154C80), 0x11000000, 0);
+    SendGsPacket__12PDisplayListFPvib(*(void **)(gGfxEng + 0x154C80), m_unk50, 0x620, true);
+    SetVifCodes__12PDisplayListFUiUi(*(void **)(gGfxEng + 0x154C80), 0x11000000, 0);
+    struct GsEntry {
+        long long data;
+        long long reg;
+    };
+    GsEntry aGs[3];
+    aGs[0].data = 0;
+    aGs[0].reg = 0x1A;
+    GsEntry *pEnt = &aGs[1];
+    pEnt->data = 0x18;
+    pEnt->reg = 0x1B;
+    pEnt = &aGs[2];
+    pEnt->data = 1;
+    pEnt->reg = 0x46;
+
+    SetGsRegisters__12PDisplayListFP1i(*(void **)(gGfxEng + 0x154C80), (u_long128 *)aGs, 3);
 }
 
 // DRAFT: 0x001B77F0 RenderAuraParticles__16PParticleManagerFv
@@ -463,6 +535,33 @@ int PParticleManager::CreateGroundDust(float *pPos, float fScale) {
     return 0;
 }
 
+// DRAFT: 0x001B88F0 CreateFrozenFx__16PParticleManagerFP6PMNodeff
+// note: DIFF 57, size 0x100 vs 0x10c; diverges from about 0x50 at assert string addressing and 0.3f literal order against the aVec lq copy.
+PFrozenFx *PParticleManager::CreateFrozenFx(PMNode *pNode, float fA, float fB) {
+    PFrozenFx *pFx;
+    PFrozenFx *pNew;
+    u_long128 aVec;
+
+    if ((pNew = (PFrozenFx *)__nw__FUi(0x210)) != 0) {
+        pFx = __ct__9PFrozenFxFv(pNew);
+    } else {
+        pFx = pNew;
+    }
+    if (pFx == 0) {
+        CdsAssert("PParticleManager.cpp", 0x4CB, "apFx");
+    }
+    aVec = lit_002487E0;
+    if (Create__9PFrozenFxFP6PMNodePffff(pFx, pNode, (float *)&aVec, 0.3f, fA, fB) != 0) {
+        Add((PParticleSystem *)pFx);
+        pFx->Slot06();
+        return pFx;
+    }
+    if (pFx != 0) {
+        pFx->Slot00(1);
+    }
+    return 0;
+}
+
 // DRAFT: 0x001B8A00 FreeAuraParticle__16PParticleManagerFP13tagVuParticle
 // note: the zero path stores $zero directly (sw) where the original does daddu v1,zero,zero then sw v1; branch offset of the b differs by one word.
 void PParticleManager::FreeAuraParticle(tagVuParticle *pParticle) {
@@ -520,6 +619,25 @@ void PParticleManager::CreateMovingFog(tagParticleMovingFogParams *pParams) {
         CdsAssert("PParticleManager.cpp", 0x483, "mpMovingFog");
     }
     ((PParticleMovingFog *)m_unk9B4)->Create(pParams);
+}
+
+// FUNCTION: 0x001B8BE0 CreateBlowingLeaves__16PParticleManagerFPfPfPfifb
+PParticleBlowingLeaves *PParticleManager::CreateBlowingLeaves(float *pA, float *pB, float *pC, int nA, float fF, bool bFlag) {
+    PParticleBlowingLeaves *pObj;
+
+    pObj = (PParticleBlowingLeaves *)__nw__FUi(0xA60);
+    if (pObj != 0) {
+        pObj = __ct__22PParticleBlowingLeavesFv(pObj);
+    }
+    if (pObj == 0) {
+        CdsAssert("PParticleManager.cpp", 0x45F, "apFx");
+    }
+    Create__22PParticleBlowingLeavesFPfPfPfifb(pObj, pA, pB, pC, nA, fF, bFlag);
+    pObj->Slot06();
+    pObj->m_unk10 = GetFxTexture(0x84000012);
+    Add((PParticleSystem *)pObj);
+    m_unk20FC = (PParticleSystem *)pObj;
+    return pObj;
 }
 
 // FUNCTION: 0x001B8CF0 SetLightningDensity__16PParticleManagerFf
@@ -629,6 +747,43 @@ int PParticleManager::LoadFogObjects(PPakFile *pFile, ePsx2FileVersion nVersion)
         }
         nIndex++;
     }
+    return 1;
+}
+
+// DRAFT: 0x001B90B0 CreateFog__16PParticleManagerFP18tagParticleFogData
+// note: DIFF 6; original shares one GetFxTexture call with a0 set in both arms; tried if/else, inverted test, short-circuit ||, empty-then (DIFF 47-52).
+int PParticleManager::CreateFog(tagParticleFogData *pData) {
+    PParticleFog *pObj;
+    int nTex;
+
+    if (pData == 0) {
+        CdsAssert("PParticleManager.cpp", 0x3BE, "pData");
+    }
+    if (m_unk40 == 0) {
+        CdsAssert("PParticleManager.cpp", 0x3BF, "mpFxResMgr");
+    }
+    if (m_unk20 >= 0x100) {
+        CdsAssert("PParticleManager.cpp", 0x3C0, "moFogList.GetCount() < MAX_FOGS");
+    }
+    nTex = 0;
+    if (pData->m_unk45 != 0) {
+        nTex = m_unk2060;
+    }
+    if (nTex == 0) {
+        nTex = GetFxTexture(0x84000002);
+    }
+    pObj = (PParticleFog *)__nw__FUi(0x60);
+    if (pObj != 0) {
+        pObj = __ct__12PParticleFogFv(pObj);
+    }
+    if (pObj == 0) {
+        CdsAssert("PParticleManager.cpp", 0x3CC, "apFog");
+    }
+    if (Create__12PParticleFogFP18tagParticleFogDatai(pObj, pData, nTex) == 0) {
+        __dt__12PParticleFogFv(pObj, 1);
+        return 0;
+    }
+    ((PArray *)((char *)this + 0x20))->Add(pObj);
     return 1;
 }
 
@@ -803,6 +958,32 @@ void PParticleManager::Remove(PParticleSystem *pSystem) {
     if (pSystem == m_unk20FC) {
         m_unk20FC = 0;
     }
+}
+
+// FUNCTION: 0x001BAB80 Add__16PParticleManagerFP15PParticleSystem
+void PParticleManager::Add(PParticleSystem *pSystem) {
+    PParticleSystem *pCur;
+    unsigned int nIdx;
+    int nKey;
+    if (pSystem == 0) {
+        CdsAssert("PParticleManager.cpp", 0xE0, "pSystem");
+    }
+    if (m_unk0 >= 0x12C) {
+        CdsAssert("PParticleManager.cpp", 0xE2, "moList.GetCount() < MAX_PARTICLES");
+    }
+    nKey = *(int *)((char *)pSystem + 0xC);
+    m_unk4 = 0;
+    pCur = (m_unk0 != 0) ? (PParticleSystem *)m_unk8[0] : 0;
+    while (pCur != 0) {
+        if (nKey == *(int *)((char *)pCur + 0xC)) {
+            ((PArray *)this)->InsertBefore(pSystem);
+            return;
+        }
+        nIdx = m_unk4 + 1;
+        m_unk4 = nIdx;
+        pCur = (nIdx < m_unk0) ? (PParticleSystem *)m_unk8[m_unk4] : 0;
+    }
+    ((PArray *)this)->Add(pSystem);
 }
 
 // FUNCTION: 0x001BAC80 Shutdown__16PParticleManagerFv
