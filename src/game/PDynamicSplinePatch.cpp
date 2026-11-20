@@ -4,6 +4,8 @@
 // TODO(header): foreign declarations
 extern "C" void sceVu0CopyVector(float *dst, float *src);
 extern "C" void __dl__FPv(void *pData);
+extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
+extern "C" void QwordMemset__FP1Ui1(u_long128 *pDst, unsigned int nQwords, u_long128 nValue);
 class PMNode;
 
 // FUNCTION: 0x001F3D80 Render__19PDynamicSplinePatchFv
@@ -101,4 +103,66 @@ extern "C" void *__dt__19PDynamicSplinePatchFv(PDynamicSplinePatch *pThis, short
         }
     }
     return pThis;
+}
+
+// DRAFT: 0x001F4030 __ct__19PDynamicSplinePatchFv
+// note: 5 words differ in loop B: original has addiu a0,a0,4 between the two sw, and its exit beqz is +0xA vs our +0x9. Tried: while form, swapped store order (6 words), walking pointers (19 words); for form with original order is best at 5.
+PDynamicSplinePatch::PDynamicSplinePatch() {
+    m_unk00 = 0;
+    m_unk04 = 0;
+    m_unk08 = 0;
+    m_unk0C = 0;
+    QwordMemset__FP1Ui1((u_long128 *)_pad10, 0x120, 0);
+    QwordMemset__FP1Ui1((u_long128 *)m_unk1690, 0x80, 0);
+    memset(m_unk1F20, 0, 0x48);
+    m_unk1F68 = 0;
+    m_unk1F6C = 0;
+    m_unk1FE0 = 0;
+    m_unk1FE8 = 0x50000;
+    m_unk1FF0 = 0x44;
+    m_unk2000[0] = 1.0f;
+    m_unk2000[1] = 1.0f;
+    m_unk2000[2] = 1.0f;
+    m_unk2000[3] = 1.0f;
+    m_unk2010 = 0;
+    m_unk1F70 = 0;
+    m_unk1F74 = 5.0f;
+    m_unk1F80 = 0.4f;
+    m_unk1F84 = 1.0f;
+    m_unk1F88 = 0.4f;
+    m_unk1F8C = 0;
+    m_unk1FB0[0] = 128.0f;
+    m_unk1FB0[1] = 128.0f;
+    m_unk1FB0[2] = 128.0f;
+    m_unk1FB0[3] = 128.0f;
+    m_unk1FB0[4] = 128.0f;
+    m_unk1FB0[5] = 128.0f;
+    m_unk1FB0[6] = 128.0f;
+    m_unk1FB0[7] = 128.0f;
+    m_unk2011 = 1;
+    m_unk2012 = 0;
+    m_unk1F78 = 0;
+    int i = 0;
+    for (; i < 10; i += 8) {
+        m_unk1E90[i + 0] = 1.0f;
+        m_unk1ED8[i + 0] = 1.0f;
+        m_unk1E90[i + 1] = 1.0f;
+        m_unk1ED8[i + 1] = 1.0f;
+        m_unk1E90[i + 2] = 1.0f;
+        m_unk1ED8[i + 2] = 1.0f;
+        m_unk1E90[i + 3] = 1.0f;
+        m_unk1ED8[i + 3] = 1.0f;
+        m_unk1E90[i + 4] = 1.0f;
+        m_unk1ED8[i + 4] = 1.0f;
+        m_unk1E90[i + 5] = 1.0f;
+        m_unk1ED8[i + 5] = 1.0f;
+        m_unk1E90[i + 6] = 1.0f;
+        m_unk1ED8[i + 6] = 1.0f;
+        m_unk1E90[i + 7] = 1.0f;
+        m_unk1ED8[i + 7] = 1.0f;
+    }
+    for (; i < 18; i++) {
+        m_unk1E90[i] = 1.0f;
+        m_unk1ED8[i] = 1.0f;
+    }
 }
