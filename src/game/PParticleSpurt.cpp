@@ -11,6 +11,11 @@ extern "C" void MulVector__5PMat4FPfPf(PMat4 *pMat, float *pSrc, float *pDst);
 extern unsigned char __vt__14PParticleSpurt[];
 extern "C" float sqrtf(float);
 void FastMath_VectorFabs(float *pDst, float *pSrc);
+extern "C" void *__nwa__FUi(unsigned int nSize);
+extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
+extern "C" void memcpy(void *pDst, const void *pSrc, unsigned int nSize);
+extern "C" int rand(void);
+extern "C" float FastMath_Fabs__Ff(float fValue);
 
 // DRAFT: 0x001CAED0 SetupBoundingBox__14PParticleSpurtFv
 // note: 42 differing words; scale bits need mfc1 (every C float-to-int cast spills, so mfc1 is asm and not counted); VU0 blocks in asm; reg/order differ (0.5 in f2 not f1, sb in v0 not t0)
@@ -94,6 +99,97 @@ void PParticleSpurt::SetupBoundingBox() {
     m_unk94 = v40[1] + (m_unkA0 + v20[1]);
     m_unk98 = v40[2] + (m_unkA0 + v20[2]);
     m_unk9C = sqrtf(m_unk90 * m_unk90 + m_unk94 * m_unk94 + m_unk98 * m_unk98);
+}
+
+// DRAFT: 0x001CBCD0 Create__14PParticleSpurtFP22tagParticleSpurtParamsfff
+// note: 125 differing words, size 0x340 vs 0x33C; the rand() float-to-int cast spills through the stack (C emits no mfc1); the m_unk1D0 selector store order and early-return epilogue differ. Tried: if/else min tail (126), positive-comparison selector (125).
+int PParticleSpurt::Create(tagParticleSpurtParams *pParams, float fX, float fY, float fZ) {
+    unsigned int i;
+    int off;
+    float f1;
+    float f2;
+    float f3;
+    float v0;
+
+    if (PParticleSystem::Create(pParams->m_unk80, 0) == 0) {
+        return 0;
+    }
+    m_unkE0 = __nwa__FUi(pParams->m_unk80 * 4);
+    if (m_unkE0 == 0) {
+        return 0;
+    }
+    m_unk30 = 0x48;
+    memcpy(m_unkF0, pParams, 0xC0);
+    m_unkF0[0] += fX;
+    m_unkF0[1] += fY;
+    m_unkF0[2] += fZ;
+    *(u_long128 *)m_unk1C0 = *(u_long128 *)m_unkF0;
+    *(u_long128 *)m_unk1B0 = *(u_long128 *)m_unk140;
+    m_unk1D0[0] = FastMath_Fabs__Ff(m_unk1B0[0]);
+    m_unk1D0[1] = FastMath_Fabs__Ff(m_unk1B0[1]);
+    m_unk1D0[2] = FastMath_Fabs__Ff(m_unk1B0[2]);
+    f1 = m_unk1D0[0];
+    f2 = m_unk1D0[1];
+    if (!(f1 <= f2) && !(f1 <= m_unk1D0[2])) {
+        m_unk1D0[0] = 0.0f;
+        m_unk1D0[1] = 1.0f;
+        m_unk1D0[2] = 1.0f;
+    } else if (!(f2 <= f1)) {
+        if (!(f2 <= m_unk1D0[2])) {
+            m_unk1D0[0] = 1.0f;
+            m_unk1D0[1] = 0.0f;
+            m_unk1D0[2] = 1.0f;
+        } else {
+            m_unk1D0[0] = 1.0f;
+            m_unk1D0[1] = 1.0f;
+            m_unk1D0[2] = 0.0f;
+        }
+    } else {
+        m_unk1D0[0] = 1.0f;
+        m_unk1D0[1] = 1.0f;
+        m_unk1D0[2] = 0.0f;
+    }
+    m_unk1E0 = 10.0f + (140.0f * (1.0f - m_unk180[1]));
+    m_unk1E4 = (int)(0.5f + (24684.0f + (23958.0f * ((float)rand() / 2.1474836e9f))));
+    m_unk0C = 7;
+    if (m_unk19C != 0) {
+        m_unkE8 = __nwa__FUi(pParams->m_unk80 * 0x10);
+        if (m_unkE8 == 0) {
+            return 0;
+        }
+        m_unkE4 = __nwa__FUi(pParams->m_unk80 * 0x10);
+        if (m_unkE4 == 0) {
+            return 0;
+        }
+        i = 0;
+        off = 0;
+        while (i < m_unk04) {
+            i++;
+            *(float *)((char *)m_unkE0 + off) = m_unk1E0;
+            off += 4;
+        }
+    } else {
+        memset(m_unkE0, 0, m_unk04 * 4);
+    }
+    m_unk180[3] = 1.0f - m_unk180[3];
+    f1 = m_unk174;
+    f2 = m_unk178;
+    v0 = f2;
+    if (!(f1 <= f2)) {
+        v0 = f1;
+    }
+    f3 = m_unk17C;
+    if (!(v0 <= f3)) {
+        if (!(f1 <= f2)) {
+        } else {
+            f1 = f2;
+        }
+    } else {
+        f1 = f3;
+    }
+    m_unkA0 = f1;
+    SetupBoundingBox();
+    return 1;
 }
 
 // FUNCTION: 0x001CB080 ModifyPosition__14PParticleSpurtFP5PMat4
