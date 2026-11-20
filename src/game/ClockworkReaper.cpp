@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "ClockworkReaper.h"
 #include "types.h"
 
@@ -15,6 +16,12 @@ public:
     char *m_unk3C;
     char _pad040[0x154 - 0x40];
     int m_unk154;
+    char _pad158[0x15E - 0x158];
+    unsigned short m_unk15E;
+    char _pad160[0x1CC - 0x160];
+    int m_unk1CC;
+    char _pad1D0[0x23D2 - 0x1D0];
+    unsigned char m_unk23D2;
 };
 
 extern "C" float Distance__7MathAPIFPA4_fPA4_f(MathAPI *, float (*)[4]);
@@ -83,6 +90,18 @@ extern "C" PMNode *GetResource__16PResourceManagerFUib(void *, unsigned int, boo
 extern "C" void BuildDispList__9PSkeletonFv(void *);
 extern void *mpResMgr__15EntityBaseClass;
 extern "C" int RandomIntRange__7MathAPIFii(int, int);
+class Shadow {
+public:
+    signed char m_unk0;
+    char _pad001[0x0C - 0x01];
+    void *m_unkC;
+};
+extern "C" void *__nw__FUi(unsigned int);
+extern "C" Shadow *__ct__6ShadowFQ26Shadow10ShadowTypeUi(Shadow *, int, unsigned int);
+extern "C" void PlaySequence__15EntityBaseClassFPUi(EntityBaseClass *, unsigned int *);
+extern unsigned int ClockworkReaper_InitGruntSeq[4];
+extern unsigned int ClockworkReaper_InitVeteranSeq[4];
+extern unsigned int ClockworkReaper_InitEliteSeq[4];
 
 // FUNCTION: 0x001BF820 SetRiseAndAttack__15ClockworkReaperFPA4_fff
 void ClockworkReaper::SetRiseAndAttack(float (*arg0)[4], float arg1, float arg2) {
@@ -158,6 +177,42 @@ int ClockworkReaper::InBlockableState() {
         return 1;
     }
     return 0;
+}
+
+// DRAFT: 0x001BF9F0 CheckBlockAttack__15ClockworkReaperFv
+// note: 80 words differ: original frame is 0x30 (saves s0,s1 only) with player in s0 and this in s1, no result register; ours keeps result in s0 and this in s2 (0x40 frame). Tried: early-return per exit (82), &&-chain with early return (84), shared exit with result var (80, current).
+int ClockworkReaper::CheckBlockAttack() {
+    int result = 0;
+    MathAPI *player = mPlayerAPI__13EntityManager;
+    if (player == 0) {
+        CdsAssert("ClockworkReaper.cpp", 0xD25, "pPlayer");
+    }
+    if (m_unkF4 == 0 && m_unk208 > 0 && player->m_unk23D2 != 0 && player->m_unk15E != 0xD &&
+        player->m_unk1CC == m_unk4 && InBlockableState() != 0) {
+        char *selfTarget = m_unk3C ? (char *)m_unk3C + 0x80 : (char *)this + 0x190;
+        char *playerTarget = player->m_unk3C ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+        float dist = Distance__7MathAPIFPA4_fPA4_f((MathAPI *)playerTarget, (float (*)[4])selfTarget);
+        if (dist <= 20.0f) {
+            int roll = RandomIntRange__7MathAPIFii(1, 100);
+            if (roll < 6) {
+                switch (m_unk1B0) {
+                case 0:
+                    m_unk2C5 = (m_unk20 == 4);
+                    result = 0x1F;
+                    break;
+                case 1:
+                    m_unk2C8 = 0;
+                    result = 0x21;
+                    break;
+                case 2:
+                    m_unk2C5 = (m_unk20 == 4);
+                    result = (m_unk2C5 == 0) ? 0x22 : 0x1F;
+                    break;
+                }
+            }
+        }
+    }
+    return result;
 }
 
 // DRAFT: 0x001BFB90 FaceHit__15ClockworkReaperFv
@@ -250,6 +305,74 @@ int ClockworkReaper::CanAttackInState() {
         return 1;
     }
     return 0;
+}
+
+// FUNCTION: 0x001C0330 LoadCorrectMesh__15ClockworkReaperFb
+void ClockworkReaper::LoadCorrectMesh(bool arg0) {
+    if (m_unk255 == 0 || arg0) {
+        if (m_unkD4 == 0) {
+            Shadow *shadow = (Shadow *)__nw__FUi(0x10);
+            if (shadow != 0) {
+                shadow = __ct__6ShadowFQ26Shadow10ShadowTypeUi(shadow, 1, 0x87000007U);
+            }
+            m_unkD4 = shadow;
+            if (m_unkD4 == 0) {
+                CdsAssert("ClockworkReaper.cpp", 0xBD8, "mpShadow");
+            }
+            Shadow *s = m_unkD4;
+            if (s != 0) {
+                s->m_unk0 = 1;
+                void *c = s->m_unkC;
+                if (c != 0) {
+                    *(unsigned char *)((char *)c + 0x18) = 1;
+                }
+            }
+        }
+        switch (m_unk1B0) {
+        case 0:
+            PlaySequence__15EntityBaseClassFPUi((EntityBaseClass *)this, ClockworkReaper_InitGruntSeq);
+            if (m_unk2B6 == 0) {
+                PMNode *node = m_unk3C;
+                if (node == 0) {
+                    CdsAssert("ClockworkReaper.cpp", 0xBE4, "pNode");
+                }
+                PMNode *found = Find__6PMNodeFUi(node, 0x8EA3DD30U);
+                if (found == 0) {
+                    CdsAssert("ClockworkReaper.cpp", 0xBE7, "pEffect");
+                }
+                PMNode *res = GetResource__16PResourceManagerFUib(mpResMgr__15EntityBaseClass, 0x81000197U, true);
+                if (res == 0) {
+                    CdsAssert("ClockworkReaper.cpp", 0xBEA, "pResource");
+                }
+                PMNode *found2 = Find__6PMNodeFUi(res, 0x8EA3DD30U);
+                if (found2 == 0) {
+                    CdsAssert("ClockworkReaper.cpp", 0xBED, "pSource");
+                }
+                PMNode *v1 = (PMNode *)found2->m_unk10;
+                found->m_unk10 = v1;
+                found->m_unk3E &= 0xEF;
+                if (v1 != 0) {
+                    if (*(unsigned char *)((char *)v1 + 0xC) != 0) {
+                        found->m_unk3E |= 0x10;
+                    }
+                }
+                AttachSoulStoneEffect(found);
+                BuildDispList__9PSkeletonFv((void *)node);
+            }
+            break;
+        case 1: {
+            PlaySequence__15EntityBaseClassFPUi((EntityBaseClass *)this, ClockworkReaper_InitVeteranSeq);
+            char *obj = (char *)m_unk38;
+            *(float *)(obj + 0x84) = *(float *)(obj + 0x84) - 0.2f;
+            *(float *)(obj + 0x94) = *(float *)(obj + 0x94) - 0.2f;
+            break;
+        }
+        case 2:
+            PlaySequence__15EntityBaseClassFPUi((EntityBaseClass *)this, ClockworkReaper_InitEliteSeq);
+            break;
+        }
+        m_unk255 = 1;
+    }
 }
 
 // FUNCTION: 0x001C0590 OutputDebug__15ClockworkReaperFv

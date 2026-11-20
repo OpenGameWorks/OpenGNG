@@ -6,6 +6,7 @@
 // ClockworkReaper derives from EntityBaseClass at offset 0; the base is not
 // declared here, so every member is named by its offset from the object start.
 class PMNode;
+class Shadow;
 
 class ClockworkReaper {
 public:
@@ -15,8 +16,10 @@ public:
     int AnimationViewer(int arg0);
     int GetRenderPassIndex();
     int InBlockableState();
+    int CheckBlockAttack();
     int CanAttackInState();
     int PlayerInAttackRadius();
+    void LoadCorrectMesh(bool arg0);
     void FaceHit();
     int Stalled(float arg0);
     void DeleteEffects();
@@ -29,12 +32,18 @@ public:
     void SetDefaultVars();
     void SetEditableVars(char *arg0);
 
-    char _pad000[0x20];
-    int m_unk20;            // 0x020 state
+    char _pad000[0x4];
+    int m_unk4;             // 0x004 compared with the player's 0x1CC by CheckBlockAttack
+    char _pad008[0x20 - 0x8];
+    int m_unk20;           // 0x020 state
     char _pad024[0x38 - 0x24];
     void *m_unk38;          // 0x038 object whose float at 0x11C FaceHit writes
     PMNode *m_unk3C;        // 0x03C node whose frame time and flags OutputDebug reads
-    char _pad040[0x163 - 0x40];
+    char _pad040[0xD4 - 0x40];
+    Shadow *m_unkD4;        // 0x0D4 shadow object, LoadCorrectMesh
+    char _pad0D8[0xF4 - 0xD8];
+    int m_unkF4;            // 0x0F4 nonzero makes CheckBlockAttack return 0
+    char _pad0F8[0x163 - 0xF8];
     unsigned char m_unk163; // 0x163
     char _pad164[0x190 - 0x164];
     u_long128 m_unk190;     // 0x190 spawn copy target, SetSpawnedFromEntity
@@ -70,7 +79,9 @@ public:
     unsigned char m_unk24D; // 0x24D, set by OnTimerEvent
     char _pad24E[0x250 - 0x24E];
     int m_unk250;           // 0x250 timer id
-    char _pad254[0x290 - 0x254];
+    char _pad254[0x255 - 0x254];
+    unsigned char m_unk255; // 0x255, tested by LoadCorrectMesh
+    char _pad256[0x290 - 0x256];
     float m_unk290[4];      // 0x290 position tested by PlayerInAttackRadius
     u_long128 m_unk2A0;     // 0x2A0 MathAPI-sized copy target, Stalled
     char _pad2B0[0x2B6 - 0x2B0];
@@ -79,7 +90,10 @@ public:
     unsigned char m_unk2B8; // 0x2B8, tested by CheckOnWakeTasks
     char _pad2B9[0x2C4 - 0x2B9];
     signed char m_unk2C4;   // 0x2C4, cleared by CheckOnWakeTasks
-    char _pad2C5[0x2E0 - 0x2C5];
+    unsigned char m_unk2C5; // 0x2C5, set by CheckBlockAttack
+    char _pad2C6[0x2C8 - 0x2C6];
+    int m_unk2C8;           // 0x2C8, cleared by CheckBlockAttack
+    char _pad2CC[0x2E0 - 0x2CC];
     unsigned char m_unk2E0; // 0x2E0, set by AttachSoulStoneEffect
     char _pad2E1[0x2E8 - 0x2E1];
     int m_unk2E8;           // 0x2E8 timer id
