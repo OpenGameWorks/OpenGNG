@@ -29,6 +29,7 @@ public:
     void Delete();
     void DoDamage(bool bFlag);
     void InitIceDoom(int nIndex, float (*pOut)[4], float (*pIn)[4]);
+    void OnAttackEvent(EntityBaseClass *pArg, int nArg);
 
     void *m_unk0;                    // 0x000 vtable pointer
     char _pad004[0x3C - 0x04];
