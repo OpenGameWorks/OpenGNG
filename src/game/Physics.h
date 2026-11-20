@@ -5,6 +5,8 @@
 #include "PArray.h"
 
 class PMeshNode;
+class EntityBaseClass;
+class BGCollision;
 
 // Background-animation list shared by all Physics instances (symbol
 // mBGAnimList__7Physics, 0x3065B0).
@@ -24,6 +26,7 @@ public:
     void AdjustFaceAngle(PMeshNode *pNode, float fRate);
     int ApplyGroundMove(float (&vOut)[4], PMeshNode *pNode);
     void CalculateVelocity(float fSpeed, float (*pMatrix)[4]);
+    void RunPhysics(EntityBaseClass *pEntity, float fDelta, int nFlag, BGCollision *pBG);
 
     float m_unk0;                   // 0x00 velocity X (SetVelocity), start of 16-byte matrix copy
     char _pad004[0x4];

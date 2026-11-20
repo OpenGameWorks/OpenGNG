@@ -1,6 +1,9 @@
 // FLAGS: -str readonly
 #include "Physics.h"
 #include "BGCollision.h"
+#include "EntityBaseClass.h"
+#include "PParticleManager.h"
+#include "PMeshNode.h"
 
 // TODO(header): foreign declarations
 class PMNode;
@@ -23,6 +26,16 @@ extern "C" float atan2f(float y, float x);
 extern char mBGCollision__15EntityBaseClass[0x20];
 extern char StaticBox[0x20];
 extern float SandSpeed[8];
+extern "C" void sceVu0CopyMatrix(float (*)[4], float (*)[4]);
+extern "C" void sceVu0DivVectorXYZ(float *, float *, float);
+extern "C" void sceVu0ScaleVectorXYZ(float *, float *, float);
+extern "C" int printf(const char *, ...);
+extern char gGfxEng[1504384];
+extern float SINK_DEPTH;
+extern float RIPPLE_RATE;
+extern unsigned char bXXX;
+extern "C" void GetReflectionVec__FPfPfPf(float *, float *, float *);
+extern "C" double fptodp(float);
 
 // FUNCTION: 0x00170E80 SulfurCheck__7PhysicsFv
 int Physics::SulfurCheck()
@@ -240,6 +253,324 @@ void Physics::CheckBGAnim(float (&vPos)[4], float fOffset)
                     : 0;
     }
 }
+
+// Float field at byte offset `off` of Physics, for offsets the header leaves unnamed.
+#define PHY_F(off) (*(float *)((char *)this + (off)))
+
+// DRAFT: 0x001714C0 RunPhysics__7PhysicsFP15EntityBaseClassfiP11BGCollision
+// note: DIFF 672 words; c1 0x504/0x150304/0x140044 became sceVu0 calls, not asm; frame 0x190 vs 0x1B0; BGDetection nFlag/pMesh guessed; slot 0x18 and fptodp/SINK_DEPTH types unverified.
+void Physics::RunPhysics(EntityBaseClass *arg0, float arg1, int arg2, BGCollision *arg3)
+{
+    float vPos[4];
+    float vVel[4];
+    float aGrid[2][4];
+    float vTmp[4];
+    float vRefl[4];
+    float vNrm[4];
+    float vCtl[4];
+    float vDiff[4];
+    float vCol1[4];
+    float vCol2[4];
+    float matF[4][4];
+    unsigned short flags;
+    int bFlag;
+    int bSink;
+    int var_s5;
+    int var_s6;
+    int s1_2;
+    int var_v0_2;
+    int spB0;
+    int nRate;
+    unsigned int nE4;
+    unsigned int nE0;
+    unsigned int nE8;
+    float fOld;
+    float fY;
+    float fDiff;
+    float fC8;
+    float fSy;
+    float f0;
+    float fShadow;
+    float fC4;
+    float f1;
+    float f12;
+    float f2_3;
+    float fTmp;
+    float fE4;
+    float f0_3;
+    PMeshNode *pNode;
+    PMeshNode *pDust;
+    float *pDustPos;
+
+    m_unk108 &= ~0x100;
+    flags = m_unk106;
+    if (!(flags & 0x800)) {
+        pNode = (PMeshNode *)arg0->m_unk3C;
+        if (flags & 0x40) {
+            sceVu0ApplyMatrix(vPos, (float (*)[4])(m_unkCC + 0x40), (float *)&m_unkD0);
+        } else {
+            bFlag = arg2 != 0;
+            m_unk108 &= ~0x4FE;
+            *(u_long128 *)vPos = *(u_long128 *)pNode->m_unk80;
+            if (bFlag == 0) {
+                bFlag = arg0->m_unkF4 != 0;
+            }
+            if ((bFlag & 0xFF) == 0) {
+                AdjustFaceAngle(pNode, arg1);
+                CalculateVelocity(vPos[1], (float (*)[4])vVel);
+                sceVu0ScaleVectorXYZ(vVel, vVel, arg1);
+                sceVu0AddVector(vPos, vPos, vVel);
+                vPos[3] = 1.0f;
+            } else {
+                vVel[1] = 0.0f;
+            }
+            if (!(m_unk106 & 1)) {
+                sceVu0CopyMatrix((float (*)[4])&matF, pNode->m_unk40);
+                *(u_long128 *)vTmp = *(u_long128 *)vPos;
+                spB0 = m_unkCC;
+                *(u_long128 *)&aGrid[0][0] = *(u_long128 *)((char *)this + 0x80);
+                *(u_long128 *)&aGrid[1][0] = *(u_long128 *)((char *)this + 0x90);
+                if (pNode->m_unk3E & 4) {
+                    aGrid[1][0] *= pNode->m_unkA0;
+                    aGrid[1][2] *= pNode->m_unkA8;
+                    sceVu0DivVectorXYZ((float *)&matF, (float *)&matF, pNode->m_unkA0);
+                    sceVu0DivVectorXYZ(vCol1, vCol1, pNode->m_unkA4);
+                    sceVu0DivVectorXYZ(vCol2, vCol2, pNode->m_unkA8);
+                }
+                arg3->BGDetection(&aGrid, (PMat4 *)&matF, vVel[1], *(SurfaceInfo *)&m_unkA0, 0, pNode);
+                if ((m_unk106 & 2) && (m_unkC0 == 0)) {
+                    nE4 = m_unkE4;
+                    if (nE4 != 0) {
+                        nE0 = m_unkE0;
+                        do {
+                            vTmp[0] = (float)*(int *)((char *)this + 0xB0);
+                            vTmp[2] = *(float *)((char *)this + 0xB8);
+                            arg3->BGDetection(&aGrid, (PMat4 *)&matF, vVel[1], *(SurfaceInfo *)&m_unkA0, 0, pNode);
+                            if (m_unkC0 != 0) {
+                                break;
+                            }
+                            printf("retry BGDetection for %s fail\n",
+                                   (char *)(*(int (**)(EntityBaseClass *))(*(char **)arg0 + 0x18))(arg0));
+                        } while (bXXX != 0);
+                        m_unkE0 = nE0;
+                        m_unkE4 = nE4;
+                    }
+                }
+                fOld = m_unkFC;
+                fY = (vPos[1] + PHY_F(0x84)) - m_unk94;
+                m_unkFC = fY;
+                fDiff = fY - m_unkB4;
+                if (m_unk106 & 0x200) {
+                    if (m_unkC0 != 0) {
+                        *(u_long128 *)vPos = *(u_long128 *)((char *)this + 0xB0);
+                    }
+                } else {
+                    if (!(fDiff <= 0.0f)) {
+                        fC8 = PHY_F(0xC8);
+                        if (!(fC8 <= -1000.0f)) {
+                            fSy = vPos[1];
+                            f0 = (m_unk94 + (fSy + PHY_F(0x84))) - fC8;
+                            if (!(f0 <= 0.0f) && !(fDiff <= f0)) {
+                                vPos[1] = fSy - f0;
+                                if (!(PHY_F(0x4) <= 0.0f)) {
+                                    PHY_F(0x4) = -0.000001f;
+                                    m_unk108 &= ~1;
+                                }
+                            }
+                        }
+                    }
+                    if (!(PHY_F(0xC8) <= vPos[1])) {
+                        fShadow = 0.6f;
+                    } else {
+                        fShadow = 1.0f;
+                    }
+                    arg0->SetShadowVolume(fShadow);
+                    var_s6 = 0;
+                    if (m_unk106 & 2) {
+                        fC4 = m_unkC4;
+                        nE8 = m_unkE8;
+                        var_s5 = 0;
+                        s1_2 = nE8 & 0x100000;
+                        if (!(fC4 <= m_unkB4) && !((fC4 - vPos[1]) <= 0.0f)) {
+                            f1 = fC4 - fY;
+                            if (nE8 & 0x100001) {
+                                var_s5 = nE8 & 1;
+                                if (!(f1 <= 0.0f)) {
+                                    if ((s1_2 != 0) && !(f1 <= PHY_F(0x84))) {
+                                        m_unk108 |= 0x400;
+                                    }
+                                    f12 = m_unkC4;
+                                    if (!(fOld < f12) && (var_s5 != 0)) {
+                                        arg0->CreateSplash(f12, true, s1_2 != 0);
+                                    }
+                                }
+                            }
+                        }
+                        if (var_s5 != 0) {
+                            var_v0_2 = m_unk108 | 0x200;
+                        } else {
+                            if ((m_unk108 & 0x200) && (s1_2 == 0)) {
+                                arg0->CreateSplash(m_unkC4, false, s1_2 != 0);
+                            }
+                            var_v0_2 = m_unk108 & ~0x200;
+                        }
+                        m_unk108 = var_v0_2;
+                        f2_3 = PHY_F(0x4);
+                        bSink = 0;
+                        if ((f2_3 != 0.0f) || !(fDiff < 1.0f)) {
+                            if ((f2_3 < 0.0f) && (fDiff <= 0.0f)) {
+                                if (!(m_unk108 & 1)) {
+                                    vPos[1] -= fDiff;
+                                    fDiff = 0.0f;
+                                }
+                                PHY_F(0x4) = 0.0f;
+                                PHY_F(0x114) = 0.0f;
+                            } else {
+                                if ((bFlag & 0xFF) == 0) {
+                                    PHY_F(0x4) -= PHY_F(0x110) * arg1;
+                                }
+                                if ((m_unk108 & 1) && !(fDiff < 1.0f)) {
+                                    m_unk108 |= 4;
+                                }
+                                if (fDiff < 0.0f) {
+                                    bSink = 1;
+                                }
+                            }
+                        } else if (!(fDiff <= 0.0f)) {
+                            bSink = 1;
+                        }
+                        if (bSink) {
+                            fTmp = vPos[1] - fDiff;
+                            fDiff = 0.0f;
+                            vPos[1] = fTmp;
+                        }
+                        if ((fDiff <= 0.0f) && (PHY_F(0x4) <= 0.0f) && ((m_unkE8 & 0x83800) == 0x80000)) {
+                            f0_3 = PHY_F(0x114) - 0.02f;
+                            PHY_F(0x114) = f0_3;
+                            if (f0_3 < SINK_DEPTH) {
+                                PHY_F(0x114) = SINK_DEPTH;
+                            }
+                            var_s6 = 1;
+                            vPos[1] += PHY_F(0x114) - fDiff;
+                            fDiff = PHY_F(0x114);
+                        }
+                    }
+                    if ((var_s6 == 0) && (m_unk106 & 0x10) && (fDiff < 0.0f)) {
+                        vPos[1] -= fDiff;
+                        fDiff = 0.0f;
+                        if (PHY_F(0x4) < 0.0f) {
+                            PHY_F(0x4) = 0.0f;
+                        }
+                    }
+                    if ((fDiff <= 0.0f) && (PHY_F(0x4) <= 0.0f) && (m_unkC0 != 0)) {
+                        if (!(m_unk108 & 1)) {
+                            m_unk108 |= 2;
+                            fE4 = *(float *)((char *)arg0 + 0xE4);
+                            if ((fE4 != 0.0f) && !(m_unk108 & 0x600) && !(m_unkE8 & 0x3800)) {
+                                pDust = (PMeshNode *)arg0->m_unk3C;
+                                pDustPos = (float *)((char *)arg0 + 0x190);
+                                if (pDust != 0) {
+                                    pDustPos = pDust->m_unk80;
+                                }
+                                ((PParticleManager *)((char *)gGfxEng + 0x154F00))->CreateGroundDust(pDustPos, fE4);
+                            }
+                            if (!(PHY_F(0x10C) <= 0.0f)) {
+                                if ((PHY_F(0x14) < -0.05f) && !(m_unkE8 & 0x100000)) {
+                                    GetReflectionVec__FPfPfPf((float *)&m_unk10, (float *)(m_unkC0 + 0x10), vRefl);
+                                    sceVu0InnerProduct((float *)&m_unk10, (float *)&m_unk10);
+                                    sceVu0ScaleVector((float *)this, vRefl, 0.8f * fDiff);
+                                    fTmp = fDiff * (vRefl[1] * PHY_F(0x10C));
+                                    PHY_F(0x4) = fTmp;
+                                    if (fTmp == 0.0f) {
+                                        printf("bad reflection %f, %f, %f\n", fptodp(m_unk0), fptodp(fTmp), fptodp(m_unk8));
+                                        PHY_F(0x4) = 0.01f;
+                                    }
+                                    PHY_F(0xC) = 1.0f;
+                                    m_unk108 &= ~1;
+                                } else {
+                                    *(u_long128 *)&m_unk0 = *(u_long128 *)&gUnitMatrix[12];
+                                }
+                            } else if (PHY_F(0x10C) <= 0.0f) {
+                                *(u_long128 *)&m_unk0 = *(u_long128 *)&gUnitMatrix[12];
+                            } else {
+                                PHY_F(0x4) = 0.0f;
+                            }
+                            *(int *)&m_unk3C = 0;
+                        }
+                        if (PHY_F(0x4) == 0.0f) {
+                            m_unk108 |= 1;
+                        }
+                        *(u_long128 *)m_unk20 = *(u_long128 *)&gUnitMatrix[12];
+                        if (m_unkC0 != 0) {
+                            if ((spB0 != 0) && (spB0 == (int)m_unkCC)) {
+                                if (ApplyGroundMove(vPos, pNode) != 0) {
+                                    arg0->m_unkD0 = 0;
+                                }
+                            } else {
+                                *(int *)&m_unk3C = 0;
+                            }
+                        }
+                        fDiff = 0.0f;
+                    } else {
+                        m_unk108 &= ~1;
+                    }
+                    if (m_unkE4 != 0) {
+                        *(u_long128 *)vPos = *(u_long128 *)((char *)this + 0xB0);
+                        vPos[2] = *(float *)((char *)this + 0xB8);
+                        if ((m_unk106 & 0x80) && !(m_unk108 & 1)
+                            && !(sceVu0InnerProduct((float *)&m_unk0, (float *)&m_unk0) <= 0.05f)) {
+                            *(u_long128 *)vCtl = *(u_long128 *)((char *)m_unkE4 + 0x10);
+                            nE0 = m_unkE0;
+                            if (nE0 != 0) {
+                                sceVu0ApplyMatrix(vCtl, (float (*)[4])(nE0 + 0x40), vCtl);
+                            }
+                            sceVu0Normalize(vNrm, (float *)this);
+                            if (sceVu0InnerProduct(vNrm, vCtl) < 0.0f) {
+                                GetReflectionVec__FPfPfPf((float *)&m_unk0, vCtl, vNrm);
+                                PHY_F(0xC) = 1.0f;
+                                m_unk108 |= 0x20;
+                            }
+                        }
+                    }
+                    if (m_unkCC != 0) {
+                        sceVu0CopyMatrix((float (*)[4])m_unk40, (float (*)[4])(m_unkCC + 0x40));
+                    }
+                    *(float *)&m_unkF8 = fDiff;
+                }
+            }
+        }
+        vPos[3] = 1.0f;
+        *(u_long128 *)pNode->m_unk80 = *(u_long128 *)vPos;
+        pNode->m_unk3E |= 8;
+        sceVu0SubVector(vDiff, vPos, (float *)&m_unkA0);
+        if (!(sceVu0InnerProduct(vDiff, vDiff) <= 0.001f)) {
+            m_unk108 |= 0x40;
+            if (!(m_unk106 & 0x40)) {
+                CheckBGAnim(vPos, PHY_F(0x84));
+            }
+            arg0->m_unkD0 = 0;
+        }
+        if (!(sceVu0InnerProduct(vDiff, vDiff) <= 0.001f)) {
+            m_unk108 |= 0x80;
+        }
+        if (m_unk108 & 0x200) {
+            m_unk104 += 1;
+            nRate = 0x1E;
+            if (m_unk108 & 0x40) {
+                nRate = (int)(RIPPLE_RATE / 0.001f);
+            }
+            if (nRate >= 0x1F) {
+                nRate = 0x1E;
+            }
+            if (m_unk104 >= nRate) {
+                m_unk104 = 0;
+                arg0->UpdateRipple(m_unkC4, m_unk108 & 0x40, (m_unkE8 & 0x100001) == 0x100001);
+            }
+        }
+        *(u_long128 *)&m_unkA0 = *(u_long128 *)vPos;
+    }
+}
+#undef PHY_F
 
 // Local view of the PMeshNode fields AdjustFaceAngle touches (0x3E flags, 0x94 heading).
 struct PMeshNodeAngleView {
