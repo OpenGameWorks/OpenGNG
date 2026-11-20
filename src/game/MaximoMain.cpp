@@ -4,6 +4,9 @@
 #include "PResourceManager.h"
 
 // TODO(header): foreign declarations
+extern "C" int ReadPush__3PadFv(void *);
+extern "C" void RemoveAllParticleSystems__16PParticleManagerFv(void *);
+extern "C" void ReturnControlOfIOPToMjln__6PSoundFv(void *);
 class FontNode {
 public:
     char _pad00[8];
@@ -988,6 +991,155 @@ PMNode *MaximoMain::SetMarker(PMNode *arg0, int arg1, PMNode *arg2) {
         }
     }
     return node;
+}
+
+// DRAFT: 0x00138110 GameSelect__10MaximoMainFv
+// note: DIFF 190; state-0 FadeScreen arg setup (a0 lui, a2=0 hoisted before float loads) and gp reloc for GAME_FPS differ; tried if/else and goto dispatch, enum-arg variants
+int MaximoMain::GameSelect() {
+    int s0;
+    int s1;
+    unsigned int s2;
+    void *fm = gInterface + 0x80;
+    unsigned int s4;
+    int t;
+    int s7 = 0;
+
+    *(int *)(gInterface + 0x1C0) = 5;
+    s0 = 0;
+    s2 = 0;
+    s1 = 20 * (int)GAME_FPS;
+    RemoveAll__11FontManagerFb(fm, true);
+    for (;;) {
+        InitRenderFrame__9MaxEngineFbUi(this, false, 0);
+        switch (s0) {
+        case 0:
+            {
+                FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 8.5f, false, 0);
+                if (m_unk19AC8 == 0) {
+                    SoundGainEEControl__9InterfaceFv(gInterface);
+                    LoadTitleMesh();
+                    ReturnControlOfIOPToMjln__6PSoundFv(gSound);
+                    m_unk19ACC->Slot2(1000.0f);
+                }
+                if (m_unk19AD0 != 0) m_unk19AD0->m_unk2C = 0;
+                DisplayString__11FontManagerFiiib(fm, 9, 0, 0, false);
+                ResetWarning__11FontManagerFv(fm);
+                if (gbMusic != 0) {
+                    s0 += 1;
+                    m_unk19B48 = 3;
+                    PlayMusic__6PSoundFUi(gSound, 3);
+                }
+            }
+            break;
+        case 1:
+            {
+                if (gInterface[0x425] == 0) s0 += 1;
+            }
+            break;
+        case 2:
+            {
+                s4 = ReadPush__3PadFv(gPad) & 0xFFFF;
+                if (s4 & 0x4008) {
+                    PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+                    if (s2 == 0) {
+                        RemoveAll__11FontManagerFb(fm, true);
+                        s0 = 4;
+                        DisplayString__11FontManagerFiiib(fm, 0xD, 0, 0, false);
+                        s2 = 0;
+                        SetColor__8FontNodeF9FontColor((0 < *(int *)fm) ? ((void **)*(void ***)((char *)fm + 8))[0] : 0, 4);
+                        s1 = 20 * (int)GAME_FPS;
+                    } else {
+                        if (s2 != 2) FadeOutAllMusic__6PSoundFUi(gSound, 0x1F4);
+                        FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 4.25f, true, 0);
+                        s0 += 1;
+                    }
+                    s7 = s2;
+                    m_unk19A78 = 0;
+                    goto tail;
+                }
+                if (s4 & 0x50) {
+                    void *pNode;
+                    void *pNode2;
+                    PlaySoundUbiquitous__6PSoundFUi(gSound, 0x40);
+                    pNode = (s2 < *(int *)fm) ? ((void **)*(void ***)((char *)fm + 8))[s2] : 0;
+                    ((pNode) ? (void)0 : CdsAssert__FPciPc("MaximoMain.cpp", 0x119B, "pNode"));
+                    SetColor__8FontNodeF9FontColor(pNode, 7);
+                    s2 += (s4 & 0x40) ? 1 : -1;
+                    if (!(s2 < 3)) {
+                        s2 = 0;
+                        if (!(s4 & 0x40)) s2 = 2;
+                    }
+                    pNode2 = (s2 < *(int *)fm) ? ((void **)*(void ***)((char *)fm + 8))[s2] : 0;
+                    ((pNode2) ? (void)0 : CdsAssert__FPciPc("MaximoMain.cpp", 0x11A2, "pNode"));
+                    SetColor__8FontNodeF9FontColor(pNode2, 4);
+                    t = 10 * (int)GAME_FPS;
+                    if (s1 < t) s1 = t;
+                }
+                if (!(*(unsigned short *)(gPad + 0x10C) & 1)) {
+                    s1 -= 1;
+                    if (s1 == 0) {
+                        s0 += 1;
+                        s7 = 4;
+                        FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 8.5f, true, 0);
+                    }
+                }
+            }
+            break;
+        case 3:
+            {
+                if (gInterface[0x425] == 0) {
+                    Destroy__9InterfaceFv(gInterface);
+                    m_unk19AC8 = 0;
+                    m_unk19ACC = 0;
+                    m_unk19AD0 = 0;
+                    RemoveAllParticleSystems__16PParticleManagerFv(gGfxEng + 0x154F00);
+                    return s7;
+                }
+            }
+            break;
+        case 4:
+            {
+                unsigned int v = ReadPush__3PadFv(gPad) & 0xFFFF;
+                if (v & 0x4008) {
+                    PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+                    *(unsigned char *)(gMC + 0x26EF) = (unsigned char)s2;
+                    FadeOutAllMusic__6PSoundFUi(gSound, 0x1F4);
+                    s0 = 3;
+                    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 4.25f, true, 0);
+                    goto tail;
+                }
+                if (v & 0x1000) {
+                    RemoveAll__11FontManagerFb(fm, true);
+                    DisplayString__11FontManagerFiiib(fm, 9, 0, 0, false);
+                    s0 = 2;
+                    s2 = 0;
+                    goto tail;
+                }
+                if (v & 0xA0) {
+                    PlaySoundUbiquitous__6PSoundFUi(gSound, 0x40);
+                    SetColor__8FontNodeF9FontColor((s2 < *(int *)fm) ? ((void **)*(void ***)((char *)fm + 8))[s2] : 0, 7);
+                    s2 ^= 1;
+                    SetColor__8FontNodeF9FontColor((s2 < *(int *)fm) ? ((void **)*(void ***)((char *)fm + 8))[s2] : 0, 4);
+                    t = 10 * (int)GAME_FPS;
+                    if (s1 < t) s1 = t;
+                    goto tail;
+                }
+                s1 -= 1;
+                if (s1 == 0) {
+                    s7 = 4;
+                    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 8.5f, true, 0);
+                    s0 = 3;
+                }
+            }
+            break;
+        }
+    tail:
+        if (m_unk19AC8 != 0) {
+            m_unk19AC8->Slot4(0, 0.0f, 1.0f, 0, 0);
+            m_unk19ACC->Slot4(0, 0.0f, 1.0f, 0, 0);
+        }
+        Render__9InterfaceFi(gInterface, 0);
+    }
 }
 
 // DRAFT: 0x001387C0 MainGame__10MaximoMainFv
