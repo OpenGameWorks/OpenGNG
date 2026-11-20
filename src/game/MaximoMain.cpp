@@ -1,13 +1,20 @@
 // FLAGS: -str readonly
 #include "MaximoMain.h"
+#include "PSlideShow.h"
+#include "PResourceManager.h"
 
 // TODO(header): foreign declarations
-class FontNode;
+class FontNode {
+public:
+    char _pad00[8];
+    int m_unk8;
+};
 class FontManager {
 public:
     void RemoveText(FontNode *pNode);
     void RemoveText(unsigned short nId);
     void *DisplayString(int nText, int x, int y, bool bFlag);
+    void InitFrame();
     char _pad000[0x13];
     signed char m_unk13;
     char _pad014[0x100 - 0x14];
@@ -15,6 +22,15 @@ public:
 };
 extern unsigned char gInterface[2656];
 extern unsigned char gMC[16320];
+extern unsigned char MemMgr[908];
+extern PMNode *pBonusScreen;
+extern "C" void Destroy__6PWorldFv(void *);
+extern "C" void RemoveAllFogObjects__16PParticleManagerFv(void *);
+extern "C" void UnloadGlobalResource__16PResourceManagerFv(void *);
+extern "C" int LoadGlobalResource__16PResourceManagerFPCcb(void *, const char *, bool);
+extern "C" void Unload__16PResourceManagerFv(void *);
+extern "C" void DmaWaitForCompletion__Fib(int, bool);
+extern "C" void sceGsSyncPath(int, int);
 extern unsigned char LevelTable[2688];
 extern unsigned char gSound[98496];
 extern "C" void FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(void *, float, float, bool, int);
@@ -1039,6 +1055,198 @@ void MaximoMain::QuitGame() {
     m_unk19A70 = 8;
     FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 4.25f, true, 0);
     FadeOutAllMusic__6PSoundFUi(gSound, 0x3E8);
+}
+
+// DRAFT: 0x00138AA0 TextureViewer__10MaximoMainFPQ210MaximoMain12BonusGalleryi
+// note: 181 differing words; 0x50 daddiu vs addiu for $s7, spAC/spCC stack slots swapped (0xAC/0xCC), branch offsets follow
+int MaximoMain::TextureViewer(MaximoMain::BonusGallery *arg0, int arg1)
+{
+    PSlideShow spD0;
+    FontNode *spCC;
+    FontManager *spB0;
+    int spAC;
+    int var_fp;
+    int var_s0;
+    int var_s1;
+    int var_s2 = arg1;
+    int var_s6;
+    int var_s7;
+    int temp_a0;
+    int temp_s0;
+    int temp_v0;
+    int var_a1;
+
+    var_s7 = 1;
+    spD0.Create(0x1C0, 0xD0);
+    var_s0 = 0;
+    var_s1 = 0;
+    spAC = 0;
+    PResourceManager sp120;
+    char sp1F0[64];
+    spB0 = (FontManager *)(gInterface + 0x80);
+    spCC = (FontNode *)spB0->DisplayString(0x26F, 0, 0, false);
+
+    for (;;) {
+        InitRenderFrame__9MaxEngineFbUi(this, false, 0);
+        if (var_s7 == 0) {
+            spD0.Animate(1.0f);
+            spD0.Render();
+            if (spD0.m_ucUnk41 == 0) {
+                Render__9InterfaceFi(gInterface, 0);
+            }
+        }
+        temp_a0 = (*(unsigned short *)(gPad + 0x10C) & 0x10A0) | (*(unsigned short *)(gPad + 0x108) & 0xA0);
+        switch (var_s0) {
+        case 0:
+            InitRenderFrame__9MaxEngineFbUi(this, false, 0);
+            DmaWaitForCompletion__Fib(1, false);
+            sceGsSyncPath(0, 0);
+            var_s0 = 1;
+            var_s7 = 1;
+            gMC[var_s2 + 0x6B5] = 2;
+            var_s6 = 0x3C;
+            if ((var_s2 >= 0x12) && (var_s2 < 0x15)) {
+                UnloadGlobalResource__16PResourceManagerFv(&sp120);
+            } else {
+                UnloadGlobalResource__16PResourceManagerFv(&sp120);
+                sprintf(sp1F0, "PSXDATA\\GAME\\BONUS%d.PAK", var_s2 + 1);
+                temp_s0 = *(int *)(MemMgr + 0x18);
+                *(int *)(MemMgr + 0x18) = 1;
+                ((LoadGlobalResource__16PResourceManagerFPCcb(&sp120, sp1F0, false) != 0) ? (void)0 : CdsAssert__FPciPc("MaximoMain.cpp", 0xF00, "0"));
+                *(int *)(MemMgr + 0x18) = temp_s0;
+                ((sp120.GetNumResourcesOfType((eResourceTypes)4, true) != 0) ? (void)0 : CdsAssert__FPciPc("MaximoMain.cpp", 0xF04, "mBonusResource.GetNumResourcesOfType( RES_TEXTURE, true )"));
+                if (var_s1 < 0) {
+                    var_s1 = sp120.GetNumResourcesOfType((eResourceTypes)4, true) - 1;
+                } else {
+                    var_s1 = 0;
+                }
+                var_s0 = 3;
+            }
+            continue;
+        case 1:
+            this->m_unk19B68 = 1;
+            spCC->m_unk8 = 0;
+            if (pBonusScreen != 0) {
+                DeleteMeshLayer__9InterfaceFP6PMNode(gInterface, pBonusScreen);
+                pBonusScreen = 0;
+            }
+            if (*(int *)gEng != 0) {
+                Destroy__6PWorldFv(this);
+                RemoveAllFogObjects__16PParticleManagerFv(gGfxEng + 0x154F00);
+                this->m_unk19B64 = 0;
+            }
+            InitRenderFrame__9MaxEngineFbUi(this, false, 0);
+            switch (var_s2) {
+            case 18:
+                var_fp = PlayMovie__9MaxEngineFiiUi(this, 3, 0, 0x1001U);
+                break;
+            case 19:
+                var_fp = PlayMovie__9MaxEngineFiiUi(this, 4, 0, 0x1001U);
+                break;
+            case 20:
+                var_fp = PlayMovie__9MaxEngineFiiUi(this, 5, 0, 0x1001U);
+                break;
+            }
+            var_s0 = 2;
+            spCC->m_unk8 = 0x3F800000;
+            if (var_fp != 2) {
+                continue;
+            }
+            break;
+        case 2:
+            var_a1 = var_s2 - 1;
+            if (var_s1 >= 0) {
+                var_a1 = var_s2 + 1;
+            }
+            if (var_a1 != var_s2) {
+                for (;;) {
+                    if (var_a1 == 0x15) {
+                        var_a1 = 0;
+                    } else if (var_a1 == -1) {
+                        var_a1 = 0x14;
+                    }
+                    if (var_a1 == var_s2) {
+                        break;
+                    }
+                    if (arg0[var_a1].m_unk4 != 0) {
+                        var_s2 = var_a1;
+                        var_s0 = 0;
+                        break;
+                    }
+                    if (var_s1 < 0) {
+                        var_a1 -= 1;
+                    } else {
+                        var_a1 += 1;
+                    }
+                    if (var_a1 == var_s2) {
+                        break;
+                    }
+                }
+            }
+            if (var_s0 != 0) {
+                if (var_s1 < 0) {
+                    var_s1 = sp120.GetNumResourcesOfType((eResourceTypes)4, true) - 1;
+                } else {
+                    var_s1 = 0;
+                }
+                var_s6 = 0x3C;
+                var_s0 = 3;
+            }
+            continue;
+        case 3:
+            if (temp_a0 & 0x1000) {
+                break;
+            } else {
+                bool show = false;
+                if ((spD0.m_ucUnk41 == 0) && (var_s6 == 0)) {
+                    if (temp_a0 & 0x20) {
+                        var_s1 += 1;
+                        show = true;
+                    } else if (temp_a0 & 0x80) {
+                        var_s1 -= 1;
+                        if (var_s1 < 0) {
+                            var_s0 = 2;
+                        } else {
+                            show = true;
+                        }
+                    } else {
+                        show = true;
+                    }
+                } else {
+                    show = true;
+                }
+                if (show) {
+                    temp_v0 = (int)sp120.GetResource(var_s1, (eResourceTypes)4, true);
+                    if (temp_v0 == 0) {
+                        var_s0 = 2;
+                    } else {
+                        if ((spD0.m_unk04 == 0) || (var_s7 != 0)) {
+                            spD0.SetFirstImage(temp_v0);
+                            var_s7 = 0;
+                            spAC = temp_v0;
+                            var_s6 = 0x3C;
+                        }
+                        if ((spD0.m_ucUnk41 == 0) && (temp_v0 != spAC)) {
+                            spD0.SetNextImage(temp_v0);
+                            var_s6 = 0;
+                        }
+                        var_s6 -= 1;
+                        spAC = temp_v0;
+                        if (var_s6 <= 0) {
+                            var_s6 = 0;
+                        }
+                    }
+                }
+                continue;
+            }
+        }
+        break;
+    }
+    Unload__16PResourceManagerFv(&sp120);
+    SetScreenMatrix__10PGfxEngineFP5PMat4(gGfxEng, gEng + 0x10);
+    spB0->RemoveText(spCC);
+    spB0->InitFrame();
+    return var_s2;
 }
 
 // FUNCTION: 0x0013C720 MapscreenOpenBonusExists__10MaximoMainFv

@@ -11,6 +11,11 @@ struct LevelFiles;
 
 class MaximoMain {
 public:
+    struct BonusGallery {
+        int m_unk0;                 // 0x00, indexed by the gallery slot (arg1)
+        int m_unk4;                 // 0x04, nonzero marks an unlocked texture
+    };
+
     MaximoMain();
     void InitGameTimes();
     void Controls();
@@ -48,6 +53,7 @@ public:
     void GameOptions();
     void GameOver();
     void MapscreenPrintInfo(FontManager *arg0, int arg1);
+    int TextureViewer(BonusGallery *arg0, int arg1);
 
     char _pad000[0xD0];
     int m_unkD0;            // 0x0D0
@@ -99,7 +105,10 @@ public:
     int m_unk19B54;         // 0x19B54, demo table index, advanced by InitPlayDemo and wrapped at 2
     int m_unk19B58;         // 0x19B58, cleared by the constructor
     int m_unk19B5C;         // 0x19B5C, demo value set by InitPlayDemo
-    char _pad19B60[0x19B6C - 0x19B60];
+    char _pad19B60[0x19B64 - 0x19B60];
+    int m_unk19B64;         // 0x19B64, cleared by TextureViewer when the world is destroyed
+    signed char m_unk19B68; // 0x19B68, set to 1 by TextureViewer's case 1
+    char _pad19B69[0x19B6C - 0x19B69];
     int m_unk19B6C;         // 0x19B6C
     int m_unk19B70;         // 0x19B70
     int m_unk19B74;         // 0x19B74
