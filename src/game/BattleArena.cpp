@@ -97,6 +97,57 @@ void BattleArena::ActivateInstances() {
     }
 }
 
+// Wave walk: each node holds an apparition id at +0 and the next node at +4.
+struct ArenaWaveNode {
+    unsigned int nApparitionId;
+    ArenaWaveNode *pNext;
+};
+
+// Cursor view at wave element + 0x220: begin list at +0x04, current node at +0x0C.
+struct ArenaWaveCursor {
+    char _pad0[4];
+    ArenaWaveNode *pBegin;
+    char _pad8[4];
+    ArenaWaveNode *pCur;
+};
+
+// FUNCTION: 0x001C7490 SpawnAllEnemiesInCurrentWave__11BattleArenaFv
+void BattleArena::SpawnAllEnemiesInCurrentWave() {
+    char *pElem;
+    ArenaWaveCursor *pCursor;
+    ArenaWaveNode *pNode;
+    EntityBaseClass *pInst;
+    unsigned int nId;
+
+    pElem = (char *)this + m_unk3C0 * 0x2C;
+    *(ArenaWaveNode **)(pElem + 0x22C) = *(ArenaWaveNode **)(pElem + 0x224);
+    pNode = *(ArenaWaveNode **)(pElem + 0x224);
+    nId = (pNode != 0) ? pNode->nApparitionId : 0;
+    if (nId != 0) {
+        do {
+            if ((pInst = (EntityBaseClass *)ApparitionIsValid__15EntityBaseClassFUi(nId)) != 0) {
+                pInst->m_unk1A = 1;
+                ((EntityVirtualView *)pInst)->SetArenaRadius(*(float *)m_unk1B0);
+            }
+            pElem = (char *)this + m_unk3C0 * 0x2C;
+            pCursor = (ArenaWaveCursor *)(pElem + 0x220);
+            if (*(ArenaWaveNode **)(pElem + 0x22C) == 0) {
+                pCursor->pCur = pCursor->pBegin;
+                pNode = pCursor->pBegin;
+                nId = (pNode != 0) ? pNode->nApparitionId : 0;
+            } else {
+                pNode = (*(ArenaWaveNode **)(pElem + 0x22C))->pNext;
+                if (pNode != 0) {
+                    pCursor->pCur = pNode;
+                    nId = pCursor->pCur->nApparitionId;
+                } else {
+                    nId = 0;
+                }
+            }
+        } while (nId != 0);
+    }
+}
+
 // FUNCTION: 0x001C75B0 SpawnEnemyFromCurrentWave__11BattleArenaFUi
 void BattleArena::SpawnEnemyFromCurrentWave(unsigned int nApparitionId) {
     void *pInst;
@@ -115,9 +166,8 @@ void BattleArena::SetEditableVars(char *pSrc) {
 }
 
 // DRAFT: 0x001C8740 __ct__11BattleArenaFv
-// note: DIFF 23; real PArray members are constructed before the body, so the original's base ctor call (0x14, before any PArray ctor) is out of order; explicit PArray ctor calls after the vptr store gave DIFF 46 (size 0xC0 vs 0xCC).
-BattleArena::BattleArena() {
-    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 5, 0U);
+// note: DIFF 32; base ctor call is a mem-initializer, but the real PArray members are constructed before the body, so the original's base-ctor order (0x14, before any PArray ctor) differs; explicit PArray ctor calls after the vptr store gave DIFF 46 (size 0xC0 vs 0xCC).
+BattleArena::BattleArena() : EntityBaseClass((LoadClass)5, 0U) {
     *(void **)this = __vt__11BattleArena;
     __construct_array(m_unk204, __ct__18WAVE_TABLE_ELEMENTFv, __dt__18WAVE_TABLE_ELEMENTFv, 0x2C, 0xA);
     __ct__5PListFv(m_unk3D0);

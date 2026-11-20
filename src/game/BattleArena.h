@@ -11,6 +11,7 @@ public:
     BattleArena();
     void OutputDebug();
     void ActivateInstances();
+    void SpawnAllEnemiesInCurrentWave();
     void SpawnEnemyFromCurrentWave(unsigned int nApparitionId);
     void SetEditableVars(char *pSrc);
 
