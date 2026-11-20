@@ -9,12 +9,14 @@
 class PLight;
 class PMesh;
 class PMat4;
+class PPakFile;
 struct tagComputedLightCache;
 
 class PLightManager {
 public:
     PLightManager();
     ~PLightManager();
+    bool Load(PPakFile *pFile);
     void *GetLightObject(unsigned int nId);
     void SetLightColor(unsigned int nId, float *pColor);
     void DestroyAllStaticLights();

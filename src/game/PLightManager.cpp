@@ -12,6 +12,19 @@ extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void *__ct__6PLightFv(void *pThis);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0ApplyMatrix(float *dst, float *mat, float *src);
+extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
+extern "C" void sceVu0Normalize(float *dst, float *src);
+extern char gGfxEng[1504384];
+extern "C" int FindBrightestLightsOfType__13PLightManagerFPfbb10eLightTypeiPP6PLight(void *pThis, float *pOut, bool bA, bool bB, int nType, int nCount, PLight **ppLights);
+extern "C" void SetDirLight__10PGfxEngineFiPfPf(void *pThis, int nIndex, float *pPos, float *pDir);
+extern "C" void SetDirLightColor__10PGfxEngineFifff(void *pThis, int nIndex, float fR, float fG, float fB);
+extern "C" void SetAmbientLight__10PGfxEngineFPf(void *pThis, float *pColor);
+extern "C" void ModulateAllLights__10PGfxEngineFPf(void *pThis, float *pVec);
+extern "C" void UpdateLights__10PGfxEngineFv(void *pThis);
+extern "C" void GetLightingInfo__10PGfxEngineFP5PMat4P5PMat4PA4_f(void *pThis, void *pA, void *pB, float (*pC)[4]);
+extern "C" int Read__7PCDFileFPvUi(void *pThis, void *pBuf, unsigned int nSize);
+extern "C" void memcpy(void *dst, const void *src, unsigned int n);
+extern "C" int Load__6PLightFP8PPakFile(void *pThis, PPakFile *pFile);
 
 // Light node: id at 0x00, next node at 0x04.
 struct PLightNode {
@@ -131,6 +144,57 @@ void PLightManager::RemoveDynamicLight(PLight *pLight) {
     }
 }
 
+// DRAFT: 0x0018EFE0 ComputeLights__13PLightManagerFPfbbbP21tagComputedLightCachePA4_ff
+// note: 115 words differ; frame 0x100 matches (aLights[8]), but i/pLight swap s1/s2 in the first loop (orig i=s2, pLight=s1), and the branch offsets after it shift. Tried: aLights[4] (117), hoisted aDir/aMod (117), counter hoist (115), pLight hoist (115).
+void PLightManager::ComputeLights(float *pOut, bool bA, bool bB, bool bC, tagComputedLightCache *pCache, float (*pMatrix)[4], float fScale) {
+    PLight *aLights[8];
+    float aDir[4];
+    float aMod[4];
+    int nCount = FindBrightestLightsOfType__13PLightManagerFPfbb10eLightTypeiPP6PLight(this, pOut, bA, bB, 3, 2, aLights);
+    for (int i = 0; i < nCount; i++) {
+        PLight *pLight = aLights[i];
+        if (pLight == 0) {
+            CdsAssert__FPciPc("PLightManager.cpp", 0x90, "apLight");
+        }
+        SetDirLight__10PGfxEngineFiPfPf(gGfxEng, i, (float *)((char *)pLight + 0x20), (float *)((char *)pLight + 0x30));
+    }
+    if (nCount < 4) {
+        for (int i = nCount; i < 4; i++) {
+            SetDirLightColor__10PGfxEngineFifff(gGfxEng, i, 0.0f, 0.0f, 0.0f);
+        }
+    }
+    int nRest = 4 - nCount;
+    if (nRest != 0) {
+        int nFound = FindBrightestLightsOfType__13PLightManagerFPfbb10eLightTypeiPP6PLight(this, pOut, bA, bB, 2, nRest, aLights);
+        if (nFound > 0) {
+            for (int i = 0; i < nFound; i++) {
+                PLight *pLight = aLights[i];
+                if (pLight == 0) {
+                    CdsAssert__FPciPc("PLightManager.cpp", 0xA7, "apLight");
+                }
+                sceVu0SubVector(aDir, pOut, (float *)pLight);
+                sceVu0Normalize(aDir, aDir);
+                SetDirLight__10PGfxEngineFiPfPf(gGfxEng, nCount + i, aDir, (float *)((char *)pLight + 0x60));
+            }
+        }
+    }
+    if (bC) {
+        float *pAmb = (pMatrix != 0) ? (float *)pMatrix : (float *)((char *)this + 0x20);
+        SetAmbientLight__10PGfxEngineFPf(gGfxEng, pAmb);
+    }
+    if (fScale < 1.0f) {
+        aMod[0] = fScale;
+        aMod[1] = fScale;
+        aMod[2] = fScale;
+        aMod[3] = 0.0f;
+        ModulateAllLights__10PGfxEngineFPf(gGfxEng, aMod);
+    }
+    UpdateLights__10PGfxEngineFv(gGfxEng);
+    if (pCache != 0) {
+        GetLightingInfo__10PGfxEngineFP5PMat4P5PMat4PA4_f(gGfxEng, pCache, (char *)pCache + 0x40, (float (*)[4])((char *)pCache + 0x80));
+    }
+}
+
 // FUNCTION: 0x0018F280 ComputeLights__13PLightManagerFP5PMeshP5PMat4bbbP21tagComputedLightCachef
 void PLightManager::ComputeLights(PMesh *pMesh, PMat4 *pMat, bool bA, bool bB, bool bC, tagComputedLightCache *pCache, float fScale) {
     float aVec[4];
@@ -139,6 +203,49 @@ void PLightManager::ComputeLights(PMesh *pMesh, PMat4 *pMat, bool bA, bool bB, b
     }
     sceVu0ApplyMatrix(aVec, (float *)pMat, (float *)((char *)pMesh + 0x10));
     ComputeLights(aVec, bA, bB, bC, pCache, 0, fScale);
+}
+
+struct PLightFileHeader {
+    unsigned int uNumLights;      // 0x00
+    unsigned int uLightDataSize;  // 0x04
+    char aBlock[0x10];            // 0x08 copied to this+0x20
+    char m_unk18[8];              // 0x18
+};
+
+// FUNCTION: 0x0018F350 Load__13PLightManagerFP8PPakFile
+bool PLightManager::Load(PPakFile *pFile) {
+    PLightFileHeader aHeader;
+    if (pFile == 0) {
+        CdsAssert__FPciPc("PLightManager.cpp", 0x39, "poFile");
+    }
+    if (Read__7PCDFileFPvUi(pFile, &aHeader, 0x20) != 0x20) {
+        return false;
+    }
+    memcpy(&m_unk20, aHeader.aBlock, 0x10);
+    if (aHeader.uNumLights == 0) {
+        return true;
+    }
+    if (aHeader.uLightDataSize != aHeader.uNumLights * 0x40) {
+        CdsAssert__FPciPc("PLightManager.cpp", 0x4A, "aHeader.uLightDataSize == sizeof(LIGHT_DATA) * aHeader.uNumLights");
+    }
+    if (aHeader.uNumLights >= 0x20) {
+        CdsAssert__FPciPc("PLightManager.cpp", 0x4C, "aHeader.uNumLights < MAX_STATIC_LIGHTS");
+    }
+    for (unsigned int i = 0; i < aHeader.uNumLights; i++) {
+        PLight *pLight = (PLight *)__nw__FUi(0x70);
+        if (pLight != 0) {
+            pLight = (PLight *)__ct__6PLightFv(pLight);
+        }
+        if (pLight == 0) {
+            return false;
+        }
+        if (!Load__6PLightFP8PPakFile(pLight, pFile)) {
+            __dt__6PLightFv(pLight, 1);
+            return false;
+        }
+        m_unk0.Add(pLight);
+    }
+    return true;
 }
 
 // FUNCTION: 0x0018F4C0 __dt__13PLightManagerFv
