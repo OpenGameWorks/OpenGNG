@@ -16,6 +16,7 @@ public:
     ~PZinDamageFx();
     void FadeAndDie(unsigned int nUnused);
     void Render();
+    void Animate(float fArg);
     int Create(EntityBaseClass *pOwner, float fArg, unsigned int nArg);
 
     EntityBaseClass *m_unkE0;   // 0x0E0 owner entity; its byte at 0x1C gates Render
