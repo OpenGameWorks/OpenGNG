@@ -50,6 +50,8 @@ public:
     void DrawFxLines(struct tagVuFxLine *pLines, int nCount, float fA, float fB, bool bFlag);
     void DrawHeatHaze(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag);
     void DrawRotatableParticles(struct tagVuRotatableParticle *pParticles, int nCount, float fA, float fB, bool bFlag);
+    void DrawParticles(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag);
+    void BeginFxLines();
     int RenderParticleSystems(ePSLayer eLayer, PZBufferFog *pFog);
     void RenderBlendedFragments(float *pVec);
     void RenderBlendedFragment(tagBlendedFragmentInfo *pInfo);
@@ -97,6 +99,9 @@ public:
     void DrawFragment(PMeshFragment *pFrag, bool bFlag, int nIdx, bool *pOut);
     void ErrorRefreshDisplay(bool bFlag);
     void SetTvOffset(int nX, int nY);
+    void Reset();
+    int Init(short nA, short nB, short nC, short nD, short nE, short nF, int nG, int nH);
+    void ResetDisplay(short nA, short nB, short nC, short nD, short nE, short nF, int nG, int nH);
 
     char _pad000[0x154C80];
     struct PDisplayList *m_unk154C80;   // 0x154C80

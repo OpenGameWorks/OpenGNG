@@ -13,6 +13,18 @@ extern "C" int sceGsSyncV(int nMode);
 extern "C" void sceGsSetHalfOffset(void *pBuf, int nW, int nH, unsigned char nFlag);
 struct sceGsDBuff;
 int GsSwapDBuff(sceGsDBuff *pBuf, int nIdx);
+extern "C" void sceGsResetPath();
+extern "C" void sceDevVu1Reset();
+extern "C" void sceDmaReset(int nMode);
+extern "C" void sceDevVif0Reset();
+extern "C" void sceDevVif1Reset();
+extern "C" void sceDevVu0Reset();
+extern "C" void SetupExceptionHandlers__Fv();
+extern "C" int AddIntcHandler(int nLine, int (*pHandler)(int), int nArg);
+extern "C" void EnableIntc(int nLine);
+extern "C" int Init__16PParticleManagerFv(void *pThis);
+extern "C" void sceGsResetGraph(int nA, int nB, short nC, int nD);
+void GsClearVRAM(unsigned char nA, unsigned char nB, unsigned char nC, unsigned char nD, short nE, short nF, short nG);
 extern char vu_clip_microcode_dma_packet[];
 extern char vu_shadow_microcode_dma_packet[];
 extern char vu_fx_microcode_dma_packet[];
@@ -23,6 +35,7 @@ extern char dbg_display_init[];
 extern char fx_instance_mesh_init[];
 extern char fx_instance_heathaze_init[];
 extern char fx_instance_particle_init[];
+extern char fx_line_clip_init[];
 extern char fx_instance_screen_st_mesh_init[];
 extern char noclip_static_instance_cull_mesh_init[];
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
@@ -70,6 +83,8 @@ public:
     void SetTexSyncPacket();
     void SetMaterials(struct tagGsMaterial *pMat, int nIndex, bool bA, bool bB, float *pF, unsigned long *pC, unsigned long *pD);
     void SendGsPacket(void *pData, int nSize, bool bFlag);
+    void Reset();
+    void KickVifDmaChain(bool bFlag);
 
     char _pad000[0xA3348];
     int m_unkA3348;                     // 0xA3348
@@ -452,6 +467,11 @@ void PGfxEngine::DrawFxLines(struct tagVuFxLine *pLines, int nCount, float fA, f
     m_unk154C80->DrawParticles((struct tagVuParticle *)pLines, nCount, fB, fA, bFlag, 0x23);
 }
 
+// FUNCTION: 0x1851D0 BeginFxLines__10PGfxEngineFv
+void PGfxEngine::BeginFxLines() {
+    m_unk154C80->BeginFxLoop(((unsigned int)(fx_line_clip_init + 0x23D8)) >> 3);
+}
+
 // FUNCTION: 0x1851F0 SetBlurHazeSourcePoint__10PGfxEngineFPff
 void PGfxEngine::SetBlurHazeSourcePoint(float *pPos, float fW) {
     unsigned int nX;
@@ -494,6 +514,11 @@ void PGfxEngine::SetGlowSizeAndColor(float fA, float fB, float *pColor) {
 // FUNCTION: 0x185390 DrawRotatableParticles__10PGfxEngineFP22tagVuRotatableParticleiffb
 void PGfxEngine::DrawRotatableParticles(struct tagVuRotatableParticle *pParticles, int nCount, float fA, float fB, bool bFlag) {
     m_unk154C80->DrawRotatableParticles(pParticles, nCount, fA, fB, bFlag, 0x1E);
+}
+
+// FUNCTION: 0x1853E0 DrawParticles__10PGfxEngineFP13tagVuParticleiffb
+void PGfxEngine::DrawParticles(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag) {
+    m_unk154C80->DrawParticles(pParticles, nCount, fA, fB, bFlag, 0x28);
 }
 
 // FUNCTION: 0x185460 EndFxRender__10PGfxEngineFv
@@ -966,6 +991,58 @@ void PGfxEngine::SetTexture(int nIndex) {
     m_unk154C80->SetGsRegisters((u_long128 *)((char *)pEnv + 0x10), 5);
 }
 
+// DRAFT: 0x00187450 SetMaterial__10PGfxEngineFiPfUlUlPUiPUiPA4_A4_f
+// note: DIFF 98 words, size 0x1D4 vs 0x1C8; first copy uses -0x74A0(at) not 0(v1), nA/nB stores go through a2/t2 not sp+0x80/0x90; a local base pointer did not change the count.
+void PGfxEngine::SetMaterial(int nIndex, float *pVec, unsigned long nA, unsigned long nB, unsigned int *pC, unsigned int *pD, float (*pMat)[4][4]) {
+    struct {
+        char _pad00[4];                 // 0x60
+        tagGsTextureEnvironment *pEnv;  // 0x64, ppEnv output of SetTexture
+        char _pad68[0x70 - 0x68];
+        char aBlock[0x50];              // 0x70, copy of this+0x158B60; nA, nB and flags overwrite its low doublewords
+        float aVec[4];                  // 0xC0
+        unsigned int aC[4];             // 0xD0
+        unsigned int aD[4];             // 0xE0
+        float (*pMatField)[4][4];       // 0xF0
+        char _padF4[0x10F - 0xF4];
+        bool bFlag;                     // 0x10F
+    } aBuf;
+    int nIdx;
+
+    *(u_long128 *)(aBuf.aBlock + 0x00) = *(u_long128 *)((char *)this + 0x158B60);
+    *(u_long128 *)(aBuf.aBlock + 0x10) = *(u_long128 *)((char *)this + 0x160000 - 0x7490);
+    *(u_long128 *)(aBuf.aBlock + 0x20) = *(u_long128 *)((char *)this + 0x160000 - 0x7480);
+    *(u_long128 *)(aBuf.aBlock + 0x30) = *(u_long128 *)((char *)this + 0x160000 - 0x7470);
+    *(u_long128 *)(aBuf.aBlock + 0x40) = *(u_long128 *)((char *)this + 0x160000 - 0x7460);
+    *(unsigned long long *)(aBuf.aBlock + 0x10) = nA;
+    *(unsigned long long *)(aBuf.aBlock + 0x20) = nB;
+    *(unsigned long long *)(aBuf.aBlock + 0x40) = (m_unk158F00 << 6) | ((nIndex != 0) << 4) | 8;
+    if (pC != 0) {
+        memcpy(aBuf.aC, pC, 0x10);
+    } else {
+        *(u_long128 *)aBuf.aC = 0;
+    }
+    if (pD != 0) {
+        memcpy(aBuf.aD, pD, 0x10);
+    } else {
+        *(u_long128 *)aBuf.aD = 0;
+    }
+    {
+        unsigned int nDma = 0;
+        if (m_unk158E24 != 0) {
+            nDma = ((unsigned int)shared_vertices_start + 0x2C10) >> 3;
+        }
+        aBuf.aC[1] = nDma;
+    }
+    aBuf.pMatField = pMat;
+    sceVu0CopyVector(aBuf.aVec, pVec);
+    nIdx = m_unk16D408;
+    if (nIdx == 0) {
+        nIdx = nIndex;
+    }
+    ((PTextureManager *)m_unk154C90)->SetTexture(nIdx, m_unk154C80, &aBuf.pEnv, aBuf.bFlag);
+    m_unk154C80->SetMaterials((struct tagGsMaterial *)&aBuf, 1, aBuf.bFlag, m_unk158E24, 0, 0, 0);
+}
+
 // DRAFT: 0x187620 SetOverrideTexture__10PGfxEngineFi
 // note: DIFF 3 words; pEnv sits at sp+0x20, original at sp+0x28 (bFlag at 0x2F matches). Tried swapping locals and adding unused pad locals; the optimizer drops both, so the slot does not move.
 void PGfxEngine::SetOverrideTexture(int nIndex) {
@@ -1042,6 +1119,94 @@ void PGfxEngine::ErrorRefreshDisplay(bool bFlag) {
     }
     m_unk158DF0 = GsSwapDBuff((sceGsDBuff *)m_unk158BB0, m_unk158DE0);
     sceGsSyncPath(0, 0);
+}
+
+// FUNCTION: 0x00188060 Reset__10PGfxEngineFv
+void PGfxEngine::Reset() {
+    sceGsSyncPath(0, 0);
+    sceGsResetPath();
+    sceDevVu1Reset();
+    *(unsigned int *)0x10003C20 = 6;
+    sceDmaReset(1);
+    asm {
+        sync
+        sync.p
+    }
+    sceGsSyncV(0);
+    sceGsResetGraph(0, 1, *(short *)((char *)this + 0x158DFC), 1);
+    GsClearVRAM(0, 0, 0, 0, 0x400, 0x400, 0);
+    int nV = sceGsSyncV(0);
+    m_unk158DEC = (nV != 0) ^ 1;
+    asm {
+        sync
+        sync.p
+    }
+    int nBit = (*(volatile unsigned long long *)0x12001000 & 0x2000) != 0;
+    asm {
+        sync
+        sync.p
+    }
+    m_unk158DE0 = nBit;
+    ((PDisplayList *)this)->Reset();
+    ((PDisplayList *)((char *)this + 0xAA640))->Reset();
+    m_unk154C80 = (PDisplayList *)this;
+    unsigned long long aGs[16];
+    aGs[0] = 0x44;
+    aGs[1] = 0x42;
+    aGs[2] = ((long long)*(short *)((char *)this + 0x158E00) << 17) | 0x10000;
+    aGs[3] = 0x47;
+    aGs[4] = 0;
+    aGs[5] = 0x08;
+    aGs[6] = 0;
+    aGs[7] = 0x49;
+    aGs[8] = 0x807F | (0x81ULL << 32);
+    aGs[9] = 0x3B;
+    aGs[10] = 0;
+    aGs[11] = 0x4A;
+    aGs[12] = 0;
+    aGs[13] = 0x1A;
+    aGs[14] = 0;
+    aGs[15] = 0x00;
+    ((PDisplayList *)this)->SetGsRegisters((u_long128 *)aGs, 8);
+    ((PDisplayList *)this)->SetVu1Microcode(m_unk158E1C);
+    ((PDisplayList *)this)->KickVifDmaChain(true);
+    *(unsigned int *)0x10003010 = 4;
+    asm {
+        sync
+        sync.p
+    }
+}
+
+// DRAFT: 0x001885D0 Init__10PGfxEngineFssssssii
+// note: DIFF 33 words; original recomputes lui 0x16/addu per access for the DF4 store and reload, ours CSEs the base into a0; DF8 block and bne delay slot also differ. Tried member vs explicit-base forms for DF4/DF8 stores and compares (DIFF 33/52/53/78). mtc0 Count is inline asm; draft.py cannot model sync or mtc0.
+int PGfxEngine::Init(short nA, short nB, short nC, short nD, short nE, short nF, int nG, int nH) {
+    sceGsResetPath();
+    sceDevVif0Reset();
+    sceDevVif1Reset();
+    sceDevVu0Reset();
+    sceDevVu1Reset();
+    *(unsigned int *)0x10003C20 = 6;
+    sceDmaReset(1);
+    SetupExceptionHandlers__Fv();
+    asm {
+        mtc0 $0, $9
+    }
+    *(int *)((char *)this + 0x160000 - 0x720C) = AddIntcHandler(5, Vif1InterruptHandler, 0);
+    if (*(int *)((char *)this + 0x160000 - 0x720C) == -1) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0xF0, "miVif1IntcHandle != -1");
+    }
+    EnableIntc(5);
+    m_unk158DF8 = AddIntcHandler(3, VBlankEndInterruptHandler, 0);
+    if (m_unk158DF8 == -1) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0xF5, "miVBlankIntcHandle != -1");
+    }
+    EnableIntc(3);
+    ResetDisplay(nA, nB, nC, nD, nE, nF, nG, nH);
+    SetTvOffset(0, 0);
+    if (Init__16PParticleManagerFv((char *)this + 0x154F00)) {
+        return 1;
+    }
+    return 0;
 }
 
 // FUNCTION: 0x001887A0 __dt__10PGfxEngineFv
