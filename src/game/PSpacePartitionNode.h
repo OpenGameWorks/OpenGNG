@@ -2,10 +2,12 @@
 #define PSPACEPARTITIONNODE_H
 
 #include "types.h"
+#include "PMesh.h"
 
-class PMesh;
 class PFrustrum;
 class PStaticInstanceGroup;
+class PPakFile;
+class PArray;
 
 // Space partition tree node. Mesh pointer at 0x00, flag at 0x04, four child
 // pointers at 0x08..0x17, u16 child count at 0x18, u16 group count at 0x1A,
@@ -20,6 +22,7 @@ public:
     void Animate(float fDelta);
     int RenderStaticInstances();
     int TestNodeWithFrustrum(PFrustrum *poFrustrum, PSpacePartitionNode **ppNodes, unsigned int &nNode);
+    int Load(PPakFile *poFile, PArray *poTextures, PArray *poInstances, ePsx2FileVersion eVersion);
 
     PMesh *m_pMesh;
     int m_unk4;
