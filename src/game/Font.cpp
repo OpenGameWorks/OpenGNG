@@ -72,6 +72,12 @@ extern "C" void EndFxRender__10PGfxEngineFv(void *pThis);
 extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *pThis, int nTexture, float *pColor, bool bFlag, unsigned long nArg4, unsigned long nArg5);
 extern "C" void SetMaterial__10PGfxEngineFPfbUlUl(void *pThis, float *pColor, bool bFlag, unsigned long nArg4, unsigned long nArg5);
 extern "C" void DrawSprites__10PGfxEngineFP11tagVuSpriteib(void *pThis, tagVuSprite *pSprite, int nCount, bool bFlag);
+extern "C" int Find__6PArrayFPv(void *pThis, void *pItem);
+class TextBoxVtbl {
+public:
+    virtual void Reserved();
+    virtual void Draw(int nA, int nB, int nC);
+};
 
 // FUNCTION: 0x132E30 ProcessSubtitle__11FontManagerFi
 void FontManager::ProcessSubtitle(int arg0) {
@@ -585,6 +591,85 @@ int FontNode::Render(int nId, FontTable *pTable, bool bUnused) {
     return nId;
 }
 
+// DRAFT: 0x134350 Render__11FontManagerFbb
+// note: 160 words differ: nId register (original sets a1 in the beqz a2 delay slot, ours uses s0), m_unk4 increment reload, branch offsets
+void FontManager::Render(bool arg0, bool arg1) {
+    FontNode *pNode;
+    int nId;
+    m_unk4 = 0;
+    pNode = (m_unk0 != 0) ? m_unk8[0] : 0;
+    if (pNode == 0) {
+        return;
+    }
+    nId = -1;
+    if (arg1) {
+        if (pNode != 0) {
+            do {
+                nId = pNode->RenderFMV(nId, (FontTable *)&m_unk104, m_unk12);
+                m_unk4++;
+                pNode = ((unsigned int)m_unk4 < (unsigned int)m_unk0) ? m_unk8[m_unk4] : 0;
+            } while (pNode != 0);
+        }
+        return;
+    }
+    if (m_unk18 != 0) {
+        m_unk10--;
+        if (m_unk10 <= 0) {
+            m_unk10 = m_unk11;
+            if (m_unk18->AdvanceText() == 0) {
+                int idx = Find__6PArrayFPv(this, m_unk18);
+                FontNode *pNext = 0;
+                if (idx >= 0 && (unsigned int)(idx + 1) < (unsigned int)m_unk0) {
+                    pNext = m_unk8[idx + 1];
+                }
+                if (pNext != 0 && pNext->m_unkC != 0) {
+                    pNext = 0;
+                }
+                m_unk18 = pNext;
+            }
+        }
+    } else if (m_unk14 != 0) {
+        m_unk14--;
+        if (m_unk14 <= 0) {
+            m_unk12 = 1;
+            mbFadeOut__8FontNode = 0;
+        }
+    }
+    if (arg0) {
+        InitRender__9InterfaceFv(gInterface);
+    }
+    BeginFxRender__10PGfxEngineFv(gGfxEng);
+    SetScreenMatrix__10PGfxEngineFP5PMat4(gGfxEng, gInterface);
+    SetViewMatrix__10PGfxEngineFP5PMat4(gGfxEng, gInterface + 0x40);
+    SetClipMatrix__10PGfxEngineFP5PMat4(gGfxEng, gEng + 0x50);
+    SetWorldMatrix__10PGfxEngineFP5PMat4(gGfxEng, gUnitMatrix);
+    BeginSprites__10PGfxEngineFv(gGfxEng);
+    if (pNode != 0) {
+        do {
+            if (m_unk128 == 0.0f) {
+                nId = pNode->Render(nId, (FontTable *)&m_unk104, m_unk12);
+            } else if (pNode->Scroll(m_unk128) != 0) {
+                nId = pNode->Render(nId, (FontTable *)&m_unk104, m_unk12);
+            } else {
+                ((PArray *)this)->RemoveCurrent();
+                ((PArray *)((char *)this + 0x1C))->Add(pNode);
+            }
+            m_unk4++;
+            pNode = ((unsigned int)m_unk4 < (unsigned int)m_unk0) ? m_unk8[m_unk4] : 0;
+        } while (pNode != 0);
+    }
+    EndFxRender__10PGfxEngineFv(gGfxEng);
+    if (mbFadeOut__8FontNode != 0) {
+        mbFadeOut__8FontNode = 0;
+        RemoveText((unsigned short)9);
+    }
+    m_unk12 = 0;
+    m_unk120 = 0;
+    if (mbEnableBox__8FontNode != 0 && mpTextBox__8FontNode != 0) {
+        ((TextBoxVtbl *)mpTextBox__8FontNode)->Draw(0, 0x80, 0);
+    }
+}
+
 // FUNCTION: 0x134690 InitFMV__11FontManagerFv
 void FontManager::InitFMV() {
     int nTexture = m_unk10C;
@@ -600,7 +685,7 @@ void FontManager::Init() {
     if (((PResourceManager *)m_unk2C)->LoadGlobalResource(FontFile, 0) == 0) {
         CdsAssert("Font.cpp", 0x5E, "0");
     }
-    gInterface[0x1B37] = 1;
+    gInterface[0x427] = 1;
     m_unk104 = (int)&Large_fontCharDef | 0x30000000;
     m_unk108 = 0x21;
     m_unk10A = 0xFE;

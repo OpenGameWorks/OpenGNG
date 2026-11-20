@@ -70,14 +70,15 @@ public:
     void RenderWarning(int arg0);
     void InitFrame();
     void RemoveAll(bool arg0);
+    void Render(bool arg0, bool arg1);
 
-    int m_unk0;                 // 0x000 base PArray: item count
+    int m_unk0;                // 0x000 base PArray: item count
     int m_unk4;                 // 0x004 base PArray: index
     FontNode **m_unk8;          // 0x008 base PArray: item table
     char _pad00C[0x4];
-    unsigned char m_unk10;      // 0x010 cleared by the constructor
-    unsigned char m_unk11;      // 0x011 set to 2 by DisplayString
-    unsigned char m_unk12;      // 0x012 cleared by InitFrame
+    signed char m_unk10;        // 0x010 cleared by the constructor
+    signed char m_unk11;        // 0x011 set to 2 by DisplayString
+    bool m_unk12;               // 0x012 cleared by InitFrame
     signed char m_unk13;        // 0x013 language index
     int m_unk14;                // 0x014 cleared by InitFrame
     FontNode *m_unk18;          // 0x018 current node, cleared by the constructor
@@ -100,7 +101,7 @@ public:
     unsigned char m_unk121;     // 0x121 warning flag, set by ResetWarning
     short m_unk122;             // 0x122 cleared by the constructor and ResetWarning
     float m_unk124;             // 0x124 warning fade, cleared by ResetWarning
-    int m_unk128;               // 0x128 cleared by the constructor
+    float m_unk128;             // 0x128 cleared by the constructor
     int m_unk12C;               // 0x12C current subtitle entry
     int m_unk130;               // 0x130 subtitle timer, 0xFFFF when idle
     unsigned char m_unk134;     // 0x134 subtitle flag
