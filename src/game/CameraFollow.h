@@ -73,6 +73,7 @@ public:
     void CreatePathFromPlayersRoute();
     void CreatePathToPlayer();
     void DrawTextDebug();
+    void SetBossArenaValues(float (*arg0)[4], float arg1, float arg2, bool arg3, bool arg4, float arg5, float arg6, bool arg7);
 
     Camera *m_pCamera;      // 0x000
     char _pad004[0x10 - 0x004];
@@ -125,15 +126,20 @@ public:
     char _pad1B0[0x1B8 - 0x1B0];
     signed char m_unk1B8;   // 0x1B8
     signed char m_unk1B9;   // 0x1B9
-    signed char m_unk1BA;   // 0x1BA
+    unsigned char m_unk1BA; // 0x1BA
     unsigned char m_unk1BB; // 0x1BB
     signed char m_unk1BC;   // 0x1BC
     char _pad1BD[0x1C0 - 0x1BD];
     float m_unk1C0[4];      // 0x1C0
     float m_unk1D0[4];      // 0x1D0
-    char _pad1E0[0x1F0 - 0x1E0];
+    unsigned char m_unk1E0; // 0x1E0
+    char _pad1E1[0x1E4 - 0x1E1];
+    float m_unk1E4;         // 0x1E4
+    float m_unk1E8;         // 0x1E8
+    float m_unk1EC;         // 0x1EC
     unsigned char m_unk1F0; // 0x1F0
-    char _pad1F1[0x1F8 - 0x1F1];
+    char _pad1F1[0x1F4 - 0x1F1];
+    float m_unk1F4;         // 0x1F4
     signed char m_unk1F8;   // 0x1F8
     char _pad1F9[0x210 - 0x1F9];
     int m_unk210;           // 0x210
@@ -177,11 +183,20 @@ public:
     char _pad6311[3];
     unsigned int m_unk6314;  // 0x6314
     int m_unk6318;          // 0x6318
-    char _pad631C[0x6360 - 0x631C];
+    unsigned char m_unk631C; // 0x631C
+    char _pad631D[0x6324 - 0x631D];
+    float m_unk6324;        // 0x6324
+    float m_unk6328;        // 0x6328
+    char _pad632C[0x6330 - 0x632C];
+    float m_unk6330[4];     // 0x6330
+    float m_unk6340[4];     // 0x6340
+    float m_unk6350;        // 0x6350
+    float m_unk6354;        // 0x6354
+    char _pad6358[0x6360 - 0x6358];
     int m_unk6360;          // 0x6360
     char _pad6364[0x636C - 0x6364];
-    int m_unk636C;          // 0x636C
-    char _pad6370[0x6371 - 0x6370];
+    float m_unk636C;        // 0x636C
+    unsigned char m_unk6370; // 0x6370
     unsigned char m_unk6371; // 0x6371
     char _pad6372[0x6374 - 0x6372];
     float m_unk6374;        // 0x6374

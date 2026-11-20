@@ -22,6 +22,9 @@ extern "C" void *__dt__15tag_ControlDataFv(void *pThis, short nFlag);
 extern "C" float Round180__Ff(float);
 extern "C" float FastMath_Sin180__Ff(float);
 extern "C" void __mi__5PVec3FR5PVec3(float *ret, float *lhs, float *rhs);
+extern "C" void __pl__5PVec3FR5PVec3(float *ret, float *lhs, float *rhs);
+extern "C" float cosf(float x);
+extern "C" float sinf(float x);
 extern "C" float sqrtf(float x);
 extern "C" float acosf(float x);
 extern "C" void sceVu0ApplyMatrix(float *dst, float *mat, float *src);
@@ -39,6 +42,7 @@ extern "C" void RotateY__5PMat4Ff(float *pMat, float angle);
 extern "C" void RotateZ__5PMat4Ff(float *pMat, float angle);
 extern "C" float sceVu0InnerProduct(float *a, float *b);
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
+extern "C" int printf(const char *fmt, ...);
 extern "C" int fptodp(float f);
 extern Debug gDebug;
 
@@ -169,10 +173,109 @@ void Camera::SetSourceTarget(PVec3 arg0, PVec3 arg1) {
     sceVu0CopyVector(m_tgt, arg1.m_v);
 }
 
+// FUNCTION: 0x00173ED0 SetBossArenaValues__12CameraFollowFPA4_fffbbffb
+void CameraFollow::SetBossArenaValues(float (*arg0)[4], float arg1, float arg2, bool arg3, bool arg4, float arg5, float arg6, bool arg7) {
+    m_unk6324 = arg5;
+    m_unk6328 = arg6;
+    if (!arg7) {
+        sceVu0CopyVector(m_unk6340, arg0[0]);
+        m_unk6354 = arg1;
+        m_unk6350 = arg2;
+        m_unk6318 = 1;
+        m_unk631C = 1;
+        m_unk6370 = arg3;
+        m_unk6371 = arg4;
+        m_unk6360 = 0;
+        sceVu0CopyVector(m_unk6330, arg0[0]);
+        sceVu0CopyVector(m_unk40, arg0[0]);
+        sceVu0CopyVector(m_unk20, m_unk180);
+        m_unk636C = arg0[0][1];
+        printf("## SetBossArenaValues ##\n");
+        printf("\tTarget spring = %f\n", fptodp(m_unk6324));
+        printf("\tSource spring = %f\n", fptodp(m_unk6328));
+        printf("\tArena centre = %f,%f,%f\n", fptodp(m_unk6340[0]), fptodp(m_unk6340[1]), fptodp(m_unk6340[2]));
+        printf("\tRadius ( min/max = %f, %f )\n", fptodp(m_unk6354), fptodp(m_unk6350));
+        printf("\tLOS collide = %d\n", m_unk6370);
+        printf("\tMove up past rad. = %d\n", m_unk6371);
+        printf("\tBoss pos ( %f, %f, %f )\n", fptodp(m_unk6330[0]), fptodp(m_unk6330[1]), fptodp(m_unk6330[2]));
+        printf("\tCam pos ( %f, %f, %f )\n", fptodp(m_unk20[0]), fptodp(m_unk20[1]), fptodp(m_unk20[2]));
+        printf("\tTarget pos ( %f, %f, %f )\n", fptodp(m_unk40[0]), fptodp(m_unk40[1]), fptodp(m_unk40[2]));
+        printf("\tBoss Y = %f\n", fptodp(m_unk636C));
+    }
+}
+
 // FUNCTION: 0x00174770 UpdatePos__6CameraF5PVec35PVec3
 void Camera::UpdatePos(PVec3 arg0, PVec3 arg1) {
     sceVu0CopyVector(m_src, arg0.m_v);
     sceVu0CopyVector(m_tgt, arg1.m_v);
+}
+
+// FUNCTION: 0x001747B0 ProcessRightAnalogue__12CameraFollowFv
+void CameraFollow::ProcessRightAnalogue() {
+    float sp30[4];
+    float sp40[4];
+    float cs;
+    float sn;
+    float ang;
+    float var20;
+    float t;
+
+    if (m_unk1BA != 0) {
+        if (m_unk1E0 != 0) {
+            m_unk1F4 = m_unk184[1];
+            m_unk1E0 = 0;
+        }
+        if (m_unk184[1] == m_unk1F4) {
+            m_unk1E4 = GetAngleBetweenCamAndPlayer(m_unk1E8);
+        }
+        m_unk1A8 = 10.0f * (m_unk1E4 / 180.0f);
+        m_unk1A8 = (m_unk1E8 < 0.0f) ? m_unk1A8 : -m_unk1A8;
+    }
+    if (!(FastMath_Fabs__Ff(m_unk1A8) <= 0.3f)) {
+        if (m_unk1F0 == 0) {
+            m_unk1EC = 1.5f;
+        }
+        m_unk110 = 1;
+        m_unk1F0 = 1;
+        if (m_unk1BA == 0) {
+            t = m_unk1EC;
+            if (t < 3.0f) {
+                m_unk1EC = t * (1.02f * m_unk16C);
+            }
+            var20 = m_unk1A8 * m_unk1EC;
+        } else {
+            var20 = m_unk1A8 * m_unk16C;
+            t = m_unk1E4 - FastMath_Fabs__Ff(var20);
+            m_unk1E4 = t;
+            if (t < 5.0f) {
+                m_unk1BA = 0;
+            }
+        }
+        ang = 0.017453292f * var20;
+        cs = cosf(ang);
+        sn = sinf(ang);
+        if (m_unk62F0 != 0) {
+            m_unk1F0 = 0;
+            return;
+        }
+        if (m_unk62F1 != 0) {
+            m_unk1F0 = 0;
+            return;
+        }
+        if (DistanceXZ__7MathAPIFPA4_fPA4_f((MathAPI *)m_unk20, (float (*)[4])m_unk40) < 0.5f) {
+            m_unk1F0 = 0;
+            return;
+        }
+        __mi__5PVec3FR5PVec3(sp30, m_unk20, m_unk40);
+        sceVu0CopyVector(m_unk10, sp30);
+        m_unk10[2] = m_unk10[2] * cs - m_unk10[0] * sn;
+        m_unk10[0] = m_unk10[2] * sn + m_unk10[0] * cs;
+        __pl__5PVec3FR5PVec3(sp40, m_unk40, m_unk10);
+        sceVu0CopyVector(m_unk20, sp40);
+        return;
+    }
+    m_unk1F0 = 0;
+    m_unk62F1 = 0;
 }
 
 // DRAFT: 0x00174A40 AddTwistEffect__12CameraFollowFv
@@ -263,7 +366,7 @@ void CameraFollow::CreatePathToPlayer() {
 }
 
 // DRAFT: 0x00175190 CalcNewCameraViewpointPos__12CameraFollowFv
-// note: 65 differing lines (was 97); size 0x174 vs 0x188, frame 0x80 matches but save slots, loop head, and PVec3 copy order differ, plus sceVu0CopyVector reloc at 0x14C; tried: separate int off for loop offset, explicit off += 0x10
+// note: DIFF 64 words; size 0x178 vs 0x188. Both loop counters now advance in the for header (66 to 64, kept). Still differs: the PVec3 copy at 0x84-0xA0 (original uses addiu-materialized addresses and a delay-slot store), the bnez targets at 0x50/0x70, the sqrt/div order at 0xB8-0xF0, and the sceVu0CopyVector reloc at 0x14C. Tried: pointer-held copy addresses (no change, reverted).
 int CameraFollow::CalcNewCameraViewpointPos() {
     float sp40[4];
     float sp50[4];
@@ -273,8 +376,9 @@ int CameraFollow::CalcNewCameraViewpointPos() {
     int off;
 
     CalcNewCameraOffsets();
+    i = 0;
     off = 0;
-    for (i = 0; i < 8; i++) {
+    for (; i < 8; i++, off += 0x10) {
         sceVu0CopyVector(m_unk10, (float *)(_pad230 + off));
         if (((BGCollision *)mBGCollision__15EntityBaseClass)->FindIntersect(*(PVec3 *)m_unk20, *(PVec3 *)m_unk10, 2, 0) == 0 &&
             ((BGCollision *)mBGCollision__15EntityBaseClass)->FindIntersect(*(PVec3 *)m_unk40, *(PVec3 *)m_unk10, 2, 0) == 0) {
@@ -289,7 +393,6 @@ int CameraFollow::CalcNewCameraViewpointPos() {
                 return 1;
             }
         }
-        off += 0x10;
     }
     return 0;
 }
