@@ -89,6 +89,34 @@ extern "C" void *__ct__12PFlashScreenFv(void *pThis);
 extern "C" void *__ct__16PParticleRipplesFv(void *pThis);
 extern "C" void *__ct__13PFireDamageFxFv(void *pThis);
 extern "C" void *__ct__16PResourceManagerFv(void *pThis);
+extern "C" void *GetResource__16PResourceManagerFUib(void *pThis, unsigned int nId, bool bFlag);
+extern "C" void *__ct__13PParticleFireFv(void *pThis);
+extern "C" void Create__13PParticleFireFP21tagParticleFireParamsfff(void *pThis, void *pParams, float fA, float fB, float fC);
+extern "C" void *__ct__18PParticleExplosionFv(void *pThis);
+extern "C" void Create__18PParticleExplosionFP26tagParticleExplosionParamsfff(void *pThis, void *pParams, float fA, float fB, float fC);
+extern "C" void *__ct__14PParticleTrailFv(void *pThis);
+extern "C" void Create__14PParticleTrailFP22tagParticleTrailParamsfff(void *pThis, void *pParams, float fA, float fB, float fC);
+extern "C" void *__ct__17PParticleLiteFireFv(void *pThis);
+extern "C" void Create__17PParticleLiteFireFP25tagParticleLiteFireParamsfff(void *pThis, void *pParams, float fA, float fB, float fC);
+extern "C" void *__ct__14PParticleSpurtFv(void *pThis);
+extern "C" void Create__14PParticleSpurtFP22tagParticleSpurtParamsfff(void *pThis, void *pParams, float fA, float fB, float fC);
+extern "C" void *__ct__19PParticleVertexGlowFv(void *pThis);
+extern "C" void Create__19PParticleVertexGlowFP27tagParticleVertexGlowParamsP6PMNodeP6PMNode(void *pThis, void *pParams, PMNode *pA, PMNode *pB);
+extern "C" void *__ct__13PParticleAuraFv(void *pThis);
+extern "C" void Create__13PParticleAuraFP21tagParticleAuraParamsfff(void *pThis, void *pParams, float fA, float fB, float fC);
+extern "C" void *__ct__20PParticleSplineTrailFv(void *pThis);
+extern "C" void Create__20PParticleSplineTrailFP28tagParticleSplineTrailParamsfff(void *pThis, void *pParams, float fA, float fB, float fC);
+extern "C" void *__ct__21PParticleEnergyStreamFv(void *pThis);
+extern "C" void Create__21PParticleEnergyStreamFP29tagParticleEnergyStreamParamsfff(void *pThis, void *pParams, float fA, float fB, float fC);
+extern "C" void *__ct__20PParticleElectricityFv(void *pThis);
+extern "C" void Create__20PParticleElectricityFP28tagParticleElectricityParamsfff(void *pThis, void *pParams, float fA, float fB, float fC);
+extern "C" void Create__22PParticleLiteExplosionFP30tagParticleLiteExplosionParamsfff(void *pThis, void *pParams, float fA, float fB, float fC);
+extern "C" void *__ct__22PParticleShockwaveRingFv(void *pThis);
+extern "C" void Create__22PParticleShockwaveRingFP30tagParticleShockwaveRingParamsfff(void *pThis, void *pParams, float fA, float fB, float fC);
+extern "C" void *__ct__13PCrystalizeFxFv(void *pThis);
+extern "C" void Create__13PCrystalizeFxFP6PMNodeP21tagCrystalizeFxParams(void *pThis, PMNode *pNode, void *pParams);
+extern "C" void *__ct__16PParticleBubblesFv(void *pThis);
+extern "C" void Create__16PParticleBubblesFP24tagParticleBubblesParamsfff(void *pThis, void *pParams, float fA, float fB, float fC);
 extern char DEF_FX_RESOURCE_PRS_FILE_NAME[0x18];
 extern "C" void sceVu0CopyVector(float *dst, float *src);
 extern "C" void SetCameraPosRot__13PParticleRainFPA4_fPA4_f(PParticleRain *pThis, float (*pA)[4], float (*pB)[4]);
@@ -976,6 +1004,297 @@ PParticleOneShot *PParticleManager::CreateOneShot(unsigned int hFx, float fA, fl
         pFx->Slot05(0);
     }
     return pFx;
+}
+
+// Resource record returned by GetResource for an FX id; only the fields Create reads.
+struct FxResRecord {
+    int m_unk0;
+    int m_unk4;
+    float m_unk8;
+    char _pad0C[0x10 - 0x0C];
+    unsigned char m_unk10;
+    unsigned char m_unk11;
+    unsigned char m_unk12;
+    char _pad13[0x14 - 0x13];
+    float m_unk14;
+    float m_unk18;
+    int m_unk1C;
+    int m_unk20;
+    char _pad24[0x28 - 0x24];
+    int m_unk28;
+    float m_unk2C;
+    float m_unk30;
+    char _pad34[0x38 - 0x34];
+    void *m_unk38;
+};
+
+// Fields of a created effect written by the shared tail of Create.
+struct FxTailLayout {
+    char _pad00[0x10];
+    int m_unk10;
+    char _pad14[0x17 - 0x14];
+    unsigned char m_unk17;
+    char _pad18[0x19 - 0x18];
+    unsigned char m_unk19;
+    char _pad1A;
+    unsigned char m_unk1B;
+    char _pad1C[0x20 - 0x1C];
+    float m_unk20;
+    float m_unk24;
+    float m_unk28;
+    float m_unk2C;
+    long long m_unk30;
+    char _pad38[0xAC - 0x38];
+    int m_unkAC;
+    float m_unkB0;
+    char _padB4[0xD4 - 0xB4];
+    int m_unkD4;
+};
+
+// Local copy source for the 40-byte effect table; the original reads it from rodata
+// at lit_002486E0, which has no symbol, so this file-local zeroed copy stands in.
+struct FxTable {
+    u_long128 m_unk0;
+    u_long128 m_unk10;
+    long long m_unk20;
+};
+static FxTable s_fxTable;
+
+// DRAFT: 0x001B9340 Create__16PParticleManagerFUifffP6PMNodeb
+// note: compiles; case order, table source (zeroed static, not rodata) and register allocation still differ.
+PParticleOneShot *PParticleManager::Create(unsigned int hFx, float fA, float fB, float fC, PMNode *pNode, bool bFlag) {
+    void *pFx = 0;
+    void *pNew;
+    PMNode *pGlow = 0;
+    FxResRecord *pRec;
+    FxTable sp90;
+    FxTailLayout *pTail;
+    unsigned int nGlowId;
+    int nType;
+
+    if (m_unk40 == 0) {
+        CdsAssert("PParticleManager.cpp", 0x2E8, "mpFxResMgr");
+    }
+    if (hFx != 0) {
+        pRec = (FxResRecord *)GetResource__16PResourceManagerFUib(m_unk40, hFx, false);
+        if (pRec == 0) {
+            printf("\nCant find FX resource data ID %d", hFx);
+            return 0;
+        }
+        switch (pRec->m_unk0) {
+        case 1:
+            pNew = __nw__FUi(0x1A0);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__13PParticleFireFv(pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x2FB, "apFx");
+            }
+            Create__13PParticleFireFP21tagParticleFireParamsfff(pFx, pRec->m_unk38, fA, fB, fC);
+            break;
+        case 2:
+            pNew = __nw__FUi(0x1E0);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__18PParticleExplosionFv(pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x302, "apFx");
+            }
+            Create__18PParticleExplosionFP26tagParticleExplosionParamsfff(pFx, pRec->m_unk38, fA, fB, fC);
+            break;
+        case 3:
+            if (m_unk44 == 0) {
+                CdsAssert("PParticleManager.cpp", 0x31D, "mpGameResMgr");
+            }
+            nGlowId = *(unsigned int *)((char *)pRec->m_unk38 + 0x30);
+            if (nGlowId != 0) {
+                pGlow = (PMNode *)GetResource__16PResourceManagerFUib(m_unk44, nGlowId, true);
+            }
+            if (pGlow == 0) {
+                printf("\nCant find Glow Object resource data ID %d, for Glow Effect ID %d", hFx, nGlowId);
+                return 0;
+            }
+            pNew = __nw__FUi(0x390);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__19PParticleVertexGlowFv(pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x32E, "apFx");
+            }
+            Create__19PParticleVertexGlowFP27tagParticleVertexGlowParamsP6PMNodeP6PMNode(pFx, pRec->m_unk38, pGlow, pNode);
+            break;
+        case 4:
+            pNew = __nw__FUi(0x1C0);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__14PParticleTrailFv(pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x309, "apFx");
+            }
+            Create__14PParticleTrailFP22tagParticleTrailParamsfff(pFx, pRec->m_unk38, fA, fB, fC);
+            break;
+        case 6:
+            pNew = __nw__FUi(0x1A0);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__17PParticleLiteFireFv(pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x310, "apFx");
+            }
+            Create__17PParticleLiteFireFP25tagParticleLiteFireParamsfff(pFx, pRec->m_unk38, fA, fB, fC);
+            break;
+        case 7:
+            pNew = __nw__FUi(0x1F0);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__14PParticleSpurtFv(pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x317, "apFx");
+            }
+            Create__14PParticleSpurtFP22tagParticleSpurtParamsfff(pFx, pRec->m_unk38, fA, fB, fC);
+            break;
+        case 9:
+            pNew = __nw__FUi(0x190);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__20PParticleElectricityFv(pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x348, "apFx");
+            }
+            Create__20PParticleElectricityFP28tagParticleElectricityParamsfff(pFx, pRec->m_unk38, fA, fB, fC);
+            break;
+        case 10:
+            pNew = __nw__FUi(0x140);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__13PParticleAuraFv(pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x334, "apFx");
+            }
+            Create__13PParticleAuraFP21tagParticleAuraParamsfff(pFx, pRec->m_unk38, fA, fB, fC);
+            break;
+        case 12:
+            pNew = __nw__FUi(0x170);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__12PParticleGasFv((PParticleGas *)pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x361, "apFx");
+            }
+            Create__12PParticleGasFP20tagParticleGasParamsfff((PParticleGas *)pFx, (tagParticleGasParams *)pRec->m_unk38, fA, fB, fC);
+            break;
+        case 13:
+            pNew = __nw__FUi(0x170);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__20PParticleSplineTrailFv(pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x33B, "apFx");
+            }
+            Create__20PParticleSplineTrailFP28tagParticleSplineTrailParamsfff(pFx, pRec->m_unk38, fA, fB, fC);
+            break;
+        case 15:
+            pNew = __nw__FUi(0x1B0);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__21PParticleEnergyStreamFv(pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x342, "apFx");
+            }
+            Create__21PParticleEnergyStreamFP29tagParticleEnergyStreamParamsfff(pFx, pRec->m_unk38, fA, fB, fC);
+            break;
+        case 17:
+            pNew = __nw__FUi(0x1D0);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__22PParticleLiteExplosionFv((PParticleLiteExplosion *)pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x34E, "apFx");
+            }
+            Create__22PParticleLiteExplosionFP30tagParticleLiteExplosionParamsfff(pFx, pRec->m_unk38, fA, fB, fC);
+            break;
+        case 19:
+            pNew = __nw__FUi(0x1F0);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__22PParticleShockwaveRingFv(pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x354, "apFx");
+            }
+            Create__22PParticleShockwaveRingFP30tagParticleShockwaveRingParamsfff(pFx, pRec->m_unk38, fA, fB, fC);
+            break;
+        case 22:
+            pNew = __nw__FUi(0x200);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__13PCrystalizeFxFv(pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x35B, "apFx");
+            }
+            Create__13PCrystalizeFxFP6PMNodeP21tagCrystalizeFxParams(pFx, pNode, pRec->m_unk38);
+            break;
+        case 24:
+            pNew = __nw__FUi(0x1A0);
+            pFx = pNew;
+            if (pNew != 0) {
+                pFx = __ct__16PParticleBubblesFv(pNew);
+            }
+            if (pFx == 0) {
+                CdsAssert("PParticleManager.cpp", 0x367, "apFx");
+            }
+            Create__16PParticleBubblesFP24tagParticleBubblesParamsfff(pFx, pRec->m_unk38, fA, fB, fC);
+            break;
+        default:
+            pFx = 0;
+            printf("\n*** Unsupported particle system, ID %d! ***", hFx);
+            break;
+        }
+        if (pFx != 0) {
+            pTail = (FxTailLayout *)pFx;
+            pTail->m_unkAC = pRec->m_unk4;
+            pTail->m_unkB0 = pRec->m_unk8;
+            pTail->m_unk17 = pRec->m_unk10;
+            sp90.m_unk0 = s_fxTable.m_unk0;
+            sp90.m_unk10 = s_fxTable.m_unk10;
+            sp90.m_unk20 = s_fxTable.m_unk20;
+            pTail->m_unk30 = ((long long *)&sp90)[pRec->m_unk1C];
+            pTail->m_unk1B = pRec->m_unk12;
+            pTail->m_unk20 = pRec->m_unk2C;
+            pTail->m_unk24 = pRec->m_unk30;
+            pTail->m_unk19 = pRec->m_unk11;
+            pTail->m_unk28 = pRec->m_unk14;
+            pTail->m_unk2C = pRec->m_unk18;
+            nType = pRec->m_unk28;
+            if (nType == 0) {
+                nType = 2;
+            }
+            pTail->m_unkD4 = nType;
+            if (pRec->m_unk11 != 0) {
+                pTail->m_unk10 = m_unk670;
+            } else {
+                pTail->m_unk10 = pRec->m_unk20;
+            }
+            if (bFlag) {
+                Add((PParticleSystem *)pFx);
+            }
+        }
+        return (PParticleOneShot *)pFx;
+    }
+    return (PParticleOneShot *)pFx;
 }
 
 // FUNCTION: 0x001B9B50 IsValid__16PParticleManagerFP15PParticleSystem
