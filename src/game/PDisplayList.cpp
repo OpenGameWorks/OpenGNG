@@ -471,6 +471,71 @@ void PDisplayList::DrawFogParticles(float (*pVerts)[4], int nCount, float fA, fl
     }
 }
 
+// DRAFT: 0x182D90 DrawParticles__12PDisplayListFP13tagVuParticleiffbi
+// note: 138 words differ; frame 0xC0 vs 0xB0 (pChunk spilled), params in s3/s1/s0 vs s0/s2/s1, bFlag not reused for n. Tried nCount as nRem, nIdx declared first, pChunk before n; none lowered the count.
+void PDisplayList::DrawParticles(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag, int nChunk) {
+    if (pParticles == 0) { CdsAssert("PDisplayList.cpp", 0x2A4, "pParticles"); }
+    if (nCount == 0) { CdsAssert("PDisplayList.cpp", 0x2A5, "iNumParticles"); }
+    if (nCount >= 5) {
+        int nLoops = nCount / nChunk;
+        if (nCount % nChunk) { nLoops++; }
+        int nRem = nCount;
+        int nIdx = 0;
+        int n;
+        if (bFlag) {
+            while (nIdx < nLoops) {
+                n = (nRem < nChunk) ? nRem : nChunk;
+                nRem -= n;
+                char *pChunk = (char *)pParticles + nIdx * nChunk * 32;
+                if (n < 5) { break; }
+                char *pPkt = (char *)AllocEntries(2 * n + 3);
+                if (pPkt == 0) { CdsAssert("PDisplayList.cpp", 0x2C6, "0"); }
+                int nQw = 2 * n + 2;
+                *(long long *)pPkt = (long long)nQw | 0x10000000;
+                *(unsigned int *)(pPkt + 8) = 0;
+                *(unsigned int *)(pPkt + 0xC) = ((nQw - 1) << 16) | 0x6C008000;
+                pPkt += 0x10;
+                *(int *)pPkt = n;
+                *(unsigned int *)(pPkt + 4) = *(unsigned int *)&fB;
+                *(unsigned int *)(pPkt + 8) = *(unsigned int *)&fA;
+                *(unsigned int *)(pPkt + 0xC) = 0;
+                pPkt += 0x10;
+                QwordCopy((u_long128 *)pPkt, (u_long128 *)pChunk, nQw - 2);
+                nIdx++;
+                pPkt += (nQw - 2) << 4;
+                *(unsigned int *)pPkt = 0x17000000;
+                *(unsigned int *)(pPkt + 4) = 0;
+                *(unsigned int *)(pPkt + 8) = 0;
+                *(unsigned int *)(pPkt + 0xC) = 0;
+            }
+        } else {
+            while (nIdx < nLoops) {
+                n = (nRem < nChunk) ? nRem : nChunk;
+                nRem -= n;
+                char *pChunk = (char *)pParticles + nIdx * nChunk * 32;
+                if (n < 5) { break; }
+                char *pPkt = (char *)AllocEntries(4);
+                if (pPkt == 0) { CdsAssert("PDisplayList.cpp", 0x2F1, "0"); }
+                nIdx++;
+                *(long long *)pPkt = 0x10000001;
+                *(unsigned int *)(pPkt + 8) = 0;
+                *(unsigned int *)(pPkt + 0xC) = 0x6C018000;
+                *(int *)(pPkt + 0x10) = n;
+                unsigned int nQ = ((unsigned int)(n << 5)) >> 4;
+                *(float *)(pPkt + 0x18) = fA;
+                *(float *)(pPkt + 0x14) = fB;
+                *(unsigned long long *)(pPkt + 0x20) = ((unsigned long long)(unsigned int)pChunk << 32) | 0x30000000 | nQ;
+                *(unsigned int *)(pPkt + 0x28) = 0;
+                *(unsigned int *)(pPkt + 0x2C) = (nQ << 16) | 0x6C008001;
+                *(long long *)(pPkt + 0x30) = 0x10000000;
+                *(unsigned int *)(pPkt + 0x38) = 0x17000000;
+                *(unsigned int *)(pPkt + 0x3C) = 0;
+            }
+        }
+    }
+    asm { sync }
+}
+
 // DRAFT: 0x1830A0 DrawSprites__12PDisplayListFP11tagVuSpriteib
 // note: loop A (bFlag) and loop B packet layout as in the asm; frame and store order still differ
 void PDisplayList::DrawSprites(struct tagVuSprite *pSprite, int nCount, bool bFlag) {
