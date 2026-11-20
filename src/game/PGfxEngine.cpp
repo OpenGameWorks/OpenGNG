@@ -236,7 +236,7 @@ int ZCompareFragments(void *pIdx0, void *pIdx1)
 }
 
 // DRAFT: 0x184800 VBlankEndInterruptHandler__Fi
-// note: 2 words differ: the original places daddu v1,zero,zero before sd ra; ours emits sd ra first (6 variants: scalar/array counter, consolidated/split COP0 asm, lui/sync as .word, nop, daddu moved to its own asm before the counter).
+// note: 2 words differ: the original places daddu v1,zero,zero before sd ra; ours emits sd ra first (tried: scalar/array counter, consolidated/split COP0 asm, lui/sync as .word, nop, daddu in its own asm, unused and used zero local, mfpc reads with named local (10 lines, wrong v0/a0 allocation)).
 int VBlankEndInterruptHandler(int nIrq) {
     asm { .word 0x0000182D }
     gCDSVBlankCount[0]++;
