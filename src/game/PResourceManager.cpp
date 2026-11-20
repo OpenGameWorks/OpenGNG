@@ -4,9 +4,23 @@
 #include "PShadowVolume.h"
 #include "PStaticInstanceMesh.h"
 #include "PArray.h"
+#include "MemoryManager.h"
 
 // TODO(header): foreign declarations
 void CdsAssert(char *pFile, int nLine, char *pExpr);
+extern "C" void __dla__FPv(void *pMem);
+extern "C" void __dl__FPv(void *pMem);
+extern "C" void *__dt__13PShadowVolumeFv(void *pThis, short nFlag);
+extern "C" void *__dt__19PStaticInstanceMeshFv(void *pThis, short nFlag);
+extern "C" void UnloadDynamicTextures__15PTextureManagerF13eTextureGroup(void *pThis, int eGroup);
+extern "C" void UnloadDynamicTexture__15PTextureManagerFi(void *pThis, int nHandle);
+extern char gGfxEng[1504384];
+extern MemoryManager MemMgr;
+class PResourceElem {
+public:
+    virtual void Release(short nFlag);
+    int m_unk4;
+};
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void *__nw__FUi(unsigned int nSize);
@@ -192,6 +206,131 @@ PMNode *PResourceManager::GetResource(tagResourceData *pData, unsigned int uId, 
         break;
     }
     return GetResourceFromIndex(pData, nIndex, eType, uId, bFlag);
+}
+
+// DRAFT: 0x00152F90 Unload__16PResourceManagerFPQ216PResourceManager15tagResourceData
+// note: 23 differing words; remaining diffs are loop-entry b targets, inner null-test beqz shape, per-slot store order in the m_unk4/m_unk10/m_unk28/m_unk34/m_unk40 walks, and s1/s3 init order. Tried: offset form for m_unk1C, store-inside-if for m_unk44/m_unk8/m_unk14, pFx before nOff, while vs for.
+void PResourceManager::Unload(tagResourceData *pData) {
+    unsigned int i;
+    if (pData == 0) {
+        CdsAssert("PResourceManager.cpp", 0x3A2, "pResData");
+    }
+    if (pData->m_unk67 != 0) {
+        UnloadDynamicTextures__15PTextureManagerF13eTextureGroup(gGfxEng + 0x154C90, 0x68);
+        MemMgr.DeletePoolContents(2);
+        memset(pData, 0, 0x68);
+        return;
+    }
+    if (pData->m_unk4 != 0) {
+        for (i = 0; i < (unsigned int)pData->m_unk0; i++) {
+            PResourceElem *pElem = (PResourceElem *)pData->m_unk4[i];
+            if (pElem != 0) {
+                if (pElem->m_unk4 == 1) {
+                    if (pElem != 0) pElem->Release(1);
+                } else if (pElem->m_unk4 == 2) {
+                    if (pElem != 0) pElem->Release(1);
+                } else {
+                    if (pElem != 0) pElem->Release(1);
+                }
+            }
+            pData->m_unk4[i] = 0;
+        }
+        __dla__FPv(pData->m_unk4);
+        pData->m_unk4 = 0;
+        pData->m_unk0 = 0;
+    }
+    if (pData->m_unk8 != 0) {
+        __dla__FPv(pData->m_unk8);
+        pData->m_unk8 = 0;
+    }
+    if (pData->m_unk10 != 0) {
+        for (i = 0; i < (unsigned int)pData->m_unkC; i++) {
+            PResourceElem *pElem = (PResourceElem *)pData->m_unk10[i];
+            if (pElem != 0) {
+                if (pElem->m_unk4 == 5) {
+                    if (pElem != 0) pElem->Release(1);
+                } else {
+                    if (pElem != 0) pElem->Release(1);
+                }
+            }
+            pData->m_unk10[i] = 0;
+        }
+        __dla__FPv(pData->m_unk10);
+        pData->m_unk10 = 0;
+        pData->m_unkC = 0;
+    }
+    if (pData->m_unk14 != 0) {
+        __dla__FPv(pData->m_unk14);
+        pData->m_unk14 = 0;
+    }
+    if (pData->m_unk28 != 0) {
+        for (i = 0; i < (unsigned int)pData->m_unk24; i++) {
+            unsigned int nHandle = (unsigned int)pData->m_unk28[i];
+            if (nHandle != 0) {
+                UnloadDynamicTexture__15PTextureManagerFi(gGfxEng + 0x154C90, (int)nHandle);
+            }
+            pData->m_unk28[i] = 0;
+        }
+        __dla__FPv(pData->m_unk28);
+        pData->m_unk28 = 0;
+        pData->m_unk24 = 0;
+    }
+    if (pData->m_unk2C != 0) {
+        __dla__FPv(pData->m_unk2C);
+    }
+    pData->m_unk2C = 0;
+    if (pData->m_unk1C != 0) {
+        tagFxData *pFx;
+        unsigned int nOff = 0;
+        for (i = 0; i < (unsigned int)pData->m_unk18; i++) {
+            pFx = (tagFxData *)((char *)pData->m_unk1C + nOff);
+            if (pFx == 0) {
+                CdsAssert("PResourceManager.cpp", 0x41B, "apFxData");
+            }
+            if (pFx->m_unk38 != 0) {
+                __dl__FPv(pFx->m_unk38);
+            }
+            nOff += 0x3C;
+        }
+        __dla__FPv(pData->m_unk1C);
+        pData->m_unk1C = 0;
+        pData->m_unk18 = 0;
+    }
+    if (pData->m_unk20 != 0) {
+        __dla__FPv(pData->m_unk20);
+    }
+    pData->m_unk20 = 0;
+    if (pData->m_unk34 != 0) {
+        for (i = 0; i < (unsigned int)pData->m_unk30; i++) {
+            void *pElem = (void *)pData->m_unk34[i];
+            if (pElem != 0) {
+                __dt__13PShadowVolumeFv(pElem, 1);
+            }
+        }
+        __dla__FPv(pData->m_unk34);
+        pData->m_unk34 = 0;
+        pData->m_unk30 = 0;
+    }
+    if (pData->m_unk38 != 0) {
+        __dla__FPv(pData->m_unk38);
+    }
+    pData->m_unk38 = 0;
+    if (pData->m_unk40 != 0) {
+        for (i = 0; i < (unsigned int)pData->m_unk3C; i++) {
+            void *pElem = (void *)pData->m_unk40[i];
+            if (pElem != 0) {
+                __dt__19PStaticInstanceMeshFv(pElem, 1);
+            }
+        }
+        __dla__FPv(pData->m_unk40);
+        pData->m_unk40 = 0;
+        pData->m_unk3C = 0;
+    }
+    if (pData->m_unk44 != 0) {
+        __dla__FPv(pData->m_unk44);
+        pData->m_unk44 = 0;
+    }
+    memset(pData, 0, 0x68);
 }
 
 // FUNCTION: 0x00153A40 LoadInstanceMeshTable__16PResourceManagerFP8PPakFilePQ216PResourceManager15tagResourceDataP6PArray16ePsx2FileVersionUi

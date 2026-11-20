@@ -40,7 +40,8 @@ public:
         int m_unk3C;
         void **m_unk40;
         unsigned int *m_unk44;
-        char _pad048[0x20];
+        char _pad048[0x1F];
+        unsigned char m_unk67;
     };
 
     PResourceManager();
