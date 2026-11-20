@@ -19,6 +19,7 @@ public:
     int CheckBlockAttack();
     int CanAttackInState();
     int PlayerInAttackRadius();
+    int CheckAttackPlayer();
     void LoadCorrectMesh(bool arg0);
     void FaceHit();
     int Stalled(float arg0);

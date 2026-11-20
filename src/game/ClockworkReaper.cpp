@@ -105,6 +105,15 @@ extern "C" void DestroyDamageFx__15EntityBaseClassFUi(void *, unsigned int);
 extern void *mpEntMgr__15EntityBaseClass;
 extern "C" void GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(void *, float *);
 extern "C" float Round180__Ff(float);
+extern "C" float FastMath_Fabs__Ff(float f);
+extern "C" int RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(void *, void *, unsigned int);
+class TimerAPI {
+public:
+    char _pad000[40];
+    void KillTimer(unsigned int);
+    unsigned int CreateTimer(unsigned int, unsigned int, bool);
+};
+extern TimerAPI mTimerAPI__13EntityManager;
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int eLoadClass, unsigned int nFlags);
 extern "C" void __dl__FPv(void *pMem);
@@ -141,7 +150,8 @@ class PMNode {
 public:
     char _pad000[4];
     int m_unk04;
-    char _pad008[0x10 - 0x08];
+    char _pad008[4];
+    int m_unk0C;
     void *m_unk10;
     char _pad014[0x3E - 0x14];
     unsigned char m_unk3E;
@@ -361,6 +371,168 @@ int ClockworkReaper::Stalled(float arg0) {
         }
         return 0;
     }
+    return 0;
+}
+
+// DRAFT: 0x001BFD90 CheckAttackPlayer__15ClockworkReaperFv
+// note: 208 words, size 0x56C vs 0x55C; mode dispatch branch shape, 0x30/0x3C targets, Distance arg branch sense, extra RandomIntRange reloc at 0x41C; tried plain returns (325), dispatch reorder (317), flipped Distance null test (212)
+int ClockworkReaper::CheckAttackPlayer() {
+    int pick;
+    int roll;
+    float dist;
+
+    if (m_unkF4 != 0) {
+        return 0;
+    }
+    if (!PlayerInAttackRadius()) {
+        goto fail;
+    }
+    if (m_unk218 == 0) {
+        goto fail;
+    }
+    if (!CanAttackInState()) {
+        goto fail;
+    }
+    roll = RandomIntRange__7MathAPIFii(1, 100);
+    if (m_unk1B0 == 2) {
+        if (roll >= 0x4C) {
+            goto fail;
+        }
+        goto mode2;
+    }
+    if (m_unk1B0 == 1) {
+        if (roll >= 0x33) {
+            goto fail;
+        }
+        goto mode1;
+    }
+    if (m_unk1B0 == 0) {
+        if (roll >= 0x33) {
+            goto fail;
+        }
+        goto mode0;
+    }
+    goto fail;
+
+mode0:
+    dist = Distance__7MathAPIFPA4_fPA4_f(
+        (MathAPI *)(m_unk3C ? (char *)m_unk3C + 0x80 : (char *)this + 0x190),
+        (float (*)[4])(mPlayerAPI__13EntityManager->m_unk3C ? (char *)mPlayerAPI__13EntityManager->m_unk3C + 0x80 : (char *)mPlayerAPI__13EntityManager + 0x190));
+    pick = RandomIntRange__7MathAPIFii(0, 2);
+    if (dist <= 7.0f) {
+        goto mode0_a7;
+    }
+    if (dist <= 9.0f) {
+        goto fail;
+    }
+    if (dist >= 12.0f) {
+        goto fail;
+    }
+    if (RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(this, mPlayerAPI__13EntityManager, 0) == 0) {
+        goto fail;
+    }
+    m_unk218 = 0;
+    if (RandomIntRange__7MathAPIFii(1, 100) < 0x28) {
+        m_unk220 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, pick + 4, false);
+        return 0x1B;
+    }
+    m_unk220 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, pick + 2, false);
+    return 0x19;
+
+mode0_a7:
+    if (RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(this, mPlayerAPI__13EntityManager, 0) == 0) {
+        goto fail;
+    }
+    m_unk218 = 0;
+    m_unk220 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, pick + 2, false);
+    return 0x1C;
+
+mode1:
+    dist = Distance__7MathAPIFPA4_fPA4_f(
+        (MathAPI *)(m_unk3C ? (char *)m_unk3C + 0x80 : (char *)this + 0x190),
+        (float (*)[4])(mPlayerAPI__13EntityManager->m_unk3C ? (char *)mPlayerAPI__13EntityManager->m_unk3C + 0x80 : (char *)mPlayerAPI__13EntityManager + 0x190));
+    pick = RandomIntRange__7MathAPIFii(0, 2);
+    if (dist <= 7.0f) {
+        goto mode1_a7;
+    }
+    if (dist <= 10.0f) {
+        goto fail;
+    }
+    if (dist >= 14.0f) {
+        goto fail;
+    }
+    if (RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(this, mPlayerAPI__13EntityManager, 0) == 0) {
+        goto fail;
+    }
+    m_unk218 = 0;
+    if (*(int *)((char *)m_unk3C + 0xC) != 1) {
+        goto mode1_tail19;
+    }
+    if (RandomIntRange__7MathAPIFii(1, 100) >= 0x28) {
+        goto mode1_tail19;
+    }
+    m_unk220 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, pick + 4, false);
+    return 0x1E;
+
+mode1_tail19:
+    m_unk220 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, pick + 2, false);
+    return 0x19;
+
+mode1_a7:
+    if (RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(this, mPlayerAPI__13EntityManager, 0) == 0) {
+        goto fail;
+    }
+    m_unk218 = 0;
+    m_unk220 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, pick + 4, false);
+    return 0x1D;
+
+mode2:
+    dist = Distance__7MathAPIFPA4_fPA4_f(
+        (MathAPI *)(m_unk3C ? (char *)m_unk3C + 0x80 : (char *)this + 0x190),
+        (float (*)[4])(mPlayerAPI__13EntityManager->m_unk3C ? (char *)mPlayerAPI__13EntityManager->m_unk3C + 0x80 : (char *)mPlayerAPI__13EntityManager + 0x190));
+    pick = RandomIntRange__7MathAPIFii(0, 2);
+    if (dist <= 15.0f) {
+        goto mode2_small;
+    }
+    if (RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(this, mPlayerAPI__13EntityManager, 0) == 0) {
+        goto fail;
+    }
+    m_unk218 = 0;
+    if (FastMath_Fabs__Ff(((float *)((mPlayerAPI__13EntityManager->m_unk3C ? (char *)mPlayerAPI__13EntityManager->m_unk3C + 0x80 : (char *)mPlayerAPI__13EntityManager + 0x190)))[1] - ((float *)((m_unk3C ? (char *)m_unk3C + 0x80 : (char *)this + 0x190)))[1]) >= 6.0f) {
+        goto mode2_tail17;
+    }
+    if (RandomIntRange__7MathAPIFii(1, 100) >= 0x28) {
+        goto mode2_tail17;
+    }
+    m_unk220 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, pick + 4, false);
+    return 0x23;
+
+mode2_tail17:
+    m_unk220 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, pick + 2, false);
+    return 0x17;
+
+mode2_small:
+    if (dist > 6.0f) {
+        goto mode2_tail19;
+    }
+    if (RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(this, mPlayerAPI__13EntityManager, 0) == 0) {
+        goto fail;
+    }
+    m_unk218 = 0;
+    m_unk220 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, pick + 2, false);
+    if (RandomIntRange__7MathAPIFii(1, 100) < 0x32) {
+        return 0x26;
+    }
+    return 0x25;
+
+mode2_tail19:
+    m_unk218 = 0;
+    m_unk220 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, pick + 2, false);
+    return 0x19;
+
+fail:
+    m_unk218 = 0;
+    m_unk220 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, 0x1E, true);
     return 0;
 }
 
