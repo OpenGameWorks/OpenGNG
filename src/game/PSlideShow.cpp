@@ -57,7 +57,7 @@ void PSlideShow::AnimateFadingTiles(float fTime)
 }
 
 // DRAFT: 0x00215710 ResetTiles__10PSlideShowFv
-// note: VU0 block (adda.s/madd.s/pcpyld on scratchpad 0x70001000) replaced by plain float math; the 128-bit tile store is omitted and the tile position formulas are approximate; register allocation differs.
+// note: 67 words; frame 0x70 vs 0x60 from the u_long128 local used for the (0,0,0,1.0f) store; original builds it with dsll32/pcpyld and no stack slot. Tried: (u_long128)<<96 and <<64 (compile error), two sd stores (82), pf[13]/pf[20] reread through pointer (86); scratchpad stores and X/Y formulas already in asm order.
 void PSlideShow::ResetTiles()
 {
     *(float *)0x70001000 = 16.0f;
@@ -76,8 +76,12 @@ void PSlideShow::ResetTiles()
             tagTile *pTile = (tagTile *)((char *)m_unkC + nIdx * 0x30);
             tagGsPoly *pPoly = (tagGsPoly *)(pPolyBase + nIdx * 0x90);
             pTile->m_fUnk2C = 128.0f;
-            pTile->m_fX = (float)(m_unk1C / 2) + 16.0f * (float)nCol;
-            pTile->m_fY = (float)(m_unk20 / 2) - 8.0f * (float)nRow;
+            pTile->m_fX = 16.0f + (2048.0f - (float)(m_unk1C / 2)) + 32.0f * (float)nCol;
+            pTile->m_fY = 8.0f + (2048.0f - (float)(m_unk20 / 2)) + 16.0f * (float)nRow;
+            u_long128 vOne;
+            ((unsigned long long *)&vOne)[0] = 0;
+            ((unsigned long long *)&vOne)[1] = 0x3F80000000000000ULL;
+            *(u_long128 *)&pTile->m_unk10 = vOne;
             SetGsPolyPos(pPoly, pTile, (float *)0x70001000, (float *)0x70001010);
 
             float fU = (float)nCol * (1.0f / (float)m_unk18);
@@ -197,7 +201,7 @@ asm void PSlideShow::ApplyTileOnGsPoly(tagGsPoly *pPoly, tagTile *pTile)
 }
 
 // DRAFT: 0x00215B10 SetGsPolyPos__10PSlideShowFPQ210PSlideShow9tagGsPolyPQ210PSlideShow7tagTilePfPf
-// note: VU0 block and the m_unkC store match; the flag updates differ (8 lines, 0x54..0x70). Ours uses `ori imm` and `or`; the original keeps 0x80 in $a3 via daddiu. Tried: int flag, unsigned pair (best), long pair (worse), signed mask (worse).
+// note: 13 words; VU0 block and m_unkC store match. Flag updates differ: original keeps 0x80 in a register (daddiu a3) for both `or`s, ours folds it to immediates. Tried: unsigned int pair (13, kept), shift form (13), unsigned char (15), long pair (16), signed mask (worse).
 void PSlideShow::SetGsPolyPos(tagGsPoly *pPoly, tagTile *pTile, float *pA, float *pB)
 {
     asm {
