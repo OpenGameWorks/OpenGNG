@@ -16,6 +16,10 @@ extern "C" void __ct__14PFadeMsecFloatFv(void *);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void SOUND_StopMultipleSounds(int nHandle, int nCount);
 extern "C" void __dl__FPv(void *pMem);
+extern "C" int SOUND_StopStream(unsigned int);
+extern int fst_ADSR_Translate_Attack[16];
+extern int fst_ADSR_Translate_Release[16];
+extern char fst_Usage[24000];
 
 // FUNCTION: 0x001A3C70 AddAEToFreeList__6PSoundFPQ26PSound12AmbientEntry
 void PSound::AddAEToFreeList(AmbientEntry *pEntry) {
@@ -172,6 +176,42 @@ int PSound::PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag) {
     return 0;
 }
 
+// DRAFT: 0x001A89E0 FindAmbientEntry__6PSoundFUi
+// note: DIFF 7 words; original has one extra join nop at 0x3C (fn 0x4C bytes, ours 0x48)
+PSound::AmbientEntry *PSound::FindAmbientEntry(unsigned int nID) {
+    AmbientEntry *pEntry = (AmbientEntry *)(m_unkF8 + (0x380 - 0xF8));
+    AmbientEntry *pEnd = (AmbientEntry *)(m_unkF8 + (0x2220 - 0xF8));
+    if (nID != 0) {
+        if (pEntry < pEnd) {
+            do {
+                if (nID == pEntry->m_unk44) {
+                    return pEntry;
+                }
+                pEntry++;
+            } while (pEntry < pEnd);
+        }
+    }
+    return 0;
+}
+
+// DRAFT: 0x001A8A30 IsAmbientSoundBySoundRef__6PSoundFUi
+// note: DIFF 9 words; original has join nop at 0x6C before the return-0 daddu (fn 0x4C bytes, ours 0x48)
+int PSound::IsAmbientSoundBySoundRef(unsigned int nSoundRef) {
+    AmbientEntry *pEntry = (AmbientEntry *)(m_unkF8 + (0x380 - 0xF8));
+    AmbientEntry *pEnd = (AmbientEntry *)(m_unkF8 + (0x2220 - 0xF8));
+    if (nSoundRef != 0) {
+        if (pEntry < pEnd) {
+            do {
+                if (nSoundRef == pEntry->m_unk44) {
+                    return 1;
+                }
+                pEntry++;
+            } while (pEntry < pEnd);
+        }
+    }
+    return 0;
+}
+
 // FUNCTION: 0x001A8A80 IsAmbientSoundByID__6PSoundFUi
 int PSound::IsAmbientSoundByID(unsigned int nID) {
     SpotInfo *pInfo = GetSpotInfoPtrByPublicID(nID);
@@ -317,11 +357,26 @@ void PSound::StopStreamsAndRequestEEControl() {
     SetEEControlOfIOP(2);
 }
 
+// FUNCTION: 0x001A9DC0 TranslateIntoADSR__6PSoundFUi
+int PSound::TranslateIntoADSR(unsigned int nArg) {
+    return fst_ADSR_Translate_Attack[(nArg >> 4) & 0xF] + 0xFF1FC0 + fst_ADSR_Translate_Release[nArg & 0xF];
+}
+
 // FUNCTION: 0x001AA030 PSoundReInitSubWSoundCalls__6PSoundFv
 void PSound::PSoundReInitSubWSoundCalls() {
     PSoundReInitSub(0);
     InternalUpdateRelVolumes();
     PSoundFlushIOPCommandsWaitFinish();
+}
+
+// FUNCTION: 0x001AA080 PSoundLevelClear__6PSoundFv
+void PSound::PSoundLevelClear() {
+    SOUND_StopAllRegularSounds();
+    PSoundReInitRegularSounds();
+    PSoundStopDialog();
+    SOUND_StopStream(0);
+    PSoundReInitSoundRooms();
+    PSoundReInitTriglets();
 }
 
 // FUNCTION: 0x001AA0D0 PSoundReInitTriglets__6PSoundFv
@@ -340,6 +395,18 @@ void PSound::PSoundReInitSoundRooms() {
     memset(m_unk5460, 0, 0x2580);
     m_unk544C = 0;
     m_unk5444 = -1;
+}
+
+// FUNCTION: 0x001AA130 PSoundStopDialog__6PSoundFv
+void PSound::PSoundStopDialog() {
+    SOUND_StopStream(0);
+    m_unkCF = 0;
+    m_unk2E50[0] = 0;
+    m_unk2E50[1] = 0;
+    m_unk2E50[2] = 0;
+    m_unk2E50[3] = 0;
+    m_unk2E48 &= ~0xC;
+    m_unk2E4C = m_unk2E48;
 }
 
 // FUNCTION: 0x001AA490 __dt__6PSoundFv
@@ -416,6 +483,19 @@ void PSound::SpotInfo::Init() {
 // FUNCTION: 0x001AAD70 __ct__Q26PSound8SpotInfoFv
 PSound::SpotInfo::SpotInfo() {
     Init();
+}
+
+// DRAFT: 0x001AAF20 UsageInit__6PSoundFv
+// note: DIFF 6 words; original has three scheduling nops between the loop sltu and bnez and the guard beqz targets one slot further; tried int*, char*, unsigned cursors (15), int stride 5 (6), for-loop (11)
+void PSound::UsageInit() {
+    int *p = (int *)fst_Usage;
+    int *end = (int *)(fst_Usage + 24000);
+    if (p < end) {
+        do {
+            *p = -1;
+            p += 5;
+        } while (p < end);
+    }
 }
 
 // FUNCTION: 0x001AB400 DebugPlaySoundWPitch__6PSoundFUiUiUi

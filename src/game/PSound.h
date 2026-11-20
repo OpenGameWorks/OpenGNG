@@ -59,9 +59,12 @@ public:
         char _pad14[0x02];
         unsigned short m_unk16; // 0x16, bit 0 is cleared on Resume
         char _pad18[0x20 - 0x18];
-        char m_unk20[0x50 - 0x20];  // 0x20, PFadeMsecFloat built by the ctor
+        char m_unk20[0x44 - 0x20];  // 0x20, PFadeMsecFloat built by the ctor
+        unsigned int m_unk44;   // 0x44, FindAmbientEntry and IsAmbientSoundBySoundRef compare it
+        char m_unk48[0x50 - 0x48];
         AmbientEntry *m_unk50;  // 0x50
         AmbientEntry *m_unk54;  // 0x54
+        char _pad58[0x70 - 0x58];   // 0x58, entries of the ambient table are 0x70 apart
     };
 
     class SpotInfo {
@@ -115,6 +118,12 @@ public:
     void AddAEToFreeList(AmbientEntry *pEntry);
     void DelinkAmbientEntry(AmbientEntry *pEntry);
     int PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag);
+    AmbientEntry *FindAmbientEntry(unsigned int nID);
+    int IsAmbientSoundBySoundRef(unsigned int nSoundRef);
+    int TranslateIntoADSR(unsigned int nArg);
+    void PSoundLevelClear();
+    void PSoundStopDialog();
+    void UsageInit();
     void SetProposedReverbParams(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3, unsigned int p4);
     void SetMonoOut(bool bMono);
     void SetMainMusicRelVolume(unsigned int nVolume);
@@ -157,7 +166,8 @@ public:
     int m_unkB4;            // 0x0B4, SendStops clears it
     char _pad0B8[0x0C8 - 0x0B8];
     int m_unkC8;            // 0x0C8, SoundEditEnter sets 1, SoundEditLeave clears it
-    char _padCC[0x0D0 - 0x0CC];
+    char _padCC[0x0CF - 0x0CC];
+    char m_unkCF;           // 0x0CF, PSoundStopDialog clears it
     bool m_unkD0;           // 0x0D0, ErrorRecovery reads it before PSoundRestart
     char _pad0D1[0x0EC - 0x0D1];
     int m_unk0EC;           // 0x0EC
@@ -169,7 +179,8 @@ public:
     char _pad2E30[0x2E48 - 0x2E30];
     int m_unk2E48;          // 0x2E48, SoundEditLeave copies 0x2E4C here
     int m_unk2E4C;          // 0x2E4C, SoundEditLeave/Enter category mask
-    char _pad2E50[0x2EB4 - 0x2E50];
+    int m_unk2E50[4];       // 0x2E50, PSoundStopDialog zeroes 0x2E50..0x2E5C
+    char _pad2E60[0x2EB4 - 0x2E60];
     char m_unk2EB4[0x2580]; // 0x2EB4, 400 SpotInfo records of 0x18 bytes, GetSpotInfo scans them
     char _pad5434[0x5438 - 0x5434];
     unsigned int m_unk5438; // 0x5438, SetProposedReverbParams arg 0
