@@ -560,7 +560,7 @@ int Tinker::OnHitEvent(EntityBaseClass *pOther, int arg1, unsigned int arg2, uns
     }
     bool bFlag = (m_unk1B0 == 0 || m_unk1B0 == 1);
     if (bFlag) {
-        SetValue__12HudBossMeterFs(gInterface + 0x1980, (short)m_unk1B8);
+        SetValue__12HudBossMeterFs(gInterface + 0x270, (short)m_unk1B8);
     }
     if (m_unk1B8 > 0) {
         m_unk29C = nPrevState;
