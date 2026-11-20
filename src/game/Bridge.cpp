@@ -28,6 +28,23 @@ extern "C" float FastMath_Fabs__Ff(float fValue);
 extern "C" float sqrtf(float x);
 extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*arg0)[4], float (*arg1)[4]);
 extern "C" float atanf(float x);
+extern "C" void CheckVariable__15EntityBaseClassFii(void *pThis, int nVar, int nValue);
+extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
+extern "C" void PlaySequence__15EntityBaseClassFPUi(void *pThis, unsigned int *pSeq);
+extern "C" void PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
+extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, bool bA, bool bB);
+extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(unsigned int nId);
+extern "C" void GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(void *pThis, int nClass, void *pArray, float (*pPos)[4], float fRadius, int nArg, bool bA, bool bB);
+extern "C" float sceVu0InnerProduct(float *a, float *b);
+extern "C" int CreateTimer__8TimerAPIFUiUib(void *pThis, unsigned int nId, unsigned int nTime, bool bPal);
+extern "C" PMNode *IsPlayerOnNode__6PlayerFP9PMeshNodeb(void *pThis, PMeshNode *pMesh, bool bFlag);
+extern "C" int printf(const char *fmt, ...);
+extern "C" int RandomIntRange__7MathAPIFii(int nLo, int nHi);
+extern void *BridgeTable[2];
+extern void *mpEntMgr__15EntityBaseClass;
+extern unsigned char mTempArray__15EntityBaseClass[0x249C];
+extern unsigned char mTimerAPI__13EntityManager[40];
+extern unsigned char gEng[105360];
 
 // Placeholder for the object at Bridge+0x3C: only the three words copied by Render are placed.
 class BridgeSource {
