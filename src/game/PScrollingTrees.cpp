@@ -2,6 +2,10 @@
 #include "types.h"
 #include "PScrollingTrees.h"
 #include "PResourceManager.h"
+#include "PShader.h"
+#include "PGfxEngine.h"
+#include "PDisplayList.h"
+#include "PMat4.h"
 
 // TODO(header): foreign declarations
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
@@ -12,6 +16,47 @@ extern "C" void sceVu0CopyVector(float *pDst, float *pSrc);
 extern "C" void sceVu0UnitMatrix(void *pMat);
 extern PScrollingTreeIds lit_0024DDC0;
 extern PScrollingTreeQuad lit_0024DDE0;
+extern char gGfxEng[1504384];
+extern float gUnitMatrix[16];
+
+// DRAFT: 0x1FAC10 Render__15PScrollingTreesFv
+// note: 115 words; frame 0x90 vs 0x80; this in s7 vs s0; first-call args and gUnitMatrix load order; loop 1 offset reg s6 (addu s6,s7,s5). Tried: local class stubs, nCount removal, per-iter entry pointer (118), nTotal after first call (115, kept), this-derived loop 2 base (no change).
+int PScrollingTrees::Render() {
+    ((PGfxEngine *)gGfxEng)->SetWorldMatrix((PMat4 *)gUnitMatrix);
+    int nTotal = 0;
+    for (int i = 0; i < 3; i++) {
+        char *pRec = (char *)m_unk34[i].m_unk0;
+        if (pRec != 0) {
+            ((PShader *)*(void **)pRec)->Render(0x80, false, 0);
+            for (int j = 0; j < *(int *)(pRec + 8); j++) {
+                int nCount = *(int *)(pRec + 8);
+                int nSize = (j < nCount) ? *(int *)(*(char **)(pRec + 0xC) + j * 8) : 0;
+                void *pData = (j < nCount) ? *(void **)(*(char **)(pRec + 0xC) + j * 8 + 4) : 0;
+                ((PGfxEngine *)gGfxEng)->BeginStaticInstances(pData, nSize);
+                ((PDisplayList *)*(void **)(gGfxEng + 0x154C80))->DrawStaticInstances(
+                    (tagVuStaticInstance *)m_unk34[i].m_unk4, m_unk34[i].m_unk8, 0x28, 0, 1, true);
+            }
+            nTotal += *(int *)(pRec + 4) * m_unk34[i].m_unk8;
+        }
+    }
+    for (int k = 0; k < 8; k++) {
+        char *pBase = m_unk70 + k * 0xC0;
+        char *pRec = *(char **)pBase;
+        if (pRec != 0) {
+            ((PShader *)*(void **)pRec)->Render(0x80, false, 0);
+            for (int j = 0; j < *(int *)(pRec + 8); j++) {
+                int nCount = *(int *)(pRec + 8);
+                int nSize = (j < nCount) ? *(int *)(*(char **)(pRec + 0xC) + j * 8) : 0;
+                void *pData = (j < nCount) ? *(void **)(*(char **)(pRec + 0xC) + j * 8 + 4) : 0;
+                ((PGfxEngine *)gGfxEng)->BeginStaticInstances(pData, nSize);
+                ((PDisplayList *)*(void **)(gGfxEng + 0x154C80))->DrawStaticInstances(
+                    (tagVuStaticInstance *)(pBase + 0x10), *(int *)(pBase + 0xB0), 0x28, 0, 1, true);
+            }
+            nTotal += *(int *)(pRec + 4) * *(int *)(pBase + 0xB0);
+        }
+    }
+    return nTotal;
+}
 
 // DRAFT: 0x1FAE50 Animate__15PScrollingTreesFf
 // note: loop 2 base: original addiu v1+0x80 with 0x38 displacement, ours folds to v1+0xB8; 2 words.
