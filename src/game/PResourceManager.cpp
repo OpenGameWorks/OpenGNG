@@ -13,6 +13,12 @@ extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void *__ct__22PMeshNodeAnimDataTableFv(void *pThis);
 extern "C" int Load__22PMeshNodeAnimDataTableFP8PPakFile16ePsx2FileVersion(void *pThis, PPakFile *pFile, ePsx2FileVersion eVersion);
 extern "C" int printf(const char *pFmt, ...);
+extern "C" void *__ct__9PMeshNodeFQ29PResource11eResObjType(void *pThis, int eType);
+extern "C" int Load__9PMeshNodeFP8PPakFileP6PArray16ePsx2FileVersion(void *pThis, PPakFile *pFile, PArray *pArray, ePsx2FileVersion eVersion);
+extern "C" void *__ct__9PSkeletonFQ29PResource11eResObjType(void *pThis, int eType);
+extern "C" int Load__9PSkeletonFP8PPakFileP6PArray16ePsx2FileVersion(void *pThis, PPakFile *pFile, PArray *pArray, ePsx2FileVersion eVersion);
+extern int guGlobalShaderIDOffset;
+extern int guNumShadersInCurModel;
 class PMeshNodeAnimDataTable {
 public:
     virtual ~PMeshNodeAnimDataTable();
@@ -240,6 +246,80 @@ int PResourceManager::LoadAnimResTable(PPakFile *pFile, ePsx2FileVersion eVersio
             CdsAssert("PResourceManager.cpp", 0x225, "0");
             return 0;
         }
+    }
+    return 1;
+}
+
+// FUNCTION: 0x00154070 LoadMeshResTable__16PResourceManagerFP8PPakFileP6PArray16ePsx2FileVersionPQ216PResourceManager15tagResourceDataUi
+int PResourceManager::LoadMeshResTable(PPakFile *pFile, PArray *pArray, ePsx2FileVersion eVersion, tagResourceData *pData, unsigned int uId) {
+    unsigned int nCount;
+    if (pFile == 0) {
+        CdsAssert("PResourceManager.cpp", 0x143, "poFile");
+    }
+    if (pData == 0) {
+        CdsAssert("PResourceManager.cpp", 0x144, "pTheResData");
+    }
+    if (((PCDFile *)pFile)->Read(&nCount, 4) != 4) {
+        return 0;
+    }
+    pData->m_unk0 = nCount;
+    if (nCount == 0) {
+        pData->m_unk8 = 0;
+        pData->m_unk4 = 0;
+        return 1;
+    }
+    if (uId >= 0x20009) {
+        pData->m_unk8 = (unsigned int *)__nwa__FUi(nCount * 4);
+        if (pData->m_unk8 == 0) {
+            return 0;
+        }
+        if (((PCDFile *)pFile)->Read(pData->m_unk8, nCount * 4) != (int)(nCount * 4)) {
+            return 0;
+        }
+    }
+    pData->m_unk4 = (void **)__nwa__FUi(nCount * 4);
+    if (pData->m_unk4 == 0) {
+        return 0;
+    }
+    for (unsigned int i = 0; i < nCount; i++) {
+        int nType = 0;
+        if (((PCDFile *)pFile)->Read(&nType, 4) != 4) {
+            return 0;
+        }
+        if (nType == 1) {
+            void *p = __nw__FUi(0x140);
+            if (p != 0) {
+                p = __ct__9PMeshNodeFQ29PResource11eResObjType(p, 1);
+            }
+            if (p == 0) {
+                return 0;
+            }
+            if (!Load__9PMeshNodeFP8PPakFileP6PArray16ePsx2FileVersion(p, pFile, pArray, eVersion)) {
+                printf("\n**** Error loading mesh resource! Index = %d **** \n", i);
+                delete (PMeshNodeAnimDataTable *)p;
+                return 0;
+            }
+            pData->m_unk4[i] = p;
+        } else if (nType == 6) {
+            void *p = __nw__FUi(0x160);
+            if (p != 0) {
+                p = __ct__9PSkeletonFQ29PResource11eResObjType(p, 2);
+            }
+            if (p == 0) {
+                return 0;
+            }
+            if (!Load__9PSkeletonFP8PPakFileP6PArray16ePsx2FileVersion(p, pFile, pArray, eVersion)) {
+                printf("\n**** Error loading mesh resource! Index = %d **** \n", i);
+                delete (PMeshNodeAnimDataTable *)p;
+                return 0;
+            }
+            pData->m_unk4[i] = p;
+        } else {
+            CdsAssert("PResourceManager.cpp", 0x1A7, "0");
+            return 0;
+        }
+        guGlobalShaderIDOffset += guNumShadersInCurModel;
+        guNumShadersInCurModel = 0;
     }
     return 1;
 }

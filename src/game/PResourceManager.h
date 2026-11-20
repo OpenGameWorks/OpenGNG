@@ -23,7 +23,7 @@ public:
 
     struct tagResourceData {
         int m_unk0;
-        char _pad004[0x4];
+        void **m_unk4;
         unsigned int *m_unk8;
         int m_unkC;
         void **m_unk10;
@@ -55,6 +55,7 @@ public:
     int LoadShadowVolumeTable(PPakFile *pFile, tagResourceData *pData, unsigned int uId);
     int LoadInstanceMeshTable(PPakFile *pFile, tagResourceData *pData, PArray *pArray, ePsx2FileVersion eVersion, unsigned int uId);
     int LoadAnimResTable(PPakFile *pFile, ePsx2FileVersion eVersion, tagResourceData *pData, unsigned int uId);
+    int LoadMeshResTable(PPakFile *pFile, PArray *pArray, ePsx2FileVersion eVersion, tagResourceData *pData, unsigned int uId);
     int LoadTextureResTable(PPakFile *pFile, PArray *pArray, tagResourceData *pData, unsigned int uId);
     int LoadFxResTable(PPakFile *pFile, PArray *pArray, tagResourceData *pData, unsigned int uId);
     int GetNumResourcesOfType(eResourceTypes eType, bool bLocal);
