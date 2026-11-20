@@ -89,21 +89,20 @@ int PCDFile::ErrorCheck() {
     return 1;
 }
 
-// DRAFT: 0x0012C060 ReadData__7PCDFileFi
-// note: 1 word differs: flag = 1 is daddiu, original addiu; while-retry loop, bool flag (74 words) and goto variants tried, int is closest.
+// FUNCTION: 0x0012C060 ReadData__7PCDFileFi
 int PCDFile::ReadData(int arg0) {
-    int flag;
+    bool flag;
 
     m_unk10054 = 0;
     do {
-        flag = 0;
+        flag = false;
         while (sceCdRead(*(unsigned int *)((char *)this + 0x10040 + arg0 * 4),
                          *(unsigned int *)((char *)this + 0x10048 + arg0 * 4),
                          *(void **)((char *)this + 0x10024 + arg0 * 4),
                          &m_unk1002C) != 1) {
-            if (flag == 0) {
+            if (!flag) {
                 printf("The precache operation failed %d\n", arg0);
-                flag = 1;
+                flag = true;
             }
             ErrorCheck();
             gInterface.LoadingDisplay(m_unk10050++, m_unk10054);
