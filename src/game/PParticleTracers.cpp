@@ -62,7 +62,7 @@ void PParticleTracers::ComputeTracerAxes() {
 }
 
 // DRAFT: 0x00203550 InitTracers__16PParticleTracersFv
-// note: 124 words differ. The lqc2/vsub/vmul/vadd/sqc2 VU0 block is written as scalar math; frame is 0x60 vs 0x40 (extra saved regs). Tried: local seed pointer, direct this-cast seed (both 124).
+// note: 105 words differ. VU0 block is asm over pT/pA/pB and matches the original ops. Remaining diff: frame 0x60 vs 0x40 and `this` copied to s4 with a 0xD0 pointer in s3, because the compiler strength-reduces i<<5 into a running offset (s2). Tried: m_unkD0 member seed (106), i*32 (106), while loop (106), local loop bound n (115), local seed pointer (124).
 void PParticleTracers::InitTracers() {
     for (int i = 0; i < m_unk120; i++) {
         float *pT = (float *)((char *)m_unk174 + (i << 5));
@@ -76,9 +76,22 @@ void PParticleTracers::InitTracers() {
         *(int *)((char *)this + 0xD0) = *(int *)((char *)this + 0xD0) * 0x343FD + 0x269EC3;
         pT[2] = (float)((*(int *)((char *)this + 0xD0) >> 16) & 0x7FFF);
         sceVu0ScaleVectorXYZ(pT, pT, 0.000030517578f);
-        pT[0] = ((m_unk100[0] + m_unk100[0]) * pT[0] - m_unk100[0]) + m_unk160[0];
-        pT[1] = ((m_unk100[1] + m_unk100[1]) * pT[1] - m_unk100[1]) + m_unk160[1];
-        pT[2] = ((m_unk100[2] + m_unk100[2]) * pT[2] - m_unk100[2]) + m_unk160[2];
+        {
+            float *pA = m_unk100;
+            float *pB = m_unk160;
+            asm {
+                lqc2 vf1, 0x0(pT)
+                lqc2 vf2, 0x0(pA)
+                lqc2 vf3, 0x0(pB)
+                vsub.xyz vf4, vf2, vf2
+                vsub.xyz vf4, vf4, vf2
+                vsub.xyz vf5, vf2, vf4
+                vmul.xyz vf6, vf5, vf1
+                vadd.xyz vf7, vf6, vf4
+                vadd.xyz vf1, vf7, vf3
+                sqc2 vf1, 0x0(pT)
+            }
+        }
         *(int *)((char *)this + 0xD0) = *(int *)((char *)this + 0xD0) * 0x343FD + 0x269EC3;
         pT[3] = 0.0f + ((m_unk170 - 0.0f) * (0.000030517578f * (float)((*(int *)((char *)this + 0xD0) >> 16) & 0x7FFF)));
         *(u_long128 *)(pT + 4) = *(u_long128 *)m_unkF0;
