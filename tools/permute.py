@@ -23,18 +23,23 @@ unless that rerun matches.
 
 from __future__ import annotations
 
+import sys
+
+# tools/ stays off sys.path: tools/queue.py would shadow the stdlib queue module
+# that ThreadPoolExecutor imports. A plain `python tools/permute.py` puts the
+# script's directory first, so drop it before any import that reaches `queue`.
+if sys.path and sys.path[0].rstrip("/").endswith("tools"):
+    sys.path.pop(0)
+
 import argparse
 import random
 import re
 import subprocess
-import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-# tools/ stays off sys.path: tools/queue.py would shadow the stdlib queue module
-# that ThreadPoolExecutor imports.
 OUT = ROOT / "build/permuter"
 DIFF = re.compile(r"(?:DIFF (\d+) words|(MATCH))\s*$")
 
