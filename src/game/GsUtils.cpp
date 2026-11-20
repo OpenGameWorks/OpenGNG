@@ -42,6 +42,15 @@ extern int guGrabFrameNumber;
 extern int SCREEN_WIDTH;
 extern u_long128 *gpFrameGrabBuf1;
 extern u_long128 *gpFrameGrabBuf2;
+extern "C" void sceVif1PkInit(void *pPk, void *pBuf);
+extern "C" void sceVif1PkReset(void *pPk);
+extern "C" void sceVif1PkAddCode(void *pPk, unsigned int nCode);
+extern "C" void sceVif1PkAddGsData(void *pPk, unsigned long long nData);
+extern "C" void sceVif1PkTerminate(void *pPk);
+extern "C" void FlushCache(int nOp);
+extern "C" void exit(int nCode);
+extern "C" int sceGsGetIMR(void);
+extern "C" int sceGsPutIMR(int nVal);
 
 // FUNCTION: 0x0017D750 GsInitClut256__FP12tagGsClut256
 void GsInitClut256(tagGsClut256 *pClut) {
@@ -197,6 +206,88 @@ void GsClearVRAM(unsigned char nR, unsigned char nG, unsigned char nB, unsigned 
     tag.m_unkC = 0;
     DmaSendSrcChain(2, &tag, false, false, true);
     sceGsSyncPath(0, 0);
+}
+
+// DRAFT: 0x0017DE30 Vif1DmaFrameBuffer__FP1sssssss
+// note: 105 differing words, size 0x458 vs 0x450; nQwc>=0x8000 compare uses v0 not at, hardware-address base reloaded per store (lui v1); variants tried: switch, if-chain, shift folded, volatile MMIO, base+offset MMIO
+void Vif1DmaFrameBuffer(u_long128 *pBuf, short nA, short nB, short nC, short nD, short nE, short nF, short nG) {
+    static u_long128 enable_path3;
+    char spA0[0x20];
+    u_long128 spC0[0xA];
+    int nQwc;
+    int nLoop;
+    int nIMR;
+
+    if (nB == 0) {
+        nQwc = (((int)nE * (int)nF) << 5) >> 7;
+    } else if (nB == 1) {
+        nQwc = ((int)nE * (int)nF * 0x18) >> 7;
+    } else if (nB == 2) {
+        nQwc = ((int)nE * (int)nF * 0x10) >> 7;
+    } else if (nB == 19) {
+        nQwc = ((int)nE * (int)nF * 8) >> 7;
+    } else {
+        nQwc = ((int)nE * (int)nF * 4) >> 7;
+    }
+    if (nQwc >= 0x8000) {
+        printf("ERROR: Texture QWC is greater then NLOOP! line:(%d), file:(%s)\n", 0x463, "GsUtils.cpp");
+        exit(0);
+    }
+    nLoop = nG >> 6;
+    if (nLoop <= 0) {
+        nLoop = 1;
+    }
+    sceVif1PkInit(spA0, spC0);
+    sceVif1PkReset(spA0);
+    sceVif1PkAddCode(spA0, 0);
+    sceVif1PkAddCode(spA0, 0x06008000);
+    sceVif1PkAddCode(spA0, 0x13000000);
+    sceVif1PkAddCode(spA0, 0x50000006);
+    sceVif1PkAddGsData(spA0, 0x8005ULL | (0x10000000ULL << 32));
+    sceVif1PkAddGsData(spA0, 0xE);
+    sceVif1PkAddGsData(spA0, ((long long)nB << 24) | ((long long)nA | ((long long)nLoop << 16)));
+    sceVif1PkAddGsData(spA0, 0x50);
+    sceVif1PkAddGsData(spA0, (long long)nC | ((long long)nD << 16));
+    sceVif1PkAddGsData(spA0, 0x51);
+    sceVif1PkAddGsData(spA0, (long long)nE | ((long long)nF << 32));
+    sceVif1PkAddGsData(spA0, 0x52);
+    sceVif1PkAddGsData(spA0, 0);
+    sceVif1PkAddGsData(spA0, 0x61);
+    sceVif1PkAddGsData(spA0, 1);
+    sceVif1PkAddGsData(spA0, 0x53);
+    sceVif1PkTerminate(spA0);
+    nIMR = sceGsPutIMR(sceGsGetIMR() | 0x200);
+    *(volatile unsigned long long *)0x12001000 = 2;
+    FlushCache(0);
+    *(volatile unsigned int *)0x10009020 = 7;
+    *(volatile unsigned int *)0x10009010 = *(unsigned int *)&spA0[4] & 0x0FFFFFFF;
+    asm { sync }
+    *(volatile unsigned int *)0x10009000 = 0x101;
+    while (*(volatile unsigned int *)0x10009000 & 0x100) {
+    }
+    printf(" 5 GS registers set\n");
+    while (!(*(volatile unsigned long long *)0x12001000 & 2)) {
+    }
+    printf(" Finish event complete\n");
+    *(volatile unsigned int *)0x10003C00 = 0x800000;
+    *(volatile unsigned long long *)0x12001040 = 1;
+    asm { sync }
+    printf(" Changed VIF1 and GS direction complete\n");
+    FlushCache(0);
+    *(volatile unsigned int *)0x10009020 = nQwc;
+    *(volatile unsigned int *)0x10009010 = (unsigned int)pBuf & 0x0FFFFFFF;
+    asm { sync }
+    *(volatile unsigned int *)0x10009000 = 0x100;
+    while (*(volatile unsigned int *)0x10009000 & 0x100) {
+    }
+    printf(" Transferred:(%d) QW from GS -> MEM complete\n", nQwc);
+    *(volatile unsigned int *)0x10003C00 = 0;
+    *(volatile unsigned long long *)0x12001040 = 0;
+    sceGsPutIMR(nIMR);
+    *(volatile unsigned long long *)0x12001000 = 2;
+    printf(" Restore VIF1 and GS direction complete\n");
+    *(volatile u_long128 *)0x10005000 = enable_path3;
+    printf(" Restore PATH3 direction complete\n");
 }
 
 // FUNCTION: 0x0017E280 FudgeBytesToBMPFormat__FPciiff
