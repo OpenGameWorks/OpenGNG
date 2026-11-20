@@ -4,6 +4,7 @@
 #include "types.h"
 
 class PMesh;
+class PFrustrum;
 class PStaticInstanceGroup;
 
 // Space partition tree node. Mesh pointer at 0x00, flag at 0x04, four child
@@ -13,10 +14,12 @@ class PStaticInstanceGroup;
 class PSpacePartitionNode {
 public:
     PSpacePartitionNode();
+    ~PSpacePartitionNode();
     int CountNodes();
     void RecurseSetSTAnimOptions(bool bFlag);
     void Animate(float fDelta);
     int RenderStaticInstances();
+    int TestNodeWithFrustrum(PFrustrum *poFrustrum, PSpacePartitionNode **ppNodes, unsigned int &nNode);
 
     PMesh *m_pMesh;
     int m_unk4;
