@@ -37,6 +37,7 @@ public:
     void PlaySound(unsigned int arg0);
     void ResetCollisions();
     void Animate(int arg0, float arg1);
+    void StopSoundBySoundRef(unsigned int arg0);
 };
 class PAnim;
 class PGrimReaperCape {
@@ -102,21 +103,50 @@ public:
     virtual void Slot10(float arg0);
     virtual void Slot14();
     virtual void Animate(float arg0, float arg1, PMat4 *arg2, int arg3, bool arg4);
+    virtual void Slot1C(int arg0);
     char _pad04[0x0C];
     void *m_unk10;
     char _pad14[0x24 - 0x14];
     AnimStateObject *m_unk24;
     char _pad28[0x3E - 0x28];
     unsigned char m_unk3E;
+    signed char m_unk3F;
     void SetRenderPassStatus(bool bA, bool bB, bool bC, bool bD);
     void *GetFirstMesh();
     void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
     void EnableFx(bool arg0, bool arg1);
+    void EnableAnim(bool arg0, bool arg1);
     void SetAnimLoopCount(int arg0, bool arg1);
     float GetFrameTime();
     PMNode *FindAnimNode(unsigned int arg0);
     int Find(PMNode *arg0);
     PMNode *Find(unsigned int arg0);
+};
+class GunTurret {
+public:
+    virtual ~GunTurret();
+    virtual void Slot0C();
+    virtual void Slot10();
+    virtual void Slot14();
+    virtual void Slot18();
+    virtual void Slot1C();
+    virtual void Slot20();
+    virtual void Slot24();
+    virtual void Slot28();
+    virtual void Slot2C();
+    virtual void Slot30();
+    virtual void Slot34();
+    virtual void Slot38();
+    virtual void Slot3C();
+    virtual void Slot40();
+    virtual void Slot44();
+    virtual void Slot48();
+    virtual void Slot4C();
+    virtual void Slot50();
+    virtual void Slot54();
+    virtual void Slot58(Player *arg0, int arg1, int arg2, int arg3);
+    void SetGunParams(signed char arg0, bool arg1);
+    void SetPlayerLeftDeck();
 };
 class FreeJoint {
 public:
@@ -149,10 +179,22 @@ public:
     void FadeOutAllMusic(unsigned int arg0);
 };
 extern PSound gSound;
+class EffectNode {
+public:
+    char _pad000[4];
+    int m_unk4;
+};
+class Projectile {
+public:
+    void Delete();
+};
 class EffectAPI {
 public:
     char _pad000[20];
     int CreateOneshot(unsigned int, unsigned int, float (*)[4], float (*)[4], EntityBaseClass *, float, bool, int, bool);
+    EffectNode *EffectValid(unsigned int arg0);
+    void DeleteEffect(EffectNode *arg0);
+    void DeleteEffect(unsigned int arg0);
 };
 extern EffectAPI mEffectAPI__13EntityManager;
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
@@ -170,6 +212,7 @@ extern float AttachedTimer[5];
 class MathAPI {
 public:
     static int RandomIntRange(int arg0, int arg1);
+    static void GetForwardVector(EntityBaseClass *arg0, float (&arg1)[4]);
 };
 struct AttachableJoint {
     int m_unk00;
@@ -402,6 +445,32 @@ void Player::PumpkinGrabMove() {
     if (ReleaseCheck() != 0) {
         m_unk1C4 = ((Physics *)m_unk38)->m_unk11C;
         SetAction(0x78);
+    }
+}
+
+// FUNCTION: 0x00159EC0 AdjustPositionOfAttacker__6PlayerFP15EntityBaseClassP15EntityBaseClassfff
+void Player::AdjustPositionOfAttacker(EntityBaseClass *arg0, EntityBaseClass *arg1, float arg2, float arg3, float arg4) {
+    float sp40[4];
+    float sp50[4];
+    float sp60[4];
+    float *s0 = (float *)(*(char **)((char *)arg0 + 0x3C) + 0x40);
+    MathAPI::GetForwardVector(arg1, sp50);
+    sceVu0ScaleVector(sp50, sp50, -1.0f);
+    sceVu0ScaleVector(sp40, sp50, arg2);
+    sceVu0AddVector(sp40, sp40, s0 + 0xC);
+    if (arg4 != 0.0f) {
+        sceVu0ScaleVector(sp60, s0, arg4);
+        sceVu0AddVector(sp40, sp40, sp60);
+    }
+    if (arg3 != 0.0f) {
+        sp40[1] += arg3;
+    }
+    char *obj = *(char **)((char *)arg1 + 0x3C);
+    if (obj != 0) {
+        *(u_long128 *)(obj + 0x80) = *(u_long128 *)sp40;
+        *(unsigned char *)(obj + 0x3E) |= 8;
+    } else {
+        *(u_long128 *)((char *)arg1 + 0x190) = *(u_long128 *)sp40;
     }
 }
 
@@ -727,6 +796,71 @@ void Player::DieMove() {
     }
 }
 
+// DRAFT: 0x0015B5C0 GunDeckMove__6PlayerFv
+// note: DIFF 32 words; original hoists first-arg moves into beqz delay slots (ours nop), and ours sign-extends m_unk3F (dsll32/dsra32). Tried !(m_unk3F&7) (32), local fx ptr (32), int local for m_unk3F (45).
+void Player::GunDeckMove() {
+    PMNode *s0 = (PMNode *)m_unk3C;
+    switch (m_unk250) {
+    case 0:
+        m_unk250 = 1;
+        m_unk330->Slot58(this, 0, 0x1FB, 0);
+        if (m_unk288 != 0) {
+            ((PMNode *)m_unk288)->EnableFx(false, true);
+        }
+        s0->EnableAnim(false, false);
+    case 1:
+        if (m_unk1B2 & 0x4000) {
+            SetAction(3);
+            m_unk330->SetPlayerLeftDeck();
+            m_unk330 = 0;
+            return;
+        }
+        {
+            bool s1 = (m_unk1B0 & 0x8000) != 0;
+            m_unk330->SetGunParams(m_unk1B4, s1);
+            if (s1 && (s0->m_unk3F & 7) == 0) {
+                s0->Slot1C(0);
+            }
+        }
+        return;
+    default:
+        return;
+    }
+}
+
+// FUNCTION: 0x0015BF70 InitCutScene__6PlayerFv
+void Player::InitCutScene() {
+    if (m_unk229 > 3) {
+        SetMaximo(MaximoArmor[m_unk1DC], true);
+    }
+    ResetEye(false);
+    ResetShield();
+    if (m_unk2AC != 0) {
+        EffectNode *e = mEffectAPI__13EntityManager.EffectValid(m_unk2AC);
+        if (e != 0) {
+            ((PMNode *)e->m_unk4)->ProcessFxTriggers(-1.0f, 0, true, false);
+            mEffectAPI__13EntityManager.DeleteEffect(e);
+        }
+        m_unk2AC = 0;
+        if (m_unk2B4 != 0) {
+            ((EntityBaseClass *)this)->StopSoundBySoundRef(m_unk2B4);
+            m_unk2B4 = 0;
+        }
+    }
+    if (m_unk2A8 != 0) {
+        mEffectAPI__13EntityManager.DeleteEffect(m_unk2A8);
+        m_unk2A8 = 0;
+    }
+    if (m_unk2B0 != 0) {
+        Projectile *p = (Projectile *)GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk2B0);
+        if (p != 0) {
+            p->Delete();
+        }
+        m_unk2B0 = 0;
+    }
+    ReleaseHeadCamera();
+}
+
 // FUNCTION: 0x0015C090 ResetShield__6PlayerFv
 void Player::ResetShield() {
     if (m_unk2A4 != 0) {
@@ -860,6 +994,31 @@ void Player::SpinSlashMove() {
             ((EntityBaseClass *)this)->PlaySound(0x2AU);
         }
         break;
+    }
+}
+
+// DRAFT: 0x0015CC30 CSliceMove__6PlayerFv
+// note: DIFF 4 words, the ComboTarget float constants: original builds 100.0f into $v1 first and -1.0f second; tried locals in both orders, direct literals, and a nested tail, all still build -1.0f first
+void Player::CSliceMove() {
+    if (m_unk250 == 0) {
+        m_unk250 = 1;
+        if (m_unk1FC == 1) {
+            m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(0x81000324U, 0x82000556U, 0, 0, (EntityBaseClass *)this, m_unk24C, false, 0, false);
+        }
+    }
+    int t = (int)m_unk3C[13];
+    if (t >= 0x28) {
+        if (CancelAttack(0x30) != 0) {
+            return;
+        }
+    } else if (t != 0 && (m_unk1B2 & 0x8000)) {
+        m_unk250 |= 4;
+    }
+    if (m_unk250 & 4) {
+        if (t >= 0x20) {
+            ComboTarget(-1.0f, 100.0f, true);
+            SetAction(0x74);
+        }
     }
 }
 
@@ -1152,6 +1311,35 @@ void Player::GrimSliceMove() {
 void Player::GrimSlash2Move() {
     if ((int)m_unk3C[13] >= 0x32) {
         CancelAttack(0x30);
+    }
+}
+
+// DRAFT: 0x0015E9B0 GrimSlashMove__6PlayerFv
+// note: DIFF 26 words; switch form with `lo = t < 0x19` hoisted: original keeps lo in v1 (ours in a3), and case-2 branch target and case-0 store order differ; if-chain form gave DIFF 54
+void Player::GrimSlashMove() {
+    int t = (int)m_unk3C[13];
+    if (t >= 0x28) {
+        CancelAttack(0x30);
+        return;
+    }
+    int lo = t < 0x19;
+    switch (m_unk250) {
+    case 0:
+        m_unk250 = 1;
+        mEffectAPI__13EntityManager.CreateOneshot(0x810002DCU, 0x820004C8U, 0, 0, (EntityBaseClass *)this, 1.0f, false, 0, false);
+        return;
+    case 1:
+        if (!(t >= 0xE && (m_unk1B2 & 0x8000))) {
+            return;
+        }
+        m_unk250 = 2;
+        lo = t < 0x19;
+    case 2:
+        if (lo == 0) {
+            ComboTarget(-1.0f, 100.0f, true);
+            SetAction(0x27);
+        }
+        return;
     }
 }
 

@@ -9,6 +9,7 @@ class FontNode;
 class PMNode;
 class PMeshNode;
 class EntityBaseClass;
+class GunTurret;
 
 class Player {
 public:
@@ -22,6 +23,7 @@ public:
     int ReleaseCheck();
     void PumpkinGrabMove();
     void AdjustPosition(EntityBaseClass *arg0, EntityBaseClass *arg1, float arg2, float arg3, float arg4);
+    void AdjustPositionOfAttacker(EntityBaseClass *arg0, EntityBaseClass *arg1, float arg2, float arg3, float arg4);
     void ResurrectionMove();
     void UnlockGateMove();
     void AlignPosition(EntityBaseClass *arg0);
@@ -46,6 +48,7 @@ public:
     int CancelAttack(unsigned int arg0);
     void CancelMove();
     void GrimSlash2Move();
+    void GrimSlashMove();
     void GrimAirSlashMove();
     void GrimIdleMove();
     void GrimMove();
@@ -55,6 +58,7 @@ public:
     void HammerSliceMove();
     void ResetPling();
     void ResetShield();
+    void InitCutScene();
     void SetFlyingShield(Shield *arg0);
     void SetShield(bool arg0);
     void SetShockwave(int arg0);
@@ -86,6 +90,7 @@ public:
     void GetKeyMove();
     void CatchIdleMove();
     void SetHeadCamera(bool arg0);
+    void ReleaseHeadCamera();
     void UpdateKey();
     void CatchLedgeMove();
     void OpenChestMove();
@@ -107,7 +112,9 @@ public:
     void MBlow2Move();
     void SpinSlashMove();
     void Spin360Move();
+    void CSliceMove();
     void SliceMove();
+    void GunDeckMove();
     int GuardCheck(EntityBaseClass *arg0);
 
     char _pad000[0x20];
@@ -178,7 +185,10 @@ public:
     char _pad290[0x2A4 - 0x290];
     Shield *m_unk2A4;       // 0x2A4 shield object, DeleteShield'd by ResetShield
     int m_unk2A8;           // 0x2A8 effect id stored by Over3Move from CreateOneshot
-    char _pad2AC[0x2C0 - 0x2AC];
+    unsigned int m_unk2AC;  // 0x2AC effect id, EffectValid and DeleteEffect by InitCutScene
+    unsigned int m_unk2B0;  // 0x2B0 apparition id, GetPtrToApparition and Projectile::Delete by InitCutScene
+    unsigned int m_unk2B4;  // 0x2B4 sound ref, StopSoundBySoundRef by InitCutScene
+    char _pad2B8[0x2C0 - 0x2B8];
     unsigned int m_unk2C0;  // 0x2C0 apparition id passed to GetPtrToApparition by ReleaseCheck
     int m_unk2C4;           // 0x2C4 hit counter, incremented and passed to OnHitEvent by ReleaseCheck
     int m_unk2C8;           // 0x2C8 countdown, reset to CAUGHT_TIME by ReleaseCheck
@@ -193,7 +203,8 @@ public:
     int m_unk324;           // 0x324
     int m_unk328;           // 0x328 apparition id passed to GetPtrToApparition by OpenChestMove
     PlingEffect *m_unk32C;  // 0x32C pling effect object, Slot00(1) called by ResetPling
-    char _pad330[0x335 - 0x330];
+    GunTurret *m_unk330;    // 0x330 gun turret object, Slot58 and SetGunParams called by GunDeckMove
+    char _pad334[0x335 - 0x334];
     signed char m_unk335;   // 0x335 flag, tested by SetPowerupMotion
     char _pad336[0x337 - 0x336];
     signed char m_unk337;   // 0x337 treasure proximity level (1 near, 2 far), set by NotifyTreasure
