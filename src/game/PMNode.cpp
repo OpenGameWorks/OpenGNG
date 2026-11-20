@@ -100,7 +100,7 @@ public:
     virtual ~PParticleSystem();
     virtual void Slot1();
     virtual void Slot2();
-    virtual void Slot3();
+    virtual void Slot3(PMat4 *pMat);
     virtual void Slot4();
     virtual void Slot5(bool bFlag);
     virtual void Slot6();
@@ -113,6 +113,8 @@ public:
 class PParticleManager {
 public:
     int IsValid(PParticleSystem *pSystem);
+    PParticleSystem *Create(unsigned int uID, float fA, float fB, float fC, PMNode *pNode, bool bFlag);
+    void Stop(unsigned int uID);
     void Destroy(unsigned int uID);
 };
 // PSound size is unknown; the placeholder member only keeps gSound out of small data (threshold 8 bytes).
@@ -438,6 +440,137 @@ int PMNode::Render(PLightManager *pLM, int nArg1, int nArg2) {
         }
     }
     return 0;
+}
+
+// DRAFT: 0x00191E00 ProcessFxTriggers__6PMNodeFfP5PMat4bb
+// note: size 0x6d4 vs 0x71c, frame 0xC0 vs 0xD0; original asserts on a constant address (s4), not pMgr; 424 words differ; ternary assert form tried, same count.
+void PMNode::ProcessFxTriggers(float fTime, PMat4 *pMat, bool bA, bool bB) {
+    PParticleManager *pMgr = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
+    ((pMgr != 0) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0x82D, "apParticleMgr"));
+    if (fTime != 0.0f && fTime == m_unk38) {
+        if (bB) {
+            unsigned int nCount = m_unkD8;
+            unsigned int i = 0;
+            if (nCount != 0) {
+                do {
+                    tagParticleFxTrigger *pTrig = (i < m_unkD8) ? m_unkE0[i] : 0;
+                    if (pTrig != 0) {
+                        PParticleSystem *pSys = (PParticleSystem *)pTrig->m_unk20;
+                        if (pMat != 0) {
+                            if (pSys != 0 && pMgr->IsValid(pSys) != 0) {
+                                pSys->Slot3(pMat);
+                            }
+                        } else {
+                            if (pSys != 0 && pMgr->IsValid(pSys) != 0) {
+                                pSys->Slot3((PMat4 *)m_unk40);
+                            }
+                        }
+                    }
+                    i++;
+                } while (i < nCount);
+            }
+        }
+        if (bA) {
+            m_unk18 = 0;
+            PMNode *pChild = (m_unk14 != 0) ? m_unk1C[0] : 0;
+            if (pChild != 0) {
+                do {
+                    pChild->ProcessFxTriggers(fTime, pMat, bA, bB);
+                    unsigned int uNext = m_unk18 + 1;
+                    m_unk18 = uNext;
+                    pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+                } while (pChild != 0);
+            }
+        }
+        return;
+    }
+    unsigned int nCount = m_unkD8;
+    unsigned int i = 0;
+    if (nCount != 0) {
+        do {
+            tagParticleFxTrigger *pTrig = (i < m_unkD8) ? m_unkE0[i] : 0;
+            if (pTrig != 0) {
+                float fStart = *(float *)&pTrig->m_unk10;
+                bool bStartHit;
+                if (fStart != -2.0f && fStart != -1.0f) {
+                    bStartHit = !(fTime < fStart);
+                } else {
+                    bStartHit = (fTime == fStart);
+                }
+                if (pMgr->IsValid((PParticleSystem *)pTrig->m_unk20) == 0) {
+                    pTrig->m_unk20 = 0;
+                }
+                PParticleSystem *pSys = (PParticleSystem *)pTrig->m_unk20;
+                if (pSys == 0 && bStartHit) {
+                    pTrig->m_unk20 = (unsigned int)pMgr->Create(pTrig->m_unk00, *(float *)&pTrig->m_unk04,
+                                                                *(float *)&pTrig->m_unk08, *(float *)&pTrig->m_unk0C, this, true);
+                    if (pMat != 0) {
+                        pSys = (PParticleSystem *)pTrig->m_unk20;
+                        if (pSys != 0 && pMgr->IsValid(pSys) != 0) {
+                            pSys->Slot3(pMat);
+                        }
+                    } else {
+                        pSys = (PParticleSystem *)pTrig->m_unk20;
+                        if (pSys != 0 && pMgr->IsValid(pSys) != 0) {
+                            pSys->Slot3((PMat4 *)m_unk40);
+                        }
+                    }
+                    pTrig->m_unk24 &= ~1U;
+                    pTrig->m_unk24 &= ~2U;
+                } else if (pMat != 0 && pSys != 0 && pMgr->IsValid(pSys) != 0) {
+                    pSys->Slot3(pMat);
+                }
+                float fEnd = *(float *)&pTrig->m_unk14;
+                bool bEndHit;
+                if (fEnd != -2.0f && fEnd != -1.0f) {
+                    bEndHit = !(fTime < fEnd);
+                } else {
+                    bEndHit = (fTime == fEnd);
+                }
+                if (bEndHit && !(pTrig->m_unk24 & 1)) {
+                    pSys = (PParticleSystem *)pTrig->m_unk20;
+                    if (pSys != 0 && pMgr->IsValid(pSys) != 0) {
+                        pSys->Slot6();
+                    }
+                    pTrig->m_unk24 |= 1;
+                } else if ((fTime < fEnd) || (fTime == 0.0f && fTime != m_unk38)) {
+                    pTrig->m_unk24 &= ~1U;
+                }
+                float fStop = *(float *)&pTrig->m_unk18;
+                bool bStopHit;
+                if (fStop != -2.0f && fStop != -1.0f) {
+                    bStopHit = !(fTime < fStop);
+                } else {
+                    bStopHit = (fTime == fStop);
+                }
+                if (bStopHit && !(pTrig->m_unk24 & 2)) {
+                    pMgr->Stop((unsigned int)pTrig->m_unk20);
+                    pTrig->m_unk24 |= 2;
+                } else if ((fTime < fStop) || (fTime == 0.0f && fTime != m_unk38)) {
+                    pTrig->m_unk24 &= ~2U;
+                }
+                if (fTime == -1.0f) {
+                    pMgr->Destroy((unsigned int)pTrig->m_unk20);
+                    pTrig->m_unk20 = 0;
+                    pTrig->m_unk24 |= 1;
+                    pTrig->m_unk24 |= 2;
+                }
+            }
+            i++;
+        } while (i < nCount);
+    }
+    if (bA) {
+        m_unk18 = 0;
+        PMNode *pChild = (m_unk14 != 0) ? m_unk1C[0] : 0;
+        if (pChild != 0) {
+            do {
+                pChild->ProcessFxTriggers(fTime, pMat, bA, bB);
+                unsigned int uNext = m_unk18 + 1;
+                m_unk18 = uNext;
+                pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+            } while (pChild != 0);
+        }
+    }
 }
 
 // DRAFT: 0x00192520 DestroyFxTriggersBySpawnFrame__6PMNodeFfb
