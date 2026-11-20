@@ -33,6 +33,7 @@ public:
     PParticleElectricity();
     int Create(tagParticleElectricityParams *pParams, float fA, float fB, float fC);
     void SetPosition(float *pFrom, float *pTo);
+    void Animate(float fA);
     void Render();
     void CreateBranch(tagElectricityBranch *pBranch);
     void SetupGlowParticles(tagElectricityBranch *pBranch);

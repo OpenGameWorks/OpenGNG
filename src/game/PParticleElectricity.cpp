@@ -16,6 +16,7 @@ extern "C" float sqrtf(float x);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void memcpy(void *pDst, const void *pSrc, unsigned int nSize);
+extern "C" int rand();
 extern char gGfxEng[1504384];
 struct tagVuFxLine;
 struct tagVuParticle;
@@ -222,6 +223,63 @@ void PParticleElectricity::SetPosition(float *pFrom, float *pTo) {
     m_unk94 = m_unk124 * 0.5f;
     m_unk98 = m_unk124 * 0.5f;
     m_unk9C = sqrtf(m_unk90 * m_unk90 + m_unk94 * m_unk94 + m_unk98 * m_unk98);
+}
+
+// DRAFT: 0x001F4E40 Animate__20PParticleElectricityFf
+// note: 236 words, size 0x378 vs 0x3E8; loop shape and reloads differ; tried early-return restructure, m_unk34 clamp flip, per-access buffer reloads (238), none below 236
+void PParticleElectricity::Animate(float fA) {
+    if (m_unk15 != 0) {
+        if (m_unk16 != 0) {
+            return;
+        }
+        if (m_unk18 == 0 || m_unk17 != 0) {
+            m_unk15 = 0;
+            m_unk16 = m_unk17;
+        }
+        if (fA != 0.0f) {
+            m_unk18C -= 1;
+            if (m_unk18C <= 0) {
+                m_unk184 = (int)(0.5f + (12345.0f + (41976.0f * ((float)rand() / 2.1474836e9f))));
+                m_unk18C = 2;
+            }
+        }
+        m_unkD0 = m_unk184;
+        sceVu0CopyVector(&((tagElectricityBranch *)m_unkE0)->m_unk10, m_unkF0);
+        sceVu0CopyVector(&((tagElectricityBranch *)m_unkE0)->m_unk20, m_unk100);
+        ((tagElectricityBranch *)m_unkE0)->m_unk30 = m_unk124;
+        ((tagElectricityBranch *)m_unkE0)->m_unk34 = m_unk120;
+        CreateBranch((tagElectricityBranch *)m_unkE0);
+
+        int nBranch = 1;
+        int nByte = 0x40;
+        while (nBranch < m_unk130) {
+            char *pBase = (char *)m_unkE0;
+            float fCount = (float)(((tagElectricityBranch *)m_unkE0)->m_unk34 - 1);
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            int nIdx = (int)(1.0f + (fCount - 1.0f) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF))) << 5;
+            tagElectricityBranch *pElem = (tagElectricityBranch *)(pBase + nByte);
+            char *pSrc = (char *)((tagElectricityBranch *)m_unkE0)->m_unk00;
+            pElem->m_unk10 = *(float *)(pSrc + nIdx);
+            pElem->m_unk14 = *(float *)(pSrc + nIdx + 4);
+            pElem->m_unk18 = *(float *)(pSrc + nIdx + 8);
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            pElem->m_unk20 = m_unk100[0] + (-0.5f + 1.0f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            pElem->m_unk24 = m_unk100[1] + (-0.5f + 1.0f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            pElem->m_unk28 = m_unk100[2] + (-0.5f + 1.0f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            pElem->m_unk30 = m_unk124 * (0.15f + 0.099999994f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+            unsigned int nCount = m_unk04 >> 2;
+            if (nCount < 9U) {
+                nCount = 8;
+            }
+            pElem->m_unk34 = nCount;
+            CreateBranch(pElem);
+            nByte += 0x40;
+            nBranch += 1;
+        }
+    }
 }
 
 // FUNCTION: 0x001F5450 __dt__20PParticleElectricityFv
