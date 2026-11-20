@@ -177,7 +177,7 @@ public:
     virtual void SetEditableVars(char *);
     virtual void SetDefaultVars();
     virtual void OnTimerEvent(unsigned int);
-    virtual void Render(void *);
+    virtual int Render(void *);
     virtual void Animate(int, float);
 };
 
@@ -211,6 +211,10 @@ public:
     void ProcessPhysics(float arg0, int arg1);
     void PlingInnocent();
     void CollisionCheck(EntityBaseClass *arg0);
+    int SequenceViewer(unsigned int **arg0, int arg1);
+    int LoadMesh(unsigned int arg0, bool arg1, bool arg2);
+    int LoadAnim(unsigned int arg0, bool arg1);
+    void SetAnimData(AnimData *arg0);
 
     char _pad000[0x04];
     unsigned int m_unk04;       // 0x04
@@ -249,6 +253,7 @@ public:
 };
 extern "C" void EnableParticleFx__9EffectAPIFb(EffectAPI *pApi, bool arg0);
 extern "C" void Animate__9EffectAPIFf(EffectAPI *pApi, float arg0);
+extern "C" int Render__9EffectAPIFP13PLightManager(EffectAPI *pApi, PLightManager *arg0);
 extern EffectAPI mEffectAPI__13EntityManager;
 extern char gGfxEng[1504384];
 
@@ -1050,6 +1055,52 @@ void EntityManager::RunPhysics(float arg0) {
     gDebug.StopTimer(2);
 }
 
+// DRAFT: 0x00148D80 Render__13EntityManagerFP13PLightManager
+// note: 5 words, all in the flag block 0x34-0x44 (orig tests the pointer before the lbu, ours computes sltu first); walks match with ++ in the loop conditions (tried flag ternary, if, if/else, and +=/= increments before it).
+int EntityManager::Render(PLightManager *arg0) {
+    ParticleSubList *pList;
+    EntityBaseVirtuals *pEnt;
+    int total;
+
+    gDebug.StartTimer(9);
+    {
+        void *pPlayer = m_unk505C;
+        unsigned char flag;
+        if (pPlayer != 0) {
+            flag = (*((unsigned char *)pPlayer + 0x26C) != 0);
+        } else {
+            flag = 0;
+        }
+        gGfxEng[0x158E21] = flag;
+    }
+    if (arg0 != 0) {
+        gGfxEng[0x158E22] = 1;
+    }
+    total = 0;
+    this->m_unk50A4 = 0;
+    pList = (this->m_unk50A0 != 0) ? (ParticleSubList *)this->m_unk50A8[0] : 0;
+    if (pList != 0) {
+        do {
+            pList->m_unk04 = 0;
+            pEnt = (pList->m_unk00 != 0) ? (EntityBaseVirtuals *)pList->m_unk08[0] : 0;
+            if (pEnt != 0) {
+                do {
+                    total += pEnt->Render(arg0);
+                    pEnt = (++pList->m_unk04 < pList->m_unk00) ? (EntityBaseVirtuals *)pList->m_unk08[pList->m_unk04] : 0;
+                } while (pEnt != 0);
+            }
+            pList = (++this->m_unk50A4 < this->m_unk50A0) ? (ParticleSubList *)this->m_unk50A8[this->m_unk50A4] : 0;
+        } while (pList != 0);
+    }
+    gGfxEng[0x158E21] = 1;
+    gDebug.StopTimer(9);
+    gDebug.StartTimer(10);
+    total += Render__9EffectAPIFP13PLightManager(&mEffectAPI__13EntityManager, arg0);
+    gDebug.StopTimer(10);
+    gGfxEng[0x158E22] = 0;
+    return total;
+}
+
 // DRAFT: 0x00148F40 LoadResource__13EntityManagerFPcb
 // note: 45 words, frame 0x130 vs 0x120 (saves s1 for arg0, buffer at sp+0x30); original saves arg0 in s0 and never spills this, a0 reaches AdjustPickupBox unreloaded; local name pointer variant also 45.
 void EntityManager::LoadResource(char *arg0, bool arg1) {
@@ -1303,6 +1354,75 @@ EntityManager::~EntityManager() {
     if (this != 0) {
         ((PList *)this)->~PList();
     }
+}
+
+// DRAFT: 0x00149F60 SequenceViewer__15EntityBaseClassFPPUii
+// note: 28 words differ; s1 init is daddiu not addiu, dispatch chain offsets off by 2 words, case-3 halfword interleave, loop-tail daddu/nop shape. Tried: arm orders, bool flag (size grows to 0x1B8).
+int EntityBaseClass::SequenceViewer(unsigned int **arg0, int arg1) {
+    struct SeqAnimData {
+        unsigned short m_unk00;
+        unsigned short m_unk02;
+        unsigned short m_unk04;
+        unsigned short m_unk06;
+        unsigned short m_unk08;
+        short m_unk0A;
+        float m_unk0C;
+    };
+    char *s0 = (char *)arg0[arg1];
+    int s1 = 1;
+    do {
+        int op = *(int *)s0;
+        s0 += 4;
+        switch (op) {
+        case 1:
+            if (LoadMesh(*(unsigned int *)s0, false, false) == 0) {
+                s1 = 0;
+            }
+            s0 += 4;
+            break;
+        case 2:
+            if (LoadAnim(*(unsigned int *)s0, false) == 0) {
+                s1 = 0;
+            }
+            s0 += 4;
+            break;
+        case 3: {
+            SeqAnimData anim;
+            anim.m_unk00 = *(unsigned short *)(s0 + 0x00);
+            anim.m_unk02 = *(unsigned short *)(s0 + 0x04);
+            anim.m_unk04 = *(unsigned short *)(s0 + 0x08);
+            anim.m_unk06 = *(unsigned short *)(s0 + 0x0C);
+            anim.m_unk08 = *(unsigned short *)(s0 + 0x10);
+            anim.m_unk0A = *(unsigned short *)(s0 + 0x14);
+            if (anim.m_unk0A == 2) {
+                anim.m_unk0A = 6;
+            }
+            anim.m_unk0C = (float)*(int *)(s0 + 0x18) / 256.0f;
+            s0 += 0x1C;
+            SetAnimData((AnimData *)&anim);
+            s1 = 0;
+            break;
+        }
+        case 0xFF:
+            s1 = 0;
+            break;
+        case 4:
+            s0 += 0xC;
+            break;
+        case 6:
+        case 5:
+        case 9:
+        case 0xA:
+            s0 += 4;
+            break;
+        case 7:
+            s0 += 8;
+            break;
+        default:
+            break;
+        }
+    } while (s1 != 0);
+    return 0;
 }
 
 // DRAFT: 0x0014A220 CameraLookingAtMe__15EntityBaseClassFv

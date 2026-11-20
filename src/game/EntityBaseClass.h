@@ -9,6 +9,8 @@ class PMNode;
 class PParticleSystem;
 class PZinDamageFx;
 class TriggerSystemWakeKillRec;
+class PLightManager;
+class Shadow;
 
 class EntityBaseClass {
 public:
@@ -17,8 +19,10 @@ public:
     enum eHitWeaponType { eHitWeaponType_Unrecovered = 0 };
     enum LoadClass { LoadClass_Unrecovered = 0 };
 
+    virtual ~EntityBaseClass();
     void ProcessPhysics(float arg0, int arg1);
-    void CheckDie(bool arg0);
+    int CheckDie(bool arg0);
+    int Render(PLightManager *arg0);
     void DestroyDamageFx(unsigned int arg0);
     int ProcessHitBack();
     int ChangeDamageFxInterval(unsigned int arg0, float arg1);
@@ -71,12 +75,15 @@ public:
     void LoadMesh(unsigned int arg0, bool arg1, bool arg2);
     int LoadAnim(unsigned int arg0, bool arg1);
     void ResumeAmbientSoundsByObject();
+    void PauseAmbientSoundsByObject();
     void StopSoundBySoundRef(unsigned int arg0);
+    void StopAmbientSoundsByObject();
+    void RemoveFromAttackSystem();
     void ProcessSequence();
     char ReadApparitionData(int arg0, unsigned int arg1);
+    void WriteApparitionData(int arg0, char arg1, unsigned int arg2);
 
-    char _pad000[0x4];
-    int m_unk04;                // 0x004
+    int m_unk04;                // 0x004 (0x000 holds the vptr from the virtual destructor)
     int m_unk08;                // 0x008
     char _pad00C[0x4];          // 0x00C..0x00F
     int m_unk10;                // 0x010
@@ -95,8 +102,8 @@ public:
     Physics *m_unk38;           // 0x038
     char *m_unk3C;              // 0x03C
     char _pad040[0x90];         // 0x040..0x0CF
-    signed char m_unkD0;        // 0x0D0
-    char _padD1[0x1];           // 0x0D1
+    unsigned char m_unkD0;      // 0x0D0
+    bool m_unkD1;               // 0x0D1
     short m_unkD2;              // 0x0D2
     char *m_unkD4;              // 0x0D4 sound/anim state block pointer
     float m_unkD8;              // 0x0D8
@@ -111,7 +118,8 @@ public:
     PParticleSystem *m_unkF4;   // 0x0F4 frozen particle system
     float m_unkF8;              // 0x0F8 frozen fx x
     float m_unkFC;              // 0x0FC frozen fx y
-    char _pad100[0x2];          // 0x100..0x101
+    char _pad100[0x1];          // 0x100
+    unsigned char m_unk101;     // 0x101
     unsigned char m_unk102;     // 0x102 physics anim list flag
     char _pad103[0xD];          // 0x103..0x10F
     int m_unk110[10];           // 0x110..0x137
@@ -130,7 +138,8 @@ public:
     unsigned char m_unk161;     // 0x161 BG anim list flag
     unsigned char m_unk162;     // 0x162 sequence flag
     unsigned char m_unk163;     // 0x163 cleared on wake
-    char _pad164[0x2];          // 0x164..0x165
+    unsigned char m_unk164;     // 0x164
+    char _pad165[0x1];          // 0x165
     unsigned char m_unk166;     // 0x166
     char _pad167[0x1];          // 0x167
     short m_unk168;             // 0x168

@@ -7,6 +7,7 @@ class PMNode;
 class PMeshNode;
 class TimerAPI;
 class CEifFile;
+class PLightManager;
 
 struct BGAnimNode {
     int m_unk00;                // 0x00 animation id, 0 ends the list
@@ -56,6 +57,7 @@ public:
     void *Spawn(unsigned int arg0, bool arg1, int arg2);
     void LoadOverlay(char *arg0, char *arg1);
     void Reset(bool arg0);
+    int Render(PLightManager *arg0);
     void LoadResource(char *arg0, bool arg1);
     void AddToRenderList(struct EntityBaseClass *arg0);
     void RemoveFromRenderList(struct EntityBaseClass *arg0);

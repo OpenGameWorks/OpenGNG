@@ -8,6 +8,7 @@ class PSound {
 public:
     int PlayMusic(unsigned int arg0);
     void ResumeAmbientSoundsByOriginatorRef(unsigned int arg0, unsigned int arg1);
+    void PauseAmbientSoundsByOriginatorRef(unsigned int arg0, unsigned int arg1);
     char _pad000[0x10];
 };
 extern PSound gSound;
@@ -136,6 +137,8 @@ public:
     void RequestAttack(EntityBaseClass *arg0, float arg1, unsigned int arg2, EntityBaseClass *arg3);
     char _pad000[0x505C];
     EntityBaseClass *m_unk505C;
+    char _pad5060[0x14];
+    float m_unk5074;
 };
 extern EntityAttackManager *mpEntMgr__15EntityBaseClass;
 
@@ -146,6 +149,21 @@ class EntityManager {
 public:
     void *FindTrigger(unsigned int arg0, int arg1);
     void *GetPtrToApparition(unsigned int arg0);
+    void RemoveFromRenderList(EntityBaseClass *arg0);
+};
+
+// TimerAPI is only needed for the apparition-timer kill call; its size is not recovered, so the placeholder keeps the global complete.
+class TimerAPI {
+public:
+    void KillAllApparitionTimers(unsigned int arg0, bool arg1);
+    char _pad00[0x28];
+};
+extern TimerAPI mTimerAPI__13EntityManager;
+
+// DrawObj is the base of the object stored at m_unk3C; only its virtual destructor is called.
+class DrawObj {
+public:
+    virtual ~DrawObj();
 };
 
 // TriggerSystem is 0x50 bytes; only the constructor and the m_unk9 state byte are needed.
@@ -167,6 +185,32 @@ extern float mfSleepDistance__15EntityBaseClass;
 extern float BEHIND_WAKE;
 extern "C" float atan2f(float y, float x);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
+
+// Render-path views: the light manager, the PGfxEngine methods it calls, the ambient table, Shadow and the m_unk3C draw object.
+class PMat4;
+struct tagComputedLightCache;
+class PLightManager {
+public:
+    void ComputeLights(float *pOut, bool bA, bool bB, bool bC, tagComputedLightCache *pCache, float (*pMatrix)[4], float fScale);
+};
+class PGfxEngine {
+public:
+    void SetOverrideTexture(int nIndex);
+    void SetAmbientLight(float *pVec);
+    void UpdateLights();
+    void UpdateLights(PMat4 *pDirMat, PMat4 *pColorMat, float (*pAmbient)[4]);
+};
+extern float aAmb_642[4];
+class Shadow {
+public:
+    ~Shadow();
+    int Render(EntityBaseClass *arg0);
+};
+class RenderView {
+public:
+    virtual ~RenderView();
+    virtual int Draw(int, int, unsigned char);
+};
 extern "C" int sprintf(char *, const char *, ...);
 extern "C" int printf(const char *fmt, ...);
 
@@ -185,7 +229,7 @@ public:
 class EntityBaseClassVirtuals {
 public:
     virtual ~EntityBaseClassVirtuals();
-    virtual void Slot1();
+    virtual int GetTallyType();
     virtual void Slot2();
     virtual void Slot3();
     virtual const char *GetName();
@@ -223,6 +267,59 @@ void EntityBaseClass::ProcessPhysics(float arg0, int arg1) {
         this->m_unk38->RunPhysics(this, arg0, arg1 & this->m_unkE8, &mBGCollision__15EntityBaseClass);
         this->CheckDie(0);
     }
+}
+
+// FUNCTION: 0x0014A790 CheckDie__15EntityBaseClassFb
+int EntityBaseClass::CheckDie(bool arg0) {
+    char *phys;
+    char *view;
+    char *q;
+    float f1;
+    unsigned int flags;
+
+    phys = (char *)this->m_unk38;
+    if (phys == 0) {
+        goto done;
+    }
+    if ((*(unsigned short *)(phys + 0x106) & 2) == 0) {
+        goto done;
+    }
+    if (this->m_unk10 != 3) {
+        goto done;
+    }
+    view = phys + 0xA0;
+    if (arg0 && *(int *)(view + 0x20) == 0 && *(float *)(phys + 4) < 0.0f) {
+        goto die;
+    }
+    if (this->m_unk3C != 0) {
+        q = this->m_unk3C + 0x80;
+    } else {
+        q = (char *)this + 0x190;
+    }
+    f1 = *(float *)(q + 4);
+    if (f1 <= mpEntMgr__15EntityBaseClass->m_unk5074) {
+        goto die;
+    }
+    flags = *(unsigned int *)(view + 0x48);
+    if (flags & 4) {
+        if (*(unsigned int *)(phys + 0x108) & 1) {
+            goto die;
+        }
+    }
+    if (flags & 0x10000) {
+        if (*(float *)(view + 0x24) > f1) {
+            goto die;
+        }
+    }
+    goto done;
+die:
+    WriteApparitionData(1, -3, 0);
+    WriteApparitionData(0, 1, 0);
+    SetState(-2);
+    printf("%s hits death surface\n", ((EntityBaseClassVirtuals *)this)->GetName());
+    return 1;
+done:
+    return 0;
 }
 
 // FUNCTION: 0x0014A970 DestroyDamageFx__15EntityBaseClassFUi
@@ -565,6 +662,11 @@ void EntityBaseClass::ResumeAmbientSoundsByObject() {
     gSound.ResumeAmbientSoundsByOriginatorRef(m_unk04, 0x10U);
 }
 
+// FUNCTION: 0x0014C1D0 PauseAmbientSoundsByObject__15EntityBaseClassFv
+void EntityBaseClass::PauseAmbientSoundsByObject() {
+    gSound.PauseAmbientSoundsByOriginatorRef(m_unk04, 0x10U);
+}
+
 // DRAFT: 0x0014C620 FaceHitDirection__15EntityBaseClassFP15EntityBaseClass
 // note: 15 words differ; 57.295776f is pooled via gp where the original builds it inline (lui/ori/mtc1), the tail store order differs, and m_unk38 is not kept in s0. Tried: cached m_unk38 local (20 words, worse, reverted).
 void EntityBaseClass::FaceHitDirection(EntityBaseClass *arg0) {
@@ -878,6 +980,55 @@ void EntityBaseClass::AddToBGAnimList() {
     }
 }
 
+// DRAFT: 0x0014DAA0 WriteApparitionData__15EntityBaseClassFicUi
+// note: DIFF 55 words; gate/tally block order and tail (sw before b, ld ra in delay slot) differ. Tried goto-done (74), tally-first (73), early returns (55).
+void EntityBaseClass::WriteApparitionData(int arg0, char arg1, unsigned int arg2) {
+    char *slot;
+    if (m_unk18 == 0 && arg2 == 0) {
+        if (arg0 == 0) {
+            if (m_unk10 == 3) {
+                *(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5B4C) += 1;
+            }
+            return;
+        }
+    } else {
+        if (!(arg0 < 4)) {
+            CdsAssert__FPciPc("EntityBaseClass.cpp", 0x3AB, "iOffset < STATIC_APPARITION_DATA_SIZE");
+        }
+    }
+    if (arg2 == 0) {
+        arg2 = m_unk04;
+    }
+    slot = 0;
+    if (arg2 < *(unsigned int *)((char *)mpEntMgr__15EntityBaseClass + 0x5054)) {
+        slot = (char *)mpEntMgr__15EntityBaseClass + 0x53A0 + arg2 * 4;
+    }
+    if (slot == 0) {
+        return;
+    }
+    if (arg0 >= 0) {
+        slot[arg0] = arg1;
+        if (arg1 == -2 && arg0 == 1) {
+            goto check;
+        }
+    }
+    *((char *)mpEntMgr__15EntityBaseClass + 0x59A0 + arg2) = arg1;
+check:
+    if (arg0 != 0) {
+        return;
+    }
+    if (arg1 == 0) {
+        return;
+    }
+    {
+        int tally = arg1;
+        if (tally == ((EntityBaseClassVirtuals *)this)->GetTallyType()) {
+            return;
+        }
+        printf("Tally mismatch for entity %d(%d != %d)\n", m_unk08, tally, ((EntityBaseClassVirtuals *)this)->GetTallyType());
+    }
+}
+
 // DRAFT: 0x0014DC20 ReadApparitionData__15EntityBaseClassFiUi
 // note: saved-register order is swapped (compiler puts iOffset in s1, original in s0); 27 words differ. Tried: local index copy, local offset copy after the first branch; same output.
 char EntityBaseClass::ReadApparitionData(int iOffset, unsigned int uIndex) {
@@ -980,6 +1131,40 @@ void EntityBaseClass::CreateFireDamageFx(float arg0) {
         this->m_unkF0 = arg0;
         ((PParticleManager *)(gGfxEng + 0x154F00))->CreateFireDamageFx((PMNode *)this->m_unk3C, this->m_unk08);
     }
+}
+
+// DRAFT: 0x0014E7A0 Render__15EntityBaseClassFP13PLightManager
+// note: DIFF 2 words only, the lui/addiu pair at 0x60/0x6C for the local aAmb$642 (mwccps2 cannot spell '$', and config has no other alias); alpha and tail order match
+int EntityBaseClass::Render(PLightManager *arg0) {
+    int ret;
+
+    if (this->m_unk3C == 0) {
+        CdsAssert__FPciPc("EntityBaseClass.cpp", 0x1DF, "mpMeshNode");
+    }
+    if ((this->m_unk30 != 0) && (this->m_unk34 & 2)) {
+        ((PGfxEngine *)(gGfxEng + 0x6680))->SetOverrideTexture(this->m_unk30);
+        ((PGfxEngine *)(gGfxEng + 0x6680))->SetAmbientLight(aAmb_642);
+        ((PGfxEngine *)(gGfxEng + 0x6680))->UpdateLights();
+    } else if (this->m_unkD0 == 0) {
+        this->m_unkD0 = 1;
+        arg0->ComputeLights(this->m_unk3C != 0 ? (float *)(this->m_unk3C + 0x80) : (float *)((char *)this + 0x190), true, this->m_unkD1, true, (tagComputedLightCache *)((char *)this + 0x40), 0, this->m_unkE0);
+    } else {
+        ((PGfxEngine *)(gGfxEng + 0x6680))->UpdateLights((PMat4 *)((char *)this + 0x40), (PMat4 *)((char *)this + 0x80), (float (*)[4])((char *)this + 0xC0));
+    }
+
+    {
+        int alpha = this->m_unkD2;
+
+        if ((signed char)this->m_unk101 >= 0) {
+            alpha = (alpha * this->m_unk101) >> 7;
+        }
+        ret = ((RenderView *)this->m_unk3C)->Draw(0, alpha, this->m_unk164);
+    }
+    ((PGfxEngine *)(gGfxEng + 0x6680))->SetOverrideTexture(0);
+    if (this->m_unkD4 != 0) {
+        ret += ((Shadow *)this->m_unkD4)->Render(this);
+    }
+    return ret;
 }
 
 // FUNCTION: 0x0014E900 SetAnimData__15EntityBaseClassFP8AnimData
@@ -1088,4 +1273,38 @@ void EntityBaseClass::ModifyLoadClass(LoadClass arg0) {
         mLoadTable__15EntityBaseClass[(int)arg0].m8 += 1;
         this->m_unk10 = (int)arg0;
     }
+}
+
+// DRAFT: 0x0014F0B0 __dt__15EntityBaseClassFv
+// note: DIFF 54 words; the 0x18 skip branch is 3 instructions shorter than the original, and the m_unk38 delete lacks the original's second null check and nop before __dl__. Tried: split delete check (54, same), virtual ~Physics (56, reverted); later branch shapes not analyzed.
+EntityBaseClass::~EntityBaseClass() {
+    RemoveFromBGAnimList();
+    RemovePhysicsAnimList();
+    if (m_unk3C != 0) {
+        ((EntityManager *)mpEntMgr__15EntityBaseClass)->RemoveFromRenderList(this);
+        delete (DrawObj *)m_unk3C;
+        m_unk3C = 0;
+    }
+    if (m_unk38 != 0) {
+        delete m_unk38;
+        m_unk38 = 0;
+    }
+    if (m_unkD4 != 0) {
+        delete (Shadow *)m_unkD4;
+        m_unkD4 = 0;
+    }
+    m_unk178 = 0;
+    PParticleSystem *pFx = m_unkF4;
+    if (pFx != 0) {
+        if (((PParticleManager *)(gGfxEng + 0x154F00))->IsValid(pFx)) {
+            pFx->FadeAndDie(0);
+        }
+        m_unkF4 = 0;
+        m_unkEC = 0.0f;
+    }
+    mTimerAPI__13EntityManager.KillAllApparitionTimers(m_unk04, false);
+    FreeActiveLoad();
+    ResetCollisions();
+    StopAmbientSoundsByObject();
+    RemoveFromAttackSystem();
 }
