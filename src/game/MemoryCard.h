@@ -37,6 +37,7 @@ public:
     int CheckLoadData();
     int CheckSum(unsigned char *pBuf);
     int CheckFiles();
+    int CheckFree();
     void ResetFileStatus();
     void IssueCommand(const char *pCmd);
     int LoadGame();
@@ -52,9 +53,13 @@ public:
     int Init();
     int SaveGame();
 
-    char _pad000[0x1C8];
+    char _pad000[0x1C0];
+    int m_unk1C0;                   // 0x1C0 entry count bound for CheckFree, 0x40-byte entries from offset 0
+    char _pad1C4[0x1C8 - 0x1C4];
     int m_unk1C8;                   // 0x1C8 must equal 0xB for SelectSlot to act
-    char _pad1CC[0x1DC - 0x1CC];
+    char _pad1CC[0x1D4 - 0x1CC];
+    unsigned int m_unk1D4;          // 0x1D4 free-block count compared against the need computed by CheckFree
+    char _pad1D8[0x1DC - 0x1D8];
     int m_unk1DC;                   // 0x1DC command word, written as (pCmd | 0x30000000)
     int m_unk1E0;                   // 0x1E0 countdown, reset to 0x3C by LoadGame
     short m_unk1E4;                 // 0x1E4
@@ -79,7 +84,7 @@ public:
     int m_unk208;                   // 0x208 cleared by ResetGameData
     int m_unk20C;                   // 0x20C cleared by ResetGameData
     int m_unk210;                   // 0x210 signed slot index, side * 3 + column
-    char _pad214[0x218 - 0x214];
+    int m_unk214;                   // 0x214 signed slot index, -1 when none (read by DisplaySlot)
     MemorySetting m_unk218;         // 0x218 active setting, filled by SetSetting or ResetMCData
     char _pad222[0x224 - 0x222];
     char m_unk224[0x22C - 0x224];   // 0x224 start of the 0x4B4-byte save block cleared by memset

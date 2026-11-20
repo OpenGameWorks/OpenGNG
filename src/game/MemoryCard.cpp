@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "MemoryCard.h"
 
@@ -47,6 +48,11 @@ extern char BootMC[16];
 extern char SaveMC[16];
 extern float GAME_FPS;
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
+extern "C" int strcasecmp(const char *pA, const char *pB);
+extern char IconSysName[9];
+extern char MaximoDir[21];
+extern unsigned int Icon_tbl[6];
+extern char iconSys[964];
 struct SlotPosition {
     float fX;
     float fY;
@@ -221,6 +227,66 @@ int MemoryCard::CheckFiles() {
         nIndex++;
     } while (nIndex < 6);
     return 1;
+}
+
+// FUNCTION: 0x001501D0 CheckFree__10MemoryCardFv
+int MemoryCard::CheckFree() {
+    int nIndex;
+    char *pName;
+    int nOff;
+    char *pEntry;
+    int nNeed;
+    int nCount;
+
+    ResetFileStatus();
+    for (nIndex = 0, nOff = 0; nIndex < m_unk1C0; nOff += 0x40, nIndex++) {
+        pEntry = (char *)this + nOff;
+        pName = pEntry + 0x20;
+        if (strcasecmp(pName, IconSysName) == 0 && *(int *)(pEntry + 0x10) == 0x3C4) {
+            m_unk1FA = nIndex;
+        } else if (strcasecmp(pName, iconSys + 0x104) == 0 &&
+                   *(unsigned int *)(pEntry + 0x10) == Icon_tbl[1] - Icon_tbl[0]) {
+            m_unk1FB = nIndex;
+        } else if (strcasecmp(pName, iconSys + 0x144) == 0 &&
+                   *(unsigned int *)(pEntry + 0x10) == Icon_tbl[3] - Icon_tbl[2]) {
+            m_unk1FC = nIndex;
+        } else if (strcasecmp(pName, iconSys + 0x184) == 0 &&
+                   *(unsigned int *)(pEntry + 0x10) == Icon_tbl[5] - Icon_tbl[4]) {
+            m_unk1FD = nIndex;
+        } else if (strcasecmp(pName, MaximoDir + 1) == 0) {
+            m_unk1FE = (*(int *)(pEntry + 0x10) == 0x1C48) ? nIndex : -2;
+        } else if (strcasecmp(pName, ".") == 0 && *(int *)(pEntry + 0x10) == 0) {
+            m_unk1FF = nIndex;
+        }
+    }
+
+    nNeed = (m_unk1C0 < 0) ? 2 : 0;
+    nCount = 0;
+    if (m_unk1FA < 0) {
+        nNeed += 1;
+        nCount += 1;
+    }
+    if (m_unk1FB < 0) {
+        nCount += 1;
+        nNeed += ((Icon_tbl[1] - Icon_tbl[0]) + 0x3FF) >> 10;
+    }
+    if (m_unk1FC < 0) {
+        nCount += 1;
+        nNeed += ((Icon_tbl[3] - Icon_tbl[2]) + 0x3FF) >> 10;
+    }
+    if (m_unk1FD < 0) {
+        nCount += 1;
+        nNeed += ((Icon_tbl[5] - Icon_tbl[4]) + 0x3FF) >> 10;
+    }
+    if (m_unk1FE < 0) {
+        nNeed += 8;
+        nCount += 1;
+    }
+    nNeed += (unsigned int)(nCount + 1) >> 1;
+    if (m_unk1D4 >= (unsigned int)nNeed) {
+        return 1;
+    }
+    return 0;
 }
 
 // FUNCTION: 0x00150470 ResetFileStatus__10MemoryCardFv
@@ -429,7 +495,7 @@ int MemoryCard::Init() {
         CDS_ASSERT(0xFA, !"sceMcInit() error\n");
     }
     *(unsigned char *)(gInterface + 0x424) = 0;
-    *(int *)&_pad214[0] = -1;
+    m_unk214 = -1;
     ResetMCData();
     m_unk210 = 0;
     m_unk1F4 = 0;
