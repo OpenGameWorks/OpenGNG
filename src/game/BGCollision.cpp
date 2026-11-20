@@ -200,6 +200,101 @@ int BGCollision::GetGround(float (*pArr)[4], unsigned int nFlags)
     return nRet;
 }
 
+struct BGAnimObj {
+    char _pad00[0x4];
+    unsigned int m_unk4;        // 0x004 type id, 0x207 selects a node
+};
+
+struct BGAnimNode {
+    char _pad00[0x24];
+    BGAnimObj *m_unk24;         // 0x024 object, type id at +4
+    char _pad28[0x4];
+    float m_unk2C;              // 0x02C compared with 0.5f
+    char _pad30[0xE];
+    unsigned char m_unk3E;      // 0x03E flags, bit 2 selects InversMatrix
+    char _pad3F[0x1];
+    float m_unk40[4][4];        // 0x040 matrix inverted into the local copy
+    char _pad80[0x80];
+    unsigned short m_unk100;    // 0x100 must be zero when bit 30 is set
+    char _pad102[0x2];
+    void *m_unk104;             // 0x104 collision map
+    char _pad108[0x8];
+    float m_unk110[2][4];       // 0x110 box
+};
+
+struct BGAnimMap {
+    char _pad00[0x8];
+    unsigned int m_unk8;        // 0x008 polygon count
+    STCollisionPoly *m_unkC[1]; // 0x00C polygon pointers
+};
+
+// DRAFT: 0x0016F690 FindIntersectAnim__11BGCollisionFPA4_fPA4_fRfUiPA4_f
+// note: 163 words differ (size 0x2e4 vs 0x304): frame 0x140 vs 0x150, pB/rT spill slots, entry branch, and the VU0 lqc2 pair before BoxLineCheck (not expressible in C); tried while and for loop shapes, and (void)&pB, all 163
+STCollisionPoly *BGCollision::FindIntersectAnim(float (*pA)[4], float (*pB)[4], float &rT, unsigned int nFlags, float (*pOut)[4])
+{
+    float mat[4][4];
+    float vA[4];
+    float vB[4];
+    float vG[4];
+    float vD[4];
+    STCollisionPoly *pRet = 0;
+    float f20 = 1.0f;
+    float f21;
+
+    m_unk70.m_unk4 = 0;
+    BGAnimNode *pNode = (m_unk70.m_unk0 != 0) ? (BGAnimNode *)m_unk70.m_unk8[0] : 0;
+    while (pNode != 0) {
+        if (!(pNode->m_unk2C < 0.5f) && !(pNode->m_unk3E & 0x20)) {
+            BGAnimObj *pObj = pNode->m_unk24;
+            unsigned int nType = (pObj != 0) ? pObj->m_unk4 : 0;
+            if (nType == 0x207) {
+                if (pNode->m_unk104 == 0) {
+                    CdsAssert__FPciPc("BGCollision.cpp", 0x2DB, "pNode->GetCollisionMap()");
+                }
+                if (!(nFlags & 0x40000000) || pNode->m_unk100 == 0) {
+                    if (pNode->m_unk3E & 4) {
+                        InversMatrix(&mat, &pNode->m_unk40);
+                    } else {
+                        sceVu0InversMatrix((float *)mat, (float *)pNode->m_unk40);
+                    }
+                    sceVu0ApplyMatrix(vA, (float *)mat, (float *)pA);
+                    sceVu0ApplyMatrix(vB, (float *)mat, (float *)pB);
+                    if (BoxLineCheck(&pNode->m_unk110)) {
+                        f21 = f20 * sceVu0InnerProduct(vB, vB);
+                        BGAnimMap *pMap = (BGAnimMap *)pNode->m_unk104;
+                        unsigned int n = pMap->m_unk8;
+                        STCollisionPoly **pp = pMap->m_unkC;
+                        for (; n != 0; --n, ++pp) {
+                            STCollisionPoly *pPoly = *pp;
+                            unsigned int s3 = *(unsigned int *)((char *)pPoly + 0xC) & nFlags;
+                            if (s3 != 0 && FindGroundPos(pPoly, (float (*)[4])vG) != 0) {
+                                sceVu0SubVector(vD, vG, vA);
+                                if (!(sceVu0InnerProduct(vD, vB) < 0.0f)) {
+                                    float f0 = sceVu0InnerProduct(vD, vD);
+                                    if (!(f0 <= 1.0f) && f0 < f21) {
+                                        f20 = f0 / f21;
+                                        pRet = pPoly;
+                                        if (pOut != 0) {
+                                            sceVu0ApplyMatrix((float *)pOut, (float *)mat, (float *)((char *)pPoly + 0x10));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        unsigned int nIdx = m_unk70.m_unk4 + 1;
+        m_unk70.m_unk4 = nIdx;
+        pNode = (nIdx < m_unk70.m_unk0) ? (BGAnimNode *)m_unk70.m_unk8[nIdx] : 0;
+    }
+    if (pRet != 0) {
+        rT *= f20;
+    }
+    return pRet;
+}
+
 // DRAFT: 0x0016F9A0 FindIntersectST__11BGCollisionFiiPA4_fPA4_fRfUi
 // note: 101 differing lines. vf26/vf27 asm loads before BoxLineCheck tried, count unchanged; prologue saves and s-reg set differ.
 STCollisionPoly *BGCollision::FindIntersectST(int nX, int nZ, float (*pA)[4], float (*pB)[4], float &rT, unsigned int nFlags)
@@ -259,23 +354,6 @@ int BGCollision::FindGrid(float (*pArr)[4], int &rX, int &rZ)
     }
     return ok;
 }
-
-struct BGAnimNode {
-    char _pad00[0x3E];
-    unsigned char m_unk3E;      // 0x03E flags, bit 2 selects InversMatrix
-    char _pad3F[0x1];
-    float m_unk40[4][4];        // 0x040 matrix inverted into the local copy
-    char _pad80[0x84];
-    void *m_unk104;             // 0x104 collision map
-    char _pad108[0x8];
-    float m_unk110[2][4];       // 0x110 box
-};
-
-struct BGAnimMap {
-    char _pad00[0x8];
-    unsigned int m_unk8;        // 0x008 polygon count
-    STCollisionPoly *m_unkC[1]; // 0x00C polygon pointers
-};
 
 // DRAFT: 0x00170300 CheckIntersectAnim__11BGCollisionFPA4_fPA4_fPA4_fUi
 // note: 2 lqc2 VU loads before BoxLineCheck are not expressible in C; test
