@@ -62,6 +62,30 @@ extern "C" void SOUND_SetPauseCategories(unsigned int);
 extern "C" void SOUND_LevelRestart();
 extern "C" void SOUND_SetMasterRegisterVolumeAbs(int);
 extern "C" void SOUND_EnableFeatures(int, int);
+extern "C" void SOUND_StreamAfterFlags(int, int, int, int, int, int);
+
+// FUNCTION: 0x001A3CC0 VerifyAmbientEntryList__6PSoundFPQ26PSound12AmbientEntry
+unsigned int PSound::VerifyAmbientEntryList(AmbientEntry *pHead) {
+    static int st_Calls;
+    static char init;
+    unsigned int nCount = 0;
+    AmbientEntry *pPrev = 0;
+    AmbientEntry *pCur = pHead;
+
+    if (!init) {
+        st_Calls = 0;
+        init = 1;
+    }
+    st_Calls += 1;
+    while (pCur != 0) {
+        nCount += 1;
+        ((nCount <= 0xC8) ? (void)0 : CdsAssert("PSound.cpp", 0x2578, "0"));
+        ((pPrev == pCur->m_unk54) ? (void)0 : CdsAssert("PSound.cpp", 0x257B, "0"));
+        pPrev = pCur;
+        pCur = pCur->m_unk50;
+    }
+    return nCount;
+}
 
 // FUNCTION: 0x001A3DD0 SwapLinksAmbientEntry__6PSoundFPQ26PSound12AmbientEntryPQ26PSound12AmbientEntry
 void PSound::SwapLinksAmbientEntry(AmbientEntry *pA, AmbientEntry *pB) {
@@ -246,6 +270,30 @@ void PSound::AbilityScreenEnter() {
     KillByCategories(0x200);
     PauseByCategories(0x8C);
     SetMainMusicSpecialVolume((EnumMusicSpecialVols)1);
+}
+
+// FUNCTION: 0x001A4640 StartPreppedDialog__6PSoundFUi
+int PSound::StartPreppedDialog(unsigned int nArg) {
+    int nReady;
+
+    if ((nArg < 0xC8) || (nArg >= 0xE4)) {
+        return -2;
+    }
+    if (nArg != m_unk2E50[2]) {
+        return -3;
+    }
+    if (m_unk2E50[0] == 0) {
+        return -1;
+    }
+    nReady = GetDialogStreamReadiness(nArg);
+    if (nReady == -1) {
+        return -1;
+    }
+    if (nReady != 0) {
+        return 1;
+    }
+    SOUND_StreamAfterFlags(0, m_unk2E50[0], 2, 2, 0, 0);
+    return 0;
 }
 
 // FUNCTION: 0x001A47D0 StartAndHoldDialog__6PSoundFUi
@@ -476,6 +524,25 @@ int PSound::StopAllRegularSounds() {
     return 0;
 }
 
+// FUNCTION: 0x001A82F0 DebugStopAllSoundsBySoundID__6PSoundFUi
+int PSound::DebugStopAllSoundsBySoundID(unsigned int nArg) {
+    int nCount;
+    unsigned int nIdx;
+    char *pEnt;
+    CheckAllChannelsMatch();
+    nCount = DebugStopAmbientSoundsBySoundID(nArg);
+    nIdx = m_unk2E30;
+    pEnt = (char *)this + (nIdx << 6) + 0x2220;
+    for (; m_unk2E34 >= nIdx; nIdx++, pEnt += 0x40) {
+        if (nArg == *(unsigned int *)(pEnt + 0x10)) {
+            StopOneShot(nIdx);
+            nCount++;
+        }
+    }
+    CheckAllChannelsMatch();
+    return nCount;
+}
+
 // FUNCTION: 0x001A83B0 DebugStopAmbientSoundsBySoundID__6PSoundFUi
 int PSound::DebugStopAmbientSoundsBySoundID(unsigned int nSound) {
     int nCount = 0;
@@ -509,6 +576,27 @@ int PSound::StopSoundBySoundRefIfAmbient(unsigned int nSoundRef) {
     return 0;
 }
 
+// FUNCTION: 0x001A84B0 ResumeAmbientSoundsByOriginatorRef__6PSoundFUiUi
+int PSound::ResumeAmbientSoundsByOriginatorRef(unsigned int nOriginator, unsigned int nFlags) {
+    int nCount = 0;
+    if (nOriginator != 0) {
+        if (nOriginator != 0x80000000) {
+            AmbientEntry *pEntry = (AmbientEntry *)((char *)this + 0x380);
+            AmbientEntry *pEnd = (AmbientEntry *)((char *)this + 0x2220);
+            if (pEntry < pEnd) {
+                do {
+                    if (nOriginator == pEntry->m_unk1C && ((unsigned short)pEntry->m_unk14 & nFlags)) {
+                        ResumeAmbientEntry(pEntry);
+                        nCount++;
+                    }
+                    pEntry = (AmbientEntry *)((char *)pEntry + 0x70);
+                } while (pEntry < pEnd);
+            }
+        }
+    }
+    return nCount;
+}
+
 // FUNCTION: 0x001A8620 ResumeAmbientEntry__6PSoundFPQ26PSound12AmbientEntry
 void PSound::ResumeAmbientEntry(AmbientEntry *pEntry) {
     if (pEntry != 0 && pEntry->m_unk10 < 0x3FFD) {
@@ -530,6 +618,29 @@ int PSound::PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag) {
     }
     pEntry->m_unk16 |= 1;
     return 0;
+}
+
+// FUNCTION: 0x001A86A0 ResumeAllAmbientSounds__6PSoundFv
+int PSound::ResumeAllAmbientSounds() {
+    int nCount = 0;
+    AmbientEntry *pEntry = (AmbientEntry *)((char *)this + 0x380);
+    AmbientEntry *pEnd = (AmbientEntry *)((char *)this + 0x2220);
+    if (pEntry < pEnd) {
+        do {
+            unsigned short nFlags = pEntry->m_unk16;
+            if (nFlags & 2) {
+                nFlags = nFlags & 0xFFFD;
+                pEntry->m_unk16 = nFlags;
+                short nChan = pEntry->m_unk18;
+                if (nChan >= 0 && *((unsigned char *)this + nChan + 0x1808C) != 0 && !(nFlags & 2)) {
+                    nCount++;
+                    AddChanToMultipleResumes(nChan);
+                }
+            }
+            pEntry = (AmbientEntry *)((char *)pEntry + 0x70);
+        } while (pEntry < pEnd);
+    }
+    return nCount;
 }
 
 // FUNCTION: 0x001A8750 PauseAllAmbientSounds__6PSoundFv

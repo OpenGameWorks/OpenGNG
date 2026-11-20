@@ -124,6 +124,7 @@ public:
     void SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol);
     int PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType);
     int CheckAllChannelsMatchSub();
+    void CheckAllChannelsMatch();
     int CheckOneChannelMatchSub(AmbientChannelState *pState);
     int PlayMusicOnStream(unsigned int p0, unsigned int p1, unsigned int p2);
     void SetPositionalRangeAmbient(unsigned int nRange);
@@ -143,12 +144,14 @@ public:
     unsigned int FindFreeAmbientChannel();
     int StartAndHoldDialog(unsigned int nArg);
     int PrepDialog(unsigned int nArg);
+    int StartPreppedDialog(unsigned int nArg);
+    int GetDialogStreamReadiness(unsigned int nArg);
     int GetDialogPlayingStatus();
     void FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned int nFrames);
     void AmbientFadeToFree(AmbientChannelState *pState);
     void FadeAmbientChannel(AmbientChannelState *pState, unsigned int nChan);
     int PauseAllAmbientSounds();
-    void ResumeAllAmbientSounds();
+    int ResumeAllAmbientSounds();
     int StopAllSounds();
     int SetStandardSecondaryMusicFileID(unsigned int id);
     int MusicSwitchToPrimary(unsigned int nArg);
@@ -158,6 +161,7 @@ public:
     void LinkAmbientEntry(AmbientEntry *pEntry, AmbientEntry *pNext);
     void InsertAEAtHead(AmbientEntry **ppHead, AmbientEntry *pEntry);
     void AddAEToFreeList(AmbientEntry *pEntry);
+    unsigned int VerifyAmbientEntryList(AmbientEntry *pHead);
     void SwapLinksAmbientEntry(AmbientEntry *pA, AmbientEntry *pB);
     void DelinkAmbientEntry(AmbientEntry *pEntry);
     int PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag);
@@ -190,6 +194,7 @@ public:
     void Resume();
     void Pause();
     void ResumeAmbientEntry(AmbientEntry *pEntry);
+    int ResumeAmbientSoundsByOriginatorRef(unsigned int nOriginator, unsigned int nFlags);
     int AddChanToMultipleResumes(unsigned int nChan);
     int AddChanToMultiplePauses(unsigned int nChan);
     int AddChanToMultipleStops(unsigned int nChan);
@@ -204,6 +209,7 @@ public:
     void PauseByCategories(unsigned int nCategory);
     int DebugStopAllDebugAmbients();
     int DebugStopAmbientSoundsBySoundID(unsigned int nSound);
+    int DebugStopAllSoundsBySoundID(unsigned int nArg);
     void SendStops();
     void SoundEditLeave();
     void SoundEditEnter();
