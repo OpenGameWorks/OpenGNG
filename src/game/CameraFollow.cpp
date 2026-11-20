@@ -1044,6 +1044,191 @@ void CameraFollow::ResetTrackingVars() {
     m_unk6398 = 0.85f;
 }
 
+// DRAFT: 0x00176270 UpdateCameraPos__12CameraFollowFv
+// note: 475 differing words of ~486; size 0x798 vs 0x78C, frame 0x170 vs 0x160; case-1 block and case-0 branch layout differ; __mi__/__pl__ operands and BG/QuatSlerp arguments are guessed
+int CameraFollow::UpdateCameraPos() {
+    PVec3 sp110;
+    PVec3 sp100;
+    PVec3 spF0;
+    PVec3 spE0;
+    PVec3 spD0;
+    PVec3 spC0;
+    PVec3 spB0;
+    PVec3 spA0;
+    PVec3 sp90;
+    PVec3 sp80;
+    PVec3 sp20;
+    float sp120[4][4];
+    float sp40[4][4];
+    float var_f0;
+    unsigned char var_v0;
+
+    switch (m_unk118) {
+    case 0:
+        if (m_unk6290 == 0) {
+            FollowPlayer();
+        }
+    default:
+        CheckCameraShake__6CameraFR5PVec3R5PVec3b(m_pCamera, m_unk20, m_unk40, 0);
+        if (m_unk6290 != 0) {
+            sceVu0ScaleVector(m_unk10, m_unk6260, 0.1f);
+            sceVu0AddVector(m_unk20, m_unk20, m_unk10);
+            m_unk628C = m_unk628C - *(float *)((char *)gEng + 0x1E8);
+            if (m_unk628C < 0.0f) {
+                m_unk6290 = 0;
+            }
+            goto block_37;
+        }
+        if (m_unk1F0 == 0) {
+            sceVu0CopyVector(m_unk10, m_unk20);
+            sp80.m_v[0] = m_unk30[0];
+            sp80.m_v[1] = m_unk30[1];
+            sp80.m_v[2] = m_unk30[2];
+            sp80.m_v[3] = m_unk30[3];
+            if (((BGCollision *)mBGCollision__15EntityBaseClass)->CameraBGIntersect(*(PVec3 *)m_unk10, sp80, 1.0f, 2U, m_unk6280, 0) != 0) {
+                if (!(m_unk6280 <= 0.5f) || (m_unk62F8 != 0)) {
+                    sceVu0CopyVector(m_unk20, m_unk30);
+                    __mi__5PVec3FR5PVec3(sp90.m_v, m_unk40, m_unk20);
+                    sceVu0CopyVector(m_unk10, sp90.m_v);
+                    m_unk140 = sqrtf(m_unk10[0] * m_unk10[0] + m_unk10[1] * m_unk10[1] + m_unk10[2] * m_unk10[2]);
+                    if (!(m_unk140 <= 10.0f)) {
+                        sceVu0Normalize(m_unk6260, m_unk6260);
+                        m_unk6290 = 1;
+                        m_unk628C = 10.0f;
+                    }
+                } else {
+                    if (m_unk62F4 == 0) {
+                        m_unk6300[0] = m_unk20[0];
+                    }
+                    m_unk62F4 += 1;
+                    if (m_unk62F4 >= 6) {
+                        m_unk62F4 = 0;
+                        var_v0 = 0;
+                        if (Distance__7MathAPIFPA4_fPA4_f((MathAPI *)m_unk6300, (float (*)[4])m_unk20) < 0.2f) {
+                            var_v0 = 1;
+                        }
+                        m_unk62F8 = var_v0;
+                    }
+                    sceVu0SubVector(m_unk10, m_unk10, m_unk30);
+                    sceVu0AddVector(m_unk20, m_unk30, m_unk10);
+                }
+            } else {
+                m_unk62F4 = 0;
+                m_unk62F8 = 0;
+                if (m_unk140 < m_unk178) {
+                    var_f0 = m_unk140 + (0.1f * m_unk16C);
+                    goto block_36;
+                }
+                if (!(m_unk140 <= (0.1f + m_unk178))) {
+                    var_f0 = m_unk140 - (0.1f * m_unk16C);
+                    goto block_36;
+                }
+            }
+            goto block_37;
+        }
+        m_unk6310 = 0;
+        m_unk6314 = 0;
+        sceVu0CopyVector(m_unk10, m_unk20);
+        spA0.m_v[0] = m_unk30[0];
+        spA0.m_v[1] = m_unk30[1];
+        spA0.m_v[2] = m_unk30[2];
+        spA0.m_v[3] = m_unk30[3];
+        if (((BGCollision *)mBGCollision__15EntityBaseClass)->CameraBGIntersect(*(PVec3 *)m_unk10, spA0, 1.0f, 2U, m_unk6280, 0) != 0) {
+            sceVu0CopyVector(sp20.m_v, m_unk10);
+            if (IsHanging__6PlayerFv(m_unk114) != 0) {
+                m_unk62F1 = 1;
+                sceVu0SubVector(m_unk10, m_unk10, m_unk30);
+                sceVu0AddVector(m_unk20, m_unk30, m_unk10);
+            } else {
+                __mi__5PVec3FR5PVec3(spB0.m_v, m_unk20, m_unk40);
+                sceVu0CopyVector(m_unk10, spB0.m_v);
+                sceVu0Normalize(m_unk10, m_unk10);
+                sceVu0ScaleVector(m_unk10, m_unk10, 1.0f);
+                sceVu0AddVector(m_unk62A0, m_unk20, m_unk10);
+                sceVu0CopyVector(m_unk10, m_unk62A0);
+                if (((BGCollision *)mBGCollision__15EntityBaseClass)->FindIntersect(*(PVec3 *)m_unk40, *(PVec3 *)m_unk62A0, 2U, 0) != 0) {
+                    __mi__5PVec3FR5PVec3(spC0.m_v, m_unk62A0, m_unk20);
+                    sceVu0CopyVector(sp20.m_v, spC0.m_v);
+                    __pl__5PVec3FR5PVec3(spD0.m_v, m_unk20, m_unk10);
+                    sceVu0CopyVector(m_unk20, spD0.m_v);
+                    var_f0 = DistanceXZ__7MathAPIFPA4_fPA4_f((MathAPI *)m_unk20, (float (*)[4])m_unk40);
+                } else {
+                    sceVu0SubVector(m_unk10, sp20.m_v, m_unk30);
+                    sceVu0AddVector(m_unk20, m_unk30, m_unk10);
+                    var_f0 = m_unk140 * 0.9f;
+                }
+                goto block_36;
+            }
+        } else {
+            if (m_unk140 < m_unk178) {
+                var_f0 = m_unk140 + (0.1f * m_unk16C);
+                goto block_36;
+            }
+            if (!(m_unk140 <= (0.1f + m_unk178))) {
+                var_f0 = m_unk140 - (0.1f * m_unk16C);
+block_36:
+                m_unk140 = var_f0;
+            }
+block_37:
+            if (!(DistanceXZ__7MathAPIFPA4_fPA4_f((MathAPI *)m_unk40, (float (*)[4])m_unk20) <= 0.5f)) {
+                sceVu0SubVector(m_unk10, m_unk40, m_unk20);
+                sceVu0Normalize(m_unk10, m_unk10);
+                if ((m_unk10[0] != m_unk6378) || (m_unk10[1] != m_unk637C) || (m_unk10[2] != m_unk6380)) {
+                    m_unk6378 = m_unk10[0];
+                    m_unk637C = m_unk10[1];
+                    m_unk6380 = m_unk10[2];
+                    m_unk6384 = 0.0f;
+                }
+                if (m_unk6398 < 0.85f) {
+                    m_unk6398 = m_unk6398 * 1.1f;
+                }
+                m_unk6384 = m_unk6384 + (m_unk6398 * *(float *)((char *)gEng + 0x1E8));
+                if (!(m_unk6384 <= 1.0f)) {
+                    m_unk6384 = 1.0f;
+                }
+                QuatSlerp__7MathAPIFP9tag_EQuatP9tag_EQuatfP9tag_EQuat((char *)this + 0x6388, &m_unk6374, m_unk6384, (char *)this + 0x6388);
+            } else {
+                m_unk6398 = 0.05f;
+            }
+            if (*(unsigned char *)((char *)m_unk114 + 0x33A) != 0) {
+                m_unk20[1] = 5.0f + m_unk180[1];
+                m_unk40[1] = 2.0f + m_unk180[1];
+                spE0.m_v[0] = m_unk20[0];
+                spE0.m_v[1] = m_unk20[1];
+                spE0.m_v[2] = m_unk20[2];
+                spE0.m_v[3] = m_unk20[3];
+                spF0.m_v[0] = m_unk40[0];
+                spF0.m_v[1] = m_unk40[1];
+                spF0.m_v[2] = m_unk40[2];
+                spF0.m_v[3] = m_unk40[3];
+                CreateViewMatrix__6CameraFR5PMat45PVec35PVec3(m_pCamera, (float *)((char *)this + 0x60), spE0.m_v, spF0.m_v);
+            } else {
+                m_unk10[0] = m_unk20[0] + m_unk638C;
+                m_unk10[1] = m_unk20[1] + m_unk6390;
+                m_unk10[2] = m_unk20[2] + m_unk6394;
+                m_unk10[3] = 1.0f;
+                sp100.m_v[0] = m_unk20[0];
+                sp100.m_v[1] = m_unk20[1];
+                sp100.m_v[2] = m_unk20[2];
+                sp100.m_v[3] = m_unk20[3];
+                sp110.m_v[0] = m_unk10[0];
+                sp110.m_v[1] = m_unk10[1];
+                sp110.m_v[2] = m_unk10[2];
+                sp110.m_v[3] = m_unk10[3];
+                CreateViewMatrix__6CameraFR5PMat45PVec35PVec3(m_pCamera, (float *)((char *)this + 0x60), sp100.m_v, sp110.m_v);
+            }
+            sceVu0CopyMatrix(sp120, (float (*)[4])((char *)this + 0x60));
+            SetViewMatrix__6CameraF5PMat4(m_pCamera, (float *)sp120);
+        }
+        return 0;
+    case 1:
+        ProcessHeadCam();
+        sceVu0CopyMatrix(sp40, (float (*)[4])((char *)this + 0x60));
+        SetViewMatrix__6CameraF5PMat4(m_pCamera, (float *)sp40);
+        return 1;
+    }
+}
+
 // DRAFT: 0x00176A00 UpdateTargetPos__12CameraFollowFv
 // note: size 0x318 vs 0x320, DIFF 172 words; the 16-byte GetGroundPos copy at 0x58 lacks the two addiu pointer loads (ptr locals, temp, folded); tried flag order (kept), pointer locals and temp (no change)
 void CameraFollow::UpdateTargetPos() {
