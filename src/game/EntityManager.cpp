@@ -14,6 +14,8 @@ public:
 
 class MathAPI;
 extern MathAPI *mPlayerAPI__13EntityManager;
+extern "C" void ShellSort__FPFPvPv_bPPvi(bool (*pCompare)(void *, void *), void **ppItems, int nCount);
+int CompareDistToCam(void *pA, void *pB);
 
 class PList {
 public:
@@ -181,6 +183,7 @@ class MathAPI {
 public:
     float GetRelAngleYToPoint(float (*arg0)[4], float arg1, float (*arg2)[4]);
     static float DistanceXZ(float (*arg0)[4], float (*arg1)[4]);
+    static float DistanceSquared(float (*arg0)[4], float (*arg1)[4]);
 
     char _pad000[0x20];
     float m_unk20[4];           // 0x20, element 1 at 0x24
@@ -260,12 +263,19 @@ public:
     void ProcessSequence();
     void ProcessMeshFade();
     void SetState(int arg0);
+    int AddToLoad();
+    void RestoreOnWake();
+    int WantsToWake();
 
     char _pad000[0x04];
     unsigned int m_unk04;       // 0x04
     int m_unk08;                // 0x08 key compared by AddToRenderList
     unsigned int m_unk0C;       // 0x0C
-    char _pad10[0x1B - 0x10];
+    int m_unk10;                // 0x10 group key compared by WakeUpApparitions
+    char _pad14[0x18 - 0x14];
+    unsigned char m_unk18;      // 0x18
+    unsigned char m_unk19;      // 0x19
+    unsigned char m_unk1A;      // 0x1A
     unsigned char m_unk1B;      // 0x1B
     unsigned char m_unk1C;      // 0x1C
     char _pad1D[0x1E - 0x1D];
@@ -622,6 +632,73 @@ void EntityManager::ExecuteApparitions() {
             Destroy(pEntity->m_unk04, pEntity->m_unk0C);
             idx++;
         } while (idx < nTerminated);
+    }
+}
+
+// DRAFT: 0x00146A30 WakeUpApparitions__13EntityManagerFv
+// note: DIFF 182; frame 0x6C0 vs 0x6B0 (extra slot at sp+0xB0, apWake at 0xC0), this in s5 vs s4, nWake s7 vs s6; tried nWake in if (188), nWake before array (182), key inlined (191), player point inlined (188)
+void EntityManager::WakeUpApparitions() {
+    EntityBaseClass *apWake[0x180];
+    int nWake = 0;
+    if (m_unk5D48 == 0) {
+        for (unsigned int i = 0; i < m_unk5078; i++) {
+            EntityBaseClass *pEntity = (i < m_unk5078) ? (EntityBaseClass *)m_unk5080[i] : 0;
+            if (pEntity == 0) {
+                CdsAssert("EntityManager.cpp", 0x75B, "pEntity");
+            }
+            if (pEntity->m_unk1B != 0) {
+                if (pEntity->m_unk1C != 0 && pEntity->WantsToWake() != 0) {
+                    if (nWake >= 0x180) {
+                        CdsAssert("EntityManager.cpp", 0x76B, "iWakeIdx < MAX_EDITED_INSTANCES");
+                    }
+                    apWake[nWake] = pEntity;
+                    nWake++;
+                }
+            } else if (pEntity->m_unk18 != 0) {
+                if (pEntity->m_unk1C != 0 && pEntity->m_unk1A != 0) {
+                    if (nWake >= 0x180) {
+                        CdsAssert("EntityManager.cpp", 0x77B, "iWakeIdx < MAX_EDITED_INSTANCES");
+                    }
+                    apWake[nWake] = pEntity;
+                    nWake++;
+                }
+            } else {
+                pEntity->m_unk1C = 0;
+                pEntity->m_unk1E = 1;
+            }
+        }
+        if (nWake != 0) {
+            ShellSort__FPFPvPv_bPPvi((bool (*)(void *, void *))CompareDistToCam, (void **)apWake, nWake);
+            for (int i = 0; i < nWake; i++) {
+                EntityBaseClass *pWake = apWake[i];
+                if (pWake->AddToLoad() != 0) {
+                    pWake->m_unk1C = 0;
+                    pWake->m_unk1E = 1;
+                    pWake->RestoreOnWake();
+                } else {
+                    int key = pWake->m_unk10;
+                    for (unsigned int j = 0; j < m_unk5078; j++) {
+                        EntityBaseClass *pOther = (j < m_unk5078) ? (EntityBaseClass *)m_unk5080[j] : 0;
+                        if (pOther->m_unk10 == key && pOther->m_unk19 != 0) {
+                            Player *pPlayer = (Player *)mPlayerAPI__13EntityManager;
+                            float (*pPlayerPt)[4] = (pPlayer->m_unk3C != 0) ? (float (*)[4])(pPlayer->m_unk3C + 0x80) : &pPlayer->m_unk190;
+                            float (*pWakePt)[4] = (pWake->m_unk3C != 0) ? (float (*)[4])(pWake->m_unk3C + 0x80) : &pWake->m_unk190;
+                            float fWake = MathAPI::DistanceSquared(pWakePt, pPlayerPt);
+                            float (*pOtherPt)[4] = (pOther->m_unk3C != 0) ? (float (*)[4])(pOther->m_unk3C + 0x80) : &pOther->m_unk190;
+                            float fOther = MathAPI::DistanceSquared(pOtherPt, pPlayerPt);
+                            if (fWake < fOther && pOther->m_unk1B != 0 && pOther->m_unk1C == 0) {
+                                pOther->CheckSleep(true);
+                                pWake->m_unk1C = 0;
+                                pWake->m_unk1E = 1;
+                                pWake->RestoreOnWake();
+                                return;
+                            }
+                        }
+                    }
+                    pWake->m_unk1E = 0;
+                }
+            }
+        }
     }
 }
 
