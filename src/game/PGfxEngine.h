@@ -84,6 +84,7 @@ public:
     void SetGlowSizeAndColor(float fA, float fB, float *pColor);
     void EnableFullScreenFx(bool bEnable);
     void FadeFullScreenMotionBlur(char cTarget, int nFrames);
+    void RenderFullScreenMotionBlur(float fParam);
     void BeginSharedMesh(eBoxIntersect eBox, PMNode *pNode);
     void BeginMesh(eBoxIntersect eBox);
     void *ComputeMicrocodeOffset(eBoxIntersect eBox, unsigned int &nOffset);

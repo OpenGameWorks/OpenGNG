@@ -23,6 +23,8 @@ extern "C" void SetupExceptionHandlers__Fv();
 extern "C" int AddIntcHandler(int nLine, int (*pHandler)(int), int nArg);
 extern "C" void EnableIntc(int nLine);
 extern "C" int Init__16PParticleManagerFv(void *pThis);
+extern "C" void GsSetFullScreenSprites__FP22tagGsFullScreenSpritesccccbbb(void *pSprites, char cA, char cB, char cC, char cD, bool bA, bool bB, bool bC);
+extern "C" int Animate__5PGridFf(void *pThis, float fStep);
 extern "C" void sceGsResetGraph(int nA, int nB, short nC, int nD);
 void GsClearVRAM(unsigned char nA, unsigned char nB, unsigned char nC, unsigned char nD, short nE, short nF, short nG);
 extern char vu_clip_microcode_dma_packet[];
@@ -30,6 +32,20 @@ extern char vu_shadow_microcode_dma_packet[];
 extern char vu_fx_microcode_dma_packet[];
 extern char vu_debug_microcode_dma_packet[];
 extern char vu_noclip_microcode_dma_packet[];
+extern char vu_noclip_bfc_microcode_dma_packet[];
+extern char vu_clip_bfc_microcode_dma_packet[];
+extern char noclip_lit_bfc_projection_mesh_init[];
+extern char noclip_unlit_bfc_projection_mesh_init[];
+extern char noclip_lit_projection_mesh_init[];
+extern char noclip_unlit_projection_mesh_init[];
+extern char clip_lit_bfc_projection_mesh_init[];
+extern char clip_unlit_bfc_projection_mesh_init[];
+extern char clip_lit_projection_mesh_init[];
+extern char clip_unlit_projection_mesh_init[];
+extern char noclip_lit_bfc_projection_cull_mesh_init[];
+extern char noclip_unlit_bfc_projection_cull_mesh_init[];
+extern char noclip_lit_projection_cull_mesh_init[];
+extern char noclip_unlit_projection_cull_mesh_init[];
 extern char clip_unlit_spline_patch_init[];
 extern char dbg_display_init[];
 extern char fx_instance_mesh_init[];
@@ -100,6 +116,7 @@ public:
 class PGrid {
 public:
     void Enable(bool bEnable);
+    void Render();
 };
 
 class PTextureDmaChain {
@@ -1023,6 +1040,96 @@ void PGfxEngine::SetWorldMatrix(PMat4 *pMat) {
     pDst[3] = pSrc[3];
 }
 
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PGfxEngine.cpp", line, #cond))
+
+// DRAFT: 0x186C10 ComputeMicrocodeOffset__10PGfxEngineF13eBoxIntersectRUi
+// note: 141 words differ; case 1 early return keeps nSel in v0 (original keeps it in s1 and tail-merges sw into the delay slot of a b to the return move); variants tried: case 3 before case 2, early return in case 1.
+void *PGfxEngine::ComputeMicrocodeOffset(eBoxIntersect eBox, unsigned int &nOffset) {
+    void *pBase;
+    unsigned int nSel = 0;
+
+    switch ((int)eBox) {
+    case 1:
+        if (m_unk158E20) {
+            pBase = vu_noclip_bfc_microcode_dma_packet;
+            if (m_unk158E22) {
+                nSel = (unsigned int)(noclip_lit_bfc_projection_mesh_init + 0xB78) >> 3;
+            } else {
+                nSel = (unsigned int)(noclip_unlit_bfc_projection_mesh_init + 0x1A8) >> 3;
+            }
+        } else {
+            pBase = vu_noclip_microcode_dma_packet;
+            if (m_unk158E22) {
+                nSel = (unsigned int)(noclip_lit_projection_mesh_init + 0xBC8) >> 3;
+            } else {
+                nSel = (unsigned int)(noclip_unlit_projection_mesh_init + 0x1A8) >> 3;
+            }
+        }
+        nOffset = nSel;
+        return pBase;
+    case 4:
+        if (m_unk158E20) {
+            if (m_unk158E21) {
+                pBase = vu_clip_bfc_microcode_dma_packet;
+                if (m_unk158E22) {
+                    nSel = (unsigned int)(clip_lit_bfc_projection_mesh_init + 0x5E0) >> 3;
+                } else {
+                    nSel = (unsigned int)(clip_unlit_bfc_projection_mesh_init + 0x1A8) >> 3;
+                }
+            } else {
+                pBase = vu_noclip_bfc_microcode_dma_packet;
+                if (m_unk158E22) {
+                    nSel = (unsigned int)(noclip_lit_bfc_projection_cull_mesh_init + 0x1398) >> 3;
+                } else {
+                    nSel = (unsigned int)(noclip_unlit_bfc_projection_cull_mesh_init + 0x670) >> 3;
+                }
+            }
+        } else if (m_unk158E21) {
+            pBase = vu_clip_microcode_dma_packet;
+            if (m_unk158E22) {
+                nSel = (unsigned int)(clip_lit_projection_mesh_init + 0x5A0) >> 3;
+            } else {
+                nSel = (unsigned int)(clip_unlit_projection_mesh_init + 0x1A8) >> 3;
+            }
+        } else {
+            pBase = vu_noclip_microcode_dma_packet;
+            if (m_unk158E22) {
+                nSel = (unsigned int)(noclip_lit_projection_cull_mesh_init + 0x11E8) >> 3;
+            } else {
+                nSel = (unsigned int)(noclip_unlit_projection_cull_mesh_init + 0x688) >> 3;
+            }
+        }
+        break;
+    case 3:
+    case 2:
+        if (m_unk158E20) {
+            pBase = vu_noclip_bfc_microcode_dma_packet;
+            if (m_unk158E22) {
+                nSel = (unsigned int)(noclip_lit_bfc_projection_cull_mesh_init + 0x1398) >> 3;
+            } else {
+                nSel = (unsigned int)(noclip_unlit_bfc_projection_cull_mesh_init + 0x670) >> 3;
+            }
+        } else {
+            pBase = vu_noclip_microcode_dma_packet;
+            if (m_unk158E22) {
+                nSel = (unsigned int)(noclip_lit_projection_cull_mesh_init + 0x11E8) >> 3;
+            } else {
+                nSel = (unsigned int)(noclip_unlit_projection_cull_mesh_init + 0x688) >> 3;
+            }
+        }
+        break;
+    case 0:
+        CDS_ASSERT(0x485, !"Begin mesh called with Box Outside!");
+        break;
+    default:
+        CDS_ASSERT(0x489, !"Begin mesh called with unknown clip type!");
+        break;
+    }
+
+    nOffset = nSel;
+    return pBase;
+}
+
 // FUNCTION: 0x186F10 BeginMesh__10PGfxEngineF13eBoxIntersect
 void PGfxEngine::BeginMesh(eBoxIntersect eBox) {
     unsigned int nOffset = 0;
@@ -1221,6 +1328,61 @@ void PGfxEngine::EnableFullScreenFx(bool bEnable) {
         m_unk16F43C = GAME_FPS * 2.5f;
     } else {
         m_unk16F43C = 0.0f;
+    }
+}
+
+// DRAFT: 0x1878F0 RenderFullScreenMotionBlur__10PGfxEngineFf
+// note: 132 words differ; size 0x2A0 vs 0x2C0. Sprite-buffer/GS packet stack layout (sp+0x30..0x6D0), rate-byte register (a0 vs v0), and nSum in v1 not matched. Tried: goto vs ternary reset test (152/157), local order, sum operand order (all 132 or worse).
+void PGfxEngine::RenderFullScreenMotionBlur(float fParam) {
+    unsigned long long aRegs1[6];
+    unsigned long long aRegs2[6];
+    char aSprites[0x680];
+    if (m_unk16D406 <= 0 || m_unk16D404 < m_unk16D405) {
+        if (m_unk16D406 < 0) {
+            if (m_unk16D405 >= m_unk16D404) {
+                goto reset_fade;
+            }
+        }
+    } else {
+    reset_fade:
+        m_unk16D406 = 0;
+        m_unk16D404 = m_unk16D405;
+    }
+    int nSum = m_unk16D404 + m_unk16D406;
+    m_unk16D404 = (nSum > 0) ? ((nSum < 0x80) ? nSum : 0x80) : 0;
+    if (m_unk16D404 != 0) {
+        GsSetFullScreenSprites__FP22tagGsFullScreenSpritesccccbbb(aSprites, -0x80, -0x80, -0x80, m_unk16D404, true, true, false);
+        SetPrevFrameBufferAsTexture();
+        aRegs1[0] = 0x44;
+        aRegs1[1] = 0x42;
+        aRegs1[2] = 0x30000;
+        aRegs1[3] = 0x47;
+        aRegs1[4] = 5;
+        aRegs1[5] = 8;
+        m_unk154C80->SetGsRegisters((u_long128 *)aRegs1, 3);
+        m_unk154C80->SendGsPacket(aSprites, 0x680, true);
+        aRegs1[0] = 0;
+        aRegs1[1] = 8;
+        m_unk154C80->SetGsRegisters((u_long128 *)aRegs1, 1);
+        return;
+    }
+    if (Animate__5PGridFf(m_unk16D410, fParam) != 0) {
+        SetPrevFrameBufferAsTexture();
+        aRegs2[0] = 0x44;
+        aRegs2[1] = 0x42;
+        aRegs2[2] = 0x30000;
+        aRegs2[3] = 0x47;
+        aRegs2[4] = 5;
+        aRegs2[5] = 8;
+        m_unk154C80->SetGsRegisters((u_long128 *)aRegs2, 3);
+        ((PGrid *)m_unk16D410)->Render();
+        aRegs2[0] = 0;
+        aRegs2[1] = 8;
+        m_unk154C80->SetGsRegisters((u_long128 *)aRegs2, 1);
+    } else {
+        m_unk16D406 = 0;
+        m_unk16D404 = 0;
+        m_unk16D405 = 0;
     }
 }
 
