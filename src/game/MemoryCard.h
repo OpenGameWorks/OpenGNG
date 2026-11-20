@@ -55,22 +55,23 @@ public:
 
     char _pad000[0x1C0];
     int m_unk1C0;                   // 0x1C0 entry count bound for CheckFree, 0x40-byte entries from offset 0
-    char _pad1C4[0x1C8 - 0x1C4];
+    int m_unk1C4;                   // 0x1C4 loop counter used by CheckFree and CheckLoadData
     int m_unk1C8;                   // 0x1C8 must equal 0xB for SelectSlot to act
-    char _pad1CC[0x1D4 - 0x1CC];
+    int m_unk1CC;                   // 0x1CC handle returned by the sceMcOpen path
+    int m_unk1D0;                   // 0x1D0 compared against 2 by CheckLoadData
     unsigned int m_unk1D4;          // 0x1D4 free-block count compared against the need computed by CheckFree
-    char _pad1D8[0x1DC - 0x1D8];
+    int m_unk1D8;                   // 0x1D8 nonzero while a file operation is pending
     int m_unk1DC;                   // 0x1DC command word, written as (pCmd | 0x30000000)
     int m_unk1E0;                   // 0x1E0 countdown, reset to 0x3C by LoadGame
     short m_unk1E4;                 // 0x1E4
     short m_unk1E6;                 // 0x1E6
-    char _pad1E8[0x1EC - 0x1E8];
+    int m_unk1E8;                   // 0x1E8 size of the save block, 0x1C48 or 0x3C4 or Icon_tbl delta
     int m_unk1EC;                   // 0x1EC
-    char _pad1F0[0x1F4 - 0x1F0];
+    int m_unk1F0;                   // 0x1F0 toggle, flipped by ProcessCommand
     char m_unk1F4;                  // 0x1F4 set to 1 by InitSaveGame, cleared by InitLoadGame
     char m_unk1F5;                  // 0x1F5
     char m_unk1F6;                  // 0x1F6
-    char _pad1F7[0x1F8 - 0x1F7];
+    char m_unk1F7;                  // 0x1F7 cleared by ProcessCommand, set to 1 by it
     char m_unk1F8;                  // 0x1F8 bFlag argument of InitSaveGame
     char m_unk1F9;                  // 0x1F9 cleared by InitSaveGame
     char m_unk1FA;                  // 0x1FA file status byte, -1 after ResetFileStatus
@@ -80,7 +81,7 @@ public:
     char m_unk1FE;                  // 0x1FE
     char m_unk1FF;                  // 0x1FF
     int m_unk200;                   // 0x200 flag, nonzero while the MC text is shown
-    char _pad204[0x208 - 0x204];
+    int m_unk204;                   // 0x204 base of the slot index arithmetic in ProcessCommand
     int m_unk208;                   // 0x208 cleared by ResetGameData
     int m_unk20C;                   // 0x20C cleared by ResetGameData
     int m_unk210;                   // 0x210 signed slot index, side * 3 + column
@@ -92,7 +93,7 @@ public:
     unsigned char m_unk22D;         // 0x22D header byte, computed by UpdateHeader
     unsigned char m_unk22E;         // 0x22E header level, raised to nVal by UpdateHeader
     signed char m_unk22F;           // 0x22F preserved across ResetGameData
-    char _pad230[0x234 - 0x230];
+    int m_unk230;                   // 0x230 nonzero flag checked by ProcessCommand
     char m_unk234[0x7C];            // 0x234 Player::PlayerData record
     char _pad2B0[0x6B5 - 0x2B0];    // 0x2B0 per-entry 0xFF table, written by ResetGameData
     char m_unk6B5;                  // 0x6B5 set to 1 by ResetGameData
@@ -124,8 +125,9 @@ public:
     short m_unk1E74;
     char _pad1E76[0x231C - 0x1E76];
     int m_unk231C;                  // 0x231C cleared by InitSaveGame
-    char _pad2320[0x3F68 - 0x2320];
-    int m_unk3F68;                  // 0x3F68 saved gInterface word 0x18D0, written by InitScreen
+    char m_unk2320[0x3F64 - 0x2320]; // 0x2320 save block, indexed by byte offset in the memset and memcpy calls
+    int m_unk3F64;                  // 0x3F64 checksum of the save block, compared by ProcessCommand
+    int m_unk3F68;                 // 0x3F68 saved gInterface word 0x18D0, written by InitScreen
     MemoryCardView *m_unk3F6C;      // 0x3F6C virtual interface, slot 0x18 called by LoadGame
     PMNode *m_unk3F70[6];           // 0x3F70 per-slot PMNode, indexed by m_unk210
     FontNode *m_unk3F88[6][2];      // 0x3F88 per-slot FontNode pair, indexed by m_unk210 (stride 8)
