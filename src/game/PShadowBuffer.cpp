@@ -30,6 +30,109 @@ public:
     void Render(float *, float *, float *, float *, float *, float);
 };
 
+// DRAFT: 0x001D7C90 EndRender__13PShadowBufferFv
+// note: frame 0x160 and s0..s7 match; this copy lands in s0 not s4, packet pointer CSE and store order differ (270 words). Tried: 0x170 fp frame (272), char *self base (270).
+void PShadowBuffer::EndRender() {
+    long long pkt[26];
+    char *self = (char *)this;
+    int nVar;
+    int nTemp;
+
+    nVar = *(int *)(self + 0x28);
+    nTemp = nVar >> 13;
+    if (nVar < 0) {
+        nTemp = (nVar + 0x1FFF) >> 13;
+    }
+    pkt[0] = (long long)nTemp
+           | ((long long)((*(int *)(self + 0x18) + 0x3F) >> 6) << 16)
+           | (0xFFFFFFLL << 32);
+    pkt[1] = 0x4C;
+    pkt[2] = 0x31001;
+    pkt[3] = 0x47;
+    SetGsRegisters__12PDisplayListFP1i(*(void **)(gGfxEng + 0x154C80), pkt, 2);
+    SendGsPacket__12PDisplayListFPvib(*(void **)(gGfxEng + 0x154C80), self + 0x1430, 0x680, 1);
+
+    int nFloat = (int)*(float *)(self + 0x10);
+    int nY = *(int *)(self + 0x14);
+    int nYa = (nY < 0) ? ((nY + 0xFF) >> 8) : (nY >> 8);
+    pkt[0] = ((long long)*(int *)(self + 0x24) << 30)
+           | ((long long)*(int *)(self + 0x20) << 26)
+           | ((long long)*(short *)(self + 0x30) << 20)
+           | (long long)nYa
+           | ((long long)(*(int *)(self + 0x18) >> 6) << 14)
+           | (0xCLL << 32);
+    pkt[1] = 6;
+    pkt[2] = 0;
+    pkt[3] = 0x14;
+    pkt[4] = (long long)nFloat | 0x8000;
+    pkt[5] = 0x3B;
+    pkt[6] = ((long long)nFloat << 4) | 0x30009;
+    pkt[7] = 0x47;
+    nVar = *(int *)(self + 0x28);
+    nTemp = nVar >> 13;
+    if (nVar < 0) {
+        nTemp = (nVar + 0x1FFF) >> 13;
+    }
+    pkt[8] = (long long)nTemp
+           | ((long long)((*(int *)(self + 0x18) + 0x3F) >> 6) << 16)
+           | (0xFFFFFFLL << 32);
+    pkt[9] = 0x4C;
+    pkt[10] = ((0x800LL - (long long)(*(int *)(self + 0x18) >> 1)) << 4)
+            | ((0x800LL - (long long)(*(int *)(self + 0x1C) >> 1)) << 36);
+    pkt[11] = 0x18;
+    pkt[12] = 0;
+    pkt[13] = 0x3F;
+    pkt[14] = 1;
+    pkt[15] = 0x46;
+    SetGsRegisters__12PDisplayListFP1i(*(void **)(gGfxEng + 0x154C80), pkt, 8);
+    SendGsPacket__12PDisplayListFPvib(*(void **)(gGfxEng + 0x154C80), self + 0x730, 0x680, 1);
+
+    nVar = *(int *)(self + 0x28);
+    nTemp = nVar >> 13;
+    if (nVar < 0) {
+        nTemp = (nVar + 0x1FFF) >> 13;
+    }
+    pkt[0] = (long long)nTemp
+           | ((long long)((*(int *)(self + 0x18) + 0x3F) >> 6) << 16);
+    pkt[1] = 0x4C;
+    pkt[2] = 0x30000;
+    pkt[3] = 0x47;
+    pkt[4] = 0x99;
+    pkt[5] = 0x42;
+    pkt[6] = 0;
+    pkt[7] = 0x3F;
+    SetGsRegisters__12PDisplayListFP1i(*(void **)(gGfxEng + 0x154C80), pkt, 4);
+    SendGsPacket__12PDisplayListFPvib(*(void **)(gGfxEng + 0x154C80), self + 0xDB0, 0x680, 1);
+
+    pkt[16] = 0;
+    pkt[17] = 0x1A;
+    pkt[18] = 0x18;
+    pkt[19] = 0x1B;
+    if (*(int *)(gGfxEng + 0x158DE0) & 1) {
+        pkt[20] = *(long long *)(gGfxEng + 0x158C30);
+    } else {
+        pkt[20] = *(long long *)(gGfxEng + 0x158D20);
+    }
+    pkt[21] = 0x18;
+    nVar = *(int *)(self + 0x2C);
+    nTemp = nVar >> 13;
+    if (nVar < 0) {
+        nTemp = (nVar + 0x1FFF) >> 13;
+    }
+    pkt[22] = (long long)nTemp | ((long long)*(short *)(self + 0x32) << 24);
+    pkt[23] = 0x4E;
+    pkt[24] = (0x80LL << 32) | 0x8080;
+    pkt[25] = 0x3B;
+    SetGsRegisters__12PDisplayListFP1i(*(void **)(gGfxEng + 0x154C80), &pkt[16], 5);
+
+    if (MODE_PAL != 0) {
+        NextBatch__16PTextureDmaChainFv((char *)*(void **)(gGfxEng + 0x154C80) + 0xA3380);
+        SetTexSyncPacket__12PDisplayListFv(*(void **)(gGfxEng + 0x154C80));
+        NextBatch__16PTextureDmaChainFv((char *)*(void **)(gGfxEng + 0x154C80) + 0xA3380);
+        SetTexSyncPacket__12PDisplayListFv(*(void **)(gGfxEng + 0x154C80));
+    }
+}
+
 // DRAFT: 0x001D8110 BeginRender__13PShadowBufferFv
 // note: compiles; PAL/non-PAL alloc paths and the 16-entry GS packet build are written, but the 64-bit packet ops and gGfxEng address order differ
 void PShadowBuffer::BeginRender() {
