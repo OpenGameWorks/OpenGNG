@@ -1,5 +1,6 @@
 // FLAGS: -Cpp_exceptions off -str readonly
 #include "PSound.h"
+#include "MathAPI.h"
 
 // TODO(header): foreign declarations
 void CdsAssert(char *pFile, int nLine, char *pExpr);
@@ -20,6 +21,10 @@ extern "C" void SOUND_CopyIOPBuffer();
 extern char gEng[105360];
 extern "C" void __ct__14PFadeMsecFloatFv(void *);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
+extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
+extern "C" float sceVu0InnerProduct(float *pA, float *pB);
+struct tagFLOAT3D;
 extern "C" void SOUND_StopMultipleSounds(int nHandle, int nCount);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" int SOUND_StopStream(unsigned int);
@@ -173,6 +178,27 @@ void PSound::WaitOnVSync() {
     fst_lastVSyncWaitCount = nSpins;
 }
 
+// DRAFT: 0x001A4200 PlayMultipleAtOnce__6PSoundFUi
+// note: 7 words differ: pEnd lands in s2 and nPlayed in s1 (original s1/s2 swapped); declaration order, unsigned pEnd and nPlayed scoped in the guard did not fix it.
+int PSound::PlayMultipleAtOnce(unsigned int nSound) {
+    SpotInfo *pSpot = (SpotInfo *)m_unk2EB4;
+    unsigned int nPlayed = 0;
+    SpotInfo *pEnd = (SpotInfo *)((char *)pSpot + 0x2580);
+    if ((unsigned int)pEnd >= (unsigned int)pSpot) {
+        do {
+            if (!(pSpot->m_unk0C & 2)) {
+                PlaySoundUbiquitous(pSpot->m_unk00);
+                nPlayed++;
+                if (!(nPlayed < nSound)) {
+                    break;
+                }
+            }
+            pSpot++;
+        } while ((unsigned int)pEnd >= (unsigned int)pSpot);
+    }
+    return 0;
+}
+
 // FUNCTION: 0x001A42A0 TriggerSystemSound__6PSoundFUiUiP6PMNode
 int PSound::TriggerSystemSound(unsigned int p0, unsigned int p1, PMNode *pNode) {
     unsigned int nSound = 0;
@@ -270,6 +296,24 @@ void PSound::PauseByCategories(unsigned int nCategory) {
     SOUND_SetPauseCategories(nCategory);
 }
 
+// DRAFT: 0x001A4D80 PointInEnclosure__6PSoundFPfP16tagBOX_OR_SPHEREP14tagVuMatrixBox17EnumEnclosureType
+// note: DIFF 3; matrix-call argument order (daddu a1,a3 before addiu a0,a0,0x2E90) and daddiu vs addiu for constant 1 on the sphere path. Bool nRet gave DIFF 14.
+int PSound::PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType) {
+    float vDiff[4];
+    float vCenter[4];
+    int nRet = 0;
+    if (eType == ENCLOSURE_SPHERE) {
+        memcpy(vCenter, pBox, 0x10);
+        sceVu0SubVector(vDiff, pPoint, vCenter);
+        if (sceVu0InnerProduct(vDiff, vDiff) <= ((float *)pBox)[3] * ((float *)pBox)[3]) {
+            nRet = 1;
+        }
+    } else {
+        nRet = ((MathAPI *)((char *)this + 0x2E90))->PointInMatrixBoxWSphereCheck((float *)pMatrix, (tagVuMatrixBox *)pBox, (tagFLOAT3D *)pMatrix) & 0xFF;
+    }
+    return nRet;
+}
+
 // FUNCTION: 0x001A4E20 EnableTrigletByInstanceID__6PSoundFUib
 int PSound::EnableTrigletByInstanceID(unsigned int nInstanceID, bool bEnable) {
     for (unsigned int i = 0, nOff = 0; i < (unsigned int)m_unk79E0[0]; nOff += 0x150, i++) {
@@ -310,6 +354,31 @@ void PSound::SetProposedReverbParams(unsigned int p0, unsigned int p1, unsigned 
     fst_ReverbRecProposed[4] = p4;
     fst_ReverbRecProposed[0] = p0;
     m_unk5438 = p0;
+}
+
+// DRAFT: 0x001A57D0 CheckAllChannelsMatchSub__6PSoundFv
+// note: DIFF 12; top-tested while inner walks best (do-while DIFF 21/18); extra nop after inner-loop lw and outer-loop branch targets differ.
+int PSound::CheckAllChannelsMatchSub() {
+    AmbientChannelState *pState = (AmbientChannelState *)m_unkF8;
+    AmbientChannelState *pEnd = (AmbientChannelState *)(m_unkF8 + (*(int *)((char *)this + 0xE4) << 5));
+    while (pState < pEnd) {
+        AmbientChannelState *pV = pState;
+        void *pA = (void *)pState->m_unk08;
+        if (pA != 0) {
+            if (pState != 0) {
+                while (pV != 0) {
+                    pV = (AmbientChannelState *)pV->m_unk1C;
+                }
+            }
+            if (pA != 0) {
+                while (pA != 0) {
+                    pA = *(void **)((char *)pA + 0x50);
+                }
+            }
+        }
+        pState++;
+    }
+    return 0;
 }
 
 // FUNCTION: 0x001A5920 ErrorRecovery__6PSoundFv
@@ -380,6 +449,23 @@ int PSound::StopAllRegularSounds() {
     SOUND_StopAllRegularSounds();
     PSoundReInitRegularSounds();
     return 0;
+}
+
+// FUNCTION: 0x001A83B0 DebugStopAmbientSoundsBySoundID__6PSoundFUi
+int PSound::DebugStopAmbientSoundsBySoundID(unsigned int nSound) {
+    int nCount = 0;
+    AmbientEntry *pEntry = (AmbientEntry *)((char *)this + 0x380);
+    AmbientEntry *pEnd = (AmbientEntry *)((char *)this + 0x2220);
+    if (pEntry < pEnd) {
+        do {
+            if (nSound == pEntry->m_unk10 && ((unsigned short)pEntry->m_unk14 & 0x800)) {
+                StopAmbientEntry(pEntry, 0);
+                nCount++;
+            }
+            pEntry = (AmbientEntry *)((char *)pEntry + 0x70);
+        } while (pEntry < pEnd);
+    }
+    return nCount;
 }
 
 // FUNCTION: 0x001A8450 StopSoundBySoundRefIfAmbient__6PSoundFUi
@@ -585,6 +671,20 @@ PSound::SpotInfo *PSound::GetSpotInfo(unsigned int nID) {
         } while (pCur < pEnd);
     }
     return 0;
+}
+
+// FUNCTION: 0x001A8FE0 SetLevelParameters__6PSoundFUiUiUiUi
+int PSound::SetLevelParameters(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3) {
+    int nRet = 0;
+    if (SetStandardSecondaryMusicFileID(p0) < 0) {
+        nRet = -1;
+    }
+    SetPositionalRangeOneshot(p1);
+    SetPositionalRangeAmbient(p2);
+    SetDistLinearPercent(p3);
+    m_unkD4 = *(int *)(gEng + 0x19A80);
+    m_unkD8 = *(int *)(gEng + 0x137A4);
+    return nRet;
 }
 
 // FUNCTION: 0x001A9080 Resume__6PSoundFv

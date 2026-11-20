@@ -4,6 +4,12 @@
 // Forward declarations of foreign classes named by PSound member parameters.
 class GameSoundTrigletPawn;
 class PMNode;
+struct tagBOX_OR_SPHERE;
+struct tagVuMatrixBox;
+enum EnumEnclosureType {
+    ENCLOSURE_SPHERE = 0,
+    ENCLOSURE_MATRIX_BOX = 1
+};
 
 class PSound {
 public:
@@ -110,8 +116,11 @@ public:
     void AbilityScreenEnter();
     void AbilityScreenLeave();
     void SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol);
+    int PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType);
+    int CheckAllChannelsMatchSub();
     int PlayMusicOnStream(unsigned int p0, unsigned int p1, unsigned int p2);
     void SetPositionalRangeAmbient(unsigned int nRange);
+    void SetDistLinearPercent(unsigned int nPercent);
     void SetPositionalRangeOneshot(unsigned int nRange);
     int PlayMusic(unsigned int nTrack);
     void PSoundReInitSoundRooms();
@@ -161,6 +170,7 @@ public:
     int PlaySoundTrigletUbiquitous(unsigned int p0, unsigned int p1, const GameSoundTrigletPawn *pPawn);
     int PlaySoundTriglet(unsigned int p0, unsigned int p1, const GameSoundTrigletPawn *pPawn);
     int PlayMultipleAtOnce(unsigned int nSound);
+    int PlaySoundUbiquitous(unsigned int nSound);
     int PlaySoundPMNode(unsigned int p0, unsigned int p1, const PMNode *pNode);
     int StopAllRegularSounds();
     void StopStreamsAndRequestEEControl();
@@ -186,6 +196,7 @@ public:
     void KillByCategories(unsigned int nCategory);
     void PauseByCategories(unsigned int nCategory);
     int DebugStopAllDebugAmbients();
+    int DebugStopAmbientSoundsBySoundID(unsigned int nSound);
     void SendStops();
     void SoundEditLeave();
     void SoundEditEnter();
