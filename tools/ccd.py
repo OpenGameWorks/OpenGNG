@@ -12,7 +12,10 @@ and owns the `mwcc` container; clients only exchange files with it:
 tools/mwcc.py uses the spool automatically while build/ccq/alive is fresh
 (the daemon touches it every second), so callers need no configuration.
 
-Usage: ccd.py [--jobs 8] [--container mwcc]
+Usage: PYTHONSAFEPATH=1 ccd.py [--jobs 8] [--container mwcc]
+
+PYTHONSAFEPATH=1 keeps tools/ off sys.path: tools/queue.py shadows the
+standard-library queue module that ThreadPoolExecutor imports.
 """
 
 from __future__ import annotations
