@@ -1,0 +1,4 @@
+#ifndef ENTITYALLOCATOR_H
+#define ENTITYALLOCATOR_H
+
+#endif
