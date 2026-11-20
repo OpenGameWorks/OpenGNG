@@ -1598,32 +1598,32 @@ void Player::AlignPosition(EntityBaseClass *arg0) {
 }
 
 // DRAFT: 0x0015B9B0 UnlockGateMove__6PlayerFv
+// note: 1 word differs at 0x0014: the original loads m_unk328 through s1 (this saved to s1 at 0x10), ours through a0 (incoming this). Tried: direct this (1), Player *self alias for whole body (1), self alias only for the m_unk328 argument (1, copy propagation folds it back).
 void Player::UnlockGateMove() {
-    Player *self = this;
-    void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, ((Player *)self)->m_unk328);
+    void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk328);
     if (pApparition != 0) {
-        int state = self->m_unk250;
-        int h = (int)self->m_unk3C[13];
+        int state = m_unk250;
+        int h = (int)m_unk3C[13];
         switch (state) {
         case 0:
-            ((ApparitionVirtuals *)pApparition)->OnHitEvent(self, 0, 0x1FF, 0);
-            self->m_unk250 = 1;
+            ((ApparitionVirtuals *)pApparition)->OnHitEvent(this, 0, 0x1FF, 0);
+            m_unk250 = 1;
             break;
         case 1:
             if (h >= 0xD) {
-                self->m_unk250 = 2;
-                self->GameVarSub(8, 1);
-                self->UpdateKey();
+                m_unk250 = 2;
+                GameVarSub(8, 1);
+                UpdateKey();
             }
             break;
         case 2:
             if (h >= 0x23) {
-                self->m_unk250 = 3;
-                ((EntityBaseClass *)self)->PlaySound(0x99);
+                m_unk250 = 3;
+                ((EntityBaseClass *)this)->PlaySound(0x99);
             }
             break;
         }
-        self->AlignPosition((EntityBaseClass *)pApparition);
+        AlignPosition((EntityBaseClass *)pApparition);
     }
 }
 
@@ -1668,7 +1668,7 @@ void Player::UnlockChestMove() {
     }
 }
 
-// note: 2 words differ: the gp global mpEntMgr loads into a0 before the m_unk328 load into a1; the original has them reversed. Tried a hoisted id local (worse), a cast local (same).
+// note: 2 words differ (0x40/0x48): the gp global mpEntMgr loads into a0 before the m_unk328 load into a1; the original has them reversed, and the m_unk328 load fills the jal delay slot in ours. Tried: hoisted id local (worse), cast local (same), id local after the m_unk250 store (same, copy propagation), separate mgr local (same), nested if form (same).
 // DRAFT: 0x0015BC20 OpenChestMove__6PlayerFv
 void Player::OpenChestMove() {
     if (m_unk250 == 0 && !(m_unk3C[0xD] <= 8.0f)) {
@@ -1701,7 +1701,7 @@ void Player::SetDeath() {
 }
 
 // DRAFT: 0x0015BD50 CyclockDamageMove__6PlayerFv
-// note: 1 word differs at 0x008C: original delay slot is nop, ours is addiu a1,zero,1.
+// note: 1 word differs at 0x008C: original delay slot is nop, ours is addiu a1,zero,1 (the original reuses the a1=1 from the switch compare). Tried: if-form for r (4 words), int one=1 hoisted before state (1), declared before state (1), inside case 2 (1), typed AbilityVirtuals local (1), one shared with m_unk250 stores (1).
 void Player::CyclockDamageMove() {
     int state = m_unk250;
     switch (state) {
