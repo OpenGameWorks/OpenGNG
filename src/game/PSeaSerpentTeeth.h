@@ -4,6 +4,7 @@
 #include "types.h"
 
 class PMNode;
+class PResourceManager;
 struct tagToothInfo;
 struct tagVuStaticInstance;
 
@@ -11,12 +12,13 @@ class PSeaSerpentTeeth {
 public:
     PSeaSerpentTeeth();
     ~PSeaSerpentTeeth();
+    void Create(PMNode *pLowerJaw1, PMNode *pLowerJaw2, PMNode *pUpperJaw1, PMNode *pUpperJaw2, PResourceManager *pResMgr);
     void ComputeInstanceData(PMNode *pNode, tagToothInfo *pTeeth, int nCount, tagVuStaticInstance *pOut);
     void KnockOutTeeth();
     void Render();
 
     PMNode *m_unk0;                 // 0x000
-    char _pad004[4];                // 0x004
+    PMNode *m_unk4;                 // 0x004
     PMNode *m_unk8;                 // 0x008
     PMNode *m_unkC;                 // 0x00C
     char m_unk10[0xB40];            // 0x010 tagToothInfo array, stride 0x30
