@@ -19,6 +19,7 @@ extern "C" void QwordCopy__FP1P1Ui(u_long128 *pDst, u_long128 *pSrc, unsigned in
 extern "C" void sceVu0ApplyMatrix(float *, float (*)[4], float *);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
+extern "C" void sceVu0ScaleVectorXYZ(float *, float *, float);
 void FastMath_RotateMatrix(float (*)[4][4], float (*)[4][4], float (*)[4], float (*)[4][4]);
 
 // FUNCTION: 0x001FD130 GenerateLeafMeshData__22PParticleBlowingLeavesFv
@@ -72,6 +73,159 @@ void PParticleBlowingLeaves::ComputeWindAxes(float *pWind) {
     sceVu0Normalize(m_unkA10, m_unkA10);
     sceVu0Normalize(m_unkA20, m_unkA20);
     sceVu0Normalize(m_unkA30, m_unkA30);
+}
+
+struct PParticleBlowingLeaves::tagLeaf {
+    float m_unk00;
+    float m_unk04;
+    float m_unk08;
+    float m_unk0C;
+    char _pad10[0x10];
+    float m_unk20;
+    float m_unk24;
+    float m_unk28;
+    int m_unk2C;
+    float m_unk30;
+    float m_unk34;
+    int m_unk38;
+    float m_unk3C;
+    char _pad40[0x30];
+};
+
+// DRAFT: 0x001FD350 SpawnLeaf__22PParticleBlowingLeavesFPQ222PParticleBlowingLeaves7tagLeaf
+// note: size 0x3B8 vs 0x39C, s2/s3 saved (original s0/s1 only); first VU0 block scheduled differently; LCG and float constants after the scale call unverified
+void PParticleBlowingLeaves::SpawnLeaf(tagLeaf *pLeaf) {
+    float v50[4];
+    float v30[4];
+    float v40[4];
+    int sb;
+    float s;
+    unsigned int seed;
+    int val;
+    float r;
+
+    s = -m_unk9F0;
+    asm { mfc1 sb, s }
+    {
+        float *pA30 = m_unkA30;
+        float *pE0 = m_unk9E0;
+        float *p50 = v50;
+        asm {
+            lqc2 vf1, 0x0(pA30)
+            lqc2 vf2, 0x0(pE0)
+            qmtc2.i sb, vf3
+            vmulx.xyzw vf4, vf1, vf3x
+            vnop
+            vnop
+            vnop
+            vadd.xyzw vf5, vf4, vf2
+            vnop
+            vnop
+            vnop
+            sqc2 vf5, 0x0(p50)
+        }
+    }
+
+    s = -m_unk9C0[0];
+    asm { mfc1 sb, s }
+    {
+        float *pA10 = m_unkA10;
+        float *p50 = v50;
+        float *p30 = v30;
+        asm {
+            lqc2 vf1, 0x0(pA10)
+            lqc2 vf2, 0x0(p50)
+            qmtc2.i sb, vf3
+            vmulx.xyzw vf4, vf1, vf3x
+            vnop
+            vnop
+            vnop
+            vadd.xyzw vf5, vf4, vf2
+            vnop
+            vnop
+            vnop
+            sqc2 vf5, 0x0(p30)
+        }
+    }
+
+    s = m_unk9C0[0];
+    asm { mfc1 sb, s }
+    {
+        float *pA10 = m_unkA10;
+        float *p50 = v50;
+        float *p40 = v40;
+        asm {
+            lqc2 vf1, 0x0(pA10)
+            lqc2 vf2, 0x0(p50)
+            qmtc2.i sb, vf3
+            vmulx.xyzw vf4, vf1, vf3x
+            vnop
+            vnop
+            vnop
+            vadd.xyzw vf5, vf4, vf2
+            vnop
+            vnop
+            vnop
+            sqc2 vf5, 0x0(p40)
+        }
+    }
+
+    v30[1] = m_unk9E0[1] - m_unk9C0[1];
+    v40[1] = m_unk9E0[1] + m_unk9C0[1];
+
+    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+    pLeaf->m_unk00 = (float)((m_unkD0 >> 16) & 0x7FFF);
+    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+    pLeaf->m_unk04 = (float)((m_unkD0 >> 16) & 0x7FFF);
+    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+    pLeaf->m_unk08 = (float)((m_unkD0 >> 16) & 0x7FFF);
+    sceVu0ScaleVectorXYZ((float *)pLeaf, (float *)pLeaf, 3.0517578125e-5f);
+
+    {
+        float *p30 = v30;
+        float *p40 = v40;
+        float *pOut = (float *)pLeaf;
+        asm {
+            lqc2 vf1, 0x0(p30)
+            lqc2 vf2, 0x0(p40)
+            lqc2 vf3, 0x0(pOut)
+            vsub.xyz vf4, vf2, vf1
+            vnop
+            vnop
+            vnop
+            vmul.xyz vf5, vf4, vf3
+            vnop
+            vnop
+            vnop
+            vadd.xyz vf3, vf5, vf1
+            vnop
+            vnop
+            vnop
+            sqc2 vf3, 0x0(pOut)
+        }
+    }
+
+    pLeaf->m_unk0C = 1.0f;
+    pLeaf->m_unk28 = 0.6f;
+    pLeaf->m_unk2C = 0;
+
+    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+    r = (float)((m_unkD0 >> 16) & 0x7FFF) * 3.0517578125e-5f;
+    pLeaf->m_unk24 = r * 0.3f + 0.7f;
+    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+    r = (float)((m_unkD0 >> 16) & 0x7FFF) * 3.0517578125e-5f;
+    pLeaf->m_unk20 = r * 0.25f + 0.8f;
+    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+    r = (float)((m_unkD0 >> 16) & 0x7FFF) * 3.0517578125e-5f;
+    pLeaf->m_unk30 = r * 240.0f + 240.0f;
+    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+    r = (float)((m_unkD0 >> 16) & 0x7FFF) * 3.0517578125e-5f;
+    pLeaf->m_unk34 = m_unk9F4 * (r * 0.3f + 0.2f);
+    pLeaf->m_unk30 = 2.0f * m_unk9F0 / pLeaf->m_unk34;
+    pLeaf->m_unk38 = 0;
+    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+    r = (float)((m_unkD0 >> 16) & 0x7FFF) * 3.0517578125e-5f;
+    pLeaf->m_unk3C = r * 0.05f + 0.05f;
 }
 
 // DRAFT: 0x001FD6F0 InitLeafRotations__22PParticleBlowingLeavesFv
