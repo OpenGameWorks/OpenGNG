@@ -14,6 +14,8 @@ public:
     void SkipToFadeOut();
     void InitBlurStrip(tagBlurStrip *pStrip, char cA, short sA, short sB, short sC, short sD, float fA, bool bFlag, float fB, float fC);
     void InitBlurPacket(tagGsScreenBlurPacket *pPacket, int nWidth, int nHeight, char cA, char cB, char cC, char cD);
+    void WobbleSTGrids(tagGsScreenBlurPacket *pPacket, float fAngle);
+    void Animate(float fDelta);
 
 private:
     char _pad00[0x10];
