@@ -42,7 +42,7 @@ public:
     void GetBoxer(int arg0);
     void SwapAbility(int arg0);
     void SetSword();
-    void GameVarSet(unsigned int arg0, int arg1);
+    int GameVarSet(unsigned int arg0, int arg1);
     int GameVarSub(unsigned int arg0, int arg1);
     int MightyBlowCheck(unsigned int arg0);
     void AirSliceMove();

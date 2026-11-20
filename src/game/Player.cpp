@@ -24,6 +24,15 @@ extern "C" int rand();
 extern "C" int LoadMesh__15EntityBaseClassFUibb(void *pThis, unsigned int uId, bool bA, bool bB);
 extern "C" void SetAbilityAction__6PlayerFP9PSkeletonii(void *pSkeleton, int nIndex, int nRemain);
 extern float MIN_TOP;
+extern "C" void PlaySoundApparition__6PSoundFUiUi(void *pThis, unsigned int nSound, unsigned int nFlags);
+extern "C" int printf(const char *pFmt, ...);
+struct PlingEntry {
+    int unk0;
+    int unk4;
+    unsigned char unk8;
+    char _pad009[3];
+};
+extern PlingEntry PlingTable[8];
 class VirtualSlot08Object {
 public:
     virtual void Slot08(int arg0);
@@ -272,6 +281,7 @@ public:
     EffectNode *EffectValid(unsigned int arg0);
     void DeleteEffect(EffectNode *arg0);
     void DeleteEffect(unsigned int arg0);
+    PlingEffect *CreatePling(EntityBaseClass *arg0, float arg1, unsigned int arg2, unsigned int arg3, bool arg4);
 };
 extern EffectAPI mEffectAPI__13EntityManager;
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
@@ -3333,6 +3343,78 @@ void Player::ResetPling() {
     }
 }
 
+// DRAFT: 0x00164BF0 SetPling__6PlayerFQ26Player9PlingTypeP15EntityBaseClassUi
+// note: 120 words; sound-ID branch grouping, m_unk334 placement and the printf guard are unresolved.
+void Player::SetPling(PlingType arg0, EntityBaseClass *arg1, unsigned int arg2) {
+    if (*((unsigned char *)&gInterface + 0x1A07) == 0) {
+        return;
+    }
+    if (m_unk32C != 0) {
+        m_unk32C->Slot00(1);
+        m_unk32C = 0;
+        return;
+    }
+    if (m_unk26C != 0) {
+        return;
+    }
+    if (m_unk26B != 0) {
+        return;
+    }
+    if (m_unk2F8 != 0.0f) {
+        return;
+    }
+    if (m_unk229 >= 4) {
+        return;
+    }
+    if (m_unk324 != 0) {
+        return;
+    }
+    if ((m_unk264 & 0x30) == 0) {
+        return;
+    }
+    if ((m_unk1D0 & 4) == 0) {
+        return;
+    }
+    if (arg0 >= 8) {
+        CdsAssert__FPciPc("Player.cpp", 0x770, "eType < MAX_PLING");
+    }
+    m_unk324 = arg0;
+    m_unk328 = *(int *)((char *)arg1 + 4);
+    if (m_unk32C == 0) {
+        PlingEntry *e = &PlingTable[arg0];
+        if (arg2 == 0) {
+            arg2 = e->unk4;
+        }
+        if (arg2 != 0) {
+            unsigned int v = *(unsigned int *)((char *)this + 0x1D4 + e->unk0 * 4);
+            if (v < arg2) {
+                unsigned int nSnd;
+                unsigned int nTag;
+                unsigned int nArg;
+                if (e->unk8 != 0) {
+                    arg2 = 0x81000009;
+                    nTag = 0x82000040;
+                    nSnd = 0x34;
+                    m_unk334 = 0;
+                } else {
+                    arg2 = 0x81000007;
+                    nTag = 0x8200003F;
+                    nSnd = 0xE3;
+                    m_unk334 = 0;
+                }
+                m_unk334 = 1;
+                PlaySoundApparition__6PSoundFUiUi(&gSound, nSnd, 0x80000000);
+                m_unk32C = mEffectAPI__13EntityManager.CreatePling((EntityBaseClass *)this, 4.5f, arg2, nTag, false);
+                nArg = nSnd;
+                if (nArg != 0) {
+                    printf("Pling is used by %d\n", nArg);
+                }
+                return;
+            }
+        }
+    }
+}
+
 // DRAFT: 0x00164E20 UpdateBodyBox__6PlayerFv
 // note: 98 words differ; float clamp block uses f1-f3 where original uses f20/f21, 6-arm exit layout and FastMath_Fabs reloc differ; tried switch form, else-first, and single-load case 6 (109)
 void Player::UpdateBodyBox() {
@@ -3461,6 +3543,54 @@ void Player::Kill() {
     if (m_unk1D0 & 1) {
         ForceDie(0x1A);
     }
+}
+
+// DRAFT: 0x00165C20 GameVarSet__6PlayerFUii
+// note: 95 words; returns int (0 on the GameVarTbl gates, 1 otherwise); tried &GameVarTbl[i], (T*)(GameVarTbl+i) pointer forms, no gain.
+int Player::GameVarSet(unsigned int arg0, int arg1) {
+    unsigned char *pEntry;
+    ((arg0 < 0x14) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x506, "iVar < GameVarMax"));
+    ((arg1 >= 0) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x507, "iValue >= 0"));
+    pEntry = (unsigned char *)GameVarTbl + arg0 * 6;
+    if (pEntry[4] != 0 && (m_unk1D0 & 1) == 0) return 0;
+    if (pEntry[5] != 0 && m_unk229 >= 4) return 0;
+    if (arg0 != 0xD) {
+        if (arg0 == 0xF) {
+            ((EntityBaseClass *)this)->PlaySound(0x20);
+            if (m_unk210 != arg1) {
+                m_unk210 = arg1;
+                if (m_unk2A4 == 0) SetShield(true);
+            }
+            return 1;
+        }
+        if (arg0 == 0xA) {
+            int old = m_unk1FC;
+            if (old == arg1) return 1;
+            if (((old ^ arg1) & 2) != 0) {
+                if (m_unk229 != 4 && (*(int *)((char *)m_unk38 + 0x108) & 1) == 0) {
+                    *((char *)this + 0x339) = (char)arg1;
+                    return 1;
+                }
+                *((char *)this + 0x22A) = (char)old;
+            }
+            SetSword();
+            m_unk1FC = arg1;
+            ((EntityBaseClass *)this)->PlaySound(0xE4);
+            SetPowerupMotion(0x39);
+            return 1;
+        }
+        if (arg0 == 0x11) {
+            int old = m_unk218;
+            m_unk218 = arg1;
+            m_unk1D4 = (arg1 == 4) ? 4 : 3;
+            if (m_unk229 == 2) {
+                if (((old ^ arg1) & 4) != 0) SetMaximo(2, false);
+                else UpdateDisplayList();
+            }
+        }
+    }
+    ((int *)((char *)this + 0x1D4))[arg0] = arg1;
+    return 1;
 }
 
 // note: 31 differing lines; original keeps the row base in a2 and counter in a0 with mbHard loaded first; ours uses a1/a0 and a different loop shape. Tried: first loop form (about 30), base pointer ComboLevel[mb*10] (32), mb/thr locals first (31, kept).
