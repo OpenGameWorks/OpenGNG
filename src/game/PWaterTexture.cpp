@@ -12,6 +12,8 @@ float FastMath_IntCos180(int nAngle);
 float FastMath_IntSin180(int nAngle);
 void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern char gGfxEng[1504384];
+extern "C" void *GetTexEnv__15PTextureManagerFi(void *pThis, int nHandle);
+extern "C" unsigned int GsGetTexByteAddr__FP23tagGsTextureEnvironment(void *pEnv);
 
 // DRAFT: 0x001EE330 InitWobbleStrip__13PWaterTextureFP14tagWobbleStripcssssfbff
 // note: DIFF 69; prologue, CdsAssert and string addressing match; loop setup register assignment differs (dsll32/dsra32 sign extension and sll 4 ordering); -str readonly needed.
@@ -49,6 +51,145 @@ void PWaterTexture::InitWobbleStrip(tagWobbleStrip *pStrip, char cA, short sB, s
         nX += nStep;
         nOff += 0x40;
     }
+}
+
+#define WB_U8(p, o)  (*(unsigned char *)((char *)(p) + (o)))
+#define WB_U16(p, o) (*(unsigned short *)((char *)(p) + (o)))
+#define WB_S32(p, o) (*(int *)((char *)(p) + (o)))
+#define WB_U64(p, o) (*(unsigned long long *)((char *)(p) + (o)))
+
+// DRAFT: 0x001EE4B0 InitWobblePacket__13PWaterTextureFP15tagGsWobbleCopyP21tagGsWobbleCopyStripsiibcUliff
+// note: DIFF 399: strip-call args now match the asm (V=nH0, a0=nW0); prologue saves differ (original this in $fp, nC in $s6, frame 0xB0; ours frame 0xC0, nC in $fp), branch forms at 0x5C/0x7C/0xB4. Tried: nC store after loop (401->399), bFlag store after loop (back to 401).
+void PWaterTexture::InitWobblePacket(tagGsWobbleCopy *pPacket, tagGsWobbleCopyStrips *pStrips, int nA, int nB, bool bFlag, char cFlag, unsigned long nC, int nD, float fA, float fB) {
+    char *pEnvA;
+    char *pEnvB;
+    int nIdx;
+    int nAddr;
+    int nBlk;
+    int nW0;
+    int nH0;
+    int nT1;
+    int nCount;
+    int nOff;
+    float fRun;
+    unsigned long long nMask;
+
+    if (nA == 0) {
+        CdsAssert("PWaterTexture.cpp", 0x154, "hSourceTexture");
+    }
+    if (nB == 0) {
+        CdsAssert("PWaterTexture.cpp", 0x155, "hTargetTexture");
+    }
+    nIdx = *(int *)(gGfxEng + 0x16D408);
+    if (nIdx == 0) {
+        nIdx = nA;
+    }
+    pEnvA = (char *)GetTexEnv__15PTextureManagerFi(gGfxEng + 0x154C90, nIdx);
+    nIdx = *(int *)(gGfxEng + 0x16D408);
+    if (nIdx == 0) {
+        nIdx = nB;
+    }
+    pEnvB = (char *)GetTexEnv__15PTextureManagerFi(gGfxEng + 0x154C90, nIdx);
+    if (pEnvA == 0) {
+        CdsAssert("PWaterTexture.cpp", 0x15A, "apSourceTexEnv");
+    }
+    if (pEnvB == 0) {
+        CdsAssert("PWaterTexture.cpp", 0x15B, "apTargetTexEnv");
+    }
+    GsGetTexByteAddr__FP23tagGsTextureEnvironment(pEnvA);
+    nAddr = (int)GsGetTexByteAddr__FP23tagGsTextureEnvironment(pEnvB);
+    nBlk = nAddr / 0x2000;
+    nW0 = 1 << (int)((WB_U64(pEnvB, 0x30) << 0x1E) >> 0x3C);
+    nH0 = 1 << (int)(((unsigned long long)((long long)(signed char)pEnvB[0x33] << 0x3A)) >> 0x3C);
+
+    WB_U64(pPacket, 0x00) = 0;
+    WB_U64(pPacket, 0x08) = 0;
+    WB_U16(pPacket, 0x00) = (unsigned short)((WB_U16(pPacket, 0x00) & ~0x7FFF) | 0x10);
+    WB_U8(pPacket, 0x01) = (unsigned char)((WB_U8(pPacket, 0x01) & ~0x80) | ((0 & 1) << 7));
+    WB_U8(pPacket, 0x07) = (unsigned char)((WB_U8(pPacket, 0x07) & ~0xF0) | 0x10);
+    WB_U8(pPacket, 0x08) = (unsigned char)((WB_U8(pPacket, 0x08) & ~0xF) | 0xE);
+    WB_U64(pPacket, 0xC0) = (((unsigned long long)((long long)(signed char)pEnvB[0x32] << 0x36) >> 0x3A) << 0x18)
+        | ((unsigned long long)(long long)nBlk | (((WB_U64(pEnvB, 0x30) << 0x2C) >> 0x3A) << 0x10));
+    WB_U64(pPacket, 0xC8) = 0x4D;
+    WB_U64(pPacket, 0xD0) = ((unsigned long long)(long long)((0x800 - (nH0 >> 1)) * 0x10))
+        | (((unsigned long long)(long long)((0x800 - (nW0 >> 1)) * 0x10)) << 0x20);
+    WB_U64(pPacket, 0xD8) = 0x19;
+    WB_U64(pPacket, 0xE0) = (((unsigned long long)(long long)(nH0 - 1)) << 0x10)
+        | (((unsigned long long)(long long)(nW0 - 1)) << 0x30);
+    WB_U64(pPacket, 0xE8) = 0x41;
+    WB_U64(pPacket, 0xF0) = (((unsigned long long)(long long)*(signed char *)(gGfxEng + 0x158E02)) << 0x18) | 0x100000000ULL;
+    WB_U64(pPacket, 0xF8) = 0x4F;
+    WB_U64(pPacket, 0x100) = 0;
+    WB_U64(pPacket, 0x108) = 0x4B;
+    WB_U64(pPacket, 0x88) = 0x43;
+    WB_U64(pPacket, 0x90) = 0x30000;
+    WB_U64(pPacket, 0x98) = 0x48;
+    WB_U64(pPacket, 0xA0) = 0;
+    WB_U64(pPacket, 0xA8) = 0x1A;
+    WB_U64(pPacket, 0xB0) = (((unsigned long long)(unsigned char)bFlag) << 6) | 0x210;
+    WB_U64(pPacket, 0xB8) = 0x1B;
+    nMask = 0xFC007FFFFFFFFFFFULL;
+    WB_U64(pPacket, 0x10) = 1;
+    WB_U64(pPacket, 0x18) = 0x3F;
+    WB_U64(pPacket, 0x50) = 0;
+    WB_U64(pPacket, 0x58) = 9;
+    WB_U64(pPacket, 0x20) = 0x60;
+    WB_U64(pPacket, 0x28) = 0x15;
+    nT1 = (0 & 3) * 4;
+    WB_U64(pPacket, 0x30) = WB_U64(pEnvA, 0x30);
+    WB_U64(pPacket, 0x38) = 7;
+    WB_U8(pPacket, 0x34) = (unsigned char)((WB_U8(pPacket, 0x34) & ~0x18) | ((nD & 3) * 8));
+    WB_U64(pPacket, 0x70) = ((((unsigned long long)((long long)(signed char)pEnvA[0x36] << 0x39)) >> 0x3C) << 0x33)
+        | (((((unsigned long long)((long long)(signed char)pEnvA[0x32] << 0x36)) >> 0x3A) << 0x14)
+        | (((WB_U64(pEnvA, 0x30) << 0xD) >> 0x32) << 0x25))
+        | 0x2000000000000000ULL;
+    WB_U64(pPacket, 0x78) = 0x17;
+    WB_U64(pPacket, 0x40) = 0;
+    WB_U64(pPacket, 0x48) = 0x35;
+    WB_U64(pPacket, 0x60) = 0;
+    WB_U64(pPacket, 0x68) = 0x37;
+    WB_U64(pPacket, 0x110) = 0;
+    WB_U64(pPacket, 0x118) = 0;
+    WB_U64(pPacket, 0x110) = (WB_U64(pPacket, 0x110) & nMask) | ((0 & 0x7FF) << 0x2F);
+    WB_U8(pPacket, 0x115) = (unsigned char)((WB_U8(pPacket, 0x115) & ~0x40) | ((0 & 1) << 6));
+    WB_U16(pPacket, 0x110) = (unsigned short)((WB_U16(pPacket, 0x110) & ~0x7FFF) | 1);
+    WB_U8(pPacket, 0x111) = (unsigned char)((WB_U8(pPacket, 0x111) & ~0x80) | 0x80);
+    WB_U8(pPacket, 0x117) = (unsigned char)((WB_U8(pPacket, 0x117) & ~0xF0) | 0x20);
+    WB_U8(pPacket, 0x117) = (unsigned char)((WB_U8(pPacket, 0x117) & ~0xC) | nT1);
+    WB_U8(pPacket, 0x118) = (unsigned char)((WB_U8(pPacket, 0x118) & ~0xF) | 2);
+    WB_U8(pPacket, 0x118) = (unsigned char)((WB_U8(pPacket, 0x118) & ~0xF0) | 0x10);
+    WB_S32(pPacket, 0x120) = 0;
+    WB_S32(pPacket, 0x124) = 0;
+    WB_S32(pPacket, 0x128) = 0x3F800000;
+    WB_S32(pPacket, 0x130) = 0xFF;
+    WB_S32(pPacket, 0x134) = 0xFF;
+    WB_S32(pPacket, 0x138) = 0xFF;
+    WB_S32(pPacket, 0x13C) = (int)(signed char)cFlag;
+
+    if (pStrips != 0) {
+        WB_U64(pStrips, 0x00) = 0;
+        WB_U64(pStrips, 0x08) = 0;
+        WB_U64(pStrips, 0x00) = (WB_U64(pStrips, 0x00) & nMask) | (4ULL << 0x2F);
+        WB_U8(pStrips, 0x05) = (unsigned char)((WB_U8(pStrips, 0x05) & ~0x40) | (1 << 6));
+        WB_U16(pStrips, 0x00) = (unsigned short)((WB_U16(pStrips, 0x00) & ~0x7FFF) | 0x210);
+        WB_U8(pStrips, 0x01) = (unsigned char)((WB_U8(pStrips, 0x01) & ~0x80) | 0x80);
+        WB_U8(pStrips, 0x07) = (unsigned char)((WB_U8(pStrips, 0x07) & ~0xF0) | 0x40);
+        WB_U8(pStrips, 0x07) = (unsigned char)((WB_U8(pStrips, 0x07) & ~0xC) | nT1);
+        WB_U8(pStrips, 0x08) = (unsigned char)((WB_U8(pStrips, 0x08) & ~0xF) | 2);
+        WB_U8(pStrips, 0x08) = (unsigned char)((WB_U8(pStrips, 0x08) & ~0xF0) | 0x50);
+        WB_U8(pStrips, 0x09) = (unsigned char)((WB_U8(pStrips, 0x09) & ~0xF) | 2);
+        WB_U8(pStrips, 0x09) = (unsigned char)((WB_U8(pStrips, 0x09) & ~0xF0) | 0x50);
+        nCount = 0;
+        nOff = 0;
+        fRun = 0.0f;
+        do {
+            InitWobbleStrip((tagWobbleStrip *)((char *)pStrips + nOff + 0x10), cFlag, (short)(0x800 - ((nH0 + 1) >> 1)), (short)(0x800 - ((nW0 + 1) >> 1)), (short)((nH0 + 0x1F) >> 5), (short)((nW0 + 0xF) >> 4), fRun, nCount > 0, fA, fB);
+            nCount += 1;
+            fRun += 0.0625f;
+            nOff += 0x840;
+        } while (nCount < 16);
+    }
+    WB_U64(pPacket, 0x80) = nC;
 }
 
 // DRAFT: 0x001EEB60 WobbleSTGrids__13PWaterTextureFP21tagGsWobbleCopyStripsf
