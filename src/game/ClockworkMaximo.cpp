@@ -19,6 +19,7 @@ public:
     virtual void Render(PLightManager *);
     virtual void Animate(int, float);
     virtual void SetInnocentInstanceID(unsigned int);
+    virtual int GetHealth();
 };
 class EntityBaseClass {
 public:
@@ -37,6 +38,7 @@ extern unsigned int FootSound[8];
 extern "C" void EnableSleep__15EntityBaseClassFbb(void *, bool, bool);
 extern "C" void SetState__15EntityBaseClassFi(void *, int);
 extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, void *);
+extern "C" int RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(void *, void *, unsigned int);
 extern "C" int FacingPoint__7MathAPIFP15EntityBaseClassPA4_ff(void *, void *, float);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void RotateTo__15EntityBaseClassFff(void *, float, float);
@@ -74,6 +76,91 @@ extern "C" unsigned int CreateDamageFx__15EntityBaseClassFfUi(void *, float, uns
 extern "C" void ChangeDamageFxInterval__15EntityBaseClassFUif(void *, unsigned int, float);
 extern "C" float GetFrameTime__6PMNodeFv(void *);
 extern char CMaximo_HitOnGroundSeq[0x34];
+extern char CMaximo_IdleSeq[0x34];
+extern char CMaximo_HammerIdleSeq[0x34];
+extern char CMaximo_TauntSeq[0x34];
+extern char CMaximo_JumpLaunchSeq[0x3C];
+extern char CMaximo_HammerJumpLaunchSeq[0x3C];
+extern char CMaximo_JumpAirSeq[0x3C];
+extern char CMaximo_HammerJumpAirSeq[0x3C];
+extern char CMaximo_JumpLandSeq[0x34];
+extern char CMaximo_HammerJumpLandSeq[0x34];
+extern char CMaximo_StopWalkSeq[0x34];
+extern char CMaximo_StopRunSeq[0x34];
+extern char CMaximo_HammerStopWalkSeq[0x34];
+extern char CMaximo_IdleLoopSeq[0x34];
+extern char CMaximo_HammerIdleLoopSeq[0x34];
+extern unsigned int LandSound[8];
+extern "C" void SetVelocity__7PhysicsFff(void *, float, float);
+extern "C" void RemoveFromAttackSystem__15EntityBaseClassFv(void *);
+extern char CMaximo_LoadMeshSeq[20];
+extern char CMaximo_ShieldAttackSeq[0x40];
+extern char CMaximo_HammerShieldAttackSeq[0x40];
+extern char CMaximo_ShieldCatchSeq[0x34];
+extern char CMaximo_HammerShieldCatchSeq[0x34];
+extern char CMaximo_HitKnockbackSeq[0x34];
+extern char CMaximo_HitSeq[0x34];
+extern char CMaximo_HammerHitSeq[0x34];
+extern char CMaximo_HammerHitKnockbackSeq[0x34];
+extern char CMaximo_HitKnockdownSeq[0x3C];
+extern char CMaximo_HammerHitKnockdownSeq[0x3C];
+extern char CMaximo_SwordBlockSeq[0x34];
+extern char CMaximo_HammerBlockSeq[0x34];
+extern char CMaximo_BlockHitSeq[0x44];
+extern char CMaximo_HammerBlockHitSeq[0x44];
+extern char CMaximo_GetUpSeq[0x34];
+extern char CMaximo_HammerGetUpSeq[0x34];
+extern char CMaximo_AirHitSeq[0x3C];
+extern char CMaximo_DiePrecursorSeq[0x3C];
+extern char CMaximo_DieSeq[0x4C];
+extern char CMaximo_DieOnGroundSeq[0x44];
+extern float m_vBonusSpawnOffset[4];
+extern "C" void SpawnBonus__15EntityBaseClassFPfii(void *, float *, int, int);
+extern char CMaximo_LaunchSeq[0x34];
+extern char CMaximo_HammerLaunchSeq[0x34];
+extern char CMaximo_JuggleSeq[0x34];
+extern char CMaximo_JuggleInAirSeq[0x34];
+extern char mTimerAPI__13EntityManager[0x28];
+extern "C" int CreateTimer__8TimerAPIFUiUib(void *, unsigned int, unsigned int, bool);
+extern "C" unsigned int GetAttackTimeOut__15ClockworkMaximoFv(void *);
+extern "C" int printf(const char *, ...);
+extern "C" void WriteApparitionData__15EntityBaseClassFicUi(void *, int, char, unsigned int);
+extern "C" void PlaySound__15EntityBaseClassFUi(void *, unsigned int);
+extern "C" void ScaleSet__6PMNodeFffff(void *, float, float, float, float);
+extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *, unsigned int, float (*)[4]);
+extern char CMaximo_SingleSlashAttackSeq[0x48];
+extern char CMaximo_360AttackSeq[0x48];
+extern char CMaximo_OverheadAttackSeq[0x48];
+extern char CMaximo_RingOfPainAttackSeq[0x48];
+extern char CMaximo_DoubleSlashAttackSeq[0x48];
+extern char CMaximo_HammerSingleSlashAttackSeq[0x40];
+extern char CMaximo_HammerDoubleSlashAttackSeq[0x40];
+extern char CMaximo_HammerDrillAttackSeq[0x40];
+static unsigned char astbComboCheck;
+
+// Physics and Shadow are shells: the size and the constructor are all Execute needs.
+class Physics {
+public:
+    Physics();
+    char _pad000[0x120];
+};
+
+struct ShadowInner {
+    char _pad000[0x18];
+    int m_unk18;
+};
+
+class Shadow {
+public:
+    enum ShadowType { SHADOW_TYPE_1 = 1 };
+    Shadow(ShadowType arg0, unsigned int arg1);
+    int m_unk0;
+    char _pad004[8];
+    ShadowInner *m_unkC;
+};
+
+// Reads an int-typed slot as a float, as the original's lwc1 does.
+#define CMF(x) (*(float *)&(x))
 
 // Slot numbers are declaration order; Slot13 is the call at vtable offset 0x3C.
 class VirtualSlots {
@@ -532,7 +619,7 @@ void ClockworkMaximo::SetDefaultVars() {
 void ClockworkMaximo::SetEditableVars(char *arg0) {
     char *pMsg;
     int bNull;
-    memcpy(_pad1B0, arg0, 0x3C);
+    memcpy(&m_unk1B0, arg0, 0x3C);
     m_unk240 = (MathAPI::RandomIntRange(1, 0x64) & 1) ? 0x3DE : 0x429;
     if (m_unk1E0 != 8 && m_unk1E0 != 7 && m_unk1E0 != 0) {
         pMsg = "Invalid m_iSpawnsKey in ClockworkMaximo.\n";
@@ -687,6 +774,983 @@ void ClockworkMaximo::OnAttackEvent(EntityBaseClass *arg0, int arg1) {
             t = m_unk20;
             m_unk27C = (t == 0x18) || (t == 0xE);
         }
+    }
+}
+
+// DRAFT: 0x00211CA0 Execute__15ClockworkMaximoFv
+// note: all cases transcribed; 1946 differing words, size 0x1E3C vs 0x1F80. Case -2 added 36 words over the 1910 stub state (best_batch16.cpp); the first divergence is the branch at 0x38 (beqz to +0x7AB vs +0x114), and the prologue frame is 0xD0 vs 0xB0, so every later word shifts.
+void ClockworkMaximo::Execute() {
+    if (m_unk20 >= 0) {
+        CheckBlockAttack();
+    }
+    switch (m_unk20) {
+    case -2:
+        {
+            if (m_unkE9 != 0 && m_unk1E0 != 0) {
+                char *pSpawn = (char *)Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 8, false, 0);
+                if (pSpawn == 0) {
+                    CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x740, "apKey");
+                }
+                char *pSrc = ((char *)m_unk3C != 0) ? (char *)m_unk3C + 0x80 : (char *)this + 0x190;
+                u_long128 spB0;
+                spB0 = *(u_long128 *)pSrc;
+                ((float *)&spB0)[1] = ((float *)&spB0)[1] + 2.0f;
+                char *pDst = *(char **)(pSpawn + 0x3C);
+                if (pDst != 0) {
+                    *(u_long128 *)(pDst + 0x80) = spB0;
+                    pDst[0x3E] = (unsigned char)(pDst[0x3E] | 8);
+                } else {
+                    *(u_long128 *)(pSpawn + 0x190) = spB0;
+                }
+                *(int *)(pSpawn + 0x1B0) = m_unk1E0;
+                *(int *)(pSpawn + 0x1B4) = 0;
+                *(unsigned char *)(pSpawn + 0x1CC) = 0x5A;
+                *(unsigned int *)(pSpawn + 0x1C4) = m_unk4;
+            }
+        }
+        goto block_444;
+    case -1:
+        if (m_unkE9 != 0) {
+            m_unk1F0 = m_unk1C8;
+            m_unk1F4 = m_unk1CC;
+            m_unk1F8 = m_unk1D0;
+            int t3C = m_unk3C;
+            float (*a0)[4] = (float (*)[4])((char *)this + 0x190);
+            if (t3C != 0) {
+                a0 = (float (*)[4])(t3C + 0x80);
+            }
+            if (!(Distance__7MathAPIFPA4_fPA4_f(a0, (float (*)[4])&m_unk1F0) <= CMF(m_unk1D4))) {
+                printf("ERROR - ClockworkMaximo shutdown as initial position wasn't inside attack radius (Instance ID: %d)\n", m_unkC);
+                SetState__15EntityBaseClassFi(this, -2);
+                return;
+            }
+            m_unk10C &= 0xF8FFFFFF;
+            m_unk10C |= 0x071B1902;
+            m_unk103 = 0x40;
+            if (CMF(m_unk1B8) == 0.0f) {
+                if (CMF(m_unk1BC) == 0.0f && CMF(m_unk1C0) == 0.0f) {
+                    int t3C_a = m_unk3C;
+                    float (*v0)[4] = (float (*)[4])((char *)this + 0x190);
+                    if (t3C_a != 0) {
+                        v0 = (float (*)[4])(t3C_a + 0x80);
+                    }
+                    CMF(m_unk1B8) = (*v0)[0];
+                    int t3C_b = m_unk3C;
+                    float (*v1)[4] = (float (*)[4])((char *)this + 0x190);
+                    if (t3C_b != 0) {
+                        v1 = (float (*)[4])(t3C_b + 0x80);
+                    }
+                    CMF(m_unk1BC) = (*v1)[1];
+                    int t3C_c = m_unk3C;
+                    float (*v2)[4] = (float (*)[4])((char *)this + 0x190);
+                    if (t3C_c != 0) {
+                        v2 = (float (*)[4])(t3C_c + 0x80);
+                    }
+                    CMF(m_unk1C0) = (*v2)[2];
+                }
+            }
+            m_unk104 = 0x40200000;
+            m_unk108 = 0x40800000;
+            if (m_unk1D8 != 0) {
+                CMF(m_unk1C4) = m_unk18C;
+                CMF(m_unk1D4) = m_unk18C;
+            }
+            m_unk200 = CMF(m_unk1B8);
+            m_unk204 = CMF(m_unk1BC);
+            m_unk208 = CMF(m_unk1C0);
+            m_unk244 = m_unk240;
+        }
+        {
+            EntityBaseClass *target = (EntityBaseClass *)mPlayerAPI__13EntityManager;
+            float (*a1)[4] = (float (*)[4])((char *)target + 0x190);
+            int t3C_t = *(int *)((char *)target + 0x3C);
+            if (t3C_t != 0) {
+                a1 = (float (*)[4])(t3C_t + 0x80);
+            }
+            if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])&m_unk200, a1) <= CMF(m_unk1C4)) {
+                if (m_unk38 == 0) {
+                    m_unk38 = (ClockworkMaximoState *)new Physics;
+                    if (m_unk38 == 0) {
+                        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x2AD, "mpPhysics");
+                    }
+                    SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12, 0);
+                }
+                if (m_unkD4 == 0) {
+                    m_unkD4 = new Shadow(Shadow::SHADOW_TYPE_1, 0x87000006);
+                    if (m_unkD4 == 0) {
+                        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x2B6, "mpShadow");
+                    }
+                    Shadow *s = m_unkD4;
+                    if (s != 0) {
+                        s->m_unk0 = 1;
+                        if (s->m_unkC != 0) {
+                            s->m_unkC->m_unk18 = 1;
+                        }
+                    }
+                }
+                PlaySequence__15EntityBaseClassFPUi(this, CMaximo_LoadMeshSeq);
+                if (m_unk3C == 0) {
+                    CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x2BF, "GetMeshNode()");
+                }
+                ScaleSet__6PMNodeFffff((void *)m_unk3C, 1.15f, 1.15f, 1.15f, 1.0f);
+                sceVu0SubVector((float *)&m_unk210, (float *)&m_unk210, (float *)&m_unk210);
+                AttachWeapon(m_unk1E4 == 0 ? WEAPON_TYPE_0 : WEAPON_TYPE_2);
+                if (m_unk1E8 != 0) {
+                    AttachWeapon(WEAPON_TYPE_1);
+                }
+                if (m_unk1B0 == 7) {
+                    PlaySound__15EntityBaseClassFUi(this, 0x1F9);
+                }
+                SetState__15EntityBaseClassFi(this, DetermineIdleState());
+            }
+        }
+    default:
+    block_444:
+        {
+            ClockworkMaximoState *s = m_unk38;
+            if (s != 0 && (s->m_unk108 & 0x400)) {
+                WriteApparitionData__15EntityBaseClassFicUi(this, 0, 1, 0U);
+                if (m_unk38 != 0) {
+                    __dl__FPv(m_unk38);
+                }
+                m_unk38 = 0;
+                m_unk10C &= 0xFDFFFFFF;
+                EnableSleep__15EntityBaseClassFbb(this, false, false);
+                m_unk240 = 0;
+                SetState__15EntityBaseClassFi(this, 0x1E);
+            }
+            return;
+        }
+    case 0:
+    case 1:
+        {
+            ClockworkMaximo *target;
+            float (*pos)[4];
+            float (*dst)[4];
+            void *seq;
+            int idle;
+            if (m_unkE9 != 0) {
+                if (StopMoving() == 0) {
+                    RemoveFromAttackSystem__15EntityBaseClassFv(this);
+                    EnableSleep__15EntityBaseClassFbb(this, true, false);
+                    if (m_unk20 == 0) {
+                        if (m_unk1E4 != 0) {
+                            seq = CMaximo_HammerIdleSeq;
+                        } else {
+                            seq = CMaximo_IdleSeq;
+                        }
+                        PlaySequence__15EntityBaseClassFPUi(this, seq);
+                    } else {
+                        PlaySequence__15EntityBaseClassFPUi(this, CMaximo_TauntSeq);
+                    }
+                    goto block_61;
+                }
+            } else {
+block_61:
+                target = GetTarget();
+                pos = (float (*)[4])((char *)target + 0x190);
+                if (target->m_unk3C != 0) {
+                    pos = (float (*)[4])(target->m_unk3C + 0x80);
+                }
+                RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, pos), 0.06f);
+                target = GetTarget();
+                if (((ClockworkMaximoVirtuals *)target)->GetHealth() > 0) {
+                    dst = (float (*)[4])((char *)target + 0x190);
+                    if (target->m_unk3C != 0) {
+                        dst = (float (*)[4])(target->m_unk3C + 0x80);
+                    }
+                    if (Distance__7MathAPIFPA4_fPA4_f(dst, (float (*)[4])&m_unk1F0) < CMF(m_unk1D4)) {
+                        SetState__15EntityBaseClassFi(this, DetermineNewState());
+                        return;
+                    }
+                    goto block_70;
+                }
+block_70:
+                if (m_unk160 == 0) {
+                    idle = DetermineIdleState();
+                    if (idle == m_unk20) {
+                        if (m_unk1E4 != 0) {
+                            seq = CMaximo_HammerIdleSeq;
+                        } else {
+                            seq = CMaximo_IdleSeq;
+                        }
+                        PlaySequence__15EntityBaseClassFPUi(this, seq);
+                    } else {
+                        SetState__15EntityBaseClassFi(this, idle);
+                    }
+                }
+                goto block_444;
+            }
+        }
+        break;
+    case 2:
+    case 13:
+        {
+            ClockworkMaximo *target;
+            float (*pos)[4];
+            int seq;
+            if (m_unkE9 != 0) {
+                if (StopMoving() == 0) {
+                    if (m_unk1E4 != 0) {
+                        seq = (int)&CMaximo_HammerIdleLoopSeq;
+                    } else {
+                        seq = (int)&CMaximo_IdleLoopSeq;
+                    }
+                    if (m_unk140 != seq) {
+                        PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)seq);
+                    }
+                    goto block_444;
+                }
+            } else {
+                if (m_unk274 == 0) {
+                    if (m_unk20 == 2) {
+                        SetState__15EntityBaseClassFi(this, 3);
+                    } else if (RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(this, GetTarget(), 0U) != 0) {
+                        SetState__15EntityBaseClassFi(this, m_unk268.m_unk270);
+                    } else {
+                        SetState__15EntityBaseClassFi(this, DetermineIdleState());
+                    }
+                } else {
+                    target = GetTarget();
+                    pos = (float (*)[4])((char *)target + 0x190);
+                    if (target->m_unk3C != 0) {
+                        pos = (float (*)[4])(target->m_unk3C + 0x80);
+                    }
+                    RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, pos), 0.06f);
+                }
+                goto block_444;
+            }
+        }
+        break;
+    case 3:
+        {
+            ClockworkMaximo *target;
+            float (*pos)[4];
+            float (*pos2)[4];
+            float dist;
+            float angle;
+            int rnd;
+            int v;
+            int seq;
+            pos = (float (*)[4])&m_unk190;
+            if (m_unk3C != 0) {
+                pos = (float (*)[4])(m_unk3C + 0x80);
+            }
+            target = GetTarget();
+            pos2 = (float (*)[4])((char *)target + 0x190);
+            if (target->m_unk3C != 0) {
+                pos2 = (float (*)[4])(target->m_unk3C + 0x80);
+            }
+            dist = Distance__7MathAPIFPA4_fPA4_f(pos2, pos);
+            if (m_unkE9 != 0) {
+                if (!(dist <= 10.0f)) {
+                    SetState__15EntityBaseClassFi(this, DetermineNewState());
+                    return;
+                }
+                if (StopMoving() == 0) {
+                    rnd = MathAPI::RandomIntRange(0, 0x64);
+                    m_unk28E = 0;
+                    m_unk27C = 0;
+                    if (m_unk1E4 != 0) {
+                        if (rnd < 0x32) {
+                            v = 0x16;
+                            m_unk268.m_unk26C = 6.0f;
+                            goto block_214;
+                        }
+                        if (rnd < 0x64) {
+                            v = 0x18;
+                            m_unk268.m_unk26C = 8.0f;
+                            goto block_214;
+                        }
+                    } else {
+                        if (rnd < 0x19) {
+                            v = 9;
+                            m_unk268.m_unk26C = 8.0f;
+                        } else if (rnd < 0x32) {
+                            m_unk268.m_unk26C = 6.0f;
+                            v = 9;
+                            m_unk28E = 1;
+                        } else if (rnd < 0x4B) {
+                            v = 0x1F;
+                            m_unk268.m_unk26C = 8.0f;
+                        } else {
+                            v = 0xC;
+                            m_unk268.m_unk26C = 6.0f;
+                        }
+block_214:
+                        m_unk268.m_unk270 = v;
+                    }
+                    if (!(dist <= m_unk268.m_unk26C)) {
+                        if (m_unk1E4 != 0) {
+                            seq = (int)&CMaximo_HammerWalkSeq;
+                        } else {
+                            seq = (int)&CMaximo_WalkSeq;
+                        }
+                        PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)seq);
+                    }
+                    goto block_221;
+                }
+            } else {
+block_221:
+                target = GetTarget();
+                pos2 = (float (*)[4])((char *)target + 0x190);
+                if (target->m_unk3C != 0) {
+                    pos2 = (float (*)[4])(target->m_unk3C + 0x80);
+                }
+                angle = GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, pos2);
+                RotateTo__15EntityBaseClassFff(this, angle, 0.06f);
+                if (!(dist <= 10.0f)) {
+                    SetState__15EntityBaseClassFi(this, 8);
+                } else if (!(dist <= m_unk268.m_unk26C)) {
+                    SetVelocity__7PhysicsFff(m_unk38, angle, 0.08f);
+                } else if (m_unkE9 == 0) {
+                    if (*(unsigned char *)(m_unk3C + 0x3F) & 4) {
+                        goto block_231;
+                    }
+                } else {
+block_231:
+                    SetState__15EntityBaseClassFi(this, 0xD);
+                }
+                FootStepSound(0x19);
+                FootStepSound(0x38);
+                goto block_444;
+            }
+        }
+        break;
+    case 4:
+        {
+            int temp_v1_12;
+            char *var_a1_16;
+            char *var_a1_17;
+            if (m_unkE9 != 0) {
+                PlaySound__15EntityBaseClassFUi(this, 0x5EU);
+                SetVelocity__7PhysicsFff(m_unk38, m_unk38->m_unk11C, 0.0f);
+                if (m_unk1E0 == 0) {
+                    m_unk38->m_unkEC = 0x80113F55;
+                }
+                if ((m_unk28D != 0) && !(m_unk38->m_unk108 & 1)) {
+                    m_unk28D = 0;
+                    SetState__15EntityBaseClassFi(this, 0x20);
+                } else {
+                    temp_v1_12 = m_unk264 & ~0x580;
+                    switch (temp_v1_12) {
+                    case 0x48:
+                    case 0xF:
+                    case 0x8:
+                        SetState__15EntityBaseClassFi(this, 0x19);
+                        break;
+                    case 0x800:
+                    case 0x808:
+                    case 0xD:
+                    case 0x2D:
+                        if (m_unk1E4 != 0) {
+                            var_a1_16 = CMaximo_HammerHitKnockbackSeq;
+                        } else {
+                            var_a1_16 = CMaximo_HitKnockbackSeq;
+                        }
+                        PlaySequence__15EntityBaseClassFPUi(this, var_a1_16);
+                        break;
+                    case 0x4D:
+                    case 0xC:
+                    case 0x804:
+                        SetState__15EntityBaseClassFi(this, 0x23);
+                        break;
+                    default:
+                        if (m_unk1E4 != 0) {
+                            var_a1_17 = CMaximo_HammerHitSeq;
+                        } else {
+                            var_a1_17 = CMaximo_HitSeq;
+                        }
+                        PlaySequence__15EntityBaseClassFPUi(this, var_a1_17);
+                        break;
+                    }
+                }
+            }
+            if (m_unk160 == 0) {
+                SetState__15EntityBaseClassFi(this, DetermineNewState());
+            }
+        }
+        goto block_444;
+    case 5:
+        {
+            if (m_unkE9 != 0) {
+                PlaySound__15EntityBaseClassFUi(this, 0x5EU);
+                if (m_unk258 == 0) {
+                    *(int *)((char *)this + 0xDC) = 0;
+                    if (m_unk38 != 0) {
+                        SetVelocity__7PhysicsFff(m_unk38, 0.0f, 0.0f);
+                    }
+                    RemoveFromAttackSystem__15EntityBaseClassFv(this);
+                    EnableSleep__15EntityBaseClassFbb(this, 0U, 0);
+                    SetVelocity__7PhysicsFff(m_unk38, m_unk38->m_unk11C, 0.0f);
+                    PlaySequence__15EntityBaseClassFPUi(this, &CMaximo_DiePrecursorSeq);
+                } else {
+                    void *temp_v0_21;
+                    char *var_v1_2;
+                    temp_v0_21 = Find__6PMNodeFUi((void *)m_unk3C, 0x72C7C29BU);
+                    if (temp_v0_21 == 0) {
+                        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x6F7, "pNode");
+                    }
+                    if (m_unk3C != 0) {
+                        var_v1_2 = (char *)(m_unk3C + 0x80);
+                    } else {
+                        var_v1_2 = (char *)&m_unk190;
+                    }
+                    *(int *)(var_v1_2 + 4) = *(int *)((char *)temp_v0_21 + 0x74);
+                    SetState__15EntityBaseClassFi(this, 0x1E);
+                }
+            }
+            if (m_unk160 == 0) {
+                SetState__15EntityBaseClassFi(this, 0x1E);
+            }
+        }
+        goto block_444;
+    case 6:
+        {
+            char *var_a1_21;
+            if (m_unkE9 != 0) {
+                if (StopMoving() == 0) {
+                    if (m_unk1E4 != 0) { var_a1_21 = CMaximo_HammerBlockSeq; } else { var_a1_21 = CMaximo_SwordBlockSeq; }
+                    PlaySequence__15EntityBaseClassFPUi(this, var_a1_21);
+                    goto block_389;
+                }
+            } else {
+block_389:
+                if (m_unk160 == 0) { SetState__15EntityBaseClassFi(this, DetermineNewState()); }
+                goto block_444;
+            }
+        }
+        break;
+    case 7:
+        {
+            char *var_a1_22;
+            if (m_unkE9 != 0) {
+                if (m_unk1E4 != 0) { var_a1_22 = CMaximo_HammerBlockHitSeq; } else { var_a1_22 = CMaximo_BlockHitSeq; }
+                PlaySequence__15EntityBaseClassFPUi(this, var_a1_22);
+            }
+            if (m_unk160 == 0) { SetState__15EntityBaseClassFi(this, DetermineNewState()); }
+        }
+        goto block_444;
+    case 8:
+        {
+            ClockworkMaximo *target;
+            float (*pos)[4];
+            float angle;
+            unsigned int spCC;
+            float jumpPos[4];
+            if (m_unkE9 != 0) {
+                if (m_unk1E4 != 0) {
+                    if (m_unk140 != (int)CMaximo_HammerRunSeq) {
+                        PlaySequence__15EntityBaseClassFPUi(this, CMaximo_HammerRunSeq);
+                    }
+                } else if (m_unk140 != (int)CMaximo_RunSeq) {
+                    PlaySequence__15EntityBaseClassFPUi(this, CMaximo_RunSeq);
+                }
+            }
+            FootStepSound(0xF);
+            FootStepSound(0x22);
+            target = GetTarget();
+            pos = (float (*)[4])((char *)target + 0x190);
+            if (target->m_unk3C != 0) {
+                pos = (float (*)[4])(target->m_unk3C + 0x80);
+            }
+            angle = GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, pos);
+            RotateTo__15EntityBaseClassFff(this, angle, 0.06f);
+            SetVelocity__7PhysicsFff(m_unk38, angle, 0.2f);
+            if ((m_unk1B0 == 7) && (m_unk290 == 0) && (m_unk38->m_unk108 & 1)) {
+                m_unk290 = 1;
+                PlaySound__15EntityBaseClassFUi(this, 0xF1);
+            }
+            if (*(unsigned char *)(m_unk3C + 0x3F) & 4) {
+                if (Stalled(2.0f, spCC) != 0) {
+                    if (CanJump((float (*)[4])jumpPos) != 0) {
+                        SetState__15EntityBaseClassFi(this, 0x12);
+                        return;
+                    }
+                    SetState__15EntityBaseClassFi(this, 1);
+                    return;
+                }
+                {
+                    int newState = DetermineNewState();
+                    if (newState != m_unk20) {
+                        SetState__15EntityBaseClassFi(this, newState);
+                    } else if ((m_unk1E8 != 0) && (MathAPI::RandomIntRange(0, 0x64) < 0x28)) {
+                        pos = (float (*)[4])&m_unk190;
+                        if (m_unk3C != 0) {
+                            pos = (float (*)[4])(m_unk3C + 0x80);
+                        }
+                        target = GetTarget();
+                        {
+                            float (*tpos)[4] = (float (*)[4])((char *)target + 0x190);
+                            if (target->m_unk3C != 0) {
+                                tpos = (float (*)[4])(target->m_unk3C + 0x80);
+                            }
+                            if ((Distance__7MathAPIFPA4_fPA4_f(tpos, pos) < 20.0f) && (m_unk38->m_unk108 & 1)) {
+                                m_unk268.m_unk270 = 0xF;
+                                m_unk27C = 0;
+                                SetState__15EntityBaseClassFi(this, 0xD);
+                            }
+                        }
+                    }
+                }
+                goto block_444;
+            }
+            goto block_444;
+        }
+        break;
+    case 9:
+        {
+            float frame;
+            if (m_unkE9 != 0) {
+                astbComboCheck = 1;
+                PlaySequence__15EntityBaseClassFPUi(this, &CMaximo_SingleSlashAttackSeq);
+            }
+            frame = GetFrameTime__6PMNodeFv((void *)m_unk3C);
+            if ((m_unk28E != 0) && !(frame < 14.0f)) {
+                SetState__15EntityBaseClassFi(this, 0xB);
+            } else if ((astbComboCheck != 0) && !(frame < 19.0f) && (frame <= 24.0f)) {
+                astbComboCheck = 0;
+                if (MathAPI::RandomIntRange(0, 0x64) >= 0x29) {
+                    SetState__15EntityBaseClassFi(this, 0xA);
+                }
+            } else if (m_unk160 == 0) {
+                SetState__15EntityBaseClassFi(this, 0x10);
+            }
+        }
+        goto block_444;
+    case 10:
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, &CMaximo_DoubleSlashAttackSeq);
+        }
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, 0x10);
+        }
+        goto block_444;
+    case 11:
+        if (m_unkE9 != 0) {
+            m_unk28E = 0;
+            PlaySequence__15EntityBaseClassFPUi(this, &CMaximo_360AttackSeq);
+        }
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, 0x10);
+        }
+        goto block_444;
+    case 12:
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, &CMaximo_OverheadAttackSeq);
+        }
+        if (m_unk160 == 0) {
+            SetState__15EntityBaseClassFi(this, 0x10);
+        }
+        goto block_444;
+    case 14:
+        {
+            float frame;
+            if (m_unkE9 != 0) {
+                astbComboCheck = 1;
+                PlaySequence__15EntityBaseClassFPUi(this, &CMaximo_RingOfPainAttackSeq);
+            }
+            frame = GetFrameTime__6PMNodeFv((void *)m_unk3C);
+            if ((astbComboCheck != 0) && !(frame < 25.0f) && (frame <= 30.0f)) {
+                astbComboCheck = 0;
+                m_unk28D = 0;
+                SetShockwave();
+            } else if (m_unk160 == 0) {
+                SetState__15EntityBaseClassFi(this, 0x10);
+            }
+        }
+        goto block_444;
+    case 15:
+        {
+            void *var_a1_14;
+            if (m_unkE9 != 0) {
+                astbComboCheck = 1;
+                EnableSleep__15EntityBaseClassFbb(this, 0U, 0);
+                if (m_unk1E4 != 0) {
+                    var_a1_14 = &CMaximo_HammerShieldAttackSeq;
+                } else {
+                    var_a1_14 = &CMaximo_ShieldAttackSeq;
+                }
+                PlaySequence__15EntityBaseClassFPUi(this, var_a1_14);
+            }
+            if ((astbComboCheck != 0) && (m_unk280 == 0) && !(GetFrameTime__6PMNodeFv((void *)m_unk3C) < 11.0f)) {
+                astbComboCheck = 0;
+                ThrowShield();
+            }
+        }
+        goto block_444;
+    case 16:
+        {
+            if (m_unkE9 != 0) {
+                m_unk274 = CreateTimer__8TimerAPIFUiUib((void *)&mTimerAPI__13EntityManager, m_unk4, GetAttackTimeOut__15ClockworkMaximoFv(this), 0);
+                if (m_unk27C != 0) {
+                    SetState__15EntityBaseClassFi(this, 0x22);
+                } else {
+                    SetState__15EntityBaseClassFi(this, DetermineNewState());
+                }
+            }
+        }
+        goto block_444;
+    case 17:
+        {
+            void *var_a1_15;
+            if (m_unkE9 != 0) {
+                EnableSleep__15EntityBaseClassFbb(this, 1U, 0);
+                if (m_unk1E4 != 0) {
+                    var_a1_15 = &CMaximo_HammerShieldCatchSeq;
+                } else {
+                    var_a1_15 = &CMaximo_ShieldCatchSeq;
+                }
+                PlaySequence__15EntityBaseClassFPUi(this, var_a1_15);
+            }
+            if (m_unk160 == 0) {
+                SetState__15EntityBaseClassFi(this, 0x10);
+            }
+        }
+        goto block_444;
+    case 18:
+        {
+            float sp40[4];
+            if (CanJump((float (*)[4])sp40) != 0) {
+                m_unk28D = 0;
+                SetState__15EntityBaseClassFi(this, 0x13);
+                return;
+            }
+            FaceTarget(0.06f);
+            SetState__15EntityBaseClassFi(this, DetermineNewState());
+            goto block_444;
+        }
+        break;
+    case 19:
+        {
+            u_long128 *src;
+            int tgt;
+            float fwd[4];
+            float vec[4];
+            if (m_unkE9 != 0) {
+                tgt = m_unk3C;
+                if (tgt != 0) {
+                    src = (u_long128 *)(tgt + 0x80);
+                } else {
+                    src = &m_unk190;
+                }
+                m_unk210 = *src;
+                if (m_unk1E4 != 0) {
+                    PlaySequence__15EntityBaseClassFPUi(this, CMaximo_HammerJumpLaunchSeq);
+                } else {
+                    PlaySequence__15EntityBaseClassFPUi(this, CMaximo_JumpLaunchSeq);
+                }
+                GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(this, fwd);
+                vec[1] = 0.33f;
+                vec[3] = 1.0f;
+                vec[0] = 0.1f * fwd[0];
+                vec[2] = 0.1f * fwd[2];
+                if (m_unk38 != 0) {
+                    *(u_long128 *)m_unk38 = *(u_long128 *)vec;
+                }
+            }
+            if (m_unk160 == 0) {
+                SetState__15EntityBaseClassFi(this, (m_unk28C == 0) ? 0x15 : 0x14);
+            }
+            goto block_444;
+        }
+        break;
+    case 20:
+        {
+            char *seq;
+            float fwd[4];
+            float vec[4];
+            if (m_unkE9 != 0) {
+                if (m_unk1E4 != 0) {
+                    seq = CMaximo_HammerJumpAirSeq;
+                } else {
+                    seq = CMaximo_JumpAirSeq;
+                }
+                PlaySequence__15EntityBaseClassFPUi(this, seq);
+                GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(this, fwd);
+                vec[1] = 0.45f;
+                vec[3] = 1.0f;
+                vec[0] = 0.05f * fwd[0];
+                vec[2] = 0.05f * fwd[2];
+                if (m_unk38 != 0) {
+                    *(u_long128 *)m_unk38 = *(u_long128 *)vec;
+                }
+            }
+            if ((m_unk28D != 0) && !(GetFrameTime__6PMNodeFv((void *)m_unk3C) < 19.0f)) {
+                SetState__15EntityBaseClassFi(this, 0xE);
+            } else if (m_unk38->m_unk108 & 1) {
+                SetState__15EntityBaseClassFi(this, 0x15);
+            }
+        }
+        goto block_444;
+    case 21:
+        {
+            char *seq;
+            if (m_unkE9 != 0) {
+                if (m_unk1E4 != 0) {
+                    seq = CMaximo_HammerJumpLandSeq;
+                } else {
+                    seq = CMaximo_JumpLandSeq;
+                }
+                PlaySequence__15EntityBaseClassFPUi(this, seq);
+                PlaySound__15EntityBaseClassFUi(this, LandSound[(m_unk38->m_unkE8 >> 11) & 7]);
+            }
+            if (m_unk160 == 0) {
+                FaceTarget(0.06f);
+                SetState__15EntityBaseClassFi(this, DetermineNewState());
+            }
+        }
+        goto block_444;
+    case 22:
+        {
+            if (m_unkE9 != 0) {
+                PlaySequence__15EntityBaseClassFPUi(this, &CMaximo_HammerSingleSlashAttackSeq);
+            }
+            ((EntityBaseClass *)this)->PlaySoundOnFrame(0xD1, 6);
+            if (m_unk160 == 0) {
+                if (MathAPI::RandomIntRange(0, 0x64) >= 0x29) {
+                    SetState__15EntityBaseClassFi(this, 0x17);
+                } else {
+                    SetState__15EntityBaseClassFi(this, 0x10);
+                }
+            }
+        }
+        goto block_444;
+    case 23:
+        {
+            if (m_unkE9 != 0) {
+                PlaySequence__15EntityBaseClassFPUi(this, &CMaximo_HammerDoubleSlashAttackSeq);
+            }
+            ((EntityBaseClass *)this)->PlaySoundOnFrame(0xD2, 2);
+            if (m_unk160 == 0) {
+                SetState__15EntityBaseClassFi(this, 0x10);
+            }
+        }
+        goto block_444;
+    case 24:
+        {
+            if (m_unkE9 != 0) {
+                PlaySequence__15EntityBaseClassFPUi(this, &CMaximo_HammerDrillAttackSeq);
+            }
+            ((EntityBaseClass *)this)->PlaySoundOnFrame(0xD2, 2);
+            if (m_unk160 == 0) {
+                SetState__15EntityBaseClassFi(this, 0x10);
+            }
+        }
+        goto block_444;
+    case 25:
+        {
+            char *var_a1_19;
+            if (m_unkE9 != 0) {
+                if (m_unk1E4 != 0) {
+                    var_a1_19 = CMaximo_HammerLaunchSeq;
+                } else {
+                    var_a1_19 = CMaximo_LaunchSeq;
+                }
+                PlaySequence__15EntityBaseClassFPUi(this, var_a1_19);
+                m_unk25C = 0x1E;
+            }
+            if (m_unk160 == 0) {
+                SetState__15EntityBaseClassFi(this, 0x1B);
+            }
+        }
+        goto block_444;
+    case 26:
+        {
+            int var_v1;
+            if (m_unkE9 != 0) {
+                PlaySound__15EntityBaseClassFUi(this, 0x5EU);
+                if (m_unk258 != 0) {
+                    PlaySequence__15EntityBaseClassFPUi(this, CMaximo_JuggleInAirSeq);
+                    var_v1 = 0x15;
+                } else {
+                    PlaySequence__15EntityBaseClassFPUi(this, CMaximo_JuggleSeq);
+                    var_v1 = 0xF;
+                }
+                m_unk25C = var_v1;
+            }
+            if (m_unk160 == 0) {
+                SetState__15EntityBaseClassFi(this, 0x1B);
+            }
+        }
+        goto block_444;
+    case 27:
+        {
+            int var_a2;
+            if (m_unkE9 != 0) {
+                RemoveFromAttackSystem__15EntityBaseClassFv(this);
+                m_unk10C &= 0xFEFFFFFF;
+                var_a2 = 2;
+                if (m_unk240 >= 0x97) {
+                    var_a2 = 0;
+                }
+                m_unk278 = CreateTimer__8TimerAPIFUiUib((void *)&mTimerAPI__13EntityManager, m_unk4, var_a2, 0);
+            }
+            if (m_unk278 == 0) {
+                m_unk10C |= 0x01000000;
+                SetState__15EntityBaseClassFi(this, 0x1C);
+            }
+        }
+        goto block_444;
+    case 28:
+        {
+            char *var_a1_20;
+            if (m_unkE9 != 0) {
+                if (m_unk1E4 != 0) {
+                    var_a1_20 = CMaximo_HammerGetUpSeq;
+                } else {
+                    var_a1_20 = CMaximo_GetUpSeq;
+                }
+                PlaySequence__15EntityBaseClassFPUi(this, var_a1_20);
+            }
+            if (m_unk160 == 0) {
+                SetState__15EntityBaseClassFi(this, DetermineNewState());
+            }
+        }
+        goto block_444;
+    case 29:
+    case 30:
+        {
+            if (m_unkE9 != 0) {
+                *(int *)((char *)this + 0xDC) = 0;
+                if (m_unk38 != 0) {
+                    SetVelocity__7PhysicsFff(m_unk38, 0.0f, 0.0f);
+                }
+                RemoveFromAttackSystem__15EntityBaseClassFv(this);
+                m_unk10C &= 0xF8FFFFFF;
+                if (m_unkD4 != 0) {
+                    m_unkD4->m_unk0 = 0;
+                    if (m_unkD4->m_unkC != 0) {
+                        m_unkD4->m_unkC->m_unk18 = 0;
+                    }
+                }
+                EnableSleep__15EntityBaseClassFbb(this, 0U, 0);
+                if (m_unk38 != 0) {
+                    SetVelocity__7PhysicsFff(m_unk38, m_unk38->m_unk11C, 0.0f);
+                }
+                {
+                    char *seqPtr;
+                    if (m_unk20 == 0x1E) {
+                        seqPtr = CMaximo_DieSeq;
+                    } else {
+                        seqPtr = CMaximo_DieOnGroundSeq;
+                    }
+                    PlaySequence__15EntityBaseClassFPUi(this, seqPtr);
+                }
+            }
+            if ((m_unk38 != 0) && !(GetFrameTime__6PMNodeFv((void *)m_unk3C) <= 15.0f)) {
+                if (m_unk28F == 0) {
+                    if (m_unk1E0 == 0) {
+                        WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0U);
+                    }
+                    WriteApparitionData__15EntityBaseClassFicUi(this, 0, 1, 0U);
+                    SpawnBonus__15EntityBaseClassFPfii(this, m_vBonusSpawnOffset, 5, 0xA);
+                }
+                m_unk28F = 1;
+            }
+            if (m_unk160 == 0) {
+                SetState__15EntityBaseClassFi(this, -2);
+            }
+        }
+        goto block_444;
+    case 31:
+        if (m_unkE9 != 0) {
+            m_unk28C = 1;
+            m_unk28D = 1;
+            SetState__15EntityBaseClassFi(this, 0x13);
+        }
+        goto block_444;
+    case 32:
+        {
+            if (m_unkE9 != 0) {
+                PlaySound__15EntityBaseClassFUi(this, 0x5EU);
+                {
+                    u_long128 spA0;
+                    spA0 = *(u_long128 *)m_unk38;
+                    if (((float *)&spA0)[1] < 0.0f) {
+                        ((float *)&spA0)[1] = 0.1f;
+                    }
+                    *(u_long128 *)m_unk38 = spA0;
+                }
+                PlaySequence__15EntityBaseClassFPUi(this, &CMaximo_AirHitSeq);
+            }
+            if (m_unk38->m_unk108 & 1) {
+                SetState__15EntityBaseClassFi(this, 0x15);
+            }
+        }
+        goto block_444;
+    case 33:
+        {
+            int temp;
+            if (m_unkE9 != 0) {
+                temp = m_unk140;
+                if (m_unk1E4 != 0) {
+                    if (temp == (int)CMaximo_HammerRunSeq) {
+                        SetVelocity__7PhysicsFff(m_unk38, m_unk38->m_unk11C, 0.06f);
+                        PlaySequence__15EntityBaseClassFPUi(this, CMaximo_HammerStopWalkSeq);
+                    } else if (temp == (int)CMaximo_HammerWalkSeq) {
+                        PlaySequence__15EntityBaseClassFPUi(this, CMaximo_HammerStopWalkSeq);
+                    } else {
+                        PlaySequence__15EntityBaseClassFPUi(this, CMaximo_HammerStopWalkSeq);
+                    }
+                } else if (temp == (int)CMaximo_RunSeq) {
+                    SetVelocity__7PhysicsFff(m_unk38, m_unk38->m_unk11C, 0.06f);
+                    PlaySequence__15EntityBaseClassFPUi(this, CMaximo_StopRunSeq);
+                } else if (temp == (int)CMaximo_WalkSeq) {
+                    PlaySequence__15EntityBaseClassFPUi(this, CMaximo_StopWalkSeq);
+                } else {
+                    PlaySequence__15EntityBaseClassFPUi(this, CMaximo_StopWalkSeq);
+                }
+            }
+            if (m_unk160 == 0) {
+                SetVelocity__7PhysicsFff(m_unk38, m_unk38->m_unk11C, 0.0f);
+                SetState__15EntityBaseClassFi(this, m_unk254);
+                EnableSleep__15EntityBaseClassFbb(this, m_unk260, false);
+            }
+        }
+        goto block_444;
+    case 34:
+        {
+            ClockworkMaximo *target;
+            float (*pos)[4];
+            if (m_unkE9 != 0) {
+                if (StopMoving() == 0) {
+                    RemoveFromAttackSystem__15EntityBaseClassFv(this);
+                    EnableSleep__15EntityBaseClassFbb(this, true, false);
+                    PlaySequence__15EntityBaseClassFPUi(this, CMaximo_TauntSeq);
+                    goto block_81;
+                }
+            } else {
+block_81:
+                target = GetTarget();
+                pos = (float (*)[4])((char *)target + 0x190);
+                if (target->m_unk3C != 0) {
+                    pos = (float (*)[4])(target->m_unk3C + 0x80);
+                }
+                RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, pos), 0.06f);
+                if (m_unk160 == 0) {
+                    SetState__15EntityBaseClassFi(this, DetermineNewState());
+                }
+                goto block_444;
+            }
+        }
+        break;
+    case 35:
+        {
+            char *var_a1_18;
+            if (m_unkE9 != 0) {
+                if (m_unk1E4 != 0) {
+                    var_a1_18 = CMaximo_HammerHitKnockdownSeq;
+                } else {
+                    var_a1_18 = CMaximo_HitKnockdownSeq;
+                }
+                PlaySequence__15EntityBaseClassFPUi(this, var_a1_18);
+            }
+            if (m_unk160 == 0) {
+                SetState__15EntityBaseClassFi(this, 0x1C);
+            }
+        }
+        goto block_444;
     }
 }
 
