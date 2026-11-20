@@ -2,6 +2,7 @@
 #include "types.h"
 #include "PShader.h"
 #include "PSTAnim.h"
+#include "PRenderPass.h"
 
 // TODO(header): foreign declarations
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
@@ -17,10 +18,69 @@ extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" int Read__7PCDFileFPvUi(void *pThis, void *pBuf, unsigned int nSize);
 extern unsigned int guNumShadersInCurModel;
 extern int guGlobalShaderIDOffset;
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
+extern "C" void *GetTexEnv__15PTextureManagerFi(void *pThis, int nHandle);
 extern char gGfxEng[1504384];
 
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PShader.cpp", line, #cond))
 #define CDS_ASSERT_TXT(line, cond, txt) ((cond) ? (void)0 : CdsAssert__FPciPc("PShader.cpp", line, txt))
+
+// DRAFT: 0x00196890 LoadRenderPass__7PShaderFP8PPakFileP6PArrayUib
+// note: DIFF 237; prologue saves s1-s4 under a smaller frame (original saves s0-s7 under 0xE0), size 0x314 vs 0x3FC; bit-31 test variant also 237.
+int PShader::LoadRenderPass(PPakFile *pPakFile, PArray *pTextures, unsigned int nIndex, bool bFlag) {
+    PRenderPass rp;
+    if (!rp.Load(pPakFile, pTextures)) {
+        return 0;
+    }
+    m_unk20[nIndex] = rp.m_unk8;
+    m_unk54[nIndex] = rp.m_unk0;
+    rp.m_unk0 = 0;
+    if (m_unk20[nIndex] > 0) {
+        m_unk4 |= 0x20;
+    }
+    m_unk50[nIndex] = rp.m_unk3;
+    m_unk40[nIndex] = rp.m_unk4;
+    if (rp.m_unk28) {
+        m_unk30[nIndex] = new PSTAnim;
+        CDS_ASSERT_TXT(0x167, m_unk30[nIndex], "mpPassSTAnims[uPass]");
+        m_unk30[nIndex]->Clone(rp.m_unk28);
+    }
+
+    char *pMat = (char *)m_unk0 + nIndex * 0xA0;
+    memcpy(pMat + 0x60, &rp.m_unk10, 16);
+    m_unk10[nIndex] = *(float *)(pMat + 0x6C);
+    memcpy(pMat + 0x70, &rp.m_unk2C, 16);
+    memcpy(pMat + 0x80, &rp.m_unk3C, 16);
+
+    int nFlag;
+    if (nIndex != 0) {
+        nFlag = 1;
+    } else {
+        nFlag = (*(float *)(pMat + 0x6C) < 1.0f) ? 1 : bFlag;
+    }
+
+    *(long long *)(pMat + 0x20) = rp.m_unk20;
+    *(long long *)(pMat + 0x28) = 0x42;
+    *(long long *)(pMat + 0x30) = rp.m_unk3 ? ((((nFlag == 0) ? 0x7E : 0) << 4) | 0x5000D) : 0x50000;
+    *(long long *)(pMat + 0x38) = 0x47;
+    *(long long *)(pMat + 0x40) = 0;
+    *(long long *)(pMat + 0x48) = 0x1A;
+    *(long long *)(pMat + 0x50) = ((nFlag & 0xFF) << 6) | ((m_unk20[nIndex] != 0) << 4) | 8;
+    *(long long *)(pMat + 0x58) = 0x1B;
+    *(long long *)(pMat + 0x10) = 0;
+    *(long long *)(pMat + 0x18) = 0;
+
+    *(unsigned short *)(pMat + 0x10) = (*(unsigned short *)(pMat + 0x10) & -0x8000) | 4;
+    *(unsigned char *)(pMat + 0x11) = (*(unsigned char *)(pMat + 0x11) & -0x81) | 0x80;
+    *(unsigned char *)(pMat + 0x17) = (*(unsigned char *)(pMat + 0x17) & -0xF1) | 0x10;
+    *(unsigned char *)(pMat + 0x18) = (*(unsigned char *)(pMat + 0x18) & -0x10) | 0xE;
+
+    int nGlobalTex = *(int *)(gGfxEng + 0x16D408);
+    int nTex = nGlobalTex ? nGlobalTex : m_unk20[nIndex];
+    *(void **)(pMat + 4) = GetTexEnv__15PTextureManagerFi(gGfxEng + 0x154C90, nTex);
+    CDS_ASSERT_TXT(0x19C, *(void **)(pMat + 4), "mpVuMaterials[uPass].pTexEnv");
+    return 1;
+}
 
 // DRAFT: 0x00196C90 Render__7PShaderFibPb
 // note: DIFF 113 words, size 0x2CC vs 0x2F0. Original loads 0x16D408 into a register and adds it with addu (folded by ours into lui/addiu); the loop uses pointer/offset induction variables and different branch shapes at 0x10C and 0x11C. Tried: local offset variable for the gate (folded, no change).
@@ -52,7 +112,7 @@ void PShader::Render(int nArg, bool bFlag, bool *pbOut) {
         for (unsigned int i = 0; i < m_unk8; i++) {
             void *apMaterial = (char *)m_unk0 + i * 0xA0;
             CDS_ASSERT(0xE4, apMaterial);
-            fScale[i] = ((float *)_pad10)[i] * ((float)nArg / 128.0f);
+            fScale[i] = m_unk10[i] * ((float)nArg / 128.0f);
             nTagA[i] = ((unsigned char *)&m_unk50)[i] ? 0x5000D : 0x50000;
             nTagB[i] = ((unsigned long long)(m_unk20[i] != 0) << 4) | 0x48;
         }
@@ -184,10 +244,10 @@ PShader::PShader() {
     m_unk4 = 0;
     m_unk8 = 0;
     m_unkC = 0;
-    memset(_pad10, 0, 0x10);
+    memset(m_unk10, 0, 0x10);
     memset(m_unk20, 0, 0x10);
-    memset(&m_unk50, 0, 4);
+    memset(m_unk50, 0, 4);
     memset(m_unk30, 0, 0x10);
-    memset(_pad40, 0, 0x10);
+    memset(m_unk40, 0, 0x10);
     memset(m_unk54, 0, 4);
 }
