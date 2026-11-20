@@ -734,7 +734,7 @@ int PSound::ProcessTriglets() {
 }
 
 // DRAFT: 0x001A4D80 PointInEnclosure__6PSoundFPfP16tagBOX_OR_SPHEREP14tagVuMatrixBox17EnumEnclosureType
-// note: DIFF 3; matrix-call argument order (daddu a1,a3 before addiu a0,a0,0x2E90) and daddiu vs addiu for constant 1 on the sphere path. Bool nRet gave DIFF 14.
+// note: DIFF 3; constant 1 on the sphere path is addiu, original daddiu; argument setup for the matrix call places the this adjust before jal, original in its delay slot. Tried: bool nRet with direct return (DIFF 4), function-scope bool and masked bool (4+), bool bIn inside sphere branch with unmasked else (DIFF 14), bool temporary and local MathAPI receiver (no change).
 int PSound::PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType) {
     float vDiff[4];
     float vCenter[4];
@@ -743,7 +743,8 @@ int PSound::PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixB
         memcpy(vCenter, pBox, 0x10);
         sceVu0SubVector(vDiff, pPoint, vCenter);
         if (sceVu0InnerProduct(vDiff, vDiff) <= ((float *)pBox)[3] * ((float *)pBox)[3]) {
-            nRet = 1;
+            bool bIn = true;
+            nRet = bIn;
         }
     } else {
         nRet = ((MathAPI *)((char *)this + 0x2E90))->PointInMatrixBoxWSphereCheck((float *)pMatrix, (tagVuMatrixBox *)pBox, (tagFLOAT3D *)pMatrix) & 0xFF;
@@ -1523,13 +1524,12 @@ void PSound::ResumeAmbientEntry(AmbientEntry *pEntry) {
     }
 }
 
-// DRAFT: 0x001A8660 PauseAmbientEntry__6PSoundFPQ26PSound12AmbientEntryUi
-// note: 2 words differ: original keeps the compare in $at (sltiu at / bnez at), ours uses v0; tried nested positive if (DIFF 15), early-return positive if (DIFF 9), explicit return in store branch (DIFF 10), unsigned local with >= (DIFF 2), unsigned local with < (DIFF 9), `||` in one if (DIFF 15), int/bool local holding the compare (DIFF 2 each)
+// FUNCTION: 0x001A8660 PauseAmbientEntry__6PSoundFPQ26PSound12AmbientEntryUi
 int PSound::PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag) {
     if (pEntry == 0) {
         return 0;
     }
-    if (!(pEntry->m_unk10 < 0x3FFD)) {
+    if (pEntry->m_unk10 > 0x3FFC) {
         return 0;
     }
     pEntry->m_unk16 |= 1;
@@ -1943,7 +1943,7 @@ void PSound::SoundEditEnter() {
 }
 
 // DRAFT: 0x001A91A0 SetMonoOut__6PSoundFb
-// note: 3 words differ; original keeps the bool in v1 and loads the field into a1 (MWCC swaps them); swapped compare operands cut 4 to 3; direct bool compare, cached load and ternary bool-to-int did not reduce it (ternary gave exit 2)
+// note: DIFF 3; andi/lw register swap: original keeps bool in v1 and field in a1, ours the reverse at 0x04, 0x0C, 0x1C. Tried: swapped compare operands (DIFF 4), bool store to field (DIFF 3), bool local then int (DIFF 3), cached load and ternary bool-to-int (no gain)
 void PSound::SetMonoOut(bool bMono) {
     int nMono = bMono;
 
@@ -2342,7 +2342,7 @@ int PSound::TranslateIntoADSR(unsigned int nArg) {
 }
 
 // DRAFT: 0x001A9E10 RestartSuffix__6PSoundFv
-// note: 2 words differ: the constant 1 goes to a0 instead of v0 (addiu at 0x38, sb at 0x4C; schedule otherwise identical); tried char/bool/uchar member, `= true`, moving the m_unk00 store, `return m_unkD1 = 1` (DIFF 10), `(char)1` (DIFF 2), int local holding 1 (DIFF 2)
+// note: DIFF 2; constant 1 goes to a0 instead of v0 (addiu at 0x38, sb at 0x4C; schedule otherwise identical). Tried: char/bool/uchar member, `= true`, moving the m_unk00 store, `return m_unkD1 = 1` (DIFF 10), `(char)1` (DIFF 2), int local holding 1 (DIFF 2)
 int PSound::RestartSuffix() {
     PSoundFlushIOPCommandsWaitFinish();
     WaitOnVSync();
