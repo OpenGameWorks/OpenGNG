@@ -343,8 +343,8 @@ void GetReflectionVec(float *pIn, float *pNormal, float *pOut)
 void Physics::ResetPhysics(PMeshNode *pNode)
 {
     m_unk11C = *(float *)((char *)pNode + 0x94);
-    *(u_long128 *)&m_unk0 = *(u_long128 *)gUnitMatrix;
-    *(u_long128 *)&m_unk10 = *(u_long128 *)gUnitMatrix;
+    *(u_long128 *)&m_unk0 = *(u_long128 *)&gUnitMatrix[12];
+    *(u_long128 *)&m_unk10 = *(u_long128 *)&gUnitMatrix[12];
     *(u_long128 *)&m_unkA0 = *(u_long128 *)((char *)pNode + 0x80);
     m_unkF8 = 0;
     m_unk108 = 0;
@@ -382,10 +382,10 @@ void Physics::SetPhysicsType(unsigned int nType, float (*pPos)[4])
 // FUNCTION: 0x001725B0 __ct__7PhysicsFv
 Physics::Physics()
 {
-    static char DefaultBox[0x20];
+    static float DefaultBox[8] = {0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 2.0f};
 
-    *(u_long128 *)&m_unk0 = *(u_long128 *)gUnitMatrix;
-    *(u_long128 *)&m_unk10 = *(u_long128 *)gUnitMatrix;
+    *(u_long128 *)&m_unk0 = *(u_long128 *)&gUnitMatrix[12];
+    *(u_long128 *)&m_unk10 = *(u_long128 *)&gUnitMatrix[12];
     m_unk106 = 1;
     m_unk10C = 0;
     m_unk110 = 0.03f;
@@ -407,5 +407,5 @@ Physics::Physics()
     m_unk104 = 0;
     m_unk114 = 0;
     *(u_long128 *)((char *)this + 0x80) = *(u_long128 *)DefaultBox;
-    *(u_long128 *)((char *)this + 0x90) = *(u_long128 *)(DefaultBox + 0x10);
+    *(u_long128 *)((char *)this + 0x90) = *(u_long128 *)&DefaultBox[4];
 }
