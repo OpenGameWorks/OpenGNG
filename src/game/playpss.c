@@ -2,12 +2,10 @@
 #include "playpss.h"
 #include "Font.h"
 
-// TODO(header): foreign declarations
-class Movie {
-public:
-    static void MovieOutputCurVol();
-};
+#include "movie.h"
+#include "PMat4.h"
 
+// TODO(header): foreign declarations
 extern "C" int sceCdStatus();
 extern "C" int sceCdGetDiskType();
 extern "C" int sceGsSyncV(int);
@@ -35,15 +33,70 @@ extern "C" void audioDecBeginPut(void *, char **, int *, char **, int *);
 extern "C" void audioDecEndPut(void *, int);
 extern "C" void *memcpy(void *, const void *, unsigned int);
 extern unsigned char gInterface[];
+extern "C" void sceMpegInit();
+extern "C" int sceMpegCreate(sceMpeg *, void *, int);
+extern "C" int sceMpegAddStrCallback(sceMpeg *, int, int, void *);
+extern "C" int sceMpegAddCallback(sceMpeg *, int, void *, void *);
+extern "C" int sceMpegIsEnd(sceMpeg *);
+extern "C" int sceMpegGetPicture(sceMpeg *, void *, int);
+extern "C" void sceMpegReset(sceMpeg *);
+extern "C" void sceMpegDelete(sceMpeg *);
+extern "C" void sceGsResetGraph(int, int, int, int);
+extern "C" void sceGsSetDefDispEnv(void *, int, int, int);
+extern "C" void sceGsPutDispEnv(void *);
+extern "C" int sceGsSyncPath(int, int);
+extern "C" void loadImage(void *, void *);
+extern "C" void setLoadImageTags(int, void *, int, int, int, int, int);
+extern "C" void audioDecCreate(void *, int, int, int);
+extern "C" void audioDecSendToIOP(void *);
+extern "C" int audioDecIsPreset(void *);
+extern "C" void audioDecStart(void *);
+extern "C" void audioDecReset(void *);
+extern "C" void RemoteChangeMasterVolume(int);
+extern "C" void UpdatePad(void *);
+extern "C" float GetMainMusicRelVolume__6PSoundFv(void *);
+extern unsigned char gSound[0x18080];
+extern unsigned char gPad[0x1C0];
+extern "C" void *memset(void *, int, unsigned int);
 
+// TODO(header): PMovieOverlayEngine shell, the real class lives in PMovieOverlayEngine.h
+class PMovieOverlayEngine {
+public:
+    void Init(short, short, short);
+    void BeginRender();
+    void EndRender();
+    char _pad[0xA0];
+};
+extern PMovieOverlayEngine gOverlayEng;
+extern char TSprites[0x200];
+extern unsigned char exitEarly[0x90];
+extern unsigned char gUnitMatrix[0x40];
+extern short DISP_WIDTH;
+extern short DISP_HEIGHT;
+extern short TV_MODE;
+extern int MAX_WIDTH;
+extern int MAX_HEIGHT;
+extern int SCAN_LINES;
+extern unsigned char MODE_PAL;
+extern unsigned char gbNoMovieSound;
+extern int isStarted;
+extern int path3tag;
+extern int fst_uHsyncBase;
+extern int fst_uHsyncCnt;
+extern int fst_movieFrameOverflows;
+
+// TODO(header): PlayPss state, bodies in this file only
 struct SubTitleState {
     unsigned char m_unk0;       // 0x00 active flag, 0x4C94F0
-    char _pad1[7];
+    unsigned char m_unk1;       // 0x01 draw flag tested before DrawSprites
+    char _pad2[6];
     FontSubtitle *m_unk8;       // 0x08 current table entry, 0x4C94F8
     char _pad10[4];
     float m_unk14;              // 0x14 timer, 0x4C9504
     int m_unk18;                // 0x18 end time of the shown entry, 0x4C9508
-    char _pad1C[0x160 - 0x1C];
+    char _pad1C[4];
+    PMat4 *m_unk20;             // 0x20 screen matrix, 0x4C9510
+    char _pad24[0x198 - 0x24];  // note: the 352-byte symbol ends at 0x160; the draft writes past it
 };
 
 extern SubTitleState subTitle;
@@ -269,4 +322,121 @@ int videoCallback(sceMpeg *arg0, sceMpegCbDataStr *arg1, void *arg2) {
         demuxBuffPast = arg1->m_unkC + demuxBuffPast;
     }
     return 1;
+}
+
+// DRAFT: 0x00200160 playPss__FPFPvi_iP12PlayPssRsrcsiUi
+// note: 1121 words differ; control flow, setup, sync, decode and teardown calls only. The exitEarly, TSprites and subTitle constant stores, the matrix setup, the centring tags, the sprite draw, Render and printf are not transcribed.
+int playPss(int (*arg0)(void *, int), PlayPssRsrcs *arg1, int arg2, unsigned int arg3) {
+    char spC0[0x50];
+    char sp110[0x20];
+    int var_s1;
+    int vol;
+    unsigned int buttons;
+    int tilesW;
+    int tilesH;
+    int i;
+    sceMpeg *mpeg;
+
+    mpeg = (sceMpeg *)spC0;
+    var_s1 = 0;
+    sceGsSyncV(0);
+    sceGsResetGraph(0, 1, TV_MODE, 0);
+    path3tag = (int)arg1->m_unkC;
+    fst_readCount = 0;
+    fst_uHsyncBase = 0;
+    fst_uHsyncCnt = 0;
+    fst_movieFrameOverflows = 0;
+    fst_trayOpen = 0;
+    fst_disk_status = 0;
+    checkAndWaitForDisk();
+    sceMpegInit();
+    audioDecCreate(audioDec, arg1->m_unk18, arg1->m_unk1C, arg1->m_unk20);
+    RemoteChangeMasterVolume(0);
+    if (gbNoMovieSound != 0) {
+        vol = 0;
+    } else {
+        vol = (int)GetMainMusicRelVolume__6PSoundFv(gSound);
+    }
+    Movie::BeginFadeMusicVolume(100, (unsigned int)vol);
+    isStarted = 0;
+    sceMpegCreate(mpeg, (void *)arg1->m_unk0, arg1->m_unk4);
+    sceMpegAddStrCallback(mpeg, 0, 0, (void *)videoCallback);
+    sceMpegAddStrCallback(mpeg, 2, 0, (void *)audioCallback);
+    sceMpegAddCallback(mpeg, 1, (void *)nodataCallback, 0);
+    sceMpegAddCallback(mpeg, 4, (void *)backgroundCallback, 0);
+    sceMpegAddCallback(mpeg, 0, (void *)errorCallback, 0);
+    muxBuffFullness = 0;
+    demuxBuff = arg1->m_unk10;
+    demuxBuffSize = arg1->m_unk14;
+    tilesW = demuxBuff + 0x10;
+    fileRead = arg0;
+    demuxBuffPresent = demuxBuff;
+    demuxBuffPast = tilesW;
+    demuxBuffFuture = tilesW;
+    do {
+    } while (fillBuff(mpeg, 1) != 0);
+
+    sceGsSetDefDispEnv(sp110, 0, DISP_WIDTH, DISP_HEIGHT);
+    sceGsPutDispEnv(sp110);
+    gOverlayEng.Init(0, DISP_WIDTH, DISP_HEIGHT);
+    ((FontManager *)(gInterface + 0x80))->InitFMV();
+
+    do {
+    } while (sceGsSyncV(0) == 1);
+    *(int *)0x10000010 = 0x83;
+    *(unsigned int *)0x10000000 = 0;
+    fst_uHsyncBase = 0;
+    fst_uHsyncCnt = 0;
+    if (sceMpegIsEnd(mpeg) == 0) {
+        do {
+            fst_uHsyncBase += *(unsigned int *)0x10000000;
+            fst_uHsyncCnt = fst_uHsyncBase;
+            audioUpdate();
+            UpdatePad(gPad);
+            buttons = *(unsigned int *)(gPad + 0x110);
+            checkAndWaitForDisk();
+            if (exitEarly[0] == 0) {
+                if ((buttons & arg3) != 0 || (arg2 != 0 && !(subTitle.m_unk14 <= (float)arg2))) {
+                    Movie::BeginFadeMusicVolume(0x3E8, 0);
+                    var_s1 = (buttons == 0) ? 1 : 2;
+                }
+            }
+            tilesW = (MAX_WIDTH + 0xF) >> 4;
+            tilesH = (MAX_HEIGHT + 0xF) >> 4;
+            if (sceMpegGetPicture(mpeg, arg1->m_unk8, tilesW * tilesH) < 0) {
+                CdsAssert((char *)"playpss.c", 0x255, (char *)"0");
+            }
+            audioUpdate();
+            loadImage((void *)path3tag, arg1->m_unk8);
+            audioUpdate();
+            sceGsSyncPath(0, 0);
+            audioUpdate();
+            gOverlayEng.BeginRender();
+            ProcessNextSubtitle();
+            ((FontManager *)(gInterface + 0x80))->InitFrame();
+            gOverlayEng.EndRender();
+            audioDecSendToIOP(audioDec);
+            if (isStarted == 0 && audioDecIsPreset(audioDec) != 0) {
+                audioDecStart(audioDec);
+                isStarted = 1;
+            }
+            for (i = 0; i < SCAN_LINES; i++) {
+                fillBuff(mpeg, 0);
+            }
+            sceGsSyncV(0);
+            fst_movieFrameOverflows += 1;
+            Movie::UpdateFadeMusicVolume();
+            sceGsPutDispEnv(sp110);
+        } while (sceMpegIsEnd(mpeg) == 0);
+    }
+
+    audioDecReset(audioDec);
+    RemoteChangePCMVolume(0);
+    sceMpegReset(mpeg);
+    sceMpegDelete(mpeg);
+    ((FontManager *)(gInterface + 0x80))->RemoveText((unsigned short)50);
+    if (var_s1 == 3) {
+        CdsAssert((char *)"playpss.c", 0x33F, (char *)"retval != PSS_RETVAL_INVALID");
+    }
+    return var_s1;
 }
