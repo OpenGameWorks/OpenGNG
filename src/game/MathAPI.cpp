@@ -9,6 +9,8 @@ extern "C" float sinf(float x);
 extern "C" float cosf(float x);
 extern "C" float acosf(float x);
 extern "C" float atan2f(float y, float x);
+extern "C" long long fptodp(float x);
+extern "C" int _dpfgt(long long a, long long b);
 float FastMath_Fabs(float f);
 struct tagVuMatrixBox;
 struct tagFLOAT3D;
@@ -20,6 +22,8 @@ public:
     void InverseByRT(float *arg0, float *arg1);
 };
 extern "C" void sceVu0UnitMatrix(PMat4 *m);
+extern "C" void sceVu0ApplyMatrix(tagBOX *dst, float *m, float *src);
+extern "C" void FastMath_ComputeMatrixLite(float (*)[4], float (*)[4], float (*)[4], float (*)[4], int);
 bool FastMath_PointInSingleMatrixBox(float *arg0, tagVuMatrixBox *arg1);
 void FastMath_PointInMatrixBox(tagVuMatrixBox *arg0, int arg1, float *arg2, int *arg3);
 
@@ -110,6 +114,50 @@ int MathAPI::IsEBoxWithinEBox(tagBOX *arg0, tagBOX *arg1) {
     return 1;
 }
 
+// DRAFT: 0x1577A0 MakeVertexList__7MathAPIFP6tagBOXPA4_f
+// note: 28 differing words; this/arg0 registers s1/s0 vs s0/s5, packed 1.0f build (lui/dsll32/or/pcpyld/sq) vs four sw. Tried: local order (42->32), unsigned counters (->31), reversed counter order (->28), separate dst pointer (47, reverted).
+void MathAPI::MakeVertexList(tagBOX *arg0, float (*arg1)[4]) {
+    float sp90[4][4];
+    float spD0[4];
+    float spE0[4];
+    float spF0[4];
+    float sp100[4];
+    float sp110[4];
+    unsigned int k;
+    unsigned int j;
+    unsigned int i;
+
+    if (this == 0) {
+        return;
+    }
+    if (arg0 == 0) {
+        return;
+    }
+    memcpy(spF0, this, 0x10);
+    memcpy(spE0, (char *)this + 0x20, 0x10);
+    memcpy(sp100, (char *)this + 0x10, 0x10);
+    spD0[0] = 1.0f;
+    spD0[1] = 1.0f;
+    spD0[2] = 1.0f;
+    spD0[3] = 1.0f;
+    FastMath_ComputeMatrixLite(sp90, (float (*)[4])spD0, (float (*)[4])spE0, (float (*)[4])spF0, 0);
+    sp110[3] = 1.0f;
+    sp110[0] = -sp100[0];
+    for (i = 0; i < 2; i++) {
+        sp110[1] = -sp100[1];
+        for (j = 0; j < 2; j++) {
+            sp110[2] = -sp100[2];
+            for (k = 0; k < 2; k++) {
+                sceVu0ApplyMatrix(arg0, &sp90[0][0], sp110);
+                arg0 = (tagBOX *)((char *)arg0 + 0x10);
+                sp110[2] = sp100[2];
+            }
+            sp110[1] = sp100[1];
+        }
+        sp110[0] = sp100[0];
+    }
+}
+
 // DRAFT: 0x157900 SetE_BOX_Radius__7MathAPIFP6tagBOX
 // note: 17 differing lines: literal 0x358637BD pooled via $gp (orig inline lui/ori/mtc1 into f1); load order f0/f3/f4 vs f2/f1/f3; beqz target off by one. Tried eps local, reversed add, -sdatathreshold 0: all 17.
 float MathAPI::SetE_BOX_Radius(tagBOX *arg0) {
@@ -120,6 +168,38 @@ float MathAPI::SetE_BOX_Radius(tagBOX *arg0) {
         m_unk10[3] = r;
     }
     return r;
+}
+
+// DRAFT: 0x157950 QuatSlerp__7MathAPIFP9tag_EQuatP9tag_EQuatfP9tag_EQuat
+// note: 8 differing words, all the 64-bit literal 0x3EB0C6F7A0B5ED8D build at 0xA0-0xC0 (orig: hi in a0, lo in v1, or a1,v1,a0; ours hi/lo in v1/v0). Tried split hi<<32|lo and swapped operands: both 8. Negation order now matches.
+void MathAPI::QuatSlerp(tag_EQuat *arg0, tag_EQuat *arg1, float arg2, tag_EQuat *arg3) {
+    float dot = arg0->m_unkC * arg1->m_unkC + (arg0->m_unk4 * arg1->m_unk4 + arg0->m_unk8 * arg1->m_unk8) + arg0->m_unk0 * arg1->m_unk0;
+    float by = arg1->m_unk4;
+    float bz = arg1->m_unk8;
+    float bw = arg1->m_unkC;
+    float bx = arg1->m_unk0;
+    if (dot < 0.0f) {
+        dot = -dot;
+        by = -by;
+        bz = -bz;
+        bw = -bw;
+        bx = -bx;
+    }
+    float w1;
+    float w2;
+    if (_dpfgt(fptodp(1.0f - dot), 0x3EB0C6F7A0B5ED8DLL) != 0) {
+        float theta = acosf(dot);
+        float sinTheta = sinf(theta);
+        w1 = sinf((1.0f - arg2) * theta) / sinTheta;
+        w2 = sinf(arg2 * theta) / sinTheta;
+    } else {
+        w1 = 1.0f - arg2;
+        w2 = arg2;
+    }
+    arg3->m_unk4 = w1 * arg0->m_unk4 + w2 * by;
+    arg3->m_unk8 = w1 * arg0->m_unk8 + w2 * bz;
+    arg3->m_unkC = w1 * arg0->m_unkC + w2 * bw;
+    arg3->m_unk0 = w1 * arg0->m_unk0 + w2 * bx;
 }
 
 // DRAFT: 0x157B00 GetAngleBetweenVectors__7MathAPIFPfPf
@@ -238,6 +318,46 @@ float MathAPI::GetRelAngleYToPoint(float (*arg0)[4], float arg1, float (*arg2)[4
         d = wrap;
     }
     float sum = arg1 + d;
+    if (!(sum <= 180.0f)) {
+        if ((int)(sum - 360.0f) == (int)ang) {
+            return d;
+        }
+        return -d;
+    }
+    if ((int)sum == (int)ang) {
+        return d;
+    }
+    return -d;
+}
+
+// DRAFT: 0x158330 GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f
+// note: 48 words with the non-static header FacingPoint 0x157D10 needs; the original is static-style (entity in a0, array in a1), so static gives 45 here but breaks FacingPoint (DIFF 17). Remaining: obj in v0 not v1, early-return branch offset, f4 vs f3 angle reg, atan2f reloc one insn off.
+float MathAPI::GetRelAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]) {
+    char *self = (char *)arg0;
+    char *obj = *(char **)(self + 0x3C);
+    float (*a)[4] = obj ? (float (*)[4])(obj + 0x80) : (float (*)[4])(self + 0x190);
+    float (*b)[4] = obj ? (float (*)[4])(obj + 0x90) : (float (*)[4])(self + 0x1A0);
+    float dx = a[0][0] - arg1[0][0];
+    float dz = a[0][2] - arg1[0][2];
+    if (dx == 0.0f && dz == 0.0f) {
+        return b[0][1];
+    }
+    float ang = 57.295776f * atan2f(dx, dz);
+    float arg1f = b[0][1];
+    float lo = ang;
+    if (!(arg1f < ang)) {
+        lo = arg1f;
+    }
+    float hi = arg1f;
+    if (lo == arg1f) {
+        hi = ang;
+    }
+    float d = lo - hi;
+    float wrap = (360.0f - lo) + hi;
+    if (!(d <= wrap)) {
+        d = wrap;
+    }
+    float sum = arg1f + d;
     if (!(sum <= 180.0f)) {
         if ((int)(sum - 360.0f) == (int)ang) {
             return d;

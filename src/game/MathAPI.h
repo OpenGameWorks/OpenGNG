@@ -9,6 +9,13 @@ struct tagSPHERE;
 struct tagVuMatrixBox;
 struct tagFLOAT3D;
 
+struct tag_EQuat {
+    float m_unk0;   // 0x00
+    float m_unk4;   // 0x04
+    float m_unk8;   // 0x08
+    float m_unkC;   // 0x0C
+};
+
 class MathAPI {
 public:
     static int IsESphereWithinESphere(tagSPHERE *arg0, tagSPHERE *arg1);
@@ -25,6 +32,7 @@ public:
     float Distance(float (*arg0)[4], float (*arg1)[4]);
     static float GetAngleBetweenVectors(float *arg0, float *arg1);
     void GetForwardVector(EntityBaseClass *arg0, float (&arg1)[4]);
+    static void QuatSlerp(tag_EQuat *arg0, tag_EQuat *arg1, float arg2, tag_EQuat *arg3);
     static float GetRelAngleYToPoint(float (*arg0)[4], float arg1, float (*arg2)[4]);
     static float RandomFloatRange(float arg0, float arg1);
     static int RandomIntRange(int arg0, int arg1);
