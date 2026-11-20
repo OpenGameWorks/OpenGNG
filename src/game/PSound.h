@@ -106,6 +106,12 @@ public:
         char m_unk15;           // 0x15
     };
 
+    class PSoundUsage {
+    public:
+        unsigned int m_unk0;    // 0x00, record ID; 0xFFFFFFFF marks an unused record
+        char _pad04[0x14 - 0x04];
+    };
+
     enum EnumMusicSpecialVols {
         MUSIC_SPECIAL_VOLS_NONE = 0
     };
@@ -118,6 +124,7 @@ public:
     void SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol);
     int PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType);
     int CheckAllChannelsMatchSub();
+    int CheckOneChannelMatchSub(AmbientChannelState *pState);
     int PlayMusicOnStream(unsigned int p0, unsigned int p1, unsigned int p2);
     void SetPositionalRangeAmbient(unsigned int nRange);
     void SetDistLinearPercent(unsigned int nPercent);
@@ -204,10 +211,12 @@ public:
     void WaitOnVSync();
     int TriggerSystemSound(unsigned int p0, unsigned int p1, PMNode *pNode);
     int EnableTrigletByInstanceID(unsigned int nInstanceID, bool bEnable);
-    void StopSoundBySoundRef(unsigned int nSoundRef);
+    int StopSoundBySoundRef(unsigned int nSoundRef);
+    void StopOneShot(unsigned int nIndex);
     void SetMusicPitchBend(bool bBend);
     void PSoundReInitMusic();
     void StopMusic();
+    int UsageFindNextHigherID(PSoundUsage **ppUsage);
     int *UsageFind(unsigned int nID);
     int UsageAdd(unsigned int nID);
     void DebugRestartValues();
@@ -215,6 +224,7 @@ public:
     int DebugFindFirstID(unsigned int *pValue, unsigned int *pIndex);
     int DebugFindPrevID(unsigned int *pValue, unsigned int *pIndex, unsigned int nBound);
     int DebugFindNextID(unsigned int *pValue, unsigned int *pIndex, unsigned int nBound);
+    unsigned int DebugChangeParam(unsigned int nValue, int nStep, unsigned int nRate, unsigned int nLo, unsigned int nHi, bool bWrap);
     int WriteLineToPCFile(int nFd, char *pLine);
 
     int m_unk00;            // 0x000, GetEEControlStatus tests it
@@ -238,7 +248,9 @@ public:
     char _pad054[0x058 - 0x054];
     float m_unk58;         // 0x058, SetPositionalRangeOneshot sets it
     float m_unk5C;          // 0x05C, SetPositionalRangeAmbient sets it
-    char _pad060[0x070 - 0x060];
+    float m_unk60;         // 0x060, SetDistLinearPercent sets it
+    float m_unk64;         // 0x064, SetDistLinearPercent sets it to 1 - m_unk60
+    char _pad068[0x070 - 0x068];
     unsigned int m_unk70[2][8]; // 0x070, music stream state table, 0x20 bytes per stream; word 0 is the music id
     int m_unkB0;            // 0x0B0, SendStops clears it
     int m_unkB4;            // 0x0B4, SendStops clears it
@@ -264,7 +276,9 @@ public:
     char m_unkF8[0x2E28 - 0x0F8];   // 0x0F8, AmbientChannelState array of stride 0x20, FindFadingAmbientChannel scans it
     unsigned int m_unk2E28; // 0x2E28, FindFadingAmbientChannel start index
     unsigned int m_unk2E2C; // 0x2E2C, FindFadingAmbientChannel limit
-    char _pad2E30[0x2E48 - 0x2E30];
+    unsigned int m_unk2E30; // 0x2E30, StopSoundBySoundRef loop start index
+    unsigned int m_unk2E34; // 0x2E34, StopSoundBySoundRef loop limit (inclusive)
+    char _pad2E38[0x2E48 - 0x2E38];
     int m_unk2E48;          // 0x2E48, SoundEditLeave copies 0x2E4C here
     int m_unk2E4C;          // 0x2E4C, SoundEditLeave/Enter category mask
     int m_unk2E50[4];       // 0x2E50, PSoundStopDialog zeroes 0x2E50..0x2E5C

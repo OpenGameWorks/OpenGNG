@@ -381,6 +381,31 @@ int PSound::CheckAllChannelsMatchSub() {
     return 0;
 }
 
+// DRAFT: 0x001A5870 CheckOneChannelMatchSub__6PSoundFPQ26PSound19AmbientChannelState
+// note: DIFF 23: original has 5 nops after each inner-loop lw (ours 4), so the else branch and loop offsets are one word off; tried do-while and top-tested while forms.
+int PSound::CheckOneChannelMatchSub(AmbientChannelState *pState) {
+    int nResult = 0;
+    if (pState != 0) {
+        void *pA = (void *)pState->m_unk08;
+        if (pA != 0) {
+            if (pState != 0) {
+                do {
+                    pState = (AmbientChannelState *)pState->m_unk1C;
+                } while (pState != 0);
+            }
+            if (pA != 0) {
+                do {
+                    pA = *(void **)((char *)pA + 0x50);
+                } while (pA != 0);
+            }
+        }
+    } else {
+        nResult = -1;
+        CdsAssert("PSound.cpp", 0x1E23, "0");
+    }
+    return nResult;
+}
+
 // FUNCTION: 0x001A5920 ErrorRecovery__6PSoundFv
 void PSound::ErrorRecovery() {
     bool bSaved = m_unkD0;
@@ -584,6 +609,25 @@ int PSound::AddChanToMultipleStops(unsigned int nChan) {
     return nRet;
 }
 
+// FUNCTION: 0x001A8930 StopSoundBySoundRef__6PSoundFUi
+int PSound::StopSoundBySoundRef(unsigned int nSoundRef) {
+    if (nSoundRef != 0) {
+        AmbientEntry *pEntry = FindAmbientEntry(nSoundRef);
+        if (pEntry != 0) {
+            StartAESoftwareFadeout(pEntry, 0);
+            return 1;
+        }
+        char *pEnt = (char *)this + (m_unk2E30 << 6) + 0x2220;
+        for (unsigned int i = m_unk2E30; i <= m_unk2E34; i++, pEnt += 0x40) {
+            if (*(unsigned int *)(pEnt + 0x24) == nSoundRef) {
+                StopOneShot(i);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 // DRAFT: 0x001A89E0 FindAmbientEntry__6PSoundFUi
 // note: DIFF 7 words; original has one extra join nop at 0x3C (fn 0x4C bytes, ours 0x48)
 PSound::AmbientEntry *PSound::FindAmbientEntry(unsigned int nID) {
@@ -760,6 +804,26 @@ void PSound::SetPositionalRangeOneshot(unsigned int nRange) {
         fRange = fRange + fRange;
     }
     m_unk58 = fRange;
+}
+
+// DRAFT: 0x001A9250 SetDistLinearPercent__6PSoundFUi
+// note: DIFF 28; this/nPercent swapped in s0/s1, 0x3C23D70A loaded before the sign test in original, fPercent in f0 vs f2; tried ternary assert, hoisted fScale, no nSigned local (no drop).
+void PSound::SetDistLinearPercent(unsigned int nPercent) {
+    float fPercent;
+    int nSigned = nPercent;
+
+    ((nPercent < 0x65) ? (void)0 : CdsAssert("PSound.cpp", 0x100F, "i_distLinearPercent <= 100"));
+    gPSndDbg[17] = nPercent;
+    if (nSigned >= 0) {
+        fPercent = (float)nSigned;
+    } else {
+        int nHalf = nPercent >> 1;
+        nHalf |= nPercent & 1;
+        fPercent = (float)nHalf;
+        fPercent = fPercent + fPercent;
+    }
+    m_unk60 = 0.01f * fPercent;
+    m_unk64 = 1.0f - m_unk60;
 }
 
 // FUNCTION: 0x001A9340 SetMasterRelVolume__6PSoundFUi
@@ -1171,6 +1235,43 @@ PSound::SpotInfo::SpotInfo() {
     Init();
 }
 
+// FUNCTION: 0x001AADA0 UsageFindNextHigherID__6PSoundFPPQ26PSound11PSoundUsage
+int PSound::UsageFindNextHigherID(PSound::PSoundUsage **ppUsage) {
+    PSoundUsage *pCur = (PSoundUsage *)fst_Usage;
+    PSoundUsage *pEnd = (PSoundUsage *)(fst_Usage + 24000);
+    PSoundUsage *pBest = 0;
+    PSoundUsage *pSkip = 0;
+    unsigned int nBest = 0xFFFFFFFF;
+    unsigned int nPrev = 0;
+
+    if (ppUsage != 0) {
+        pSkip = *ppUsage;
+        if (pSkip != 0) {
+            nPrev = pSkip->m_unk0;
+        }
+    }
+    if (pCur < pEnd) {
+        do {
+            unsigned int nId = pCur->m_unk0;
+            if (nId == 0xFFFFFFFF) {
+                break;
+            }
+            if (pSkip != pCur && nId < nBest && nPrev < nId) {
+                nBest = nId;
+                pBest = pCur;
+            }
+            pCur++;
+        } while (pCur < pEnd);
+    }
+    if (ppUsage != 0) {
+        *ppUsage = pBest;
+        if (pBest != 0) {
+            return 0;
+        }
+    }
+    return -1;
+}
+
 // DRAFT: 0x001AAF20 UsageInit__6PSoundFv
 // note: DIFF 6 words; original has three scheduling nops between the loop sltu and bnez and the guard beqz targets one slot further; tried int*, char*, unsigned cursors (15), int stride 5 (6), for-loop (11)
 void PSound::UsageInit() {
@@ -1376,4 +1477,29 @@ int PSound::DebugFindFirstID(unsigned int *pValue, unsigned int *pIndex) {
         *pValue = nMin;
     }
     return nRet;
+}
+
+// DRAFT: 0x001ACD00 DebugChangeParam__6PSoundFUiiUiUiUib
+// note: DIFF 10; wrap-return branches one word short, and the clamp return copies nHi into t0 instead of keeping the shared epilogue. Tried: ternary return, else form, nClamp local (best), inverted nClamp select.
+unsigned int PSound::DebugChangeParam(unsigned int nValue, int nStep, unsigned int nRate, unsigned int nLo, unsigned int nHi, bool bWrap) {
+    unsigned int nQ = (nValue * nRate) / 1000;
+    unsigned int nVal = nValue + nStep;
+    if (nStep < 0) {
+        nVal -= nQ;
+    } else if (nStep > 0) {
+        nVal += nQ;
+    }
+    if (bWrap) {
+        if (nStep < 0) {
+            if (nValue < nVal) return nLo;
+        } else {
+            if (nVal < nValue) return nHi;
+        }
+    }
+    if (nLo > nVal || nVal > nHi) {
+        unsigned int nClamp = nLo;
+        if (nStep < 0) nClamp = nHi;
+        return nClamp;
+    }
+    return nVal;
 }
