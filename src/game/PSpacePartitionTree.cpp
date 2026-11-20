@@ -151,15 +151,13 @@ void PSpacePartitionTree::CullToFrustrum(PFrustrum *pFrustrum, float *pOut) {
     if (m_unk0 != 0) {
         *(u_long128 *)&gCameraPos = *(u_long128 *)pOut;
         asm {
-            .word 0x4011C801
-            move nStart, $s1
+            mfpc nStart, 0
         }
         m_unk404 = 0;
         m_unk410 = TestNodeWithFrustrum__19PSpacePartitionNodeFP9PFrustrumPP19PSpacePartitionNodeRUi(m_unk0, pFrustrum, &m_unk4, &m_unk404);
         unsigned int nEnd;
         asm {
-            .word 0x4003C801
-            move nEnd, $v1
+            mfpc nEnd, 0
         }
         int nDelta = nEnd - nStart;
         float fCount;
