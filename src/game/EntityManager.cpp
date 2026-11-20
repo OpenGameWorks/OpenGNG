@@ -27,6 +27,23 @@ public:
 
 class AnimData;
 class PMat4;
+class SoundRoom;
+class EntityBaseClass;
+
+enum EnumSoundTrigletPawnType {
+    SOUND_TRIGLET_PAWN_TYPE_1 = 1,
+    SOUND_TRIGLET_PAWN_TYPE_2 = 2
+};
+
+class PSound {
+public:
+    void RegisterSoundEntityAmounts(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3);
+    int RegisterRoom(SoundRoom *pRoom);
+    void RegisterSoundTrigletPawn(EntityBaseClass *pEntity, EnumSoundTrigletPawnType eType);
+    void AfterSpawnEditedInstances();
+    char _pad000[0x10];
+};
+extern PSound gSound;
 
 class PMNode {
 public:
@@ -163,6 +180,7 @@ public:
 class MathAPI {
 public:
     float GetRelAngleYToPoint(float (*arg0)[4], float arg1, float (*arg2)[4]);
+    static float DistanceXZ(float (*arg0)[4], float (*arg1)[4]);
 
     char _pad000[0x20];
     float m_unk20[4];           // 0x20, element 1 at 0x24
@@ -212,6 +230,8 @@ extern MemMgrType MemMgr;
 class Camera {
 public:
     void ResetCamBoxCount();
+    void SetEntityYOffset(unsigned short arg0);
+    unsigned short GetEntityYOffset();
 };
 
 class TimerAPI {
@@ -236,6 +256,10 @@ public:
     int LoadMesh(unsigned int arg0, bool arg1, bool arg2);
     int LoadAnim(unsigned int arg0, bool arg1);
     void SetAnimData(AnimData *arg0);
+    int ChangedState();
+    void ProcessSequence();
+    void ProcessMeshFade();
+    void SetState(int arg0);
 
     char _pad000[0x04];
     unsigned int m_unk04;       // 0x04
@@ -244,11 +268,20 @@ public:
     char _pad10[0x1B - 0x10];
     unsigned char m_unk1B;      // 0x1B
     unsigned char m_unk1C;      // 0x1C
-    char _pad1D[0x3C - 0x1D];
+    char _pad1D[0x1E - 0x1D];
+    unsigned char m_unk1E;      // 0x1E nonzero while the entity is active
+    char _pad1F[0x20 - 0x1F];
+    int m_unk20;                // 0x20 state, -2 takes the sleep path
+    char _pad24[0x3C - 0x24];
     char *m_unk3C;              // 0x3C
-    char _pad040[0x10C - 0x40];
+    char _pad040[0xE9 - 0x40];
+    unsigned char m_unkE9;      // 0xE9 flag set from ChangedState
+    char _padEA[0x10C - 0xEA];
     unsigned int m_unk10C;      // 0x10C collision flags, bits 24-26 mark collidable
-    char _pad110[0x190 - 0x110];
+    char _pad110[0x182 - 0x110];
+    unsigned short m_unk182;    // 0x182 range, compared against DistanceXZ
+    unsigned short m_unk184;    // 0x184 camera Y offset applied when in range
+    char _pad186[0x190 - 0x186];
     float m_unk190[4];          // 0x190
 };
 
@@ -477,18 +510,33 @@ void EntityManager::CheckSwordBGAnim(PMNode *pNode) {
 }
 
 // DRAFT: 0x00146590 BoxSphereCheck__FPA4_A4_fPA2_A4_ff
-// note: VU0 lanes (lqc2, vmadd, qmfc2, pextlw) are placeholders here; only the scalar branch shape is reproduced
+// note: DIFF 62 with the placeholder; VU0 run (lqc2..vmul, qmfc2 of vf6) now in asm, MMI lane shuffles (pcpyud, prot3w, pextlw, pcgtw) still unmatched
 int BoxSphereCheck(float (*pBox)[4][4], float (*pSphere)[2][4], float fRadius) {
-    float dist2 = 0.0f;
-    float centre = 0.0f;
-    int lane0 = 0;
-    int lane1 = 0;
+    u_long128 q6;
+    float dist2;
+    float s;
     int result = 0;
-    float s = centre + fRadius;
+    asm {
+        lqc2 vf1, 0x0(pBox)
+        lqc2 vf2, 0x10(pBox)
+        lqc2 vf3, 0x20(pBox)
+        lqc2 vf4, 0x30(pBox)
+        lqc2 vf5, 0x0(pSphere)
+        lqc2 vf6, 0x10(pSphere)
+        vmulax.xyzw ACC, vf1, vf5x
+        qmfc2.ni q6, vf6
+        vmadday.xyzw ACC, vf2, vf5y
+        vmaddaz.xyzw ACC, vf3, vf5z
+        vmaddw.xyzw vf7, vf4, vf5w
+        vsub.xyz vf7, vf7, vf9
+        vmul.xyz vf7, vf7, vf7
+        vaddy.x vf7, vf7, vf7y
+        vaddz.x vf7, vf7, vf7z
+        qmfc2.ni dist2, vf7
+    }
+    s = fRadius + fRadius;
     if (!((s * s) <= dist2)) {
-        if (lane0 == 0 && lane1 == 0) {
-            result = 1;
-        }
+        result = 1;
     }
     return result;
 }
@@ -512,6 +560,68 @@ void EntityManager::InitSwordBGAnimList(PMeshNode *pMesh) {
     ((PMNode *)pMesh)->BuildAnimList((PArray *)&m_unk5B70, 0x200);
     if ((unsigned int)m_unk5B70 > 0x20) {
         CdsAssert("EntityManager.cpp", 0x82C, "mOnTriggerList.GetCount() <= MAX_TRIGGER");
+    }
+}
+
+// DRAFT: 0x00146770 ExecuteApparitions__13EntityManagerFv
+// note: DIFF 146; prologue and pEntity load differ in register roles (orig s3 = i, s5 = byte offset, s4 = this, s0 = nTerminated, s2 = destroy index, s1 = pEntity). Tried byte-offset pointer walk (147), reverted to m_unk5080[i] (146, kept).
+void EntityManager::ExecuteApparitions() {
+    EntityBaseClass *apTerminated[0x180];
+    int nTerminated = 0;
+    ((Camera *)mCameraAPI)->SetEntityYOffset(0);
+    for (unsigned int i = 0; i < m_unk5078; i++) {
+        EntityBaseClass *pEntity = (i < m_unk5078) ? (EntityBaseClass *)m_unk5080[i] : 0;
+        if (pEntity == 0) {
+            CdsAssert("EntityManager.cpp", 0x7CB, "pEntity");
+        }
+        if (pEntity->m_unk1E != 0) {
+            if (pEntity->ChangedState() != 0) {
+                pEntity->m_unkE9 = 1;
+            } else {
+                pEntity->m_unkE9 = 0;
+            }
+            pEntity->ProcessSequence();
+            pEntity->ProcessMeshFade();
+            if (pEntity->m_unk20 == -2) {
+                ((EntityBaseVirtuals *)pEntity)->Slot02();
+                pEntity->SetState(-3);
+                apTerminated[nTerminated] = pEntity;
+                nTerminated++;
+                if (nTerminated >= 0x181) {
+                    CdsAssert("EntityManager.cpp", 0x7E6, "iNTerminated <= sizeof( apTerminated ) / 4");
+                }
+            } else {
+                ((EntityBaseVirtuals *)pEntity)->Slot02();
+                if ((((Camera *)mCameraAPI)->GetEntityYOffset() & 0xFFFF) == 0) {
+                    unsigned short range = pEntity->m_unk182;
+                    if (range != 0) {
+                        float (*pt)[4] = (pEntity->m_unk3C != 0) ? (float (*)[4])(pEntity->m_unk3C + 0x80) : &pEntity->m_unk190;
+                        float dist = MathAPI::DistanceXZ(pt, (float (*)[4])mCameraAPI);
+                        float limit = (float)range;
+                        if (dist < limit) {
+                            ((Camera *)mCameraAPI)->SetEntityYOffset(pEntity->m_unk184);
+                        }
+                    }
+                }
+            }
+            float (*target)[4] = (pEntity->m_unk3C != 0) ? (float (*)[4])(pEntity->m_unk3C + 0x80) : &pEntity->m_unk190;
+            if (target[0][1] <= -1000.0f) {
+                pEntity->SetState(-3);
+                apTerminated[nTerminated] = pEntity;
+                nTerminated++;
+                if (nTerminated >= 0x181) {
+                    CdsAssert("EntityManager.cpp", 0x811, "iNTerminated <= sizeof( apTerminated ) / 4");
+                }
+            }
+        }
+    }
+    if (nTerminated > 0) {
+        int idx = 0;
+        do {
+            EntityBaseClass *pEntity = apTerminated[idx];
+            Destroy(pEntity->m_unk04, pEntity->m_unk0C);
+            idx++;
+        } while (idx < nTerminated);
     }
 }
 
@@ -1024,6 +1134,66 @@ int EntityManager::SetEifWoken(unsigned int arg0, bool arg1, unsigned int arg2) 
         }
     }
     return 0;
+}
+
+// DRAFT: 0x00147F90 AfterSpawnEditedInstances__13EntityManagerFv
+// note: DIFF 167; original frame 0x6A0 (fp saved, ra at 0x90) vs ours 0x690 (no fp); loop-1 count lives in fp in the original, s0 here; gSound reloc at 0x278 missing; size 0x288 vs 0x2AC. Tried byte-offset loop 1 (167, no gain), count first (170), ternary tail (170).
+void EntityManager::AfterSpawnEditedInstances() {
+    int count = m_unk5078;
+    EntityBaseClass *apTerminated[0x180];
+    int iNTerminated = 0;
+    int nTotal = 0;
+    int n16 = 0;
+    int n71 = 0;
+    for (int i = 0; i < count; i++) {
+        EntityBaseClass *pEntity = ((unsigned int)i < m_unk5078) ? (EntityBaseClass *)m_unk5080[i] : 0;
+        if (pEntity == 0) {
+            CdsAssert("EntityManager.cpp", 0x3AB, "pEntity");
+        }
+        if (pEntity->m_unk08 == 0x71) {
+            nTotal++;
+            n71++;
+        } else if (pEntity->m_unk08 == 0x70) {
+            nTotal++;
+        } else if (pEntity->m_unk08 == 0x16) {
+            n16++;
+        }
+    }
+    gSound.RegisterSoundEntityAmounts(n16, nTotal, n71, 0);
+    iNTerminated = 0;
+    for (int i = 0; i < count; i++) {
+        EntityBaseClass *pEntity = ((unsigned int)i < (unsigned int)count) ? (EntityBaseClass *)m_unk5080[i] : 0;
+        if (pEntity == 0) {
+            CdsAssert("EntityManager.cpp", 0x3D2, "pEntity");
+        }
+        int flag = 0;
+        if (pEntity->m_unk08 == 0x71) {
+            gSound.RegisterSoundTrigletPawn(pEntity, SOUND_TRIGLET_PAWN_TYPE_2);
+            flag = 1;
+        } else if (pEntity->m_unk08 == 0x70) {
+            gSound.RegisterSoundTrigletPawn(pEntity, SOUND_TRIGLET_PAWN_TYPE_1);
+            flag = 1;
+        } else if (pEntity->m_unk08 == 0x16) {
+            gSound.RegisterRoom((SoundRoom *)pEntity);
+            flag = 1;
+        }
+        if (flag != 0) {
+            apTerminated[iNTerminated] = pEntity;
+            iNTerminated++;
+            if (iNTerminated >= 0x181) {
+                CdsAssert("EntityManager.cpp", 0x3FA, "iNTerminated <= sizeof( apTerminated ) / 4");
+            }
+        }
+    }
+    if (iNTerminated > 0) {
+        int idx = 0;
+        do {
+            EntityBaseClass *pEntity = apTerminated[idx];
+            Destroy(pEntity->m_unk04, pEntity->m_unk0C);
+            idx++;
+        } while (idx < iNTerminated);
+    }
+    gSound.AfterSpawnEditedInstances();
 }
 
 // FUNCTION: 0x00148960 GetPtrToInstance__13EntityManagerFUi
