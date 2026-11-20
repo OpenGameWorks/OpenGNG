@@ -7,6 +7,9 @@ extern "C" void CdsAssert__FPciPc(char *pExpr, int nLine, char *pFile);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void sceGsPutDispEnv(void *pEnv);
 extern "C" void sceGsPutDrawEnv(void *pEnv);
+extern int SCREEN_OFFSET_X;
+extern int SCREEN_OFFSET_Y;
+extern int SCREEN_HEIGHT;
 
 // FUNCTION: 0x0017D750 GsInitClut256__FP12tagGsClut256
 void GsInitClut256(tagGsClut256 *pClut) {
@@ -25,6 +28,71 @@ void FudgeBytesToBMPFormat(char *pBuf, int nWidth, int nHeight, float fA, float 
         char c = p[0];
         p[0] = p[2];
         p[2] = c;
+    }
+}
+
+// FUNCTION: 0x0017E820 GsSetSpriteCoords__FP10sprite_tagssssiiiis
+void GsSetSpriteCoords(sprite_tag *pSprite, short nX0, short nX1, short nX2, short nX3, int nOffX, int nOffY, int nW, int nH, short nFlag) {
+    pSprite->m_unk20 = nX0 << 4;
+    pSprite->m_unk24 = nX1 << 4;
+    pSprite->m_unk28 = nX2 << 4;
+    pSprite->m_unk2C = nX3 << 4;
+    if (nFlag != 0) {
+        pSprite->m_unk20 += 8;
+        pSprite->m_unk28 += 8;
+        pSprite->m_unk24 += 8;
+        pSprite->m_unk2C += 8;
+    }
+    pSprite->m_unk38 = nOffX << 4;
+    pSprite->m_unk3C = nOffY << 4;
+    pSprite->m_unk30 = nW << 4;
+    pSprite->m_unk34 = nH << 4;
+    int nScrX = SCREEN_OFFSET_X * 16;
+    pSprite->m_unk10 = nScrX + pSprite->m_unk38;
+    int nScrY = SCREEN_OFFSET_Y * 16;
+    pSprite->m_unk14 = nScrY + pSprite->m_unk3C;
+    pSprite->m_unk18 = pSprite->m_unk10 + pSprite->m_unk30;
+    pSprite->m_unk1C = pSprite->m_unk14 + pSprite->m_unk34;
+    pSprite->m_unk00 = 0x80;
+    pSprite->m_unk04 = 0x80;
+    pSprite->m_unk08 = 0x80;
+    pSprite->m_unk0C = 0x80;
+}
+
+// DRAFT: 0x0017EBD0 GsInitFogSprite__FP18tagFogSpritePacketcccUi
+// note: DIFF 102; original has 0x40 frame saving s0..s3 and 0x198 body, ours 0x10 frame and 0x16c body, lhu vs lh header load; tried separate/shared nOff and early constant (no change)
+void GsInitFogSprite(tagFogSpritePacket *pPacket, char cR, char cG, char cB, unsigned int nZ) {
+    long long nRGB = (long long)cR | ((long long)cG << 8) | ((long long)cB << 16);
+    pPacket->m_unk00 = 0;
+    unsigned short nHdr = *(unsigned short *)pPacket;
+    *(unsigned short *)pPacket = (nHdr & 0x8000) | 0x2C;
+    unsigned char *pB = (unsigned char *)pPacket;
+    pB[1] = (pB[1] & ~0x80) | 0x80;
+    pB[7] = (pB[7] & ~0xF0) | 0x10;
+    pB[8] = (pB[8] & ~0x0F) | 0x0E;
+    pPacket->m_unk10 = 0x70000;
+    pPacket->m_unk18 = 0x47;
+    pPacket->m_unk30 = 0x46;
+    pPacket->m_unk38 = 0;
+    pPacket->m_unk20 = 0x11;
+    pPacket->m_unk28 = 0x42;
+    pPacket->m_unk40 = nRGB | 0x3F80000080000000LL;
+    pPacket->m_unk48 = 1;
+    unsigned long long nZHi = (unsigned long long)nZ << 32;
+    int nX = 0;
+    int nOff = 0;
+    for (int i = 0; i < 20; i++) {
+        char *pV = (char *)pPacket + nOff;
+        long long nX0 = (SCREEN_OFFSET_X + nX) << 4;
+        long long nY0 = (long long)(SCREEN_OFFSET_Y << 4) << 16;
+        *(long long *)(pV + 0x50) = nX0 | nY0 | nZHi;
+        *(long long *)(pV + 0x58) = 5;
+        long long nX1 = (SCREEN_OFFSET_X + nX + 0x20) << 4;
+        long long nY1 = (long long)((SCREEN_OFFSET_Y + SCREEN_HEIGHT) << 4) << 16;
+        *(long long *)(pV + 0x60) = nX1 | nY1 | nZHi;
+        *(long long *)(pV + 0x68) = 5;
+        nX += 0x20;
+        nOff += 0x20;
     }
 }
 
