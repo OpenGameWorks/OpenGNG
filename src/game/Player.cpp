@@ -628,7 +628,7 @@ void Player::InitAttachableJoints() {
 }
 
 // DRAFT: 0x00159790 AnimationViewer__6PlayerFi
-// note: 4 words differ: the four `addiu $s6,$zero,1` are `daddiu` in the original; pointer, 1LL, bool casts tried, no change
+// note: 4 words differ: the four `addiu $s6,$zero,1` are `daddiu` in the original; pointer, 1LL, bool casts tried, bool flag local (126 lines, frame 0x90 vs 0x80), no gain
 int Player::AnimationViewer(int arg0) {
     int nIndex = 0;
     int nOffset = 0;
@@ -1842,7 +1842,7 @@ void Player::ResetShield() {
     }
 }
 
-// note: 2 words differ: SetShield argument is lowered to movn/sltu instead of the original's daddu zero-preload and movz a1,v0,s0. Tried arg0 ? 0 : 1 (33 words), (arg0 == 0) ? true : false (movn, no gain), and the empty-then layout (33 words).
+// note: 2 words differ: SetShield argument is lowered to movn/sltu instead of the original's daddu zero-preload and movz a1,v0,s0. Tried arg0 ? 0 : 1 (33 words), !arg0 (33), (arg0 == 0) ? true : false (movn, no gain), and the empty-then layout (33 words).
 // DRAFT: 0x0015C0E0 SetFlyingShield__6PlayerFP6Shield
 void Player::SetFlyingShield(Shield *arg0) {
     SetShield((arg0 == 0) ? 1 : 0);
@@ -3221,6 +3221,7 @@ void Player::RollMove() {
     }
 }
 
+// note: 2 words differ: ours hoists `this` (daddu a0,s0,zero) into the beq delay slot at 0x34; the original has nop there and the move in the jal delay slot at 0x3C. Tried early-return split (13), nested if (2), swapped operands (3), guard return (13).
 // DRAFT: 0x0015F770 LandingMove__6PlayerFv
 void Player::LandingMove() {
     int action = GetGroundAction();
