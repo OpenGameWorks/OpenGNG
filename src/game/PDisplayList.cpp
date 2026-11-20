@@ -19,6 +19,7 @@ extern char guFxPipelineVuConstants[0x10];
 extern char gu3dPipelineVuConstants[0x10];
 extern char vu_fx_microcode_dma_packet[0x10];
 extern char vu_shadow_microcode_dma_packet[0x10];
+void DmaScratchPadToMainMem(void *pSrc, void *pDst, short nQw, bool bA, bool bB);
 
 // FUNCTION: 0x180400 DeAllocEntries__12PDisplayListFi
 void PDisplayList::DeAllocEntries(int nCount) {
@@ -354,6 +355,89 @@ void PDisplayList::SetTexSyncPacket() {
     ((unsigned int *)nPacket)[5] = 0;
     ((unsigned int *)nPacket)[6] = 0;
     ((unsigned int *)nPacket)[7] = 0x80000000;
+    asm {
+        sync
+    }
+}
+
+// DRAFT: 0x181AB0 DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib
+// note: 180 words differ; frame 0xB0 vs 0xA0 (this spilled to 0xAC(sp), fp not used), arg registers a1..a3 not s7/s1/s0, packet store order
+void PDisplayList::DrawFxInstances(struct tagVuFxInstance *pInstances, int nNum, bool bFlag) {
+    int i;
+    int nBatch;
+    int nLeft;
+    int nCount;
+    int nPacket;
+    int nQw;
+    char *pBatch;
+    unsigned int qw;
+
+    if (pInstances == 0) {
+        CdsAssert("PDisplayList.cpp", 0x553, "pInstances");
+    }
+    if (nNum == 0) {
+        CdsAssert("PDisplayList.cpp", 0x554, "iNumInstances");
+    }
+    nBatch = nNum / 30;
+    if (nNum % 30 != 0) {
+        nBatch++;
+    }
+    nLeft = nNum;
+    if (bFlag) {
+        for (i = 0; i < nBatch; i++) {
+            nCount = nLeft;
+            if (nLeft >= 30) {
+                nCount = 30;
+            }
+            nLeft -= nCount;
+            pBatch = (char *)pInstances + i * 0xB40;
+            nPacket = AllocEntries(nCount * 6 + 3);
+            if (nPacket == 0) {
+                CdsAssert("PDisplayList.cpp", 0x56B, "0");
+            }
+            nQw = nCount * 6 + 2;
+            *(long long *)nPacket = (long long)nQw | 0x10000000LL;
+            ((unsigned int *)nPacket)[2] = 0;
+            ((unsigned int *)nPacket)[3] = ((nQw - 1) << 16) | 0x6C000000;
+            ((unsigned int *)nPacket)[4] = nCount;
+            ((unsigned int *)nPacket)[5] = 0;
+            ((unsigned int *)nPacket)[6] = 0;
+            ((unsigned int *)nPacket)[7] = 0;
+            if (((int)pBatch & 0x70000000) == 0x70000000) {
+                DmaScratchPadToMainMem(pBatch, (void *)(nPacket + 0x20), (short)(nQw - 2), 0, 0);
+            } else {
+                QwordCopy((u_long128 *)(nPacket + 0x20), (u_long128 *)pBatch, nQw - 2);
+            }
+            ((unsigned int *)(nPacket + 0x20 + (nQw - 2) * 0x10))[0] = 0x17000000;
+            ((unsigned int *)(nPacket + 0x20 + (nQw - 2) * 0x10))[1] = 0;
+            ((unsigned int *)(nPacket + 0x20 + (nQw - 2) * 0x10))[2] = 0;
+            ((unsigned int *)(nPacket + 0x20 + (nQw - 2) * 0x10))[3] = 0;
+        }
+    } else {
+        for (i = 0; i < nBatch; i++) {
+            nCount = nLeft;
+            if (nLeft >= 30) {
+                nCount = 30;
+            }
+            nLeft -= nCount;
+            pBatch = (char *)pInstances + i * 0xB40;
+            nPacket = AllocEntries(4);
+            if (nPacket == 0) {
+                CdsAssert("PDisplayList.cpp", 0x598, "0");
+            }
+            qw = (unsigned int)(nCount * 0x60) >> 4;
+            *(long long *)nPacket = 0x10000001LL;
+            ((unsigned int *)nPacket)[2] = 0x10000000;
+            ((unsigned int *)nPacket)[3] = 0x6C010000;
+            ((unsigned int *)nPacket)[4] = nCount;
+            *(long long *)(nPacket + 0x20) = ((long long)(unsigned int)pBatch << 32) | 0x30000000LL | (long long)qw;
+            ((unsigned int *)nPacket)[10] = 0;
+            ((unsigned int *)nPacket)[11] = (qw << 16) | 0x6C000001;
+            *(long long *)(nPacket + 0x30) = 0x10000000LL;
+            ((unsigned int *)nPacket)[14] = 0x11000000;
+            ((unsigned int *)nPacket)[15] = 0x17000000;
+        }
+    }
     asm {
         sync
     }
