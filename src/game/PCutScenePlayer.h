@@ -28,7 +28,7 @@ public:
     void Abort();
     void ResetCutScene();
     void ResetAnimations();
-    void AttachActors();
+    bool AttachActors();
     void UpdatePlayer();
     void Unload(bool bFlag);
     void SetBgNodesOpacity(PArray *pArray, float fOpacity);

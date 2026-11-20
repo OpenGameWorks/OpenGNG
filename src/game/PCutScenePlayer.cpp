@@ -45,6 +45,7 @@ public:
     virtual void Vt2();
     virtual void Vt3();
     virtual void Animate(float fA, float fB, PMat4 *pMat, int nA, bool bB);
+    virtual void Vt4();
     void ProcessFxTriggers(float fTime, PMat4 *pMat, bool bA, bool bB);
     PMNode *Find(unsigned int nId);
     void RecurseSetFade(float fFade);
@@ -54,6 +55,7 @@ class PArray {
 public:
     void Add(void *pItem);
     void Remove(void *pItem);
+    void RemoveCurrent();
     void Allocate(unsigned int nSize);
 };
 class PCDFile {
