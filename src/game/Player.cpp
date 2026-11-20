@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #include "Player.h"
 #include "PResourceManager.h"
+#include "PArray.h"
 
 // TODO(header): foreign declarations
 extern "C" void Add__6PArrayFPv(void *pArray, void *pItem);
@@ -326,7 +327,8 @@ extern "C" void sceVu0ApplyMatrix(float *pDst, float *pMat, float *pSrc);
 extern "C" void sceVu0Normalize(float *, float *);
 extern "C" void *Spawn__13EntityManagerFUibi(void *, unsigned int, bool, int);
 extern "C" void InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(void *, int, float *, float *, float *);
-extern "C" void *ComboTarget__6PlayerFffb(void *, float, float, bool);
+extern "C" float sinf(float x);
+extern "C" float cosf(float x);
 extern "C" float atan2f(float fY, float fX);
 extern "C" float Round180__Ff(float fAngle);
 extern "C" float FastMath_Sin180__Ff(float fAngle);
@@ -1199,6 +1201,72 @@ void Player::SwapAbility(int arg0) {
         return;
     }
     ((EntityBaseClass *)this)->PlaySound(0xE4U);
+}
+
+// DRAFT: 0x0015B020 SetAbility__6PlayerFii
+// note: 154 words; the clamp temp lands in v1 (original uses a1), so lui AbilityTable is not hoisted into the blez slot; the original shares one exit and a 0x280 size vs our 0x29c. Variants tried: `arg0 > 0x25`, `arg0 - 0x25 > 0`, `int t = arg0 - 0x25`.
+void Player::SetAbility(int arg0, int arg1) {
+    if (arg1 == 0 && m_unk335 != 0) {
+        arg1 = 2;
+    }
+    if (arg0 - 0x25 > 0) {
+        arg0 = 0x25;
+    }
+    int a6 = *(int *)&AbilityTable[arg0 * 16];
+    switch (a6) {
+    case -13:
+        if (arg0 < 0x1E) {
+            m_unk224 |= 1 << arg0;
+        }
+        return;
+    case -12:
+        GameVarAdd(0xC, 0xA, 0);
+        ((EntityBaseClass *)this)->PlaySound(0x26C);
+        return;
+    case -11:
+        m_unk214 = (arg0 == 0x12) ? 0x9F : 0x6A;
+        if (m_unk28C) {
+            SetShield(true);
+        }
+        gInterface.UpdateStatus(0x10, false);
+        ((EntityBaseClass *)this)->PlaySound(0xE7);
+        return;
+    case -10:
+        GameVarAdd(0xE, 0x280, arg1);
+        if (arg1 < 2 && SetPowerupMotion(0x32) != 0 && arg1 != 0) {
+            m_unk335 |= 2;
+        }
+        return;
+    case -9:
+        GameVarAdd(1, 0xC8, arg1);
+        return;
+    case -8:
+        GameVarAdd(2, 1, arg1);
+        return;
+    case -7:
+        GameVarAdd(9, 1, 0);
+        return;
+    case -5:
+        GameVarSet(0xF, arg0 - 4);
+        gInterface.AddAbility(arg0);
+        return;
+    case -4:
+        GetBoxer(arg0);
+        return;
+    case -3:
+    case -2:
+        GameVarSet(0xA, arg0);
+        gInterface.AddAbility(arg0);
+        return;
+    case -1:
+        GameVarAdd(0xD, 1, 0);
+        GameVarAdd(0xE, 0x280, 0);
+        return;
+    default:
+        m_unk1D0 |= a6;
+        gInterface.AddAbility(arg0);
+        return;
+    }
 }
 
 // DRAFT: 0x0015B2A0 ResurrectionMove__6PlayerFv
@@ -2258,6 +2326,68 @@ int Player::CancelAttack(unsigned int arg0) {
     return 0;
 }
 
+// DRAFT: 0x0015DFD0 ComboTarget__6PlayerFffb
+// note: 98 words differ: original saves 3 float regs (f20-f22) and keeps vec at 0x90(sp); ours saves 5 (f20-f24, args copied before the m_unkEA test) and vec at 0x80(sp). Tried reusing arg1 as the running best: still 98.
+void *Player::ComboTarget(float arg0, float arg1, bool arg2) {
+    if (m_unkEA == 0) {
+        return 0;
+    }
+    float ang = 0.017453292f * m_unk1C4;
+    float vec[4];
+    vec[0] = sinf(ang);
+    vec[1] = 0.0f;
+    vec[2] = cosf(ang);
+    vec[3] = 0.0f;
+    float *pos = (float *)((char *)m_unk3C + 0x80);
+    PArray *pa = (PArray *)((char *)mpEntMgr__15EntityBaseClass + 0x50B0);
+    pa->m_unk4 = 0;
+    char *s5 = (pa->m_unk0 != 0) ? (char *)pa->m_unk8[0] : 0;
+    char *s2 = 0;
+    float d[4];
+    float res[4];
+    while (s5 != 0) {
+        if ((!arg2 || *(int *)(s5 + 0x10) == 3) && s5[0xEA] != 0 && *(char **)(s5 + 0x3C) != 0) {
+            unsigned int kind = (unsigned char)s5[0x163] - 1;
+            if (kind < 4) {
+                float *target;
+                if (*(char **)(s5 + 0x3C) != 0) {
+                    target = (float *)(*(char **)(s5 + 0x3C) + 0x80);
+                } else {
+                    target = (float *)(s5 + 0x190);
+                }
+                sceVu0SubVector(d, pos, target);
+                if (FastMath_Fabs__Ff(d[1]) < 10.0f) {
+                    float dd = sceVu0InnerProduct(d, d);
+                    if (dd < arg1) {
+                        sceVu0Normalize(d, d);
+                        float dot = sceVu0InnerProduct(d, vec);
+                        if (!(dot < arg0)) {
+                            float v = dd * (2.0f - dot);
+                            if (v < arg1) {
+                                arg1 = v;
+                                s2 = s5;
+                                res[0] = d[0];
+                                res[1] = d[1];
+                                res[2] = d[2];
+                                res[3] = d[3];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        pa->m_unk4++;
+        s5 = (pa->m_unk4 < (int)pa->m_unk0) ? (char *)pa->m_unk8[pa->m_unk4] : 0;
+    }
+    if (s2 == 0) {
+        m_unk1CC = 0;
+        return 0;
+    }
+    m_unk1CC = *(int *)(s2 + 4);
+    m_unk1C4 = Round180__Ff(atan2f(res[0], res[2]) * 57.29578f);
+    return s2;
+}
+
 // note: 10 words differ: original branches to the body on beqz and skips it with an unthreaded b to the epilogue; compiled code threads that into bnez. Tried the early-return form and an empty-then if/else, both threaded the same way.
 // DRAFT: 0x0015E250 AirSliceMove__6PlayerFv
 void Player::AirSliceMove() {
@@ -2433,7 +2563,7 @@ void Player::GrimProjectileMove() {
             if (proj != 0) {
                 float *pm = m_unk3C;
                 sceVu0ApplyMatrix(sp40, (float *)((char *)pm + 0x40), vOffset);
-                void *tgt = ComboTarget__6PlayerFffb(this, 0.5f, 900.0f, false);
+                void *tgt = ComboTarget(0.5f, 900.0f, false);
                 if (tgt != 0) {
                     int sub = *(int *)((char *)tgt + 0x3C);
                     void *src = (char *)tgt + 0x190;

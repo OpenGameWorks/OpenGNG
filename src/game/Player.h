@@ -41,9 +41,11 @@ public:
     void ForceDie(int arg0);
     void GetBoxer(int arg0);
     void SwapAbility(int arg0);
+    void SetAbility(int arg0, int arg1);
     void SetSword();
     int GameVarSet(unsigned int arg0, int arg1);
     int GameVarSub(unsigned int arg0, int arg1);
+    void GameVarAdd(unsigned int arg0, int arg1, int arg2);
     int MightyBlowCheck(unsigned int arg0);
     void AirSliceMove();
     void AirOverheadMove();
@@ -59,7 +61,7 @@ public:
     void GrimIdleMove();
     void GrimMove();
     void GrimRunMove();
-    void ComboTarget(float arg0, float arg1, bool arg2);
+    void *ComboTarget(float arg0, float arg1, bool arg2);
     void HammerDSlashMove();
     void DSlashMove();
     void HammerSliceMove();
@@ -165,7 +167,9 @@ public:
     signed char m_unkD0;    // 0x0D0 set to 1 by Render
     char _padD1[0xD4 - 0xD1];
     void *m_unkD4;          // 0x0D4 shadow object, byte 0 set by EnablePlayerShadow, +0xC holds a sub-object
-    char _padD8[0x103 - 0xD8];
+    char _padD8[0xEA - 0xD8];
+    unsigned char m_unkEA;  // 0x0EA read by ComboTarget as the gate for its search
+    char _padEB[0x103 - 0xEB];
     unsigned char m_unk103; // 0x103 set to 0xFE by ForceDie
     char _pad104[0x10C - 0x104];
     int m_unk10C;           // 0x10C flags word, bit 0x01000000 cleared by CyclockDamageMove
@@ -188,7 +192,7 @@ public:
     char _pad1C2[0x1C4 - 0x1C2];
     float m_unk1C4;         // 0x1C4 set from Physics float 0x11C by CatchIdleMove
     float m_unk1C8;         // 0x1C8 running float, updated by JogLandMove
-    char _pad1CC[0x1D0 - 0x1CC];
+    int m_unk1CC;           // 0x1CC set from the found entity's +4 field by ComboTarget
     int m_unk1D0;           // 0x1D0
     int m_unk1D4;           // 0x1D4 compared against m_unk1DC by GetAbility
     int m_unk1D8;           // 0x1D8 cleared by ForceDie
