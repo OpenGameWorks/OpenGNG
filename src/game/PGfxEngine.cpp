@@ -86,6 +86,14 @@ extern "C" void __dt__13PShadowBufferFv(void *pThis, short nFlag);
 extern "C" void __dt__16PParticleManagerFv(void *pThis, short nFlag);
 extern "C" void __dt__15PTextureManagerFv(void *pThis, short nFlag);
 extern "C" void __dt__12PDisplayListFv(void *pThis, short nFlag);
+extern "C" int Init__12PDisplayListFv(void *pThis);
+extern "C" void sceGsSetDefDBuff(void *pBuf, short nA, short nB, short nC, short nD, short nE, short nF);
+extern "C" int Init__15PTextureManagerFiii(void *pThis, int nA, int nB, int nC);
+extern "C" int Init__5PGridFffiiPfUiUiUiUi(void *pThis, float fA, float fB, int nA, int nB, float *pAlpha, unsigned int nC, unsigned int nD, unsigned int nE, unsigned int nF);
+extern "C" int Create__13PShadowBufferFiiiisf(void *pThis, int nA, int nB, int nC, int nD, short nE, float fA);
+extern "C" void InitHeatHazeBuffer__16PParticleManagerFv(void *pThis);
+extern "C" void InitExceptionDisplay__Fv();
+extern unsigned char g8x16GridAlpha[612];
 class PMat4;
 
 class PDisplayList {
@@ -1554,6 +1562,51 @@ void PGfxEngine::Reset() {
         sync
         sync.p
     }
+}
+
+// DRAFT: 0x00188230 ResetDisplay__10PGfxEngineFssssssii
+// note: DIFF 190 words (size 0x38c vs 0x394); original reloads lui at,0x16 base per field store (no CSE) and interleaves arg daddu copies with sq saves in the prologue; ours shares base regs. Tried: v1 frame 0x90 (202), TextureManager size from members (190), hoisted nA*nB (190, no change).
+void PGfxEngine::ResetDisplay(short nA, short nB, short nC, short nD, short nE, short nF, int nG, int nH) {
+    int nProd = nA * nB;
+    m_unk158DFC = nD;
+    m_unk158DFE = nC;
+    m_unk158E00 = nE;
+    m_unk158E02 = nF;
+    m_unk158E08 = nA;
+    m_unk158E0A = nB;
+    m_unk158E04 = ((unsigned int)nProd << 3) >> 13;
+    Init__12PDisplayListFv(this);
+    Init__12PDisplayListFv((char *)this + 0xAA640);
+    m_unk154C80 = (PDisplayList *)this;
+    Reset();
+    sceGsSetDefDBuff(m_unk158BB0, nC, nA, nB, nE, nF, 1);
+    *(unsigned long long *)((char *)this + 0x158CB0) = 0x3F80000080000000ULL;
+    *(unsigned long long *)((char *)this + 0x158DA0) = 0x3F80000080000000ULL;
+    sceGsSetDefDispEnv(m_unk158BB0, m_unk158DFE, m_unk158E08, m_unk158E0A, *(short *)((char *)this + 0x158DE4), *(short *)((char *)this + 0x158DE8));
+    sceGsSetDefDispEnv(m_unk158BB0 + 0x28, m_unk158DFE, m_unk158E08, m_unk158E0A, *(short *)((char *)this + 0x158DE4), *(short *)((char *)this + 0x158DE8));
+    int w = (m_unk158E08 + 63) / 64;
+    int h = (m_unk158E0A + 31) / 32;
+    m_unk158BE8 = (m_unk158BE8 & 0xFE00) | ((w * h) & 0x1FF);
+    int nTex = (nC == 2) ? 2 : 4;
+    Init__15PTextureManagerFiii((char *)this + 0x154C90, nTex * (3 * (m_unk158E08 * m_unk158E0A)), nG, nH);
+    Init__5PGridFffiiPfUiUiUiUi((char *)this + 0x16D410, 0.0f, 0.0f, 8, 0x10, (float *)g8x16GridAlpha, 0x8C, 0x5A, 0x46, 0x73);
+    Create__13PShadowBufferFiiiisf((char *)this + 0x157000, SCREEN_WIDTH, SCREEN_HEIGHT, 10, 8, 10, 95.0f);
+    InitHeatHazeBuffer__16PParticleManagerFv((char *)this + 0x154F00);
+    for (int i = 0; i < 20; i++) {
+        sceGsSyncV(0);
+    }
+    m_unk158DEC = (sceGsSyncV(0) == 0);
+    asm {
+        sync
+        sync.p
+    }
+    int nBit = (*(volatile unsigned long long *)0x12001000 & 0x2000) != 0;
+    asm {
+        sync
+        sync.p
+    }
+    m_unk158DE0 = nBit;
+    InitExceptionDisplay__Fv();
 }
 
 // DRAFT: 0x001885D0 Init__10PGfxEngineFssssssii

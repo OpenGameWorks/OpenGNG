@@ -136,7 +136,7 @@ public:
     int m_unk158DF0;                    // 0x158DF0, non-zero skips the frame-buffer size term in SetPrevFrameBufferAsTexture
     int m_unk158DF4;                    // 0x158DF4, INTC handler id for line 5, removed by the destructor
     int m_unk158DF8;                    // 0x158DF8, INTC handler id for line 3, removed by the destructor
-    char _pad158DFC[0x158DFE - 0x158DFC];
+    short m_unk158DFC;                  // 0x158DFC, display y passed to sceGsSetDefDispEnv
     short m_unk158DFE;                 // 0x158DFE, display x passed to sceGsSetDefDispEnv
     short m_unk158E00;                  // 0x158E00, GS register value source (RefreshDisplay)
     short m_unk158E02;                 // 0x158E02
