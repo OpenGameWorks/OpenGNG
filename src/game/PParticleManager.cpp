@@ -71,6 +71,18 @@ extern "C" PParticleFog *__ct__12PParticleFogFv(PParticleFog *pThis);
 extern "C" int Create__12PParticleFogFP18tagParticleFogDatai(PParticleFog *pThis, tagParticleFogData *pData, int nTex);
 extern "C" PParticleBlowingLeaves *__ct__22PParticleBlowingLeavesFv(PParticleBlowingLeaves *pThis);
 extern "C" void Create__22PParticleBlowingLeavesFPfPfPfifb(PParticleBlowingLeaves *pThis, float *pA, float *pB, float *pC, int nA, float fF, bool bFlag);
+extern "C" int LoadGlobalResource__16PResourceManagerFPCcb(void *pThis, const char *pName, bool bFlag);
+extern "C" void Init__16PParticleRipplesFibb(void *pThis, int nCount, bool bA, bool bB);
+extern "C" int sceCdReadClock(void *pClock);
+extern "C" void srand(unsigned int nSeed);
+extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
+extern "C" void *__ct__6PArrayFv(void *pThis);
+extern "C" void Allocate__6PArrayFUi(void *pThis, unsigned int nCount);
+extern "C" void *__ct__12PFlashScreenFv(void *pThis);
+extern "C" void *__ct__16PParticleRipplesFv(void *pThis);
+extern "C" void *__ct__13PFireDamageFxFv(void *pThis);
+extern "C" void *__ct__16PResourceManagerFv(void *pThis);
+extern char DEF_FX_RESOURCE_PRS_FILE_NAME[0x18];
 
 class PParticleRain {
 public:
@@ -910,6 +922,53 @@ void PParticleManager::RemoveAllFogObjects() {
     }
 }
 
+// FUNCTION: 0x001BA690 RemoveAllParticleSystems__16PParticleManagerF8ePSLayer
+void PParticleManager::RemoveAllParticleSystems(ePSLayer eLayer) {
+    PParticleSystem *pSystem;
+    unsigned int nIdx;
+    m_unk4 = 0;
+    if (m_unk0 != 0) {
+        pSystem = (PParticleSystem *)m_unk8[0];
+    } else {
+        pSystem = 0;
+    }
+    if (pSystem != 0) {
+        do {
+            if ((int)eLayer == *(int *)((char *)pSystem + 0xD4)) {
+                ((PArray *)this)->Remove(pSystem);
+                if (pSystem != 0) {
+                    pSystem->Slot00(1);
+                }
+                if (pSystem == m_unk20FC) {
+                    m_unk20FC = 0;
+                }
+            }
+            nIdx = m_unk4 + 1;
+            m_unk4 = nIdx;
+            pSystem = (nIdx < m_unk0) ? (PParticleSystem *)m_unk8[m_unk4] : 0;
+        } while (pSystem != 0);
+    }
+    m_unk14 = 0;
+    void *pEntry = 0;
+    if (m_unk10 != 0) {
+        pEntry = *m_unk18;
+    }
+    if (pEntry != 0) {
+        do {
+            if (pEntry != 0) {
+                ((PParticleSystem *)pEntry)->Slot00(1);
+            }
+            unsigned int nSlot = m_unk14 + 1;
+            m_unk14 = nSlot;
+            pEntry = (nSlot < m_unk10) ? m_unk18[m_unk14] : 0;
+        } while (pEntry != 0);
+    }
+    if (m_unk18 != 0) {
+        m_unk10 = 0;
+        m_unk14 = 0;
+    }
+}
+
 // FUNCTION: 0x001BA9B0 RemoveAll__16PParticleManagerFv
 void PParticleManager::RemoveAll() {
     RemoveAllParticleSystems();
@@ -1011,6 +1070,38 @@ void PParticleManager::Shutdown() {
     }
 }
 
+// FUNCTION: 0x001BAD20 Init__16PParticleManagerFv
+int PParticleManager::Init() {
+    unsigned char aClock[8];
+    if (m_unk40 == 0) {
+        return 0;
+    }
+    if (LoadGlobalResource__16PResourceManagerFPCcb(m_unk40, DEF_FX_RESOURCE_PRS_FILE_NAME, 0) == 0) {
+        printf("\n\nFailed to load particle fx resource files!\n");
+        CdsAssert("PParticleManager.cpp", 0x94, "0");
+        return 0;
+    }
+    Init__16PParticleRipplesFibb(m_unk1790, 6, 0, 0);
+    m_unk17A0 = GetFxTexture(0x8400000DU);
+    Init__16PParticleRipplesFibb(m_unkED0, 6, 1, 1);
+    m_unkEE0 = m_unk670;
+    InitShockwaveRings();
+    sceCdReadClock(aClock);
+    srand(aClock[1] + aClock[2] * 60 + aClock[3] * 3600);
+    memset(m_unk30, 0, 0x10);
+    m_unk6A0 = 0x461C4000;
+    m_unk6A4 = 0x45FD2000;
+    memset(m_unk9C0, 0, 0x500);
+    m_unkEC4 = GetFxTexture(0x84000004U);
+    m_unk2060 = 0;
+    m_unk2064 = 0;
+    m_unk20FC = 0;
+    InitGroundDustFx();
+    InitSulphurReactionFx();
+    InitEweedReactionFx();
+    return 1;
+}
+
 // FUNCTION: 0x001BAE90 __dt__16PParticleManagerFv
 PParticleManager::~PParticleManager() {
     Shutdown();
@@ -1027,4 +1118,42 @@ PParticleManager::~PParticleManager() {
     __dt__6PArrayFv((char *)this + 0x20, -1);
     __dt__6PArrayFv((char *)this + 0x10, -1);
     __dt__6PArrayFv(this, -1);
+}
+
+// DRAFT: 0x001BAF70 __ct__16PParticleManagerFv
+// note: original spills this to 0x1C(sp) and reloads per call (embedded dtor-bearing members PArray/PParticleRipples/PFlashScreen/PFireDamageFx at 0x00..0x2088); header keeps raw fields, so we get s0..s4 saves, 0x60 frame, DIFF 91 words. Tried: 1 variant (cast-based calls).
+PParticleManager::PParticleManager() {
+    __ct__6PArrayFv(this);
+    __ct__6PArrayFv((char *)this + 0x10);
+    __ct__6PArrayFv((char *)this + 0x20);
+    __ct__12PFlashScreenFv((char *)this + 0x6B0);
+    __ct__16PParticleRipplesFv((char *)this + 0xED0);
+    __ct__16PParticleRipplesFv((char *)this + 0x1790);
+    __ct__6PArrayFv((char *)this + 0x2068);
+    __ct__6PArrayFv((char *)this + 0x2078);
+    __ct__13PFireDamageFxFv((char *)this + 0x2088);
+    void *pRes = __nw__FUi(0xD0);
+    if (pRes != 0) {
+        pRes = __ct__16PResourceManagerFv(pRes);
+    }
+    m_unk40 = pRes;
+    if (m_unk40 == 0) {
+        CdsAssert("PParticleManager.cpp", 0x5F, "mpFxResMgr");
+    }
+    Allocate__6PArrayFUi(this, 0x12C);
+    Allocate__6PArrayFUi((char *)this + 0x10, 0x12C);
+    Allocate__6PArrayFUi((char *)this + 0x20, 0x100);
+    Allocate__6PArrayFUi((char *)this + 0x2068, 0x40);
+    Allocate__6PArrayFUi((char *)this + 0x2078, 0x20);
+    *(int *)((char *)this + 0x44) = 0;
+    m_unk9B4 = 0;
+    m_pRain = 0;
+    m_unk9B0 = 0;
+    m_unkEC0 = 0;
+    m_unk2060 = 0;
+    m_unk2064 = 0;
+    memset((char *)this + 0x208C, 0, 0x30);
+    memset((char *)this + 0x20BC, 0, 0x20);
+    memset((char *)this + 0x20DC, 0, 0x20);
+    m_unk670 = 0;
 }

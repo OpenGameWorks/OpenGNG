@@ -28,6 +28,12 @@ enum ePSType {
     ePSType_Unknown = 0
 };
 
+// Layer selector for RemoveAllParticleSystems(ePSLayer). Same enum as MaxEngine.h;
+// no TU includes both headers yet, so the duplicate is harmless until they merge.
+enum ePSLayer {
+    ePSLayer_2 = 2
+};
+
 // File version selector for pak loaders. Enumerator values are not yet
 // recovered; same placeholder as PWorld.h.
 enum ePsx2FileVersion {
@@ -81,11 +87,14 @@ public:
     void StopFx(unsigned int hSystem);
     void Destroy(unsigned int hSystem);
     void Shutdown();
+    int Init();
+    PParticleManager();
     ~PParticleManager();
 
     void Add(PParticleSystem *pSystem);
     void Remove(PParticleSystem *pSystem);
     void RemoveAllParticleSystems();
+    void RemoveAllParticleSystems(ePSLayer eLayer);
     void RemoveAllFogObjects();
     void UpdateMasterParticleInstances(float fDt, PFrustrum *pFrustrum);
     int InitRingMeshPacket(int &nOut, int nCount, bool bFlag, float fA, float fB, int nC, int nD);
@@ -95,27 +104,39 @@ public:
     unsigned int m_unk0;        // 0x00 list count
     unsigned int m_unk4;        // 0x04 list index
     void **m_unk8;              // 0x08 list storage of PParticleSystem pointers
-    char _pad00C[0x20 - 0x0C];
+    char _pad00C[0x10 - 0x0C];
+    unsigned int m_unk10;       // 0x10 second list count
+    unsigned int m_unk14;       // 0x14 second list index
+    void **m_unk18;             // 0x18 second list storage (elements have a virtual dtor, slot 8)
+    char _pad01C[0x20 - 0x1C];
     unsigned int m_unk20;       // 0x20
     unsigned int m_unk24;       // 0x24
     PParticleFog **m_unk28;     // 0x28
-    char _pad02C[0x40 - 0x2C];
-    void *m_unk40;              // 0x40
+    char _pad02C[0x30 - 0x2C];
+    char m_unk30[0x10];         // 0x30 memset target in Init
+    void *m_unk40;              // 0x40 PResourceManager, passed to LoadGlobalResource
     char _pad44[0x50 - 0x44];
     char m_unk50[0x620];        // 0x50 GS frame buffer copy packet, sent with size 0x620
     int m_unk670;               // 0x670
-    char _pad674[0x6A8 - 0x674];
+    char _pad674[0x6A0 - 0x674];
+    int m_unk6A0;               // 0x6A0 float constant, stored by Init
+    int m_unk6A4;               // 0x6A4 float constant, stored by Init
     PParticleRain *m_pRain;     // 0x6A8
     char _pad6AC[0x9B0 - 0x6AC];
     unsigned char m_unk9B0;     // 0x9B0
     char _pad9B1[0x9B4 - 0x9B1];
     PMovingFog *m_unk9B4;       // 0x9B4
-    char _pad9B8[0xEC0 - 0x9B8];
+    char _pad9B8[0x9C0 - 0x9B8];
+    char m_unk9C0[0x500];       // 0x9C0 memset target in Init
     int m_unkEC0;               // 0xEC0
     int m_unkEC4;               // 0xEC4
-    char _padEC8[0xEE0 - 0xEC8];
+    char _padEC8[0xED0 - 0xEC8];
+    char m_unkED0[0x10];        // 0xED0 PParticleRipples object, Init(6, 1, 1)
     int m_unkEE0;               // 0xEE0
-    char _padEE4[0x2050 - 0xEE4];
+    char _padEE4[0x1790 - 0xEE4];
+    char m_unk1790[0x10];       // 0x1790 PParticleRipples object, Init(6, 0, 0)
+    int m_unk17A0;              // 0x17A0 GetFxTexture(0x8400000D) result
+    char _pad17A4[0x2050 - 0x17A4];
     void *m_unk2050;            // 0x2050
     unsigned int m_unk2054;     // 0x2054
     void *m_unk2058;            // 0x2058
