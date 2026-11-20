@@ -20,6 +20,7 @@ public:
     int HoverCheck();
     void DeleteShield();
     void Execute();
+    void InitShield(EntityBaseClass *arg0, float arg1, float (*arg2)[4], float (*arg3)[4], unsigned int arg4, bool *arg5, int arg6);
 
     char _pad190[0x20];
     int m_unk1B0;                   // 0x1B0 compared against 2 by OnAttackEvent
