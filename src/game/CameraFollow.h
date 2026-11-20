@@ -76,6 +76,7 @@ public:
     void CreatePathToPlayer();
     void DrawTextDebug();
     void SetBossArenaValues(float (*arg0)[4], float arg1, float arg2, bool arg3, bool arg4, float arg5, float arg6, bool arg7);
+    void UpdateTargetPos();
 
     Camera *m_pCamera;      // 0x000
     char _pad004[0x10 - 0x004];
@@ -83,7 +84,7 @@ public:
     float m_unk20[4];       // 0x020
     char _pad030[0x40 - 0x30];
     float m_unk40[4];       // 0x040
-    char _pad050[0x060 - 0x050];
+    float m_unk50[4];       // 0x050
     char _pad060[0x0A0 - 0x060];
     float m_unkA0[16];      // 0x0A0 (PMat4, 64 bytes)
     int m_unk0E0;           // 0x0E0
@@ -105,7 +106,9 @@ public:
     float m_unk140;         // 0x140
     float m_unk144;         // 0x144
     short m_unk148;         // 0x148
-    char _pad14A[0x160 - 0x14A];
+    char _pad14A[0x14C - 0x14A];
+    float m_unk14C;         // 0x14C
+    char _pad150[0x160 - 0x150];
     int m_unk160;           // 0x160
     float m_unk164;         // 0x164
     char _pad168[0x16C - 0x168];
@@ -168,7 +171,7 @@ public:
     int m_unk6190;          // 0x6190
     char _pad6194[0x61A0 - 0x6194];
     float m_unk61A0[10][4]; // 0x61A0
-    char _pad6240[0x6250 - 0x6240];
+    float m_unk6240[4];     // 0x6240
     float m_unk6250;        // 0x6250
     int m_unk6254;          // 0x6254
     int m_unk6258;          // 0x6258

@@ -1,5 +1,6 @@
 #include "CameraFollow.h"
 #include "Debug.h"
+#include "PFrustrum.h"
 
 // TODO(header): foreign declarations
 extern "C" void sceVu0CopyVector(float *dst, float *src);
@@ -12,6 +13,8 @@ extern float GAME_FPS;
 extern unsigned char gPad[448];
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void __dl__FPv(void *pMem);
+extern "C" void GetGroundPos__7PhysicsFv(float *pDst, void *pSrc);
+extern PFrustrum *mpFrustum__15EntityBaseClass;
 extern "C" void *__construct_array(void *pBlock, void *(*pCtor)(void *), void *(*pDtor)(void *, short), int nSize, int nCount);
 extern "C" void __destroy_arr(void *pBlock, void *(*pDtor)(void *, short), int nSize, int nCount);
 extern "C" void *__ct__5PVec3Fv(void *pThis);
@@ -82,14 +85,25 @@ public:
     float m_tgt[4];         // 0x010
 };
 
+// The 16-byte ground position Physics::GetGroundPos returns through the hidden result pointer.
+struct PGroundPos {
+    PGroundPos() {}
+    PGroundPos(const float *pSrc) { x = pSrc[0]; y = pSrc[1]; z = pSrc[2]; w = 1.0f; }
+    float x, y, z, w;
+};
+
 class Physics {
 public:
-    void GetGroundPos();
+    PGroundPos GetGroundPos();
 
     float m_unk0;           // 0x000
     float m_unk4;           // 0x004
     float m_unk8;           // 0x008
     int m_unkC;             // 0x00C
+    char _pad010[0xB0 - 0x10];
+    float m_unkB0;          // 0x0B0 ground position x
+    float m_unkB4;          // 0x0B4 ground position y
+    float m_unkB8;          // 0x0B8 ground position z
 };
 
 // FUNCTION: 0x00173640 DrawTextDebug__12CameraFollowFv
@@ -207,7 +221,7 @@ void CameraFollow::ForceReset(bool arg0) {
         m_unk40[1] += m_unk164;
     } else if (((BGCollision *)mBGCollision__15EntityBaseClass)->FindIntersect(*(PVec3 *)m_unk40, *(PVec3 *)m_unk20, 2, 0)) {
         PVec3 tmp1 = *(PVec3 *)m_unk40;
-        ((BGCollision *)mBGCollision__15EntityBaseClass)->CameraBGIntersect(*(PVec3 *)m_unk20, tmp1, 1.0f, 2, *(float *)&_pad6240[0x40], 0);
+        ((BGCollision *)mBGCollision__15EntityBaseClass)->CameraBGIntersect(*(PVec3 *)m_unk20, tmp1, 1.0f, 2, *(float *)((char *)m_unk6240 + 0x40), 0);
     }
     PVec3 tmp2 = *(PVec3 *)m_unk20;
     PVec3 tmp3 = *(PVec3 *)m_unk40;
@@ -742,6 +756,12 @@ void CameraFollow::IdleFreezeCheck() {
     }
 }
 
+// DRAFT: 0x00176170 GetGroundPos__7PhysicsFv
+// note: 1 word differs: ours sets v0 to the result pointer; the original returns without it. Tried member-init and field-copy constructors, a local copy, a destructor. The earlier whole-asm body copied C-emittable instructions and does not count.
+PGroundPos Physics::GetGroundPos() {
+    return PGroundPos(&m_unkB0);
+}
+
 // FUNCTION: 0x001761A0 FollowPlayer__12CameraFollowFv
 void CameraFollow::FollowPlayer() {
     if (m_unk2C0 != 0) {
@@ -767,19 +787,77 @@ void CameraFollow::ResetTrackingVars() {
     m_unk6398 = 0.85f;
 }
 
-// FUNCTION: 0x00176170 GetGroundPos__7PhysicsFv
-void Physics::GetGroundPos() {
-    asm {
-        lwc1 f0, 0xB0(a1)
-        lui v1, 0x3F80
-        swc1 f0, 0x0(a0)
-        lwc1 f0, 0xB4(a1)
-        swc1 f0, 0x4(a0)
-        lwc1 f0, 0xB8(a1)
-        swc1 f0, 0x8(a0)
-        sw v1, 0xC(a0)
-        jr ra
+// DRAFT: 0x00176A00 UpdateTargetPos__12CameraFollowFv
+// note: size 0x318 vs 0x320, DIFF 172 words; the 16-byte GetGroundPos copy at 0x58 lacks the two addiu pointer loads (ptr locals, temp, folded); tried flag order (kept), pointer locals and temp (no change)
+void CameraFollow::UpdateTargetPos() {
+    float tgt[4];
+    float cur[4];
+    float gpc[4];
+    float raw[4];
+    float pA;
+    float pB;
+    float pC;
+    float pD;
+    float d1;
+    float d2;
+    int flag1;
+    int flag2;
+
+    sceVu0CopyVector(m_unk50, m_unk40);
+    flag1 = 0;
+    flag2 = 0;
+    sceVu0CopyVector(tgt, m_unk180);
+    GetGroundPos__7PhysicsFv(raw, *(void **)((char *)m_unk114 + 0x38));
+    *(u_long128 *)gpc = *(u_long128 *)raw;
+
+    if (m_unk180[1] - gpc[1] < 0.1f) {
+        tgt[1] = m_unk180[1] + 5.0f;
+    } else {
+        tgt[1] = m_unk40[1];
     }
+
+    if (m_unk218 == 0 && m_unk140 > 8.0f) {
+        mpFrustum__15EntityBaseClass->GetPlaneEquation(PFrustrum::FRUSTUM_PLANE_1, pA, pB, pC, pD);
+
+        *(u_long128 *)cur = *(u_long128 *)m_unk180;
+        cur[1] += 6.5f;
+        d1 = pA * cur[0] + pB * cur[1] + pC * cur[2] + pD;
+        if (d1 > 0.0f) {
+            flag1 = 1;
+        }
+
+        mpFrustum__15EntityBaseClass->GetPlaneEquation(PFrustrum::FRUSTUM_PLANE_2, pA, pB, pC, pD);
+
+        *(u_long128 *)cur = *(u_long128 *)m_unk180;
+        cur[1] -= 3.0f;
+        d2 = pA * cur[0] + pB * cur[1] + pC * cur[2] + pD;
+        if (d2 > 0.0f) {
+            flag2 = 1;
+        }
+    }
+
+    if (flag1) {
+        m_unk14C = d1;
+    } else if (flag2) {
+        m_unk14C = -d2;
+    } else {
+        m_unk14C = 0.0f;
+    }
+
+    if (m_unk120 != 0 || ((unsigned char *)m_unk114)[0x26A] != 0) {
+        sceVu0CopyVector(m_unk40, tgt);
+        m_unk40[1] = 5.0f + m_unk180[1];
+    } else if (m_unk140 > 5.0f) {
+        tgt[1] = tgt[1] + m_unk14C;
+    }
+
+    m_unk6240[0] = (tgt[0] - m_unk50[0]) * 0.05f;
+    m_unk6240[1] = (tgt[1] - m_unk50[1]) * 0.05f;
+    m_unk6240[2] = (tgt[2] - m_unk50[2]) * 0.05f;
+
+    m_unk40[0] = m_unk50[0] + m_unk6240[0];
+    m_unk40[1] = m_unk50[1] + m_unk6240[1];
+    m_unk40[2] = m_unk50[2] + m_unk6240[2];
 }
 
 // FUNCTION: 0x00176D20 GetPlayerDetails__12CameraFollowFv
