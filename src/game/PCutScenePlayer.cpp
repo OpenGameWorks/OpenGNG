@@ -71,8 +71,7 @@ void PCutScenePlayer::KillActorFx() {
     }
 }
 
-// DRAFT: 0x001BBC40 LoadNodeNameTable__15PCutScenePlayerFP8PPakFileUiP6PArray
-// note: 9 differing lines, all in the return tail: the original has a nop before the `return true` load and its false branch targets the epilogue one slot later. Tried: bOk flag (worse, extra s4 and 0x70 frame), while loop (15+ lines), ++i loop test (9, same), for loop (31), nCount != 0 guard (beqz instead of sltu).
+// FUNCTION: 0x001BBC40 LoadNodeNameTable__15PCutScenePlayerFP8PPakFileUiP6PArray
 bool PCutScenePlayer::LoadNodeNameTable(PPakFile *pFile, unsigned int nCount, PArray *pArray) {
     if (pFile == 0) {
         CdsAssert("PCutScenePlayer.cpp", 0x42B, "poFile");
@@ -133,7 +132,8 @@ bool PCutScenePlayer::LoadBgAnims(PPakFile *pFile, unsigned int nFlag) {
     return true;
 }
 
-// FUNCTION: 0x001BC770 SetBgNodesOpacity__15PCutScenePlayerFP6PArrayf
+// DRAFT: 0x001BC770 SetBgNodesOpacity__15PCutScenePlayerFP6PArrayf
+// note: matches at -O4 only; at the file's -O4,p the index loop is strength-reduced (offset in s1) where the original recomputes sll i,2 and reloads the count each pass. Tried ternary tail and an inline PArray::Get accessor (for over m_unk0).
 void PCutScenePlayer::SetBgNodesOpacity(PArray *pArray, float fOpacity) {
     if (pArray == 0) {
         CdsAssert("PCutScenePlayer.cpp", 0x2E1, "poNodeTable");
@@ -228,8 +228,7 @@ void PCutScenePlayer::CullTest(PFrustrum *pFrustrum) {
     }
 }
 
-// DRAFT: 0x001BD270 UpdatePlayer__15PCutScenePlayerFv
-// note: 9 differing lines; the loop matches, but the original has one extra nop before the RemoveAll call, which shifts the tail by one instruction. Tried: void* and char* element pointer, node local, for(;;) top test, guarded do-while (kept), index local, direct m_unkB4 increment (16 lines, reverted).
+// FUNCTION: 0x001BD270 UpdatePlayer__15PCutScenePlayerFv
 void PCutScenePlayer::UpdatePlayer() {
     char *pElem;
     m_unkB4 = 0;

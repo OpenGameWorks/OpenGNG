@@ -6,7 +6,7 @@ effort: high
 autoCompactWindow: 100000
 disallowedTools: NotebookEdit, Agent, WebFetch, WebSearch
 ---
-You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4`) that `tools/fncmp.py` reports as MATCH against the original Maximo executable. Work from the repository root `/Users/krystian/CodeProjects/xsyetopz/OpenGNG`. The coordinator verifies, builds and commits.
+You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4,p`) that `tools/fncmp.py` reports as MATCH against the original Maximo executable. Work from the repository root `/Users/krystian/CodeProjects/xsyetopz/OpenGNG`. The coordinator verifies, builds and commits.
 
 ## Ownership
 
@@ -29,7 +29,8 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4`) that `tool
 
 - Saves are `sd ra` plus `sq s0..`; a 128-bit copy is `*(u_long128 *)dst = *(u_long128 *)src` (`lq`/`sq`).
 - `lui at,1; addu at,base,at; sb ...` is a member past offset 0x8000: a large class, not pointer arithmetic.
-- `mtc1` from `lui` is a float literal; `lwc1` from `%lo(lit_...)` is a pooled literal. Both are written as plain literals.
+- Game code compiles at `-O4,p` (`tools/srcmeta.py`): a float literal is built inline (`lui`/`ori`/`mtc1`) and written as a plain literal (`0.05f`). A source never needs `-O4,p` in its FLAGS line.
+- `-O4,p` enters a `while`/`for` loop with a `b` to its bottom test. A PArray walk whose tail picks the next element compiles from a ternary, `pNode = (idx < m_unk0) ? m_unk8[m_unk4] : 0;`; the same `if`/`else` leaves an extra `b` and `nop` (`FontManager::EnableAllText` in `src/game/Font.cpp`).
 - An empty function is `jr ra; nop`; a getter is `jr ra; lw v0,off(a0)`.
 - Store order and local declaration order set instruction order; separate early returns or a duplicated tail replace a shared exit.
 - A global the original reaches with `lui`/`addiu` (or `%hi`/`%lo`) needs a complete type larger than 8 bytes; an extern of incomplete or small type compiles to gp-relative `lw ...(gp)` and mismatches. A placeholder member (`char _pad[0x10];`) in your header fixes it. A file-wide `// FLAGS: -sdatathreshold 0` is wrong: most original files use gp-relative globals elsewhere.

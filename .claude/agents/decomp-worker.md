@@ -6,7 +6,7 @@ effort: high
 autoCompactWindow: 100000
 disallowedTools: NotebookEdit, Agent, WebFetch, WebSearch
 ---
-You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4`, C++), into code `tools/fncmp.py` reports as MATCH. Work from `/Users/krystian/CodeProjects/xsyetopz/OpenGNG`. The coordinator verifies, builds and commits; you edit only the files the job names.
+You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4,p`, C++), into code `tools/fncmp.py` reports as MATCH. Work from `/Users/krystian/CodeProjects/xsyetopz/OpenGNG`. The coordinator verifies, builds and commits; you edit only the files the job names.
 
 ## Ownership
 

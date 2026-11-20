@@ -1,9 +1,14 @@
 """Per-source compiler selection and annotation parsing.
 
-Game code is MW CodeWarrior PS2 C++ at `-O4` (scheduling and register use of
-0x19A730 PWorld::InitFrustrum match it exactly; `-O2` leaves delay slots
-empty). A source overrides the defaults with comment lines within its first
-four lines:
+Game code is MW CodeWarrior PS2 C++ at `-O4,p` (optimize for speed).
+Scheduling and register use of 0x19A730 PWorld::InitFrustrum match `-O4`
+(`-O2` leaves delay slots empty). The `p` comes from float literals: `-O4,p`
+builds a non-round literal inline (`lui`/`ori`/`mtc1`) where `-O4` loads it
+from the gp-relative pool, and the original builds them inline in 87 game
+files and pools one literal in one file (`tools/fltscan.py`).
+
+A source overrides the defaults with comment lines within its first four
+lines:
 
     // COMPILER: mwcps2-3.0-011126
     // FLAGS: -inline off
@@ -21,7 +26,7 @@ from pathlib import Path
 DEFAULT_COMPILER = "mwcps2-3.0.3-020716"
 # Exceptions off: frameless `j` tail calls match only without EH tables, and a
 # regression over every tag found no function that needs them on.
-DEFAULT_FLAGS = ["-O4", "-Cpp_exceptions", "off", "-Iinclude", "-Isrc/game"]
+DEFAULT_FLAGS = ["-O4,p", "-Cpp_exceptions", "off", "-Iinclude", "-Isrc/game"]
 TAG = re.compile(r"^\s*//\s*(FUNCTION|DRAFT):\s*(0x[0-9A-Fa-f]+)(?:\s+(\S+))?")
 
 

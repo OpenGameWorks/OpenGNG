@@ -51,8 +51,7 @@ done:
     return r;
 }
 
-// DRAFT: 0x0012C830 Close__7PCDFileFv
-// note: 23 words differ; gInterface lui is emitted after the m_unk10050 load (original does it first), loop exit lands one nop early; while, do-while, post-increment and local-pointer forms tried.
+// FUNCTION: 0x0012C830 Close__7PCDFileFv
 int PCDFile::Close() {
     if (m_size == 0) {
         return 1;

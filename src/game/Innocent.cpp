@@ -92,8 +92,7 @@ int Innocent::AnimationViewer(int arg0) {
     return 0x23;
 }
 
-// DRAFT: 0x0019F340 OnWakeEvent__8InnocentFv
-// note: 13 words differ; original materializes 1.03f inline (lui/ori/mtc1 in the beqz delay slot), ours loads a pooled gp literal. Tried: function-scope local float, block-scope local float; count unchanged.
+// FUNCTION: 0x0019F340 OnWakeEvent__8InnocentFv
 void Innocent::OnWakeEvent() {
     if (m_unk1B0 == 3) {
         PMNode *pNode = m_unk3C;
@@ -266,8 +265,7 @@ int Innocent::IsEnemyReady(unsigned int *pOut) {
     return nCleared == 3;
 }
 
-// DRAFT: 0x0019FC90 ActivateAttackingEnemies__8InnocentFv
-// note: DIFF 16; size 0xdc vs 0xe0. Original keeps a nop at 0x9C as the join target of both beqz branches; ours schedules addiu $s1 into the jal delay slot. Tried: pointer walk, declaration orders, narrowed IsArenaApparition guard (16), increment order, for loop (53).
+// FUNCTION: 0x0019FC90 ActivateAttackingEnemies__8InnocentFv
 void Innocent::ActivateAttackingEnemies() {
     EntityBaseClass **pSlot = (EntityBaseClass **)((char *)this + 0x1E0);
     int nIndex = 0;

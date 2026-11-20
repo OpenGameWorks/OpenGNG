@@ -75,8 +75,7 @@ void Tinker::AttackSound() {
     }
 }
 
-// DRAFT: 0x00209440 SetAsActivatedEnemyTarget__6TinkerFv
-// note: 5 differing lines; MW emits a `b` to the loop test before the body (the original falls into the body) and fills the join nop after the Slot12 call with off+=4. Tried merged null check (21 words), do-while (11 words), and increment order (5 words, kept).
+// FUNCTION: 0x00209440 SetAsActivatedEnemyTarget__6TinkerFv
 void Tinker::SetAsActivatedEnemyTarget() {
     int i;
     int off;
@@ -122,19 +121,19 @@ unsigned int Tinker::IsBadWaypoint(unsigned int arg0) {
     int off;
     unsigned int n = m_unk2D0;
     unsigned int i;
-    int v;
     i = 0;
     off = 0;
-    for (; i < n; i++) {
-        v = 0;
-        if (i < n) {
-            v = *(int *)((char *)m_unk2D8 + off);
-        }
-        if (v == (int)arg0) {
-            return 1;
-        }
-        off += 4;
+    int v;
+    goto test;
+body:
+    v = (i < n) ? *(int *)((char *)m_unk2D8 + off) : 0;
+    if (v == (int)arg0) {
+        return 1;
     }
+    off += 4;
+    i++;
+test:
+    if (i < n) goto body;
     return 0;
 }
 

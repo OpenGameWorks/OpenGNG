@@ -181,8 +181,7 @@ void Interface::SoundGainEEControl() {
     WaitForEEControl();
 }
 
-// DRAFT: 0x13F8C0 WaitForEEControl__9InterfaceFv
-// note: 6 words off; original leaves a nop in the delay slot of the exit `b`, ours fills it with the epilogue ld ra. Tried break/return/for-increment forms, same count.
+// FUNCTION: 0x13F8C0 WaitForEEControl__9InterfaceFv
 void Interface::WaitForEEControl() {
     ((FileUtils *)this)->LoadingHangCheckInit();
     for (unsigned int i = 0;; i++) {
@@ -215,8 +214,7 @@ void Interface::LevelClear() {
 // TODO(header): mpPlayerData__7GameHud is a pointer-sized small-data global.
 extern GameHud *mpPlayerData__7GameHud;
 
-// DRAFT: 0x13FEE0 UpdateCover__7HudGrimFv
-// note: 2 words differ; the original runs the i<3 compare before the off+=4 update, the compiler emits off+=4 first. Tried local orders, off=i<<2, explicit condition variable.
+// FUNCTION: 0x13FEE0 UpdateCover__7HudGrimFv
 void HudGrim::UpdateCover() {
     int threshold = 0x14;
     int hp = *(int *)((char *)mpPlayerData__7GameHud + 0x34);
@@ -352,8 +350,7 @@ void HudBossMeter::SetValue(short value) {
     }
 }
 
-// DRAFT: 0x141630 SetFace__12HudBossMeterFv
-// note: byte-offset do-while matches body; differs at FaceID lui/addiu (reloc) and missing join nop at 0x54. Tried: index loop, pointer walk, for loop, precomputed value, empty else, if-form value.
+// FUNCTION: 0x141630 SetFace__12HudBossMeterFv
 void HudBossMeter::SetFace() {
     static unsigned int FaceID[3] = {0x00000000, 0x902DF890, 0x4B01E2EE};
     int i = 0;

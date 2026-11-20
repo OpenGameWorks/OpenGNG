@@ -1,4 +1,4 @@
-// FLAGS: -sdatathreshold 0 -O4,p
+// FLAGS: -sdatathreshold 0
 #include "BGCollision.h"
 
 // TODO(header): foreign declarations

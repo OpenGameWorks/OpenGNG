@@ -1,4 +1,4 @@
-// FLAGS: -str readonly -O4,p
+// FLAGS: -str readonly
 #include "PWorld.h"
 
 // TODO(header): foreign declarations

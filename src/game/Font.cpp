@@ -65,8 +65,7 @@ void FontManager::InitSubTitle(int arg0) {
     m_unk130 = 0xFFFF;
 }
 
-// DRAFT: 0x132F70 Scroll__8FontNodeFf
-// note: this while form measures 22 differing words (fncmp counts words, not lines); the original tests the loop bound after the offset update with a different branch layout and shared return-0 tail; an earlier 2-diff variant does not reproduce, and for-loop and flag-break forms were worse.
+// FUNCTION: 0x132F70 Scroll__8FontNodeFf
 int FontNode::Scroll(float arg0) {
     int nIndex = 0;
     int nOffset = 0;
@@ -99,11 +98,7 @@ void FontManager::EnableAllText(bool arg0) {
             pNode->m_unk8 = fAlpha;
             int nIndex = m_unk4 + 1;
             m_unk4 = nIndex;
-            if ((unsigned int)nIndex < (unsigned int)m_unk0) {
-                pNode = m_unk8[m_unk4];
-            } else {
-                pNode = 0;
-            }
+            pNode = ((unsigned int)nIndex < (unsigned int)m_unk0) ? m_unk8[m_unk4] : 0;
         } while (pNode != 0);
     }
 }
@@ -182,8 +177,7 @@ void FontManager::RemoveText(FontNode *pNode) {
     }
 }
 
-// DRAFT: 0x133290 RemoveText__11FontManagerFUs
-// note: original keeps an extra nop after the RemoveCurrent call and another before the loop-exit epilogue (23 differing lines); swapping the id compare operands gave more.
+// FUNCTION: 0x133290 RemoveText__11FontManagerFUs
 void FontManager::RemoveText(unsigned short nId) {
     m_unk4 = 0;
     FontNode *pNode = (m_unk0 != 0) ? m_unk8[0] : 0;
@@ -195,11 +189,7 @@ void FontManager::RemoveText(unsigned short nId) {
             }
             int nIndex = m_unk4 + 1;
             m_unk4 = nIndex;
-            if ((unsigned int)nIndex < (unsigned int)m_unk0) {
-                pNode = m_unk8[m_unk4];
-            } else {
-                pNode = 0;
-            }
+            pNode = ((unsigned int)nIndex < (unsigned int)m_unk0) ? m_unk8[m_unk4] : 0;
         } while (pNode != 0);
     }
 }
@@ -216,8 +206,7 @@ void FontNode::SetColor(FontColor arg0) {
     }
 }
 
-// DRAFT: 0x1333A0 GetTextCount__11FontManagerFi
-// note: the original's loop-exit branch lands on an extra nop before the epilogue (5 differing lines); tried a return-in-loop form (9), a while form with count+1 (19), a do-while (5) and the for+break form kept here (5).
+// FUNCTION: 0x1333A0 GetTextCount__11FontManagerFi
 int FontManager::GetTextCount(int arg0) {
     if ((unsigned int)arg0 >= 0x56E) {
         printf("Invalid text ID %d\n", arg0);
@@ -316,11 +305,7 @@ void FontManager::ResetWarning() {
             ((PArray *)((char *)this + 0x1C))->Add(pNode);
             int nIndex = m_unk114 + 1;
             m_unk114 = nIndex;
-            if ((unsigned int)nIndex < (unsigned int)m_unk110) {
-                pNode = m_unk118[m_unk114];
-            } else {
-                pNode = 0;
-            }
+            pNode = ((unsigned int)nIndex < (unsigned int)m_unk110) ? m_unk118[m_unk114] : 0;
         } while (pNode != 0);
     }
     if (m_unk118 != 0) {

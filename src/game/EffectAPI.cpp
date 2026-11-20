@@ -1,4 +1,3 @@
-// FLAGS: -O4,p
 #include "types.h"
 #include "EffectAPI.h"
 

@@ -416,8 +416,7 @@ void EntityManager::ProcessApparitions() {
     ExecuteApparitions();
 }
 
-// DRAFT: 0x00146FA0 CalculateTallyData__13EntityManagerFv
-// note: 17 lines differ; constants preload order and the join placement differ (ours inlines off+=4 before the body); tried ||-chain signed char (32 words), !=/else (26), int t (32), offset-first decl (26), switch 4..1 (21), switch 1..4 with ascending cases (17, kept).
+// FUNCTION: 0x00146FA0 CalculateTallyData__13EntityManagerFv
 void *EntityManager::CalculateTallyData() {
     m_unk5B24[0].m_unk00 = 0;
     m_unk5B24[1].m_unk00 = 0;

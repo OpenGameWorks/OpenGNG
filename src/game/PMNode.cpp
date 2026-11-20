@@ -235,8 +235,7 @@ int PMNode::AddFxTrigger(tagParticleFxTrigger *pTrigger, bool bFlag) {
     return 1;
 }
 
-// DRAFT: 0x00192ED0 LoadFxTriggers__6PMNodeFP8PPakFile
-// note: 25 words differ: loop entry is a b to the bottom test in the original and the call-site arg order differs; while and for loop forms both give 25.
+// FUNCTION: 0x00192ED0 LoadFxTriggers__6PMNodeFP8PPakFile
 int PMNode::LoadFxTriggers(PPakFile *pFile) {
     unsigned int nCount = 0;
     unsigned int idx;
@@ -245,7 +244,8 @@ int PMNode::LoadFxTriggers(PPakFile *pFile) {
     if (((PCDFile *)pFile)->Read(&nCount, 4) != 4) {
         return 0;
     }
-    for (idx = 0; idx < nCount; idx++) {
+    idx = 0;
+    while (idx < nCount) {
         pBlk = (char *)__nw__FUi(0x28);
         if (pBlk == 0) {
             CdsAssert__FPciPc("PMNode.cpp", 0x732, "apTrigger");
@@ -256,6 +256,7 @@ int PMNode::LoadFxTriggers(PPakFile *pFile) {
         *(int *)(pBlk + 0x20) = 0;
         *(int *)(pBlk + 0x24) = 0;
         ((PArray *)((char *)this + 0xD8))->Add(pBlk);
+        idx++;
     }
     return 1;
 }
@@ -295,8 +296,7 @@ float PMNode::GetFrameRate() {
     return 0.0f;
 }
 
-// DRAFT: 0x001930B0 SetFrameRate__6PMNodeFfb
-// note: loop body and guard match; original has an extra nop (0xA4) in the guard join before the epilogue. Tried: plain while, ternary, guarded do-while, empty else join.
+// FUNCTION: 0x001930B0 SetFrameRate__6PMNodeFfb
 void PMNode::SetFrameRate(float fRate, bool bFlag) {
     PMNode *pChild;
     void *pObj = m_unk24;
@@ -319,8 +319,7 @@ void PMNode::SetFrameRate(float fRate, bool bFlag) {
     }
 }
 
-// DRAFT: 0x00193380 FindBone__6PMNodeFUi
-// note: original is 0xD0 bytes with an extra join nop after the loop (0xAC-0xB0), so every later branch is off by one instruction. Tried: plain while, do-while guard (11 lines differ, kept), break-with-result (worse).
+// FUNCTION: 0x00193380 FindBone__6PMNodeFUi
 PMNode *PMNode::FindBone(unsigned int uID) {
     PMNode *pChild;
     if (uID == 0xFFFFFFFFU) {
@@ -384,21 +383,16 @@ void PMNode::BuildDispList(PArray *pArr) {
         pArr->Add(this);
     }
     m_unk18 = 0;
+    pChild = 0;
     if (m_unk14 != 0) {
         pChild = *m_unk1C;
-    } else {
-        pChild = 0;
     }
     if (pChild != 0) {
         do {
             pChild->BuildDispList(pArr);
             idx = m_unk18 + 1;
             m_unk18 = idx;
-            if (idx < m_unk14) {
-                pChild = m_unk1C[m_unk18];
-            } else {
-                pChild = 0;
-            }
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
         } while (pChild != 0);
     }
 }
@@ -406,33 +400,28 @@ void PMNode::BuildDispList(PArray *pArr) {
 // FUNCTION: 0x00193600 AddBoneMatrixToDisplayList__6PMNodeFb
 void PMNode::AddBoneMatrixToDisplayList(bool bRecurse) {
     PMNode *pChild;
+    unsigned int idx;
     if (m_unkD0 >= 0) {
         gGfxEng.pDisplayList->AddMatrix((PMat4 *)m_unk40, m_unkD0 * 4 + 0x296);
     }
     if (bRecurse) {
         m_unk18 = 0;
+        pChild = 0;
         if (m_unk14 != 0) {
             pChild = *m_unk1C;
-        } else {
-            pChild = 0;
         }
         if (pChild != 0) {
             do {
                 pChild->AddBoneMatrixToDisplayList(bRecurse);
-                unsigned int idx = m_unk18 + 1;
+                idx = m_unk18 + 1;
                 m_unk18 = idx;
-                if (idx < m_unk14) {
-                    pChild = m_unk1C[m_unk18];
-                } else {
-                    pChild = 0;
-                }
+                pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
             } while (pChild != 0);
         }
     }
 }
 
-// DRAFT: 0x001936C0 SetFrameTime__6PMNodeFf
-// note: 2 lines differ, both epilogue restore order (original lq s0 then lwc1 f20, ours reversed). Tried: local decl order, flag store after the frame-source call (worse).
+// FUNCTION: 0x001936C0 SetFrameTime__6PMNodeFf
 void PMNode::SetFrameTime(float fTime) {
     PMNode *pChild;
     void *pObj;
@@ -513,8 +502,7 @@ void PMNode::SetAnimLoopCount(int nCount, bool bFlag) {
     }
 }
 
-// DRAFT: 0x00193A30 SetAllAnimFlags__6PMNodeFP8AnimData
-// note: body and loop match; original has an extra nop at 0x193AF4 (join of the if-guard) before ld ra, ours has none. Tried ternary and if/else loop tails, same 6 lines.
+// FUNCTION: 0x00193A30 SetAllAnimFlags__6PMNodeFP8AnimData
 void PMNode::SetAllAnimFlags(AnimData *pAnim) {
     PMNode *pChild;
     void *pObj = m_unk24;
@@ -639,8 +627,7 @@ void PMNode::BuildAnimList(PArray *pArr, unsigned int uID) {
     }
 }
 
-// DRAFT: 0x00194580 FindAnimNode__6PMNodeFUi
-// note: body matches; original has an extra nop before the return-0 tail (join of the loop exit), ours has none. Tried return-0 tail and result variable with break (worse, 13+ lines). 11 lines.
+// FUNCTION: 0x00194580 FindAnimNode__6PMNodeFUi
 PMNode *PMNode::FindAnimNode(unsigned int uID) {
     PMNode *pChild;
     int nObjID;
@@ -703,8 +690,7 @@ void PMNode::EnableOneRenderPassOnly(int nPass) {
     }
 }
 
-// DRAFT: 0x00194850 Find__6PMNodeFUi
-// note: 2 words differ. Original guards uID==0 with a branch to a shared return-0 tail; ours puts v0=0 in the guard delay slot. Tried: early return on child==0, nested uID!=0 body (worse), single-exit form.
+// FUNCTION: 0x00194850 Find__6PMNodeFUi
 PMNode *PMNode::Find(unsigned int uID) {
     PMNode *pChild;
     if (uID == 0) {
@@ -899,8 +885,7 @@ void PMNode::DestroyChildren() {
     }
 }
 
-// DRAFT: 0x00195480 SetAllLoopCountByID__6PMNodeFUii
-// note: 7 lines differ; the original has a join nop (0x53C) between the child loop exit and the epilogue. Tried the nested-if guard, same 7 lines.
+// FUNCTION: 0x00195480 SetAllLoopCountByID__6PMNodeFUii
 void PMNode::SetAllLoopCountByID(unsigned int uID, int nCount) {
     PMNode *pChild;
     void *pObj = m_unk24;
@@ -1014,21 +999,16 @@ void PMNode::RecurseDetachAnim() {
     DestroyAnim();
     DestroyFxTriggers(true, false, false);
     m_unk18 = 0;
+    pChild = 0;
     if (m_unk14 != 0) {
         pChild = *m_unk1C;
-    } else {
-        pChild = 0;
     }
     if (pChild != 0) {
         do {
             pChild->RecurseDetachAnim();
             idx = m_unk18 + 1;
             m_unk18 = idx;
-            if (idx < m_unk14) {
-                pChild = m_unk1C[m_unk18];
-            } else {
-                pChild = 0;
-            }
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
         } while (pChild != 0);
     }
 }

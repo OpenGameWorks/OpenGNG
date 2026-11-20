@@ -116,8 +116,7 @@ void ClockworkMaximo::FootStepSound(unsigned int arg0) {
     ((EntityBaseClass *)this)->PlaySoundOnFrame(snd, arg0);
 }
 
-// DRAFT: 0x00210650 CanJump__15ClockworkMaximoFPA4_f
-// note: 2 words differ (loop entry b targets the bottom test one word later, delay slot lui not nop); needs -O4,p? while-form tried and worse.
+// FUNCTION: 0x00210650 CanJump__15ClockworkMaximoFPA4_f
 int ClockworkMaximo::CanJump(float (*arg0)[4]) {
     float sp60[4];
     float sp70[4];
