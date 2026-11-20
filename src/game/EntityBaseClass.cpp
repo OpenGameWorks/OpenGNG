@@ -23,6 +23,19 @@ extern "C" float cosf(float x);
 extern "C" float sinf(float x);
 extern "C" void sceVu0CopyVector(float *dst, float *src);
 extern float m_fYAngle__15EntityBaseClass;
+extern "C" void sceVu0UnitMatrix(void *pMatrix);
+extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
+// Per-LoadClass table, 7 entries of 12 bytes (symbol ClassTable, 0x241270, 84 bytes).
+struct ClassTableEntry {
+    signed char m0;
+    unsigned char m1;
+    unsigned char m2;
+    unsigned char m3;
+    unsigned char m4;
+    unsigned char m5;
+    int m8;
+};
+extern ClassTableEntry ClassTable[7];
 
 class PMNode;
 
@@ -2126,4 +2139,95 @@ EntityBaseClass::~EntityBaseClass() {
     ResetCollisions();
     StopAmbientSoundsByObject();
     RemoveFromAttackSystem();
+}
+
+// DRAFT: 0x0014F210 __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi
+// note: first compiling draft from m2c order; not yet compared.
+EntityBaseClass::EntityBaseClass(LoadClass eLoadClass, unsigned int nFlags)
+{
+    ClassTableEntry *pEntry = &ClassTable[(int)eLoadClass];
+    sceVu0UnitMatrix((char *)this + 0x40);
+    sceVu0UnitMatrix((char *)this + 0x80);
+    m_unk04 = 0;
+    m_unk08 = 0;
+    *(unsigned char *)((char *)this + 0x1C) = 1;
+    *(unsigned char *)((char *)this + 0x1B) = 1;
+    *(unsigned char *)((char *)this + 0x1D) = 0;
+    *(unsigned char *)((char *)this + 0x1E) = 0;
+    m_unk164 = 0;
+    m_unk102 = 0;
+    *(int *)((char *)this + 0x0C) = 0;
+    m_unk100 = 0;
+    m_unk101 = 0x80;
+    m_unk30 = 0;
+    m_unk34 = 0;
+    m_unkEC = 0.0f;
+    m_unkF8 = 1.0f;
+    m_unkFC = 1.2f;
+    m_unkF4 = 0;
+    m_unk14C = 0;
+    *(short *)((char *)this + 0x180) = 5;
+    *(short *)((char *)this + 0x182) = 0;
+    *(short *)((char *)this + 0x184) = 0;
+    *(unsigned char *)((char *)this + 0x186) = 1;
+    *(unsigned char *)((char *)this + 0x187) = 1;
+    *(unsigned char *)((char *)this + 0x188) = 1;
+    m_unk20 = -1;
+    m_unk2C = -1;
+    m_unkE8 = pEntry->m0;
+    *(unsigned char *)((char *)this + 0xEA) = pEntry->m1;
+    m_unkEB = pEntry->m3;
+    *(unsigned char *)((char *)this + 0x179) = pEntry->m2;
+    *(unsigned char *)((char *)this + 0x17A) = 0;
+    m_unk1F = pEntry->m4;
+    *(int *)((char *)this + 0x10C) = pEntry->m8;
+    m_unkD1 = false;
+    m_unkD2 = 0x80;
+    m_unkE0 = 1.0f;
+    *(int *)((char *)this + 0xE4) = 0;
+    m_unkD0 = 0;
+    m_unk150 = 0;
+    m_unk28 = 0;
+    m_unk3C = 0;
+    m_unk38 = 0;
+    {
+        char *pVec = (char *)this + 0x190;
+        asm {
+            sqc2 vf0, 0x0(pVec)
+            sqc2 vf0, 0x10(pVec)
+        }
+    }
+    *(int *)((char *)this + 0x104) = 0;
+    *(int *)((char *)this + 0x108) = 0;
+    m_unkD4 = 0;
+    m_unk13C = 0;
+    m_unk140 = 0;
+    m_unk144 = 0;
+    m_unk178 = 0;
+    m_unk162 = 0;
+    *(short *)((char *)this + 0x15C) = 0;
+    m_unk15E = 0;
+    *(unsigned char *)((char *)this + 0x103) = 0;
+    memset((char *)this + 0x110, 0, 0x28);
+    m_unk163 = 0;
+    CDS_ASSERT(0x89, (int)eLoadClass > 0, "eLoadClass > 0");
+    CDS_ASSERT(0x8A, (int)eLoadClass < 7, "eLoadClass < LOAD_MAX");
+    m_unk10 = (int)eLoadClass;
+    if (nFlags == 0) {
+        nFlags = pEntry->m5;
+    }
+    m_unk14 = nFlags;
+    m_unk19 = 0;
+    m_unk18 = 0;
+    *(unsigned char *)((char *)this + 0xE9) = 1;
+    *(unsigned char *)((char *)this + 0x165) = 0;
+    m_unk166 = 0;
+    m_unk161 = 0;
+    m_unk1A = 1;
+    *(int *)((char *)this + 0x18C) = 0x42C80000;
+    m_unk138 = 0xF423F;
+    m_unkDC = 0.0f;
+    m_unk24 = 0;
+    m_unk158 = 0;
+    m_unkF0 = 0.0f;
 }
