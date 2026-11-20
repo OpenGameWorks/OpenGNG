@@ -17,6 +17,21 @@ enum FontColor {
     FONTCOLOR_10
 };
 
+enum FontAlign {
+    FONTALIGN_0,
+    FONTALIGN_1,
+    FONTALIGN_2
+};
+
+struct FontSubtitle {
+    char *m_unk0;               // 0x00 text pointer
+    short m_unk4;               // 0x04 start time
+    short m_unk6;               // 0x06 id
+    signed char m_unk8;         // 0x08 colour
+    signed char m_unk9;         // 0x09 end flag
+    signed char m_unkA;         // 0x0A z value
+};
+
 class FontTable;
 
 class FontNode {
@@ -26,6 +41,7 @@ public:
     int AdvanceText();
     void AdjustTextBox(float *arg0);
     int RenderFMV(int nId, FontTable *pTable, bool bUnused);
+    int Render(int nId, FontTable *pTable, bool bUnused);
 
     char *m_unk0;               // 0x000 vertex block, 0x40 bytes per entry, colour at +0x20
     unsigned short m_unk4;      // 0x004 entry count
@@ -37,16 +53,19 @@ public:
 
 class FontManager {
 public:
+    void ProcessSubtitle(int arg0);
     void InitSubTitle(int arg0);
     void EnableAllText(bool arg0);
     void RemoveText(FontNode *pNode);
     void RemoveText(unsigned short nId);
     int GetTextCount(int arg0);
     unsigned short *JapanAddNumber(unsigned short *pStr, unsigned short *pNum, int nUnused);
+    FontNode *DisplayString(char *pStr, float fX, float fY, int nZ, FontColor nColor, FontAlign nAlign);
     void InitFMV();
     void Init();
     void SetLanguage(char arg0);
     void ResetWarning();
+    void RenderWarning(int arg0);
     void InitFrame();
     void RemoveAll(bool arg0);
 
@@ -76,13 +95,13 @@ public:
     FontNode **m_unk118;        // 0x118 third PArray: item table
     char _pad11C[0x4];
     unsigned char m_unk120;     // 0x120 cleared by InitFrame
-    signed char m_unk121;       // 0x121 warning flag, set by ResetWarning
-    unsigned short m_unk122;    // 0x122 cleared by the constructor and ResetWarning
-    int m_unk124;               // 0x124 cleared by ResetWarning
+    unsigned char m_unk121;     // 0x121 warning flag, set by ResetWarning
+    short m_unk122;             // 0x122 cleared by the constructor and ResetWarning
+    float m_unk124;             // 0x124 warning fade, cleared by ResetWarning
     int m_unk128;               // 0x128 cleared by the constructor
     int m_unk12C;               // 0x12C current subtitle entry
     int m_unk130;               // 0x130 subtitle timer, 0xFFFF when idle
-    signed char m_unk134;       // 0x134 subtitle flag
+    unsigned char m_unk134;     // 0x134 subtitle flag
 };
 
 #endif

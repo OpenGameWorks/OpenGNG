@@ -46,6 +46,8 @@ extern "C" void *__dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" void *__dt__16PResourceManagerFv(void *pThis, short nFlag);
 extern "C" float FastMath_Fabs__Ff(float f);
 extern "C" void *__dt__8FontNodeFv(FontNode *pThis, short nFlag);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" FontNode *__ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(FontNode *pThis, FontManager *pMgr, char *pStr, float fX, float fY, unsigned short nArg4, int nZ, FontColor nColor, FontAlign nAlign, bool bFlag);
 extern unsigned char mbFadeOut__8FontNode;
 extern char *mpTextBox__8FontNode;
 extern int mbEnableBox__8FontNode;
@@ -53,6 +55,65 @@ extern unsigned char gInterface[];
 extern char Large_fontCharDef[0x100];
 extern float BOXX;
 extern float BOXY;
+extern float WARNING_FADE;
+extern char gGfxEng[1504384];
+extern unsigned char gEng[0x1A000];
+extern unsigned char gUnitMatrix[0x40];
+extern "C" void DisplayString__11FontManagerFiiib(void *pThis, int nX, int nY, int nZ, bool bFlag);
+extern "C" void InitRender__9InterfaceFv(void *pThis);
+extern "C" void BeginFxRender__10PGfxEngineFv(void *pThis);
+extern "C" void SetScreenMatrix__10PGfxEngineFP5PMat4(void *pThis, void *pMat);
+extern "C" void SetViewMatrix__10PGfxEngineFP5PMat4(void *pThis, void *pMat);
+extern "C" void SetClipMatrix__10PGfxEngineFP5PMat4(void *pThis, void *pMat);
+extern "C" void SetWorldMatrix__10PGfxEngineFP5PMat4(void *pThis, void *pMat);
+extern "C" void BeginSprites__10PGfxEngineFv(void *pThis);
+extern "C" void EndFxRender__10PGfxEngineFv(void *pThis);
+extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *pThis, int nTexture, float *pColor, bool bFlag, unsigned long nArg4, unsigned long nArg5);
+extern "C" void SetMaterial__10PGfxEngineFPfbUlUl(void *pThis, float *pColor, bool bFlag, unsigned long nArg4, unsigned long nArg5);
+extern "C" void DrawSprites__10PGfxEngineFP11tagVuSpriteib(void *pThis, tagVuSprite *pSprite, int nCount, bool bFlag);
+
+// FUNCTION: 0x132E30 ProcessSubtitle__11FontManagerFi
+void FontManager::ProcessSubtitle(int arg0) {
+    int nDur;
+    FontSubtitle *pEntry;
+    FontNode *pNode;
+
+    if (m_unk134 != 0) {
+        if (arg0 < m_unk130) {
+            return;
+        }
+        RemoveText(50);
+        m_unk134 = 0;
+        return;
+    }
+    pEntry = (FontSubtitle *)m_unk12C;
+    if (pEntry == 0) {
+        return;
+    }
+    if (arg0 < pEntry->m_unk4) {
+        return;
+    }
+    RemoveText(50);
+    pEntry = (FontSubtitle *)m_unk12C;
+    pNode = DisplayString(pEntry->m_unk0, 0.0f, -220.0f, pEntry->m_unkA, (FontColor)pEntry->m_unk8, FONTALIGN_1);
+    pNode->m_unk6 = 50;
+    pEntry = (FontSubtitle *)m_unk12C;
+    nDur = pEntry->m_unk6;
+    if (nDur != 0) {
+        m_unk130 = pEntry->m_unk4 + (short)nDur;
+        m_unk134 = 1;
+    }
+    pEntry = (FontSubtitle *)m_unk12C;
+    if (pEntry->m_unk9 != 0) {
+        m_unk12C = 0;
+        return;
+    }
+    m_unk12C = (int)(pEntry + 1);
+    pEntry = (FontSubtitle *)m_unk12C;
+    if (pEntry->m_unk4 < m_unk130) {
+        m_unk134 = 0;
+    }
+}
 
 // FUNCTION: 0x132F30 InitSubTitle__11FontManagerFi
 void FontManager::InitSubTitle(int arg0) {
@@ -282,6 +343,25 @@ void FontNode::AdjustTextBox(float *arg0) {
     }
 }
 
+// FUNCTION: 0x1334A0 DisplayString__11FontManagerFPcffi9FontColor9FontAlign
+FontNode *FontManager::DisplayString(char *pStr, float fX, float fY, int nZ, FontColor nColor, FontAlign nAlign) {
+    FontNode *pNode;
+
+    if ((unsigned int)m_unk0 >= 0x30) {
+        CdsAssert("Font.cpp", 0x317, "mFontList.GetCount() < MAX_TEXT");
+    }
+    pNode = (FontNode *)__nw__FUi(0x10);
+    if (pNode != 0) {
+        pNode = __ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(pNode, this, pStr, fX, fY, 0, nZ, nColor, nAlign, false);
+    }
+    if (pNode == 0) {
+        CdsAssert("Font.cpp", 0x319, "pNode");
+    }
+    ((PArray *)this)->Add(pNode);
+    mbEnableBox__8FontNode = 0;
+    return pNode;
+}
+
 // FUNCTION: 0x133E00 __dt__8FontNodeFv
 extern "C" void *__dt__8FontNodeFv(FontNode *pThis, short nFlag) {
     if (pThis != 0) {
@@ -317,6 +397,43 @@ void FontManager::ResetWarning() {
     m_unk121 = 1;
 }
 
+// FUNCTION: 0x133F20 RenderWarning__11FontManagerFi
+void FontManager::RenderWarning(int arg0) {
+    if (arg0 != m_unk122) {
+        ResetWarning();
+        m_unk122 = arg0;
+        DisplayString__11FontManagerFiiib(this, arg0, 0, 0, true);
+    }
+    float fFade = m_unk121 ? WARNING_FADE : -WARNING_FADE;
+    float fNew = m_unk124 + fFade;
+    m_unk124 = fNew;
+    if (fNew >= 1.0f) {
+        m_unk121 = 0;
+    } else {
+        if (fNew <= 0.0f) {
+            m_unk121 = 1;
+        }
+    }
+    InitRender__9InterfaceFv(gInterface + 0x1710);
+    BeginFxRender__10PGfxEngineFv(gGfxEng);
+    SetScreenMatrix__10PGfxEngineFP5PMat4(gGfxEng, gInterface + 0x1710);
+    SetViewMatrix__10PGfxEngineFP5PMat4(gGfxEng, gInterface + 0x1750);
+    SetClipMatrix__10PGfxEngineFP5PMat4(gGfxEng, gEng - 0x540);
+    SetWorldMatrix__10PGfxEngineFP5PMat4(gGfxEng, gUnitMatrix - 0x5F0);
+    BeginSprites__10PGfxEngineFv(gGfxEng);
+    m_unk114 = 0;
+    int nRet = -1;
+    FontNode *pNode = (m_unk110 != 0) ? m_unk118[0] : 0;
+    while (pNode != 0) {
+        pNode->m_unk8 = m_unk124;
+        nRet = pNode->Render(nRet, (FontTable *)&m_unk104, false);
+        int nNext = m_unk114 + 1;
+        m_unk114 = nNext;
+        pNode = ((unsigned int)nNext < (unsigned int)m_unk110) ? m_unk118[m_unk114] : 0;
+    }
+    EndFxRender__10PGfxEngineFv(gGfxEng);
+}
+
 // DRAFT: 0x1340E0 AdvanceText__8FontNodeFv
 // note: original loads m_unkC into v1 before m_unk4 into v0 (slt at,v1,v0); ours loads m_unk4 first; 3 differing lines after about 9 variants.
 int FontNode::AdvanceText() {
@@ -346,6 +463,37 @@ int FontNode::RenderFMV(int nId, FontTable *pTable, bool bUnused) {
             gOverlayEng.DrawSprites((tagVuSprite *)m_unk0, m_unkC, 0);
             gOverlayEng.EndSprites();
         }
+    }
+    return nId;
+}
+
+// DRAFT: 0x134200 Render__8FontNodeFiP9FontTableb
+// note: 1 word differs, c.eq.s operand order (orig $f1,$f0). Tried: 0.0f!=m_unk8, m_unk8!=0.0f, hoisted alpha local, early return (worse), combined outer condition.
+int FontNode::Render(int nId, FontTable *pTable, bool bUnused) {
+    float afColor[4];
+
+    if (bUnused && m_unk6 == 9) {
+        float fNew = m_unk8 - 0.03f;
+        m_unk8 = fNew;
+        if (fNew <= 0.2f) {
+            m_unk8 = 0.0f;
+            mbFadeOut__8FontNode = 1;
+        }
+    }
+    if (m_unkC >= 2 && m_unk8 != 0.0f) {
+        afColor[0] = m_unk8;
+        afColor[1] = m_unk8;
+        afColor[2] = m_unk8;
+        afColor[3] = 1.0f;
+        pTable = (FontTable *)((char *)pTable + m_unkE * 12);
+        int nTex = *(int *)((char *)pTable + 8);
+        if (nTex != nId) {
+            nId = nTex;
+            SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, nTex, afColor, false, 0x44, 0x5048D);
+        } else {
+            SetMaterial__10PGfxEngineFPfbUlUl(gGfxEng, afColor, false, 0x44, 0x5048D);
+        }
+        DrawSprites__10PGfxEngineFP11tagVuSpriteib(gGfxEng, (tagVuSprite *)m_unk0, m_unkC, false);
     }
     return nId;
 }
