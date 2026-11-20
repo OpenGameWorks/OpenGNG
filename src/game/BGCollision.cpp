@@ -18,7 +18,13 @@ extern "C" void sceVu0ScaleVector(float *, float *, float);
 extern "C" void sceVu0Normalize(float *, float *);
 float FastMath_Fabs(float f);
 float Fabs(float f);
-struct STCollisionPoly;
+struct STCollisionPoly {
+    u_long128 *m_unk0;
+    float *m_unk4;
+    float *m_unk8;
+    char _pad0C[4];
+    float m_unk10[4];
+};
 struct STCollisionNode;
 float SphereIntersect(STCollisionPoly *pPoly, float (*pSph)[4], float fRadius);
 int FindGroundPos(STCollisionPoly *pPoly, float (*pOut)[4]);
@@ -569,6 +575,160 @@ void BGCollision::BGDetectionST(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo *p
             }
         }
     }
+}
+
+// DRAFT: 0x0016E670 SphereIntersect__FP15STCollisionPolyPA4_ff
+// note: 423 words; |det| Fabs call at 0x170 (orig 0x15c), size 0x5fc vs 0x72c; fused mula/madd chains and region branch order differ.
+float SphereIntersect(STCollisionPoly *pPoly, float (*pSph)[4], float fRadius) {
+    u_long128 sp60;
+    u_long128 sp70;
+    u_long128 sp80;
+    float fPlane;
+    float fPlaneSq;
+    float fRet;
+    float fA, fB, fC, fD, fE, fF;
+    float fDet, fDetAbs, fS, fT, fNumer, fDenom, fTmp0, fTmp1, fInv, fSqr;
+
+    fPlaneSq = 0.0f;
+    fRet = 0.0f;
+    fPlane = pPoly->m_unk10[3] + sceVu0InnerProduct(pSph[0], pPoly->m_unk10);
+    if (fPlane < 0.0f) {
+        fPlaneSq = -fPlane;
+        if (pPoly->m_unk10[3] + sceVu0InnerProduct(pSph[1], pPoly->m_unk10) < 0.0f) {
+            return 0.0f;
+        }
+    } else if (!(fPlane <= fRadius)) {
+        return 0.0f;
+    }
+
+    sp60 = *pPoly->m_unk0;
+    sceVu0SubVector((float *)&sp70, pPoly->m_unk4, (float *)&sp60);
+    sceVu0SubVector((float *)&sp80, pPoly->m_unk8, (float *)&sp60);
+    sceVu0SubVector((float *)&sp60, (float *)&sp60, pSph[0]);
+    fA = sceVu0InnerProduct((float *)&sp70, (float *)&sp70);
+    fB = sceVu0InnerProduct((float *)&sp70, (float *)&sp80);
+    fC = sceVu0InnerProduct((float *)&sp80, (float *)&sp80);
+    fD = sceVu0InnerProduct((float *)&sp60, (float *)&sp70);
+    fE = sceVu0InnerProduct((float *)&sp60, (float *)&sp80);
+    fF = sceVu0InnerProduct((float *)&sp60, (float *)&sp60);
+
+    fDet = fA * fC - fB * fB;
+    fS = fB * fE - fC * fD;
+    fT = fB * fD - fA * fE;
+    fDetAbs = FastMath_Fabs(fDet);
+
+    if (fS + fT <= fDetAbs) {
+        if (fS < 0.0f) {
+            if (fT < 0.0f) {
+                /* region 4 */
+                if (fD < 0.0f) {
+                    fT = 0.0f;
+                    if (-fD >= fA) {
+                        fS = 1.0f;
+                    } else {
+                        fS = -fD / fA;
+                    }
+                } else {
+                    fS = 0.0f;
+                    if (fE >= 0.0f) {
+                        fT = 0.0f;
+                    } else if (-fE >= fC) {
+                        fT = 1.0f;
+                    } else {
+                        fT = -fE / fC;
+                    }
+                }
+            } else {
+                /* region 3 */
+                fS = 0.0f;
+                if (fE >= 0.0f) {
+                    fT = 0.0f;
+                } else if (-fE >= fC) {
+                    fT = 1.0f;
+                } else {
+                    fT = -fE / fC;
+                }
+            }
+        } else if (fT < 0.0f) {
+            /* region 5 */
+            fT = 0.0f;
+            if (fD >= 0.0f) {
+                fS = 0.0f;
+            } else if (-fD >= fA) {
+                fS = 1.0f;
+            } else {
+                fS = -fD / fA;
+            }
+        } else {
+            /* region 0 */
+            fInv = 1.0f / fDetAbs;
+            fS = fS * fInv;
+            fT = fT * fInv;
+        }
+    } else {
+        if (fS < 0.0f) {
+            /* region 2 */
+            fTmp0 = fB + fD;
+            fTmp1 = fC + fE;
+            if (fTmp1 > fTmp0) {
+                fNumer = fTmp1 - fTmp0;
+                fDenom = fA - 2.0f * fB + fC;
+                fS = (fNumer >= fDenom) ? 1.0f : fNumer / fDenom;
+                fT = 1.0f - fS;
+            } else {
+                fS = 0.0f;
+                if (fTmp1 <= 0.0f) {
+                    fT = 1.0f;
+                } else if (fE >= 0.0f) {
+                    fT = 0.0f;
+                } else {
+                    fT = -fE / fC;
+                }
+            }
+        } else if (fT < 0.0f) {
+            /* region 6 */
+            fTmp0 = fB + fE;
+            fTmp1 = fA + fD;
+            if (fTmp1 > fTmp0) {
+                fNumer = fTmp1 - fTmp0;
+                fDenom = fA - 2.0f * fB + fC;
+                fT = (fNumer >= fDenom) ? 1.0f : fNumer / fDenom;
+                fS = 1.0f - fT;
+            } else {
+                fT = 0.0f;
+                if (fTmp1 <= 0.0f) {
+                    fS = 1.0f;
+                } else if (fD >= 0.0f) {
+                    fS = 0.0f;
+                } else {
+                    fS = -fD / fA;
+                }
+            }
+        } else {
+            /* region 1 */
+            fNumer = fC + fE - fB - fD;
+            if (fNumer <= 0.0f) {
+                fS = 0.0f;
+            } else {
+                fDenom = fA - 2.0f * fB + fC;
+                fS = (fNumer >= fDenom) ? 1.0f : fNumer / fDenom;
+            }
+            fT = 1.0f - fS;
+        }
+    }
+
+    fSqr = fS * (fA * fS + fB * fT + 2.0f * fD) + fT * (fB * fS + fC * fT + 2.0f * fE) + fF;
+    fRet = fS;
+    if (fSqr < 0.0f) {
+        fSqr = -fSqr;
+    }
+    if (fSqr < fPlaneSq) {
+        return fRet;
+    }
+    if (!(fSqr < fRadius)) {
+        return 0.0f;
+    }
+    return fRet;
 }
 
 // DRAFT: 0x0016EDA0 BGDetection__11BGCollisionFPA2_A4_fP5PMat4fR11SurfaceInfoiP9PMeshNode
