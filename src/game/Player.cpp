@@ -719,6 +719,13 @@ void Player::NotifyTreasure(float (*arg0)[4], float arg1) {
     }
 }
 
+// FUNCTION: 0x0015A590 ArmorUpMove__6PlayerFv
+void Player::ArmorUpMove() {
+    if (m_unk250 == 0) {
+        m_unk250 = 1;
+    }
+}
+
 // FUNCTION: 0x0015A5B0 SetProbe__6PlayerFPA4_ff
 void Player::SetProbe(float (*arg0)[4], float arg1) {
     *(float *)&m_unk344 = arg1 * arg1;

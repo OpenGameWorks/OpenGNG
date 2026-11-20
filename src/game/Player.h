@@ -105,6 +105,9 @@ public:
     void ReleaseHeadCamera();
     void UpdateKey();
     void CatchLedgeMove();
+    void ArmorUpMove();
+    void CatchUpMove();
+    void OpenDoorMove();
     void OpenChestMove();
     void Over3Move();
     void LoadPlayerData(PlayerData *arg0);
