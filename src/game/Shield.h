@@ -9,7 +9,10 @@ class Physics;
 class Shield {
 public:
     Shield();
+    void Animate(int arg0, float arg1);
     int OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3);
+    void OnAttackEvent(EntityBaseClass *arg0, int arg1);
+    int CheckRicochet(EntityBaseClass *arg0);
     float ShieldDistance(float (*arg0)[4]);
     int HoverCheck();
     void DeleteShield();
@@ -18,7 +21,9 @@ public:
     char _pad004[0x38 - 0x04];
     Physics *m_unk38;               // 0x038 physics object, SetPhysicsType target
     char *m_unk3C;                  // 0x03C
-    char _pad040[0x1B8 - 0x40];
+    char _pad040[0x1B0 - 0x40];
+    int m_unk1B0;                   // 0x1B0 compared against 2 by OnAttackEvent
+    char _pad1B4[0x1B8 - 0x1B4];
     void *m_unk1B8;                 // 0x1B8
     EntityBaseClass *m_unk1BC;      // 0x1BC cleared by constructor
     void *m_unk1C0;                 // 0x1C0 cleared by constructor
