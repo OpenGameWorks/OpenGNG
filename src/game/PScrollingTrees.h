@@ -35,6 +35,7 @@ public:
     PScrollingTrees();
     ~PScrollingTrees();
     void Animate(float fTime);
+    int Render();
     void Init(float *pVecA, float *pVecB, float fScale, PResourceManager *pResMgr);
     int CreateFloor();
 
