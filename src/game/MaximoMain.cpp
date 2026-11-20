@@ -472,7 +472,7 @@ PMNode *MaximoMain::SetMarker(PMNode *arg0, int arg1, PMNode *arg2) {
 }
 
 // DRAFT: 0x001387C0 MainGame__10MaximoMainFv
-// note: DIFF 106; original frame 0x40 keeps this in s1, pEntity in s2, this+0x137E0 in s0 (ours s0/s1, frame 0x30); tried local pMgr (107) and pSelf copy (117)
+// note: DIFF 109; original frame 0x40 keeps this in s1, pEntity in s2, this+0x137E0 in s0 (ours s0/s1, frame 0x30); tried local pMgr (107) and pSelf copy (117)
 void MaximoMain::MainGame() {
     char *pGfxEng = (char *)this + 0x188A4;
     m_unk19A74 = 0;
@@ -482,7 +482,7 @@ void MaximoMain::MainGame() {
     for (;;) {
         switch (m_unk19A74) {
         case 0:
-            StaticDemo__9InterfaceFPCcUiUiiUs(gInterface + 0x1710, "CAPCOM", 1, 0x19B, (int)GAME_FPS * 6, 0);
+            StaticDemo__9InterfaceFPCcUiUiiUs(gInterface, "CAPCOM", 1, 0x19B, (int)GAME_FPS * 6, 0);
             m_unk19A74 = 1;
             break;
         case 1:
@@ -510,7 +510,7 @@ void MaximoMain::MainGame() {
                 m_unk19A74 = 5;
             } else if (r == 1) {
                 Reset__13EntityManagerFb((char *)this + 0x137E0, true);
-                Destroy__9InterfaceFv(gInterface + 0x1710);
+                Destroy__9InterfaceFv(gInterface);
                 Destroy__9MaxEngineFv(this);
                 m_unk19A74 = 6;
             } else if (r == 0) {
