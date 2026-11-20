@@ -55,6 +55,7 @@ void CdsAssert(char *pFile, int nLine, char *pExpr);
 class PGrimReaperCape {
 public:
     void Enable(bool bFlag, PMNode *pNode);
+    void Init(float *pBuf);
 };
 class Player {
 public:
@@ -79,6 +80,13 @@ extern "C" void *__ct__6PArrayFv(PArray *pThis);
 extern "C" void *__ct__15PGrimReaperCapeFv(PGrimReaperCape *pThis);
 extern "C" void sceVu0UnitMatrix(void *pMat);
 extern "C" int printf(const char *pFmt, ...);
+extern "C" void __dt__22PMeshNodeAnimDataTableFv(PMeshNodeAnimDataTable *pThis, short nFlag);
+extern "C" void __dl__FPv(void *pMem);
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
+class PResourceManager {
+public:
+    int GetResource(unsigned int nId, bool bFlag);
+};
 class PCutSceneAnim {
 public:
     virtual ~PCutSceneAnim();
@@ -199,6 +207,56 @@ bool PCutScenePlayer::LoadBgAnims(PPakFile *pFile, unsigned int nFlag) {
                 return false;
             }
             ((PArray *)m_unkA0)->Add(pObj);
+            i++;
+        } while (i < nFlag);
+    }
+    return true;
+}
+
+// FUNCTION: 0x001BC590 LoadActors__15PCutScenePlayerFP8PPakFileUi
+bool PCutScenePlayer::LoadActors(PPakFile *pFile, unsigned int nFlag) {
+    if (pFile == 0) {
+        CdsAssert("PCutScenePlayer.cpp", 0x30C, "poFile");
+    }
+    unsigned int i = 0;
+    if (i < nFlag) {
+        do {
+            char abRec[0xA4];
+            if (((PCDFile *)pFile)->Read(abRec, 0xA4) != 0xA4) {
+                return false;
+            }
+            void *pRaw = __nw__FUi(0xE0);
+            PMeshNodeAnimDataTable *pObj = (PMeshNodeAnimDataTable *)pRaw;
+            if (pRaw != 0) {
+                __ct__22PMeshNodeAnimDataTableFv(pObj);
+            }
+            if (pObj == 0) {
+                CdsAssert("PCutScenePlayer.cpp", 0x317, "apData");
+            }
+            int nVersion = 0;
+            if (((PCDFile *)pFile)->Read(&nVersion, 4) != 4) {
+                return false;
+            }
+            if (nVersion != 0xA) {
+                return false;
+            }
+            if (Load__22PMeshNodeAnimDataTableFP8PPakFile16ePsx2FileVersion(pObj, pFile, 0x20000) == 0) {
+                if (pObj != 0) {
+                    __dt__22PMeshNodeAnimDataTableFv(pObj, -1);
+                    __dl__FPv(pObj);
+                }
+                return false;
+            }
+            *(int *)((char *)pObj + 0x30) = 0;
+            *(int *)((char *)pObj + 0x34) = 0;
+            *(int *)((char *)pObj + 0x38) = 0;
+            memcpy((char *)pObj + 0x3C, abRec, 0xA4);
+            ((PArray *)&m_unkB0)->Add(pObj);
+            if ((unsigned long long)*(unsigned int *)((char *)pObj + 0xD0) == 0x81000162ULL) {
+                float fBuf[4] = {128.0f, 128.0f, 128.0f, 128.0f};
+                ((PGrimReaperCape *)m_unk100)->Init(fBuf);
+                m_unk20E0 = ((PResourceManager *)m_unk44)->GetResource(0x84000010, false);
+            }
             i++;
         } while (i < nFlag);
     }
@@ -394,6 +452,83 @@ void PCutScenePlayer::UpdatePlayer() {
         } while (pElem != 0);
     }
     ((FontManager *)(gInterface + 0x1790))->RemoveAll(true);
+}
+
+// DRAFT: 0x001BD340 Unload__15PCutScenePlayerFb
+// note: 153 lines differ; frame 0x70 with six saved regs vs 0x60 with five; this/bFlag/count/index in s1/s0/s3/s1 vs s3/s2/s0/s1; tried signed loop locals (153), swapped declaration order (154)
+void PCutScenePlayer::Unload(bool bFlag) {
+    unsigned int nIdx;
+    unsigned int nCount;
+    m_unk40 = 0;
+    nCount = m_unkA0;
+    for (nIdx = 0; nIdx < nCount; nIdx++) {
+        PCutSceneAnim *pAnim = (nIdx < m_unkA0) ? (PCutSceneAnim *)m_unkA8[nIdx] : 0;
+        if (pAnim != 0) {
+            delete pAnim;
+        }
+    }
+    if (m_unkA8 != 0) {
+        m_unkA0 = 0;
+        m_unkA4 = 0;
+    }
+    nCount = m_unkB0;
+    for (nIdx = 0; nIdx < nCount; nIdx++) {
+        char *pElem = (nIdx < m_unkB0) ? (char *)m_unkB8[nIdx] : 0;
+        if (pElem != 0) {
+            if (*(void **)(pElem + 0x30) != 0) {
+                if (bFlag) {
+                    if (*(void **)(pElem + 0x38) != 0) {
+                        ((Player *)*(void **)(pElem + 0x38))->FinishCutScene((PMeshNode *)*(void **)(pElem + 0x30), (PMat4 *)this, m_unk213D & 2);
+                        ((PArray *)(*(char **)(pElem + 0x30) + 0x14))->Remove(*(void **)(pElem + 0x34));
+                    }
+                }
+                if (*(void **)(pElem + 0x30) != 0) {
+                    delete (PMNode *)*(void **)(pElem + 0x30);
+                }
+            }
+            __dt__22PMeshNodeAnimDataTableFv((PMeshNodeAnimDataTable *)pElem, -1);
+            __dl__FPv(pElem);
+        }
+    }
+    if (m_unkB8 != 0) {
+        m_unkB0 = 0;
+        m_unkB4 = 0;
+    }
+    if (m_unk48 != 0) {
+        delete m_unk48;
+    }
+    m_unk48 = 0;
+    if (m_unk4C != 0) {
+        delete m_unk4C;
+    }
+    m_unk4C = 0;
+    if (m_unk50 != 0) {
+        delete m_unk50;
+    }
+    m_unk50 = 0;
+    if (m_unk54 != 0) {
+        delete m_unk54;
+    }
+    m_unk54 = 0;
+    if (*(void **)(m_unk60 + 8) != 0) {
+        *(unsigned int *)m_unk60 = 0;
+        *(int *)(m_unk60 + 4) = 0;
+    }
+    if (*(void **)(m_unk70 + 8) != 0) {
+        *(unsigned int *)m_unk70 = 0;
+        *(int *)(m_unk70 + 4) = 0;
+    }
+    if (*(void **)(m_unk80 + 8) != 0) {
+        *(unsigned int *)m_unk80 = 0;
+        *(int *)(m_unk80 + 4) = 0;
+    }
+    if (*(void **)(m_unk90 + 8) != 0) {
+        *(unsigned int *)m_unk90 = 0;
+        *(int *)(m_unk90 + 4) = 0;
+    }
+    ((PGrimReaperCape *)m_unk100)->Enable(false, 0);
+    sceVu0UnitMatrix(this);
+    m_unk213C = 0;
 }
 
 // FUNCTION: 0x001BDBD0 __dt__15PCutScenePlayerFv

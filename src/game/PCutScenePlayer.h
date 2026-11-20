@@ -25,6 +25,7 @@ public:
     void SetBgNodesOpacity(PArray *pArray, float fOpacity);
     bool LoadNodeNameTable(PPakFile *pFile, unsigned int nCount, PArray *pArray);
     bool LoadBgAnims(PPakFile *pFile, unsigned int nFlag);
+    bool LoadActors(PPakFile *pFile, unsigned int nFlag);
     void CullTest(PFrustrum *pFrustrum);
     void GetViewMatrix(PMat4 *pMat);
     void Render(PLightManager *pLightMgr);
@@ -42,12 +43,17 @@ public:
     char m_unk70[0x10];
     char m_unk80[0x10];
     char m_unk90[0x10];
-    char m_unkA0[0x10];
+    unsigned int m_unkA0;
+    unsigned int m_unkA4;
+    void **m_unkA8;
+    char m_unkAC[4];
     unsigned int m_unkB0;
     unsigned int m_unkB4;
     void **m_unkB8;
     char m_unkBC[0x44];
-    char m_unk100[0x2130 - 0x100];
+    char m_unk100[0x20E0 - 0x100];
+    int m_unk20E0;
+    char m_unk20E4[0x2130 - 0x20E4];
     int m_unk2130;
     char m_unk2134[0x8];
     signed char m_unk213C;
