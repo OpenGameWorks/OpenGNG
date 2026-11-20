@@ -23,6 +23,11 @@ extern "C" void *memset(void *, int, unsigned int);
 extern "C" void sceVu0UnitMatrix(void *);
 extern "C" void sceVu0CopyVector(float *, float *);
 extern "C" int rand(void);
+extern "C" void sceVu0SubVector(float *, float *, float *);
+extern "C" void sceVu0MulMatrix(float *, float *, float *);
+extern "C" void *AllocParticles__12PDisplayListFii(void *, int, int);
+extern "C" float FastMath_IntSin180__Fi(int);
+extern "C" float FastMath_IntCos180__Fi(int);
 
 // DRAFT: 0x001F8980 InitRingMeshPacket__17PMidasShieldRingsFRiib
 // note: frame, call order and arguments match; 86 words differ in local layout and register scheduling; tried direct array indexing and single-expression total
@@ -167,6 +172,194 @@ void PMidasShieldRings::Render() {
     DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(*(void **)gDisplayListPtr, m_unk1FC, m_unk200, false);
 done:
     return;
+}
+
+// DRAFT: 0x001F8FA0 Animate__17PMidasShieldRingsFf
+// note: 266 differing words, size 0x474 vs 0x488; this is copied to s4 (original keeps it in s3, frame saves s0-s3 only) so the gate and slot loads shift; tried f21 scale operand order and pS alias removal, both 266
+void PMidasShieldRings::Animate(float fA) {
+    float f20;
+    float f21;
+    float f22;
+    float fNew;
+    float fProd;
+    float sinv;
+    float cosv;
+    float v60[4];
+    float v70[4];
+    float v80[4];
+    float v90[4];
+    float vA0[4];
+    float vB0[4];
+    float *pSrc;
+    float *pAdd;
+    float *pDst;
+    float scale;
+    int sb;
+    int i;
+    char *slot;
+    char *s2;
+    float *pS;
+
+    if (m_unk15 == 0) {
+        return;
+    }
+    f21 = fA;
+    if (m_unk18 != 0) {
+        f21 = f21 * 4.0f;
+    }
+    if (m_unk204 != 0) {
+        f21 = f21 * 4.0f;
+    }
+    if (m_unk1EC >= 4) {
+        m_unk204 = 0;
+    }
+    m_unk148 -= (int)f21;
+    if (m_unk148 <= 0 && m_unk18 != 0) {
+        Emit();
+        m_unk148 = m_unk144;
+    }
+    if (m_unk1EC == 0) {
+        m_unk16 = m_unk17;
+        m_unk15 = m_unk18;
+        return;
+    }
+    m_unk1FC = AllocParticles__12PDisplayListFii((void *)(gGfxEng + 0x154C80), m_unk1EC, 6);
+    if (m_unk1FC == 0) {
+        CdsAssert__FPciPc("PMidasShieldRings.cpp", 0x93, "mpFxInstances");
+    }
+    m_unk200 = 0;
+    if (m_unk19 != 0) {
+        fProd = 3.0f * f21;
+        *(float *)&m_unk1F0 = *(float *)&m_unk1F0 + fProd;
+        if (!(*(float *)&m_unk1F0 < 360.0f)) {
+            *(float *)&m_unk1F0 = *(float *)&m_unk1F0 - 360.0f;
+        }
+    }
+    f20 = *(float *)&m_unk1F0;
+    sceVu0SubVector(v60, m_unkF0, m_unkE0);
+    sceVu0SubVector(v70, m_unk100, m_unkF0);
+    sceVu0SubVector(v80, &m_unk120, &m_unk110);
+    sceVu0SubVector(v90, &m_unk130, &m_unk120);
+    for (i = 0; i < 8; i++) {
+        slot = (char *)this + 0x14C + i * 0x14;
+        if (m_unk19 != 0) {
+            f20 = f20 + 25.0f;
+            if (!(f20 < 360.0f)) {
+                f20 = f20 - 360.0f;
+            }
+        }
+        if (slot[0x10] != 0) {
+            s2 = (char *)m_unk1FC + m_unk200 * 0x60;
+            if (*(float *)slot < 0.5f) {
+                scale = 2.0f * *(float *)slot;
+                asm { mfc1 sb, scale }
+                pSrc = v80;
+                pAdd = &m_unk110;
+                pDst = vA0;
+                asm {
+                    lqc2 vf1, 0x0(pSrc)
+                    lqc2 vf2, 0x0(pAdd)
+                    qmtc2.i sb, vf3
+                    vmulx.xyzw vf4, vf1, vf3x
+                    vnop
+                    vnop
+                    vnop
+                    vadd.xyzw vf5, vf4, vf2
+                    vnop
+                    vnop
+                    vnop
+                    sqc2 vf5, 0x0(pDst)
+                }
+                scale = 2.0f * *(float *)slot;
+                asm { mfc1 sb, scale }
+                pSrc = v60;
+                pAdd = m_unkE0;
+                pDst = vB0;
+                asm {
+                    lqc2 vf1, 0x0(pSrc)
+                    lqc2 vf2, 0x0(pAdd)
+                    qmtc2.i sb, vf3
+                    vmulx.xyzw vf4, vf1, vf3x
+                    vnop
+                    vnop
+                    vnop
+                    vadd.xyzw vf5, vf4, vf2
+                    vnop
+                    vnop
+                    vnop
+                    sqc2 vf5, 0x0(pDst)
+                }
+            } else {
+                scale = (*(float *)slot - 0.5f) * 2.0f;
+                asm { mfc1 sb, scale }
+                pSrc = v90;
+                pAdd = &m_unk120;
+                pDst = vA0;
+                asm {
+                    lqc2 vf1, 0x0(pSrc)
+                    lqc2 vf2, 0x0(pAdd)
+                    qmtc2.i sb, vf3
+                    vmulx.xyzw vf4, vf1, vf3x
+                    vnop
+                    vnop
+                    vnop
+                    vadd.xyzw vf5, vf4, vf2
+                    vnop
+                    vnop
+                    vnop
+                    sqc2 vf5, 0x0(pDst)
+                }
+                scale = (*(float *)slot - 0.5f) * 2.0f;
+                asm { mfc1 sb, scale }
+                pSrc = v70;
+                pAdd = m_unkF0;
+                pDst = vB0;
+                asm {
+                    lqc2 vf1, 0x0(pSrc)
+                    lqc2 vf2, 0x0(pAdd)
+                    qmtc2.i sb, vf3
+                    vmulx.xyzw vf4, vf1, vf3x
+                    vnop
+                    vnop
+                    vnop
+                    vadd.xyzw vf5, vf4, vf2
+                    vnop
+                    vnop
+                    vnop
+                    sqc2 vf5, 0x0(pDst)
+                }
+            }
+            fProd = *(float *)(slot + 4) * f21;
+            fNew = *(float *)slot + fProd;
+            *(float *)slot = fNew;
+            if (!(fNew < 1.0f)) {
+                slot[0x10] = 0;
+                *(int *)&vA0[0] = 0;
+                *(int *)&vB0[3] = 0;
+                m_unk1EC = m_unk1EC - 1;
+            }
+            sceVu0UnitMatrix(s2);
+            pS = (float *)s2;
+            pS[5] = vA0[0];
+            pS[10] = vA0[0];
+            pS[12] = vA0[1];
+            *(int *)&pS[13] = 0;
+            *(int *)&pS[14] = 0;
+            pS[15] = 1.0f;
+            *(u_long128 *)(s2 + 0x40) = *(u_long128 *)vB0;
+            sceVu0MulMatrix((float *)s2, m_unk40, (float *)s2);
+            if (m_unk19 != 0) {
+                f22 = f20 - 180.0f;
+                sinv = FastMath_IntSin180__Fi((int)f22);
+                cosv = FastMath_IntCos180__Fi((int)f22);
+                f22 = sinv;
+                *(float *)(s2 + 0x50) = *(float *)(slot + 8) * cosv;
+                *(float *)(s2 + 0x54) = *(float *)(slot + 0xC) * f22;
+            }
+            m_unk200 = m_unk200 + 1;
+        }
+    }
+    asm { sync }
 }
 
 // FUNCTION: 0x001F9440 Create__17PMidasShieldRingsFfffPfPfPffffiibb

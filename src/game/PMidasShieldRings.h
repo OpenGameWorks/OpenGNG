@@ -16,6 +16,7 @@ public:
     int Emit();
     void FadeAndDie(unsigned int uArg);
     void Render();
+    void Animate(float fA);
 
     void *m_unk000;
     char _pad004[0x08];
@@ -23,7 +24,8 @@ public:
     int m_unk10;
     unsigned char m_unk14;
     unsigned char m_unk15;
-    char _pad16[0x02];
+    unsigned char m_unk16;
+    unsigned char m_unk17;
     unsigned char m_unk18;
     unsigned char m_unk19;
     char _pad1A[0x16];
