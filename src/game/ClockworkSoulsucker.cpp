@@ -77,10 +77,13 @@ extern "C" int printf(const char *fmt, ...);
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __dl__FPv(void *);
 extern "C" void DestroyDamageFx__15EntityBaseClassFUi(void *, unsigned int);
+extern "C" unsigned int CreateDamageFx__15EntityBaseClassFfUi(void *pThis, float fInterval, unsigned int nFlag);
+extern "C" int ChangeDamageFxInterval__15EntityBaseClassFUif(void *pThis, unsigned int nFx, float fInterval);
 extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, void *);
 extern "C" void RotateTo__15EntityBaseClassFff(void *, float, float);
 extern "C" void EnableSleep__15EntityBaseClassFbb(void *, bool, bool);
 extern "C" float Distance__7MathAPIFPA4_fPA4_f(void *pThis, float (*pPos)[4]);
+extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern "C" void **InstanceIsValid__15EntityBaseClassFUi(unsigned int);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *, int, unsigned int);
 extern "C" int GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(void *pThis, int eLoadClass, void *pArray, float (*pBox)[4], float fRadius, int nFlags, bool bFlagA, bool bFlagB);
@@ -197,6 +200,50 @@ void ClockworkSoulsucker::AttachDamageEffect(PMNode *pNode, unsigned int nId, fl
         trig.z2 = 0;
         trig.z3 = 0;
         pNode->AddFxTrigger((struct tagParticleFxTrigger *)&trig, 0);
+    }
+}
+
+// FUNCTION: 0x002045D0 UpdateDamageFx__19ClockworkSoulsuckerFv
+void ClockworkSoulsucker::UpdateDamageFx() {
+    float fTime = (float)m_unk22C;
+    if (fTime < 600.0f) {
+        if (m_unk238 == 0) {
+            if (fTime < 240.00002f) {
+                m_unk238 = CreateDamageFx__15EntityBaseClassFfUi(this, 20.0f, (m_unk1B0 == 1) ? 0x830002AAull : 0ull);
+                if (m_unk238 == 0) {
+                    CdsAssert("ClockworkSoulsucker.cpp", 0x9DB, "m_hDamageFx");
+                }
+                if (m_unk1B0 == 1) {
+                    AttachSmokeEffect();
+                }
+                m_unk2B4 = 2;
+            } else {
+                m_unk238 = CreateDamageFx__15EntityBaseClassFfUi(this, 90.0f, (m_unk1B0 == 1) ? 0x830002AAull : 0ull);
+                if (m_unk238 == 0) {
+                    CdsAssert("ClockworkSoulsucker.cpp", 0x9E6, "m_hDamageFx");
+                }
+                m_unk2B4 = 1;
+            }
+        } else if (fTime < 240.00002f && m_unk2B4 != 2) {
+            if (!(ChangeDamageFxInterval__15EntityBaseClassFUif(this, m_unk238, 20.0f) & 0xFF)) {
+                m_unk238 = CreateDamageFx__15EntityBaseClassFfUi(this, 20.0f, (m_unk1B0 == 1) ? 0x830002AAull : 0ull);
+                if (m_unk238 == 0) {
+                    CdsAssert("ClockworkSoulsucker.cpp", 0x9F1, "m_hDamageFx");
+                }
+            }
+            if (m_unk1B0 == 1) {
+                AttachSmokeEffect();
+            }
+            m_unk2B4 = 2;
+        } else if (m_unk2B4 != 1) {
+            if (!(ChangeDamageFxInterval__15EntityBaseClassFUif(this, m_unk238, 90.0f) & 0xFF)) {
+                m_unk238 = CreateDamageFx__15EntityBaseClassFfUi(this, 90.0f, (m_unk1B0 == 1) ? 0x830002AAull : 0ull);
+                if (m_unk238 == 0) {
+                    CdsAssert("ClockworkSoulsucker.cpp", 0x9FE, "m_hDamageFx");
+                }
+            }
+            m_unk2B4 = 1;
+        }
     }
 }
 
@@ -363,6 +410,45 @@ int ClockworkSoulsucker::InBlockableState() {
         }
     }
     return 0;
+}
+
+// FUNCTION: 0x00204CD0 CheckBlockAttack__19ClockworkSoulsuckerFv
+void ClockworkSoulsucker::CheckBlockAttack() {
+    MathAPI *pPlayer;
+
+    pPlayer = mPlayerAPI__13EntityManager;
+    if (pPlayer == 0) {
+        CdsAssert("ClockworkSoulsucker.cpp", 0x8F9, "pPlayer");
+    }
+    if (m_unk22C > 0 && *((unsigned char *)pPlayer + 0x23D2) != 0 &&
+        *((unsigned short *)((char *)pPlayer + 0x15E)) != 0xD &&
+        *((int *)((char *)pPlayer + 0x1CC)) == (int)m_unk4) {
+        if (m_unk1B0 == 1) {
+            if (InBlockableState()) {
+                if (Distance__7MathAPIFPA4_fPA4_f(
+                        (*((int *)((char *)pPlayer + 0x3C)) != 0) ? (void *)(*((int *)((char *)pPlayer + 0x3C)) + 0x80) : (void *)((char *)pPlayer + 0x190),
+                        (float (*)[4])((m_unk3C != 0) ? (char *)(m_unk3C + 0x80) : (char *)this + 0x190)) <= 20.0f &&
+                    PlayerFacingUs() != 0 && MathAPI::RandomIntRange(0, 0x63) < 0x28) {
+                    m_unk25C = 0;
+                    SetState__15EntityBaseClassFi(this, 0xB);
+                }
+            }
+        } else {
+            if (Distance__7MathAPIFPA4_fPA4_f(
+                    (m_unk3C != 0) ? (void *)(m_unk3C + 0x80) : (void *)((char *)this + 0x190),
+                    (float (*)[4])((char *)this + 0x200)) < m_unk1D4) {
+                if (InBlockableState()) {
+                    if (Distance__7MathAPIFPA4_fPA4_f(
+                            (*((int *)((char *)pPlayer + 0x3C)) != 0) ? (void *)(*((int *)((char *)pPlayer + 0x3C)) + 0x80) : (void *)((char *)pPlayer + 0x190),
+                            (float (*)[4])((m_unk3C != 0) ? (char *)(m_unk3C + 0x80) : (char *)this + 0x190)) <= 20.0f &&
+                        PlayerFacingUs() != 0 && MathAPI::RandomIntRange(0, 0x63) < 0x28) {
+                        m_unk25C = 0;
+                        SetState__15EntityBaseClassFi(this, 0x16);
+                    }
+                }
+            }
+        }
+    }
 }
 
 // FUNCTION: 0x00204FA0 DetermineIdleState__19ClockworkSoulsuckerFv

@@ -9,6 +9,7 @@ public:
     void AttachDamageEffect(class PMNode *pNode, unsigned int nId, float fA, float fB, float fC);
     int PlayerFacingUs();
     int DetermineIdleState();
+    void CheckBlockAttack();
     int DetermineNewState();
     void DeleteTimers();
     int GetSuckingSucker();
