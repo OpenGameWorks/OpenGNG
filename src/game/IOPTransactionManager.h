@@ -25,6 +25,7 @@ public:
     int FrameMaintenacePartA();
     int FrameMaintenacePartB();
     int TranAdd(const IOP_Tran *pTran);
+    int TranProcess(IOP_Tran *pTran, unsigned int nId);
 
     int m_unk0;
     int m_unk4;
