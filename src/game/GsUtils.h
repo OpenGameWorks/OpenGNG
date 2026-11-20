@@ -3,6 +3,35 @@
 
 #include "types.h"
 
+// GIF tag, 16 bytes; bit layout of sceGifTag in ext/sce/x250/sce/ee/include/eestruct.h.
+typedef struct GifTag {
+    unsigned long NLOOP:15;
+    unsigned long EOP:1;
+    unsigned long pad16:16;
+    unsigned long id:14;
+    unsigned long PRE:1;
+    unsigned long PRIM:11;
+    unsigned long FLG:2;
+    unsigned long NREG:4;
+    unsigned long REGS0:4;
+    unsigned long REGS1:4;
+    unsigned long REGS2:4;
+    unsigned long REGS3:4;
+    unsigned long REGS4:4;
+    unsigned long REGS5:4;
+    unsigned long REGS6:4;
+    unsigned long REGS7:4;
+    unsigned long REGS8:4;
+    unsigned long REGS9:4;
+    unsigned long REGS10:4;
+    unsigned long REGS11:4;
+    unsigned long REGS12:4;
+    unsigned long REGS13:4;
+    unsigned long REGS14:4;
+    unsigned long REGS15:4;
+} GifTag;                       // size 0x10
+typedef char GifTagSizeCheck[sizeof(GifTag) == 0x10 ? 1 : -1];
+
 typedef struct tagGsClut256 {
     char _pad000[0x50];
     u_long128 m_unk50;          // 0x050 CLUT packet head
@@ -102,12 +131,7 @@ typedef struct tagGsFullScreenSprites {
 void GsSetFullScreenSprites(tagGsFullScreenSprites *pInfo, char cA, char cB, char cC, char cD, bool bA, bool bB, bool bC);
 
 typedef struct tagGs16BitShadowBufferSetup {
-    unsigned short m_unk00;     // 0x00 halfword, bit 15 kept, low bits set to 9
-    unsigned char m_unk01;      // 0x01 low 7 bits cleared, bit 7 cleared
-    char _pad02[5];             // 0x02
-    unsigned char m_unk07;      // 0x07 bits 1..3 cleared, bit 4 set
-    unsigned char m_unk08;      // 0x08 low nibble set to 0xE
-    char _pad09[7];             // 0x09
+    GifTag tag0;                // 0x00 GIF tag, NLOOP 9, NREG 1, REGS0 0xE
     long long m_unk10;          // 0x10 packed header
     long long m_unk18;          // 0x18 register data 0x4D
     long long m_unk20;          // 0x20 packed header
@@ -126,18 +150,10 @@ typedef struct tagGs16BitShadowBufferSetup {
     long long m_unk88;          // 0x88 register data 0x1A
     long long m_unk90;          // 0x90 packed register data 0x240 and 0x246
     long long m_unk98;          // 0x98 register data 0x1B
-    unsigned short m_unkA0;     // 0xA0 halfword, mask and 0x7FFF-style bits
-    unsigned char m_unkA1;      // 0xA1 bit field
-    char _padA2[3];             // 0xA2
-    unsigned char m_unkA5;      // 0xA5 bit field
-    char _padA6;               // 0xA6
-    unsigned char m_unkA7;      // 0xA7 bit field
-    unsigned char m_unkA8;      // 0xA8 low nibble set to 0xF
-    unsigned char m_unkA9;      // 0xA9 low nibble set to 5
-    unsigned char m_unkAA;      // 0xAA bit field
-    char _padAB[5];             // 0xAB
+    GifTag tag1;                // 0xA0 GIF tag, NLOOP 20, PRIM 0x246, NREG 5
     char _padB0[0x500];         // 0xB0 loop writes at stride 0x50, 20 rows
 } tagGs16BitShadowBufferSetup;  // size >= 0x5B0
+typedef char Gs16BitShadowBufferSetupSizeCheck[sizeof(tagGs16BitShadowBufferSetup) >= 0x5B0 ? 1 : -1];
 
 typedef struct tagShadowVolumeBuffer {
     char _pad00[0x04];          // 0x00

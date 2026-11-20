@@ -671,7 +671,7 @@ void GsSetFullScreenSprites(tagGsFullScreenSprites *pInfo, char cA, char cB, cha
 }
 
 // DRAFT: 0x0017F4F0 Gs16BitShadowBufferSetup__FP27tagGs16BitShadowBufferSetupP21tagShadowVolumeBuffer
-// note: 316 of 324 words differ; frame 0xC0 vs 0xE0 (arrays at sp+0xA0 vs C0/D0), FTOI4 reloc None; decl reorder no change
+// note: 314 of 324 words differ; frame 0xC0 vs 0xE0 (arrays at sp+0xA0 vs C0/D0), size 0x500 vs 0x504; tag0 bitfield RMW order and tag1 PRIM as ld/sd mask were tried, bitfield-only tag1 gave 318
 void Gs16BitShadowBufferSetup(tagGs16BitShadowBufferSetup *pInfo, tagShadowVolumeBuffer *pBufferInfo)
 {
     float aSrc[4] = {0.5f, 0.5f, 32.5f, 0.0f};
@@ -690,10 +690,10 @@ void Gs16BitShadowBufferSetup(tagGs16BitShadowBufferSetup *pInfo, tagShadowVolum
     CDS_ASSERT(0x1B5, pBufferInfo);
 
     *(u_long128 *)pInfo = 0;
-    pInfo->m_unk00 = (pInfo->m_unk00 & 0x8000) | 9;
-    pInfo->m_unk01 = (pInfo->m_unk01 & ~0x80) | ((nFlag & 1) << 7);
-    pInfo->m_unk07 = (pInfo->m_unk07 & ~0xF0) | 0x10;
-    pInfo->m_unk08 = (pInfo->m_unk08 & ~0x0F) | 0x0E;
+    pInfo->tag0.NLOOP = 9;
+    pInfo->tag0.EOP = nFlag;
+    pInfo->tag0.NREG = 1;
+    pInfo->tag0.REGS0 = 0xE;
     pInfo->m_unk10 = 0xFFFFFFFF01000000LL | ((long long)(pBufferInfo->m_unk08 / 64) << 16) | (long long)(pBufferInfo->m_unk1C / 0x2000);
     pInfo->m_unk18 = 0x4D;
     pInfo->m_unk20 = ((long long)((0x800 - (pBufferInfo->m_unk08 >> 1)) << 4)) | ((long long)((0x800 - (pBufferInfo->m_unk0C >> 1)) << 4));
@@ -712,18 +712,18 @@ void Gs16BitShadowBufferSetup(tagGs16BitShadowBufferSetup *pInfo, tagShadowVolum
     pInfo->m_unk88 = 0x1A;
     pInfo->m_unk90 = 0x240;
     pInfo->m_unk98 = 0x1B;
-    *(u_long128 *)&pInfo->m_unkA0 = 0;
-    *(long long *)&pInfo->m_unkA0 = (*(long long *)&pInfo->m_unkA0 & 0xFC007FFFFFFFFFFFLL) | (0x246LL << 47);
-    pInfo->m_unkA5 = (pInfo->m_unkA5 & ~0x40) | 0x40;
-    pInfo->m_unkA0 = (pInfo->m_unkA0 & 0x8000) | 0x14;
-    pInfo->m_unkA1 = (pInfo->m_unkA1 & ~0x80) | 0x80;
-    pInfo->m_unkA7 = (pInfo->m_unkA7 & ~0xF0) | 0x50;
-    pInfo->m_unkA7 = (pInfo->m_unkA7 & ~0x0C) | ((nFlag & 3) << 2);
-    pInfo->m_unkA8 = (pInfo->m_unkA8 & ~0x0F) | 0x0F;
-    pInfo->m_unkA8 = (pInfo->m_unkA8 & ~0xF0) | 0x10;
-    pInfo->m_unkA9 = (pInfo->m_unkA9 & ~0x0F) | 5;
-    pInfo->m_unkA9 = (pInfo->m_unkA9 & ~0xF0) | 0xF0;
-    pInfo->m_unkAA = (pInfo->m_unkAA & ~0x0F) | 3;
+    *(u_long128 *)&pInfo->tag1 = 0;
+    *(long long *)&pInfo->tag1 = (*(long long *)&pInfo->tag1 & 0xFC007FFFFFFFFFFFLL) | (0x246LL << 47);
+    pInfo->tag1.PRE = 1;
+    pInfo->tag1.NLOOP = 0x14;
+    pInfo->tag1.EOP = 1;
+    pInfo->tag1.NREG = 5;
+    pInfo->tag1.FLG = nFlag & 3;
+    pInfo->tag1.REGS0 = 0xF;
+    pInfo->tag1.REGS1 = 1;
+    pInfo->tag1.REGS2 = 5;
+    pInfo->tag1.REGS3 = 0xF;
+    pInfo->tag1.REGS4 = 3;
 
     nHalfW = (short)pBufferInfo->m_unk0C;
     nStep = (short)(pBufferInfo->m_unk08 / 20);
