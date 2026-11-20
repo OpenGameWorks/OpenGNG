@@ -30,6 +30,7 @@ struct FontSubtitle {
     signed char m_unk8;         // 0x08 colour
     signed char m_unk9;         // 0x09 end flag
     signed char m_unkA;         // 0x0A z value
+    unsigned char m_unkB;       // 0x0B text id, compared with DIALOG_ID by DisplayString
 };
 
 class FontTable;
@@ -61,6 +62,7 @@ public:
     int GetTextCount(int arg0);
     unsigned short *JapanAddNumber(unsigned short *pStr, unsigned short *pNum, int nUnused);
     FontNode *DisplayString(char *pStr, float fX, float fY, int nZ, FontColor nColor, FontAlign nAlign);
+    FontNode *DisplayString(int nX, int nY, int nZ, bool bFlag);
     void InitFMV();
     void Init();
     void SetLanguage(char arg0);
@@ -74,7 +76,7 @@ public:
     FontNode **m_unk8;          // 0x008 base PArray: item table
     char _pad00C[0x4];
     unsigned char m_unk10;      // 0x010 cleared by the constructor
-    char _pad011[0x1];
+    unsigned char m_unk11;      // 0x011 set to 2 by DisplayString
     unsigned char m_unk12;      // 0x012 cleared by InitFrame
     signed char m_unk13;        // 0x013 language index
     int m_unk14;                // 0x014 cleared by InitFrame

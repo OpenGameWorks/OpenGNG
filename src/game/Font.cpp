@@ -51,6 +51,8 @@ extern "C" FontNode *__ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(
 extern unsigned char mbFadeOut__8FontNode;
 extern char *mpTextBox__8FontNode;
 extern int mbEnableBox__8FontNode;
+extern float mTextBox__8FontNode[4];
+extern "C" void AdjustTextBox__8FontNodeFPf(float *arg0);
 extern unsigned char gInterface[];
 extern char Large_fontCharDef[0x100];
 extern float BOXX;
@@ -59,7 +61,6 @@ extern float WARNING_FADE;
 extern char gGfxEng[1504384];
 extern unsigned char gEng[0x1A000];
 extern unsigned char gUnitMatrix[0x40];
-extern "C" void DisplayString__11FontManagerFiiib(void *pThis, int nX, int nY, int nZ, bool bFlag);
 extern "C" void InitRender__9InterfaceFv(void *pThis);
 extern "C" void BeginFxRender__10PGfxEngineFv(void *pThis);
 extern "C" void SetScreenMatrix__10PGfxEngineFP5PMat4(void *pThis, void *pMat);
@@ -362,6 +363,92 @@ FontNode *FontManager::DisplayString(char *pStr, float fX, float fY, int nZ, Fon
     return pNode;
 }
 
+// DRAFT: 0x001335B0 DisplayString__11FontManagerFiiib
+// note: DIFF 35 words: loop-bottom b target (0x58), ctor arg order (movz/movn for FontAlign, lh reuse), exit branch shape and tail store order; tried if-form, hoisted ternary, shared m_unk4 load, inverted ternary (97 words).
+FontNode *FontManager::DisplayString(int nX, int nY, int nZ, bool bFlag) {
+    FontNode *pFirst;
+    FontSubtitle *pEntry;
+    PArray *pList;
+    FontNode *pNode;
+    bool bNonZero;
+    int nBox;
+
+    if (nX >= m_unkFC) {
+        printf("Invalid text ID %d\n", nX);
+        return 0;
+    }
+    pFirst = 0;
+    bNonZero = nY != 0;
+    if (bNonZero) {
+        RemoveText((unsigned short)9);
+    }
+    float box[4] = {1000.0f, 1000.0f, -1000.0f, -1000.0f};
+    pEntry = (FontSubtitle *)(m_unk100 + nX * 12);
+    nBox = pEntry->m_unk9 & 2;
+    mbEnableBox__8FontNode = nBox;
+    if (bFlag) {
+        pList = (PArray *)((char *)this + 0x110);
+    } else {
+        pList = (PArray *)this;
+    }
+    while (1) {
+        if (*(unsigned int *)pList >= 0x30) {
+            CdsAssert("Font.cpp", 0x2A6, "pList->GetCount() < MAX_TEXT");
+        }
+        if (nY > 0) {
+            if (pEntry->m_unkB != 9) {
+                CdsAssert("Font.cpp", 0x2A8, "pString->iID == DIALOG_ID");
+            }
+        }
+        pNode = (FontNode *)__nw__FUi(0x10);
+        if (pNode != 0) {
+            pNode = __ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(pNode, this, pEntry->m_unk0, (float)pEntry->m_unk4, (float)(pEntry->m_unk6 + nZ), pEntry->m_unkB, pEntry->m_unkA, (FontColor)pEntry->m_unk8, (FontAlign)(pEntry->m_unk4 == 0 ? 1 : 0), bNonZero);
+        }
+        if (pNode == 0) {
+            CdsAssert("Font.cpp", 0x2AB, "pNode");
+        }
+        pList->Add(pNode);
+        if (pFirst == 0) {
+            pFirst = pNode;
+        }
+        if (nBox != 0) {
+            if (mTextBox__8FontNode[0] < box[0]) {
+                box[0] = mTextBox__8FontNode[0];
+            }
+            if (mTextBox__8FontNode[1] < box[1]) {
+                box[1] = mTextBox__8FontNode[1];
+            }
+            if (mTextBox__8FontNode[2] > box[2]) {
+                box[2] = mTextBox__8FontNode[2];
+            }
+            if (mTextBox__8FontNode[3] > box[3]) {
+                box[3] = mTextBox__8FontNode[3];
+            }
+        }
+        if (pEntry->m_unk9 & 1) {
+            if (nBox != 0) {
+                AdjustTextBox__8FontNodeFPf(box);
+                m_unk120 = 1;
+            }
+            break;
+        }
+        pEntry++;
+    }
+    if (nY != 0) {
+        if (nY > 0) {
+            m_unk14 = nY;
+        } else {
+            nY = 0;
+            m_unk14 = nY;
+        }
+        m_unk18 = pFirst;
+        m_unk10 = 0;
+        m_unk11 = 2;
+        m_unk12 = 0;
+    }
+    return pFirst;
+}
+
 // FUNCTION: 0x133E00 __dt__8FontNodeFv
 extern "C" void *__dt__8FontNodeFv(FontNode *pThis, short nFlag) {
     if (pThis != 0) {
@@ -397,12 +484,12 @@ void FontManager::ResetWarning() {
     m_unk121 = 1;
 }
 
-// FUNCTION: 0x133F20 RenderWarning__11FontManagerFi
+// FUNCTION: 0x00133F20 RenderWarning__11FontManagerFi
 void FontManager::RenderWarning(int arg0) {
     if (arg0 != m_unk122) {
         ResetWarning();
         m_unk122 = arg0;
-        DisplayString__11FontManagerFiiib(this, arg0, 0, 0, true);
+        DisplayString(arg0, 0, 0, true);
     }
     float fFade = m_unk121 ? WARNING_FADE : -WARNING_FADE;
     float fNew = m_unk124 + fFade;
@@ -414,12 +501,12 @@ void FontManager::RenderWarning(int arg0) {
             m_unk121 = 1;
         }
     }
-    InitRender__9InterfaceFv(gInterface + 0x1710);
+    InitRender__9InterfaceFv(gInterface);
     BeginFxRender__10PGfxEngineFv(gGfxEng);
-    SetScreenMatrix__10PGfxEngineFP5PMat4(gGfxEng, gInterface + 0x1710);
-    SetViewMatrix__10PGfxEngineFP5PMat4(gGfxEng, gInterface + 0x1750);
-    SetClipMatrix__10PGfxEngineFP5PMat4(gGfxEng, gEng - 0x540);
-    SetWorldMatrix__10PGfxEngineFP5PMat4(gGfxEng, gUnitMatrix - 0x5F0);
+    SetScreenMatrix__10PGfxEngineFP5PMat4(gGfxEng, gInterface);
+    SetViewMatrix__10PGfxEngineFP5PMat4(gGfxEng, gInterface + 0x40);
+    SetClipMatrix__10PGfxEngineFP5PMat4(gGfxEng, gEng + 0x50);
+    SetWorldMatrix__10PGfxEngineFP5PMat4(gGfxEng, gUnitMatrix);
     BeginSprites__10PGfxEngineFv(gGfxEng);
     m_unk114 = 0;
     int nRet = -1;
