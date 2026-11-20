@@ -195,6 +195,7 @@ public:
     void UsageInit();
     void SetProposedReverbParams(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3, unsigned int p4);
     void ChangeReverb();
+    void SetReverbByPosition(float *pPos);
     void SetMonoOut(bool bMono);
     void SetMainMusicRelVolume(unsigned int nVolume);
     int PlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3, unsigned int p4);
@@ -250,6 +251,7 @@ public:
     int *UsageFind(unsigned int nID);
     int UsageAdd(unsigned int nID);
     void Test1();
+    void Test2();
     void DebugRestartValues();
     int DebugFindLastID(unsigned int *pValue, unsigned int *pIndex);
     int DebugFindFirstID(unsigned int *pValue, unsigned int *pIndex);
@@ -349,7 +351,10 @@ public:
     char m_unk5460[0x2580]; // 0x5460, PSoundReInitSoundRooms clears it
     int m_unk79E0[6];       // 0x79E0
     char *m_unk79F8;        // 0x79F8, triglet table base (0x150-byte records)
-    char _pad79FC[0x1808C - 0x79FC];
+    char _pad79FC[0x18080 - 0x79FC];
+    int m_unk18080;         // 0x18080, SetReverbByPosition writes 0x62 or 0xE9
+    int m_unk18084;         // 0x18084, SetReverbByPosition writes 1
+    char _pad18088[0x1808C - 0x18088];
     char m_unk1808C;        // 0x1808C, AddChanToMultiplePauses/Stops write here at this + 0x1808C + channel
 };
 

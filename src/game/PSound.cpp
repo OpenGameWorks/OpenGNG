@@ -2,6 +2,7 @@
 #include "PSound.h"
 #include "MathAPI.h"
 #include "PIOPFile.h"
+#include "PCDFile.h"
 
 // TODO(header): foreign declarations
 void CdsAssert(char *pFile, int nLine, char *pExpr);
@@ -32,6 +33,11 @@ extern "C" unsigned int EngGenerateUniqueID__9MaxEngineFv(void *pThis);
 extern unsigned char MODE_PAL;
 extern "C" void SOUND_FadeOutAllMusic(short);
 extern "C" void SOUND_MusicAddExciteHits(int);
+extern "C" bool PointInMatrixBoxWSphereCheck__7MathAPIFPfP14tagVuMatrixBoxP10tagFLOAT3D(float *pPos, void *pBox, void *pSphere);
+extern int fst_ByPositionTypeReverbTable[40];
+extern int dbg_ChangeFromType;
+extern int dbg_ChangeToType;
+extern int dbg_type;
 extern "C" void __ct__14PFadeMsecFloatFv(void *);
 extern "C" void FadeMsecFloatPrep__14PFadeMsecFloatFffUiUi(void *pThis, float fStart, float fEnd, unsigned int nArg2, unsigned int nArg3);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
@@ -90,6 +96,7 @@ extern int SOUND_STREAM_ID[4];
 extern int SOUND_STREAM_STATUS16[4];
 extern unsigned int gSOUND_EEMainSyncCount3Returned;
 extern PIOPFile fst_PIOPFileTest;
+extern PCDFile fst_PCDFileTest;
 extern char fst_ReadBuf[32768];
 extern int fst_VBCountC;
 extern int fst_VBCountD;
@@ -682,6 +689,56 @@ int PSound::RegisterRoom(SoundRoom *pRoom) {
     ((MathAPI *)(pRec + 0x50))->MakeMatrixBox(0, (tagBOX *)((char *)pRoom + 0x1B0), pUnset, 1.0f);
     m_unk544C += 1;
     return 0;
+}
+
+// DRAFT: 0x001A5360 SetReverbByPosition__6PSoundFPf
+// note: 114 words differ. Frame 0x70 with s5 vs 0x60 with s0..s4; first-check and hit-path gp/table load order differs; table base folds differ; tail loop order differs. Tried: local order, unsigned compares, rec pointer, indexed fields.
+void PSound::SetReverbByPosition(float *pPos)
+{
+    int i;
+    unsigned int off;
+    char *rec;
+    int prev = m_unk5444;
+    if (!((unsigned int)prev < (unsigned int)m_unk544C && (rec = m_unk5460 + prev * 0xF0,PointInMatrixBoxWSphereCheck__7MathAPIFPfP14tagVuMatrixBoxP10tagFLOAT3D(pPos, rec + 0x50, rec + 0xA0)))) {
+        m_unk5444 = -1;
+        for (i = 0, off = 0; i < m_unk544C; off += 0xF0, i++) {
+            char *rec = m_unk5460 + off;
+            if (PointInMatrixBoxWSphereCheck__7MathAPIFPfP14tagVuMatrixBoxP10tagFLOAT3D(pPos, rec + 0x50, rec + 0xA0)) {
+                m_unk5444 = i;
+                unsigned int p1 = *(unsigned int *)(m_unk5460 + i * 0xF0 + 0xD0);
+                unsigned int v = *(unsigned int *)(m_unk5460 + i * 0xF0 + 0xD4);
+                unsigned int d8 = *(unsigned int *)(m_unk5460 + i * 0xF0 + 0xD8);
+                unsigned int dc = *(unsigned int *)(m_unk5460 + i * 0xF0 + 0xDC);
+                if (dbg_ChangeFromType == (int)p1) {
+                    p1 = dbg_ChangeToType;
+                }
+                if (dbg_type == (int)p1) {
+                    v = fst_ByPositionTypeReverbTable[1 + p1 * 4];
+                    d8 = fst_ByPositionTypeReverbTable[2 + p1 * 4];
+                    dc = fst_ByPositionTypeReverbTable[3 + p1 * 4];
+                }
+                SetProposedReverbParams(p1, v << 8, v << 8, d8, dc);
+                break;
+            }
+        }
+    }
+    if ((unsigned int)m_unk5444 >= (unsigned int)m_unk544C) {
+        SetProposedReverbParams(fst_ReverbRecOff[0], fst_ReverbRecOff[1], fst_ReverbRecOff[2], fst_ReverbRecOff[3], fst_ReverbRecOff[4]);
+    }
+    if (prev != m_unk5444) {
+        ChangeReverb();
+    }
+    if ((unsigned int)m_unk5444 < (unsigned int)m_unk544C) {
+        if (gPSndDbg[39]) {
+            m_unk18080 = 0x62;
+            m_unk18084 = 1;
+        }
+    } else {
+        if (gPSndDbg[40]) {
+            m_unk18080 = 0xE9;
+            m_unk18084 = 1;
+        }
+    }
 }
 
 // FUNCTION: 0x001A5590 SetMusicPitchBend__6PSoundFb
@@ -2168,6 +2225,63 @@ int PSound::UsageAdd(unsigned int nID) {
         } while (p < end);
     }
     return -1;
+}
+
+// FUNCTION: 0x001AAF70 Test2__6PSoundFv
+void PSound::Test2() {
+    unsigned int nSize;
+    unsigned int nRemain;
+    unsigned int nChunk;
+
+    fst_VBCountC = gCDSVBlankCount;
+    fst_PCDFileTest.Open("PSXDATA\\GAME\\LOGO.PAK", OPEN_READ);
+    nSize = fst_PCDFileTest.GetSize();
+    if (nSize != 0) {
+        nRemain = nSize;
+        do {
+            nChunk = nRemain;
+            if (nRemain > 0x8000) {
+                nChunk = 0x8000;
+            }
+            fst_PCDFileTest.Read(fst_ReadBuf, nChunk);
+            nRemain -= nChunk;
+        } while (nRemain != 0);
+    }
+    fst_VBCountD = gCDSVBlankCount;
+    fst_diffCD = fst_VBCountD - fst_VBCountC;
+    fst_PCDFileTest.Close();
+    fst_PCDFileTest.Open("PSXDATA\\GAME\\TITLE.PAK", OPEN_READ);
+    nSize = fst_PCDFileTest.GetSize();
+    if (nSize != 0) {
+        nRemain = nSize;
+        do {
+            nChunk = nRemain;
+            if (nRemain > 0x8000) {
+                nChunk = 0x8000;
+            }
+            fst_PCDFileTest.Read(fst_ReadBuf, nChunk);
+            nRemain -= nChunk;
+        } while (nRemain != 0);
+    }
+    fst_VBCountE = gCDSVBlankCount;
+    fst_diffDE = fst_VBCountE - fst_VBCountD;
+    fst_PCDFileTest.Close();
+    fst_PCDFileTest.Open("PSXDATA\\MUSIC\\FRST1.VGM", OPEN_READ);
+    nSize = fst_PCDFileTest.GetSize();
+    if (nSize != 0) {
+        nRemain = nSize;
+        do {
+            nChunk = nRemain;
+            if (nRemain > 0x8000) {
+                nChunk = 0x8000;
+            }
+            fst_PCDFileTest.Read(fst_ReadBuf, nChunk);
+            nRemain -= nChunk;
+        } while (nRemain != 0);
+    }
+    fst_VBCountF = gCDSVBlankCount;
+    fst_diffEF = fst_VBCountF - fst_VBCountE;
+    fst_PCDFileTest.Close();
 }
 
 // FUNCTION: 0x001AB150 Test1__6PSoundFv
