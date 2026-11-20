@@ -21,6 +21,7 @@ extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
 extern "C" void sceVu0ScaleVectorXYZ(float *, float *, float);
 void FastMath_RotateMatrix(float (*)[4][4], float (*)[4][4], float (*)[4], float (*)[4][4]);
+void FastMath_ComputeMatrixLite(float (*)[4][4], float (*)[4], float (*)[4], float (*)[4], float (*)[4][4]);
 
 // FUNCTION: 0x001FD130 GenerateLeafMeshData__22PParticleBlowingLeavesFv
 void PParticleBlowingLeaves::GenerateLeafMeshData() {
@@ -84,10 +85,10 @@ struct PParticleBlowingLeaves::tagLeaf {
     float m_unk20;
     float m_unk24;
     float m_unk28;
-    int m_unk2C;
+    float m_unk2C;
     float m_unk30;
     float m_unk34;
-    int m_unk38;
+    float m_unk38;
     float m_unk3C;
     char _pad40[0x30];
 };
@@ -312,6 +313,155 @@ void PParticleBlowingLeaves::Render() {
         }
         PDisplayList *pList = *(PDisplayList **)((char *)gGfxEng + 0x154C80);
         pList->DrawFxInstances((struct tagVuFxInstance *)0x70001000, nCount, true);
+    }
+}
+
+// DRAFT: 0x001FDB40 Animate__22PParticleBlowingLeavesFf
+// note: DIFF 317: frame 0x80 vs 0x70 with extra sq s4 (loop-1 i*0x70 strength-reduced into s4, original recomputes from s1); this in s0 vs s3; separate epilogue exits; v60 zeroed not rodata copy; char-ptr index and function-scope pLeaf tried, no change
+void PParticleBlowingLeaves::Animate(float fDelta) {
+    int nSpawn;
+    int i;
+    int sb;
+    float s;
+
+    if (m_unk15 == 0) {
+        return;
+    }
+    if (m_unkCC == 0.0f) {
+        return;
+    }
+    if (fDelta == 0.0f) {
+        return;
+    }
+    if (m_unkA5C) {
+        m_unkA44 = m_unkA44 - fDelta;
+        if (m_unkA44 <= 0.0f) {
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            m_unkA44 = 60.0f * (10.0f + 10.0f * (3.0517578125e-05f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            m_unkA48 = (-90.0f + 180.0f * (3.0517578125e-05f * (float)((m_unkD0 >> 16) & 0x7FFF))) / 600.0f;
+            m_unkA4C = 600.0f;
+        }
+        if (m_unkA4C > 0.0f) {
+            m_unkA4C = m_unkA4C - fDelta;
+        }
+        m_unkA00[1] = m_unkA00[1] + m_unkA48;
+        ComputeWindAxes(m_unkA00);
+    }
+
+    nSpawn = 0;
+    {
+        float v60[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        for (i = 0; i < 0x14; i++) {
+            tagLeaf *pLeaf = (tagLeaf *)(m_unkF0 + i * 0x70);
+            if (pLeaf == 0) {
+                CdsAssert__FPciPc("PParticleBlowingLeaves.cpp", 0x8A, "apLeafRot");
+            }
+            sceVu0AddVector((float *)pLeaf, (float *)pLeaf, (float *)pLeaf->_pad10);
+            if (pLeaf->m_unk00 > 180.0f) {
+                pLeaf->m_unk00 = pLeaf->m_unk00 - 360.0f;
+            }
+            if (pLeaf->m_unk04 > 180.0f) {
+                pLeaf->m_unk04 = pLeaf->m_unk04 - 360.0f;
+            }
+            FastMath_ComputeMatrixLite((float (*)[4][4])&pLeaf->m_unk30, (float (*)[4])&pLeaf->m_unk20,
+                                       (float (*)[4])pLeaf, (float (*)[4])v60, (float (*)[4][4])0);
+        }
+    }
+
+    for (i = 0; i < m_unkE4; i++) {
+        tagLeaf *pLeaf = (tagLeaf *)((char *)m_unkE0 + (i << 6));
+        if (pLeaf == 0) {
+            CdsAssert__FPciPc("PParticleBlowingLeaves.cpp", 0x9F, "apLeaf");
+        }
+        if (pLeaf->m_unk30 > 0.0f) {
+            float *pA30 = m_unkA30;
+            s = pLeaf->m_unk34;
+            asm { mfc1 sb, s }
+            asm {
+                lqc2 vf1, 0x0(pA30)
+                lqc2 vf2, 0x0(pLeaf)
+                qmtc2.i sb, vf3
+                vmulx.xyzw vf4, vf1, vf3x
+                vnop
+                vnop
+                vnop
+                vadd.xyzw vf5, vf4, vf2
+                vnop
+                vnop
+                vnop
+                sqc2 vf5, 0x0(pLeaf)
+            }
+
+            pLeaf->m_unk38 = pLeaf->m_unk38 + pLeaf->m_unk3C;
+            if (!(pLeaf->m_unk38 < 1.0f) || pLeaf->m_unk38 < -1.0f) {
+                pLeaf->m_unk3C = -pLeaf->m_unk3C;
+            }
+
+            {
+                float *pA20 = m_unkA20;
+                s = 0.06f * pLeaf->m_unk38;
+                asm { mfc1 sb, s }
+                asm {
+                    lqc2 vf1, 0x0(pA20)
+                    lqc2 vf2, 0x0(pLeaf)
+                    qmtc2.i sb, vf3
+                    vmulx.xyzw vf4, vf1, vf3x
+                    vnop
+                    vnop
+                    vnop
+                    vadd.xyzw vf5, vf4, vf2
+                    vnop
+                    vnop
+                    vnop
+                    sqc2 vf5, 0x0(pLeaf)
+                }
+            }
+
+            {
+                float *pA10 = m_unkA10;
+                s = 0.06f * pLeaf->m_unk38;
+                asm { mfc1 sb, s }
+                asm {
+                    lqc2 vf1, 0x0(pA10)
+                    lqc2 vf2, 0x0(pLeaf)
+                    qmtc2.i sb, vf3
+                    vmulx.xyzw vf4, vf1, vf3x
+                    vnop
+                    vnop
+                    vnop
+                    vadd.xyzw vf5, vf4, vf2
+                    vnop
+                    vnop
+                    vnop
+                    sqc2 vf5, 0x0(pLeaf)
+                }
+            }
+
+            pLeaf->m_unk30 = pLeaf->m_unk30 - fDelta;
+            if (pLeaf->m_unk30 > 20.0f) {
+                if (pLeaf->m_unk2C < 1.0f) {
+                    pLeaf->m_unk2C = pLeaf->m_unk2C + 0.05f;
+                    if (pLeaf->m_unk2C > 1.0f) {
+                        pLeaf->m_unk2C = 1.0f;
+                    }
+                }
+            } else if (pLeaf->m_unk2C > 0.0f) {
+                pLeaf->m_unk2C = pLeaf->m_unk2C - 0.05f;
+                if (pLeaf->m_unk2C < 0.0f) {
+                    pLeaf->m_unk2C = 0.0f;
+                }
+            }
+        }
+        nSpawn++;
+        if (nSpawn < m_unkE4) {
+            if (m_unk18) {
+                SpawnLeaf(pLeaf);
+            }
+        } else {
+            m_unk15 = 0;
+            m_unk16 = m_unk17;
+        }
     }
 }
 

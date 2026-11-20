@@ -25,6 +25,7 @@ public:
     void Render();
     void SetCameraPosRot(float (*arg0)[4], float (*arg1)[4]);
     void SpawnLeaf(tagLeaf *pLeaf);
+    void Animate(float fDelta);
 
     void *m_unkE0;
     int m_unkE4;
@@ -44,9 +45,9 @@ public:
     float m_unkA20[4];
     float m_unkA30[4];
     int m_unkA40;
-    int m_unkA44;
-    int m_unkA48;
-    int m_unkA4C;
+    float m_unkA44;
+    float m_unkA48;
+    float m_unkA4C;
     void *m_unkA50;
     int m_unkA54;
     int m_unkA58;
