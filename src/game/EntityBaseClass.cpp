@@ -4,6 +4,8 @@
 #include "CameraAPI.h"
 
 // TODO(header): foreign declarations
+extern "C" int IntersectBox__9PFrustrumFPA2_A4_fP5PMat4(void *pFrustum, void *pBox, void *pMat);
+extern "C" void SetAllFrustrumTest__6PMNodeF13eBoxIntersect(void *pNode, int eMode);
 // PSound size is unknown; the placeholder member only keeps gSound out of small data (threshold 8 bytes).
 class PSound {
 public:
@@ -117,14 +119,19 @@ public:
     virtual void VirtSlot1();
     virtual void VirtSlot2();
     virtual void VirtSlot3();
-    virtual void VirtSlot4();
+    virtual void VirtSlot4(float arg0, float arg1, void *arg2, int arg3, bool arg4);
     virtual void VirtSlot5(AnimData *arg0);
     virtual int VirtSlot6(void *arg0);
     PMNode *FindAnimNode(unsigned int arg0);
     void EnableOneRenderPassOnly(int arg0);
     void DestroyFxTriggersBySpawnFrame(float arg0, bool arg1);
     float GetFrameTime();
-    char _pad04[0x24];
+    int m_unk4;
+    char _pad08[0xC];
+    int m_unk14;
+    int m_unk18;
+    PMNode **m_unk1C;
+    char _pad20[0x8];
     float (*m_unk28)[2][4];
     char _pad2C[0x10];
     unsigned char m_3C;
@@ -132,6 +139,10 @@ public:
     unsigned char m_3E;
     signed char m_3F;
     float m_unk40[4][4];
+    char _pad80[0xD0];
+    int m_unk150;
+    int m_unk154;
+    PMNode **m_unk158;
 };
 // gEng is a pointer; the placeholder pads it past the small-data threshold so the load is absolute.
 struct PMNodeHolder {
@@ -1196,6 +1207,98 @@ int EntityBaseClass::SkeletonCollision(PMNode *arg0, float (*arg1)[2][4], float 
     return (int)((c1 << 16) | c2);
 }
 
+// DRAFT: 0x0014CA10 MeshNodeCollision__15EntityBaseClassFP6PMNodePA2_A4_fRA4_A4_fUc
+// note: 145 words; frame 0x120 vs original 0x130 (16-byte spill slot at 0xA0 missing); volatile and padding variants tried, no gain.
+int EntityBaseClass::MeshNodeCollision(PMNode *arg0, float (*arg1)[2][4], float (&arg2)[4][4], unsigned char arg3) {
+    unsigned int c2;
+    float local2x4[2][4];
+    float local4x4[4][4];
+    float e0[4];
+    float f0[4];
+    float (*box)[2][4];
+    float (*mtx)[4][4];
+    unsigned char m3C;
+    unsigned int c1;
+    unsigned int ret;
+    PMNode *child;
+    unsigned int idx;
+
+    ret = 0;
+    switch (arg0->m_unk4) {
+    case 1:
+        box = arg0->m_unk28;
+        m3C = arg0->m_3C;
+        if (box != 0 && m3C != 0) {
+            mtx = &arg0->m_unk40;
+            if (arg0->m_3E & 4) {
+                if (!NormalizedBox(arg0->m_unk28, local2x4, &arg0->m_unk40, local4x4)) {
+                    return 0;
+                }
+                box = &local2x4;
+                mtx = &local4x4;
+            }
+            if (BoxBoxCheck(arg1, box, &arg2, mtx)) {
+                c2 = ((unsigned int)m3C | 0x20) & 0xFF;
+                c1 = arg3 & 0xFF;
+                if (((c2 | c1) & 0x80) != 0 && mHitPos__15EntityBaseClass[0] == 0.0f) {
+                    sceVu0ApplyMatrix(e0, arg2, (float *)arg1);
+                    sceVu0ApplyMatrix(f0, arg0->m_unk40, (float *)box);
+                    if (c1 & 0x80) {
+                        sceVu0SubVector(f0, f0, e0);
+                        f0[1] = 0.0f;
+                        sceVu0Normalize(f0, f0);
+                        sceVu0ScaleVector(f0, f0, (*arg1)[1][0]);
+                    } else {
+                        sceVu0SubVector(e0, e0, f0);
+                        e0[1] = 0.0f;
+                        sceVu0Normalize(e0, e0);
+                        sceVu0ScaleVector(e0, e0, (*box)[1][0]);
+                    }
+                    sceVu0AddVector(mHitPos__15EntityBaseClass, e0, f0);
+                    mHitPos__15EntityBaseClass[3] = 1.0f;
+                }
+                ret |= (c1 << 16) | c2;
+            }
+        }
+        arg0->m_unk18 = 0;
+        child = 0;
+        if (arg0->m_unk14 != 0) {
+            child = arg0->m_unk1C[0];
+        }
+        if (child != 0) {
+            do {
+                ret |= MeshNodeCollision(child, arg1, arg2, arg3);
+                idx = arg0->m_unk18 + 1;
+                arg0->m_unk18 = idx;
+                child = 0;
+                if (idx < (unsigned int)arg0->m_unk14) {
+                    child = arg0->m_unk1C[arg0->m_unk18];
+                }
+            } while (child != 0);
+        }
+        break;
+    case 2:
+        arg0->m_unk154 = 0;
+        child = 0;
+        if (arg0->m_unk150 != 0) {
+            child = arg0->m_unk158[0];
+        }
+        if (child != 0) {
+            do {
+                ret |= SkeletonCollision(child, arg1, arg2, arg3);
+                idx = arg0->m_unk154 + 1;
+                arg0->m_unk154 = idx;
+                child = 0;
+                if (idx < (unsigned int)arg0->m_unk150) {
+                    child = arg0->m_unk158[arg0->m_unk154];
+                }
+            } while (child != 0);
+        }
+        break;
+    }
+    return ret;
+}
+
 // DRAFT: 0x0014CD10 SkeletonCollision__15EntityBaseClassFP6PMNodeP15EntityBaseClass
 // note: DIFF 39 words; register allocation differs (original ret=s0, flags=s1, arg1=s2), the original ORs the call result into ret, and an andi on the u8 flag|0x20 argument is extra. Tried: ret|= (40), unsigned int flags (no gain), hoisted u8 flag|0x20 (42), early return (40).
 int EntityBaseClass::SkeletonCollision(PMNode *arg0, EntityBaseClass *arg1) {
@@ -1642,6 +1745,95 @@ void EntityBaseClass::CreateFireDamageFx(float arg0) {
         this->m_unkF0 = arg0;
         ((PParticleManager *)(gGfxEng + 0x154F00))->CreateFireDamageFx((PMNode *)this->m_unk3C, this->m_unk08);
     }
+}
+
+// DRAFT: 0x0014E500 Animate__15EntityBaseClassFif
+// note: 104 words; c.eq.s operand order and zero loaded to $f0 at 0xD8 (original $f1) shift float regs; tried swapped != tests and hoisted IntersectBox pointer, no gain
+void EntityBaseClass::Animate(int arg0, float arg1) {
+    float f20;
+    PParticleSystem *s1;
+    int nBox;
+    unsigned char var_v0;
+    float f0;
+    float fe;
+    float f2;
+    float f1;
+    float t;
+    int a0;
+
+    f20 = arg1;
+    CDS_ASSERT(0x216, this->m_unk3C != 0, "mpMeshNode");
+    if (arg0 & this->m_unkE8) {
+        f20 = 0.0f;
+    } else {
+        int v = this->m_unk34;
+        if (v != 0) {
+            v = v - 1;
+            this->m_unk34 = v;
+            if (v <= 0) {
+                this->m_unk30 = 0;
+            }
+        }
+    }
+    if (f20 != 0.0f) {
+        f0 = this->m_unkF0;
+        if (f0 != 0.0f) {
+            f0 = f0 - f20;
+            this->m_unkF0 = f0;
+            if (f0 <= 0.0f) {
+                this->m_unkF0 = 0.0f;
+                if (this->m_unk3C != 0) {
+                    ((PMNode *)this->m_unk3C)->DestroyFxTriggersBySpawnFrame(25000.0f, true);
+                }
+            }
+        }
+    }
+    if (f20 != 0.0f) {
+        fe = this->m_unkEC;
+        if (fe != 0.0f) {
+            fe = fe - f20;
+            this->m_unkEC = fe;
+            if (fe <= 0.0f) {
+                this->m_unkEC = 0.0f;
+                s1 = this->m_unkF4;
+                if (s1 != 0) {
+                    if (((PParticleManager *)(gGfxEng + 0x154F00))->IsValid(s1)) {
+                        s1->FadeAndDie(0);
+                    }
+                    this->m_unkF4 = 0;
+                }
+            }
+            f20 = 0.0f;
+        }
+    }
+    var_v0 = 1;
+    if (f20 == 0.0f) {
+        var_v0 = 0;
+    }
+    this->m_unk167 = var_v0;
+    ((PMNode *)this->m_unk3C)->VirtSlot4(0.0f, f20, 0, 0, false);
+    nBox = IntersectBox__9PFrustrumFPA2_A4_fP5PMat4(mpFrustum__15EntityBaseClass, this->m_unk3C + 0x110, this->m_unk3C + 0x40);
+    SetAllFrustrumTest__6PMNodeF13eBoxIntersect(this->m_unk3C, nBox);
+    if (this->m_unk100 != 0) {
+        if (nBox == 4) {
+            f2 = *(float *)((char *)mpFrustum__15EntityBaseClass + 0xE0);
+            if (!(f2 <= -6.0f)) {
+                f1 = 0.0f;
+                t = -1.0f - f2;
+                if (!(t <= 0.0f)) {
+                    f1 = 25.6f * t;
+                }
+                if (!(f1 >= 2.1474836e9f)) {
+                    a0 = (int)f1;
+                } else {
+                    a0 = (int)(f1 - 2.1474836e9f) | 0x80000000;
+                }
+                this->m_unk101 = (unsigned char)a0;
+                return;
+            }
+        }
+    }
+    this->m_unk101 = 0x80;
 }
 
 // DRAFT: 0x0014E7A0 Render__15EntityBaseClassFP13PLightManager

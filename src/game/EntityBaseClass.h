@@ -30,6 +30,7 @@ public:
     int CheckDie(bool arg0);
     int CheckSleep(bool arg0);
     int Render(PLightManager *arg0);
+    void Animate(int arg0, float arg1);
     void DestroyDamageFx(unsigned int arg0);
     int ProcessHitBack();
     int ChangeDamageFxInterval(unsigned int arg0, float arg1);
@@ -134,7 +135,7 @@ public:
     PParticleSystem *m_unkF4;   // 0x0F4 frozen particle system
     float m_unkF8;              // 0x0F8 frozen fx x
     float m_unkFC;              // 0x0FC frozen fx y
-    char _pad100[0x1];          // 0x100
+    unsigned char m_unk100;     // 0x100
     unsigned char m_unk101;     // 0x101
     unsigned char m_unk102;     // 0x102 physics anim list flag
     char _pad103[0xD];          // 0x103..0x10F
@@ -157,7 +158,7 @@ public:
     unsigned char m_unk164;     // 0x164
     char _pad165[0x1];          // 0x165
     unsigned char m_unk166;     // 0x166
-    char _pad167[0x1];          // 0x167
+    signed char m_unk167;       // 0x167 nonzero while freeze value is active
     short m_unk168;             // 0x168
     char _pad16A[0x2];          // 0x16A..0x16B
     float m_unk16C;             // 0x16C
