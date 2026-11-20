@@ -33,5 +33,9 @@ int FlushIOPCommand(int arg0, unsigned int arg1, unsigned int arg2);
 unsigned int SOUND_PlayDialogRelVol(unsigned int arg0, short arg1, unsigned int arg2, short arg3, unsigned int arg4);
 unsigned int SOUND_PlayMusicRelVol(unsigned int arg0, short arg1, unsigned int arg2, short arg3, unsigned int arg4);
 int SOUND_InitIOP(void);
+void SOUND_FadeOutAllMusic(short arg0);
+void SOUND_AllChannelReverbOff(short arg0);
+void SOUND_CloseStreamBuffer(short arg0);
+void SOUND_SetLanguage(short arg0);
 
 #endif

@@ -1,7 +1,7 @@
 #include "sound.h"
 
 // TODO(header): foreign declarations
-extern short IOPCommandData[64];
+extern unsigned short IOPCommandData[64];
 extern int gSOUND_EEControlReq;
 extern int gSOUND_EEControlReqCallCnt;
 extern char SOUND_SPUKeyStatus[0x40];
@@ -22,6 +22,7 @@ extern int IOP_Cnt;
 extern int SOUND_IOP_REQUEST_LOAD;
 extern int gSOUND_uEECallCnt;
 extern int gSOUND_EEMainSyncCount3Sent;
+extern int gSOUND_EEMainSyncCount3Returned;
 
 static unsigned int fst_uEECallCnt;
 static int fst_WaitUpdateArray;
@@ -176,6 +177,18 @@ void SOUND_FadeMusicStream(short arg0, short arg1, short arg2) {
     SetIOPCommand(0x1D, 3);
 }
 
+// FUNCTION: 0x001ADDB0 SOUND_FadeOutAllMusic
+void SOUND_FadeOutAllMusic(short arg0) {
+    IOPCommandData[0] = arg0;
+    SetIOPCommand(0x1C, 1);
+}
+
+// FUNCTION: 0x001ADDD0 SOUND_AllChannelReverbOff
+void SOUND_AllChannelReverbOff(short arg0) {
+    IOPCommandData[0] = arg0;
+    SetIOPCommand(0x17, 1);
+}
+
 // FUNCTION: 0x001ADDF0 SOUND_ChangeReverbMasterVolume
 void SOUND_ChangeReverbMasterVolume(short arg0, short arg1, short arg2) {
     IOPCommandData[2] = arg2;
@@ -318,6 +331,47 @@ int SOUND_FindFreeSPUChannel(unsigned int arg0, unsigned int arg1, unsigned int 
     return -1;
 }
 
+// DRAFT: 0x001AE1A0 SetIOPCommand
+// note: 128 words differ; original frame is 0x30 with s0/s1 saved and 0x200 bytes vs our 0x180; signed loop index 140, cached IOP_Cnt no change.
+void SetIOPCommand(int arg0, int arg1) {
+    static char init;
+    static int overflowCnt;
+    unsigned int t4;
+
+    if (init == 0) {
+        overflowCnt = 0;
+        init = 1;
+    }
+    if ((unsigned int)(IOP_Cnt + arg1 + 10) >= 0x400U) {
+        printf("*** Function:SetIOPCommand - IOP Buffer full(%d), cmd %d  ***\n", gSOUND_EEMainSyncCount3Returned, arg0);
+        return;
+    }
+    t4 = 0;
+    senddata[8 + IOP_Cnt] = arg0;
+    senddata[9 + IOP_Cnt] = arg1;
+    if (arg1 != 0) {
+        if ((unsigned int)arg1 >= 9U) {
+            do {
+                senddata[IOP_Cnt + 10 + t4 + 0] = IOPCommandData[t4 + 0];
+                senddata[IOP_Cnt + 10 + t4 + 1] = IOPCommandData[t4 + 1];
+                senddata[IOP_Cnt + 10 + t4 + 2] = IOPCommandData[t4 + 2];
+                senddata[IOP_Cnt + 10 + t4 + 3] = IOPCommandData[t4 + 3];
+                senddata[IOP_Cnt + 10 + t4 + 4] = IOPCommandData[t4 + 4];
+                senddata[IOP_Cnt + 10 + t4 + 5] = IOPCommandData[t4 + 5];
+                senddata[IOP_Cnt + 10 + t4 + 6] = IOPCommandData[t4 + 6];
+                senddata[IOP_Cnt + 10 + t4 + 7] = IOPCommandData[t4 + 7];
+                t4 += 8;
+            } while (t4 < (unsigned int)(arg1 - 8));
+        }
+        for (; t4 < (unsigned int)arg1; t4++) {
+            senddata[IOP_Cnt + 10 + t4] = IOPCommandData[t4];
+        }
+    }
+    senddata[0] += 1;
+    IOP_Cnt += 2;
+    IOP_Cnt += arg1;
+}
+
 // FUNCTION: 0x001AE3A0 SOUND_SetSPUWriteAddress
 void SOUND_SetSPUWriteAddress(unsigned int arg0) {
     IOPCommandData[1] = (short)arg0;
@@ -334,6 +388,18 @@ void SOUND_AllocateStreamBuffer(short arg0, unsigned int arg1, unsigned int arg2
     IOPCommandData[1] = (short)(arg1 >> 16);
     IOPCommandData[2] = arg1 & 0xFFFFU;
     SetIOPCommand(0xD, 5);
+}
+
+// FUNCTION: 0x001AE410 SOUND_CloseStreamBuffer
+void SOUND_CloseStreamBuffer(short arg0) {
+    IOPCommandData[0] = arg0;
+    SetIOPCommand(0xF, 1);
+}
+
+// FUNCTION: 0x001AE430 SOUND_SetLanguage
+void SOUND_SetLanguage(short arg0) {
+    IOPCommandData[0] = arg0;
+    SetIOPCommand(0x21, 1);
 }
 
 // FUNCTION: 0x001AE5E0 SOUND_SetChannelPitch
