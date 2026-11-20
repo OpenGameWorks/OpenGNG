@@ -780,7 +780,7 @@ void PMNode::CopyFxTriggers(PMNode &src) {
 }
 
 // DRAFT: 0x00192D70 AddFxTriggers__6PMNodeFP6PArrayb
-// note: 9 lines differ; original has one extra nop before the epilogue. Tried if(count!=0), if(count>0), if(0<count), for loop, bool guard temp, idx-zero guard with ++idx test.
+// note: 49 words differ: frame 0x70 saving s5 instead of 0x60/s4..s0; the element index gets a strength-reduced induction register (addiu s2,s2,4) in place of the original's sll/addu per iteration, which shifts this/pArr/bFlag to s5/s4/s3. Tried: typed-member if form, void** slot local, for loop, idx++ in body, explicit idx*4 byte offset (49), ternary element select (51), while/signed idx.
 void PMNode::AddFxTriggers(PArray *pArr, bool bFlag) {
     tagParticleFxTrigger *pTrig;
     unsigned int count;
@@ -788,13 +788,13 @@ void PMNode::AddFxTriggers(PArray *pArr, bool bFlag) {
     if (pArr == 0) {
         CdsAssert__FPciPc("PMNode.cpp", 0x753, "poTriggers");
     }
-    count = *(unsigned int *)pArr;
+    count = pArr->m_unk0;
     idx = 0;
     if (idx < count) {
         do {
             pTrig = 0;
-            if (idx < *(unsigned int *)pArr) {
-                pTrig = (*(tagParticleFxTrigger ***)((char *)pArr + 8))[idx];
+            if (idx < pArr->m_unk0) {
+                pTrig = (tagParticleFxTrigger *)pArr->m_unk8[idx];
             }
             AddFxTrigger(pTrig, bFlag);
         } while (++idx < count);
@@ -1106,12 +1106,11 @@ int PMNode::CheckAnimated() {
     return nRet;
 }
 
-// DRAFT: 0x00193890 GetFrameTime__6PMNodeFv
-// note: 10 lines differ: compare operand order at 0x14 and 0x60 (x != 0.0f kept; 0.0f != x compiles identically), branch offsets and epilogue/mtc1 placement at 0xB4-0xC8; join nop after the loop (0x193944) missing as in FindBone.
+// FUNCTION: 0x00193890 GetFrameTime__6PMNodeFv
 float PMNode::GetFrameTime() {
     PMNode *pChild;
     float fTime = *(float *)&m_unk34;
-    if (fTime != 0.0f) {
+    if (fTime) {
         return fTime;
     }
     m_unk18 = 0;
@@ -1123,7 +1122,7 @@ float PMNode::GetFrameTime() {
         do {
             float fChild = pChild->GetFrameTime();
             unsigned int uNext;
-            if (fChild != 0.0f) {
+            if (fChild) {
                 return fChild;
             }
             uNext = m_unk18 + 1;
@@ -1481,8 +1480,7 @@ int PMNode::Find(PMNode *pNode) {
     return 0;
 }
 
-// DRAFT: 0x001949E0 RecurseSetSTAnimOptions__6PMNodeFb
-// note: 8 words differ; the original returns the byte from s0 without andi 0xFF masks, and the loop-exit delay slot differs. Tried: int local and return (31 words, reverted), unsigned char kept.
+// FUNCTION: 0x001949E0 RecurseSetSTAnimOptions__6PMNodeFb
 unsigned char PMNode::RecurseSetSTAnimOptions(bool bFlag) {
     unsigned char bResult = 0;
     PMNode *pChild;
@@ -1491,26 +1489,18 @@ unsigned char PMNode::RecurseSetSTAnimOptions(bool bFlag) {
         bResult = *((unsigned char *)m_unk10 + 0xC);
     }
     m_unk18 = 0;
-    if (m_unk14 != 0) {
-        pChild = *m_unk1C;
-    } else {
-        pChild = 0;
-    }
+    pChild = (m_unk14 != 0) ? *m_unk1C : 0;
     if (pChild != 0) {
         do {
-            if (pChild->RecurseSetSTAnimOptions(bFlag) != 0) {
+            if (pChild->RecurseSetSTAnimOptions(bFlag)) {
                 bResult = 1;
             }
             unsigned int idx = m_unk18 + 1;
             m_unk18 = idx;
-            if (idx < m_unk14) {
-                pChild = m_unk1C[m_unk18];
-            } else {
-                pChild = 0;
-            }
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
         } while (pChild != 0);
     }
-    if (bResult != 0) {
+    if (bResult) {
         m_unk3E |= 0x10;
     }
     return bResult;
