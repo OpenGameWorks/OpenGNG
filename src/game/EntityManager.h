@@ -54,6 +54,7 @@ public:
     void LoadOverlay(char *arg0, char *arg1);
     void Reset(bool arg0);
     void LoadResource(char *arg0, bool arg1);
+    void AddToRenderList(struct EntityBaseClass *arg0);
     void RemoveFromRenderList(struct EntityBaseClass *arg0);
     int BGAnimIsReset(int arg0);
     void UpdateSwordBGAnim();
@@ -63,9 +64,12 @@ public:
     void SaveApparitionData(int arg0);
     void SetEifPosition(unsigned int arg0, unsigned int arg1, float (*arg2)[4]);
     void RunPhysics(float arg0);
+    void ObjectCollision();
     void Process();
     void ProcessTrigger();
+    void RestoreHolyGround();
     void ProcessIcons();
+    void Init();
 
     static TimerAPI mTimerAPI;  // TimerAPI instance ticked by Process
 
@@ -80,8 +84,12 @@ public:
     void **m_unk5080;           // 0x5080 PArray entries, removed by Destroy
     char _pad5084[0x5088 - 0x5084];
     char m_unk5088[0xC];        // 0x5088 PHashTable, looked up by GetPtrToApparition
-    char m_unk5094[0x50B0 - 0x5094];    // 0x5094 PHashTable, looked up by GetPtrToInstance
-    unsigned int m_unk50B0;     // 0x50B0 physics list count
+    char m_unk5094[0x50A0 - 0x5094];    // 0x5094 PHashTable, looked up by GetPtrToInstance
+    unsigned int m_unk50A0;     // 0x50A0 PArray count of sub-lists keyed by arg0->m_unk08
+    unsigned int m_unk50A4;     // 0x50A4 PArray index
+    void **m_unk50A8;           // 0x50A8 PArray entries
+    char _pad50AC[0x50B0 - 0x50AC];
+    unsigned int m_unk50B0;    // 0x50B0 physics list count
     unsigned int m_unk50B4;     // 0x50B4 physics list index
     void **m_unk50B8;           // 0x50B8 physics list entries, EntityBaseClass pointers
     char _pad50BC[0x50C0 - 0x50BC];

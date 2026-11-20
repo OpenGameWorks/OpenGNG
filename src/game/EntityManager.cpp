@@ -22,6 +22,7 @@ public:
 };
 
 class AnimData;
+class PMat4;
 
 class PMNode {
 public:
@@ -35,6 +36,7 @@ public:
     void RecurseResetAnimByID(unsigned int arg0);
     void RecurseApplyAnimFlagsByID(unsigned int arg0, bool arg1, int arg2);
     void BuildAnimList(PArray *arg0, unsigned int arg1);
+    void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
 
     char _pad004[0x28 - 0x4];
     float (*m_unk28)[2][4];     // 0x28
@@ -99,6 +101,17 @@ public:
     virtual void Slot23();
     virtual void Slot24();
     virtual void Slot25();
+};
+
+class Player;
+class TriggerSystem {
+public:
+    int TriggerCheck(float (*pArr)[4], PMeshNode *pNode, Player *pPlayer);
+    void ResetTrigger(PMeshNode *pNode);
+    char _pad0[4];
+    unsigned short m_unk4;
+    char _pad6[3];
+    signed char m_unk9;
 };
 
 void CdsAssert(char *pFile, int nLine, char *pExpr);
@@ -171,17 +184,20 @@ public:
     int CheckSleep(bool arg0);
     void ProcessPhysics(float arg0, int arg1);
     void PlingInnocent();
+    void CollisionCheck(EntityBaseClass *arg0);
 
     char _pad000[0x04];
     unsigned int m_unk04;       // 0x04
-    char _pad08[0x0C - 0x08];
+    int m_unk08;                // 0x08 key compared by AddToRenderList
     unsigned int m_unk0C;       // 0x0C
     char _pad10[0x1B - 0x10];
     unsigned char m_unk1B;      // 0x1B
     unsigned char m_unk1C;      // 0x1C
     char _pad1D[0x3C - 0x1D];
     char *m_unk3C;              // 0x3C
-    char _pad040[0x190 - 0x40];
+    char _pad040[0x10C - 0x40];
+    unsigned int m_unk10C;      // 0x10C collision flags, bits 24-26 mark collidable
+    char _pad110[0x190 - 0x110];
     float m_unk190[4];          // 0x190
 };
 
@@ -480,6 +496,89 @@ void *EntityManager::FindTrigger(unsigned int arg0, int arg1) {
     return 0;
 }
 
+// DRAFT: 0x00147290 ProcessTrigger__13EntityManagerFv
+// note: DIFF 81; frame 0x90 vs 0x80, this in s6 vs s0, pNode in s7 vs s4; tried key-local removal (83), key after assert (83), pNode after i/off (81), pArr default-then-override (81), m_unk5B68[i] indexing (81)
+void EntityManager::ProcessTrigger() {
+    Player *pPlayer = *(Player **)((char *)this + 0x505C);
+    if (pPlayer != 0) {
+        float (*pArr)[4] = (float (*)[4])((char *)pPlayer + 0x190);
+        if (pPlayer->m_unk3C != 0) {
+            pArr = (float (*)[4])(pPlayer->m_unk3C + 0x80);
+        }
+        PMeshNode *pNode = *(PMeshNode **)gEng;
+        unsigned int i = 0;
+        for (;;) {
+            TriggerSystem *pTrig = 0;
+            if (i < (unsigned int)m_unk5B60) {
+                pTrig = (TriggerSystem *)m_unk5B68[i];
+            }
+            if (pTrig == 0) {
+                break;
+            }
+            int r = pTrig->TriggerCheck(pArr, pNode, *(Player **)((char *)this + 0x505C));
+            if (r != 0) {
+                unsigned short key = pTrig->m_unk4;
+                if (key >= 0x180) {
+                    CdsAssert("EntityManager.cpp", 0x5C1, "pTrigger->GetReference() < MAX_EDITED_INSTANCES");
+                }
+                if ((signed char)m_unk53A1[key * 4] >= 0) {
+                    if (r >= 0) {
+                        m_unk53A1[key * 4] = 1;
+                    } else {
+                        m_unk53A1[key * 4] = -2;
+                    }
+                    if (r == -2) {
+                        *((char *)this + 0x59A0 + key) = -2;
+                    }
+                }
+            }
+            i++;
+        }
+    }
+}
+
+// DRAFT: 0x001473D0 RestoreHolyGround__13EntityManagerFv
+// note: DIFF 18 against the original; the differing lines were not analysed in this job
+void EntityManager::RestoreHolyGround() {
+    PMeshNode *pNode = *(PMeshNode **)gEng;
+    if (pNode != 0) {
+        m_unk5B64 = 0;
+        TriggerSystem *pTrig = 0;
+        if (m_unk5B60 != 0) {
+            pTrig = (TriggerSystem *)m_unk5B68[0];
+        }
+        if (pTrig != 0) {
+            do {
+                if (pTrig->m_unk9 != 0 && *(signed char *)((char *)this + pTrig->m_unk4 + 0x59A0) >= 0) {
+                    pTrig->ResetTrigger(pNode);
+                }
+                unsigned int idx = m_unk5B64 + 1;
+                m_unk5B64 = idx;
+                if (idx < (unsigned int)m_unk5B60) {
+                    pTrig = (TriggerSystem *)m_unk5B68[m_unk5B64];
+                } else {
+                    pTrig = 0;
+                }
+            } while (pTrig != 0);
+        }
+        signed char *pSrc = (signed char *)((char *)this + 0x59A0);
+        signed char *pDst = (signed char *)((char *)this + 0x53A1);
+        int n = 0x180;
+        do {
+            n--;
+            *pDst = *pSrc;
+            pSrc++;
+            pDst += 4;
+        } while (n != 0);
+    }
+    int *pMC = (int *)&gMC[0x234];
+    pMC[8] = *(signed char *)((char *)this + 0x5B20);
+    pMC[9] = *(signed char *)((char *)this + 0x5B21);
+    if (pNode != 0) {
+        ((PMNode *)pNode)->ProcessFxTriggers(-2.0f, 0, true, false);
+    }
+}
+
 // DRAFT: 0x00147760 ValidateDependencyList__13EntityManagerFv
 // note: 7 lines; loop counter and byte offset swap registers (original keeps offset in a3 and counter in a1, ours offset a1 and counter a2); tried scoped counter (9 lines), unsigned offset (9 lines), counter-first ordering (7 lines, kept).
 void EntityManager::ValidateDependencyList() {
@@ -616,6 +715,37 @@ void *EntityManager::GetPtrToApparition(unsigned int arg0) {
     return 0;
 }
 
+// FUNCTION: 0x00148B90 ObjectCollision__13EntityManagerFv
+void EntityManager::ObjectCollision() {
+    gDebug.StartTimer(3);
+    EntityBaseClass *pA;
+    unsigned int j;
+    int joff;
+    int off;
+    unsigned int i;
+    i = 0;
+    off = 0;
+    for (; i < m_unk50B0; off += 4, i++) {
+        pA = 0;
+        if (i < m_unk50B0) { pA = *(EntityBaseClass **)((char *)m_unk50B8 + off); }
+        j = i + 1;
+        if (pA->m_unk10C & 0x07000000) {
+            joff = j << 2;
+            for (;;) {
+                EntityBaseClass *pB = 0;
+                if (j < m_unk50B0) { pB = *(EntityBaseClass **)((char *)m_unk50B8 + joff); }
+                if (pB == 0) { break; }
+                if (pB->m_unk10C & 0x07000000) {
+                    if (pB->m_unk10C & 1) { pB->CollisionCheck(pA); } else { pA->CollisionCheck(pB); }
+                }
+                joff += 4;
+                j++;
+            }
+        }
+    }
+    gDebug.StopTimer(3);
+}
+
 // DRAFT: 0x00148CC0 RunPhysics__13EntityManagerFf
 // note: 20 diffs; original enters the loop with b to a bottom test (ours tests beqz a0 at the top), and reloads m_unk50B4 from memory after the store (ours reuses the addiu result); tried nested while (worse), increment in the update clause (same 20 plus shifted tail).
 void EntityManager::RunPhysics(float arg0) {
@@ -702,6 +832,47 @@ void EntityManager::CallOnTimerEvent(unsigned int arg0, unsigned int arg1) {
     }
 }
 
+// FUNCTION: 0x00149240 AddToRenderList__13EntityManagerFP15EntityBaseClass
+void EntityManager::AddToRenderList(EntityBaseClass *arg0) {
+    PArray *pList;
+    PArray *pNew;
+    unsigned int i;
+    int key;
+
+    ((PArray *)&m_unk50B0)->Add(arg0);
+    key = arg0->m_unk08;
+    m_unk50A4 = 0;
+    pList = 0;
+    if (m_unk50A0 != 0) {
+        pList = (PArray *)m_unk50A8[0];
+    }
+    while (pList != 0) {
+        EntityBaseClass *pEnt;
+        pList->m_unk4 = 0;
+        if (pList->m_unk0 != 0) {
+            pEnt = (EntityBaseClass *)pList->m_unk8[0];
+        } else {
+            pEnt = 0;
+        }
+        if (key == pEnt->m_unk08) {
+            pList->Add(arg0);
+            return;
+        }
+        i = m_unk50A4 + 1;
+        m_unk50A4 = i;
+        pList = 0;
+        if (i < m_unk50A0) {
+            pList = (PArray *)m_unk50A8[m_unk50A4];
+        }
+    }
+    pNew = new PArray;
+    if (pNew == 0) {
+        CdsAssert("EntityManager.cpp", 0x16C, "pList");
+    }
+    pNew->Add(arg0);
+    ((PArray *)&m_unk50A0)->Add(pNew);
+}
+
 // FUNCTION: 0x00149500 Destroy__13EntityManagerFUiUi
 void EntityManager::Destroy(unsigned int arg0, unsigned int arg1) {
     if (arg1 != 0) {
@@ -732,6 +903,12 @@ void EntityManager::LoadOverlay(char *arg0, char *arg1) {
         }
         LoadResource(arg1, false);
     }
+}
+
+// FUNCTION: 0x00149BB0 Init__13EntityManagerFv
+void EntityManager::Init() {
+    EntityManager::mCameraAPI = gEng + 0x19760;
+    m_unk5D4C = 0;
 }
 
 // FUNCTION: 0x00149BD0 __dt__13EntityManagerFv
