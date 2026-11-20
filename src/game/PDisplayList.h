@@ -12,6 +12,7 @@ struct tagVuRotatableParticle;
 struct tagVuFxInstance;
 struct tagGsMaterial;
 struct tagVuSplineKey;
+struct tagVuSplinePatchKey;
 
 class PDisplayList {
 public:
@@ -64,6 +65,7 @@ public:
     char m_unkA3380[1];     // 0xA3380 PTextureDmaChain, size not yet recovered
     void SetMaterials(struct tagGsMaterial *pMat, int nCount, bool bA, bool bB, float *pScale, unsigned long *pTagA, unsigned long *pTagB);
     void DrawSplineParticles(struct tagVuSplineKey *pKeys, int nCount, int nTag, float fA, bool bFlag, int nChunk);
+    void DrawSplinePatch(struct tagVuSplinePatchKey *pKeys, int nCount, int nTag, float fA, bool bFlag, int nChunk);
 };
 
 #endif
