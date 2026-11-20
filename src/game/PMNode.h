@@ -64,6 +64,7 @@ public:
     void UpdateCameraFade(bool bFlag);
     int LoadFxTriggers(PPakFile *pFile);
     int LoadMesh(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion);
+    int LoadBone(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion);
     void RecurseEnableBone(PArray *pArr, bool bFlag);
     void EnableOneRenderPassOnly(int nPass);
     void SetRenderPassStatus(bool bA, bool bB, bool bC, bool bD);

@@ -1497,6 +1497,75 @@ int PMNode::LoadMesh(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
     return 0;
 }
 
+// DRAFT: 0x00194DB0 LoadBone__6PMNodeFP8PPakFileP6PArray16ePsx2FileVersion
+// note: 94 lines differ: b offsets at 0x94/0xC8/0x14C/0x170/0x1FC, tag at 0x148 vs 0x14C, clone-block store order, __nw(0x30)+__ct__5PMeshFv mesh alloc (tried, worse at 140); local order tried, same 94
+int PMNode::LoadBone(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
+    unsigned char hdrA[0x60];
+    unsigned char hdrB[0x44];
+    unsigned int meshHdr[4];
+    float box[2][4];
+    unsigned int tag;
+    PMNode *apCloneChild;
+
+    ((pFile) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0x1F5, "poFile"));
+    ((pArr) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0x1F6, "poTextureHandles"));
+
+    if ((int)eVersion >= 0x20000) {
+        if (((PCDFile *)pFile)->Read(hdrB, 0x44) != 0x44) { return 0; }
+        m_unk08 = *(int *)(hdrB + 0x00);
+        m_unkD0 = *(int *)(hdrB + 0x34);
+    } else {
+        if (((PCDFile *)pFile)->Read(hdrA, 0x60) != 0x60) { return 0; }
+        m_unk08 = *(int *)(hdrA + 0x00);
+        m_unkD0 = *(int *)(hdrA + 0x50);
+        memcpy(hdrB + 4, hdrA + 0x20, 0x10);
+        memcpy(hdrB + 0x14, hdrA + 0x30, 0x20);
+        *(int *)(hdrB + 0x34) = *(int *)(hdrA + 0x50);
+        *(int *)(hdrB + 0x38) = *(int *)(hdrA + 0x54);
+        memcpy(hdrB + 0x3C, hdrA + 0x58, 8);
+    }
+
+    if ((int)eVersion >= 0x10001) {
+        if (!LoadFxTriggers(pFile)) { return 0; }
+    }
+
+    if (((PCDFile *)pFile)->Read(meshHdr, 0x10) != 0x10) { return 0; }
+    memcpy(m_unk80, hdrB + 4, 0x10);
+
+    if (meshHdr[0] != 0) {
+        m_unk10 = new PMesh();
+        if (m_unk10 == 0) { CdsAssert__FPciPc("PMNode.cpp", 0x235, "mpMesh"); }
+        m_unk3E |= 1;
+        if (((PMesh *)m_unk10)->Load(pFile, pArr, meshHdr[0], meshHdr[1], eVersion, false) == 0) { return 0; }
+        if (((PMesh *)m_unk10)->m_unkC != 0) { m_unk3E |= 0x10; }
+        memcpy(box, hdrB + 0x14, 0x20);
+        ((PMesh *)m_unk10)->SetBoundBox(&box);
+        m_unk28 = (char *)m_unk10 + 0x10;
+        ((PMesh *)m_unk10)->m_unkE = hdrB[0x38];
+        m_unk3C = hdrB[0x38];
+    }
+
+    if (((PCDFile *)pFile)->Read(&tag, 4) != 4) { return 0; }
+    while (tag != 9) {
+        if (tag != 8) { return 0; }
+        apCloneChild = (PMNode *)__nw__FUi(0x100);
+        if (apCloneChild) {
+            *(void **)apCloneChild = __vt__9PResource + 0x970;
+            apCloneChild->m_unk04 = 0;
+            *(void **)apCloneChild = __vt__6PMNode + 0xE00;
+            __ct__6PArrayFv(&apCloneChild->m_unk14);
+            sceVu0UnitMatrix(apCloneChild->m_unk40);
+            __ct__6PArrayFv(&apCloneChild->m_unkD8);
+            apCloneChild->InitMembers();
+        }
+        ((apCloneChild) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0x25D, "apChildBone"));
+        Add__6PArrayFPv(&m_unk14, apCloneChild);
+        if (!apCloneChild->LoadBone(pFile, pArr, eVersion)) { return 0; }
+        if (((PCDFile *)pFile)->Read(&tag, 4) != 4) { return 0; }
+    }
+    return 1;
+}
+
 // DRAFT: 0x00195180 DestroyChildren__6PMNodeFv
 // note: original keeps an inner pChild != 0 guard before the slot-8 call (CW drops it here) and calls through t9 with a nop after jalr; tried cast, local fn pointer, for-break loop; all leave the same diff.
 void PMNode::DestroyChildren() {
