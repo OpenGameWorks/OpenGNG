@@ -46,6 +46,8 @@ public:
     void *GetFirstMesh();
     void StopAmbientSoundsByObject();
     void StopAllSoundsByObject();
+    void StopSoundBySoundRef(unsigned int uID);
+    void StopSoundBySoundRefIfAmbient(unsigned int uID);
     int CreateObjectDisplayList();
     void *AttachFx(unsigned int uID, float fA, float fB, float fC, float fD, bool bFlag);
     void CopyFxTriggers(PMNode &src);
@@ -82,6 +84,7 @@ public:
     void EnableFx(bool bA, bool bB);
     void DebugDrawBox(int nMode);
     void CopyMNode(PMNode &src, bool bFlag);
+    int Animate(float fA, float fB, PMat4 *pMat, int nMode, bool bFlag);
 
     int m_unk04;           // 0x004 state; 2 skips frustum test
     int m_unk08;            // 0x008 zeroed by InitMembers
@@ -94,8 +97,8 @@ public:
     void *m_unk24;          // 0x024 object whose vtable slot 0x48 returns a frame rate
     void *m_unk28;          // 0x028 AnimateBox result (PChannel return or PMesh + 0x10)
     float m_unk2C;          // 0x02C fade value
-    int m_unk30;            // 0x030
-    int m_unk34;            // 0x034
+    float m_unk30;          // 0x030
+    float m_unk34;          // 0x034
     float m_unk38;          // 0x038
     unsigned char m_unk3C;  // 0x03C
     unsigned char m_unk3D;  // 0x03D
@@ -119,7 +122,7 @@ public:
     int m_unkE8;            // 0x0E8 copy of mst_NextPMNodeRef
     int m_unkEC;            // 0x0EC
     int m_unkF0;            // 0x0F0
-    unsigned char m_unkF4;  // 0x0F4
+    signed char m_unkF4;    // 0x0F4
     char _padF5[0x3];
     PObjectDisplayList *m_pObjDisplayList; // 0x0F8
     char _pad0FC[0x14];
