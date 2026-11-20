@@ -1,8 +1,15 @@
 // FLAGS: -str readonly
 #include "Player.h"
+#include "PResourceManager.h"
 
 // TODO(header): foreign declarations
 extern unsigned char gEng[];
+extern PResourceManager *mpResMgr__15EntityBaseClass;
+struct SpinEffectEntry {
+    unsigned int a;
+    unsigned int b;
+};
+extern "C" void SetFrameRate__6PMNodeFfb(PMNode *, float, bool);
 class Interface {
 public:
     char _pad000[0x10];
@@ -95,8 +102,14 @@ public:
     virtual void Slot10(float arg0);
     virtual void Slot14();
     virtual void Animate(float arg0, float arg1, PMat4 *arg2, int arg3, bool arg4);
-    char _pad04[0x20];
+    char _pad04[0x0C];
+    void *m_unk10;
+    char _pad14[0x24 - 0x14];
     AnimStateObject *m_unk24;
+    char _pad28[0x3E - 0x28];
+    unsigned char m_unk3E;
+    void SetRenderPassStatus(bool bA, bool bB, bool bC, bool bD);
+    void *GetFirstMesh();
     void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
     void EnableFx(bool arg0, bool arg1);
     void SetAnimLoopCount(int arg0, bool arg1);
@@ -154,6 +167,10 @@ extern int mbHard__15EntityBaseClass;
 extern int ComboLevel[20];
 extern int CAUGHT_TIME;
 extern float AttachedTimer[5];
+class MathAPI {
+public:
+    static int RandomIntRange(int arg0, int arg1);
+};
 struct AttachableJoint {
     int m_unk00;
     int m_unk04;
@@ -263,6 +280,41 @@ void Player::DetachJoint(int arg0) {
         m_unk2FC = fTimer;
         if (fTimer == 0.0f) {
             *(float *)&m_unk2F8 = 0.0f;
+        }
+    }
+}
+
+// DRAFT: 0x00159150 FreeJoint__6PlayerFi
+// note: 10 words differ: f0/f1 swapped for fTimer and zero (lwc1 first load lands in f0), a0=1 hoisted into bc1f delay slot, v0/v1 swapped in flag compare. Tried: flag temp, store reorder, reload of AttachedTimer.
+void Player::FreeJoint(int arg0) {
+    int idx = m_unk23D4 + arg0;
+    m_unk23D1 = (unsigned int)idx < 4U;
+    if ((unsigned int)idx >= 6U) {
+        idx = 5;
+    }
+    if (AttachedTimer[5 - idx] == 0.0f) {
+        m_unk2FC = AttachedTimer[5 - idx];
+        *(float *)&m_unk2F8 = 0.0f;
+    }
+    int freed = 0;
+    int r = MathAPI::RandomIntRange(1, 4);
+    int i = r;
+    while (m_unk23D4 != 5) {
+        if (m_pFreeJoints[i].m_unk04 == 0) {
+            m_pFreeJoints[i].m_unk00 = 0;
+            freed += 1;
+            m_pFreeJoints[i].m_unk04 = 1;
+            m_unk23D4 += 1;
+            if (freed == arg0) {
+                return;
+            }
+        }
+        i += 1;
+        if (i == r) {
+            return;
+        }
+        if (i == 5) {
+            i = 0;
         }
     }
 }
@@ -494,6 +546,31 @@ int Player::CheckHammer(bool arg0) {
         i++;
     } while (i < 8);
     return 0;
+}
+
+// FUNCTION: 0x0015ABE0 FindCurrentItem__6PlayerFib
+int Player::FindCurrentItem(int arg0, bool arg1) {
+    signed char *pData = &AbilityTable[arg0 * 16];
+    signed char group = pData[4];
+    if ((unsigned int)pData[5] >= 4) {
+        CdsAssert__FPciPc("Player.cpp", 0x1D8E, "(u_int)pData->iGroup < ICON_GROUP");
+    }
+    signed char *row = (signed char *)((char *)this + pData[5] * 8 + 0x22B);
+    int i = 0;
+    do {
+        int idx = *row;
+        row++;
+        if (idx >= 0 && group == AbilityTable[idx * 16 + 4]) {
+            if (idx == arg0) {
+                return -3;
+            }
+            if (arg1 && arg0 < idx) {
+                return -2;
+            }
+        }
+        i++;
+    } while (i < 8);
+    return -1;
 }
 
 // DRAFT: 0x0015AE60 SetPowerupMotion__6PlayerFi
@@ -827,6 +904,39 @@ void Player::Over3Move() {
     MultipleAttack(&Over3Attacks[0]);
 }
 
+// DRAFT: 0x0015D3C0 Spin360Move__6PlayerFv
+// note: 49 words; branch layout differs (original places the 720 and 360 blocks out of line), and the Spin360Attack address is hoisted before the compares; tried reordered store, folded index
+void Player::Spin360Move() {
+    static unsigned short Spin360Attack[3] = {0x10, 0x08, 0xFFFF};
+    static unsigned short Spin720Attack[8] = {0x10, 0x08, 0x1E, 0x08, 0xFFFF, 0, 0, 0};
+    static unsigned int SpinEffect[9] = {0x8100020C, 0x82000367, 0x81000201, 0x820003B1, 0x81000337, 0x8200057F, 0, 0, 0x8100006B};
+    unsigned short *attack;
+    if (m_unk250 == 2) {
+        attack = Spin720Attack;
+    } else if (m_unk250 == 1) {
+        attack = Spin360Attack;
+    } else if (m_unk250 == 0) {
+        SpinEffectEntry *eff = 0;
+        if (m_unk260 == 0x33) {
+            m_unk250 = 1;
+            if (m_unk1FC != 0) {
+                eff = (SpinEffectEntry *)&SpinEffect[4];
+            }
+        } else {
+            m_unk250 = 2;
+            eff = (SpinEffectEntry *)&SpinEffect[(m_unk1FC != 0) ? 2 : 0];
+            if (m_unk1FC != 0) {
+                ((EntityBaseClass *)this)->PlaySound(0xAD);
+            }
+        }
+        if (eff != 0) {
+            m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(eff->a, eff->b, 0, 0, (EntityBaseClass *)this, 1.0f, true, 0, false);
+        }
+        attack = Spin360Attack;
+    }
+    MultipleAttack(attack);
+}
+
 // FUNCTION: 0x0015D4C0 UpwardStrikeMove__6PlayerFv
 void Player::UpwardStrikeMove() {
     static unsigned int UpperFx[3][2] = {{0x8100006A, 0x820000BC}, {0x810001ED, 0x8200039A}, {0x8100020C, 0x82000367}};
@@ -1081,6 +1191,35 @@ void Player::GrimIdleMove() {
     p[2] = 0;
 }
 
+// note: 36 words; the tier-zero block is inline where the original places it out of line, and the m_unk260 compares are ordered differently (original uses beq to the fp[13] block). Local fp with tier != 0 outer is the best form (36); tier == 0 outer gave 41.
+// DRAFT: 0x0015F0E0 GrimRunMove__6PlayerFv
+void Player::GrimRunMove() {
+    float *fp = m_unk3C;
+    int tier;
+    if (m_unk1BC < 0x32) {
+        tier = 0;
+    } else if (m_unk1BC < 0x4B) {
+        tier = 1;
+    } else if (m_unk1BC < 0x64) {
+        tier = 2;
+    } else {
+        tier = 3;
+    }
+    if (tier != 0) {
+        if (m_unk260 == 2 || m_unk260 == 1) {
+            if ((int)fp[13] >= *((unsigned char *)m_unk254 + 5)) {
+                SetAction(2);
+            }
+        } else {
+            SetAction(2);
+        }
+    } else {
+        EndAction();
+        SetFrameRate__6PMNodeFfb((PMNode *)fp, 0.5f, false);
+    }
+    GrimMove();
+}
+
 // DRAFT: 0x0015F5E0 FootStepSound__6PlayerFPUs
 // note: 6 words differ: addu index temp goes to a0 not a1, lhu/cvt order and mfc1 register swapped, slt sense inverted. Tried negated compare (31), index local (29), else-if sound chain (6, kept).
 void Player::FootStepSound(unsigned short *arg0) {
@@ -1169,6 +1308,33 @@ void Player::GetShieldPass(bool *arg0) {
         idx = 1;
     }
     arg0[idx] = 1;
+}
+
+// note: 26 words differ: this stays in s1 (original keeps it in s0), mesh/shield reload pattern after calls differs. Tried a top-level cached shield local (38), else-branch local (31), and the 26-word form kept.
+// DRAFT: 0x001600F0 SetShield__6PlayerFb
+void Player::SetShield(bool arg0) {
+    bool pass[3];
+    if (m_unk28C != 0) {
+        if (arg0) {
+            GetShieldPass(pass);
+            PMNode *mesh = mpResMgr__15EntityBaseClass->GetResource(0x81000002, true);
+            if (mesh == 0) {
+                CdsAssert__FPciPc("Player.cpp", 0x1077, "pShield");
+            }
+            void *first = mesh->GetFirstMesh();
+            PMNode *shield = (PMNode *)m_unk28C;
+            shield->m_unk10 = first;
+            shield->m_unk3E &= 0xEF;
+            if (first != 0 && *((unsigned char *)first + 0xC) != 0) {
+                shield->m_unk3E |= 0x10;
+            }
+            shield->SetRenderPassStatus(pass[0], pass[1], pass[2], true);
+            shield->Slot14();
+        } else {
+            ((PMNode *)m_unk28C)->m_unk10 = 0;
+            ((PMNode *)m_unk28C)->m_unk3E &= 0xEF;
+        }
+    }
 }
 
 // note: 4 words differ: original keeps the loaded pointer in a1 and passes it as a0 for the call; compiled code keeps it in t0. Tried void * and int locals; int does not compile, void * still 4 words.

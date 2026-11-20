@@ -48,6 +48,8 @@ public:
     void GrimSlash2Move();
     void GrimAirSlashMove();
     void GrimIdleMove();
+    void GrimMove();
+    void GrimRunMove();
     void ComboTarget(float arg0, float arg1, bool arg2);
     void HammerDSlashMove();
     void HammerSliceMove();
@@ -97,11 +99,14 @@ public:
     PMNode *IsPlayerOnNode(PMeshNode *arg0, bool arg1);
     void SetBoundingSphere(PMNode *arg0, float arg1);
     void DetachJoint(int arg0);
+    void FreeJoint(int arg0);
+    int FindCurrentItem(int arg0, bool arg1);
     void GetAttachableJointOffsets(int arg0, float (*arg1)[4]);
     void FinishCutCamera(float (*arg0)[4]);
     void DuckLaunchMove();
     void MBlow2Move();
     void SpinSlashMove();
+    void Spin360Move();
     void SliceMove();
     int GuardCheck(EntityBaseClass *arg0);
 
