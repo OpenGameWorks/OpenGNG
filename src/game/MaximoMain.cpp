@@ -49,6 +49,12 @@ extern unsigned char DemoTableP[24];
 extern unsigned char gPad[448];
 extern unsigned char gEng[0x1A000];
 extern "C" void DisplayLevelName__9InterfaceFii(void *, int, int);
+extern "C" void SetMonoOut__6PSoundFb(void *, unsigned char);
+extern "C" void SetMainMusicRelVolume__6PSoundFUi(void *, unsigned int);
+extern "C" void SetEffectsRelVolume__6PSoundFUi(void *, unsigned int);
+extern "C" void ScaleSet__6PMNodeFffff(void *, float, float, float, float);
+extern "C" void EnableVibrate__3PadFb(void *, unsigned char);
+extern "C" void SetColor__8FontNodeF9FontColor(void *, int);
 extern "C" unsigned char PlayingCutCamera__6CameraFv(void *);
 extern "C" void __ct__9MaxEngineFv(void *);
 extern "C" void __ct__13EntityManagerFv(void *);
@@ -70,6 +76,14 @@ extern "C" void ResetAnimations__15PCutScenePlayerFv(void *pThis);
 extern "C" void SetBgNodesOpacity__15PCutScenePlayerFP6PArrayf(void *pThis, void *pArray, float fOpacity);
 extern "C" void CutSceneEnter__6PSoundFPUiUiUiUi(void *pThis, unsigned int *pOut, unsigned int nA, unsigned int nB, unsigned int nC);
 extern char gGfxEng[1504384];
+extern "C" void InitStatic__15EntityBaseClassFP16PResourceManagerP13EntityManagerP9PFrustrum(void *, void *, void *);
+extern "C" void LoadResource__13EntityManagerFPcb(void *, const char *, bool);
+extern "C" void StaticDemo__9InterfaceFPCcUiUiiUs(void *, const char *, unsigned int, unsigned int, int, unsigned short);
+extern "C" void Reset__13EntityManagerFb(void *, bool);
+extern "C" void Destroy__9InterfaceFv(void *);
+extern "C" void Destroy__9MaxEngineFv(void *);
+extern "C" int PlayMovie__9MaxEngineFiiUi(void *, int, int, unsigned int);
+extern float GAME_FPS;
 struct PMChildList {
     unsigned int count;     // child count
     unsigned int m_unk4;
@@ -174,6 +188,50 @@ void MaximoMain::Controls() {
         }
         pNode->Slot4(0, 0.0f, 1.0f, 0, 0);
         Render__9InterfaceFi(gInterface, 0);
+    }
+}
+
+// Byte fields of MemorySetting read by RefreshOptionsValue; the struct is only a view.
+struct MemorySettingBytes {
+    unsigned char m_unk0;
+    unsigned char m_unk1;
+    unsigned char m_unk2;
+    unsigned char m_unk3;
+    signed char m_unk4;
+    signed char m_unk5;
+};
+
+// DRAFT: 0x00135FB0 RefreshOptionsValue__10MaximoMainFP13MemorySettingb
+// note: DIFF 14 words; the original keeps the MemorySetting pointer in s1 and the bool in s0, ours swaps them. Tried: bool->unsigned char for SetMonoOut and EnableVibrate (147->45->14), inline cast without local (139).
+void MaximoMain::RefreshOptionsValue(MemorySetting *arg0, bool arg1) {
+    MemorySettingBytes *mem = (MemorySettingBytes *)arg0;
+    if (m_unk19B44 == 0 || arg1) {
+        SetMonoOut__6PSoundFb(&gSound, mem->m_unk3);
+        if (mem->m_unk3 != 0) {
+            SetColor__8FontNodeF9FontColor(m_unk19AE0, 7);
+            SetColor__8FontNodeF9FontColor(m_unk19AE4, 4);
+        } else {
+            SetColor__8FontNodeF9FontColor(m_unk19AE0, 4);
+            SetColor__8FontNodeF9FontColor(m_unk19AE4, 7);
+        }
+    }
+    if (m_unk19B44 == 1 || arg1) {
+        SetMainMusicRelVolume__6PSoundFUi(&gSound, (unsigned int)mem->m_unk4);
+        ScaleSet__6PMNodeFffff(m_unk19B3C, (float)mem->m_unk4 / 100.0f, 1.0f, 1.0f, 1.0f);
+    }
+    if (m_unk19B44 == 2 || arg1) {
+        SetEffectsRelVolume__6PSoundFUi(&gSound, (unsigned int)mem->m_unk5);
+        ScaleSet__6PMNodeFffff(m_unk19B40, (float)mem->m_unk5 / 100.0f, 1.0f, 1.0f, 1.0f);
+    }
+    if (m_unk19B44 == 3 || arg1) {
+        EnableVibrate__3PadFb(&gPad, mem->m_unk1);
+        if (mem->m_unk1 != 0) {
+            SetColor__8FontNodeF9FontColor(m_unk19B04, 4);
+            SetColor__8FontNodeF9FontColor(m_unk19B08, 7);
+        } else {
+            SetColor__8FontNodeF9FontColor(m_unk19B04, 7);
+            SetColor__8FontNodeF9FontColor(m_unk19B08, 4);
+        }
     }
 }
 
@@ -325,6 +383,65 @@ PMNode *MaximoMain::SetMarker(PMNode *arg0, int arg1, PMNode *arg2) {
         }
     }
     return node;
+}
+
+// DRAFT: 0x001387C0 MainGame__10MaximoMainFv
+// note: DIFF 106; original frame 0x40 keeps this in s1, pEntity in s2, this+0x137E0 in s0 (ours s0/s1, frame 0x30); tried local pMgr (107) and pSelf copy (117)
+void MaximoMain::MainGame() {
+    char *pGfxEng = (char *)this + 0x188A4;
+    m_unk19A74 = 0;
+    InitStatic__15EntityBaseClassFP16PResourceManagerP13EntityManagerP9PFrustrum(pGfxEng, (char *)this + 0x137E0, (char *)this + 0xF0);
+    LoadResource__13EntityManagerFPcb((char *)this + 0x137E0, "PSXDATA\\RESOURCE\\GLOBAL.PAK", true);
+    *(void **)gGfxEng = pGfxEng;
+    for (;;) {
+        switch (m_unk19A74) {
+        case 0:
+            StaticDemo__9InterfaceFPCcUiUiiUs(gInterface + 0x1710, "CAPCOM", 1, 0x19B, (int)GAME_FPS * 6, 0);
+            m_unk19A74 = 1;
+            break;
+        case 1:
+            ResetGameData__10MemoryCardFv(gMC);
+            m_unk19A78 = 0;
+            m_unk19A74 = AttractDemo();
+            break;
+        case 2:
+            ResetGameData__10MemoryCardFv(gMC);
+            miAbilityCount__15EntityBaseClass = 0;
+            PlayMovie__9MaxEngineFiiUi(this, 0, 0, 1);
+            m_unk19A74 = 4;
+            break;
+        case 3:
+            if (LoadGame()) {
+                m_unk19A74 = 4;
+                m_unk19A70 = 7;
+            } else {
+                m_unk19A74 = 1;
+            }
+            break;
+        case 4: {
+            int r = Game(0);
+            if (r == 2) {
+                m_unk19A74 = 5;
+            } else if (r == 1) {
+                Reset__13EntityManagerFb((char *)this + 0x137E0, true);
+                Destroy__9InterfaceFv(gInterface + 0x1710);
+                Destroy__9MaxEngineFv(this);
+                m_unk19A74 = 6;
+            } else if (r == 0) {
+                return;
+            }
+            break;
+        }
+        case 5:
+            m_unk19A74 = 1;
+            break;
+        case 6:
+            m_unk19A74 = 1;
+            break;
+        case 7:
+            return;
+        }
+    }
 }
 
 // DRAFT: 0x00138A40 QuitGame__10MaximoMainFv
@@ -631,7 +748,7 @@ unsigned int MaximoMain::FindFirstDialog(LevelFiles const *arg0, bool arg1) {
 
 // FUNCTION: 0x0013ED80 PauseDisplay__10MaximoMainFi
 void MaximoMain::PauseDisplay(int arg0) {
-    FontManager *fm = (FontManager *)(gInterface + 0x1790);
+    FontManager *fm = (FontManager *)(gInterface + 0x80);
     int i = 0;
     int off = 0;
 

@@ -55,7 +55,7 @@ void ProcessNextSubtitle() {
     FontSubtitle *pEntry;
     FontNode *pNode;
 
-    gi = (FontManager *)(gInterface + 0x1790);
+    gi = (FontManager *)(gInterface + 0x80);
     gi->InitFrame();
     if (subTitle.m_unk0 != 0) {
         if (subTitle.m_unk14 < (float)subTitle.m_unk18) {

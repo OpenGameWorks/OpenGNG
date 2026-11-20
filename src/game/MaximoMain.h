@@ -5,6 +5,7 @@
 
 class PMNode;
 class PArray;
+class MemorySetting;
 struct LevelFiles;
 
 class MaximoMain {
@@ -34,6 +35,10 @@ public:
     unsigned int FindFirstDialog(LevelFiles const *arg0, bool arg1);
     void InitCutScene();
     void PauseDisplay(int arg0);
+    void RefreshOptionsValue(MemorySetting *arg0, bool arg1);
+    void MainGame();
+    int Game(int arg0);
+    int AttractDemo();
 
     char _pad000[0xD0];
     int m_unkD0;            // 0x0D0
@@ -50,8 +55,8 @@ public:
     char _pad18840[0x19784 - 0x18840];
     int m_unk19784;         // 0x19784
     char _pad19788[0x19A70 - 0x19788];
-    int m_unk19A70;         // 0x19A70, game state (8 after QuitGame, 6 after SetLevelClear, 9/10 after RestartGame)
-    char _pad19A74[0x19A78 - 0x19A74];
+    int m_unk19A70;         // 0x19A70, game state (7 after MainGame's LoadGame succeeds, 8 after QuitGame, 6 after SetLevelClear, 9/10 after RestartGame)
+    int m_unk19A74;         // 0x19A74, MainGame state switch word
     int m_unk19A78;         // 0x19A78, fallback level index for GetLevelFile
     int m_unk19A7C;         // 0x19A7C, cleared by the constructor
     char _pad19A80[0x19A88 - 0x19A80];
@@ -67,7 +72,15 @@ public:
     PMNode *m_unk19ACC;     // 0x19ACC, title animation node found by LoadTitleMesh
     PMNode *m_unk19AD0;     // 0x19AD0, copyright node found by LoadTitleMesh
     int m_unk19AD4;         // 0x19AD4, press-start state counter (0 to 30 pulse)
-    char _pad19AD8[0x19B44 - 0x19AD8];
+    char _pad19AD8[0x19AE0 - 0x19AD8];
+    void *m_unk19AE0;       // 0x19AE0, FontNode colored by RefreshOptionsValue (sound mono)
+    void *m_unk19AE4;       // 0x19AE4, FontNode colored by RefreshOptionsValue (sound mono)
+    char _pad19AE8[0x19B04 - 0x19AE8];
+    void *m_unk19B04;       // 0x19B04, FontNode colored by RefreshOptionsValue (vibrate)
+    void *m_unk19B08;       // 0x19B08, FontNode colored by RefreshOptionsValue (vibrate)
+    char _pad19B0C[0x19B3C - 0x19B0C];
+    PMNode *m_unk19B3C;     // 0x19B3C, slider mesh scaled by the main music volume
+    PMNode *m_unk19B40;     // 0x19B40, slider mesh scaled by the effects volume
     int m_unk19B44;         // 0x19B44, cleared by the constructor
     int m_unk19B48;         // 0x19B48, cleared by the constructor
     int m_unk19B4C;         // 0x19B4C, cleared by the constructor

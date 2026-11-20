@@ -38,7 +38,7 @@ void ExitLevel::OutputDebug()
 void DisplayTime0(int nTime, float fTime)
 {
     char buf[0x40];
-    FontManager *pFont = (FontManager *)(gInterface + 0x1790);
+    FontManager *pFont = (FontManager *)(gInterface + 0x80);
     char *pEntry;
 
     pFont->RemoveText((unsigned short)1);
