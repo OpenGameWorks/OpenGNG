@@ -58,6 +58,13 @@ public:
     char _pad000[0xF0];
 };
 
+class EffectAPI {
+public:
+    char _pad000[20];
+    int CreateOneshot(unsigned int arg0, unsigned int arg1, float (*arg2)[4], float (*arg3)[4], EntityBaseClass *arg4, float arg5, bool arg6, int arg7, bool arg8);
+};
+extern EffectAPI mEffectAPI__13EntityManager;
+
 class MathAPI {
 public:
     static float Distance(float (*arg0)[4], float (*arg1)[4]);
@@ -211,6 +218,16 @@ extern float mfSleepDistance__15EntityBaseClass;
 extern float BEHIND_WAKE;
 extern "C" float atan2f(float y, float x);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
+extern "C" void memcpy(void *, const void *, unsigned int);
+extern unsigned int guHitMarkFxID[7][7];
+extern char gClockworkHitSpark[96];
+struct tagParticleSparksParams { char _pad000[0x60]; };
+class PParticleSparks : public PParticleSystem {
+public:
+    PParticleSparks();
+    void Create(tagParticleSparksParams *arg0, float arg1, float arg2, float arg3);
+};
+#define CDS_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert__FPciPc("EntityBaseClass.cpp", line, msg))
 
 // Render-path views: the light manager, the PGfxEngine methods it calls, the ambient table, Shadow and the m_unk3C draw object.
 class PMat4;
@@ -408,6 +425,44 @@ PZinDamageFx *EntityBaseClass::CreateDamageFx(float arg0, unsigned int arg1) {
     ((PParticleManager *)(gGfxEng + 0x154F00))->Add((PParticleSystem *)pFx);
     ((PParticleSystem *)pFx)->Start();
     return pFx;
+}
+
+// DRAFT: 0x0014AB30 CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb
+// note: else-arm table index one word short (b +0xA vs +0xB), table base reg v0 vs v1, temp reg swapped; 109 words over 8 variants (guHitMarkFxID[arg2][arg1], byte offset, row cast, flat &[arg2][0])
+void EntityBaseClass::CreateHitMarkFx(float (*arg0)[4], eHitObjectType arg1, eHitWeaponType arg2, bool arg3) {
+    PParticleManager *pMgr;
+    PParticleSystem *pFx;
+    PParticleSparks *pSparks;
+    tagParticleSparksParams params;
+    unsigned int fxId;
+
+    pMgr = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
+    CDS_ASSERT(0xAD6, pMgr != 0, "apParticleMgr");
+    if (arg3) {
+        fxId = 0x830001B9;
+    } else {
+        fxId = ((unsigned int *)&guHitMarkFxID[arg2][0])[arg1];
+    }
+    pFx = pMgr->Create(fxId, mHitPos__15EntityBaseClass[0], mHitPos__15EntityBaseClass[1], mHitPos__15EntityBaseClass[2], 0, true);
+    if (pFx != 0 && pMgr->IsValid(pFx)) {
+        pFx->Start();
+    }
+    if (pFx != 0 && pMgr->IsValid(pFx)) {
+        pFx->FadeAndDie(0);
+    }
+    if (arg1 == 2 && !arg3) {
+        memcpy(&params, gClockworkHitSpark, 0x60);
+        *(u_long128 *)((char *)&params + 0x10) = (u_long128)((unsigned long long)0x3F800000 << 32);
+        if (arg2 == 2 || arg2 == 3) {
+            *(unsigned int *)((char *)&params + 0x3C) = 0x3F266666;
+        }
+    }
+    pSparks = new PParticleSparks();
+    CDS_ASSERT(0xAEF, pSparks != 0, "apSparks");
+    pSparks->Create(&params, mHitPos__15EntityBaseClass[0], mHitPos__15EntityBaseClass[1], mHitPos__15EntityBaseClass[2]);
+    pMgr->Add((PParticleSystem *)pSparks);
+    pSparks->Start();
+    pSparks->FadeAndDie(0);
 }
 
 // FUNCTION: 0x0014AD50 ShakeScreen__15EntityBaseClassFiiiifi
@@ -711,6 +766,47 @@ void EntityBaseClass::UpdateRipple(float arg0, unsigned int arg1, bool arg2) {
         ((PParticleRipples *)(gfx + 0x1790))->Create(v, 0.5f, 8.0f, r);
         ((PParticleRipples *)(gfx + 0xED0))->Create(v, 0.5f, 8.0f, r);
     }
+    if (arg2) {
+        ((PParticleManager *)gfx)->CreateEweedReaction(pos);
+    }
+}
+
+// DRAFT: 0x0014BAE0 CreateSplash__15EntityBaseClassFfbb
+// note: 2 words differ (mtc1 f12/f13 order for v[0]); scheduling depends on the preceding UpdateRipple body: with it emptied, v[0] = RandomFloatRange(3.0f, -3.0f) + pos[0] matches, so recheck that form once UpdateRipple matches
+void EntityBaseClass::CreateSplash(float arg0, bool arg1, bool arg2) {
+    float pos[4];
+    float v[4];
+    float r;
+    float (*src)[4];
+    PParticleSystem *ps;
+    if (this->m_unk3C != 0) {
+        src = (float (*)[4])(this->m_unk3C + 0x80);
+    } else {
+        src = (float (*)[4])((char *)this + 0x190);
+    }
+    *(u_long128 *)pos = *(u_long128 *)src;
+    pos[1] = arg0;
+    if (arg1) {
+        mEffectAPI__13EntityManager.CreateOneshot(0x8100004D, 0x82000085, (float (*)[4])pos, 0, 0, 0.5f, false, 0, false);
+    }
+    PlaySound(0x14);
+    char *gfx = (char *)&gGfxEng + 0x154F00;
+    ps = ((PParticleManager *)gfx)->Create(0x83000141, pos[0], pos[1], pos[2], 0, true);
+    if (ps != 0 && ((PParticleManager *)gfx)->IsValid(ps)) {
+        ps->Start();
+    }
+    if (ps != 0 && ((PParticleManager *)gfx)->IsValid(ps)) {
+        ps->FadeAndDie(0);
+    }
+    v[0] = pos[0] + MathAPI::RandomFloatRange(3.0f, -3.0f);
+    v[1] = pos[1];
+    v[2] = pos[2] + MathAPI::RandomFloatRange(-3.0f, 3.0f);
+    r = MathAPI::RandomFloatRange(60.0f, 90.0f);
+    ((PParticleRipples *)(gfx + 0x1790))->Create(v, 0.5f, 8.0f, r);
+    ((PParticleRipples *)(gfx + 0xED0))->Create(v, 0.5f, 8.0f, r);
+    r = MathAPI::RandomFloatRange(60.0f, 90.0f);
+    ((PParticleRipples *)(gfx + 0x1790))->Create(v, 0.5f, 8.0f, r);
+    ((PParticleRipples *)(gfx + 0xED0))->Create(v, 0.5f, 8.0f, r);
     if (arg2) {
         ((PParticleManager *)gfx)->CreateEweedReaction(pos);
     }
