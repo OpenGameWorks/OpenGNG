@@ -4,9 +4,14 @@
 #include "PMat4.h"
 
 // TODO(header): foreign declarations
+extern "C" void sceVu0CopyVector(void *pDst, float *pSrc);
 class PVec3 {
 public:
     PVec3 operator-(PVec3 &rhs);
+    PVec3 &operator=(const PVec3 &rhs) {
+        sceVu0CopyVector(this, (float *)&rhs);
+        return *this;
+    }
     float m_fX, m_fY, m_fZ, m_fW;
 };
 extern "C" float sqrtf(float fVal);
@@ -148,26 +153,38 @@ bool PCutScenePlayer::LoadNodeNameTable(PPakFile *pFile, unsigned int nCount, PA
 }
 
 // DRAFT: 0x001BBD10 GetViewMatrix__15PCutScenePlayerFP5PMat4
-// note: DIFF 138; original frame 0xC0 with s0..s5 saves and scratch at 0xB0, ours frame 0x90 with s0..s2; cop1 0x46010344 (sqrt) not reproduced; copying vDelta via sceVu0CopyVector gave 139
+// note: 122 differing words; original frame 0x90 (s0..s2 saves, vDelta at 0x70, operator- temp at 0x80), ours frame 0xC0 (s0..s5 saves, this copied to s4, pMat to s3, vDelta at 0xA0, temp at 0xB0); sqrt sequence (c1 0x10344) order not reproduced. VU0/COP0 premise false: no VU0/COP0 instructions here. Tried: vTmp/vDelta split (139), element c-arrays (129), c-arrays first (122), direct member access (122), swapped sqrt sum (122), pMat cast at top (122); in-class operator= copy is the 122 best
 void PCutScenePlayer::GetViewMatrix(PMat4 *pMat) {
-    PVec3 vDelta = *(PVec3 *)((char *)this + 0xE0) - *(PVec3 *)((char *)this + 0xC0);
-    float *v = (float *)&vDelta;
-    float fLen = sqrtf(v[0] * v[0] + v[2] * v[2]);
-    float fPitch = atan2f(-v[1], fLen) * 57.29578f;
+    float *m = (float *)pMat;
+    float c0[4];
+    float c1[4];
+    float c2[4];
+    PVec3 vDelta;
+    vDelta = *(PVec3 *)((char *)this + 0xE0) - *(PVec3 *)((char *)this + 0xC0);
+    float fLen = sqrtf(vDelta.m_fZ * vDelta.m_fZ + vDelta.m_fX * vDelta.m_fX);
+    float fPitch = atan2f(-vDelta.m_fY, fLen) * 57.29578f;
     *(float *)((char *)this + 0xD0) = fPitch;
     fPitch += 180.0f;
     *(float *)((char *)this + 0xD0) = fPitch;
     Round180__Ff(fPitch);
-    *(float *)((char *)this + 0xD4) = atan2f(v[0], -v[2]) * 57.29578f;
+    *(float *)((char *)this + 0xD4) = atan2f(vDelta.m_fX, -vDelta.m_fZ) * 57.29578f;
     *(float *)((char *)this + 0xD8) = *(float *)((char *)this + 0xF0);
     sceVu0UnitMatrix(pMat);
     pMat->RotateY(*(float *)((char *)this + 0xD4));
     pMat->RotateX(*(float *)((char *)this + 0xD0));
     pMat->RotateZ(*(float *)((char *)this + 0xD8));
-    float *m = (float *)pMat;
-    float c0[4] = { m[0], m[4], m[8], 1.0f };
-    float c1[4] = { m[1], m[5], m[9], 1.0f };
-    float c2[4] = { m[2], m[6], m[10], 1.0f };
+    c0[0] = m[0];
+    c0[1] = m[4];
+    c0[2] = m[8];
+    c0[3] = 1.0f;
+    c1[0] = m[1];
+    c1[1] = m[5];
+    c1[2] = m[9];
+    c1[3] = 1.0f;
+    c2[0] = m[2];
+    c2[1] = m[6];
+    c2[2] = m[10];
+    c2[3] = 1.0f;
     m[12] = -sceVu0InnerProduct(c0, (float *)((char *)this + 0xC0));
     m[13] = -sceVu0InnerProduct(c1, (float *)((char *)this + 0xC0));
     m[14] = -sceVu0InnerProduct(c2, (float *)((char *)this + 0xC0));
@@ -299,7 +316,7 @@ void PCutScenePlayer::Abort() {
     SetBgNodesOpacity((PArray *)m_unk80, 0.0f);
     SetBgNodesOpacity((PArray *)m_unk70, 1.0f);
     KillActorFx();
-    ((FontManager *)(gInterface + 0x1790))->RemoveAll(true);
+    ((FontManager *)(gInterface + 0x80))->RemoveAll(true);
     if ((m_unk213D & 1) != 0) {
         Unload(true);
     } else {
@@ -338,7 +355,7 @@ void PCutScenePlayer::ResetAnimations() {
     if (m_unk54 != 0) {
         m_unk54->V9(&sp50);
     } else {
-        ((FontManager *)(gInterface + 0x1790))->InitSubTitle(m_unk2130);
+        ((FontManager *)(gInterface + 0x80))->InitSubTitle(m_unk2130);
     }
     printf("**** Cutscene load ****\n");
     AttachActors();
@@ -451,7 +468,7 @@ void PCutScenePlayer::UpdatePlayer() {
             pElem = (nIdx < m_unkB0) ? (char *)m_unkB8[m_unkB4] : 0;
         } while (pElem != 0);
     }
-    ((FontManager *)(gInterface + 0x1790))->RemoveAll(true);
+    ((FontManager *)(gInterface + 0x80))->RemoveAll(true);
 }
 
 // DRAFT: 0x001BD340 Unload__15PCutScenePlayerFb
@@ -543,44 +560,28 @@ PCutScenePlayer::~PCutScenePlayer() {
     __dt__6PArrayFv((char *)this + 0x60, -1);
 }
 
-// DRAFT: 0x001BDC80 __ct__15PCutScenePlayerFv
-// note: 66 differing words; ours uses a 0x20 frame with a `this` spill at 0x1C($sp) and reloads, while the original uses a 0x80 frame, saves s0..s6, keeps this in $s0 (set in the sceVu0UnitMatrix delay slot) and caches the sub-object pointers in s1..s6. Tried: sp local, named pA locals, pThis assigned after the sceVu0UnitMatrix call, member-array addressing (pThis->m_unk60 etc.); none reduced the count.
+// FUNCTION: 0x001BDC80 __ct__15PCutScenePlayerFv
 PCutScenePlayer::PCutScenePlayer() {
-    PCutScenePlayer *pThis;
-    PArray *pA60;
-    PArray *pA70;
-    PArray *pA80;
-    PArray *pA90;
-    PArray *pAA0;
-    PArray *pAB0;
-
     sceVu0UnitMatrix(this);
-    pThis = this;
-    pA60 = (PArray *)pThis->m_unk60;
-    __ct__6PArrayFv(pA60);
-    pA70 = (PArray *)pThis->m_unk70;
-    __ct__6PArrayFv(pA70);
-    pA80 = (PArray *)pThis->m_unk80;
-    __ct__6PArrayFv(pA80);
-    pA90 = (PArray *)pThis->m_unk90;
-    __ct__6PArrayFv(pA90);
-    pAA0 = (PArray *)pThis->m_unkA0;
-    __ct__6PArrayFv(pAA0);
-    pAB0 = (PArray *)&pThis->m_unkB0;
-    __ct__6PArrayFv(pAB0);
-    __ct__15PGrimReaperCapeFv((PGrimReaperCape *)pThis->m_unk100);
-    pThis->m_unk44 = 0;
-    pThis->m_unk40 = 0;
-    pThis->m_unk48 = 0;
-    pThis->m_unk4C = 0;
-    pThis->m_unk50 = 0;
-    pThis->m_unk54 = 0;
-    pThis->m_unk213C = 0;
-    pThis->m_unk213D = 1;
-    pAB0->Allocate(0x10);
-    pAA0->Allocate(4);
-    pA60->Allocate(0xC);
-    pA70->Allocate(0xC);
-    pA80->Allocate(0xC);
-    pA90->Allocate(0xC);
+    __ct__6PArrayFv((PArray *)m_unk60);
+    __ct__6PArrayFv((PArray *)m_unk70);
+    __ct__6PArrayFv((PArray *)m_unk80);
+    __ct__6PArrayFv((PArray *)m_unk90);
+    __ct__6PArrayFv((PArray *)&m_unkA0);
+    __ct__6PArrayFv((PArray *)&m_unkB0);
+    __ct__15PGrimReaperCapeFv((PGrimReaperCape *)m_unk100);
+    m_unk44 = 0;
+    m_unk40 = 0;
+    m_unk48 = 0;
+    m_unk4C = 0;
+    m_unk50 = 0;
+    m_unk54 = 0;
+    m_unk213C = 0;
+    m_unk213D = 1;
+    ((PArray *)&m_unkB0)->Allocate(0x10);
+    ((PArray *)&m_unkA0)->Allocate(4);
+    ((PArray *)m_unk60)->Allocate(0xC);
+    ((PArray *)m_unk70)->Allocate(0xC);
+    ((PArray *)m_unk80)->Allocate(0xC);
+    ((PArray *)m_unk90)->Allocate(0xC);
 }

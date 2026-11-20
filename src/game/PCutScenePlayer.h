@@ -11,6 +11,15 @@ class PCutSceneAnim;
 class PMat4;
 class PLightManager;
 
+// Empty member subobject with a declared destructor; it makes the constructor keep
+// `this` in memory and reload it, as the original does.
+class PCutSceneGuard {
+public:
+    PCutSceneGuard() {}
+    ~PCutSceneGuard() {}
+    char _pad000[4];
+};
+
 class PCutScenePlayer {
 public:
     PCutScenePlayer();
@@ -37,7 +46,7 @@ public:
     PCutSceneAnim *m_unk4C;
     PCutSceneAnim *m_unk50;
     PCutSceneAnim *m_unk54;
-    char m_unk58[4];
+    PCutSceneGuard m_unk58;
     int m_unk5C;
     char m_unk60[0x10];
     char m_unk70[0x10];
