@@ -9,6 +9,9 @@ extern "C" void DmaWaitForCompletion__Fib(int nChannel, bool bFlag);
 extern "C" void __dla__FPv(void *pMem);
 extern "C" void __dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
+// The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PTextureManager.cpp", line, #cond))
+#define CDS_ASSERT_TEX(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PTexture.h", line, #cond))
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void memset(void *, int, unsigned int);
 extern "C" void __ct__6PArrayFv(void *pThis);
@@ -263,15 +266,10 @@ PTexture::~PTexture() {
     }
 }
 
-// DRAFT: 0x0018A8E0 InitRendered__8PTextureFP19tagPs2TexDataHeaderP23tagGsTextureEnvironment13eTextureGroup
-// note: 24 lines differ: the 8-byte "pTexEnv" literal is gp-relative in mine but lui/addiu in the original, so the second assert block is one instruction short; literal placement is not controlled from source, no variant tried this session
+// FUNCTION: 0x0018A8E0 InitRendered__8PTextureFP19tagPs2TexDataHeaderP23tagGsTextureEnvironment13eTextureGroup
 int PTexture::InitRendered(tagPs2TexDataHeader *pTexHeader, tagGsTextureEnvironment *pTexEnv, eTextureGroup eGroup) {
-    if (pTexHeader == 0) {
-        CdsAssert__FPciPc("PTexture.h", 0x4D, "pTexHeader");
-    }
-    if (pTexEnv == 0) {
-        CdsAssert__FPciPc("PTexture.h", 0x4E, "pTexEnv");
-    }
+    CDS_ASSERT_TEX(0x4D, pTexHeader != 0);
+    CDS_ASSERT_TEX(0x4E, pTexEnv != 0);
     memcpy(m_unk4, pTexHeader, 0x2C);
     memcpy(m_unk40, pTexEnv, 0x60);
     m_unkA0 = eGroup;
@@ -504,11 +502,9 @@ void PTextureManager::Shutdown() {
 }
 
 // DRAFT: 0x0018C530 Init__15PTextureManagerFiii
-// note: DIFF 50 words. Original allocates this=s0, nTexMemStart=s3, nStaticSize=s2, nDynamicSize=s1; ours rotates them, so the base/source registers differ. Tried nHalf placement, n/2 form, unused local copies (no change), assert moved after member stores (92 words, worse).
+// note: 50 lines differ. Assert now uses CDS_ASSERT (slt/bnez/literal match) but s-register map is reversed: original this=s0, nDynamic=s1, nStatic=s2, nTexMemStart=s3; ours this=s3, nDynamic=s0. Tried nHalf placement, n/2 form, unused local copies, assert after member stores (92, worse), sum order (a1+a2)+a3 (50, no change).
 int PTextureManager::Init(int nTexMemStart, int nStaticSize, int nDynamicSize) {
-    if (nDynamicSize + (nTexMemStart + nStaticSize) >= 0x400001) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x46, "iTexMemStartAddr + iStaticBufferSize + iDynamicBufferSize <= 4 * 1024 * 1024");
-    }
+    CDS_ASSERT(0x46, nDynamicSize + (nTexMemStart + nStaticSize) < 0x400001);
     m_unk4 = nTexMemStart;
     m_unk8 = nStaticSize;
     m_unkC = nDynamicSize;

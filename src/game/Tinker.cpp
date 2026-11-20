@@ -10,6 +10,8 @@ extern "C" float DistanceXZ__7MathAPIFPA4_fPA4_f(MathAPI *, float (*)[4]);
 // The second argument is not set by the caller; the original leaves a1 untouched.
 extern "C" void *InstanceIsValid__15EntityBaseClassFUi(EntityBaseClass *pEntity);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
+// The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Tinker.cpp", line, #cond))
 extern EntityManager *mpEntMgr__15EntityBaseClass;
 extern "C" void *GetPtrToApparition__13EntityManagerFUi(EntityManager *pThis, unsigned int arg0);
 extern "C" int GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(EntityManager *pThis, int eLoadClass, PArray *pArray, float (*pBox)[4], float fRadius, int nFlags, bool bFlagA, bool bFlagB);
@@ -407,8 +409,7 @@ public:
     virtual unsigned char Slot13();
 };
 
-// DRAFT: 0x0020A0F0 SetEditableVars__6TinkerFPc
-// note: DIFF 46 words; assert test is beqz on a local pointer (orig sltu/xori/bnez, 2 insns longer); literal folded when used directly; per-element ternary block otherwise matches.
+// FUNCTION: 0x0020A0F0 SetEditableVars__6TinkerFPc
 void Tinker::SetEditableVars(char *arg0) {
     memcpy(&m_unk1B0, arg0, 0x84);
     m_unk1B8 *= 0x32;
@@ -429,10 +430,7 @@ void Tinker::SetEditableVars(char *arg0) {
         m_unk210 = 0;
     }
     if (m_unk1C0 == 0.0f && m_unk1C4 == 0.0f && m_unk1C8 == 0.0f) {
-        char *pMsg = "eif 0, 0, 0 error.  see keith or ted";
-        if (pMsg != 0) {
-            CdsAssert__FPciPc("Tinker.cpp", 0x82E, "!\"eif 0, 0, 0 error.  see keith or ted\"");
-        }
+        CDS_ASSERT(0x82E, !"eif 0, 0, 0 error.  see keith or ted");
         float *p = (m_unk3C != 0) ? (float *)(m_unk3C + 0x80) : m_unk190;
         m_unk240 = p[0];
         p = (m_unk3C != 0) ? (float *)(m_unk3C + 0x80) : m_unk190;
