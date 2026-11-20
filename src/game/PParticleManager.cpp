@@ -97,6 +97,12 @@ extern "C" void Animate__18PParticleMovingFogFf(PParticleMovingFog *pThis, float
 extern "C" void FrustrumTest__18PParticleMovingFogFP9PFrustrumPfff(PParticleMovingFog *pThis, PFrustrum *pFrustrum, float *pVec, float fA, float fB);
 extern "C" void FrustrumTest__12PParticleFogFP9PFrustrumPfffP5PMat4(PParticleFog *pThis, PFrustrum *pFrustrum, float *pVec, float fA, float fB, void *pMat);
 extern "C" void Animate__12PFlashScreenFv(void *pThis);
+extern "C" void RenderRefractionMappedFragments__10PGfxEngineFv(void *pThis);
+extern "C" void SetTexture__10PGfxEngineFi(void *pThis, int hTexture);
+extern "C" void SetZBufferUpdate__10PGfxEngineFb10eGsContext(void *pThis, bool bFlag, int eContext);
+extern "C" void Render__12PFlashScreenFv(void *pThis);
+extern "C" void Render__12PParticleFogFP5PMat4(void *pThis, void *pMat);
+extern "C" void Render__18PParticleMovingFogFv(void *pThis);
 
 class PParticleRain {
 public:
@@ -112,9 +118,12 @@ public:
     void SetLightningDensity(float fDensity);
     void SetDensity(float fDensity, bool bFlag);
     void Create(tagParticleRainParams *pParams, float (*pA)[4], float (*pB)[4], PFlashScreen *pScreen);
-    char _pad000[0x8];
+    int m_unk4;                 // 0x04
+    char _pad008[0x4];
     int m_unkC;                 // 0x0C
-    char _pad010[0xC4];
+    char _pad010[0x9];
+    unsigned char m_unk19;      // 0x19
+    char _pad01A[0xD4 - 0x1A];
     int m_unkD4;                // 0xD4
 };
 
@@ -975,6 +984,116 @@ int PParticleManager::IsValid(PParticleSystem *pSystem) {
         return 1;
     }
     return 0;
+}
+
+// DRAFT: 0x001B9B90 Render__16PParticleManagerF8ePSLayerb
+// note: DIFF 150 words, size 0x450 vs 0x448. Missing andi on the m_unk0 arm before loop B; loop B branch shape; element-select b around lw a0,0(v1); index register; trailing SetZBufferUpdate reloc at 0x0404. Tried: while and do-while loop A, int/bool bFound (bool form 159 words), && form (152), break form (150).
+int PParticleManager::Render(ePSLayer eLayer, bool bFlag) {
+    int nSum = 0;
+    unsigned int nIdx;
+    PParticleRain *pFx;
+    PParticleFog *pFog;
+    int bFound;
+
+    SetZBufferUpdate__10PGfxEngineFb10eGsContext(&gGfxEng, 0, 0);
+    m_unk4 = 0;
+    pFx = (m_unk0 != 0) ? (PParticleRain *)m_unk8[0] : 0;
+    if (pFx != 0) {
+        do {
+            if ((eLayer == pFx->m_unkD4) && (pFx->m_unk19 == 0)) {
+                pFx->Slot02();
+                nSum += pFx->m_unk4;
+            }
+            nIdx = m_unk4 + 1;
+            m_unk4 = nIdx;
+            pFx = (nIdx < m_unk0) ? (PParticleRain *)m_unk8[m_unk4] : 0;
+        } while (pFx != 0);
+    }
+
+    if (eLayer == ePSLayer_2) {
+        RenderParticleInstanceGroups(false);
+        RenderAuraParticles();
+        RenderGroundDustFx();
+        RenderSulphurReactionFx();
+        RenderEweedReactionFx();
+        m_unk24 = 0;
+        pFog = (m_unk20 != 0) ? m_unk28[0] : 0;
+        while (pFog != 0) {
+            Render__12PParticleFogFP5PMat4(pFog, 0);
+            nIdx = m_unk24 + 1;
+            m_unk24 = nIdx;
+            pFog = (nIdx < m_unk20) ? m_unk28[m_unk24] : 0;
+        }
+        if (m_unk9B4 != 0) {
+            Render__18PParticleMovingFogFv(m_unk9B4);
+        }
+    }
+
+    bFound = (m_unk1730 > 0);
+    if (bFound != 0) {
+        bFound = (eLayer == ePSLayer_2);
+    }
+    m_unk4 = 0;
+    pFx = (m_unk0 != 0) ? (PParticleRain *)m_unk8[0] : 0;
+    while ((pFx != 0) && (bFound == 0)) {
+        if ((eLayer == pFx->m_unkD4) && (pFx->m_unk19 != 0)) {
+            bFound = 1;
+            break;
+        }
+        nIdx = m_unk4 + 1;
+        m_unk4 = nIdx;
+        pFx = (nIdx < m_unk0) ? (PParticleRain *)m_unk8[m_unk4] : 0;
+    }
+
+    if (eLayer == ePSLayer_2) {
+        m_unk207C = 0;
+        pFx = (m_unk2078 != 0) ? (PParticleRain *)m_unk2080[0] : 0;
+        while ((pFx != 0) && (bFound == 0)) {
+            if (pFx->m_unk19 != 0) {
+                bFound = 1;
+            } else {
+                nIdx = m_unk207C + 1;
+                m_unk207C = nIdx;
+                pFx = (nIdx < m_unk2078) ? (PParticleRain *)m_unk2080[m_unk207C] : 0;
+            }
+        }
+    }
+
+    if ((bFound != 0) || bFlag) {
+        UpdateHeatHazeBuffer();
+        SetTexture__10PGfxEngineFi(&gGfxEng, m_unk670);
+        m_unk4 = 0;
+        pFx = (m_unk0 != 0) ? (PParticleRain *)m_unk8[0] : 0;
+        while (pFx != 0) {
+            if ((eLayer == pFx->m_unkD4) && (pFx->m_unk19 != 0)) {
+                pFx->Slot02();
+                nSum += pFx->m_unk4;
+            }
+            nIdx = m_unk4 + 1;
+            m_unk4 = nIdx;
+            pFx = (nIdx < m_unk0) ? (PParticleRain *)m_unk8[m_unk4] : 0;
+        }
+        if (eLayer == ePSLayer_2) {
+            RenderParticleInstanceGroups(true);
+        }
+        RenderRefractionMappedFragments__10PGfxEngineFv(&gGfxEng);
+        if (eLayer == ePSLayer_2) {
+            ((PParticleRain *)m_unkED0)->Slot02();
+            RenderShockwaveRings();
+            ((PParticleRain *)m_unk1790)->Slot02();
+        }
+    }
+    if ((eLayer == ePSLayer_2) && (m_unk9B0 != 0)) {
+        Render__12PFlashScreenFv((char *)this + 0x6B0);
+    }
+    SetZBufferUpdate__10PGfxEngineFb10eGsContext(&gGfxEng, 1, 0);
+    if (eLayer == ePSLayer_2) {
+        if (m_unk2070 != 0) {
+            m_unk2068 = 0;
+            m_unk206C = 0;
+        }
+    }
+    return nSum;
 }
 
 // FUNCTION: 0x001B9FE0 Update__16PParticleManagerFfP6CameraP9PFrustrum8ePSLayer

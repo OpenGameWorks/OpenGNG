@@ -95,6 +95,7 @@ public:
     void RemoveAllFogObjects();
     void UpdateMasterParticleInstances(float fDt, PFrustrum *pFrustrum);
     void Update(float fDt, Camera *pCamera, PFrustrum *pFrustrum, ePSLayer eLayer);
+    int Render(ePSLayer eLayer, bool bFlag);
     void *InitRingMeshPacket(int &nOut, int nCount, bool bFlag, float fA, float fB, int nC, int nD);
     int CreateRingTriStrip(int nCount, float fA, float fB, float fC, float fD, int nE, int nF, float (*pA)[4], float (*pB)[4], float (*pC)[4]);
     void InitShockwaveRings();
@@ -135,7 +136,9 @@ public:
     char _padEC8[0xED0 - 0xEC8];
     char m_unkED0[0x10];        // 0xED0 PParticleRipples object, Init(6, 1, 1)
     int m_unkEE0;               // 0xEE0
-    char _padEE4[0x1790 - 0xEE4];
+    char _padEE4[0x1730 - 0xEE4];
+    int m_unk1730;              // 0x1730
+    char _pad1734[0x1790 - 0x1734];
     char m_unk1790[0x10];       // 0x1790 PParticleRipples object, Init(6, 0, 0)
     int m_unk17A0;              // 0x17A0 GetFxTexture(0x8400000D) result
     char _pad17A4[0x2050 - 0x17A4];
