@@ -51,7 +51,7 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4,p`) that `to
 - A function-local `static` compiles to `name$N` with a counter N that runs across the whole TU; `fncmp.py` and the linker accept `name$N` against the original's `name$M`, so only the bytes need to agree.
 - An access into a global is written as its offset from the symbol (`gInterface + 0x80`), never as the low half the original shows (`0x1790` = low bits of `0x301710 + 0x80`). `fncmp.py` checks each relocation's addend and reports `addend into X differs` for the copied form.
 - The performance-counter read the disassembler shows as `.word 0x4???C801` (`mfc0 rt, Reserved25`, sel 1) is `mfpc nCounter, 0` in the asm block; the assembler encodes sel 1 from that mnemonic (`src/game/Timing.cpp` StartTimer).
-- `local NAME data differs from original NAME2` from `fncmp.py` means a function-local static or string literal holds other bytes than the original: a static needs its initialiser, and a literal pool in another order means the file's strings are first used in another order.
+- `local NAME data differs from original NAME2` from `fncmp.py` means a function-local static or string literal holds other bytes than the original: a static needs its initialiser and the element count matching the original symbol's size (decimal bytes in `config/symbols.tsv`; data past that size belongs to the next symbol), and a literal pool in another order means the file's strings are first used in another order.
 - `fncmp.py`'s verdict line (`MATCH` or `DIFF N words`) is the difference count; counting `^!` lines is unreliable.
 - `src/game/PWorld.cpp` holds the first match and serves as a model.
 

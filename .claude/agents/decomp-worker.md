@@ -33,7 +33,7 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 - A float's raw bits feeding a VU0 register (`mfc1 t0, $f0` then `qmtc2 t0, vf1`) belong in the asm block: CodeWarrior compiles every C bit cast (`*(int *)&f`, a union) to `swc1` plus `lw` through the stack, never `mfc1` (`src/scratch/vu0-PParticleSpurt/probe/`).
 - An access into a global is its offset from the symbol (`gGfxEng + 0x154F00`, `&gUnitMatrix[12]`), never the low half the original shows; `fncmp.py` reports `addend into X differs` for the copied form.
 - The performance-counter read the disassembler shows as `.word 0x4???C801` (`mfc0 rt, Reserved25`, sel 1) is `mfpc nCounter, 0` in the asm block; the assembler encodes sel 1 from that mnemonic (`src/game/Timing.cpp` StartTimer).
-- `local NAME data differs from original NAME2` from `fncmp.py` means a function-local static or string literal holds other bytes than the original: a static needs its initialiser, and a literal pool in another order means the file's strings are first used in another order.
+- `local NAME data differs from original NAME2` from `fncmp.py` means a function-local static or string literal holds other bytes than the original: a static needs its initialiser and the element count matching the original symbol's size (decimal bytes in `config/symbols.tsv`; data past that size belongs to the next symbol), and a literal pool in another order means the file's strings are first used in another order.
 - A ctor that spills `this` to `0x1C(sp)` and reloads it before stores needs a member sub-object with an empty user-declared destructor.
 
 ## Finishing
