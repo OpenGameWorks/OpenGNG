@@ -10,6 +10,7 @@ public:
     int Lookup(void *pKey, void *&pValue);
     void Add(void *pKey, void *pValue);
     void *Remove(void *pKey);
+    void RemoveAll();
 };
 
 class MathAPI;
@@ -20,6 +21,13 @@ int CompareDistToCam(void *pA, void *pB);
 class PList {
 public:
     ~PList();
+    void RemoveAll();
+};
+
+// Sleep-list entry: first virtual (vtable slot 0 at offset 8) takes an int.
+class SleepEntity {
+public:
+    virtual void Sleep(int arg0);
 };
 
 class WaypointManager {
@@ -316,6 +324,10 @@ public:
     char _pad000[20];
 };
 extern "C" void EnableParticleFx__9EffectAPIFb(EffectAPI *pApi, bool arg0);
+extern "C" void Reset__9EffectAPIFv(EffectAPI *pApi);
+extern "C" void __dt__6PArrayFv(void *pThis, short destroyFlag);
+extern "C" void __dt__8CEifFileFv(void *pThis, short destroyFlag);
+extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void Animate__9EffectAPIFf(EffectAPI *pApi, float arg0);
 extern "C" int Render__9EffectAPIFP13PLightManager(EffectAPI *pApi, PLightManager *arg0);
 extern EffectAPI mEffectAPI__13EntityManager;
@@ -1639,6 +1651,161 @@ void *EntityManager::Spawn(unsigned int arg0, bool arg1, int arg2) {
     MemMgr.m_unk18 = saved;
     m_unk5050 += 1;
     return pEnt;
+}
+
+// FUNCTION: 0x00149720 Reset__13EntityManagerFb
+void EntityManager::Reset(bool arg0) {
+    m_unk5058 = 0;
+    m_unk5D4C = 0;
+    m_unk5050 = 1;
+    m_unk5054 = 1;
+    m_unk5D48 = 4;
+    ((PHashTable *)m_unk5088)->RemoveAll();
+    ((PHashTable *)m_unk5094)->RemoveAll();
+    *(int *)((char *)this + 0x5B4C) = 0;
+    m_unk505C = 0;
+    mPlayerAPI__13EntityManager = 0;
+    m_unk507C = 0;
+    void *pSleep = 0;
+    if (m_unk5078 != 0) {
+        pSleep = m_unk5080[0];
+    }
+    if (pSleep != 0) {
+        do {
+            if (pSleep != 0) {
+                ((SleepEntity *)pSleep)->Sleep(1);
+            }
+            unsigned int idx = m_unk507C + 1;
+            m_unk507C = idx;
+            pSleep = (idx < m_unk5078) ? m_unk5080[m_unk507C] : 0;
+        } while (pSleep != 0);
+    }
+    if (m_unk5080 != 0) {
+        m_unk5078 = 0;
+        m_unk507C = 0;
+    }
+    m_unk50A4 = 0;
+    void *pSub = 0;
+    if (m_unk50A0 != 0) {
+        pSub = m_unk50A8[0];
+    }
+    if (pSub != 0) {
+        do {
+            __dt__6PArrayFv(pSub, 1);
+            unsigned int idx = m_unk50A4 + 1;
+            m_unk50A4 = idx;
+            pSub = (idx < m_unk50A0) ? m_unk50A8[m_unk50A4] : 0;
+        } while (pSub != 0);
+    }
+    if (m_unk50A8 != 0) {
+        m_unk50A0 = 0;
+        m_unk50A4 = 0;
+    }
+    if (m_unk50B8 != 0) {
+        m_unk50B0 = 0;
+        m_unk50B4 = 0;
+    }
+    if (arg0) {
+        m_unk5B20 = 0;
+        m_unk5B21 = 0;
+        m_unk519C = 0;
+    } else {
+        ValidateDependencyList();
+    }
+    RestoreHolyGround();
+    m_unk5B64 = 0;
+    void *pTrig = 0;
+    if (m_unk5B60 != 0) {
+        pTrig = m_unk5B68[0];
+    }
+    if (pTrig != 0) {
+        do {
+            __dl__FPv(pTrig);
+            unsigned int idx = m_unk5B64 + 1;
+            m_unk5B64 = idx;
+            pTrig = 0;
+            if (idx < (unsigned int)m_unk5B60) {
+                pTrig = m_unk5B68[m_unk5B64];
+            }
+        } while (pTrig != 0);
+    }
+    if (m_unk5B68 != 0) {
+        m_unk5B60 = 0;
+        m_unk5B64 = 0;
+    }
+    ((PList *)((char *)this + 0x5B80))->RemoveAll();
+    int cnt = 0;
+    if (arg0) {
+        m_unk5070 = 0;
+        memset((char *)this + 0x53A0, 0, 0x600);
+        memset((char *)this + 0x59A0, 0, 0x180);
+        if (m_unk5B78 != 0) {
+            m_unk5B70 = 0;
+            m_unk5B74 = 0;
+        }
+        CEifFile *pEif = m_unk5194;
+        if (pEif != 0) {
+            __dt__8CEifFileFv(pEif, 1);
+            m_unk5194 = 0;
+        }
+    } else {
+        int ofs = 0;
+        do {
+            char *pBase = (char *)this + ofs;
+            cnt += 8;
+            pBase[0x53A2] = 0;
+            pBase[0x53A6] = 0;
+            pBase[0x53AA] = 0;
+            pBase[0x53AE] = 0;
+            pBase[0x53B2] = 0;
+            pBase[0x53B6] = 0;
+            pBase[0x53BA] = 0;
+            pBase[0x53BE] = 0;
+            ofs += 0x20;
+        } while (cnt < 0x180);
+        m_unk5B74 = 0;
+        void *pNode = 0;
+        if (m_unk5B70 != 0) {
+            pNode = m_unk5B78[0];
+        }
+        if (pNode != 0) {
+            do {
+                ((PMNode *)pNode)->RecurseResetAnimByID(0x202);
+                ((PMNode *)pNode)->RecurseResetAnimByID(0x1FF);
+                unsigned int idx = m_unk5B74 + 1;
+                m_unk5B74 = idx;
+                pNode = 0;
+                if (idx < (unsigned int)m_unk5B70) {
+                    pNode = m_unk5B78[m_unk5B74];
+                }
+            } while (pNode != 0);
+        }
+        ResetSwordBGAnim();
+    }
+    Reset__9EffectAPIFv(&mEffectAPI__13EntityManager);
+    m_unk5F5C = m_unk5F54;
+    Icon *pIcon = 0;
+    if (m_unk5F54 != 0) {
+        pIcon = (Icon *)*m_unk5F54;
+    }
+    if (pIcon != 0) {
+        do {
+            pIcon->Reset();
+            void **pCur = m_unk5F5C;
+            if (pCur == 0) {
+                m_unk5F5C = m_unk5F54;
+                pIcon = (m_unk5F54 != 0) ? (Icon *)*m_unk5F54 : 0;
+            } else {
+                void **pNext = (void **)pCur[1];
+                if (pNext != 0) {
+                    m_unk5F5C = pNext;
+                    pIcon = (Icon *)m_unk5F5C[0];
+                } else {
+                    pIcon = 0;
+                }
+            }
+        } while (pIcon != 0);
+    }
 }
 
 // DRAFT: 0x00149B10 LoadOverlay__13EntityManagerFPcPc
