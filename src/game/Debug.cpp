@@ -19,6 +19,23 @@ extern short gPlayerPos;
 extern "C" int sprintf(char *pBuf, const char *pFmt, ...);
 extern "C" void sceDevConsClose(char *pCons);
 extern "C" void __dl__FPv(void *pMem);
+extern short giRep;
+extern short gApparition;
+class Apparition {
+public:
+    virtual ~Apparition();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void Slot3();
+    char _pad004[0x38];
+    char *m_unk3C;
+    char _pad040[0x190 - 0x40];
+};
+extern Apparition *gpApparition;
+class PArray {
+public:
+    int Find(void *pItem);
+};
 
 class PMat4;
 
@@ -38,7 +55,9 @@ public:
 extern PSound gSound;
 
 struct PadState {
-    char _pad000[0x110];
+    char _pad000[0x10C];
+    unsigned short m_unk10C;
+    char _pad10E[2];
     unsigned short m_unk110;
     char _pad112[0x10];
 };
@@ -160,6 +179,16 @@ void Debug::StopDebugTimer(void *pArg) {
         this->m_unk24 = pArg;
     }
     this->m_unk1C += nDelta;
+}
+
+// DRAFT: 0x16A990 StartDebugTimer__5DebugFv
+// note: 1 differing line: mfc0 counter (.word 0x4003C801, v1 in original) lands in v0; the .word stands in for mfc0 and the store order alone is correct; reordering the increment before the store gives 4 differing words.
+void Debug::StartDebugTimer() {
+    unsigned int nNow;
+
+    asm { .word 0x4003C801 }
+    this->m_unk10 = nNow;
+    this->m_unk20++;
 }
 
 // FUNCTION: 0x16A9B0 ResetDebugTimer__5DebugFv
@@ -338,6 +367,64 @@ void RenderAnimation() {
             gGfxEng.m_unk158E22 = 0;
         }
     }
+}
+
+// DRAFT: 0x0016B010 ApparitionDisplay__Fv
+// note: DIFF 13 words: gbApparition read as lbu from gp (-0x7C28) in the original, ours uses 0x0($gp) with a reloc; gPad lhu uses -0x40F0 in the original, ours 0x110 from $at; nA in a2 (original) vs a0 and bDirty in a3 vs a1. Tried decl orders (bDirty first 66, bDirty before nA 69, nB before nA 63, nRep first 13); kept nA, nB, nRep, bDirty.
+void ApparitionDisplay() {
+    float *pPos;
+    unsigned int nA;
+    unsigned int nB;
+    int nRep;
+    int bDirty;
+    char aBuf[0x40];
+
+    if (gpApparition == 0) {
+        return;
+    }
+    if (((PArray *)(gEng + 0x18858))->Find(gpApparition) < 0) {
+        gpApparition = 0;
+        gApparition = 0;
+        return;
+    }
+    if (gbApparition) {
+        gpApparition->Slot3();
+    }
+    gbApparition = 0;
+    if (gpApparition->m_unk3C) {
+        pPos = (float *)(gpApparition->m_unk3C + 0x80);
+    } else {
+        pPos = (float *)((char *)gpApparition + 0x190);
+    }
+    nA = gPad.m_unk110;
+    nRep = (short)(giRep - 1);
+    giRep = (short)nRep;
+    nB = gPad.m_unk10C;
+    if (nRep == 0) {
+        nA |= nB;
+    }
+    bDirty = 0;
+    if (nA & 0x50) {
+        giRep = 4;
+        if (nB & 0x100) {
+            pPos[1] += (nA & 0x10) ? 0.1f : -0.1f;
+        } else {
+            pPos[2] += (nA & 0x10) ? 0.1f : -0.1f;
+        }
+        bDirty = 1;
+    }
+    if (nA & 0xA0) {
+        giRep = 4;
+        pPos[0] += (nA & 0x20) ? 0.1f : -0.1f;
+        bDirty = 1;
+    }
+    if (bDirty) {
+        if (gpApparition->m_unk3C) {
+            ((unsigned char *)gpApparition->m_unk3C)[0x3E] |= 8;
+        }
+    }
+    sprintf(aBuf, "(%f, %f, %f)\n", pPos[0], pPos[1], pPos[2]);
+    gDebug.DebugDisp(aBuf);
 }
 
 // FUNCTION: 0x16B210 CameraDisplay__Fv

@@ -7,6 +7,7 @@ class Debug {
 public:
     Debug();
     ~Debug();
+    void StartDebugTimer();
     void StopDebugTimer(void *pArg);
     void ResetDebugTimer();
     void DebugDisp(char *pStr);
