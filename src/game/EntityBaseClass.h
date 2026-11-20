@@ -88,7 +88,7 @@ public:
     int MeshNodeCollision(PMNode *arg0, EntityBaseClass *arg1);
     int PlaySequence(unsigned int *arg0);
     void ModifyLoadClass(LoadClass arg0);
-    void LoadMesh(unsigned int arg0, bool arg1, bool arg2);
+    int LoadMesh(unsigned int arg0, bool arg1, bool arg2);
     int LoadAnim(unsigned int arg0, bool arg1);
     void ResumeAmbientSoundsByObject();
     void PauseAmbientSoundsByObject();
@@ -146,7 +146,7 @@ public:
     int m_unk144;               // 0x144
     int m_unk148;               // 0x148
     int m_unk14C;               // 0x14C
-    char _pad150[0x4];          // 0x150..0x153
+    int m_unk150;               // 0x150 mesh id loaded by LoadMesh
     int m_unk154;               // 0x154 animation argument
     int m_unk158;               // 0x158 sound reference
     char _pad15C[0x2];          // 0x15C..0x15D

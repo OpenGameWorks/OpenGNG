@@ -6,6 +6,7 @@
 // TODO(header): foreign declarations
 extern "C" int IntersectBox__9PFrustrumFPA2_A4_fP5PMat4(void *pFrustum, void *pBox, void *pMat);
 extern "C" void SetAllFrustrumTest__6PMNodeF13eBoxIntersect(void *pNode, int eMode);
+extern "C" void SetShadowCaster__13PShadowVolumeFP6PMNode(void *pVol, void *pNode);
 // PSound size is unknown; the placeholder member only keeps gSound out of small data (threshold 8 bytes).
 class PSound {
 public:
@@ -115,7 +116,7 @@ public:
 
 class PMNode {
 public:
-    virtual void VirtSlot0();
+    virtual void VirtSlot0(int arg0);
     virtual void VirtSlot1();
     virtual void VirtSlot2();
     virtual void VirtSlot3();
@@ -192,6 +193,7 @@ public:
     void *Spawn(unsigned int arg0, bool arg1, int arg2);
     void *GetPtrToApparition(unsigned int arg0);
     void RemoveFromRenderList(EntityBaseClass *arg0);
+    void AddToRenderList(EntityBaseClass *arg0);
 };
 
 // TimerAPI is only needed for the apparition-timer kill call; its size is not recovered, so the placeholder keeps the global complete.
@@ -1910,6 +1912,112 @@ int EntityBaseClass::LoadAnim(unsigned int arg0, bool arg1) {
         return 0;
     }
     this->m_unk154 = arg0;
+    return 1;
+}
+
+// DRAFT: 0x0014EA80 LoadMesh__15EntityBaseClassFUibb
+// note: DIFF 207 words; prologue saves s0..s5 (original s0..s3, frame 0x70), so the compiler keeps extra values live across calls; tried locals scoping, address-taken sp locals, sp[2] array, m38 copy from sp50, pSys block scope; none lowered the count.
+int EntityBaseClass::LoadMesh(unsigned int arg0, bool arg1, bool arg2) {
+    u_long128 sp[2];
+
+    if (!arg1 && arg0 == (unsigned int)this->m_unk150) {
+        return 0;
+    }
+    if (arg0 != 0) {
+        this->m_unk28 = arg0;
+    }
+    this->m_unk138 = 0xF423F;
+    if (this->m_unkF4 != 0) {
+        PParticleSystem *pSys = this->m_unkF4;
+        if (pSys != 0 && ((PParticleManager *)(gGfxEng + 0x154F00))->IsValid(pSys)) {
+            pSys->FadeAndDie(0);
+        }
+        this->m_unkF4 = 0;
+        this->m_unkEC = 0.0f;
+    }
+    if (this->m_unk3C != 0) {
+        sp[0] = *(u_long128 *)((char *)this->m_unk3C + 0x80);
+        sp[1] = *(u_long128 *)((char *)this->m_unk3C + 0x90);
+        this->RemoveFromBGAnimList();
+        this->RemovePhysicsAnimList();
+        if (this->m_unk3C != 0) {
+            ((PMNode *)this->m_unk3C)->VirtSlot0(1);
+        }
+        this->m_unk3C = 0;
+        if (arg0 == 0) {
+            this->m_unk150 = 0;
+            ((EntityManager *)mpEntMgr__15EntityBaseClass)->RemoveFromRenderList(this);
+            this->ResetCollisions();
+            if (this->m_unkD4 != 0) {
+                void *pVol = *(void **)(this->m_unkD4 + 0xC);
+                if (pVol != 0) {
+                    SetShadowCaster__13PShadowVolumeFP6PMNode(pVol, 0);
+                }
+            }
+            return 0;
+        }
+    } else {
+        sp[0] = *(u_long128 *)((char *)this + 0x190);
+        sp[1] = *(u_long128 *)((char *)this + 0x1A0);
+        Physics *pPhys = this->m_unk38;
+        if (pPhys != 0) {
+            *(float *)((char *)pPhys + 0x11C) = Round180(*(float *)((char *)this + 0x1A4));
+            if (*(float *)((char *)this->m_unk38 + 0xAC) == 0.0f) {
+                *(u_long128 *)((char *)this->m_unk38 + 0xA0) = sp[0];
+            }
+        }
+        if (this->m_unk150 == 0) {
+            ((EntityManager *)mpEntMgr__15EntityBaseClass)->AddToRenderList(this);
+        }
+    }
+    this->m_unk3C = (char *)mpResMgr__15EntityBaseClass->GetResource(arg0, false);
+    if (arg2) {
+        if (this->m_unk3C == 0) {
+            printf("ERROR : Couldn't find resource with id (%d)\n", arg0);
+        }
+        CDS_ASSERT(0x159, this->m_unk3C != 0, "mpMeshNode");
+    } else if (this->m_unk3C == 0) {
+        return 0;
+    }
+    ((PMNode *)this->m_unk3C)->VirtSlot3();
+    if (this->m_unkD4 != 0) {
+        void *pVol = *(void **)(this->m_unkD4 + 0xC);
+        if (pVol != 0) {
+            SetShadowCaster__13PShadowVolumeFP6PMNode(pVol, this->m_unk3C);
+        }
+    }
+    *(u_long128 *)((char *)this->m_unk3C + 0x80) = sp[0];
+    ((PMNode *)this->m_unk3C)->m_3E |= 8;
+    *(u_long128 *)((char *)this->m_unk3C + 0x90) = sp[1];
+    ((PMNode *)this->m_unk3C)->m_3E |= 8;
+    this->m_unk150 = arg0;
+    if (this->m_unk38 != 0) {
+        if ((int)this->m_unk163 < 4) {
+            char *pn = this->m_unk3C;
+            float fLo = 0.5f * (*(float *)(pn + 0x128) + *(float *)(pn + 0x120));
+            if (fLo < 1.5f) {
+                fLo = 1.5f;
+            }
+            float fHi = *(float *)(pn + 0x124);
+            if (fHi < 1.5f) {
+                fHi = 1.5f;
+            }
+            if (!(fLo <= fHi)) {
+                fLo = fHi;
+            }
+            char *pa = (char *)this->m_unk38 + 0x80;
+            *(float *)(pa + 0x10) = fLo;
+            *(float *)(pa + 0x18) = fLo;
+            if (this->m_unk10 == 6 || this->m_unk10 == 3) {
+                float fTmp = 1.0f + fLo;
+                if (fHi < fTmp) {
+                    fHi = fTmp;
+                }
+            }
+            *(float *)(pa + 0x4) = fHi;
+            *(float *)(pa + 0x14) = fHi;
+        }
+    }
     return 1;
 }
 
