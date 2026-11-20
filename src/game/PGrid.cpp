@@ -9,6 +9,11 @@ extern "C" void __dl__FPv(void *pData);
 float FastMath_Sin180__Ff(float fAngle);
 void FTOI4(float *pDst, float *pSrc);
 void CdsAssert(char *pFile, int nLine, char *pExpr);
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
+extern float GAME_FPS;
+extern int SCREEN_WIDTH;
+extern int SCREEN_HEIGHT;
+extern "C" void *__nwa__FUi(unsigned int nSize);
 
 // 16-byte base row for InitStrip's float vector; the original value sits in bss and is set at run time.
 static u_long128 kStripBase;
@@ -248,6 +253,85 @@ void PGrid::Render() {
         gGfxEng.pDisplayList->SetGsRegisters((u_long128 *)regs, 2);
         gGfxEng.pDisplayList->SendGsPacket(m_pData, m_nSize * 0x10, true);
     }
+}
+
+// DRAFT: 0x001F2710 Init__5PGridFffiiPfUiUiUiUi
+// note: 238 words, size 0x3a0 vs 0x408: prologue spills (nB reloaded from 0xF8(sp)), header bit-field byte edits (lbu/and/or vs sb of constants); SCREEN_*/GAME_FPS are gp-relative in the original too (relocs.tsv type 7). Tried: u_long128 clear (239), null-check restructure (238), h[5] write moved last (238).
+int PGrid::Init(float fA, float fB, int nA, int nB, float *pSrc, unsigned int uA, unsigned int uB, unsigned int uC, unsigned int uD) {
+    int halfW;
+    int halfH;
+    short sA;
+    short sB;
+    short sC;
+    short sD;
+    int i;
+    int off;
+    float fU;
+    float fV;
+    float fW;
+    float *src;
+    unsigned char *h;
+
+    Destroy();
+    m_08 = nB + 1;
+    m_0C = nA;
+    m_nSize = m_0C * m_08 * 6 + 1;
+    h = (unsigned char *)__nwa__FUi(m_nSize * 0x10);
+    m_pData = h;
+    if (h == 0) {
+        return 0;
+    }
+    *(u_long128 *)h = 0;
+    *(long long *)h = (*(long long *)h & ((0xFFFF << 0x10) | 0xFFFF | ((long long)0xFC007FFF << 0x20))) | ((long long)4 << 0x2F);
+    h[5] = (h[5] & ~0x40) | 0x40;
+    *(short *)h = (short)((*(unsigned short *)h & ~0x7FFF) | ((m_08 * m_0C) & 0x7FFF));
+    h[1] = (h[1] & ~0x80) | 0x80;
+    h[7] = (h[7] & ~0xF0) | 0x60;
+    h[7] = (h[7] & ~0xC) | 0;
+    h[8] = (h[8] & ~0xF) | 3;
+    h[8] = (h[8] & ~0xF0) | 0x10;
+    h[9] = (h[9] & ~0xF) | 5;
+    h[9] = (h[9] & ~0xF0) | 0x30;
+    h[10] = (h[10] & ~0xF) | 1;
+    h[10] = (h[10] & ~0xF0) | 0x50;
+    m_10 = (int)m_pData + 0x10;
+
+    halfW = SCREEN_WIDTH >> 1;
+    sC = (short)(SCREEN_WIDTH / nB);
+    sD = (short)(SCREEN_HEIGHT / nA);
+    if (SCREEN_WIDTH < 0) {
+        halfW = (SCREEN_WIDTH + 1) >> 1;
+    }
+    halfH = SCREEN_HEIGHT >> 1;
+    sA = (short)(0x800 - halfW);
+    if (SCREEN_HEIGHT < 0) {
+        halfH = (SCREEN_HEIGHT + 1) >> 1;
+    }
+    i = 0;
+    fU = 0.0f;
+    sB = (short)(0x800 - halfH);
+    fV = (float)SCREEN_WIDTH / (float)nB;
+    fW = (float)SCREEN_HEIGHT / (float)nA;
+    for (; i < m_0C; i++) {
+        InitStrip((tagGridStripVertex *)((char *)m_10 + i * m_08 * 0x60), sA, sB, sC, sD, uA, uB, uC, uD, fU, fV, fW, i > 0);
+        fU += fW;
+        sB = (short)(sB + sD);
+    }
+    m_2014 = uD;
+    off = 0;
+    i = 0;
+    src = pSrc;
+    while (i <= m_0C) {
+        memcpy((char *)this + off + 0x1014, src, m_08 * 4);
+        off += 0x80;
+        i++;
+        src = &src[m_08];
+    }
+    memcpy((char *)this + 0x14, (char *)this + 0x1014, 0x1000);
+    SetGridVertexAlpha();
+    m_2024 = 0.25f * GAME_FPS;
+    m_2028 = GAME_FPS;
+    return 1;
 }
 
 // FUNCTION: 0x001F2B20 Destroy__5PGridFv

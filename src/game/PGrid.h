@@ -25,6 +25,7 @@ public:
     ~PGrid();
     void Enable(bool bEnable);
     void Render();
+    int Init(float fA, float fB, int nA, int nB, float *pSrc, unsigned int uA, unsigned int uB, unsigned int uC, unsigned int uD);
     void Destroy();
     void Animate(float fStep);
     void AnimateAlphaGrid(float fAngle);
