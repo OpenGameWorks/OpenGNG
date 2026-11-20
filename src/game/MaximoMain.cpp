@@ -248,10 +248,11 @@ void MaximoMain::InitGameTimes() {
     m_unk19B80 = 0;
 }
 
-// DRAFT: 0x001357C0 Controls__10MaximoMainFv
-// note: 4 words differ: case 3 FadeScreen(255.0f, 17.0f) loads 17.0f into f13 before 255.0f into f12 in the original; tried reordering nState++ (11 words), local float for 17.0f (4 words), literal form kept.
+// FUNCTION: 0x001357C0 Controls__10MaximoMainFv
 void MaximoMain::Controls() {
     int nState = 0;
+    int nPad;
+    float f17 = 17.0f;
     PMNode *pNode = GetResource__16PResourceManagerFUib((char *)this + 0x188A4, 0x8100003DU, false);
     if (pNode == 0) {
         CdsAssert__FPciPc("MaximoMain.cpp", 0x1734, "pMeshNode");
@@ -259,7 +260,7 @@ void MaximoMain::Controls() {
     AddMeshLayer__9InterfaceFP6PMNode(gInterface, pNode);
     ((FontManager *)(gInterface + 0x80))->DisplayString(0x25C, 0, 0, false);
     for (;;) {
-        int nPad = *(unsigned short *)(gPad + 0x110);
+        nPad = *(unsigned short *)(gPad + 0x110);
         InitRenderFrame__9MaxEngineFbUi(this, false, 0);
         switch (nState) {
         case 0:
@@ -278,7 +279,7 @@ void MaximoMain::Controls() {
             }
             break;
         case 3:
-            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface,255.0f, 17.0f, true, 0);
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface,255.0f, f17, true, 0);
             nState++;
             break;
         case 4:
@@ -367,14 +368,14 @@ void MaximoMain::TVAdjust() {
     }
 }
 
-// DRAFT: 0x00135CA0 ScreenAdjust__10MaximoMainFRiRi
-// note: 4 words differ: case 3 FadeScreen loads 17.0f into f13 before 255.0f into f12 in the original (0218-0230), the same order Controls misses.
+// FUNCTION: 0x00135CA0 ScreenAdjust__10MaximoMainFRiRi
 int MaximoMain::ScreenAdjust(int &arg0, int &arg1)
 {
     int state;
     bool moved;
     unsigned short pad;
     int c;
+    float f17 = 17.0f;
 
     state = 0;
     ((FontManager *)(gInterface + 0x80))->DisplayString(0x257, 0, 0, false);
@@ -428,7 +429,7 @@ int MaximoMain::ScreenAdjust(int &arg0, int &arg1)
             }
             break;
         case 3:
-            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 17.0f, true, 0);
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, f17, true, 0);
             state++;
             break;
         case 4:
@@ -461,7 +462,7 @@ struct MemorySettingBytes {
 };
 
 // DRAFT: 0x00135FB0 RefreshOptionsValue__10MaximoMainFP13MemorySettingb
-// note: DIFF 14 words; the original keeps the MemorySetting pointer in s1 and the bool in s0, ours swaps them. Tried: bool->unsigned char for SetMonoOut and EnableVibrate (147->45->14), inline cast without local (139).
+// note: DIFF 14 words; the original keeps the MemorySetting pointer in s1 and the bool in s0, ours swaps them (only the 14 s0/s1 lines differ). Tried: bool->unsigned char for SetMonoOut and EnableVibrate (147->45->14), inline cast without local (139), bool/int local copy of arg1 (14/130), mem declared then assigned (14), arg1-first condition (54), register hint on mem (14), !m_unk19B44 form (14), direct arg0 cast in first block (14), unsigned char* mem (105).
 void MaximoMain::RefreshOptionsValue(MemorySetting *arg0, bool arg1) {
     MemorySettingBytes *mem = (MemorySettingBytes *)arg0;
     if (m_unk19B44 == 0 || arg1) {
@@ -1210,11 +1211,11 @@ void MaximoMain::MainGame() {
     }
 }
 
-// DRAFT: 0x00138A40 QuitGame__10MaximoMainFv
-// note: float args load in swapped order (original 4.25 into f13 first, ours 255 into f12 first); inline literals, locals in both orders, and locals before the state store all leave 4 words differing
+// FUNCTION: 0x00138A40 QuitGame__10MaximoMainFv
 void MaximoMain::QuitGame() {
     m_unk19A70 = 8;
-    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 4.25f, true, 0);
+    float f255 = 255.0f;
+    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, f255, 4.25f, true, 0);
     FadeOutAllMusic__6PSoundFUi(gSound, 0x3E8);
 }
 
