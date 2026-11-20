@@ -77,12 +77,15 @@ public:
     void DrawTextDebug();
     void SetBossArenaValues(float (*arg0)[4], float arg1, float arg2, bool arg3, bool arg4, float arg5, float arg6, bool arg7);
     void UpdateTargetPos();
+    void UpdateBossCam();
+    int UpdateCameraPos();
+    void Update();
 
     Camera *m_pCamera;      // 0x000
     char _pad004[0x10 - 0x004];
     float m_unk10[4];       // 0x010
     float m_unk20[4];       // 0x020
-    char _pad030[0x40 - 0x30];
+    float m_unk30[4];       // 0x030
     float m_unk40[4];       // 0x040
     float m_unk50[4];       // 0x050
     char _pad060[0x0A0 - 0x060];
@@ -111,7 +114,7 @@ public:
     char _pad150[0x160 - 0x150];
     int m_unk160;           // 0x160
     float m_unk164;         // 0x164
-    char _pad168[0x16C - 0x168];
+    float m_unk168;         // 0x168
     float m_unk16C;         // 0x16C
     float m_unk170;         // 0x170
     float m_unk174;         // 0x174
@@ -134,7 +137,7 @@ public:
     signed char m_unk1B9;   // 0x1B9
     unsigned char m_unk1BA; // 0x1BA
     unsigned char m_unk1BB; // 0x1BB
-    signed char m_unk1BC;   // 0x1BC
+    unsigned char m_unk1BC; // 0x1BC
     char _pad1BD[0x1C0 - 0x1BD];
     float m_unk1C0[4];      // 0x1C0
     float m_unk1D0[4];      // 0x1D0
@@ -182,7 +185,8 @@ public:
     unsigned char m_unk62B0; // 0x62B0
     char _pad62B1[0x62D1 - 0x62B1];
     unsigned char m_unk62D1; // 0x62D1
-    char _pad62D2[0x62F0 - 0x62D2];
+    char _pad62D2[0x62E0 - 0x62D2];
+    float m_unk62E0[4];     // 0x62E0
     unsigned char m_unk62F0; // 0x62F0
     unsigned char m_unk62F1; // 0x62F1
     char _pad62F2[0x62F4 - 0x62F2];

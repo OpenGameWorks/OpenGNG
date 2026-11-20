@@ -32,6 +32,7 @@ extern "C" float sqrtf(float x);
 extern "C" float acosf(float x);
 extern "C" void sceVu0ApplyMatrix(float *dst, float *mat, float *src);
 extern "C" void sceVu0AddVector(float *dst, float *a, float *b);
+extern "C" void sceVu0ScaleVector(float *dst, float *src, float scale);
 extern char mBGCollision__15EntityBaseClass[0x20];
 extern "C" float FastMath_Fabs__Ff(float f);
 extern "C" void ReleaseHeadCamera__6PlayerFv(void *pThis);
@@ -69,7 +70,7 @@ public:
 class BGCollision {
 public:
     int FindIntersect(PVec3 &arg0, PVec3 &arg1, unsigned int arg2, float (*arg3)[4]);
-    void CameraBGIntersect(PVec3 &arg0, PVec3 arg1, float arg2, unsigned int arg3, float &arg4, float (*arg5)[4]);
+    int CameraBGIntersect(PVec3 &arg0, PVec3 arg1, float arg2, unsigned int arg3, float &arg4, float (*arg5)[4]);
 };
 
 class MathAPI;
@@ -964,6 +965,105 @@ int CameraFollow::PlayerMovedSinceLastSwing() {
 // FUNCTION: 0x001771D0 PlayerExitingLevel__12CameraFollowFv
 int CameraFollow::PlayerExitingLevel() {
     return *(int *)((char *)m_unk114 + 0x20) == 2;
+}
+
+// DRAFT: 0x001771F0 Update__12CameraFollowFv
+// note: DIFF 219 words; compiler keeps BG pointer and this+0x6280 in saved regs (s0/s1), frame 0xA0 with s2 vs original 0x80 with s0 only; spelling variant 292 words
+void CameraFollow::Update() {
+    float fAngle;
+    float diff[4];
+
+    m_unk16C = *(float *)((char *)gEng + 0x1E8);
+    sceVu0CopyVector(m_unk30, m_unk20);
+    StorePlayerPos();
+    GetPlayerDetails();
+    sceVu0CopyVector(m_unk10, m_unk40);
+    m_unk62F0 = ((BGCollision *)((char *)mBGCollision__15EntityBaseClass + 0x2270))->CameraBGIntersect(*(PVec3 *)m_unk10, *(PVec3 *)m_unk10, 2.0f, 2, *(float *)((char *)m_unk6240 + 0x40), 0) != 0;
+
+    if (*(unsigned char *)((char *)m_unk114 + 0x33A) == 0 && m_unk218 == 0 && m_unk6318 == 0) {
+        sceVu0CopyVector(m_unk10, m_unk20);
+        if (((BGCollision *)((char *)mBGCollision__15EntityBaseClass + 0x2270))->FindIntersect(*(PVec3 *)m_unk40, *(PVec3 *)m_unk10, 2, 0)) {
+            sceVu0CopyVector(m_unk62E0, m_unk10);
+            sceVu0CopyVector(m_unk10, m_unk40);
+            if (((BGCollision *)((char *)mBGCollision__15EntityBaseClass + 0x2270))->FindIntersect(*(PVec3 *)m_unk20, *(PVec3 *)m_unk10, 2, 0) == 0) {
+                sceVu0SubVector(m_unk10, m_unk40, m_unk62E0);
+                sceVu0ScaleVector(m_unk10, m_unk10, 0.1f);
+                sceVu0AddVector(m_unk30, m_unk62E0, m_unk10);
+                sceVu0CopyVector(m_unk20, m_unk62E0);
+                ((BGCollision *)((char *)mBGCollision__15EntityBaseClass + 0x2270))->CameraBGIntersect(*(PVec3 *)m_unk20, *(PVec3 *)m_unk30, 1.0f, 2, *(float *)((char *)m_unk6240 + 0x40), 0);
+                printf("(Camera) - Reset due to outside world\n");
+            }
+        }
+    }
+
+    if (m_unk6318 != 0) {
+        UpdateBossCam();
+        return;
+    }
+    ProcessPlayerIO();
+    if (m_unk1BC != 0) {
+        m_unk1BC = 0;
+        if (GetAngleBetweenCamAndPlayer(fAngle) > 1.0f && PlayerMovedSinceLastSwing()) {
+            m_unk1BA = 1;
+            m_unk1E0 = 1;
+        } else {
+            m_unk1BA = 0;
+        }
+    }
+    if (ProcessCamBox()) {
+        UpdateTargetPos();
+        IdleFreezeCheck();
+        if (UpdateCameraPos()) {
+            return;
+        }
+    }
+    AddTwistEffect();
+    if (m_unk218 != 0) {
+        m_unk218 = m_unk218 - 1;
+        return;
+    }
+
+    {
+        int mode = *(int *)((char *)gEng + 0x19A78);
+        if (mode == 5 || mode == 11) {
+            if (*(int *)((char *)m_pCamera + 0x2C0) & 0x10) {
+                m_unk178 = *(float *)((char *)m_pCamera + 0x2C4);
+            } else if (m_unk178 != 10.0f) {
+                m_unk178 = 10.0f;
+            }
+        }
+    }
+
+    if (!PlayerExitingLevel() && m_unk1F0 == 0 && m_unk2C0 == 0 && (*(int *)((char *)m_pCamera + 0x2C0) & 0x8) == 0) {
+        sceVu0CopyVector(m_unk10, m_unk40);
+        if (((BGCollision *)((char *)mBGCollision__15EntityBaseClass + 0x2270))->FindIntersect(*(PVec3 *)m_unk20, *(PVec3 *)m_unk10, 2, 0)) {
+            int idle = 0;
+            if (FastMath_Fabs__Ff(m_unk1A8) > 0.3f) {
+                if (PlayerIsIdle()) {
+                    m_unk2C0 = 0;
+                    idle = 1;
+                }
+            }
+            if (!idle && !PlayerIsIdle()) {
+                if (CalcNewCameraViewpointPos()) {
+                    CreatePathToPlayer();
+                    m_unk2C0 = 1;
+                    m_unk62D1 = 0;
+                } else {
+                    CreatePathFromPlayersRoute();
+                    m_unk2C0 = 1;
+                    m_unk62D1 = 1;
+                }
+            }
+        }
+    }
+
+    m_pCamera->UpdatePos(*(PVec3 *)m_unk20, *(PVec3 *)m_unk40);
+    m_unk120 = 0;
+    __mi__5PVec3FR5PVec3(diff, m_unk30, m_unk20);
+    m_unk22C = 0;
+    sceVu0CopyVector(m_unk10, diff);
+    m_unk168 = sqrtf(m_unk10[0] * m_unk10[0] + m_unk10[1] * m_unk10[1] + m_unk10[2] * m_unk10[2]);
 }
 
 // DRAFT: 0x00177680 CreatePathFromPlayersRoute__12CameraFollowFv
