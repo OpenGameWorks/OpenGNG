@@ -22,6 +22,8 @@ extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void SOUND_StopMultipleSounds(int nHandle, int nCount);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" int SOUND_StopStream(unsigned int);
+extern "C" void SOUND_CloseStreamBuffer(int);
+extern "C" void sceGsSyncV(int);
 extern int fst_ADSR_Translate_Attack[16];
 extern int fst_ADSR_Translate_Release[16];
 extern char fst_Usage[24000];
@@ -47,6 +49,23 @@ extern "C" void SOUND_SetPauseCategories(unsigned int);
 extern "C" void SOUND_LevelRestart();
 extern "C" void SOUND_SetMasterRegisterVolumeAbs(int);
 extern "C" void SOUND_EnableFeatures(int, int);
+
+// FUNCTION: 0x001A3DD0 SwapLinksAmbientEntry__6PSoundFPQ26PSound12AmbientEntryPQ26PSound12AmbientEntry
+void PSound::SwapLinksAmbientEntry(AmbientEntry *pA, AmbientEntry *pB) {
+    if (pA != 0 && pB != 0) {
+        if (pB != pA->m_unk50) {
+            CdsAssert("PSound.cpp", 0x253E, "i_pB == i_pA->mpAmbientEntryNext");
+        }
+        if (pA != pB->m_unk54) {
+            CdsAssert("PSound.cpp", 0x253F, "i_pA == i_pB->mpAmbientEntryPrev");
+        }
+        AmbientEntry *pTmp = pA->m_unk54;
+        pA->m_unk50 = pB->m_unk50;
+        pB->m_unk54 = pTmp;
+        pA->m_unk54 = pB;
+        pB->m_unk50 = pA;
+    }
+}
 
 // FUNCTION: 0x001A3C70 AddAEToFreeList__6PSoundFPQ26PSound12AmbientEntry
 void PSound::AddAEToFreeList(AmbientEntry *pEntry) {
@@ -328,6 +347,23 @@ int PSound::PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag) {
         return 0;
     }
     pEntry->m_unk16 |= 1;
+    return 0;
+}
+
+// FUNCTION: 0x001A8750 PauseAllAmbientSounds__6PSoundFv
+int PSound::PauseAllAmbientSounds() {
+    AmbientEntry *pEntry = (AmbientEntry *)((char *)this + 0x380);
+    AmbientEntry *pEnd = (AmbientEntry *)((char *)this + 0x2220);
+    if (pEntry < pEnd) {
+        do {
+            pEntry->m_unk16 |= 2;
+            short nIdx = pEntry->m_unk18;
+            if (nIdx >= 0 && *((unsigned char *)this + nIdx + 0x1808C) == 0) {
+                AddChanToMultiplePauses(nIdx);
+            }
+            pEntry = (AmbientEntry *)((char *)pEntry + 0x70);
+        } while (pEntry < pEnd);
+    }
     return 0;
 }
 
@@ -618,6 +654,23 @@ int PSound::SetStandardSecondaryMusicFileID(unsigned int id) {
     return (m_unk024 >= 0x21) ? -1 : 0;
 }
 
+// DRAFT: 0x001A9500 MusicSwitchToPrimary__6PSoundFUi
+// note: 24 words differ; original builds table as addiu v0,s1,0x70 + addu, compiler folds 0x70 into lw offset; first beqz also one insn shorter. Tried m_unk70[idx][0], char* table+idx<<5, pSlot struct, pBase+=0x70, int nRet=-1 (all 24)
+int PSound::MusicSwitchToPrimary(unsigned int nArg) {
+    if (m_unk1C < 0x21) {
+        unsigned int idx = m_unk28;
+        if (idx < 2) {
+            if (m_unk1C != m_unk70[idx][0]) {
+                PlayMusicOnStream(idx, m_unk1C, 1);
+            }
+            FadeMusicOnStream(m_unk28, nArg, 100);
+            m_unkCD = 0;
+            return 0;
+        }
+    }
+    return -1;
+}
+
 // DRAFT: 0x001A95A0 FadeMusicOnStream__6PSoundFUiUiUi
 // note: 14 words differ: original clamp path re-shifts a3 (folded to 0x190 here); compare uses at not v0; sw before bnez. Tried n*10, t=n<<2 clamp, param clamp, store via int*.
 void PSound::FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned int nFrames) {
@@ -674,6 +727,23 @@ void PSound::StopStreamsAndRequestEEControl() {
     SetEEControlOfIOP(2);
 }
 
+// FUNCTION: 0x001A9C40 PSoundShutdown__6PSoundFv
+int PSound::PSoundShutdown() {
+    SOUND_StopStream(0);
+    SOUND_CloseStreamBuffer(0);
+    SOUND_StopStream(1);
+    SOUND_CloseStreamBuffer(1);
+    SOUND_StopStream(2);
+    SOUND_CloseStreamBuffer(2);
+    SOUND_StopAllSounds();
+    PSoundReInitSub(0);
+    PSoundFlushIOPCommandsWaitFinish();
+    m_unkD1 = 0;
+    sceGsSyncV(0);
+    sceGsSyncV(0);
+    return 1;
+}
+
 // FUNCTION: 0x001A9CD0 RestartAndLoadInterfaceTypeBank__6PSoundFUi
 int PSound::RestartAndLoadInterfaceTypeBank(unsigned int nArg) {
     int nRet = 0;
@@ -684,6 +754,20 @@ int PSound::RestartAndLoadInterfaceTypeBank(unsigned int nArg) {
         nRet = -1;
     }
     return nRet;
+}
+
+// FUNCTION: 0x001A9D30 RestartAndLoadPrimarySoundBank__6PSoundFUi
+int PSound::RestartAndLoadPrimarySoundBank(unsigned int nArg) {
+    int nFlagA;
+    int nFlagB;
+    ReturnControlOfIOPToMjln();
+    WaitOnVSync();
+    OneFrameHasElapsed_R(&m_unk2EA0, m_unk2EB0, nFlagA, nFlagB);
+    PSoundRestart();
+    WaitOnVSync();
+    OneFrameHasElapsed_R(&m_unk2EA0, m_unk2EB0, nFlagA, nFlagB);
+    LoadPrimarySoundBank(nArg);
+    return 0;
 }
 
 // FUNCTION: 0x001A9DC0 TranslateIntoADSR__6PSoundFUi

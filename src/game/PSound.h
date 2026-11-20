@@ -130,16 +130,18 @@ public:
     int GetDialogPlayingStatus();
     void FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned int nFrames);
     void AmbientFadeToFree(AmbientChannelState *pState);
-    void PauseAllAmbientSounds();
+    int PauseAllAmbientSounds();
     void ResumeAllAmbientSounds();
     int StopAllSounds();
     int SetStandardSecondaryMusicFileID(unsigned int id);
+    int MusicSwitchToPrimary(unsigned int nArg);
     void PSoundReInitTriglets();
     void EnableLevelProcessing(bool bEnable);
     void EnableProcessTriglets(bool bEnable);
     void LinkAmbientEntry(AmbientEntry *pEntry, AmbientEntry *pNext);
     void InsertAEAtHead(AmbientEntry **ppHead, AmbientEntry *pEntry);
     void AddAEToFreeList(AmbientEntry *pEntry);
+    void SwapLinksAmbientEntry(AmbientEntry *pA, AmbientEntry *pB);
     void DelinkAmbientEntry(AmbientEntry *pEntry);
     int PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag);
     void StopAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag);
@@ -159,6 +161,7 @@ public:
     int PlaySoundPMNode(unsigned int p0, unsigned int p1, const PMNode *pNode);
     int StopAllRegularSounds();
     void StopStreamsAndRequestEEControl();
+    int PSoundShutdown();
     int GetEEControlStatus();
     int DebugPlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int p2);
     void DebugClearPlayedInGame();
@@ -172,6 +175,9 @@ public:
     int AddChanToMultipleStops(unsigned int nChan);
     int RestartAndLoadInterfaceTypeBank(unsigned int nArg);
     int RestartAndLoadPrimarySoundBank(unsigned int nArg);
+    void ReturnControlOfIOPToMjln();
+    void OneFrameHasElapsed_R(float *pElapsed, float fFrame, int &rA, int &rB);
+    int LoadPrimarySoundBank(unsigned int nArg);
     int SetLevelParameters(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3);
     void PSoundFlushIOPCommandsWaitFinish();
     void KillByCategories(unsigned int nCategory);
@@ -215,7 +221,8 @@ public:
     char _pad054[0x058 - 0x054];
     float m_unk58;         // 0x058, SetPositionalRangeOneshot sets it
     float m_unk5C;          // 0x05C, SetPositionalRangeAmbient sets it
-    char _pad060[0x0B0 - 0x060];
+    char _pad060[0x070 - 0x060];
+    unsigned int m_unk70[2][8]; // 0x070, music stream state table, 0x20 bytes per stream; word 0 is the music id
     int m_unkB0;            // 0x0B0, SendStops clears it
     int m_unkB4;            // 0x0B4, SendStops clears it
     unsigned int m_unkB8[2];// 0x0B8, AddChanToMultiplePauses bit masks (index 1 for channels 0x18 and up)
@@ -249,7 +256,10 @@ public:
     int m_unk2E74;          // 0x2E74, GetEEControlStatus stores its result
     char _pad2E78[0x2E7C - 0x2E78];
     int m_unk2E7C;          // 0x2E7C, RestartSuffix clears it
-    char _pad2E80[0x2EB4 - 0x2E80];
+    char _pad2E80[0x2EA0 - 0x2E80];
+    float m_unk2EA0;        // 0x2EA0, RestartAndLoadPrimarySoundBank passes its address to OneFrameHasElapsed_R
+    char _pad2EA4[0x2EB0 - 0x2EA4];
+    float m_unk2EB0;        // 0x2EB0, RestartAndLoadPrimarySoundBank passes it as the float argument
     char m_unk2EB4[0x2580]; // 0x2EB4, 400 SpotInfo records of 0x18 bytes, GetSpotInfo scans them
     char m_unk5434;         // 0x5434, RestartSuffix clears it
     char _pad5435[0x5438 - 0x5435];
