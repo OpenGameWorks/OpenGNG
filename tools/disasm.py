@@ -158,6 +158,9 @@ def render_m2c(name: str, addr: int, size: int) -> list[str]:
     end = addr + size
     insns = [decode(a) for a in range(addr, end, 4)]
     labels = {i.getBranchVramGeneric() for i in insns if i.isBranch() and addr <= i.getBranchVramGeneric() < end}
+    tables = jump_tables(addr, end, rel)
+    for entries in tables.values():
+        labels.update(entries)
     lines = [f"glabel {ident(name, addr)}"]
     lits = {}
     for i in insns:
@@ -169,7 +172,9 @@ def render_m2c(name: str, addr: int, size: int) -> list[str]:
             typ, idx = rel[a]
             imm, val = target(a, typ, idx, rel, end)
             sn = symtab()[idx][2]
-            if sn.startswith("@") and typ in (6, 7):
+            if val in tables and typ in (5, 6):
+                imm = f"{imm[:3]}(jtbl_{val:08X})"
+            elif sn.startswith("@") and typ in (6, 7):
                 lits[imm] = literal(val)
         elif i.isBranch():
             imm = f".L{i.getBranchVramGeneric():08X}"
@@ -179,9 +184,29 @@ def render_m2c(name: str, addr: int, size: int) -> list[str]:
             # the real instruction in a comment; recover it so m2c sees an opcode.
             text = re.sub(r"Reserved(\d+)", r"$\1", text.split("#")[1].strip())
         lines.append(f"/* {a:08X} {word(a):08X} */  {text}")
+    for t, entries in sorted(tables.items()):
+        lines += [".section .rodata", f"glabel jtbl_{t:08X}", *(f".word .L{e:08X}" for e in entries), ".section .text"]
     for k, v in sorted(lits.items()):
         lines.append(f"# literal {k}: {v}")
     return lines
+
+
+def jump_tables(addr: int, end: int, rel: dict[int, tuple[int, int]]) -> dict[int, list[int]]:
+    """Switch tables the function loads: table address -> case targets.
+
+    A table is a run of R_MIPS_32 words that point into the function, reached
+    through a HI16/LO16 pair; m2c needs it as `jtbl_` data to follow the `jr`."""
+    out = {}
+    for a in range(addr, end, 4):
+        if rel.get(a, (0,))[0] != 6:
+            continue
+        _, t = target(a, 6, rel[a][1], rel, end)
+        entries = []
+        while rel.get(t + 4 * len(entries), (0,))[0] == 2 and addr <= word(t + 4 * len(entries)) < end:
+            entries.append(word(t + 4 * len(entries)))
+        if entries:
+            out[t] = entries
+    return out
 
 
 def main() -> int:
@@ -191,8 +216,12 @@ def main() -> int:
     try:
         a, s, n = lookup(sys.argv[1])
     except (StopIteration, ValueError):
-        # Data addresses (literals, vtables) and unknown names have no function entry.
-        print(f"{sys.argv[1]}: not the start of a function in .main", file=sys.stderr)
+        # Data addresses (literals, vtables) and unknown names have no function entry;
+        # a case target or other interior address names the function that holds it.
+        a = int(sys.argv[1], 16) if sys.argv[1].lower().startswith("0x") else -1
+        inner = next((f for f in functions() if f[0] <= a < f[0] + f[1]), None)
+        hint = f"; inside {inner[2]} 0x{inner[0]:08X} at +0x{a - inner[0]:X}" if inner else ""
+        print(f"{sys.argv[1]}: not the start of a function in .main{hint}", file=sys.stderr)
         return 1
     if "--m2c" in sys.argv:
         print("\n".join(render_m2c(n, a, s)))
