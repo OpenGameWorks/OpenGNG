@@ -11,6 +11,10 @@ extern unsigned char __vt__9PResource[];
 extern unsigned char __vt__6PMNode[];
 extern "C" void InitMembers__6PMNodeFv(PMNode *pThis);
 extern "C" void CopyMNode__6PMNodeFR6PMNodeb(PMNode *pThis, PMNode *src, bool flag);
+extern "C" void DestroyChildren__6PMNodeFv(PMNode *pThis);
+extern PMNode *mpNumbers__7GameHud[10];
+extern float HINT_X;
+extern "C" int sprintf(char *buf, const char *fmt, ...);
 class Player {
 public:
     void SwapAbility(int arg0);
@@ -860,6 +864,51 @@ void HudCombo::InitCombo(PMeshNode *arg0, HudData *arg1, PMNode *arg2) {
     ((PArray *)((char *)m_unk4 + 0x14))->Add(m_unk38);
 }
 
+// DRAFT: 0x00142280 SetNumber__7GameHudFv
+// note: 131 words; frame size differs (0x220 vs 0x23C-class spill) because the PMNode node-ctor spill needs PMNode as a real class (another worker's header). Tried: local reorder, void *volatile self (136, reverted).
+void GameHud::SetNumber() {
+    short cur;
+    int first = 0;
+    int div = 1000;
+    float vec[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+
+    DestroyChildren__6PMNodeFv((PMNode *)m_unk4);
+    vec[0] += *(float *)((char *)m_unk4 + 0xB0);
+    vec[1] += *(float *)((char *)m_unk4 + 0xB4);
+    if (m_unkC >= 0x2710) {
+        CdsAssert__FPciPc("Interface.cpp", 0x717, "miValue < 10000");
+    }
+    cur = m_unkC;
+    do {
+        int digit = cur / div;
+        if (digit != 0 || first != 0 || div == 1) {
+            cur = (short)(cur % (short)div);
+            first = 1;
+            void *node = __nw__FUi(0x100);
+            if (node != 0) {
+                *(unsigned char **)node = __vt__9PResource;
+                *(int *)((char *)node + 4) = 0;
+                *(unsigned char **)node = __vt__6PMNode;
+                __ct__6PArrayFv((char *)node + 0x14);
+                sceVu0UnitMatrix((char *)node + 0x40);
+                __ct__6PArrayFv((char *)node + 0xD8);
+                InitMembers__6PMNodeFv((PMNode *)node);
+            }
+            if (node == 0) {
+                CdsAssert__FPciPc("Interface.cpp", 0x720, "pNode");
+            }
+            CopyMNode__6PMNodeFR6PMNodeb((PMNode *)node, mpNumbers__7GameHud[digit], true);
+            float f1 = *(float *)((char *)*(void **)((char *)node + 0x10) + 0x20);
+            vec[0] += f1;
+            *(u_long128 *)((char *)node + 0x80) = *(u_long128 *)vec;
+            *((unsigned char *)node + 0x3E) |= 8;
+            vec[0] += f1;
+            ((PArray *)((char *)m_unk4 + 0x14))->Add(node);
+        }
+        div = div / 10 + ((unsigned int)div >> 31);
+    } while (div != 0);
+}
+
 // DRAFT: 0x1424A0 UpdateStatus__7GameHudFb
 // note: switch on m_unkF with case order 0,3,2,1 gives DIFF 54 (if-chain 65, case order 2,3,1,0 67); compare sequence 1,2,3,0 vs original 2,3,1,0 and register use in the CoinAnim/virtual calls differ.
 void GameHud::UpdateStatus(bool arg0) {
@@ -973,7 +1022,7 @@ void HudInventory::Update(int arg0) {
             if (r == 0) {
                 *(int *)((char *)m_unk4 + 0xC) = 0;
                 m_unkF = 0;
-                *(int *)((char *)&gInterface + 0x18D0) = 15;
+                *(int *)((char *)&gInterface + 0x1C0) = 15;
             }
         }
     } else if (state == 2) {
@@ -1320,6 +1369,45 @@ void HudHint::WriteHint() {
     FontManager *fm = (FontManager *)((char *)&gInterface + 0x80);
     fm->RemoveText((unsigned short)0x14);
     fm->DisplayString(HintTable[m_unk38[m_unkC]] + 1, 0, 10, false);
+}
+
+// DRAFT: 0x00143DC0 DisplayTitle__7HudHintFi
+// note: 121 words vs 0x22C; original keeps the slot address in a saved register and stores the second slot at 0xC0(sp), ours reloads this+off. Tried: local order, off-first (123).
+void HudHint::DisplayTitle(int arg0) {
+    char buf[8];
+    int idx = arg0;
+    int y = 0x91;
+    FontManager *fm = (FontManager *)((char *)&gInterface + 0x80);
+    int off = 0;
+    float fx;
+    for (int i = 0; i < 5; i++) {
+        char *slot = (char *)this + off;
+        int *pSlot0 = (int *)(slot + 0x10);
+        int *pSlot1 = (int *)(slot + 0x14);
+        void *p0 = *(void **)pSlot0;
+        if (p0 != 0) fm->RemoveText((FontNode *)p0);
+        *pSlot0 = 0;
+        void *p1 = *(void **)pSlot1;
+        if (p1 != 0) fm->RemoveText((FontNode *)p1);
+        *pSlot1 = 0;
+        if (idx < m_unkB0) {
+            sprintf(buf, "%d.", m_unk38[idx] + 1);
+            char *entry = *(char **)((char *)fm + 0x100) + HintTable[m_unk38[idx]] * 12;
+            int color = (idx == m_unkC) ? 4 : 7;
+            signed char t = *(signed char *)((char *)fm + 0x13);
+            if (t == 2 || (unsigned int)(t - 4) < 2 || t == 3) {
+                fx = HINT_X;
+                *(void **)pSlot0 = DisplayString__11FontManagerFPcffi9FontColor9FontAlign(fm, buf, HINT_X, (float)y, 6, color, 2);
+            } else {
+                fx = 10.0f + HINT_X;
+                *(void **)pSlot0 = DisplayString__11FontManagerFPcffi9FontColor9FontAlign(fm, buf, fx, (float)y, 0, color, 2);
+            }
+            *(void **)pSlot1 = DisplayString__11FontManagerFPcffi9FontColor9FontAlign(fm, *(char **)entry, 10.0f + fx, (float)y, *(signed char *)(entry + 0xA), color, 0);
+        }
+        off += 8;
+        idx++;
+        y -= 0x19;
+    }
 }
 
 // FUNCTION: 0x143FF0 InitHint__7HudHintFv
