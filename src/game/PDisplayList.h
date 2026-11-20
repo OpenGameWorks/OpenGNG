@@ -39,6 +39,8 @@ public:
     void DrawLines(struct tagVuLine *pLines, int nCount);
     void ClearFrameBuffer(short nX, short nY, short nW, short nH, char nR, char nG, char nB, char nA, unsigned int nFlags);
     void ClearZBuffer(short nX, short nY, short nW, unsigned int nFlags);
+    void DrawFogParticles(float (*pVerts)[4], int nCount, float fA, float fB, float fC, float *pColor);
+    void SetVu1Microcode(void *pData);
 
     char _pad000[0xA3340];
     int m_unkA3340;         // 0xA3340 entry count, decremented by DeAllocEntries

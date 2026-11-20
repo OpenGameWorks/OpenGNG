@@ -14,6 +14,11 @@ void QwordCopy(u_long128 *pDst, u_long128 *pSrc, unsigned int nQwords);
 extern "C" void FlushCache(int nMode);
 void DmaWaitForCompletion(int nChannel, bool bWait);
 extern "C" void sceGsSetDefClear(void *pPacket, int nW, short nCX, short nCY, short nX, short nY, int nZero0, int nZero1, int nZero2, int nZero3, unsigned int nFlags);
+extern char gHermiteMat[0x40];
+extern char guFxPipelineVuConstants[0x10];
+extern char gu3dPipelineVuConstants[0x10];
+extern char vu_fx_microcode_dma_packet[0x10];
+extern char vu_shadow_microcode_dma_packet[0x10];
 
 // FUNCTION: 0x180400 DeAllocEntries__12PDisplayListFi
 void PDisplayList::DeAllocEntries(int nCount) {
@@ -354,6 +359,52 @@ void PDisplayList::SetTexSyncPacket() {
     }
 }
 
+// DRAFT: 0x182100 DrawFogParticles__12PDisplayListFPA4_fifffPf
+// note: 102 differing words; frame 0xC0 vs 0xB0 with pColor spilled and extra locals live across the call (tried 5 variants, best kept)
+void PDisplayList::DrawFogParticles(float (*pVerts)[4], int nCount, float fA, float fB, float fC, float *pColor) {
+    if (pVerts == 0) {
+        CdsAssert("PDisplayList.cpp", 0x4A7, "pParticles");
+    }
+    if (nCount == 0) {
+        CdsAssert("PDisplayList.cpp", 0x4A8, "iNumParticles");
+    }
+    int nLoops = nCount / 61;
+    if (nCount % 61 != 0) {
+        nLoops += 1;
+    }
+    int nIndex = 0;
+    while (nIndex < nLoops) {
+        int nChunk = (nCount < 61) ? nCount : 61;
+        float (*pChunk)[4] = pVerts + nIndex * 61;
+        nCount -= nChunk;
+        if (nChunk < 5) {
+            break;
+        }
+        int nPacket = AllocEntries(5);
+        if (nPacket == 0) {
+            CdsAssert("PDisplayList.cpp", 0x4C1, "0");
+        }
+        *(long long *)nPacket = 0x10000002LL;
+        ((unsigned int *)nPacket)[2] = 0;
+        ((unsigned int *)nPacket)[3] = 0x6C028000;
+        ((unsigned int *)nPacket)[4] = nChunk;
+        nIndex++;
+        ((float *)nPacket)[6] = fA;
+        ((float *)nPacket)[5] = fB;
+        ((float *)nPacket)[7] = fC;
+        *(u_long128 *)(nPacket + 0x20) = *(u_long128 *)pColor;
+        *(long long *)(nPacket + 0x30) = ((long long)(unsigned int)pChunk << 32) | 0x30000000LL | (long long)nChunk;
+        ((unsigned int *)nPacket)[14] = 0;
+        ((unsigned int *)nPacket)[15] = (nChunk << 16) | 0x6C008004;
+        *(long long *)(nPacket + 0x40) = 0x10000000LL;
+        ((unsigned int *)nPacket)[18] = 0x17000000;
+        ((unsigned int *)nPacket)[19] = 0;
+    }
+    asm {
+        sync
+    }
+}
+
 // FUNCTION: 0x183380 BeginFxLoop__12PDisplayListFUi
 void PDisplayList::BeginFxLoop(unsigned int nTag) {
     if (m_unkA3348 != 2) {
@@ -607,6 +658,69 @@ void PDisplayList::SetWorldMatrix(PMat4 *pMat) {
         *(u_long128 *)(nPacket + 0x20) = *(u_long128 *)((char *)pMat + 0x10);
         *(u_long128 *)(nPacket + 0x30) = *(u_long128 *)((char *)pMat + 0x20);
         *(u_long128 *)(nPacket + 0x40) = *(u_long128 *)((char *)pMat + 0x30);
+        asm {
+            sync
+        }
+    }
+}
+
+// DRAFT: 0x183D30 SetVu1Microcode__12PDisplayListFPv
+// note: size 0x218 vs 0x284; frame 0x80 not 0x90 (no s7 save); locals s3/s2 swapped; tried decl reorder (148) and inverted branch (149), kept 147
+void PDisplayList::SetVu1Microcode(void *pData) {
+    unsigned int nMode;
+    unsigned int nStart;
+    unsigned int nVu1Offset;
+    unsigned int nCode;
+    char *pConst;
+    int nQw;
+    int nPacket;
+    if (pData == vu_fx_microcode_dma_packet) {
+        m_unkA3348 = 2;
+        nMode = 0;
+        pConst = guFxPipelineVuConstants;
+        nQw = 0xA;
+        nStart = 0x185;
+        nVu1Offset = 0x3BF;
+        nCode = 0x6C04039C;
+    } else {
+        m_unkA3348 = 1;
+        nMode = 0;
+        pConst = gu3dPipelineVuConstants;
+        nQw = 0xF;
+        nStart = 0x10A;
+        nVu1Offset = 0x3BB;
+        nCode = 0x6C040367;
+    }
+    ((gHermiteMat != 0) ? (void)0 : CdsAssert("PDisplayList.cpp", 0x94C, "pMat"));
+    nPacket = AllocEntries(5);
+    if (nPacket != 0) {
+        *(long long *)nPacket = 0x10000004LL;
+        ((unsigned int *)nPacket)[2] = 0x10000000;
+        ((unsigned int *)nPacket)[3] = nCode;
+        *(u_long128 *)(nPacket + 0x10) = *(u_long128 *)gHermiteMat;
+        *(u_long128 *)(nPacket + 0x20) = *(u_long128 *)(gHermiteMat + 0x10);
+        *(u_long128 *)(nPacket + 0x30) = *(u_long128 *)(gHermiteMat + 0x20);
+        *(u_long128 *)(nPacket + 0x40) = *(u_long128 *)(gHermiteMat + 0x30);
+        asm {
+            sync
+        }
+    }
+    nPacket = AllocEntries(1);
+    if (nPacket == 0) {
+        CdsAssert("PDisplayList.cpp", 0xFE, "0");
+    }
+    *(long long *)nPacket = ((long long)(unsigned int)pData << 32) | 0x50000000LL;
+    ((unsigned int *)nPacket)[2] = 0x11000000;
+    ((unsigned int *)nPacket)[3] = 0;
+    if (pData != vu_shadow_microcode_dma_packet) {
+        WriteToVu1Mem(nVu1Offset, (u_long128 *)pConst, nQw);
+        nPacket = AllocEntries(1);
+        if (nPacket == 0) {
+            CdsAssert("PDisplayList.cpp", 0x115, "0");
+        }
+        *(long long *)nPacket = 0x10000000LL;
+        ((unsigned int *)nPacket)[2] = nMode | 0x03000000;
+        ((unsigned int *)nPacket)[3] = nStart | 0x02000000;
         asm {
             sync
         }
