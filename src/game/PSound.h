@@ -107,6 +107,11 @@ public:
     SpotInfo *GetSpotInfoPtrByPublicID(unsigned int nID);
     SpotInfo *GetSpotInfo(unsigned int nID);
     void InternalUpdateRelVolumes();
+    void SetMasterRelVolume(unsigned int nVolume);
+    void SetEffectsRelVolume(unsigned int nVolume);
+    int StopSoundBySoundRefIfAmbient(unsigned int nSoundRef);
+    unsigned int FindFreeAmbientChannel();
+    int StartAndHoldDialog(unsigned int nArg);
     void AmbientFadeToFree(AmbientChannelState *pState);
     int StopAllSounds();
     int SetStandardSecondaryMusicFileID(unsigned int id);
@@ -171,8 +176,11 @@ public:
     int m_unk38;            // 0x038, RelVolumes arg 2
     int m_unk3C;            // 0x03C, RelVolumes arg 3
     int m_unk40;            // 0x040, RelVolumes arg 4
-    char _pad044[0x058 - 0x044];
-    float m_unk58;          // 0x058, SetPositionalRangeOneshot sets it
+    char _pad044[0x04C - 0x044];
+    int m_unk4C;            // 0x04C, SetMasterRelVolume arg 3
+    int m_unk50;            // 0x050, SetEffectsRelVolume arg 3
+    char _pad054[0x058 - 0x054];
+    float m_unk58;         // 0x058, SetPositionalRangeOneshot sets it
     float m_unk5C;          // 0x05C, SetPositionalRangeAmbient sets it
     char _pad060[0x0B0 - 0x060];
     int m_unkB0;            // 0x0B0, SendStops clears it
@@ -198,7 +206,8 @@ public:
     int m_unk2E48;          // 0x2E48, SoundEditLeave copies 0x2E4C here
     int m_unk2E4C;          // 0x2E4C, SoundEditLeave/Enter category mask
     int m_unk2E50[4];       // 0x2E50, PSoundStopDialog zeroes 0x2E50..0x2E5C
-    char _pad2E60[0x2E74 - 0x2E60];
+    int m_unk2E60;          // 0x2E60, StartAndHoldDialog stores its value
+    char _pad2E64[0x2E74 - 0x2E64];
     int m_unk2E74;          // 0x2E74, GetEEControlStatus stores its result
     char _pad2E78[0x2EB4 - 0x2E78];
     char m_unk2EB4[0x2580]; // 0x2EB4, 400 SpotInfo records of 0x18 bytes, GetSpotInfo scans them

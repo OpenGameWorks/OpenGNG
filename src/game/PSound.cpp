@@ -29,6 +29,9 @@ extern "C" void FlushCache(int nMode);
 extern int gCDSVBlankCount;
 extern int fst_lastVSyncWaitCount;
 extern "C" void SOUND_SetOverallMusicPitch(int, int);
+extern unsigned char SOUND_SPUKeyStatus[0x40];
+extern "C" int SOUND_MakeSoundStreamRef();
+extern "C" unsigned int SOUND_PlayDialogRelVol(unsigned int, unsigned int, unsigned int, short, unsigned int);
 
 // FUNCTION: 0x001A3C70 AddAEToFreeList__6PSoundFPQ26PSound12AmbientEntry
 void PSound::AddAEToFreeList(AmbientEntry *pEntry) {
@@ -99,6 +102,20 @@ unsigned int PSound::FindFadingAmbientChannel() {
     return -1U;
 }
 
+// FUNCTION: 0x001A3F30 FindFreeAmbientChannel__6PSoundFv
+unsigned int PSound::FindFreeAmbientChannel() {
+    unsigned int nIdx = m_unk2E28;
+    AmbientChannelState *p = (AmbientChannelState *)m_unkF8;
+    while (nIdx <= m_unk2E2C) {
+        if (p->m_unk00 == 0x3FFF && SOUND_SPUKeyStatus[nIdx] == 0) {
+            return nIdx;
+        }
+        nIdx++;
+        p = (AmbientChannelState *)((char *)p + 0x20);
+    }
+    return -1;
+}
+
 // FUNCTION: 0x001A41A0 WaitOnVSync__6PSoundFv
 void PSound::WaitOnVSync() {
     int nVBlank = gCDSVBlankCount;
@@ -144,6 +161,15 @@ void PSound::AbilityScreenEnter() {
     KillByCategories(0x200);
     PauseByCategories(0x8C);
     SetMainMusicSpecialVolume((EnumMusicSpecialVols)1);
+}
+
+// FUNCTION: 0x001A47D0 StartAndHoldDialog__6PSoundFUi
+int PSound::StartAndHoldDialog(unsigned int nArg) {
+    m_unk2E50[0] = SOUND_MakeSoundStreamRef();
+    m_unk2E50[2] = nArg;
+    SOUND_PlayDialogRelVol(0, nArg, m_unk2E50[0], 0x3E8, 6);
+    m_unk2E60 = *(int *)(gEng + 0x137A4);
+    return 0;
 }
 
 // FUNCTION: 0x001A48D0 SendStops__6PSoundFv
@@ -218,6 +244,22 @@ int PSound::StopAllSounds() {
 int PSound::StopAllRegularSounds() {
     SOUND_StopAllRegularSounds();
     PSoundReInitRegularSounds();
+    return 0;
+}
+
+// FUNCTION: 0x001A8450 StopSoundBySoundRefIfAmbient__6PSoundFUi
+int PSound::StopSoundBySoundRefIfAmbient(unsigned int nSoundRef) {
+    if (nSoundRef != 0) {
+        AmbientEntry *p = (AmbientEntry *)((char *)this + 0x380);
+        AmbientEntry *end = (AmbientEntry *)((char *)this + 0x2220);
+        while (p < end) {
+            if (nSoundRef == p->m_unk44) {
+                StartAESoftwareFadeout(p, 0);
+                return 1;
+            }
+            p = (AmbientEntry *)((char *)p + 0x70);
+        }
+    }
     return 0;
 }
 
@@ -389,6 +431,32 @@ void PSound::SetPositionalRangeOneshot(unsigned int nRange) {
         fRange = fRange + fRange;
     }
     m_unk58 = fRange;
+}
+
+// FUNCTION: 0x001A9340 SetMasterRelVolume__6PSoundFUi
+void PSound::SetMasterRelVolume(unsigned int nVolume) {
+    unsigned int nClamped = nVolume;
+
+    if (nClamped > 0x64) {
+        nClamped = 0x64;
+    }
+    gPSndDbg[4] = nClamped;
+    m_unk34 = nClamped * 10;
+    m_unk4C = (nClamped * 0x3FFF * 10) / 1000;
+    InternalUpdateRelVolumes();
+}
+
+// FUNCTION: 0x001A93A0 SetEffectsRelVolume__6PSoundFUi
+void PSound::SetEffectsRelVolume(unsigned int nVolume) {
+    unsigned int nClamped = nVolume;
+
+    if (nClamped > 0x64) {
+        nClamped = 0x64;
+    }
+    gPSndDbg[6] = nClamped;
+    m_unk38 = nClamped * 10;
+    m_unk50 = (nClamped * 0x3FFF * 10) / 1000;
+    InternalUpdateRelVolumes();
 }
 
 // FUNCTION: 0x001A9400 InternalUpdateRelVolumes__6PSoundFv
