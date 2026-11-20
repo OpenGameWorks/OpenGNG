@@ -19,6 +19,7 @@ public:
     void Remove(PParticleSystem *pSystem);
     void CreateSulphurReaction(float *arg0, float arg1);
     void CreateFireDamageFx(PMNode *arg0, unsigned int arg1);
+    int IsValid(PParticleSystem *pSystem);
 };
 extern char gGfxEng[1504384];
 
@@ -56,6 +57,7 @@ class Physics {
 public:
     void RunPhysics(EntityBaseClass *arg0, float arg1, int arg2, BGCollision *arg3);
     void AddBGAnimNode(PMeshNode *arg0);
+    void SetVelocity(float arg0, float arg1);
 };
 
 class PMNode {
@@ -75,7 +77,8 @@ public:
 // gEng is a pointer; the placeholder pads it past the small-data threshold so the load is absolute.
 struct PMNodeHolder {
     PMNode *ptr;
-    char _pad000[0x10];
+    char _pad004[0x1E4];
+    float m_unk1E8;
 };
 extern PMNodeHolder gEng;
 
@@ -105,8 +108,22 @@ extern EntityAttackManager *mpEntMgr__15EntityBaseClass;
 
 extern "C" void sceVu0ScaleVector(float *pDst);
 extern "C" void sceVu0AddVector(float *pDst, float *pSrc0, float *pSrc1);
+extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
+extern "C" float atan2f(float y, float x);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" int sprintf(char *, const char *, ...);
+extern "C" int printf(const char *fmt, ...);
+
+// PParticleSystem fields used by ChangeDamageFxInterval; the shared class header has no fields at these offsets.
+class PParticleSystemView {
+public:
+    char _pad000[0xC];
+    int m_unkC;
+    char _pad010[0xD0];
+    EntityBaseClass *m_unkE0;
+    char _padE4[0x4];
+    float m_unkE8;
+};
 
 // Vptr view used to call the object's virtual name getter at slot 0x18.
 class EntityBaseClassVirtuals {
@@ -133,6 +150,28 @@ void EntityBaseClass::DestroyDamageFx(unsigned int arg0) {
     if (arg0 != 0) {
         ((PParticleManager *)(gGfxEng + 0x154F00))->Remove((PParticleSystem *)arg0);
     }
+}
+
+// FUNCTION: 0x0014A9A0 ChangeDamageFxInterval__15EntityBaseClassFUif
+int EntityBaseClass::ChangeDamageFxInterval(unsigned int arg0, float arg1) {
+    int ret;
+
+    if (arg0 != 0) {
+        ret = ((PParticleManager *)(gGfxEng + 0x154F00))->IsValid((PParticleSystem *)arg0);
+        if (ret != 0) {
+            if (((PParticleSystemView *)arg0)->m_unkE0 != this) {
+                ret = printf("\nEntity %s is not owner of Fx 0x%X", ((EntityBaseClassVirtuals *)this)->GetName(), arg0);
+            }
+            if (((PParticleSystemView *)arg0)->m_unkC == 0x1A) {
+                ((PParticleSystemView *)arg0)->m_unkE8 = arg1;
+                goto block_6;
+            }
+        }
+    } else {
+block_6:
+        ret = 1;
+    }
+    return ret;
 }
 
 // DRAFT: 0x0014A8F0 OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi
@@ -171,6 +210,29 @@ void EntityBaseClass::CheckVariable(int arg0, int arg1) {
         sprintf(buf, "Invalid variable in %d %s. value %d < %d", id, ((EntityBaseClassVirtuals *)this)->GetName(), arg0, arg1);
         CdsAssert__FPciPc("EntityBaseClass.cpp", 0xA0C, buf);
     }
+}
+
+// DRAFT: 0x0014B170 ProcessHitBack__15EntityBaseClassFv
+// note: original builds 0.05f inline (lui/ori/mtc1); mwcc pools it via gp (lwc1), shifting the body by one word.
+int EntityBaseClass::ProcessHitBack() {
+    float temp;
+    int ret;
+
+    temp = this->m_unkDC - 0.05f * *(float *)((char *)&gEng + 0x1E8);
+    this->m_unkDC = temp;
+    if (temp < 0.0f) {
+        this->m_unkDC = 0.0f;
+    } else {
+        Physics *phys = this->m_unk38;
+        if (phys != 0) {
+            phys->SetVelocity(this->m_unkD8, temp);
+        }
+    }
+    ret = 1;
+    if (this->m_unkDC <= 0.0f) {
+        ret = 0;
+    }
+    return ret;
 }
 
 // FUNCTION: 0x0014B330 IsBGAnimating__15EntityBaseClassFUi
@@ -228,9 +290,61 @@ void EntityBaseClass::FacePlayer(float arg0) {
     this->RotateTo(angle, arg0);
 }
 
+// DRAFT: 0x0014C010 ProcessMeshFade__15EntityBaseClassFv
+// note: 9 words differ; original keeps clamp sum in v1 (addu v1,a1,v1) and orders clamp as bgez then slti. Tried: block-scope v, operand swap (worse), short v (worse), separate int temp (same).
+void EntityBaseClass::ProcessMeshFade() {
+    float temp;
+
+    if (this->m_unk178 != 0) {
+        temp = this->m_unk170;
+        if (!(temp <= 0.0f)) {
+            float dt = gEng.m_unk1E8;
+            int v;
+            this->m_unk170 = temp - dt;
+            this->m_unk174 += this->m_unk16C * dt;
+            v = this->m_unk168 + (int)this->m_unk174;
+            if (v >= 0x81) {
+                v = 0x80;
+            } else if (v < 0) {
+                v = 0;
+            }
+            this->m_unkD2 = v;
+            return;
+        }
+        this->m_unk178 = 0;
+    }
+}
+
 // FUNCTION: 0x0014C160 MusicChangePrimary__15EntityBaseClassFUiUi
 int EntityBaseClass::MusicChangePrimary(unsigned int arg0, unsigned int arg1) {
     return gSound.PlayMusic(arg0) & 0xFF;
+}
+
+// DRAFT: 0x0014C620 FaceHitDirection__15EntityBaseClassFP15EntityBaseClass
+// note: 15 words differ; 57.295776f is pooled via gp where the original builds it inline (lui/ori/mtc1), the tail store order differs, and m_unk38 is not kept in s0. Tried: cached m_unk38 local (20 words, worse, reverted).
+void EntityBaseClass::FaceHitDirection(EntityBaseClass *arg0) {
+    float vec[4];
+    float (*a1)[4];
+    float (*a2)[4];
+    float ang;
+
+    if (this->m_unk3C != 0) {
+        a2 = (float (*)[4])((char *)arg0 + 0x190);
+        if (arg0->m_unk3C != 0) {
+            a2 = (float (*)[4])(arg0->m_unk3C + 0x80);
+        }
+        a1 = (float (*)[4])((char *)this + 0x190);
+        if (this->m_unk3C != 0) {
+            a1 = (float (*)[4])(this->m_unk3C + 0x80);
+        }
+        sceVu0SubVector(vec, (float *)a1, (float *)a2);
+        ang = Round180(57.295776f * atan2f(vec[0], vec[2]));
+        *(float *)(this->m_unk3C + 0x94) = ang;
+        *(unsigned char *)(this->m_unk3C + 0x3E) |= 8;
+        if (this->m_unk38 != 0) {
+            *(float *)((char *)this->m_unk38 + 0x11C) = Round180(ang);
+        }
+    }
 }
 
 // FUNCTION: 0x0014C6D0 GetDistFromPlayer__15EntityBaseClassFv
@@ -392,6 +506,30 @@ void EntityBaseClass::UpdateShadowVolume() {
         this->SetShadowVolume(0.4f);
     } else {
         this->SetShadowVolume(1.0f);
+    }
+}
+
+// DRAFT: 0x0014D8C0 SetShadowVolume__15EntityBaseClassFf
+// note: 25 words differ; the original builds 0.02f inline (lui/ori/mtc1, first lui in a branch delay slot) and ours pools it via gp. Tried: goto shared exit (25), hoisted 0.02f local (25).
+void EntityBaseClass::SetShadowVolume(float arg0) {
+    float temp;
+
+    if (arg0 != this->m_unkE0) {
+        if (this->m_unkE0 < arg0) {
+            temp = this->m_unkE0 + 0.02f;
+            this->m_unkE0 = temp;
+            if (!(temp <= arg0)) {
+                goto block_5;
+            }
+        } else {
+            temp = this->m_unkE0 - 0.02f;
+            this->m_unkE0 = temp;
+            if (temp < arg0) {
+block_5:
+                this->m_unkE0 = arg0;
+            }
+        }
+        this->m_unkD0 = 0;
     }
 }
 

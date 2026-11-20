@@ -15,10 +15,14 @@ public:
     void ProcessPhysics(float arg0, int arg1);
     void CheckDie(bool arg0);
     void DestroyDamageFx(unsigned int arg0);
+    int ProcessHitBack();
+    int ChangeDamageFxInterval(unsigned int arg0, float arg1);
     long long IsBGAnimating(unsigned int arg0);
     int MusicChangePrimary(unsigned int arg0, unsigned int arg1);
     void UpdateSulphurFx(float arg0);
     void FacePlayer(float arg0);
+    void FaceHitDirection(EntityBaseClass *arg0);
+    void ProcessMeshFade();
     float GetDistFromPlayer();
     void SetRenderPass(int arg0);
     int ChangedState();
@@ -65,7 +69,13 @@ public:
     char *m_unk3C;              // 0x03C
     char _pad040[0x90];         // 0x040..0x0CF
     signed char m_unkD0;        // 0x0D0
-    char _padD1[0x17];          // 0x0D1..0x0E7
+    char _padD1[0x1];           // 0x0D1
+    short m_unkD2;              // 0x0D2
+    char _padD4[0x4];           // 0x0D4..0x0D7
+    float m_unkD8;              // 0x0D8
+    float m_unkDC;              // 0x0DC
+    float m_unkE0;              // 0x0E0 shadow volume scale
+    char _padE4[0x4];           // 0x0E4..0x0E7
     signed char m_unkE8;        // 0x0E8
     char _pad0E9[0x7];          // 0x0E9..0x0EF
     float m_unkF0;              // 0x0F0
@@ -80,7 +90,14 @@ public:
     unsigned char m_unk161;     // 0x161 BG anim list flag
     char _pad162[0x4];          // 0x162..0x165
     unsigned char m_unk166;     // 0x166
-    char _pad167[0x29];         // 0x167..0x18F; MathAPI matrix block at 0x190
+    char _pad167[0x1];          // 0x167
+    short m_unk168;             // 0x168
+    char _pad16A[0x2];          // 0x16A..0x16B
+    float m_unk16C;             // 0x16C
+    float m_unk170;             // 0x170 mesh fade timer
+    float m_unk174;             // 0x174 mesh fade accumulator
+    unsigned char m_unk178;     // 0x178 mesh fade active flag
+    char _pad179[0x17];         // 0x179..0x18F; MathAPI matrix block at 0x190
 };
 
 #endif
