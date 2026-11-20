@@ -11,6 +11,7 @@ public:
     PSTAnim();
     void Animate(float fTime, bool bFlag);
     int Load(PPakFile *pFile);
+    void Clone(PSTAnim *pSrc);
 
     unsigned char m_unk0;
     unsigned char m_unk1;
