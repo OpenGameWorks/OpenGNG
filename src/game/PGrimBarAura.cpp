@@ -1,6 +1,7 @@
 #include "types.h"
 #include "PGrimBarAura.h"
 #include "PParticleManager.h"
+#include "PDisplayList.h"
 
 // TODO(header): foreign declarations
 extern "C" void *__dt__15PParticleSystemFv(void *, short);
@@ -11,6 +12,43 @@ extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern unsigned char __vt__12PGrimBarAura[];
 extern char gGfxEng[1504384];
+
+// DRAFT: 0x00213DB0 Animate__12PGrimBarAuraFf
+// note: 58 words differ: register allocation (m_unk108/m_unk10C/m_unk100 f-regs swapped), loop off/pOut registers swapped, element-test c.eq.s operand order, clamp branch layout. Tried: if/else clamp (77), ternary clamp (77), swapped i/off declarations (60), 0.0f compare operand order (58), unsigned char pElem (58).
+void PGrimBarAura::Animate(float fDelta) {
+    if (m_unk15 != 0) {
+        m_unk08 = ((PDisplayList *)*(char **)(gGfxEng + 0x154C80))->AllocParticles(m_unk04, 2);
+        if (m_unk08 == 0) {
+            CdsAssert__FPciPc("PGrimBarAura.cpp", 0x63, "mpVuParticles");
+        }
+        if (m_unk100 != 0.0f) {
+            float fT = m_unk10C + (fDelta * m_unk108);
+            m_unk10C = fT;
+            if ((fT <= 0.6f) || !(fT < 1.0f)) {
+                m_unk108 = -m_unk108;
+            }
+        }
+        unsigned int i = 0;
+        int off = 0;
+        while (i < m_unk04) {
+            unsigned char *pElem = (unsigned char *)m_unkE0 + off;
+            char *pOut = (char *)m_unk08 + off;
+            if (*(float *)(pElem + 0x10) != 0.0f && pElem[0x14] == 0) {
+                float v = *(float *)(pElem + 0x10) - (fDelta * (1.0f / m_unk104));
+                if (v <= 0.0f) {
+                    v = 0.0f;
+                }
+                *(float *)(pElem + 0x10) = v;
+            }
+            off += 0x20;
+            i++;
+            *(u_long128 *)pOut = *(u_long128 *)pElem;
+            *(u_long128 *)(pOut + 0x10) = m_unkF0;
+            *(float *)(pOut + 0x1C) = *(float *)(pOut + 0x1C) * (*(float *)(pElem + 0x10) * m_unk10C);
+            *(float *)(pOut + 0xC) = m_unkA0;
+        }
+    }
+}
 
 // DRAFT: 0x00213F50 EnableParticle__12PGrimBarAuraFib
 // note: original keeps addiu +0x10/+0x14 before the index addu and reloads m_unkE0 per block; MW folds the constant into sw/sb immediates (14 words). Tried: inline offsets, locals, char* base; none reduced the count.
@@ -85,5 +123,5 @@ PGrimBarAura::PGrimBarAura() {
     m_unkE0 = 0;
     m_unk100 = 0.0f;
     m_unk104 = 0.0f;
-    m_unk10C = 0x3F800000;
+    m_unk10C = 1.0f;
 }

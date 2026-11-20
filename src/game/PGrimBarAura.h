@@ -10,6 +10,7 @@
 class PGrimBarAura : public PParticleSystem {
 public:
     PGrimBarAura();
+    void Animate(float fDelta);
     void EnableParticle(int nIndex, bool bEnable);
     void SetParticlePos(int nIndex, float *pPos);
     int Create(int nNum, float fA, float fB, float fC, float *pPos);
@@ -20,7 +21,7 @@ public:
     float m_unk100;             // 0x100 Create argument, decay input
     float m_unk104;             // 0x104 Create argument
     float m_unk108;             // 0x108 -(1 / (60 * (1 - m_unk100))), clamped to at least 2
-    int m_unk10C;               // 0x10C 1.0f in the constructor
+    float m_unk10C;             // 0x10C 1.0f in the constructor; phase advanced by Animate
 };
 
 #endif
