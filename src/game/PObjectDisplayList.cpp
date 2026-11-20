@@ -2,14 +2,9 @@
 #include "types.h"
 #include "PObjectDisplayList.h"
 
-// TODO(header): foreign declarations
-class PArray {
-public:
-    PArray();
-    ~PArray();
-    void Add(void *pItem);
-};
+#include "PArray.h"
 
+// TODO(header): foreign declarations
 class PShader {
 public:
     char _pad000[0x8];
@@ -24,6 +19,12 @@ public:
     void *m_unk0;           // 0x00 element base
     unsigned int m_unk4;    // 0x04 element count
     unsigned short m_unk8;  // 0x08
+    int Render(int nFlags, bool *pFlags, bool bFlag);
+};
+
+class PDisplayList {
+public:
+    void EndMesh();
 };
 
 class PMNodeChildList {
@@ -35,7 +36,7 @@ public:
 
 class PMNode {
 public:
-    char _pad000[0x4];
+    PMNode *m_unk0;         // 0x000
     int m_unk4;             // 0x004
     char _pad008[0x8];
     PMesh *m_unk10;         // 0x010
@@ -52,6 +53,7 @@ public:
 
 void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern MemoryManager MemMgr;
+extern PGfxEngine gGfxEng;
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" void __ct__6PArrayFv(void *pThis);
@@ -163,6 +165,116 @@ void PObjectDisplayList::FindUniqueShaders(PMesh *pMesh) {
             i += 1;
             off += 0x90;
         } while (i < nCount);
+    }
+}
+
+// DRAFT: 0x1D4350 FindUniqueShaders__18PObjectDisplayListFP6PArray
+// note: 63 words differ; element-base if/else lays out zero in beqz slot, original falls through then-path with b over else; IsShaderUnique call order at 0x9C-0xB4 differs. Tried ternary, 0<nCount guard, inverted if/else (65).
+void PObjectDisplayList::FindUniqueShaders(PArray *pArray) {
+    PMNode *pNode;
+    unsigned int nCount;
+    unsigned int i;
+    PMesh *pMesh;
+    PShader *pShader;
+    int off;
+    char *pElem;
+
+    pArray->m_unk4 = 0;
+    pNode = (pArray->m_unk0 != 0) ? (PMNode *)pArray->m_unk8[0] : 0;
+    while (pNode != 0) {
+        pMesh = pNode->m_unk10;
+        if (pMesh != 0) {
+            nCount = (pMesh->m_unk4 - pMesh->m_unk8) & 0xFFFF;
+            i = 0;
+            if (i < nCount) {
+                off = 0;
+                do {
+                    if (i < pMesh->m_unk4) {
+                        pElem = (char *)pMesh->m_unk0 + off;
+                    } else {
+                        pElem = 0;
+                    }
+                    pShader = (PShader *)(pElem + 0xC);
+                    if (pShader != 0 && IsShaderUnique(pShader)) {
+                        if (m_unk20 >= 0xC) {
+                            CdsAssert("PObjectDisplayList.cpp", 0x269, "miNumShaders < MAX_SHADERS");
+                        }
+                        m_apoShaders[m_unk20] = pShader;
+                        m_unk20 += 1;
+                    }
+                    i += 1;
+                    off += 0x90;
+                } while (i < nCount);
+            }
+        }
+        pArray->m_unk4 += 1;
+        pNode = (pArray->m_unk4 < pArray->m_unk0) ? (PMNode *)pArray->m_unk8[pArray->m_unk4] : 0;
+    }
+}
+
+// DRAFT: 0x1D44D0 FindUniqueShaders__18PObjectDisplayListFP6PMNode
+// note: 97 words differ; pNode guard and i < nCount form match, but element-base if/else puts zero in beqz slot (0x68), nCount guard at 0x4C; tried 16-bit nCount (107), no-break flag loop (105), unsigned nFlag (97), pElem=0 pre-init (98).
+void PObjectDisplayList::FindUniqueShaders(PMNode *pNode) {
+    unsigned int nCount;
+    unsigned int i;
+    PMesh *pMesh;
+    PShader *pShader;
+    int off;
+    char *pElem;
+    int nFlag;
+    unsigned int j;
+    PMNodeChildList *pChildList;
+    PMNode *pChild;
+
+    if (pNode != 0) {
+        pMesh = pNode->m_unk10;
+        if (pMesh != 0) {
+            nCount = (pMesh->m_unk4 - pMesh->m_unk8) & 0xFFFF;
+            i = 0;
+            if (i < nCount) {
+                off = 0;
+                do {
+                    if (i < pMesh->m_unk4) {
+                        pElem = (char *)pMesh->m_unk0 + off;
+                    } else {
+                        pElem = 0;
+                    }
+                    pShader = (PShader *)(pElem + 0xC);
+                    if (pShader != 0 && IsShaderUnique(pShader)) {
+                        nFlag = 0;
+                        j = 0;
+                        while (j < pShader->m_unk8) {
+                            if (m_unk1E0[j] != 0) {
+                                nFlag = 1;
+                                break;
+                            }
+                            j += 1;
+                        }
+                        if (nFlag != 0) {
+                            if (m_unk20 >= 0xC) {
+                                CdsAssert("PObjectDisplayList.cpp", 0x23A, "miNumShaders < MAX_SHADERS");
+                            }
+                            m_apoShaders[m_unk20] = pShader;
+                            m_unk20 += 1;
+                        }
+                    }
+                    i += 1;
+                    off += 0x90;
+                } while (i < nCount);
+            }
+        }
+
+        pChildList = &pNode->m_apoChildList;
+        if (pChildList == 0) {
+            CdsAssert("PObjectDisplayList.cpp", 0x249, "apoChildList");
+        }
+        pChildList->m_unk4 = 0;
+        pChild = (pChildList->m_unk0 != 0) ? (PMNode *)pChildList->m_unk8[0] : 0;
+        while (pChild != 0) {
+            FindUniqueShaders(pChild);
+            pChildList->m_unk4 += 1;
+            pChild = (pChildList->m_unk4 < pChildList->m_unk0) ? (PMNode *)pChildList->m_unk8[pChildList->m_unk4] : 0;
+        }
     }
 }
 
@@ -370,6 +482,45 @@ void PObjectDisplayList::SetupNodeInfo(PArray *pArray) {
             }
         } while (pNode != 0);
     }
+}
+
+// DRAFT: 0x1D4D60 RenderBlendedFragments__18PObjectDisplayListF13eBoxIntersect
+// note: 28 words differ, all saved-register allocation (original this=s4, eBox=s3, index=s2, offset=s1); tried i-first (35), reversed decls (35), cached count (91)
+int PObjectDisplayList::RenderBlendedFragments(eBoxIntersect eBox) {
+    int nTotal;
+    PMesh *pMesh;
+    PMNode *pNode;
+    void *pInfo;
+    unsigned int i;
+
+    nTotal = 0;
+    pNode = (PMNode *)m_unk8;
+    if (pNode != 0) {
+        pMesh = (PMesh *)pNode->m_unkD0;
+        if (pMesh != 0) {
+            if (pMesh->m_unk8 != 0) {
+                gGfxEng.BeginSharedMesh(eBox, pNode->m_unk0);
+                nTotal += pMesh->Render(0x80, (bool *)m_unk1E0, true);
+                *(unsigned char *)((char *)&gGfxEng + 0x158E24) = 0;
+                *(int *)((char *)&gGfxEng + 0x16D400) = 0;
+            }
+        }
+    }
+    for (i = 0; i < ((PArray *)m_unkC)->m_unk0; i++) {
+        pInfo = (i < ((PArray *)m_unkC)->m_unk0) ? ((PArray *)m_unkC)->m_unk8[i] : 0;
+        if (pInfo == 0) {
+            CdsAssert("PObjectDisplayList.cpp", 0x172, "apNodeInfo");
+        }
+        pNode = *(PMNode **)pInfo;
+        pMesh = pNode->m_unk10;
+        if (pMesh != 0 && pMesh->m_unk8 != 0) {
+            gGfxEng.SetWorldMatrix((PMat4 *)((char *)pNode + 0x40));
+            gGfxEng.BeginMesh(eBox);
+            nTotal += pMesh->Render(0x80, (bool *)m_unk1E0, true);
+            (*(PDisplayList **)0x45B300)->EndMesh();
+        }
+    }
+    return nTotal;
 }
 
 // FUNCTION: 0x1D54A0 Create__18PObjectDisplayListFP6PMNodePb

@@ -2,6 +2,7 @@
 #define POBJECTDISPLAYLIST_H
 
 #include "types.h"
+#include "PGfxEngine.h"
 
 class PArray;
 class PMNode;
@@ -27,6 +28,7 @@ public:
     int CreateDisplayList();
     int Create(PMNode *pNode, bool *pFlags);
     int Create(PArray *pArray, PMNode *pNode, PMesh *pMesh, bool *pFlags);
+    int RenderBlendedFragments(eBoxIntersect eBox);
 
     void *m_unk0;           // 0x000 cleared by ctor, freed by Destroy
     int m_unk4;             // 0x004
