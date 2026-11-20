@@ -1,26 +1,58 @@
 // FLAGS: -str readonly
 #include "EntityManager.h"
 
+#include "PArray.h"
+
 // TODO(header): foreign declarations
 class PHashTable {
 public:
+    ~PHashTable();
     int Lookup(void *pKey, void *&pValue);
     void *Remove(void *pKey);
 };
 
-class PArray {
+class PList {
 public:
-    void Remove(void *pItem);
-    void RemoveCurrent();
+    ~PList();
 };
+
+class WaypointManager {
+public:
+    ~WaypointManager();
+};
+
+class AnimData;
 
 class PMNode {
 public:
+    virtual ~PMNode();
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual void Slot04();
+    virtual void SetAllAnimFlags(AnimData *pData);   // 0x1C, virtual #5
     int CheckAnimated();
     void RecurseResetAnimByID(unsigned int arg0);
     void RecurseApplyAnimFlagsByID(unsigned int arg0, bool arg1, int arg2);
     void BuildAnimList(PArray *arg0, unsigned int arg1);
+
+    char _pad004[0x28 - 0x4];
+    float (*m_unk28)[2][4];     // 0x28
+    char _pad02C[0x3C - 0x2C];
+    unsigned char m_unk3C;      // 0x3C
+    char _pad03D[0x40 - 0x3D];
+    float m_unk40[4][4];        // 0x40
+    char _pad080[0x110 - 0x80];
+    float m_unk110[2][4];       // 0x110
 };
+
+class PWorld {
+public:
+    void UpdateAnimate(PMNode *pNode);
+};
+
+extern "C" void sceVu0ApplyMatrix(float *, float (*)[4], float *);
+int BoxSphereCheck(float (*pBox)[4][4], float (*pSphere)[2][4], float fRadius);
 
 class OverlayManager {
 public:
@@ -75,6 +107,7 @@ extern "C" int sprintf(char *pBuf, const char *fmt, ...);
 
 class PResourceManager {
 public:
+    ~PResourceManager();
     int LoadGlobalResource(const char *pName, bool bFlag);
     int LoadLocalResource(const char *pName, bool bFlag);
 };
@@ -96,6 +129,7 @@ float FastMath_Fabs(float f);
 extern char gEng[105360];
 extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
 extern "C" float sceVu0InnerProduct(float *a, float *b);
+extern "C" void sceVu0Normalize(float *dst, float *src);
 extern "C" float sqrtf(float x);
 
 extern unsigned char gMC[0x1000];
@@ -108,11 +142,35 @@ public:
 };
 extern Debug gDebug;
 
+class MemMgrType {
+public:
+    char _pad000[0x18];
+    int m_unk18;                // 0x18 set around Process
+};
+extern MemMgrType MemMgr;
+
+class Camera {
+public:
+    void ResetCamBoxCount();
+};
+
+class TimerAPI {
+public:
+    void ProcessTimers(class EntityManager *arg0);
+    char _pad000[0x10];         // placeholder size, keeps mTimerAPI out of small data
+};
+
+class EntityAttackManager {
+public:
+    void DisplayDebug();
+};
+
 class EntityBaseClass {
 public:
     bool CameraLookingAtMe();
     int CheckSleep(bool arg0);
     void ProcessPhysics(float arg0, int arg1);
+    void PlingInnocent();
 
     char _pad000[0x04];
     unsigned int m_unk04;       // 0x04
@@ -126,6 +184,20 @@ public:
     char _pad040[0x190 - 0x40];
     float m_unk190[4];          // 0x190
 };
+
+class Player {
+public:
+    enum PlingType {
+        PLING_TYPE_UNUSED = 0
+    };
+    void SetPling(PlingType arg0, EntityBaseClass *arg1, unsigned int arg2);
+    char _pad000[0x3C];
+    char *m_unk3C;              // 0x3C
+    char _pad040[0x190 - 0x40];
+    float m_unk190[4];          // 0x190
+};
+
+extern char *mpEntMgr__15EntityBaseClass;   // pointer global, its target holds the Player at 0x505C
 
 // DRAFT: 0x001460D0 BGAnimIsReset__13EntityManagerFi
 // note: 21 diffs; entry beqz targets differ (orig +0x1F to shared return-0, ours +0x1B); tried guard form, while form (34), local cursor (21), flipped cursor order (25), early return (30+)
@@ -210,6 +282,60 @@ void EntityManager::ResetSwordBGAnim() {
             }
         } while (node != 0);
     }
+}
+
+// DRAFT: 0x00146470 CheckSwordBGAnim__13EntityManagerFP6PMNode
+// note: DIFF 25; frame size 0x118 vs 0x120. Original has a join-point nop after the UpdateAnimate call (branch target of the BoxSphereCheck if). Tried nested-if (no gain) and reordered the && operands (DIFF 68, reverted).
+void EntityManager::CheckSwordBGAnim(PMNode *pNode) {
+    if (pNode->m_unk3C & 0x80) {
+        float vec[4];
+        sceVu0ApplyMatrix(vec, pNode->m_unk40, (float *)pNode->m_unk28);
+        float f20 = pNode->m_unk28[0][1][3];
+        m_unk5B54 = 0;
+        PMNode *node;
+        if (m_unk5B50 != 0) {
+            node = *m_unk5B58;
+        } else {
+            node = 0;
+        }
+        if (node != 0) {
+            do {
+                if (node->CheckAnimated() == 0) {
+                    float (*box)[2][4] = node->m_unk28;
+                    if (box == 0) {
+                        box = &node->m_unk110;
+                    }
+                    if (box != 0 && BoxSphereCheck(&node->m_unk40, box, f20) != 0) {
+                        node->SetAllAnimFlags(0);
+                        ((PWorld *)gEng)->UpdateAnimate(node);
+                    }
+                }
+                unsigned int idx = m_unk5B54 + 1;
+                m_unk5B54 = idx;
+                node = 0;
+                if (idx < (unsigned int)m_unk5B50) {
+                    node = m_unk5B58[m_unk5B54];
+                }
+            } while (node != 0);
+        }
+    }
+}
+
+// DRAFT: 0x00146590 BoxSphereCheck__FPA4_A4_fPA2_A4_ff
+// note: VU0 lanes (lqc2, vmadd, qmfc2, pextlw) are placeholders here; only the scalar branch shape is reproduced
+int BoxSphereCheck(float (*pBox)[4][4], float (*pSphere)[2][4], float fRadius) {
+    float dist2 = 0.0f;
+    float centre = 0.0f;
+    int lane0 = 0;
+    int lane1 = 0;
+    int result = 0;
+    float s = centre + fRadius;
+    if (!((s * s) <= dist2)) {
+        if (lane0 == 0 && lane1 == 0) {
+            result = 1;
+        }
+    }
+    return result;
 }
 
 // FUNCTION: 0x00146690 InitSwordBGAnimList__13EntityManagerFP9PMeshNode
@@ -524,6 +650,28 @@ void EntityManager::LoadResource(char *arg0, bool arg1) {
     }
 }
 
+// FUNCTION: 0x00148FF0 Process__13EntityManagerFv
+void EntityManager::Process() {
+    gDebug.StartTimer(0xE);
+    ((Camera *)(gEng + 0x19760))->ResetCamBoxCount();
+    MemMgr.m_unk18 = 1;
+    ProcessTrigger();
+    int i = 0;
+    do {
+        if (!(GetItemCounter((ItemCounterType)i) <= 0.0f)) {
+            float dec = *(float *)(gEng + 0x1E8);
+            SetItemCounter((ItemCounterType)i, GetItemCounter((ItemCounterType)i) - dec);
+        }
+        i++;
+    } while (i < ITEM_COUNTER_MAX);
+    ProcessApparitions();
+    mTimerAPI.ProcessTimers(this);
+    ProcessIcons();
+    ((EntityAttackManager *)this)->DisplayDebug();
+    MemMgr.m_unk18 = 0;
+    gDebug.StopTimer(0xE);
+}
+
 // DRAFT: 0x001490F0 SetItemCounter__13EntityManagerFQ213EntityManager15ItemCounterTypef
 // note: 10 lines; original keeps this+0x5F74 as a separate addiu after sll, ours folds 0x5F74 into swc1 displacement; tried m_unk5F74[i] (9 lines), local float* base (9), offset-then-add (9), deferred pointer (9); final form 10.
 void EntityManager::SetItemCounter(ItemCounterType theType, float value) {
@@ -587,6 +735,27 @@ void EntityManager::LoadOverlay(char *arg0, char *arg1) {
     }
 }
 
+// FUNCTION: 0x00149BD0 __dt__13EntityManagerFv
+EntityManager::~EntityManager() {
+    Reset(true);
+    ((PArray *)((char *)this + 0x5F64))->~PArray();
+    ((PList *)((char *)this + 0x5F50))->~PList();
+    ((PList *)((char *)this + 0x5B80))->~PList();
+    ((PArray *)((char *)this + 0x5B70))->~PArray();
+    ((PArray *)((char *)this + 0x5B60))->~PArray();
+    ((PArray *)((char *)this + 0x5B50))->~PArray();
+    ((PResourceManager *)((char *)this + 0x50C4))->~PResourceManager();
+    ((PArray *)((char *)this + 0x50B0))->~PArray();
+    ((PArray *)((char *)this + 0x50A0))->~PArray();
+    ((PHashTable *)((char *)this + 0x5094))->~PHashTable();
+    ((PHashTable *)((char *)this + 0x5088))->~PHashTable();
+    ((PArray *)((char *)this + 0x5078))->~PArray();
+    ((WaypointManager *)((char *)this + 0x30))->~WaypointManager();
+    if (this != 0) {
+        ((PList *)this)->~PList();
+    }
+}
+
 // DRAFT: 0x0014A220 CameraLookingAtMe__15EntityBaseClassFv
 // note: 2 words; lui scratch is v1 (original v0). Tried reversed compare (4), if-return (3), direct m_unk20[1] (23); kept pf local + fabs local (2).
 bool EntityBaseClass::CameraLookingAtMe() {
@@ -595,4 +764,20 @@ bool EntityBaseClass::CameraLookingAtMe() {
     float (*p)[4] = m_unk3C != 0 ? (float (*)[4])(m_unk3C + 0x80) : &m_unk190;
     float a = FastMath_Fabs(pCam->GetRelAngleYToPoint(p, pf[1], (float (*)[4])pCam));
     return a <= 35.0f;
+}
+
+// FUNCTION: 0x0014A290 PlingInnocent__15EntityBaseClassFv
+void EntityBaseClass::PlingInnocent() {
+    float sp40[4];
+    Player *player = *(Player **)(mpEntMgr__15EntityBaseClass + 0x505C);
+    char *a2 = m_unk3C != 0 ? m_unk3C + 0x80 : (char *)m_unk190;
+    char *a1 = player->m_unk3C != 0 ? player->m_unk3C + 0x80 : (char *)player->m_unk190;
+    sceVu0SubVector(sp40, (float *)a1, (float *)a2);
+    if (sceVu0InnerProduct(sp40, sp40) < 36.0f && CameraLookingAtMe()) {
+        char *s2 = player->m_unk3C + 0x40;
+        sceVu0Normalize(sp40, sp40);
+        if (!(sceVu0InnerProduct((float *)(s2 + 0x20), sp40) <= 0.5f)) {
+            player->SetPling((Player::PlingType)6, this, 0U);
+        }
+    }
 }

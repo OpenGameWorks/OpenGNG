@@ -5,6 +5,7 @@
 
 class PMNode;
 class PMeshNode;
+class TimerAPI;
 
 struct BGAnimNode {
     int m_unk00;                // 0x00 animation id, 0 ends the list
@@ -13,6 +14,8 @@ struct BGAnimNode {
 
 class EntityManager {
 public:
+    ~EntityManager();
+
     enum ItemCounterType {
         ITEM_COUNTER_MAX = 2
     };
@@ -55,10 +58,16 @@ public:
     int BGAnimIsReset(int arg0);
     void UpdateSwordBGAnim();
     void ResetSwordBGAnim();
+    void CheckSwordBGAnim(PMNode *pNode);
     void InitSwordBGAnimList(PMeshNode *pMesh);
     void SaveApparitionData(int arg0);
     void SetEifPosition(unsigned int arg0, unsigned int arg1, float (*arg2)[4]);
     void RunPhysics(float arg0);
+    void Process();
+    void ProcessTrigger();
+    void ProcessIcons();
+
+    static TimerAPI mTimerAPI;  // TimerAPI instance ticked by Process
 
     static void *mCameraAPI;    // MathAPI instance read by EntityBaseClass::CameraLookingAtMe
 
