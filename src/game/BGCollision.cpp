@@ -4,8 +4,10 @@
 // TODO(header): foreign declarations
 extern "C" void __dl__FPv(void *);
 extern float vUp_1253[4];
+extern float vGDown[4];
 extern "C" void sceVu0SubVector(float *, float *, float *);
 extern "C" float sceVu0InnerProduct(float *, float *);
+extern "C" float sqrtf(float);
 extern "C" void sceVu0ScaleVectorXYZ(float *, float *, float);
 float FastMath_Fabs(float f);
 float Fabs(float f);
@@ -150,18 +152,23 @@ int FindGroundPos(STCollisionPoly *pPoly, float (*pOut)[4])
 }
 
 // DRAFT: 0x0016F490 GetGround__11BGCollisionFPA4_fUi
-// note: lqc2 pArr loads and c1 ops 0x150004/0x10044 omitted; d[] is zeroed, original loads vGDown into it (size 0x1c0 vs 0x1f8).
+// note: 109 differing lines. vf26/vf27 loads in asm (vGDown via C pointer; asm symbol form rejected); frame 0xC0 vs 0x90 (loop n/pp kept in s-regs across the FindGroundPos call), sqrt.s/c1 hit-scale path and d[] vGDown load absent.
 int BGCollision::GetGround(float (*pArr)[4], unsigned int nFlags)
 {
     float fBest = -1000.0f;
     unsigned int nRet = 0;
-    int nX;
-    int nZ;
     float out[4];
     float d[4];
+    int nX;
+    int nZ;
     if (m_unk40 != 0 && FindGrid(pArr, nX, nZ) != 0) {
         int *pBlk = *(int **)((char *)m_unk40 + nX * 4 + nZ * m_unk38 * 4);
         if (pBlk != 0) {
+            float *pG = vGDown;
+            asm {
+                lqc2 vf26, 0x0(pArr)
+                lqc2 vf27, 0x0(pG)
+            }
             int n = pBlk[2];
             STCollisionPoly **pp = (STCollisionPoly **)(pBlk + 3);
             while (n != 0) {
@@ -183,15 +190,18 @@ int BGCollision::GetGround(float (*pArr)[4], unsigned int nFlags)
     d[2] = 0.0f;
     d[3] = 0.0f;
     float inner = sceVu0InnerProduct(d, d);
-    float slot;
-    FindIntersectAnim(pArr, (float (*)[4])d, slot, nFlags, 0);
-    sceVu0ScaleVectorXYZ(d, d, slot / inner);
+    float slot = inner;
+    STCollisionPoly *hit = FindIntersectAnim(pArr, (float (*)[4])d, slot, nFlags, 0);
+    if (hit != 0) {
+        nRet = *(unsigned int *)((char *)hit + 0xC);
+        sceVu0ScaleVectorXYZ(d, d, sqrtf(slot) / sqrtf(inner));
+    }
     pArr[0][1] += d[1];
     return nRet;
 }
 
 // DRAFT: 0x0016F9A0 FindIntersectST__11BGCollisionFiiPA4_fPA4_fRfUi
-// note: lqc2 pA/pB loads for BoxLineCheck omitted (C cannot express vf26/vf27).
+// note: 101 differing lines. vf26/vf27 asm loads before BoxLineCheck tried, count unchanged; prologue saves and s-reg set differ.
 STCollisionPoly *BGCollision::FindIntersectST(int nX, int nZ, float (*pA)[4], float (*pB)[4], float &rT, unsigned int nFlags)
 {
     STCollisionPoly *pRet = 0;
@@ -324,7 +334,7 @@ int BGCollision::CheckIntersectAnim(float (*pA)[4], float (*pB)[4], float (*pC)[
 }
 
 // DRAFT: 0x00170580 CheckIntersectST__11BGCollisionFiiPA4_fPA4_fPA4_fUi
-// note: lqc2 pA/pB loads for BoxLineCheck omitted; VU ops not expressible in C.
+// note: 112 differing lines. vf26/vf27 loads in asm before BoxLineCheck (was 114); frame 0x90 and saved s-regs differ (BoxLineCheck clobber set unknown to the compiler).
 int BGCollision::CheckIntersectST(int nX, int nZ, float (*pA)[4], float (*pB)[4], float (*pC)[4], unsigned int nFlags)
 {
     if ((unsigned int)nX >= m_unk38 || (unsigned int)nZ >= m_unk3C) {
@@ -336,6 +346,10 @@ int BGCollision::CheckIntersectST(int nX, int nZ, float (*pA)[4], float (*pB)[4]
     }
     *(float *)((char *)this + 0x54) = *(float *)pBlk;
     *(float *)((char *)this + 0x64) = *((float *)pBlk + 1);
+    asm {
+        lqc2 vf26, 0x0(pA)
+        lqc2 vf27, 0x0(pB)
+    }
     if (!BoxLineCheck((float (*)[2][4])((char *)this + 0x50))) {
         return 0;
     }
