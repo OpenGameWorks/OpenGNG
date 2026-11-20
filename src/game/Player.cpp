@@ -56,9 +56,10 @@ struct AttackEntry {
 extern AttackEntry AttackTable[42];
 class EntityBaseClass {
 public:
+    int Render(PLightManager *pLightMgr);
     int ProcessHitBack();
     void SetState(int arg0);
-    void PlaySound(unsigned int arg0);
+    int PlaySound(unsigned int arg0);
     void ResetCollisions();
     void Animate(int arg0, float arg1);
     void StopSoundBySoundRef(unsigned int arg0);
@@ -70,6 +71,7 @@ public:
 };
 class PDynamicSplinePatch {
 public:
+    void Render();
     void Animate(float arg0);
 };
 extern signed char MaximoArmor[8];
@@ -88,6 +90,11 @@ class CutSceneObject {
 public:
     virtual void Slot00();
     virtual void Slot04(int arg0, int arg1, int arg2);
+};
+class RenderSlotObject {
+public:
+    virtual void Slot00();
+    virtual int Slot04(PLightManager *arg0, int arg1, int arg2);
 };
 class Shield {
 public:
@@ -118,6 +125,7 @@ public:
     virtual void Slot20();
     virtual void Slot24();
     virtual int Slot28();
+    int m_unk4;
 };
 
 // TODO(header): foreign declarations
@@ -138,7 +146,7 @@ public:
 class PMNode {
 public:
     virtual void Slot08();
-    virtual void Slot0C();
+    virtual int Slot0C(PLightManager *arg0, int arg1, int arg2);
     virtual void Slot10(float arg0);
     virtual void Slot14();
     virtual void Animate(float arg0, float arg1, PMat4 *arg2, int arg3, bool arg4);
@@ -152,13 +160,17 @@ public:
     } m_unk14;              // 0x14 list header: count, index, data (0x18 and 0x1C)
     char _pad20[0x24 - 0x20];
     AnimStateObject *m_unk24;
-    char _pad28[0x3E - 0x28];
+    char _pad28[0x34 - 0x28];
+    float m_unk34;
+    char _pad38[0x3E - 0x38];
     unsigned char m_unk3E;
     signed char m_unk3F;
     char _pad40[0x80 - 0x40];
     u_long128 m_unk80;      // 0x80 vector written by CatchLedgeMove
     char _pad90[0x94 - 0x90];
     float m_unk94;          // 0x94 angle written by CatchLedgeMove
+    char _pad98[0xE8 - 0x98];
+    unsigned int m_unkE8;
     void SetRenderPassStatus(bool bA, bool bB, bool bC, bool bD);
     void *GetFirstMesh();
     void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
@@ -223,11 +235,13 @@ class Camera {
 public:
     int SetHeadCam(bool arg0);
     int ControlledByApp(unsigned int arg0);
+    void SetupShakeScreen(float arg0, float arg1, float arg2, int arg3, int arg4, unsigned int arg5);
 };
 class PSound {
 public:
     char _pad000[0x18080];
     void PlaySoundApparition(unsigned int arg0, unsigned int arg1);
+    void TriggerSystemSound(unsigned int arg0, unsigned int arg1, PMNode *arg2);
     void FadeOutAllMusic(unsigned int arg0);
     enum EnumMusicSpecialVols { MUSIC_SPECIAL_VOLS_NONE = 0 };
     void SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol);
@@ -2025,6 +2039,37 @@ void Player::GrimSliceMove() {
     }
 }
 
+// DRAFT: 0x0015E650 GrimThrowMove__6PlayerFv
+// note: 30 words differ, size 0x1A8 vs 0x1AC; index/frame registers swapped at 0x0A8-0x0CC, else-if delay slot nop missing, 100.0f loaded after -1.0f, GrimThrowAttack$2267 reloc shifted; tried inline frame in delta and index local (both worse or same)
+void Player::GrimThrowMove() {
+    static int GrimThrowFrames[3] = {52, 91, 4095};
+    static unsigned short GrimThrowAttack[23] = {0x1F, 0x26, 0x2D, 0x26, 0x37, 0x26, 0x41, 0x27, 0x4B, 0x27, 0x55, 0x27, 0x5F, 0x27, 0x69, 0x27, 0x73, 0x27, 0x7D, 0x27, 0x87, 0x27, 0xFFFF};
+    if (m_unk250 == 0) {
+        m_unk250 = 1;
+        ((!(m_unk2B4 != 0)) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x1381, "!miSound"));
+        m_unk2B4 = ((EntityBaseClass *)this)->PlaySound(0x110);
+        m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(0x810002E3, 0x820004D1, 0, 0, (EntityBaseClass *)this, 1.0f, false, 0, false);
+    }
+    int frame = (int)((PMNode *)m_unk3C)->GetFrameTime();
+    int delta = GrimThrowFrames[m_unk250 - 1] - frame;
+    if (delta <= 0) {
+        ((PMNode *)m_unk3C)->Slot10(141.0f);
+        if (m_unk2A8 != 0) {
+            EffectNode *e = mEffectAPI__13EntityManager.EffectValid(m_unk2A8);
+            if (e) {
+                ((PMNode *)e->m_unk4)->Slot10(141.0f);
+            }
+        }
+        m_unk250 = 3;
+    } else if (delta < 0x10 && (m_unk1B2 & 0x2000)) {
+        m_unk250 = m_unk250 + 1;
+        ComboTarget(-1.0f, 100.0f, true);
+        Physics *ph = (Physics *)m_unk38;
+        ph->m_unk11C = Round180__Ff(m_unk1C4);
+    }
+    MultipleAttack(GrimThrowAttack);
+}
+
 // FUNCTION: 0x0015E800 GrimProjectileMove__6PlayerFv
 void Player::GrimProjectileMove() {
     static float vOffset[4] = {0.0f, 3.0f, -3.0f, 1.0f};
@@ -2658,6 +2703,62 @@ void Player::ForceDie(int arg0) {
     }
 }
 
+// Node list at mpEntMgr + 0x5B70: count, index, element array.
+struct PMNodeList {
+    int m_unk0;
+    int m_unk4;
+    PMNode **m_unk8;
+};
+
+// DRAFT: 0x00162EE0 OnTriggerCheck__6PlayerFv
+// note: does not match, 52 words: switch order is right but the animId compare chain differs (orig beq 1FF/200/202 then b end) and the function end is 2 words short
+void Player::OnTriggerCheck() {
+    PMNode *pTarget = (PMNode *)m_unk38[0x33];
+    if (pTarget == 0) {
+        return;
+    }
+    int animId = 0;
+    if (pTarget->m_unk24 != 0) {
+        animId = pTarget->m_unk24->m_unk4;
+    }
+    switch (animId) {
+    case 0x1FF:
+    case 0x200:
+    case 0x202:
+        break;
+    default:
+        return;
+    }
+    char *mgr = (char *)mpEntMgr__15EntityBaseClass;
+    *(int *)(mgr + 0x5B74) = 0;
+    PMNodeList *list = (PMNodeList *)(mgr + 0x5B70);
+    PMNode *pNode = 0;
+    if (list->m_unk0 != 0) {
+        pNode = list->m_unk8[0];
+    }
+    while (pNode != 0) {
+        if (pNode->Find(pTarget)) {
+            int busy = 0;
+            if (pNode->m_unk24 != 0) {
+                busy = pNode->m_unk24->Slot18() != 0;
+            }
+            if (!busy && (animId == 0x200 || pNode->m_unk34 == 0.0f)) {
+                gSound.TriggerSystemSound(animId, pTarget->m_unkE8, pTarget);
+                pNode->Slot1C(0);
+                if (animId == 0x1FF) {
+                    ((Camera *)(gEng + 0x19760))->SetupShakeScreen(0.0f, 2.0f, 3.0f, 0, 0, 0U);
+                }
+            }
+            break;
+        }
+        list->m_unk4 += 1;
+        pNode = 0;
+        if ((unsigned int)list->m_unk4 < (unsigned int)list->m_unk0) {
+            pNode = list->m_unk8[list->m_unk4];
+        }
+    }
+}
+
 // FUNCTION: 0x00163660 IsPlayerOnNode__6PlayerFP9PMeshNodeb
 PMNode *Player::IsPlayerOnNode(PMeshNode *arg0, bool arg1) {
     if (!(m_unk1D0 & 4)) {
@@ -2828,6 +2929,36 @@ void Player::SetHeadCamera(bool arg0) {
 void Player::RenderCutScene() {
     ((CutSceneObject *)m_unk28C)->Slot04(0, 0x80, 0);
     ((CutSceneObject *)m_unk284)->Slot04(0, 0x80, 0);
+}
+
+// DRAFT: 0x001640B0 Render__6PlayerFP13PLightManager
+// note: 1 word differs at 0x8C: add.s operands are f1,f2,f1 in ours, f1,f1,f2 in the original; tried a+b, b+a, a+=b, temp b, member +=
+int Player::Render(PLightManager *pLightMgr) {
+    int total;
+    int i;
+    if (m_unk26C != 0 || m_unk33B != 0) return 0;
+    if (m_unk229 == 4) {
+        m_unkD0 = 1;
+        memset((char *)this + 0x40, 0, 0x90);
+        m_unk50 = 0xBF800000;
+        m_unk70 = 0x3F800000;
+        *(u_long128 *)&m_unk80 = *(u_long128 *)&m_unk380;
+        float t = m_unk23C0 + m_unk380;
+        m_unk380 = t;
+        if (t < 50.0f || !(t < 128.0f)) m_unk23C0 = -m_unk23C0;
+        total = ((EntityBaseClass *)this)->Render(pLightMgr);
+        ((PDynamicSplinePatch *)((char *)this + 0x390))->Render();
+    } else {
+        total = ((EntityBaseClass *)this)->Render(pLightMgr);
+        if (m_unk2A4 == 0) total += ((RenderSlotObject *)m_unk28C)->Slot04(pLightMgr, 0x80, 0);
+        total += ((RenderSlotObject *)m_unk284)->Slot04(pLightMgr, 0x80, 0);
+        for (i = 0; i < 3; i++) {
+            PMNode *node = m_unk298[i];
+            if (node == 0 || node->m_unk10 == 0) break;
+            total += node->Slot0C(pLightMgr, 0x80, 0);
+        }
+    }
+    return total;
 }
 
 // FUNCTION: 0x00164270 Animate__6PlayerFif

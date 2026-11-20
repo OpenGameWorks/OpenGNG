@@ -12,6 +12,7 @@ class PMat4;
 class EntityBaseClass;
 class GunTurret;
 class PSkeleton;
+class PLightManager;
 
 class Player {
 public:
@@ -146,7 +147,15 @@ public:
     char _pad024[0x38 - 0x24];
     int *m_unk38;           // 0x038 pointer, m_unk38[1] is written by AirSliceMove, m_unk38[0x42] (0x108) is read by Ready2Clear
     float *m_unk3C;         // 0x03C pointer, float at 0x34 is read by GrimSlash2Move, OutputDebug
-    char _pad040[0xD4 - 0x40];
+    char _pad040[0x50 - 0x40];
+    int m_unk50;            // 0x050 set to -1.0f bits (0xBF800000) by Render
+    char _pad054[0x70 - 0x54];
+    int m_unk70;            // 0x070 set to 1.0f bits (0x3F800000) by Render
+    char _pad074[0x80 - 0x74];
+    u_long128 m_unk80;      // 0x080 copy of m_unk380 by Render
+    char _pad090[0xD0 - 0x90];
+    signed char m_unkD0;    // 0x0D0 set to 1 by Render
+    char _padD1[0xD4 - 0xD1];
     void *m_unkD4;          // 0x0D4 shadow object, byte 0 set by EnablePlayerShadow, +0xC holds a sub-object
     char _padD8[0x103 - 0xD8];
     unsigned char m_unk103; // 0x103 set to 0xFE by ForceDie
@@ -203,7 +212,7 @@ public:
     signed char m_unk268;   // 0x268 cleared by GrimIdleMove
     char _pad269[0x26B - 0x269];
     unsigned char m_unk26B; // 0x26B tested by DialogMove
-    signed char m_unk26C;   // 0x26C byte set by SetHeadCamera
+    unsigned char m_unk26C; // 0x26C byte set by SetHeadCamera
     char _pad26D[0x270 - 0x26D];
     int m_unk270;           // 0x270 spin state, read and written by SpinCheck
     char _pad274[0x278 - 0x274];
@@ -256,7 +265,10 @@ public:
         PMNode *node;       // 0x00 owner, null when the slot is free
         float r2;           // 0x04 squared radius
     } m_unk360[4];          // 0x360 bounding spheres set by SetBoundingSphere
-    char _pad380[0x23C8 - 0x380];
+    float m_unk380;         // 0x380 float advanced by m_unk23C0 in Render
+    char _pad384[0x23C0 - 0x384];
+    float m_unk23C0;        // 0x23C0 float step added to m_unk380 in Render
+    char _pad23C4[0x23C8 - 0x23C4];
     void *m_unk23C8;        // 0x23C8 shadow object, cleared or set by EnablePlayerShadow
     void *m_unk23CC;        // 0x23CC shadow object, cleared or set by EnablePlayerShadow
     signed char m_unk23D0;  // 0x23D0 cleared by InitAttachableJoints
@@ -265,7 +277,10 @@ public:
     int m_unk23D4;          // 0x23D4 set to 5 by InitAttachableJoints
     void FinishCutScene(PMeshNode *arg0, PMat4 *arg1, int arg2);
     void GrimAirAttackMove();
+    void GrimThrowMove();
     void SphereCheck();
+    void OnTriggerCheck();
+    int Render(PLightManager *pLightMgr);
     ~Player();
 };
 
