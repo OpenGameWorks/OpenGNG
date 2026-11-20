@@ -41,6 +41,15 @@ public:
 };
 
 extern unsigned char fst_bUseOldLoadingDisplay;
+// TODO(header): LoadingDisplayNew frame statistics and the VBlank counter (all gp-relative).
+extern unsigned int fst_VBlankCount;
+extern unsigned int gCDSVBlankCount;
+extern unsigned int fst_callsThisFrame;
+extern unsigned int fst_maxCallsPerFrameAllowed;
+extern unsigned int fst_maxCallsPerFrameDone;
+extern unsigned int fst_nCallsTotal;
+extern unsigned int fst_nFramesTotal;
+extern float fst_fAvgCallsPerFrame;
 
 // Pad is reached via lui/addiu; the placeholder keeps gPad above the 8-byte small-data threshold.
 class Pad {
@@ -127,6 +136,16 @@ public:
     float m_unk80;              // 0x080
 };
 
+// Same vtable as PMNode; the slot at 0x18 takes four arguments at this call site.
+class PMNodeView {
+public:
+    virtual void Slot00(int flag);
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual void Slot03(int flag);
+    virtual int Slot04(float fA, float fB, PMat4 *pMat, int arg3);
+};
+
 // Placeholder size; the original object is larger than the 8-byte small-data threshold.
 extern char CoinAnim[0x10];
 extern char DefaultLoopAnim[0x10];
@@ -178,15 +197,21 @@ public:
     void Delete();
     int SwapCheck(unsigned int arg0);
     void UpdateShieldIcon();
+    void Init(PMeshNode *arg0, HudData *arg1);
 
     char _pad000[0x4];
     void *m_unk4;               // 0x004
-    char _pad008[0x7];
+    char _pad008[0x6];
+    signed char m_unkE;         // 0x00E
     signed char m_unkF;         // 0x00F
     unsigned char m_unk10;      // 0x010
-    char _pad011[0xB];
+    char _pad011[0x3];
+    PMNode *m_unk14;            // 0x014 first group node, PArray at +0x14
+    PMNode *m_unk18;            // 0x018 second group node
     void *m_unk1C;              // 0x01C element with a PArray at 0x14 (index 0x18, storage 0x1C)
-    char _pad020[0x1C];
+    char _pad020[0x14];
+    PMNode *m_unk34;            // 0x034
+    PMNode *m_unk38;            // 0x038 mpCursor node
     int m_unk3C;                // 0x03C
     int m_unk40;                // 0x040 icon index, used by SwapCheck
 };
@@ -872,6 +897,64 @@ void HudInventory::AddIcon(int arg0) {
     }
 }
 
+// DRAFT: 0x00143320 UpdateGroup__12HudInventoryFi
+// note: 120 words differ; scheduling and address form of the pair loads/stores; first arrangement 121, one reorder 120.
+void HudInventory::UpdateGroup(int arg0) {
+    int a2 = arg0 * 8;
+    PMNode *s7 = *(PMNode **)((char *)this + 0x18 + a2);
+    PMNode *s6 = *(PMNode **)((char *)this + 0x14 + a2);
+    PArray *s5 = (PArray *)((char *)s7 + 0x14);
+    char *s0;
+    signed char *s1;
+    u_long128 *s2;
+    PMNode *s4;
+    float f12;
+    int s3;
+
+    s6->SetAllFrustrumTest((eBoxIntersect)0);
+    s0 = IconTable + (arg0 << 5);
+    s1 = (signed char *)mpPlayerData__7GameHud + a2 + 0x5B;
+    if (s7 != 0) {
+        s7->SetAllFrustrumTest((eBoxIntersect)0);
+    }
+    s2 = *(u_long128 **)(s0 + 0x1C);
+    s3 = 0;
+    do {
+        signed char v0 = *s1;
+        if (v0 >= 0) {
+            signed char *a0 = AbilityTable + (v0 << 4);
+            signed char v1 = a0[6];
+            if (v1 != -1) {
+                if (s3 < *(int *)(s0 + 0x14)) {
+                    s4 = s6->Find(*(unsigned int *)(a0 + 8));
+                    if (s3 != 0) {
+                        f12 = *(float *)(s0 + 0x10);
+                    } else {
+                        f12 = 1.0f;
+                    }
+                    s4->ScaleSet(f12, f12, 1.0f, 1.0f);
+                    *(u_long128 *)((char *)s4 + 0x80) = *s2;
+                    s2 += 1;
+                    ((unsigned char *)s4)[0x3E] |= 8;
+                } else {
+                    s4 = (((unsigned int)v1) < s5->m_unk0) ? (PMNode *)s5->m_unk8[v1] : 0;
+                }
+                s4->m_unkC = 1;
+            }
+        }
+        s3++;
+        s1++;
+    } while (s3 < 8);
+    s6->m_unkC = 1;
+    if (s7 != 0) {
+        s7->m_unkC = 1;
+    }
+    if (arg0 == 1) {
+        UpdateShieldIcon();
+    }
+    ((PMNodeView *)s6)->Slot04(0.0f, 0.0f, 0, 0);
+}
+
 // DRAFT: 0x143510 Reset__12HudInventoryFv
 // note: 8 words differ; size 0x88 vs 0x8c. The original has an extra nop before the loop bnez, and the call-site reloc set is otherwise equal. Tried: pointer local for this+4 (CSE into s0), member m_unk4, for-loop form (16 words), UpdateGroup(i++) (12 words).
 void HudInventory::Reset() {
@@ -888,6 +971,48 @@ void HudInventory::Reset() {
         UpdateGroup(i);
         i += 1;
     } while (i < 4);
+}
+
+// DRAFT: 0x001435A0 Init__12HudInventoryFP9PMeshNodeP7HudData
+// note: 110 words differ; original keeps 8 saved regs (this in s7, arg0 in s6, entry ptr live across the loop), ours 7 saved, frame 0x80 vs 0x90; tried pointer entry (112->111), s2/s3 induction offsets (111->110), root copy of arg0 (no change).
+void HudInventory::Init(PMeshNode *arg0, HudData *arg1) {
+    PMNode *root = (PMNode *)arg0;
+    m_unk4 = root->Find(arg1->m_unk0);
+    m_unkF = arg1->m_unk5;
+    m_unkE = arg1->m_unk4;
+    int i = 0;
+    unsigned int s2 = 0;
+    int s3 = 0;
+    do {
+        char *entry = IconTable + s2;
+        char *slot = (char *)this + s3;
+        PMNode *n0 = root->Find(*(unsigned int *)entry);
+        *(PMNode **)(slot + 0x14) = n0;
+        PMNode *n1 = root->Find(*(unsigned int *)(entry + 4));
+        *(PMNode **)(slot + 0x18) = n1;
+        PArray *pa = (PArray *)((char *)n1 + 0x14);
+        u_long128 *dst = *(u_long128 **)(entry + 0x1C);
+        for (int j = 0; j < *(int *)(entry + 0x14); j++) {
+            void *src = (j < pa->m_unk0) ? pa->m_unk8[j] : 0;
+            if (src) {
+                *dst = *(u_long128 *)((char *)src + 0x80);
+            }
+            dst++;
+        }
+        i++;
+        s2 += 0x20;
+        s3 += 8;
+    } while (i < 4);
+    m_unk34 = ((PMNode *)arg0)->Find(0xBBCD34F9);
+    if (m_unk34 != 0) {
+        float *pBox = (float *)(BoxSize + *(signed char *)((char *)&gInterface + 0x93) * 0xC);
+        m_unk34->ScaleSet(pBox[0], 1.0f, 1.0f, 1.0f);
+    }
+    m_unk38 = ((PMNode *)arg0)->Find(0x2C87C156);
+    if (m_unk38 == 0) {
+        CdsAssert__FPciPc("Interface.cpp", 0x4DB, "mpCursor");
+    }
+    m_unk38->m_unkC = 0;
 }
 
 // FUNCTION: 0x143770 __ct__12HudInventoryFv
@@ -1076,6 +1201,50 @@ void Interface::LoadingDisplayGuts(unsigned int arg0) {
         DebugDispPos__5DebugFPcUiUii(gDebug, "LOADING...", 10, 20, 7);
     }
     RefreshDisplay__10PGfxEngineFv(gGfxEng);
+}
+
+// DRAFT: 0x001449C0 LoadingDisplayNew__9InterfaceFUi
+// note: 104 words differ, size 0x1B0 vs 0x1C8. Original reads COP0 Count inline (mfc0) in the busy-wait; the ReadCountReg helper call and the fst_nFramesTotal/fst_fAvgCallsPerFrame relocs differ. Tried: helper asm, plain C wait loop.
+static unsigned int ReadCountReg() {
+    asm { .word 0x40024800 }
+}
+
+void Interface::LoadingDisplayNew(unsigned int arg0) {
+    int a;
+    int b;
+    int doGuts;
+    unsigned int t;
+    unsigned int target;
+    doGuts = 0;
+    if (fst_VBlankCount >= gCDSVBlankCount && fst_callsThisFrame >= fst_maxCallsPerFrameAllowed) {
+        while (fst_VBlankCount >= gCDSVBlankCount) {
+        }
+    }
+    if (fst_VBlankCount < gCDSVBlankCount) {
+        doGuts = 1;
+        fst_callsThisFrame = 0;
+        fst_VBlankCount = gCDSVBlankCount;
+        fst_nFramesTotal += 1;
+    } else {
+        fst_callsThisFrame += 1;
+        if (fst_callsThisFrame >= 2) {
+            t = ReadCountReg();
+            target = t + (0x3A0458 / fst_maxCallsPerFrameAllowed);
+            while (t < target) {
+                t = ReadCountReg();
+            }
+        }
+    }
+    if (doGuts) {
+        LoadingDisplayGuts(arg0);
+        fst_VBlankCount = gCDSVBlankCount;
+    }
+    SoundOneFrameHasElapsed_R__9MaxEngineFRiRi(gEng, &a, &b);
+    fst_nCallsTotal += 1;
+    if (fst_maxCallsPerFrameDone < fst_callsThisFrame) {
+        fst_maxCallsPerFrameDone = fst_callsThisFrame;
+    }
+    fst_fAvgCallsPerFrame = (float)fst_nCallsTotal / (float)fst_nFramesTotal;
 }
 
 // FUNCTION: 0x144B90 LoadingDisplayOld__9InterfaceFUii
