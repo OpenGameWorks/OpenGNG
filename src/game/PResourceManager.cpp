@@ -17,12 +17,108 @@ extern "C" void *__ct__9PMeshNodeFQ29PResource11eResObjType(void *pThis, int eTy
 extern "C" int Load__9PMeshNodeFP8PPakFileP6PArray16ePsx2FileVersion(void *pThis, PPakFile *pFile, PArray *pArray, ePsx2FileVersion eVersion);
 extern "C" void *__ct__9PSkeletonFQ29PResource11eResObjType(void *pThis, int eType);
 extern "C" int Load__9PSkeletonFP8PPakFileP6PArray16ePsx2FileVersion(void *pThis, PPakFile *pFile, PArray *pArray, ePsx2FileVersion eVersion);
+extern "C" void *__ct__9PMeshNodeFR9PMeshNode(void *pThis, void *pSrc);
+extern "C" void *__ct__9PSkeletonFR9PSkeleton(void *pThis, void *pSrc);
+extern "C" void *__ct__13PShadowVolumeFP13PShadowVolume(void *pThis, void *pSrc);
 extern int guGlobalShaderIDOffset;
 extern int guNumShadersInCurModel;
 class PMeshNodeAnimDataTable {
 public:
     virtual ~PMeshNodeAnimDataTable();
 };
+
+// DRAFT: 0x00152990 GetResourceFromIndex__16PResourceManagerFPQ216PResourceManager15tagResourceDatai14eResourceTypesUib
+// note: DIFF 141 words; eType 1 out-of-range branch lands near (orig jumps to shared epilogue), bnez/printf/assert layout differs. Tried if-chain (161) and single-exit pResult (210).
+PMNode *PResourceManager::GetResourceFromIndex(tagResourceData *pData, int nIndex, eResourceTypes eType, unsigned int uFlags, bool bFlag) {
+    void *pEntry;
+    void *pNew;
+
+    if (pData == 0) {
+        CdsAssert("PResourceManager.cpp", 0x4E9, "pResData");
+    }
+    if (eType == 1) {
+        pEntry = (nIndex < pData->m_unk0) ? pData->m_unk4[nIndex] : 0;
+        if (pEntry == 0) {
+            printf("\n **** Bogus mesh resource data! Resource ID = %d, Index = %d **** \n", uFlags, nIndex);
+        }
+        if (pEntry == 0) {
+            CdsAssert("PResourceManager.cpp", 0x4F9, "apResource");
+        }
+        if (bFlag) {
+            return (PMNode *)pEntry;
+        }
+        if (((int *)pEntry)[1] == 1) {
+            pNew = __nw__FUi(0x140);
+            if (pNew) {
+                return (PMNode *)__ct__9PMeshNodeFR9PMeshNode(pNew, pEntry);
+            }
+            return 0;
+        }
+        if (((int *)pEntry)[1] == 2) {
+            pNew = __nw__FUi(0x160);
+            if (pNew) {
+                return (PMNode *)__ct__9PSkeletonFR9PSkeleton(pNew, pEntry);
+            }
+            return 0;
+        }
+        CdsAssert("PResourceManager.cpp", 0x50B, "0");
+        return (PMNode *)pEntry;
+    }
+    if (eType == 2) {
+        pEntry = (nIndex < pData->m_unkC) ? pData->m_unk10[nIndex] : 0;
+        if (pEntry == 0) {
+            printf("\n **** Bogus animation resource data! Resource ID = %d, Index = %d **** \n", uFlags, nIndex);
+        }
+        if (pEntry == 0) {
+            CdsAssert("PResourceManager.cpp", 0x51D, "apResource");
+        }
+        return (PMNode *)pEntry;
+    }
+    if (eType == 4) {
+        pEntry = (nIndex < pData->m_unk24) ? pData->m_unk28[nIndex] : 0;
+        if (pEntry == 0) {
+            printf("\n **** Bogus texture resource data! Resource ID = %d, Index = %d **** \n", uFlags, nIndex);
+        }
+        if (pEntry == 0) {
+            CdsAssert("PResourceManager.cpp", 0x52F, "apResource");
+        }
+        return (PMNode *)pEntry;
+    }
+    if (eType == 3) {
+        pEntry = (nIndex < pData->m_unk18) ? (void *)&pData->m_unk1C[nIndex] : 0;
+        if (pEntry == 0) {
+            printf("\n **** Bogus FX resource data! Resource ID = %d, Index = %d **** \n", uFlags, nIndex);
+        }
+        if (pEntry == 0) {
+            CdsAssert("PResourceManager.cpp", 0x541, "apResource");
+        }
+        return (PMNode *)pEntry;
+    }
+    if (eType == 7) {
+        pEntry = (nIndex < pData->m_unk30) ? (void *)pData->m_unk34[nIndex] : 0;
+        if (pEntry != 0) {
+            if (bFlag) {
+                return (PMNode *)pEntry;
+            }
+            pNew = __nw__FUi(0x1C);
+            if (pNew) {
+                return (PMNode *)__ct__13PShadowVolumeFP13PShadowVolume(pNew, pEntry);
+            }
+            return 0;
+        }
+        printf("\n **** Bogus Shadow Volume resource data! Resource ID = %d, Index = %d **** \n", uFlags, nIndex);
+        return 0;
+    }
+    if (eType == 6) {
+        pEntry = (nIndex < pData->m_unk3C) ? pData->m_unk40[nIndex] : 0;
+        if (pEntry != 0) {
+            return (PMNode *)pEntry;
+        }
+        printf("\n **** Bogus Instance Mesh resource data! Resource ID = %d, Index = %d **** \n", uFlags, nIndex);
+        return 0;
+    }
+    return 0;
+}
 
 // FUNCTION: 0x00152D40 LookupResourceIndex__16PResourceManagerFPUiii
 int PResourceManager::LookupResourceIndex(unsigned int *pIds, int nCount, int nId) {
