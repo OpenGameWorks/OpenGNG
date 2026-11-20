@@ -266,6 +266,164 @@ void CameraFollow::SetBossArenaValues(float (*arg0)[4], float arg1, float arg2, 
     }
 }
 
+// DRAFT: 0x00174110 UpdateBossCam__12CameraFollowFv
+// note: 398 words; original frame -0x1A0 with five saved GPRs, ours -0x190 with four (moved not in a saved reg); pointer-alias variant kept
+void CameraFollow::UpdateBossCam() {
+    float b0[4];
+    float c70[4];
+    float d0[4];
+    float t80[4];
+    float e0[4];
+    float e90[4];
+    float f0[4];
+    float a0[4];
+    float h100[4];
+    float c0[4];
+    float v120[4];
+    float v130[4];
+    float v180[4];
+    float v190[4];
+    float m140[4][4];
+    float f20;
+    float f3;
+    float f2;
+    float len;
+    float len2;
+    bool s1;
+    bool moved;
+    int mode1;
+    int mode2;
+    float *pY = &t80[1];
+    float *pZ = &t80[2];
+
+    s1 = false;
+    moved = false;
+    if (m_unk631C) {
+        m_unk631C = 0;
+        m_unk6320 = 10.0f;
+        m_unk6358 = 0.0f;
+        s1 = true;
+        m_unk635C = 5.0f;
+        m_unk6368 = m_unk636C + m_unk635C;
+    }
+    sceVu0CopyVector(b0, m_unk20);
+    sceVu0CopyVector(c70, m_unk40);
+    sceVu0CopyVector(m_unk40, m_unk6330);
+    m_unk40[1] += m_unk6358;
+    __mi__5PVec3FR5PVec3(d0, m_unk40, c70);
+    sceVu0CopyVector(m_unk10, d0);
+    if (!s1) {
+        m_unk40[0] = c70[0] + m_unk10[0] * m_unk6324;
+        m_unk40[1] = c70[1] + m_unk10[1] * m_unk6324;
+        m_unk40[2] = c70[2] + m_unk10[2] * m_unk6324;
+    }
+    sceVu0SubVector(m_unk10, m_unk180, m_unk40);
+    m_unk10[1] = 0.0f;
+    sceVu0Normalize(m_unk10, m_unk10);
+    t80[0] = m_unk180[0] + m_unk10[0] * m_unk6320;
+    (*pY) = m_unk180[1] + m_unk635C;
+    (*pZ) = m_unk180[2] + m_unk10[2] * m_unk6320;
+    f20 = 0.0f;
+    mode1 = *(int *)((char *)gEng + 0x19A78);
+    if (mode1 == 3) {
+        float d = DistanceXZ__7MathAPIFPA4_fPA4_f((MathAPI *)m_unk6330, (float (*)[4])m_unk180);
+        if (d < 20.0f) {
+            f20 = -5.0f * (1.0f - d / 20.0f);
+        }
+    }
+    (*pY) += f20;
+    __mi__5PVec3FR5PVec3(e0, t80, m_unk40);
+    sceVu0CopyVector(e90, e0);
+    __mi__5PVec3FR5PVec3(f0, t80, m_unk6340);
+    sceVu0CopyVector(a0, f0);
+    len = sqrtf(a0[0] * a0[0] + a0[2] * a0[2]);
+    moved = false;
+    mode2 = *(int *)((char *)gEng + 0x19A78);
+    switch (mode2) {
+    case 0x14:
+    case 0x13:
+        goto L464;
+    case 7:
+        goto L43C;
+    case 3:
+        goto L3A0;
+    default:
+        goto L504;
+    }
+L3A0:
+    if (len > m_unk6350) {
+        f3 = len - m_unk6350;
+        (*pY) = m_unk6368 + 1.2f * f3;
+        f20 = 0.008f * f3;
+        if (f20 > 1.0f) {
+            f20 = 1.0f;
+        }
+        moved = true;
+        __mi__5PVec3FR5PVec3(c0, m_unk180, m_unk40);
+        m_unk40[0] += c0[0] * f20;
+        m_unk40[2] += c0[2] * f20;
+    }
+    goto L504;
+L464:
+    if (len > m_unk6350) {
+        f3 = len - m_unk6350;
+        (*pY) = m_unk6368 + 0.8f * f3;
+        f2 = 0.0005f * f3;
+        if (f2 > 1.0f) {
+            f2 = 1.0f;
+        }
+        moved = true;
+        m_unk40[0] += e90[0] * f2;
+        m_unk40[1] += e90[1] * f2;
+        m_unk40[2] += e90[2] * f2;
+    }
+    goto L504;
+L43C:
+    if (*(unsigned int *)((char *)m_pCamera + 0x2C0) & 4) {
+        (*pY) += *(float *)((char *)m_pCamera + 0x2C4);
+    }
+    goto L504;
+L504:
+    switch (m_unk6360) {
+    case 0:
+        break;
+    case 1:
+        if ((*pY) < (float)m_unk6364) {
+            (*pY) = (float)m_unk6364;
+        }
+        break;
+    default:
+        break;
+    }
+    len2 = sqrtf(e90[0] * e90[0] + e90[2] * e90[2]);
+    if (len2 < m_unk6354) {
+        t80[0] = m_unk40[0] + m_unk10[0] * m_unk6354;
+        (*pZ) = m_unk40[2] + m_unk10[2] * m_unk6354;
+    }
+    __mi__5PVec3FR5PVec3(h100, t80, b0);
+    sceVu0CopyVector(m_unk10, h100);
+    if (!moved) {
+        m_unk20[0] = b0[0] + m_unk10[0] * m_unk6328;
+        m_unk20[1] = b0[1] + m_unk10[1] * m_unk6328;
+        m_unk20[2] = b0[2] + m_unk10[2] * m_unk6328;
+    } else {
+        sceVu0CopyVector(m_unk20, t80);
+    }
+    CheckCameraShake__6CameraFR5PVec3R5PVec3b(m_pCamera, m_unk20, m_unk40, moved);
+    if (m_unk6370) {
+        *(u_long128 *)m_unk10 = *(u_long128 *)m_unk180;
+        ((BGCollision *)mBGCollision__15EntityBaseClass)->CameraBGIntersect(*(PVec3 *)m_unk20, *(PVec3 *)m_unk10, 1.5f, 0x40000002, m_unk6280, 0);
+    }
+    *(u_long128 *)v120 = *(u_long128 *)m_unk20;
+    *(u_long128 *)v130 = *(u_long128 *)m_unk40;
+    CreateViewMatrix__6CameraFR5PMat45PVec35PVec3(m_pCamera, (float *)((char *)this + 0x60), v120, v130);
+    sceVu0CopyMatrix((float (*)[4])m140, (float (*)[4])((char *)this + 0x60));
+    SetViewMatrix__6CameraF5PMat4(m_pCamera, (float *)m140);
+    *(u_long128 *)v180 = *(u_long128 *)m_unk20;
+    *(u_long128 *)v190 = *(u_long128 *)m_unk40;
+    UpdatePos__6CameraF5PVec35PVec3(m_pCamera, v180, v190);
+}
+
 // FUNCTION: 0x00174770 UpdatePos__6CameraF5PVec35PVec3
 void Camera::UpdatePos(PVec3 arg0, PVec3 arg1) {
     sceVu0CopyVector(m_src, arg0.m_v);

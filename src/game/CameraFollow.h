@@ -179,7 +179,9 @@ public:
     float m_unk6250;        // 0x6250
     int m_unk6254;          // 0x6254
     int m_unk6258;          // 0x6258
-    char _pad625C[0x628C - 0x625C];
+    char _pad625C[0x6280 - 0x625C];
+    float m_unk6280;        // 0x6280 (BG intersect distance)
+    char _pad6284[0x628C - 0x6284];
     int m_unk628C;          // 0x628C
     unsigned char m_unk6290; // 0x6290
     char _pad6291[0x62B0 - 0x6291];
@@ -199,7 +201,8 @@ public:
     unsigned int m_unk6314;  // 0x6314
     int m_unk6318;          // 0x6318
     unsigned char m_unk631C; // 0x631C
-    char _pad631D[0x6324 - 0x631D];
+    char _pad631D[0x6320 - 0x631D];
+    float m_unk6320;        // 0x6320
     float m_unk6324;        // 0x6324
     float m_unk6328;        // 0x6328
     char _pad632C[0x6330 - 0x632C];
@@ -207,9 +210,11 @@ public:
     float m_unk6340[4];     // 0x6340
     float m_unk6350;        // 0x6350
     float m_unk6354;        // 0x6354
-    char _pad6358[0x6360 - 0x6358];
+    float m_unk6358;        // 0x6358
+    float m_unk635C;        // 0x635C
     int m_unk6360;          // 0x6360
-    char _pad6364[0x636C - 0x6364];
+    int m_unk6364;          // 0x6364
+    float m_unk6368;        // 0x6368
     float m_unk636C;        // 0x636C
     unsigned char m_unk6370; // 0x6370
     unsigned char m_unk6371; // 0x6371
