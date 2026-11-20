@@ -61,7 +61,13 @@ def lookup(key: str) -> tuple[int, int, str]:
 
 
 def word(addr: int) -> int:
-    return struct.unpack_from("<I", image(), addr - MAIN_VA + MAIN_OFF)[0]
+    off = addr - MAIN_VA + MAIN_OFF
+    img = image()
+    # Addresses past the file image lie in the segment's zero-filled memsz tail
+    # (.bss-style pool data), which the loader clears.
+    if off + 4 > len(img):
+        return 0
+    return struct.unpack_from("<I", img, off)[0]
 
 
 def render(addr: int, size: int) -> list[str]:
@@ -107,7 +113,7 @@ def ident(name: str, addr: int) -> str:
 def literal(addr: int) -> str:
     """A pool literal as a C string when it is NUL-terminated text, else as word and float."""
     off = addr - MAIN_VA + MAIN_OFF
-    raw = image()[off:off + 256].split(b"\0", 1)[0]
+    raw = image()[off:off + 256].split(b"\0", 1)[0] if off < len(image()) else b""
     if len(raw) >= 2 and all(32 <= c < 127 or c in (9, 10) for c in raw):
         return '"' + raw.decode().replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
     w = word(addr)
