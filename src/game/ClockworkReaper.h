@@ -9,6 +9,7 @@ class PMNode;
 
 class ClockworkReaper {
 public:
+    ClockworkReaper();
     void SetRiseAndAttack(float (*arg0)[4], float arg1, float arg2);
     void AttachSoulStoneEffect(PMNode *arg0);
     int AnimationViewer(int arg0);
@@ -16,10 +17,13 @@ public:
     int InBlockableState();
     int CanAttackInState();
     int PlayerInAttackRadius();
+    void FaceHit();
+    int Stalled(float arg0);
     void DeleteEffects();
     void OnTimerEvent(unsigned int arg0);
     void OnStopAttack();
     void OutputDebug();
+    void CheckOnWakeTasks();
     void SetSpawnedFromEntity(float *arg0, float *arg1, int arg2);
     void SetupHealth();
     void SetDefaultVars();
@@ -27,7 +31,8 @@ public:
 
     char _pad000[0x20];
     int m_unk20;            // 0x020 state
-    char _pad024[0x3C - 0x24];
+    char _pad024[0x38 - 0x24];
+    void *m_unk38;          // 0x038 object whose float at 0x11C FaceHit writes
     PMNode *m_unk3C;        // 0x03C node whose frame time and flags OutputDebug reads
     char _pad040[0x163 - 0x40];
     unsigned char m_unk163; // 0x163
@@ -50,10 +55,12 @@ public:
     int m_unk1F4;           // 0x1F4
     int m_unk1F8;           // 0x1F8 default 0.1f bit pattern, set by SetDefaultVars
     int m_unk1FC;           // 0x1FC
-    char _pad200[0x204 - 0x200];
+    int m_unk200;           // 0x200 nonzero forces the 0x2B6 flag, SetupHealth
     int m_unk204;           // 0x204
-    int m_unk208;           // 0x208
-    char _pad20C[0x218 - 0x20C];
+    int m_unk208;           // 0x208 health value, SetupHealth
+    char _pad20C[0x210 - 0x20C];
+    int m_unk210;           // 0x210 copy of m_unk208, SetupHealth
+    char _pad214[0x218 - 0x214];
     unsigned char m_unk218; // 0x218, set by OnTimerEvent
     char _pad219[0x220 - 0x219];
     int m_unk220;           // 0x220 timer id
@@ -65,7 +72,14 @@ public:
     int m_unk250;           // 0x250 timer id
     char _pad254[0x290 - 0x254];
     float m_unk290[4];      // 0x290 position tested by PlayerInAttackRadius
-    char _pad2A0[0x2E0 - 0x2A0];
+    u_long128 m_unk2A0;     // 0x2A0 MathAPI-sized copy target, Stalled
+    char _pad2B0[0x2B6 - 0x2B0];
+    unsigned char m_unk2B6; // 0x2B6, tested by CheckOnWakeTasks
+    char _pad2B7[0x2B8 - 0x2B7];
+    unsigned char m_unk2B8; // 0x2B8, tested by CheckOnWakeTasks
+    char _pad2B9[0x2C4 - 0x2B9];
+    signed char m_unk2C4;   // 0x2C4, cleared by CheckOnWakeTasks
+    char _pad2C5[0x2E0 - 0x2C5];
     unsigned char m_unk2E0; // 0x2E0, set by AttachSoulStoneEffect
     char _pad2E1[0x2E8 - 0x2E1];
     int m_unk2E8;           // 0x2E8 timer id

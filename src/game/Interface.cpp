@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "Interface.h"
+#include "PTextureManager.h"
 
 // TODO(header): foreign declarations
 // PSound size is unknown; the placeholder member only keeps gSound out of small data (threshold 8 bytes).
@@ -26,6 +27,13 @@ public:
     void Remove(PParticleSystem *pSystem);
 };
 extern char gGfxEng[1504384];
+
+// PDisplayList is declared in PDisplayList.h without ClearFrameBuffer; only the two members used here are listed.
+class PDisplayList {
+public:
+    void SetGsRegisters(u_long128 *pRegData, int nNumRegs);
+    void ClearFrameBuffer(short x0, short x1, short x2, short x3, char r, char g, char b, char a, unsigned int z);
+};
 
 extern unsigned char fst_bUseOldLoadingDisplay;
 
@@ -63,6 +71,7 @@ public:
     virtual void Slot02();
     virtual void Slot03();
     virtual void Slot04(float fA, float fB, PMat4 *pMat, int arg3, bool bFlag);
+    void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
     PMNode *Find(unsigned int id);
     void RecurseSetSTAnimOptions(bool flag);
     void SetAllFrustrumTest(eBoxIntersect arg0);
@@ -86,6 +95,12 @@ extern "C" void DebugDispPos__5DebugFPcUiUii(void *pThis, char *text, unsigned i
 extern "C" void RefreshDisplay__10PGfxEngineFv(void *pThis);
 extern "C" void SoundOneFrameHasElapsed_R__9MaxEngineFRiRi(void *pThis, int *pA, int *pB);
 extern "C" void IncrementSecondarySyncCounts__9MaxEngineFv(void *pThis);
+extern "C" void SetFrameRate__6PMNodeFfb(PMNode *pThis, float rate, bool flag);
+extern unsigned char MODE_PAL;
+extern int SCREEN_WIDTH;
+extern int SCREEN_HEIGHT;
+// PMat4 member; the call passes the matrix object as pThis. PMat4.h has no declaration for it.
+extern "C" void MakeParallelProjectionMatrix__5PMat4Fffffffffffff(void *pThis, float, float, float, float, float, float, float, float, float, float, float, float);
 
 class HudData {
 public:
@@ -213,6 +228,9 @@ void Interface::LevelClear() {
 
 // TODO(header): mpPlayerData__7GameHud is a pointer-sized small-data global.
 extern GameHud *mpPlayerData__7GameHud;
+// TODO(header): IconTable is a 0x20-byte-stride table indexed by icon type; AbilityTable is shared with Player.cpp.
+extern char IconTable[0x1100];
+extern signed char AbilityTable[];
 
 // FUNCTION: 0x13FEE0 UpdateCover__7HudGrimFv
 void HudGrim::UpdateCover() {
@@ -397,6 +415,42 @@ void HudBossMeter::Init(PMeshNode *meshNode, HudData *hud) {
     SetFace();
 }
 
+// DRAFT: 0x00141960 UpdateStatus__8HudComboFb
+// note: 54 words differ; original hoists the state constant 2 to entry, loads the mpPlayerData pointer and adds 4 before the index, and compares 2,1,3,0; ours folds +4 into lh offset. Tried: case orders 2,3,1,0 (69) and 2,1,3,0 (64); short-indexed global load (56).
+void HudCombo::UpdateStatus(bool flag) {
+    m_unkC = *(short *)((char *)mpPlayerData__7GameHud + 4 + (m_unkE * 4));
+    switch (m_unkF) {
+    case 0:
+        m_unkF = 1;
+        m_unk4->SetAllFrustrumTest((eBoxIntersect)1);
+        ((PVirtObj *)m_unk4)->Slot05(0);
+        ComboNumber();
+        return;
+    case 2:
+        if (flag) {
+            m_unk8 = 0x40000000;
+            return;
+        }
+        m_unkF = 1;
+        break;
+    case 3:
+        SetFrameRate__6PMNodeFfb(m_unk4, 0.5f, false);
+        m_unkF = 1;
+        break;
+    case 1:
+        break;
+    default:
+        return;
+    }
+    ComboNumber();
+    if (m_unk44 != 0) {
+        ((PVirtObj *)m_unk44)->Slot05(0);
+    }
+    if (m_unk4C != 0) {
+        ((PVirtObj *)m_unk4C)->Slot05(0);
+    }
+}
+
 // FUNCTION: 0x141A80 ComboFinish__8HudComboFv
 void HudCombo::ComboFinish() {
     void *temp_a1 = m_unk48;
@@ -448,6 +502,52 @@ void HudInventory::UpdateStatus(bool flag) {
     }
     ((PMNode *)m_unk4)->RecurseSetLoopRateByID(-1U, 1, rate);
     gSound.PlaySoundUbiquitous(0x3A);
+}
+
+// DRAFT: 0x00143200 AddIcon__12HudInventoryFi
+// note: 68 words differ. Early branch at 0x20 targets 0x50 (orig 0x3B) so the copy loop is unrolled by eight in ours and the exit lands later. Tried: IconTable offset folded into index, i=0 before w=1, w declared before i, copy loop as base[i] (no change).
+void HudInventory::AddIcon(int arg0) {
+    signed char sp18[8];
+    signed char *entry;
+    signed char *base;
+    int iconType;
+    int count;
+    int w;
+    int i;
+    signed char slot;
+    signed char c;
+    signed char *dst;
+
+    entry = AbilityTable + arg0 * 16;
+    iconType = entry[5];
+    if ((unsigned int)iconType < 4) {
+        slot = entry[6];
+        if (slot != -1) {
+            count = *(int *)(IconTable + (iconType << 5));
+            if (slot == -2) {
+                sp18[0] = arg0;
+                i = 0;
+                w = 1;
+                base = (signed char *)mpPlayerData__7GameHud + 0x5B + iconType * 8;
+                for (; i < count; i++) {
+                    c = base[i];
+                    if (c != arg0) {
+                        sp18[w] = c;
+                        w++;
+                    }
+                }
+                dst = base;
+                for (i = 0; i < count; i++) {
+                    *dst = sp18[i];
+                    dst++;
+                }
+            } else {
+                base = (signed char *)mpPlayerData__7GameHud + 0x5B + iconType * 8;
+                base[count + slot] = arg0;
+            }
+            UpdateGroup(iconType);
+        }
+    }
 }
 
 // DRAFT: 0x143510 Reset__12HudInventoryFv
@@ -661,6 +761,45 @@ void Interface::DeleteMeshLayer() {
     }
 }
 
+// DRAFT: 0x00144E20 Destroy__9InterfaceFv
+// note: 60 words differ, original frame 0x30 keeps this in s1 with field slots in s0 (addiu s0,s1,0x1C4/0x1C8); ours keeps this in s0 and folds the offsets; tried slot pointers, hoisted slot, declaration reorder, self local (6 attempts)
+void Interface::Destroy() {
+    Interface *self;
+    PMNode **slot;
+    PMNode *node;
+    void **obj;
+    void ***objSlot;
+    self = this;
+    slot = (PMNode **)((char *)self + 0x1C4);
+    node = *(PMNode **)((char *)self + 0x1C4);
+    if (node != 0) {
+        node->ProcessFxTriggers(-1.0f, 0, true, false);
+        node = *slot;
+        if (node != 0) {
+            node->Slot00(1);
+        }
+        *slot = 0;
+        ((PVirtObj *)((char *)this + 0x22C))->Slot01();
+        ((PVirtObj *)((char *)this + 0x290))->Slot01();
+        ((PTextureManager *)((char *)gGfxEng + 0x154C90))->UnloadDynamicTextures((eTextureGroup)0x6A);
+    }
+    objSlot = (void ***)((char *)self + 0x1C8);
+    obj = *(void ***)((char *)self + 0x1C8);
+    if (obj != 0) {
+        if (obj != 0) {
+            ((PMNode *)obj)->Slot00(1);
+        }
+        *objSlot = 0;
+    }
+    *(signed char *)((char *)this + 0x2F8) = 1;
+    *(signed char *)((char *)this + 0x3E4) = 0;
+    m_unk1C0 = 1;
+    DeleteMeshLayer();
+    ((FontManager *)((char *)this + 0x80))->RemoveAll(true);
+    *(short *)((char *)this + 0x414) = 0;
+    *(short *)((char *)this + 0x416) = 0;
+}
+
 // DRAFT: 0x001450D0 ProcessScreenFade__9InterfaceFv
 // note: 2 words differ, mul.s operand order and c.eq.s operand order; tried swapped mul operands, read-modify-write form, local temp (4), and both branch forms
 void Interface::ProcessScreenFade() {
@@ -677,6 +816,30 @@ void Interface::ProcessScreenFade() {
     if (*(float *)&m_unk41C != 0.0f) {
         DisplayFadeRectangle();
     }
+}
+
+// DRAFT: 0x001451B0 DisplayFadeRectangle__9InterfaceFv
+// note: 42 words; gs store order and branch shape differ, gGfxEng+0x154C80 load scheduled earlier; size 0xf8 vs 0xe8. Tried gs initializer (56), (int) alpha cast (54), per-use table index (54).
+void Interface::DisplayFadeRectangle() {
+    static char vFadeRGB[2][3] = {{0, 0, 0}, {-128, -128, -128}};
+    unsigned long long gs[6];
+    gs[2] = 0;
+    gs[3] = 0x1A;
+    gs[4] = 0x48;
+    gs[5] = 0x1B;
+    if (m_unk426 != 0) {
+        gs[0] = 0x48;
+        gs[1] = 0x42;
+    } else {
+        gs[0] = 0x44;
+        gs[1] = 0x42;
+    }
+    PDisplayList *pd = *(PDisplayList **)(gGfxEng + 0x154C80);
+    pd->SetGsRegisters((u_long128 *)gs, 3);
+    pd = *(PDisplayList **)(gGfxEng + 0x154C80);
+    char *rgb = vFadeRGB[m_unk426];
+    pd->ClearFrameBuffer(0x800, 0x800, 0x800, 0x800, rgb[0], rgb[1],
+                         rgb[2], (char)(int)*(float *)&m_unk41C, 0x3F800000);
 }
 
 // DRAFT: 0x1452A0 FadeScreen__9InterfaceFffbQ29Interface10eFadeColor
@@ -752,6 +915,26 @@ void Interface::InitRender() {
     vu1SetViewMatrix__FP5PMat4((char *)this + 0x40);
     vu1SetClipMatrix__FP5PMat4(gEng + 0x50);
     gGfxEng[0x158E22] = 0;
+}
+
+// FUNCTION: 0x1458B0 InitMatrices__9InterfaceFv
+void Interface::InitMatrices() {
+    if (MODE_PAL != 0) {
+        float h = (float)SCREEN_HEIGHT;
+        float f2 = 9.75f * (h / 224.0f);
+        float w = (float)SCREEN_WIDTH;
+        MakeParallelProjectionMatrix__5PMat4Fffffffffffff(this, 2048.0f, 2048.0f, w, h, 100.0f, 16777215.0f, (float)-SCREEN_WIDTH / 19.5f, w / 19.5f, h / f2, -h / f2, -100.0f, 100.0f);
+    } else {
+        *(int *)((char *)this + 0x00) = 0x411C0000;
+        *(int *)((char *)this + 0x14) = 0x409C0000;
+        *(int *)((char *)this + 0x28) = 0xC7A3D6C9;
+        *(int *)((char *)this + 0x30) = 0x45000000;
+        *(int *)((char *)this + 0x34) = 0x45000000;
+        *(int *)((char *)this + 0x38) = 0x4B000031;
+    }
+    *(int *)((char *)this + 0x54) = 0xBF733333;
+    *(int *)((char *)this + 0x68) = 0xBF800000;
+    *(int *)((char *)this + 0x78) = 0x4210CCCD;
 }
 
 // FUNCTION: 0x1459D0 Init__9InterfaceFv

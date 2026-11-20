@@ -54,11 +54,21 @@ public:
 class HudCombo {
 public:
     void ComboFinish();
+    void ComboNumber();
+    void UpdateStatus(bool flag);
 
-    char _pad000[0x38];
+    char _pad000[0x4];
+    PMNode *m_unk4;             // 0x004 node whose frustum test and frame rate are set
+    int m_unk8;                 // 0x008 float bits, 0x40000000 is 2.0f
+    short m_unkC;               // 0x00C HUD value looked up from the player table
+    unsigned char m_unkE;       // 0x00E index into the player table
+    unsigned char m_unkF;       // 0x00F state, 0..3
+    char _pad010[0x28];
     void *m_unk38;              // 0x038
-    char _pad03C[0xC];
+    char _pad03C[0x8];
+    void *m_unk44;              // 0x044 polymorphic element, slot 5 called by UpdateStatus
     void *m_unk48;              // 0x048
+    void *m_unk4C;              // 0x04C polymorphic element, slot 5 called by UpdateStatus
 };
 
 class HudHint {
@@ -106,6 +116,7 @@ public:
     int IsTreasureOK();
     void DisplayLevelName(int arg0, int arg1);
     void Init();
+    void Destroy();
     void InitMatrices();
     void SetPause();
     void InitRender();

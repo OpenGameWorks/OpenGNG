@@ -8,6 +8,7 @@ extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
 extern "C" void sceVu0Normalize(float *dst, float *src);
 extern "C" float GetLength__5PVec3Fv(float *this_vec);
 extern float GAME_FPS;
+extern unsigned char gPad[448];
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void *__construct_array(void *pBlock, void *(*pCtor)(void *), void *(*pDtor)(void *, short), int nSize, int nCount);
@@ -35,9 +36,11 @@ extern char gEng[105360];
 extern "C" void RotateX__5PMat4Ff(float *pMat, float angle);
 extern "C" void RotateY__5PMat4Ff(float *pMat, float angle);
 extern "C" void RotateZ__5PMat4Ff(float *pMat, float angle);
+extern "C" float sceVu0InnerProduct(float *a, float *b);
 
 class PVec3 {
 public:
+    PVec3() {}
     PVec3(const PVec3 &o) {
         m_v[0] = o.m_v[0];
         m_v[1] = o.m_v[1];
@@ -113,7 +116,7 @@ void CameraFollow::ForceReset(bool arg0) {
         *(int *)&m_unk10[0] = 0;
         m_unk10[1] = m_unk144;
         m_unk10[2] = m_unk140;
-        sceVu0ApplyMatrix(m_unk20, &m_unkA0, m_unk10);
+        sceVu0ApplyMatrix(m_unk20, m_unkA0, m_unk10);
         sceVu0AddVector(m_unk20, m_unk20, m_unk180);
         *(int *)&m_unk20[3] = 0x3F800000;
         m_unk224 = m_unk180[1];
@@ -277,10 +280,10 @@ float CameraFollow::GetAngleBetweenCamAndPlayer(float &arg0) {
     float d[4];
     __mi__5PVec3FR5PVec3(d, m_unk20, m_unk40);
     sceVu0CopyVector(v, d);
-    c[0] = m_unkC0;
-    c[2] = m_unkC8;
-    a[0] = m_unkA0;
-    a[2] = m_unkA8;
+    c[0] = m_unkA0[8];
+    c[2] = m_unkA0[10];
+    a[0] = m_unkA0[0];
+    a[2] = m_unkA0[2];
     arg0 = v[0] * a[0] + v[2] * a[2];
     float dot = v[0] * c[0] + v[2] * c[2];
     float q = dot / (sqrtf(v[0] * v[0] + v[2] * v[2]) * sqrtf(c[0] * c[0] + c[2] * c[2]));
@@ -377,6 +380,85 @@ void Physics::GetGroundPos() {
     }
 }
 
+// FUNCTION: 0x00176D20 GetPlayerDetails__12CameraFollowFv
+void CameraFollow::GetPlayerDetails() {
+    {
+        char *pPlay = (char *)m_unk114;
+        char *pSub = *(char **)(pPlay + 0x3C);
+        m_unk180 = (float *)(pSub ? pSub + 0x80 : pPlay + 0x190);
+    }
+    sceVu0SubVector(m_unk130, m_unk180, m_unk190);
+    {
+        char *pPlay = (char *)m_unk114;
+        char *pSub = *(char **)(pPlay + 0x3C);
+        m_unk184 = (float *)(pSub ? pSub + 0x90 : pPlay + 0x1A0);
+    }
+    float *pDetail = *(float **)((char *)m_unk114 + 0x38);
+    if (pDetail == 0) {
+        CdsAssert__FPciPc("CameraFollow.cpp", 0x240, "pPlayerPhysics");
+    }
+    m_unk188 = pDetail;
+    sceVu0CopyMatrix((float (*)[4])m_unkA0, (float (*)[4])(*(char **)((char *)m_unk114 + 0x3C) + 0x40));
+    if (m_unk188[0] == 0.0f && m_unk188[1] == 0.0f && m_unk188[2] == 0.0f) {
+        float diff[4];
+        sceVu0SubVector(diff, m_unk180, m_unk190);
+        sceVu0CopyVector(m_unk190, m_unk180);
+        m_unk1A0 = sqrtf(sceVu0InnerProduct(diff, diff));
+        diff[1] = 0.0f;
+        m_unk170 = sqrtf(sceVu0InnerProduct(diff, diff));
+    } else {
+        m_unk1A0 = sqrtf(sceVu0InnerProduct(m_unk188, m_unk188));
+        m_unk170 = sqrtf(m_unk188[0] * m_unk188[0] + m_unk188[2] * m_unk188[2]);
+        sceVu0CopyVector(m_unk190, m_unk180);
+    }
+    m_unk6250 = *(float *)(*(char **)((char *)m_unk114 + 0x38) + 0xC8);
+}
+
+// DRAFT: 0x00176ED0 ProcessPlayerIO__12CameraFollowFv
+// note: 2 words differ, both `jal abs`: our call relocates to abs__Fi (block-scope int abs(int) gets C++ linkage) vs original C abs; extern "C" block decl is a compile error, dropping the decl inlines abs (DIFF 110), dont_inline pragma still inlines.
+void CameraFollow::ProcessPlayerIO() {
+    int abs(int);
+    int var_s1;
+    int var_a0;
+
+    if (*(int *)((char *)m_pCamera + 0x2C0) & 4) {
+        m_unk1A5 = 0;
+        m_unk1A4 = 0;
+    } else {
+        char *pPlay = (char *)m_unk114;
+        m_unk1A4 = *(signed char *)(pPlay + 0x1B6);
+        m_unk1A5 = *(signed char *)(pPlay + 0x1B7);
+    }
+    m_unk1B8 = *(signed char *)(gPad + 0x114);
+    m_unk1B9 = *(signed char *)(gPad + 0x115);
+    var_s1 = (signed char)(abs(m_unk1A4) >> 4);
+    var_a0 = (signed char)(abs(m_unk1A5) >> 4);
+    if (var_s1 != 0 && m_unk1A4 > 0) {
+        var_s1 = (signed char)(var_s1 + 1);
+    }
+    if (var_a0 != 0 && m_unk1A5 > 0) {
+        var_a0 = (signed char)(var_a0 + 1);
+    }
+    m_unk1A8 = (float)var_s1 / 8.0f;
+    m_unk1AC = (float)var_a0 / 8.0f;
+    if (m_unk1A8 > 0.5f) {
+        m_unk1BA = 0;
+    }
+    m_unk1A8 = (m_unk1A4 < 0) ? -m_unk1A8 : m_unk1A8;
+    m_unk1AC = (m_unk1A5 < 0) ? -m_unk1AC : m_unk1AC;
+    if (m_unk118 != 1) {
+        if ((*(int *)((char *)m_pCamera + 0x2C0) & 2) == 0 &&
+            (*(unsigned short *)((char *)m_unk114 + 0x1B0) & 0x400) != 0) {
+            if (m_unk1BB == 0) {
+                m_unk1BB = 1;
+                m_unk1BC = 1;
+            }
+        } else {
+            m_unk1BB = 0;
+        }
+    }
+}
+
 // DRAFT: 0x00177090 PlayerMovedSinceLastSwing__12CameraFollowFv
 // note: 68 lines; 0.1f pooled via gp where the original builds it inline (lui/ori/mtc1), which shifts branch layout. Shared-exit variant gave 79.
 int CameraFollow::PlayerMovedSinceLastSwing() {
@@ -402,6 +484,38 @@ int CameraFollow::PlayerMovedSinceLastSwing() {
 // FUNCTION: 0x001771D0 PlayerExitingLevel__12CameraFollowFv
 int CameraFollow::PlayerExitingLevel() {
     return *(int *)((char *)m_unk114 + 0x20) == 2;
+}
+
+// DRAFT: 0x00177680 CreatePathFromPlayersRoute__12CameraFollowFv
+// note: DIFF 56 words; first loop's FP temps are saved (f20..f23) and the copies to the call temps are scheduled differently. Tried: inline PVec3 copies (106), hoisted float d (106), per-call scoped temps (106), shared temp (56, kept).
+void CameraFollow::CreatePathFromPlayersRoute() {
+    float best = 9999.0f;
+    int bestIdx = 0;
+    for (int i = 9; i >= 0; i--) {
+        float d = DistanceXZ__7MathAPIFPA4_fPA4_f((MathAPI *)m_unk20, &m_unk61A0[i]);
+        if (d < best) {
+            best = d;
+            bestIdx = i;
+        }
+    }
+    ((CameraSpline *)_pad2D0)->Reset();
+    PVec3 start = *(PVec3 *)m_unk20;
+    ((CameraSpline *)_pad2D0)->AddControlPoint(start);
+    ((CameraSpline *)_pad2D0)->AddControlPoint(start);
+    for (int j = bestIdx; j >= 0; j--) {
+        sceVu0CopyVector(m_unk10, m_unk61A0[j]);
+        m_unk10[1] = m_unk20[1];
+        ((CameraSpline *)_pad2D0)->AddControlPoint(*(PVec3 *)m_unk10);
+    }
+    ((CameraSpline *)_pad2D0)->Create();
+    PVec3 pos;
+    ((CameraSpline *)_pad2D0)->GetPosition(((CameraSpline *)_pad2D0)->m_unk8 - 1, pos);
+    if (((BGCollision *)mBGCollision__15EntityBaseClass)->FindIntersect(*(PVec3 *)m_unk40, pos, 2, 0)) {
+        ForceReset(false);
+    }
+    m_unk6190 = 0;
+    m_unk6254 = 0x3F800000;
+    m_unk6258 = 0;
 }
 
 // FUNCTION: 0x00177820 StorePlayerPos__12CameraFollowFv
@@ -507,15 +621,15 @@ void CameraFollow::Init(bool arg0) {
     m_unk180 = (float *)(pSub ? pSub + 0x80 : (char *)m_unk114 + 0x190);
     pSub = *(char **)((char *)m_unk114 + 0x3C);
     m_unk184 = (float *)(pSub ? pSub + 0x90 : (char *)m_unk114 + 0x1A0);
-    sceVu0UnitMatrix(&m_unkA0);
+    sceVu0UnitMatrix(m_unkA0);
     if (m_unk184[0] != 0.0f) {
-        RotateX__5PMat4Ff(&m_unkA0, m_unk184[0]);
+        RotateX__5PMat4Ff(m_unkA0, m_unk184[0]);
     }
     if (m_unk184[1] != 0.0f) {
-        RotateY__5PMat4Ff(&m_unkA0, m_unk184[1]);
+        RotateY__5PMat4Ff(m_unkA0, m_unk184[1]);
     }
     if (m_unk184[2] != 0.0f) {
-        RotateZ__5PMat4Ff(&m_unkA0, m_unk184[2]);
+        RotateZ__5PMat4Ff(m_unkA0, m_unk184[2]);
     }
     ForceReset(true);
     if (arg0) {

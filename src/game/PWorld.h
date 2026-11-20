@@ -18,14 +18,17 @@ enum ePsx2FileVersion {
 
 class PWorld {
 public:
+    PWorld();
     void InitFrustrum(PMat4 *pMat, float (*pVec)[4]);
     void CullMainWorld();
     int LoadEditedInstanceData(PPakFile *pFile);
     void AttachFxTriggersToNodes(PMeshNode *pNode, tagParticleFxTriggerData *pData, unsigned int nCount);
     int LoadFxTriggerData(PPakFile *pFile, tagParticleFxTriggerData **ppData, unsigned int &nCount);
     void UpdateAnimate(PMNode *pNode);
+    void Animate();
     void InitRenderFrame();
     void RenderWorld();
+    void Render();
     void Init();
     void UpdateTimer();
     void InitMatrices();
@@ -35,7 +38,7 @@ public:
     ~PWorld();
 
     PMeshNode *m_pMeshNode;                     // 0x000
-    char _pad004[0x4];
+    int m_unk004;                               // 0x004
     PSpacePartitionTree *m_pSpacePartitionTree; // 0x008
     char _pad00C[0x4];
     float m_Screen[4][4];   // 0x010
@@ -55,7 +58,7 @@ public:
     float m_1E0;            // 0x001E0
     float m_1E4;            // 0x001E4
     float m_1E8;            // 0x001E8
-    char _pad1EC[0x1ED - 0x1EC];
+    signed char m_1EC;      // 0x001EC
     bool m_1ED;             // 0x001ED
     char _pad1EE[0x8720 - 0x1EE];
     signed char m_8720;     // 0x08720
@@ -71,7 +74,7 @@ public:
     unsigned int m_9FB4;                        // 0x09FB4
     PStaticInstanceMesh **m_9FB8;               // 0x09FB8
     char _pad9FBC[0x13790 - 0x9FBC];
-    char m_bCulled;         // 0x13790
+    unsigned char m_bCulled; // 0x13790
     char _pad13791[0x13794 - 0x13791];
     float m_13794;          // 0x13794
 };

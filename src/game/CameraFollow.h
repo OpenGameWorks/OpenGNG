@@ -29,6 +29,8 @@ public:
     CameraSpline();
     void AddControlPoint(PVec3 arg0);
     void GetPosition(unsigned int arg0, PVec3 &arg1);
+    void Reset();
+    void Create();
 
     int m_iNumCtrlPoints;               // 0x000
     int m_unk4;                         // 0x004
@@ -66,6 +68,9 @@ public:
     int PlayerExitingLevel();
     void SetFollowCameraParams(float arg0, float arg1);
     int SetHeadCam(bool arg0);
+    void GetPlayerDetails();
+    void ProcessPlayerIO();
+    void CreatePathFromPlayersRoute();
 
     Camera *m_pCamera;      // 0x000
     char _pad004[0x10 - 0x004];
@@ -74,15 +79,8 @@ public:
     char _pad030[0x40 - 0x30];
     float m_unk40[4];       // 0x040
     char _pad050[0x060 - 0x050];
-    char _pad060[0x0A0 - 0x060];   // 0x60: PMat4 (64 bytes)
-    float m_unkA0;          // 0x0A0
-    char _padA4[0x0A8 - 0x0A4];
-    float m_unkA8;          // 0x0A8
-    char _padAC[0x0C0 - 0x0AC];
-    float m_unkC0;          // 0x0C0
-    char _padC4[0x0C8 - 0x0C4];
-    float m_unkC8;          // 0x0C8
-    char _padCC[0x0E0 - 0x0CC];
+    char _pad060[0x0A0 - 0x060];
+    float m_unkA0[16];      // 0x0A0 (PMat4, 64 bytes)
     int m_unk0E0;           // 0x0E0
     float m_unk0E4;         // 0x0E4
     int m_unk0E8;           // 0x0E8
@@ -95,7 +93,8 @@ public:
     int m_unk11C;           // 0x11C
     char _pad120[0x124 - 0x120];
     float m_unk124;         // 0x124
-    char _pad128[0x140 - 0x128];
+    char _pad128[0x130 - 0x128];
+    float m_unk130[4];      // 0x130
     float m_unk140;         // 0x140
     float m_unk144;         // 0x144
     char _pad148[0x164 - 0x148];
@@ -108,12 +107,22 @@ public:
     float m_unk17C;         // 0x17C
     float *m_unk180;        // 0x180
     float *m_unk184;        // 0x184
-    char _pad188[0x1A0 - 0x188];
+    float *m_unk188;        // 0x188
+    char _pad18C[4];
+    float m_unk190[4];      // 0x190
     float m_unk1A0;         // 0x1A0
-    char _pad1A4[0x1B8 - 0x1A4];
+    signed char m_unk1A4;   // 0x1A4
+    signed char m_unk1A5;   // 0x1A5
+    char _pad1A6[0x1A8 - 0x1A6];
+    float m_unk1A8;         // 0x1A8
+    float m_unk1AC;         // 0x1AC
+    char _pad1B0[0x1B8 - 0x1B0];
     signed char m_unk1B8;   // 0x1B8
     signed char m_unk1B9;   // 0x1B9
-    char _pad1BA[0x1C0 - 0x1BA];
+    signed char m_unk1BA;   // 0x1BA
+    unsigned char m_unk1BB; // 0x1BB
+    signed char m_unk1BC;   // 0x1BC
+    char _pad1BD[0x1C0 - 0x1BD];
     float m_unk1C0[4];      // 0x1C0
     float m_unk1D0[4];      // 0x1D0
     char _pad1E0[0x1F8 - 0x1E0];
@@ -131,9 +140,14 @@ public:
     unsigned char m_unk2C0; // 0x2C0
     char _pad2C1[0x2D0 - 0x2C1];
     char _pad2D0[0x5EC0];   // CameraSpline, 0x2D0..0x6190
-    char _pad6190[0x61A0 - 0x6190];
+    int m_unk6190;          // 0x6190
+    char _pad6194[0x61A0 - 0x6194];
     float m_unk61A0[10][4]; // 0x61A0
-    char _pad6240[0x6290 - 0x6240];
+    char _pad6240[0x6250 - 0x6240];
+    float m_unk6250;        // 0x6250
+    int m_unk6254;          // 0x6254
+    int m_unk6258;          // 0x6258
+    char _pad625C[0x6290 - 0x625C];
     unsigned char m_unk6290; // 0x6290
     char _pad6291[0x62F0 - 0x6291];
     unsigned char m_unk62F0; // 0x62F0

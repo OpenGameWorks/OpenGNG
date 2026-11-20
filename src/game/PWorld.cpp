@@ -20,6 +20,13 @@ class PCutScenePlayer {
 public:
     void CullTest(PFrustrum *pFrustrum);
     void Render(PLightManager *pLight);
+    void GetViewMatrix(PMat4 *pMat);
+    int Animate(float fStep);
+};
+
+class PSpacePartitionNode {
+public:
+    void Animate(float fStep);
 };
 
 // Object reached through PWorld's offset 0 pointer; Render is at vtable offset 0xC.
@@ -27,6 +34,16 @@ class PRenderHook {
 public:
     virtual void Slot0();
     virtual int Render(int nA, int nB, int nC);
+};
+
+// PMNode vtable view: Animate sits at vtable offset 0x18, which is virtual index 4.
+class PMNodeVirtual {
+public:
+    virtual void Slot0();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void Slot3();
+    virtual void Animate(float fA, float fB, PMat4 *pMat, int nFlag, bool bFlag);
 };
 
 class PCDFile {
@@ -41,10 +58,22 @@ struct tagParticleFxTriggerData {
     char m_Trigger[0x28];   // 0x04, tagParticleFxTrigger
 };
 
+struct PNodeAnim {
+    char _pad00[4];
+    int m_04;
+};
+
 class PMNode {
 public:
-    char _pad00[0x3F];
-    signed char m_3F;
+    char _pad00[0x0C];
+    void *m_0C;             // 0x0C
+    char _pad10[0x24 - 0x10];
+    PNodeAnim *m_24;        // 0x24
+    char _pad28[0x2C - 0x28];
+    float m_2C;             // 0x2C
+    char _pad30[0x3E - 0x30];
+    unsigned char m_3E;     // 0x3E
+    signed char m_3F;       // 0x3F
     int Find(PMNode *pNode);
     PMNode *Find(unsigned int nId);
     int AddFxTrigger(tagParticleFxTrigger *pTrigger, bool bFlag);
@@ -81,6 +110,7 @@ public:
 class PMat4 {
 public:
     void MakeScreenMatrix2(float f0, float f1, float f2, float f3, float f4, float f5, float f6, float f7);
+    void MakeMayaProjectionMatrix(float f0, float f1, float f2, float f3, float f4, float f5);
 };
 
 extern "C" int printf(const char *fmt, ...);
@@ -100,6 +130,14 @@ struct PClipVolume {
 };
 extern PClipVolume clip_volume;
 void vu1SetScreenMatrix(PMat4 *pMat);
+void vu1SetViewMatrix(PMat4 *pMat);
+void vu1SetClipMatrix(PMat4 *pMat);
+extern "C" void sceVu0UnitMatrix(void *pMat);
+class Camera {
+public:
+    void SetPosAndRot(float (*pPos)[4], float (*pRot)[4]);
+};
+extern unsigned char gEng[0x1A000];
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void scePcStart(int nMode, int nA, int nB);
 extern "C" void __destroy_arr(void *pBlock, void *(*pDtor)(void *, short), int nSize, int nCount);
@@ -122,10 +160,25 @@ extern "C" void Reset__13PWaterTextureFv(void *pThis);
 extern "C" void Reset__11PGasTextureFv(void *pThis);
 extern "C" void Reset__12PFireTextureFv(void *pThis);
 extern "C" void Reset__11PFogTextureFv(void *pThis);
+extern "C" void Update__13PWaterTextureFv(void *pThis);
+extern "C" void Update__11PGasTextureFv(void *pThis);
+extern "C" void Update__12PFireTextureFv(void *pThis);
+extern "C" void Update__11PFogTextureFv(void *pThis);
 extern "C" void RemoveAllParticleSystems__16PParticleManagerF8ePSLayer(void *pThis, int nLayer);
 extern unsigned char gInterface[0x300];
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void *__ct__19PStaticInstanceMeshFv(void *pThis);
+extern "C" void *__ct__9PFrustrumFv(void *pThis);
+extern "C" void *__ct__13PLightManagerFv(void *pThis);
+extern "C" void *__ct__15PCutScenePlayerFv(void *pThis);
+extern "C" void *__ct__11PZBufferFogFv(void *pThis);
+extern "C" void *__ct__6PArrayFv(void *pThis);
+extern "C" void *__ct__13PWaterTextureFv(void *pThis);
+extern "C" void *__ct__11PGasTextureFv(void *pThis);
+extern "C" void *__ct__12PFireTextureFv(void *pThis);
+extern "C" void *__ct__11PFogTextureFv(void *pThis);
+extern "C" void __construct_array(void *pBlock, void *(*pCtor)(void *), void *(*pDtor)(void *, short), int nSize, int nCount);
+extern "C" void Allocate__6PArrayFUi(void *pThis, unsigned int nCount);
 extern "C" int Load__19PStaticInstanceMeshFP8PPakFileP6PArray16ePsx2FileVersion(void *pThis, PPakFile *pFile, PArray *pArray, ePsx2FileVersion nVersion);
 extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, char *pExpr);
@@ -294,6 +347,43 @@ void PWorld::RenderWorld() {
     }
 }
 
+// DRAFT: 0x19AF70 Render__6PWorldFv
+// note: DIFF 39; float local array and offset variants tried, shared-local, pRot-first and clamp-rewrite variants gave DIFF 43 and were reverted.
+void PWorld::Render() {
+    float sp20[4][4];
+    float sp60[4][4];
+    float fFar;
+
+    if (m_8720 != 0) {
+        sceVu0UnitMatrix(sp20);
+        ((PCutScenePlayer *)((char *)this + m_8724 * 0x2140 + 0x220))->GetViewMatrix((PMat4 *)sp20);
+        InitFrustrum((PMat4 *)sp20, (float (*)[4])((char *)this + m_8724 * 0x2140 + 0x2E0));
+        {
+            float (*pPos)[4] = (float (*)[4])((char *)this + m_8724 * 0x2140 + 0x220 + 0xC0);
+            float (*pRot)[4] = (float (*)[4])((char *)this + m_8724 * 0x2140 + 0x220 + 0xD0);
+            ((Camera *)(gEng + 0x19760))->SetPosAndRot(pPos, pRot);
+        }
+        if (m_bCulled == 0) {
+            CullMainWorld();
+        }
+        sceVu0UnitMatrix(sp60);
+        fFar = 4194304.0f + m_9EA0;
+        if (fFar >= 1.6777216e7f) {
+            fFar = 1.6777216e7f;
+        }
+        ((PMat4 *)sp60)->MakeMayaProjectionMatrix(2048.0f, 2048.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 100.0f, fFar);
+        vu1SetScreenMatrix((PMat4 *)sp60);
+        vu1SetViewMatrix((PMat4 *)sp20);
+    } else {
+        if (m_bCulled == 0) {
+            CullMainWorld();
+        }
+        vu1SetViewMatrix((PMat4 *)m_Mat);
+    }
+    vu1SetClipMatrix((PMat4 *)&m_50);
+    RenderWorld();
+}
+
 // DRAFT: 0x19B130 UpdateAnimate__6PWorldFP6PMNode
 // note: size 0xbc vs 0xd0; pNode/cur in s2/s1 (orig s1/s2); no index reload before array access; 42 lines after variants (pList ptr, decl order).
 void PWorld::UpdateAnimate(PMNode *pNode) {
@@ -319,6 +409,69 @@ void PWorld::UpdateAnimate(PMNode *pNode) {
             }
         }
     }
+}
+
+// DRAFT: 0x19B200 Animate__6PWorldFv
+// note: DIFF 72; original uses direct branches with one shared call block, ours is bool-free do-while (72) vs bCall (85), goto-label call block and swapped float compare gave no gain; m_0C==0 arm compares nType into v0 vs at and inverts the nType!=0x1F4 test.
+void PWorld::Animate() {
+    PNodeTable *pTable;
+    PNodeList *pList;
+    PMNode *pCur;
+    int nType;
+    bool bCall;
+
+    if (m_8720 != 0) {
+        m_8720 = ((PCutScenePlayer *)((char *)this + m_8724 * 0x2140 + 0x220))->Animate(m_1E8) & 7;
+    } else {
+        pTable = (PNodeTable *)m_pMeshNode;
+        if (pTable != 0) {
+            pList = &pTable->m_list;
+            pList->m_nIndex = 0;
+            pCur = 0;
+            if (pList->m_nCount != 0) {
+                pCur = pList->m_ppNodes[0];
+            }
+            while (pCur != 0) {
+                do {
+                    if ((signed char)(pCur->m_3F & 7) == 0 && (pCur->m_3E & 0x18) == 0) {
+                        break;
+                    }
+                    nType = 0;
+                    if (pCur->m_24 != 0) {
+                        nType = pCur->m_24->m_04;
+                    }
+                    if (pCur->m_0C == 0) {
+                        if (nType < 2) {
+                            break;
+                        }
+                        if (nType == 0x1F4) {
+                            break;
+                        }
+                    } else {
+                        if (nType < 0 && pCur->m_2C == 0.0f) {
+                            break;
+                        }
+                    }
+                    ((PMNodeVirtual *)pCur)->Animate(0.0f, m_1E8, 0, 0, false);
+                } while (0);
+                pList->m_nIndex++;
+                if (pList->m_nIndex < pList->m_nCount) {
+                    pCur = pList->m_ppNodes[pList->m_nIndex];
+                } else {
+                    pCur = 0;
+                }
+            }
+        }
+    }
+
+    if (m_pSpacePartitionTree != 0) {
+        PSpacePartitionNode *pRoot = *(PSpacePartitionNode **)m_pSpacePartitionTree;
+        pRoot->Animate(0.5f * m_1E8);
+    }
+    Update__13PWaterTextureFv((char *)this + 0x9FC0);
+    Update__11PGasTextureFv((char *)this + 0x12690);
+    Update__12PFireTextureFv((char *)this + 0x12C10);
+    Update__11PFogTextureFv((char *)this + 0x13210);
 }
 
 // DRAFT: 0x19B400 Destroy__6PWorldFv
@@ -435,4 +588,36 @@ PWorld::~PWorld() {
     __destroy_arr((char *)this + 0x220, __dt__15PCutScenePlayerFv, 0x2140, 4);
     __dt__13PLightManagerFv((char *)this + 0x1F0, -1);
     __dt__9PFrustrumFv((char *)this + 0xF0, -1);
+}
+
+// DRAFT: 0x19C2E0 __ct__6PWorldFv
+// note: DIFF 98; original spills this to 0x1C(sp) with frame 0x20 and reloads it before each call, ours keeps this in s0 with frame 0x30 and s1; the spill needs a member type with a destructor (PFrustrum's __dt__ exists but PFrustrum.h declares none); tried explicit (char *)this casts (99) and a local char *base (98).
+PWorld::PWorld() {
+    char *base = (char *)this;
+    sceVu0UnitMatrix(base + 0x10);
+    sceVu0UnitMatrix(base + 0x50);
+    sceVu0UnitMatrix(base + 0x90);
+    __ct__9PFrustrumFv(base + 0xF0);
+    __ct__13PLightManagerFv(base + 0x1F0);
+    __construct_array(base + 0x220, __ct__15PCutScenePlayerFv, __dt__15PCutScenePlayerFv, 0x2140, 4);
+    __ct__11PZBufferFogFv(base + 0x8750);
+    __ct__6PArrayFv(base + 0x9FB0);
+    __ct__13PWaterTextureFv(base + 0x9FC0);
+    __ct__11PGasTextureFv(base + 0x12690);
+    __ct__12PFireTextureFv(base + 0x12C10);
+    __ct__11PFogTextureFv(base + 0x13210);
+    m_pMeshNode = 0;
+    m_unk004 = 0;
+    m_pSpacePartitionTree = 0;
+    m_bCulled = 0;
+    m_8724 = 0;
+    m_1EC = 0;
+    m_1ED = false;
+    m_1E0 = 0.00333333341f;
+    m_1E4 = 60.0f;
+    m_Persp[0] = 60.0f;
+    m_Persp[1] = 1.4f;
+    m_Persp[2] = 1.0f;
+    m_Persp[3] = 150.0f;
+    Allocate__6PArrayFUi((char *)this + 0x9FB0, 0x40);
 }
