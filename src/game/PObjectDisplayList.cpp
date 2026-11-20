@@ -3,6 +3,7 @@
 #include "PObjectDisplayList.h"
 
 #include "PArray.h"
+#include "PDynamicBuffer.h"
 
 // TODO(header): foreign declarations
 class PShader {
@@ -38,7 +39,8 @@ class PMNode {
 public:
     PMNode *m_unk0;         // 0x000
     int m_unk4;             // 0x004
-    char _pad008[0x8];
+    int m_unk8;             // 0x008 ghost data offset
+    int m_unkC;             // 0x00C dma count tag
     PMesh *m_unk10;         // 0x010
     PMNodeChildList m_apoChildList;  // 0x014
     char _pad020[0xB0];
@@ -48,17 +50,110 @@ public:
 class MemoryManager {
 public:
     void DeAllocateAligned(void *pMem);
+    void *AllocateAligned(int nSize, unsigned int nAlign);
     char _pad000[0x38C];    // MemMgr is 908 bytes
 };
 
+class PFragment {
+public:
+    void *m_unk0;           // 0x00
+    unsigned int m_unk4;    // 0x04
+    unsigned short m_unk8;  // 0x08
+    char _pad00A[0xE];
+    int m_unk18;            // 0x18 matched against PShader::m_unkC
+    char _pad01C[0x74];     // entry size 0x90
+};
+
 void CdsAssert(char *pFile, int nLine, char *pExpr);
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern MemoryManager MemMgr;
 extern PGfxEngine gGfxEng;
+extern PDynamicBuffer gPDynamicBuffer;
+extern float gUnitMatrix[16];
+extern "C" void QwordCopy__FP1P1Ui(u_long128 *, u_long128 *, unsigned int);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" void __ct__6PArrayFv(void *pThis);
 extern "C" void __dl__FPv(void *);
 extern "C" void *__nw__FUi(unsigned int nSize);
+
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PObjectDisplayList.cpp", line, #cond))
+
+// DRAFT: 0x001D3B80 CreateDisplayList__18PObjectDisplayListFv
+// note: compiles, 225 words differ: frame 0x49C vs 0x4C4 size, loop s-register allocation and i*4/i*0x10 strength reduction differ; 6 variants tried
+int PObjectDisplayList::CreateDisplayList() {
+    PMNode *info;
+    PShader *shader;
+    PFragment *apFragment;
+    PMNode *apNodeInfo;
+    PMesh *apMesh;
+    PMesh *mesh;
+    PMNode *e;
+    char *slot;
+    int i;
+    int j;
+    int k;
+    int m;
+    unsigned int count;
+
+    gPDynamicBuffer.Open();
+    if (m_unk8 != 0) {
+        gPDynamicBuffer.WriteDmaCntTag(((PMNode *)m_unk8)->m_unk4 * 5, 0x10000000, 0);
+        ((PMNode *)m_unk8)->m_unk8 = gPDynamicBuffer.WriteGhostData(((PMNode *)m_unk8)->m_unk4 * 5);
+        gPDynamicBuffer.WriteMatrix((PMat4 *)gUnitMatrix, 0x336);
+        ((PMNode *)m_unk8)->m_unkC = gPDynamicBuffer.WriteDmaCntTag(0, 0, 0);
+        for (i = 0; i < m_unk20; i++) {
+            shader = m_apoShaders[i];
+            if (shader != 0) {
+                gPDynamicBuffer.WriteShader(shader, (bool *)m_unk1E0, (int *)((char *)m_unk8 + i * 0x10 + 0x10), true);
+                for (j = 0; j < (int)(((((PMesh *)((PMNode *)m_unk8)->m_unkD0)->m_unk4 - ((PMesh *)((PMNode *)m_unk8)->m_unkD0)->m_unk8)) & 0xFFFF); j++) {
+                    mesh = (PMesh *)((PMNode *)m_unk8)->m_unkD0;
+                    apFragment = (j < mesh->m_unk4) ? (PFragment *)((char *)mesh->m_unk0 + j * 0x90) : 0;
+                    CDS_ASSERT(0x2F7, apFragment);
+                    if (apFragment->m_unk18 == shader->m_unkC) {
+                        gPDynamicBuffer.WriteDmaRefTag(apFragment->m_unk0, apFragment->m_unk4 >> 4, false, 0x11000000, 0);
+                        m_unk1C += apFragment->m_unk8;
+                    }
+                }
+            }
+        }
+    }
+    if (((PArray *)m_unkC)->m_unk0 != 0) {
+        for (k = 0; k < m_unk20; k++) {
+            shader = m_apoShaders[k];
+            if (shader != 0) {
+                gPDynamicBuffer.WriteShader(shader, (bool *)m_unk1E0, (int *)((char *)this + 0x24 + k * 0x10), false);
+                count = ((PArray *)m_unkC)->m_unk0;
+                for (m = 0; m < (int)count; m++) {
+                    e = (m < (int)count) ? (PMNode *)((PArray *)m_unkC)->m_unk8[m] : 0;
+                    apNodeInfo = e;
+                    CDS_ASSERT(0x316, apNodeInfo);
+                    apMesh = e->m_unk0->m_unk10;
+                    CDS_ASSERT(0x31A, apMesh);
+                    slot = (char *)e + k * 4;
+                    *(int *)(slot + 4) = -1;
+                    *(int *)(slot + 0x34) = -1;
+                    for (j = 0; j < (int)((apMesh->m_unk4 - apMesh->m_unk8) & 0xFFFF); j++) {
+                        apFragment = (j < (int)apMesh->m_unk4) ? (PFragment *)((char *)apMesh->m_unk0 + j * 0x90) : 0;
+                        CDS_ASSERT(0x323, apFragment);
+                        if (apFragment->m_unk18 == shader->m_unkC) {
+                            *(int *)(slot + 4) = gPDynamicBuffer.WriteMatrix((PMat4 *)gUnitMatrix, 0x336);
+                            *(int *)(slot + 0x34) = gPDynamicBuffer.WriteDmaCntTag(0, 0, 0);
+                            gPDynamicBuffer.WriteDmaRefTag(apFragment->m_unk0, apFragment->m_unk4 >> 4, false, 0x11000000, 0);
+                            m_unk1C += apFragment->m_unk8;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    m_unk4 = gPDynamicBuffer.m_uCurSize;
+    m_unk0 = MemMgr.AllocateAligned(m_unk4 << 4, 0x80);
+    CDS_ASSERT(0x341, m_unk0);
+    QwordCopy__FP1P1Ui((u_long128 *)m_unk0, gPDynamicBuffer.m_pBuffer, m_unk4);
+    gPDynamicBuffer.Close();
+    m_unk1E5 = 1;
+}
 
 // DRAFT: 0x1D4050 Destroy__18PObjectDisplayListFv
 // note: 50 differing lines; ours saves s1 as this with a 0x30 frame, original uses s0 only with 0x20 and a do-while loop; do-while (68) and raw-offset (70) variants were worse.
