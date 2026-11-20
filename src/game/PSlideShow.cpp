@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "PSlideShow.h"
 #include "PGfxEngine.h"
@@ -261,6 +262,64 @@ void PSlideShow::InitTiles(tagTile *pTile)
         fX = 16.0f + (2048.0f - (float)(m_unk1C / 2));
         fY += 16.0f;
     }
+}
+
+// DRAFT: 0x00215CF0 CreateImagePacket__10PSlideShowFRiPQ210PSlideShow7tagTile
+// note: 89 words; register allocation differs (original keeps m_unk14*m_unk18 in s2 across __nwa, ours folds it into v1). Tried: inline post-call size (192), named nCount local in header and nQwc (168), -str readonly on line 1 (89, no change).
+void *PSlideShow::CreateImagePacket(int &nOffset, tagTile *pTile)
+{
+    int nQwc = (m_unk14 * m_unk18) * 9 + 1;
+    unsigned char *pPacket = (unsigned char *)__nwa__FUi(nQwc * 0x10);
+    if (pPacket == 0) {
+        CdsAssert__FPciPc("PSlideShow.cpp", 0xC4, "apPacket");
+    }
+    *(u_long128 *)pPacket = 0;
+    *(u_long128 *)pPacket = (u_long128)((unsigned long long)(long long)(m_unk14 * m_unk18) | 0x8000ULL | (0x900E4000ULL << 32));
+    pPacket[8] = (pPacket[8] & ~0xF) | 1;
+    pPacket[8] = (pPacket[8] & ~0xF0) | 0x20;
+    pPacket[9] = (pPacket[9] & ~0xF) | 5;
+    pPacket[9] = (pPacket[9] & ~0xF0) | 0x20;
+    pPacket[0xA] = (pPacket[0xA] & ~0xF) | 5;
+    pPacket[0xA] = (pPacket[0xA] & ~0xF0) | 0x20;
+    pPacket[0xB] = (pPacket[0xB] & ~0xF) | 5;
+    pPacket[0xB] = (pPacket[0xB] & ~0xF0) | 0x20;
+    pPacket[0xC] = (pPacket[0xC] & ~0xF) | 5;
+    *(int *)0x70001000 = 0x41800000;
+    *(int *)0x70001004 = 0x41000000;
+    *(int *)0x70001008 = 0;
+    *(int *)0x7000100C = 0x3F800000;
+    *(int *)0x70001010 = 0x41800000;
+    *(int *)0x70001014 = 0xC1000000;
+    *(int *)0x70001018 = 0;
+    *(int *)0x7000101C = 0x3F800000;
+    unsigned char *pBase = pPacket + 0x10;
+    for (int nRow = 0; nRow < m_unk14; nRow++) {
+        for (int nCol = 0; nCol < m_unk18; nCol++) {
+            int nIdx = nCol + nRow * m_unk18;
+            tagGsPoly *pPoly = (tagGsPoly *)(pBase + nIdx * 0x90);
+            int *pI = (int *)pPoly;
+            float *pF = (float *)pPoly;
+            pI[0] = 0x80;
+            pI[1] = 0x80;
+            pI[2] = 0x80;
+            pI[3] = 0x80;
+            pF[4] = (float)nCol * (1.0f / (float)m_unk18);
+            pF[5] = (float)nRow * (1.0f / (float)m_unk14);
+            pI[6] = 0x3F800000;
+            pF[0xC] = pF[4];
+            pF[0xD] = pF[5] + (1.0f / (float)m_unk14);
+            pI[0xE] = 0x3F800000;
+            pF[0x14] = pF[4] + (1.0f / (float)m_unk18);
+            pF[0x15] = pF[5];
+            pI[0x16] = 0x3F800000;
+            pF[0x1C] = pF[0x14];
+            pF[0x1D] = pF[0xD];
+            pI[0x1E] = 0x3F800000;
+            SetGsPolyPos(pPoly, pTile + nIdx, (float *)0x70001000, (float *)0x70001010);
+        }
+    }
+    nOffset = nQwc * 0x10;
+    return pPacket;
 }
 
 // DRAFT: 0x00216000 Render__10PSlideShowFv
