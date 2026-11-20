@@ -5,9 +5,12 @@
 // TODO(header): foreign declarations
 extern "C" void sceVu0ApplyMatrix(float *, float (*)[4], float *);
 extern "C" void sceVu0CopyVector(float *dst, float *src);
+extern "C" void sceVu0SubVector(float *, float *, float *);
+extern "C" float mvTrans__6PMNode[4];
 extern "C" void __dt__5PMeshFv(void *, short);
 extern "C" void SetSTAnimOptions__5PMeshFb(void *, bool);
 extern "C" void *__nw__FUi(unsigned int);
+extern "C" void __dl__FPv(void *);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
 // TODO(header): tagParticleFxTrigger layout as ClockworkReaper.cpp names it; only the word at 0x20 (the PParticleSystem pointer) is used here.
@@ -36,6 +39,23 @@ public:
     virtual ~PAnimFrame();
     virtual void Slot01();
     virtual int LoadHeader(void *pFile, void *pHeader);
+    virtual void Slot03();
+    virtual signed char IsAnimate();
+    virtual void Slot05();
+    virtual void Slot06();
+    virtual void Slot07();
+    virtual void Slot08();
+    virtual void Slot09();
+    virtual void Slot10();
+    virtual void Slot11();
+    virtual void Slot12();
+    virtual void Slot13();
+    virtual void Slot14();
+    virtual void Slot15();
+    virtual float GetFrameRate();
+    char _pad04[0x22];
+    short m_unk26;
+    short m_unk28;
 };
 extern "C" PAnimFrame *__ct__10PAnimFrameFP5PAnim(PAnimFrame *, PAnim *);
 extern "C" PAnimFrame *__ct__10PAnimFrameFs(PAnimFrame *, short);
@@ -67,15 +87,18 @@ public:
     virtual void Slot2();
     virtual void Slot3();
     virtual void Slot4();
-    virtual void Slot5();
+    virtual void Slot5(bool bFlag);
     virtual void Slot6();
     virtual void Slot7();
     virtual void Slot8();
     virtual void Enable(bool bFlag);
+    char _pad04[0x11];
+    unsigned char m_unk15;
 };
 class PParticleManager {
 public:
     int IsValid(PParticleSystem *pSystem);
+    void Destroy(unsigned int uID);
 };
 // PSound size is unknown; the placeholder member only keeps gSound out of small data (threshold 8 bytes).
 class PSound {
@@ -84,6 +107,7 @@ public:
     int IsObjectPlayingAmbientByID(unsigned int p0, unsigned int p1, unsigned int p2);
     int PlaySoundPMNode(unsigned int p0, unsigned int p1, const PMNode *pNode);
     void StopAmbientSoundsByOriginatorRef(unsigned int p0, unsigned int p1);
+    void StopSoundsByOriginatorRef(unsigned int p0, unsigned int p1, unsigned int p2);
     char _pad000[0x10];
 };
 extern PSound gSound;
@@ -104,6 +128,7 @@ enum eAnimType { eAnimType_Placeholder = 0 };
 class PChannel {
 public:
     void *AnimateBox(float fTime, unsigned char &bOut);
+    void EvaluateAnim(float fTime, float *pOut, int nA, float fB);
 };
 class PAnim {
 public:
@@ -220,6 +245,11 @@ public:
 void PMNode::StopAmbientSoundsByObject() {
     m_unkF4 = 0;
     gSound.StopAmbientSoundsByOriginatorRef(m_unkE8, 0x20U);
+}
+
+// FUNCTION: 0x00191800 StopAllSoundsByObject__6PMNodeFv
+void PMNode::StopAllSoundsByObject() {
+    gSound.StopSoundsByOriginatorRef(m_unkE8, 0x20U, 3U);
 }
 
 // FUNCTION: 0x00191830 PlaySound__6PMNodeFUi
@@ -348,6 +378,48 @@ int PMNode::CreateObjectDisplayList() {
     return 1;
 }
 
+// DRAFT: 0x00192520 DestroyFxTriggersBySpawnFrame__6PMNodeFfb
+// note: DIFF 99 words. Original enters the while with a b to the bottom test and keeps a 0x80 frame with s5; ours tests at the top (blez) and uses a 0x90 frame. Tried: while(idx-- > 0) (104), baseline only.
+void PMNode::DestroyFxTriggersBySpawnFrame(float fFrame, bool bFlag) {
+    PParticleManager *pMgr = (PParticleManager *)&gGfxEng;
+    if (pMgr == 0) {
+        CdsAssert__FPciPc("PMNode.cpp", 0x80C, "apParticleMgr");
+    }
+    int idx = (int)m_unkD8;
+    while (idx > 0) {
+        idx--;
+        tagParticleFxTrigger *pTrig = 0;
+        if ((unsigned int)idx < m_unkD8) {
+            pTrig = m_unkE0[idx];
+        }
+        if (pTrig != 0 && *(float *)&pTrig->m_unk10 == fFrame) {
+            PParticleSystem *pSystem = (PParticleSystem *)pTrig->m_unk20;
+            if (pSystem != 0 && pMgr->IsValid(pSystem) != 0) {
+                pSystem->Slot5(false);
+            }
+            __dl__FPv(pTrig);
+            ((PArray *)&m_unkD8)->Remove(pTrig);
+        }
+    }
+    if (bFlag) {
+        m_unk18 = 0;
+        PMNode *pChild = 0;
+        if (m_unk14 != 0) {
+            pChild = m_unk1C[0];
+        }
+        if (pChild != 0) {
+            do {
+                pChild->DestroyFxTriggersBySpawnFrame(fFrame, bFlag);
+                m_unk18++;
+                pChild = 0;
+                if (m_unk18 < m_unk14) {
+                    pChild = m_unk1C[m_unk18];
+                }
+            } while (pChild != 0);
+        }
+    }
+}
+
 // DRAFT: 0x001926C0 SetFxColorMultiplier__6PMNodeFPfb
 // note: 75 words differ; the original keeps a 0x70 frame with 6 saved regs and recomputes idx*4 in the body, ours hoists sll idx,4 into s3 (0x80 frame). Tried: for/while, if/else vs ternary, struct tagParticleFxTrigger with m_unk20, pTrig in loop.
 void PMNode::SetFxColorMultiplier(float *pColor, bool bFlag) {
@@ -442,6 +514,45 @@ void PMNode::EnableFx(bool bA, bool bB) {
         if (pChild != 0) {
             do {
                 pChild->EnableFx(bA, bB);
+                m_unk18++;
+                pChild = 0;
+                if (m_unk18 < m_unk14) {
+                    pChild = m_unk1C[m_unk18];
+                }
+            } while (pChild != 0);
+        }
+    }
+}
+
+// DRAFT: 0x00192AC0 DestroyFxTriggers__6PMNodeFbbb
+// note: DIFF 96 words; the two pTrig null tests (loop entry and loop head) and the ok ternary layout differ. Tried: pTrig!=0 in the if (103), ok as an if statement (96), nested pTrig!=0 guard (103).
+void PMNode::DestroyFxTriggers(bool bA, bool bB, bool bC) {
+    m_unkDC = 0;
+    tagParticleFxTrigger *pTrig = (m_unkD8 != 0) ? m_unkE0[0] : 0;
+    while (pTrig != 0) {
+        if (!bA || (pTrig->m_unk24 & 4)) {
+            PParticleSystem *pSys = (PParticleSystem *)pTrig->m_unk20;
+            unsigned char ok = (pSys != 0 && ((PParticleManager *)&gGfxEng)->IsValid(pSys) != 0) ? pSys->m_unk15 : 0;
+            if (ok == 0 || bB) {
+                ((PParticleManager *)&gGfxEng)->Destroy((unsigned int)pTrig->m_unk20);
+            } else {
+                pSys = (PParticleSystem *)pTrig->m_unk20;
+                if (pSys != 0 && ((PParticleManager *)&gGfxEng)->IsValid(pSys) != 0) {
+                    pSys->Slot5(false);
+                }
+            }
+            __dl__FPv(pTrig);
+            ((PArray *)&m_unkD8)->RemoveCurrent();
+        }
+        m_unkDC++;
+        pTrig = (m_unkDC < m_unkD8) ? m_unkE0[m_unkDC] : 0;
+    }
+    if (bC && m_unk14 != 0) {
+        m_unk18 = 0;
+        PMNode *pChild = m_unk1C[0];
+        if (pChild != 0) {
+            do {
+                pChild->DestroyFxTriggers(bA, bB, bC);
                 m_unk18++;
                 pChild = 0;
                 if (m_unk18 < m_unk14) {
@@ -588,6 +699,60 @@ void PMNode::SetFrameRate(float fRate, bool bFlag) {
             pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
         } while (pChild != 0);
     }
+}
+
+// DRAFT: 0x00193170 GetDeltaMove__6PMNodeFP10PAnimFramePA4_f
+// note: DIFF 134 words. Original zeroes pOut with one sqc2 vf0 store (0,0,0,1), which plain C cannot emit; frame is 0x80 vs 0x90 and s4 is not used; register allocation and branch layout differ.
+int PMNode::GetDeltaMove(PAnimFrame *pFrame, float (*pOut)[4]) {
+    float vStart[4];
+    float vEnd[4];
+    float fTime = m_unk38;
+    PChannel *pChan;
+    unsigned char mode;
+    short sStart;
+    short sEnd;
+
+    (*pOut)[0] = 0.0f;
+    (*pOut)[1] = 0.0f;
+    (*pOut)[2] = 0.0f;
+    (*pOut)[3] = 1.0f;
+
+    if (m_unk24 == 0) {
+        return 0;
+    }
+    if (*(float *)&m_unk34 == fTime) {
+        return 0;
+    }
+    mode = m_unk3D & 7;
+    if (mode != 2 && mode != 1 && mode != 0) {
+        return 0;
+    }
+    pChan = ((PAnim *)m_unk24)->FindChannel((eAnimType)1);
+    if (pChan == 0) {
+        return 0;
+    }
+    if (pFrame->IsAnimate() & 4) {
+        pChan->EvaluateAnim(fTime, vStart, 3, 0.0f);
+    }
+    if (pFrame->GetFrameRate() < 0.0f) {
+        sStart = pFrame->m_unk26;
+        sEnd = pFrame->m_unk28;
+    } else {
+        sEnd = pFrame->m_unk26;
+        sStart = pFrame->m_unk28;
+    }
+    pChan->EvaluateAnim((float)sStart, vEnd, 3, 0.0f);
+    sceVu0SubVector(*pOut, vEnd, vStart);
+    pChan->EvaluateAnim((float)sEnd, vStart, 3, 0.0f);
+    (*pOut)[0] = (*pOut)[0] + (mvTrans__6PMNode[0] - vStart[0]);
+    (*pOut)[2] = (*pOut)[2] + (mvTrans__6PMNode[2] - vStart[2]);
+    if (m_unk3D & 2) {
+        (*pOut)[1] = 0.0f;
+    } else {
+        (*pOut)[1] = (*pOut)[1] + (mvTrans__6PMNode[1] - vStart[1]);
+    }
+    (*pOut)[3] = 1.0f;
+    return 1;
 }
 
 // FUNCTION: 0x00193380 FindBone__6PMNodeFUi

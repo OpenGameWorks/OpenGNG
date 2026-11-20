@@ -8,6 +8,7 @@ struct tagParticleFxTrigger;
 class PObjectDisplayList;
 class PArray;
 class PAnim;
+class PAnimFrame;
 class AnimData;
 class PPakFile;
 class PMat4;
@@ -24,6 +25,7 @@ public:
     float GetFrameRate();
     PMNode *FindBone(unsigned int uID);
     void SetFrameRate(float fRate, bool bFlag);
+    int GetDeltaMove(PAnimFrame *pFrame, float (*pOut)[4]);
     int GetWorldMeshCenter(float *pOut);
     void DisableAllHitBox();
     void AnimateBox(float fTime);
@@ -37,8 +39,10 @@ public:
     void RecurseDetachAnim();
     void AttachAnim(PAnim *pAnim, bool bFlag);
     void DestroyFxTriggers(bool bA, bool bB, bool bC);
+    void DestroyFxTriggersBySpawnFrame(float fFrame, bool bFlag);
     void *GetFirstMesh();
     void StopAmbientSoundsByObject();
+    void StopAllSoundsByObject();
     int CreateObjectDisplayList();
     void *AttachFx(unsigned int uID, float fA, float fB, float fC, float fD, bool bFlag);
     void CopyFxTriggers(PMNode &src);
@@ -102,7 +106,7 @@ public:
     unsigned char m_unkD6;  // 0x0D6
     unsigned char m_unkD7;  // 0x0D7
     unsigned int m_unkD8;   // 0x0D8 fx trigger count
-    char _padDC[0x4];
+    unsigned int m_unkDC;   // 0x0DC fx trigger index in DestroyFxTriggers
     tagParticleFxTrigger **m_unkE0; // 0x0E0 fx trigger array
     char _padE4[0x4];
     int m_unkE8;            // 0x0E8 copy of mst_NextPMNodeRef
