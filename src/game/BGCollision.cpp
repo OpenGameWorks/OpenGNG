@@ -5,9 +5,12 @@
 extern "C" void __dl__FPv(void *);
 extern float vUp_1253[4];
 extern "C" void sceVu0SubVector(float *, float *, float *);
+extern "C" float sceVu0InnerProduct(float *, float *);
+extern "C" void sceVu0ScaleVectorXYZ(float *, float *, float);
 float FastMath_Fabs(float f);
 float Fabs(float f);
 struct STCollisionPoly;
+int BoxLineCheck(float (*pBox)[2][4]);
 
 // DRAFT: 0x0016C8A0 CheckCeiling__11BGCollisionFPA4_f
 // note: only the two lui/addiu words differ; the reloc target is vUp$1253, which C++ cannot name (vUp_1253 emitted).
@@ -142,6 +145,87 @@ int FindGroundPos(STCollisionPoly *pPoly, float (*pOut)[4])
     }
 }
 
+// DRAFT: 0x0016F490 GetGround__11BGCollisionFPA4_fUi
+// note: lqc2 pArr loads and c1 ops 0x150004/0x10044 omitted; d[] is zeroed, original loads vGDown into it (size 0x1c0 vs 0x1f8).
+int BGCollision::GetGround(float (*pArr)[4], unsigned int nFlags)
+{
+    float fBest = -1000.0f;
+    unsigned int nRet = 0;
+    int nX;
+    int nZ;
+    float out[4];
+    float d[4];
+    if (m_unk40 != 0 && FindGrid(pArr, nX, nZ) != 0) {
+        int *pBlk = *(int **)((char *)m_unk40 + nX * 4 + nZ * m_unk38 * 4);
+        if (pBlk != 0) {
+            int n = pBlk[2];
+            STCollisionPoly **pp = (STCollisionPoly **)(pBlk + 3);
+            while (n != 0) {
+                STCollisionPoly *pPoly = *pp;
+                if ((*(unsigned int *)((char *)pPoly + 0xC) & nFlags) &&
+                    !(*(float *)((char *)pPoly + 0x14) <= 0.0f) &&
+                    FindGroundPos(pPoly, (float (*)[4])out) != 0 &&
+                    out[1] <= pArr[0][1] && !(out[1] <= fBest)) {
+                    nRet = *(unsigned int *)((char *)pPoly + 0xC);
+                    fBest = out[1];
+                }
+                n--;
+                pp++;
+            }
+        }
+    }
+    d[0] = 0.0f;
+    d[1] = fBest - pArr[0][1];
+    d[2] = 0.0f;
+    d[3] = 0.0f;
+    float inner = sceVu0InnerProduct(d, d);
+    float slot;
+    FindIntersectAnim(pArr, (float (*)[4])d, slot, nFlags, 0);
+    sceVu0ScaleVectorXYZ(d, d, slot / inner);
+    pArr[0][1] += d[1];
+    return nRet;
+}
+
+// DRAFT: 0x0016F9A0 FindIntersectST__11BGCollisionFiiPA4_fPA4_fRfUi
+// note: lqc2 pA/pB loads for BoxLineCheck omitted (C cannot express vf26/vf27).
+STCollisionPoly *BGCollision::FindIntersectST(int nX, int nZ, float (*pA)[4], float (*pB)[4], float &rT, unsigned int nFlags)
+{
+    STCollisionPoly *pRet = 0;
+    if ((unsigned int)nX < m_unk38 && (unsigned int)nZ < m_unk3C) {
+        int *pBlk = *(int **)((char *)m_unk40 + nX * 4 + nZ * m_unk38 * 4);
+        if (pBlk != 0) {
+            *(float *)((char *)this + 0x54) = *(float *)pBlk;
+            *(float *)((char *)this + 0x64) = *((float *)pBlk + 1);
+            if (BoxLineCheck((float (*)[2][4])((char *)this + 0x50))) {
+                int n = pBlk[2];
+                STCollisionPoly **pp = (STCollisionPoly **)(pBlk + 3);
+                while (n != 0) {
+                    STCollisionPoly *pPoly = *pp;
+                    if (*(unsigned int *)((char *)pPoly + 0xC) & nFlags) {
+                        if (sceVu0InnerProduct((float *)pB, (float *)((char *)pPoly + 0x10)) < 0.0f) {
+                            float out[4];
+                            float diff[4];
+                            if (FindGroundPos(pPoly, (float (*)[4])out) != 0) {
+                                sceVu0SubVector(diff, out, (float *)pA);
+                                if (!(sceVu0InnerProduct(diff, (float *)pB) < 0.0f)) {
+                                    float fd = sceVu0InnerProduct(diff, diff);
+                                    if (fd > 1.0f && fd < rT) {
+                                        rT = fd;
+                                        pRet = pPoly;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    n--;
+                    pp++;
+                }
+            }
+        }
+    }
+    return pRet;
+}
+
 // FUNCTION: 0x001701E0 FindGrid__11BGCollisionFPA4_fRiRi
 int BGCollision::FindGrid(float (*pArr)[4], int &rX, int &rZ)
 {
@@ -160,6 +244,49 @@ int BGCollision::FindGrid(float (*pArr)[4], int &rX, int &rZ)
         ok = (unsigned int)rZ < m_unk3C;
     }
     return ok;
+}
+
+// DRAFT: 0x00170580 CheckIntersectST__11BGCollisionFiiPA4_fPA4_fPA4_fUi
+// note: lqc2 pA/pB loads for BoxLineCheck omitted; VU ops not expressible in C.
+int BGCollision::CheckIntersectST(int nX, int nZ, float (*pA)[4], float (*pB)[4], float (*pC)[4], unsigned int nFlags)
+{
+    if ((unsigned int)nX >= m_unk38 || (unsigned int)nZ >= m_unk3C) {
+        return 0;
+    }
+    int *pBlk = *(int **)((char *)m_unk40 + nX * 4 + nZ * m_unk38 * 4);
+    if (pBlk == 0) {
+        return 0;
+    }
+    *(float *)((char *)this + 0x54) = *(float *)pBlk;
+    *(float *)((char *)this + 0x64) = *((float *)pBlk + 1);
+    if (!BoxLineCheck((float (*)[2][4])((char *)this + 0x50))) {
+        return 0;
+    }
+    float fLenSq = sceVu0InnerProduct((float *)pB, (float *)pB);
+    int n = pBlk[2];
+    STCollisionPoly **pp = (STCollisionPoly **)(pBlk + 3);
+    while (n != 0) {
+        STCollisionPoly *pPoly = *pp;
+        unsigned int nPolyFlags = *(unsigned int *)((char *)pPoly + 0xC) & nFlags;
+        if (nPolyFlags != 0 && (nPolyFlags & 0x20) == 0) {
+            if (pC == 0 || sceVu0InnerProduct((float *)pC, (float *)((char *)pPoly + 0x10)) <= -0.5f) {
+                float out[4];
+                float diff[4];
+                if (FindGroundPos(pPoly, (float (*)[4])out) != 0) {
+                    sceVu0SubVector(diff, out, (float *)pA);
+                    if (!(sceVu0InnerProduct((float *)pB, diff) < 0.0f)) {
+                        float fd = sceVu0InnerProduct(diff, diff);
+                        if (fd > 1.0f && fd < fLenSq) {
+                            return nPolyFlags;
+                        }
+                    }
+                }
+            }
+        }
+        n--;
+        pp++;
+    }
+    return 0;
 }
 
 // FUNCTION: 0x00170760 CheckIntersect__11BGCollisionFRA4_fRA4_fPA4_fUi

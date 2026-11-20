@@ -9,6 +9,7 @@ class PVec3;
 class PMat4;
 class PMeshNode;
 class SurfaceInfo;
+struct STCollisionPoly;
 
 class BGCollision {
 public:
@@ -17,8 +18,11 @@ public:
     int CheckCeiling(float (*pVec)[4]);
     int GetGroundPos(float (*pPos)[4]);
     int CheckIntersect(float (&pA)[4], float (&pB)[4], float (*pC)[4], unsigned int nFlags);
+    int GetGround(float (*pArr)[4], unsigned int nFlags);
+    STCollisionPoly *FindIntersectST(int nX, int nZ, float (*pA)[4], float (*pB)[4], float &rT, unsigned int nFlags);
     int CheckIntersectST(int nX, int nZ, float (*pA)[4], float (*pB)[4], float (*pC)[4], unsigned int nFlags);
     int CheckIntersectAnim(float (*pA)[4], float (*pB)[4], float (*pC)[4], unsigned int nFlags);
+    STCollisionPoly *FindIntersectAnim(float (*pA)[4], float (*pB)[4], float &rT, unsigned int nFlags, float (*pOut)[4]);
     void FindNextGrid(int &rX, int &rZ, int nDX, int nDZ, float (*pA)[4], float (*pB)[4], bool bFlag);
     int FindIntersect(PVec3 &rFrom, PVec3 &rTo, unsigned int nFlags, float (*pOut)[4]);
     int FindGrid(float (*pArr)[4], int &rX, int &rZ);
