@@ -2,6 +2,8 @@
 #include "PResourceManager.h"
 #include "PCDFile.h"
 #include "PShadowVolume.h"
+#include "PStaticInstanceMesh.h"
+#include "PArray.h"
 
 // TODO(header): foreign declarations
 void CdsAssert(char *pFile, int nLine, char *pExpr);
@@ -82,6 +84,55 @@ PMNode *PResourceManager::GetResource(tagResourceData *pData, unsigned int uId, 
     return GetResourceFromIndex(pData, nIndex, eType, uId, bFlag);
 }
 
+// FUNCTION: 0x00153A40 LoadInstanceMeshTable__16PResourceManagerFP8PPakFilePQ216PResourceManager15tagResourceDataP6PArray16ePsx2FileVersionUi
+int PResourceManager::LoadInstanceMeshTable(PPakFile *pFile, tagResourceData *pData, PArray *pArray, ePsx2FileVersion eVersion, unsigned int uId) {
+    unsigned int nCount;
+    if (pFile == 0) {
+        CdsAssert("PResourceManager.cpp", 0x27B, "poFile");
+    }
+    if (pData == 0) {
+        CdsAssert("PResourceManager.cpp", 0x27C, "pTheResData");
+    }
+    if (((PCDFile *)pFile)->Read(&nCount, 4) != 4) {
+        return 0;
+    }
+    pData->m_unk3C = nCount;
+    if (nCount == 0) {
+        pData->m_unk44 = 0;
+        pData->m_unk40 = 0;
+        return 1;
+    }
+    if (uId >= 0x20009) {
+        pData->m_unk44 = (unsigned int *)__nwa__FUi(nCount * 4);
+        if (pData->m_unk44 == 0) {
+            return 0;
+        }
+        if (((PCDFile *)pFile)->Read(pData->m_unk44, nCount * 4) != (int)(nCount * 4)) {
+            return 0;
+        }
+    }
+    pData->m_unk40 = (void **)__nwa__FUi(nCount * 4);
+    if (pData->m_unk40 == 0) {
+        return 0;
+    }
+    for (unsigned int i = 0; i < nCount; i++) {
+        PStaticInstanceMesh *p = new PStaticInstanceMesh();
+        if (p == 0) {
+            return 0;
+        }
+        char buf[0x18];
+        if (((PCDFile *)pFile)->Read(buf, 0x18) != 0x18) {
+            return 0;
+        }
+        if (p->Load(pFile, pArray, eVersion) == 0) {
+            delete p;
+            return 0;
+        }
+        ((PStaticInstanceMesh **)pData->m_unk40)[i] = p;
+    }
+    return 1;
+}
+
 // FUNCTION: 0x00153C50 LoadShadowVolumeTable__16PResourceManagerFP8PPakFilePQ216PResourceManager15tagResourceDataUi
 int PResourceManager::LoadShadowVolumeTable(PPakFile *pFile, tagResourceData *pData, unsigned int uId) {
     unsigned int nCount;
@@ -123,6 +174,57 @@ int PResourceManager::LoadShadowVolumeTable(PPakFile *pFile, tagResourceData *pD
             return 0;
         }
         ((PShadowVolume **)pData->m_unk34)[i] = p;
+    }
+    return 1;
+}
+
+// FUNCTION: 0x00154390 LoadTextureResTable__16PResourceManagerFP8PPakFileP6PArrayPQ216PResourceManager15tagResourceDataUi
+int PResourceManager::LoadTextureResTable(PPakFile *pFile, PArray *pArray, tagResourceData *pData, unsigned int uId) {
+    unsigned int nCount;
+    int nIndex = -1;
+    if (pFile == 0) {
+        CdsAssert("PResourceManager.cpp", 0xF2, "poFile");
+    }
+    if (pArray == 0) {
+        CdsAssert("PResourceManager.cpp", 0xF3, "poTextureHandles");
+    }
+    if (pData == 0) {
+        CdsAssert("PResourceManager.cpp", 0xF4, "pTheResData");
+    }
+    if (((PCDFile *)pFile)->Read(&nCount, 4) != 4) {
+        return 0;
+    }
+    pData->m_unk24 = nCount;
+    if (pData->m_unk24 == 0) {
+        pData->m_unk28 = 0;
+        pData->m_unk2C = 0;
+        return 1;
+    }
+    if (uId >= 0x20009) {
+        pData->m_unk2C = (unsigned int *)__nwa__FUi(nCount * 4);
+        if (pData->m_unk2C == 0) {
+            return 0;
+        }
+        if (((PCDFile *)pFile)->Read(pData->m_unk2C, nCount * 4) != (int)(nCount * 4)) {
+            return 0;
+        }
+    }
+    pData->m_unk28 = (void **)__nwa__FUi(nCount * 4);
+    if (pData->m_unk28 == 0) {
+        return 0;
+    }
+    for (unsigned int i = 0; i < nCount; i++) {
+        if (((PCDFile *)pFile)->Read(&nIndex, 4) != 4) {
+            return 0;
+        }
+        if (nIndex < 0) {
+            return 0;
+        }
+        pData->m_unk28[i] = (nIndex < pArray->m_unk0) ? pArray->m_unk8[nIndex] : 0;
+        if (pData->m_unk28[i] == 0) {
+            return 0;
+        }
+        nIndex = -1;
     }
     return 1;
 }

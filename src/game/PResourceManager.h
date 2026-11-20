@@ -2,9 +2,11 @@
 #define PRESOURCEMANAGER_H
 
 #include "types.h"
+#include "PMesh.h"
 
 class PMNode;
 class PPakFile;
+class PArray;
 
 // TODO(header): eResourceTypes belongs to the owner header of the resource type enum. Placeholder until that header defines it; only the name matters for mangling.
 enum eResourceTypes { eResourceTypes_Placeholder = 0 };
@@ -22,13 +24,13 @@ public:
         char _pad01C[0x4];
         unsigned int *m_unk20;
         int m_unk24;
-        char _pad028[0x4];
+        void **m_unk28;
         unsigned int *m_unk2C;
         int m_unk30;
         unsigned int *m_unk34;
         unsigned int *m_unk38;
         int m_unk3C;
-        char _pad040[0x4];
+        void **m_unk40;
         unsigned int *m_unk44;
         char _pad048[0x20];
     };
@@ -43,6 +45,8 @@ public:
     unsigned int GetResType(unsigned int uTheID);
     void Unload(tagResourceData *pData);
     int LoadShadowVolumeTable(PPakFile *pFile, tagResourceData *pData, unsigned int uId);
+    int LoadInstanceMeshTable(PPakFile *pFile, tagResourceData *pData, PArray *pArray, ePsx2FileVersion eVersion, unsigned int uId);
+    int LoadTextureResTable(PPakFile *pFile, PArray *pArray, tagResourceData *pData, unsigned int uId);
     int GetNumResourcesOfType(eResourceTypes eType, bool bLocal);
 
 private:
