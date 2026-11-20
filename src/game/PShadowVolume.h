@@ -27,8 +27,9 @@ public:
     ~PShadowVolume();
     void SetShadowCaster(PMNode *pNode);
     int Load(PPakFile *pFile);
+    void Render(float *, float *, float *, float *, float *, float);
 
-    int m_unk10;                // 0x10 initialised to 0xC9742400
+    int m_unk10;               // 0x10 initialised to 0xC9742400
     int m_unk14;                // 0x14 cleared by ctor and dtor
     unsigned char m_unk18;      // 0x18 cleared by ctor, copy ctor and SetShadowCaster
 };
