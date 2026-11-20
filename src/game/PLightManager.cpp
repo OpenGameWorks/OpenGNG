@@ -15,7 +15,6 @@ extern "C" void sceVu0ApplyMatrix(float *dst, float *mat, float *src);
 extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
 extern "C" void sceVu0Normalize(float *dst, float *src);
 extern char gGfxEng[1504384];
-extern "C" int FindBrightestLightsOfType__13PLightManagerFPfbb10eLightTypeiPP6PLight(void *pThis, float *pOut, bool bA, bool bB, int nType, int nCount, PLight **ppLights);
 extern "C" void SetDirLight__10PGfxEngineFiPfPf(void *pThis, int nIndex, float *pPos, float *pDir);
 extern "C" void SetDirLightColor__10PGfxEngineFifff(void *pThis, int nIndex, float fR, float fG, float fB);
 extern "C" void SetAmbientLight__10PGfxEngineFPf(void *pThis, float *pColor);
@@ -25,6 +24,10 @@ extern "C" void GetLightingInfo__10PGfxEngineFP5PMat4P5PMat4PA4_f(void *pThis, v
 extern "C" int Read__7PCDFileFPvUi(void *pThis, void *pBuf, unsigned int nSize);
 extern "C" void memcpy(void *dst, const void *src, unsigned int n);
 extern "C" int Load__6PLightFP8PPakFile(void *pThis, PPakFile *pFile);
+extern "C" float GetBrightness__6PLightFPf(void *pThis, float *pOut);
+extern "C" void ShellSort__FPFPvPv_bPPvi(bool (*pCompare)(void *, void *), void **ppItems, int nCount);
+
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PLightManager.cpp", line, #cond))
 
 // Light node: id at 0x00, next node at 0x04.
 struct PLightNode {
@@ -35,6 +38,79 @@ struct PLightNode {
 // FUNCTION: 0x0018E880 LightCompareBrightness__FPvPv
 bool LightCompareBrightness(void *pA, void *pB) {
     return *(float *)((char *)pA + 0x50) < *(float *)((char *)pB + 0x50);
+}
+
+// DRAFT: 0x0018E8B0 FindBrightestLightsOfType__13PLightManagerFPfbb10eLightTypeiPP6PLight
+// note: 182 words differ, size 0x3AC vs 0x3B8. Block A array store folds sp+0xA0 (original: addiu v0,sp,0xA0 then addu); block B cursor order and post-loop sort placement differ. Tried: index via nIndex local, pointer-based aLights store (pDst), both kept at 182.
+int PLightManager::FindBrightestLightsOfType(float *pOut, bool bA, bool bB, eLightType nType, int nCount, PLight **pBrightestLights) {
+    PLight *aLights[32];
+    int i = 0;
+    int j;
+    void *pNode;
+    void *pLight;
+
+    CDS_ASSERT(0x1C0, pBrightestLights);
+    if (bA) {
+        if (m_unk0.m_unk0 != 0) {
+            m_unk0.m_unk4 = 0;
+            pNode = (m_unk0.m_unk0 != 0) ? m_unk0.m_unk8[0] : 0;
+            if (pNode != 0) {
+                do {
+                    if (*((unsigned char *)pNode + 0x48) != 0 && *(int *)((char *)pNode + 0x44) == nType) {
+                        float fB = GetBrightness__6PLightFPf(pNode, pOut);
+                        if (i >= 32) break;
+                        if (fB != 0.0f) {
+                            aLights[i++] = (PLight *)pNode;
+                        }
+                    }
+                    int nIndex = m_unk0.m_unk4 + 1;
+                    m_unk0.m_unk4 = nIndex;
+                    pNode = ((unsigned int)nIndex < m_unk0.m_unk0) ? m_unk0.m_unk8[m_unk0.m_unk4] : 0;
+                } while (pNode != 0);
+            }
+        }
+    }
+    if (bB) {
+        if (*(int *)m_unk10 != 0) {
+            m_unk1C = m_unk14;
+            pLight = (m_unk14 != 0) ? *(void **)m_unk14 : 0;
+            if (pLight != 0) {
+                do {
+                    if (*((unsigned char *)pLight + 0x48) != 0 && *(int *)((char *)pLight + 0x44) == nType) {
+                        if (i >= 32) break;
+                        aLights[i++] = (PLight *)pLight;
+                        GetBrightness__6PLightFPf(pLight, pOut);
+                    }
+                    if (m_unk1C == 0) {
+                        m_unk1C = m_unk14;
+                        pLight = (m_unk14 != 0) ? *(void **)m_unk14 : 0;
+                    } else {
+                        void *pNext = *(void **)((char *)m_unk1C + 4);
+                        if (pNext != 0) {
+                            m_unk1C = pNext;
+                            pLight = *(void **)pNext;
+                        } else {
+                            pLight = 0;
+                        }
+                    }
+                } while (pLight != 0);
+            }
+        }
+    }
+    if (nCount < i) {
+        ShellSort__FPFPvPv_bPPvi(LightCompareBrightness, (void **)aLights, i);
+    }
+    if (nCount > 0) {
+        for (j = 0; j < nCount; j++) {
+            pBrightestLights[j] = aLights[j];
+        }
+        return nCount;
+    }
+    for (j = 0; j < i; j++) {
+        pBrightestLights[j] = aLights[j];
+    }
+    nCount = i;
+    return i;
 }
 
 // DRAFT: 0x0018EC70 GetLightObject__13PLightManagerFUi
@@ -150,7 +226,7 @@ void PLightManager::ComputeLights(float *pOut, bool bA, bool bB, bool bC, tagCom
     PLight *aLights[8];
     float aDir[4];
     float aMod[4];
-    int nCount = FindBrightestLightsOfType__13PLightManagerFPfbb10eLightTypeiPP6PLight(this, pOut, bA, bB, 3, 2, aLights);
+    int nCount = FindBrightestLightsOfType(pOut, bA, bB, (eLightType)3, 2, aLights);
     for (int i = 0; i < nCount; i++) {
         PLight *pLight = aLights[i];
         if (pLight == 0) {
@@ -165,7 +241,7 @@ void PLightManager::ComputeLights(float *pOut, bool bA, bool bB, bool bC, tagCom
     }
     int nRest = 4 - nCount;
     if (nRest != 0) {
-        int nFound = FindBrightestLightsOfType__13PLightManagerFPfbb10eLightTypeiPP6PLight(this, pOut, bA, bB, 2, nRest, aLights);
+        int nFound = FindBrightestLightsOfType(pOut, bA, bB, (eLightType)2, nRest, aLights);
         if (nFound > 0) {
             for (int i = 0; i < nFound; i++) {
                 PLight *pLight = aLights[i];

@@ -12,11 +12,15 @@ class PMat4;
 class PPakFile;
 struct tagComputedLightCache;
 
+// Light type tag of PLight at 0x44. Only the callers' values (2 and 3) are known.
+enum eLightType { eLightType_Unknown = 0 };
+
 class PLightManager {
 public:
     PLightManager();
     ~PLightManager();
     bool Load(PPakFile *pFile);
+    int FindBrightestLightsOfType(float *pOut, bool bA, bool bB, eLightType nType, int nCount, PLight **ppLights);
     void *GetLightObject(unsigned int nId);
     void SetLightColor(unsigned int nId, float *pColor);
     void DestroyAllStaticLights();
