@@ -43,6 +43,7 @@ public:
     unsigned int FindFirstDialog(LevelFiles const *arg0, bool arg1);
     void InitCutScene();
     void PauseDisplay(int arg0);
+    int PauseCheck();
     void RefreshOptionsValue(MemorySetting *arg0, bool arg1);
     void MainGame();
     int Game(int arg0);
@@ -69,14 +70,19 @@ public:
     void *m_unk1883C;       // 0x1883C, EntityBaseClass pointer driven by SetLevelClear
     char _pad18840[0x19784 - 0x18840];
     int m_unk19784;         // 0x19784
-    char _pad19788[0x19A70 - 0x19788];
+    char _pad19788[0x19814 - 0x19788];
+    int m_unk19814;         // 0x19814, PauseCheck returns early when it equals 1
+    char _pad19818[0x19A70 - 0x19818];
     int m_unk19A70;         // 0x19A70, game state (7 after MainGame's LoadGame succeeds, 8 after QuitGame, 6 after SetLevelClear, 9/10 after RestartGame)
     int m_unk19A74;         // 0x19A74, MainGame state switch word
     int m_unk19A78;         // 0x19A78, fallback level index for GetLevelFile
     int m_unk19A7C;         // 0x19A7C, cleared by the constructor
-    char _pad19A80[0x19A88 - 0x19A80];
+    char _pad19A80[4];
+    int m_unk19A84;         // 0x19A84, pause state word (switch in PauseCheck)
     void *m_unk19A88[3];    // 0x19A88, PauseDisplay font strings
-    char _pad19A94[0x19AA0 - 0x19A94];
+    void *m_unk19A94;       // 0x19A94, DisplayString created by PauseCheck state 2
+    void *m_unk19A98;       // 0x19A98, DisplayString created by PauseCheck state 2
+    char _pad19A9C[0x19AA0 - 0x19A9C];
     int m_unk19AA0;         // 0x19AA0, cleared by the constructor
     int m_unk19AA4;         // 0x19AA4, dialog stream handle checked by InitCutSceneIfDialogReady
     int m_unk19AA8;         // 0x19AA8, dialog index chosen by FindFirstDialog (-1 when none)

@@ -48,7 +48,7 @@ extern "C" void __dl__FPv(void *);
 extern "C" int Find__6PArrayFPv(void *, void *);
 extern "C" void *DisplayString__11FontManagerFPcffi9FontColor9FontAlign(void *, const char *, float, float, int, int, int);
 extern "C" void RemoveAll__11FontManagerFb(void *, bool);
-extern "C" void DisplayString__11FontManagerFiiib(void *, int, int, int, bool);
+extern "C" void *DisplayString__11FontManagerFiiib(void *, int, int, int, bool);
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 extern PMNode *pMasteryTextIcon;
 extern unsigned char __vt__9PResource[12];
@@ -116,6 +116,15 @@ extern "C" void ResetAnimations__15PCutScenePlayerFv(void *pThis);
 extern "C" void SetBgNodesOpacity__15PCutScenePlayerFP6PArrayf(void *pThis, void *pArray, float fOpacity);
 extern "C" void CutSceneEnter__6PSoundFPUiUiUiUi(void *pThis, unsigned int *pOut, unsigned int nA, unsigned int nB, unsigned int nC);
 extern char gGfxEng[1504384];
+extern "C" int AbilityScreen__9InterfaceFv(void *);
+extern "C" int IsPauseDisabled__6PlayerFv(void *);
+extern "C" int IsConnected__3PadFv(void *);
+extern "C" void PauseVibrate__3PadFb(void *, bool);
+extern "C" void Pause__6PSoundFv(void *);
+extern "C" void Resume__6PSoundFv(void *);
+extern "C" void SetPause__9InterfaceFv(void *);
+extern "C" void InitSaveGame__10MemoryCardFPQ26Player10PlayerDataib(void *, void *, int, bool);
+extern "C" int SaveGame__10MemoryCardFv(void *);
 // TODO(header): foreign declarations for ScreenAdjust
 struct PMat4 { char _pad00[0x40]; };
 // Four debug lines: start, end, start colour, end colour (x, y, z, w each).
@@ -1774,6 +1783,254 @@ void MaximoMain::PauseDisplay(int arg0) {
         off += 4;
         *(float *)((char *)text + 8) = alpha;
     } while (i < 3);
+}
+
+// DRAFT: 0x0013EE30 PauseCheck__10MaximoMainFv
+// note: DIFF 502 (525 first); differs in m_unk19814 compare scheduling and branch forms at 0x5C/0x68/0x70-0x7C, 0x2A4 null-test form (sltiu vs sltu/xori), m_unk19A7C&1 layout at 0x8C-0xA4, switch/jump-table tail after 0x0CC, size 0x830 vs 0x878, PlaySoundUbiquitous reloc at 0x848. Tried: tmp removal (no change), fm local (514), reversed early-return ternary (502), 0x2A4 ternary respelling (no change), 0x19814 if-form (no change).
+int MaximoMain::PauseCheck() {
+    void *p;
+    int pad;
+    int state;
+    int var;
+    void *text;
+
+    if (gInterface[0x425] == 0) {
+        goto block_2;
+    }
+    return (m_unk19A7C != 0) ? 3 : 0;
+block_2:
+    p = m_unk1883C;
+    if (p == 0) {
+        goto block_5;
+    }
+    if (IsPauseDisabled__6PlayerFv(p) == 0) {
+        goto block_7;
+    }
+block_5:
+    return 0;
+block_7:
+    if (m_unk19814 != 1) {
+        goto block_10;
+    }
+    return 0;
+block_10:
+    if (m_unk19A7C & 1) {
+        goto block_18;
+    }
+    var = (*(int *)((char *)p + 0x264) & 0x4000) != 0;
+    if (var == 0) {
+        goto block_13;
+    }
+    var = (*(void **)((char *)p + 0x2A4)) == 0;
+block_13:
+    if (!(var & 0xFF)) {
+        goto block_18;
+    }
+    if (AbilityScreen__9InterfaceFv(gInterface) == 0) {
+        goto block_17;
+    }
+    m_unk19A7C |= 2;
+    return m_unk19A7C & 3;
+block_17:
+    m_unk19A7C &= ~2;
+block_18:
+    pad = ReadPush__3PadFv(gPad) & 0xFFFF;
+    FontManager *fm = (FontManager *)(gInterface + 0x80);
+    if (m_unk19A7C != 0) {
+        goto block_20;
+    }
+    if (IsConnected__3PadFv(gPad) == 0) {
+        goto block_23;
+    }
+block_20:
+    if (!(pad & 8)) {
+        goto block_27;
+    }
+    if (m_unk19A84 >= 3) {
+        goto block_26;
+    }
+block_22:
+block_23:
+    gGfxEng[0x1558B0] = (char)(m_unk19A7C != 0);
+    m_unk19A7C ^= 1;
+    PauseVibrate__3PadFb(gPad, m_unk19A7C != 0);
+    m_unk19A84 = 0;
+    if (m_unk19A7C == 0) {
+        goto block_25;
+    }
+    RemoveAll__11FontManagerFb(fm, false);
+    PauseDisplay(0);
+    Pause__6PSoundFv(gSound);
+    PlaySoundUbiquitous__6PSoundFUi(gSound, 0x3E);
+    SetPause__9InterfaceFv(gInterface);
+    DisplayLevelName__9InterfaceFii(gInterface, -1, 0xF0);
+    goto block_26;
+block_25:
+    Resume__6PSoundFv(gSound);
+    fm->RemoveText((unsigned short)4);
+    fm->RemoveText((unsigned short)5);
+    return 3;
+block_26:
+block_27:
+    if (!(m_unk19A7C & 3)) {
+        goto block_77;
+    }
+    state = m_unk19A84;
+    var = pad & 0x50;
+    if ((unsigned int)state >= 0xB) {
+        goto block_69;
+    }
+    switch (state) {
+    case 0:
+        if (!(pad & 0x4000)) {
+            goto block_68;
+        }
+        PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+        goto block_22;
+    case 1:
+        if (!(pad & 0x4000)) {
+            goto block_68;
+        }
+        PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+        m_unk19A70 = 2;
+        return 3;
+    case 2:
+        if (!(pad & 0x4000)) {
+            goto block_68;
+        }
+        PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+        m_unk19A84 = 3;
+        m_unk19A94 = fm->DisplayString(5, 0, 0, false);
+        text = fm->DisplayString(6, 0, 0, false);
+        m_unk19A98 = text;
+        *(float *)((char *)text + 8) = 0.5f;
+        fm->DisplayString(8, 0, 0, false);
+        return 3;
+    case 3:
+    case 4:
+        if (!(pad & 0x4000)) {
+            goto block_42;
+        }
+        PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+        fm->RemoveText((unsigned short)5);
+        if (m_unk19A84 != 3) {
+            goto block_40;
+        }
+        m_unk19A84 = 8;
+        FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 8.5f, true, 0);
+        goto block_46;
+    block_40:
+        m_unk19A84 = 5;
+        goto block_46;
+    block_42:
+        if (!(pad & 0xA0)) {
+            goto block_46;
+        }
+        var = 3;
+        *(float *)((char *)m_unk19A88[state] + 8) = 0.5f;
+        if (m_unk19A84 != 3) {
+            goto block_45;
+        }
+        var = 4;
+    block_45:
+        m_unk19A84 = var;
+        *(float *)((char *)m_unk19A88[m_unk19A84] + 8) = 1.0f;
+        PlaySoundUbiquitous__6PSoundFUi(gSound, 0x40);
+    block_46:
+        return 3;
+    case 5:
+        m_unk19A84 = 7;
+        text = fm->DisplayString(5, 0, 0, false);
+        m_unk19A94 = text;
+        *(float *)((char *)text + 8) = 0.5f;
+        m_unk19A98 = fm->DisplayString(6, 0, 0, false);
+        fm->DisplayString(7, 0, 0, false);
+        return 3;
+    case 6:
+    case 7:
+        if (!(pad & 0x4000)) {
+            goto block_54;
+        }
+        PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+        fm->RemoveText((unsigned short)5);
+        if (m_unk19A84 != 6) {
+            goto block_52;
+        }
+        m_unk19A84 = 0;
+        QuitGame();
+        goto block_58;
+    block_52:
+        m_unk19A84 = 2;
+        goto block_58;
+    block_54:
+        if (!(pad & 0xA0)) {
+            goto block_58;
+        }
+        var = 6;
+        *(float *)((char *)((void **)&m_unk19A7C)[state] + 8) = 0.5f;
+        if (m_unk19A84 != 6) {
+            goto block_57;
+        }
+        var = 7;
+    block_57:
+        m_unk19A84 = var;
+        *(float *)((char *)((void **)&m_unk19A7C)[m_unk19A84] + 8) = 1.0f;
+        PlaySoundUbiquitous__6PSoundFUi(gSound, 0x40);
+    block_58:
+        return 3;
+    case 8:
+        if (gInterface[0x425] != 0) {
+            goto block_61;
+        }
+        m_unk19A84 += 1;
+        RemoveAll__11FontManagerFb(fm, true);
+        FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 8.5f, true, 0);
+        InitSaveGame__10MemoryCardFPQ26Player10PlayerDataib(gMC, (char *)m_unk1883C + 0x1D0, m_unk19A78, false);
+    block_61:
+        return 3;
+    case 9:
+        if (gInterface[0x425] != 0) {
+            goto block_64;
+        }
+        m_unk19A84 += 1;
+    block_64:
+        return 3;
+    case 10:
+        if (SaveGame__10MemoryCardFv(gMC) == -1) {
+            goto block_67;
+        }
+        m_unk19A84 = 5;
+        PauseDisplay(2);
+    block_67:
+        return 3;
+    }
+block_68:
+    var = pad & 0x50;
+block_69:
+    if (var == 0) {
+        goto block_76;
+    }
+    pad &= 0x40;
+    *(float *)((char *)m_unk19A88[state] + 8) = 0.5f;
+    if (pad == 0) {
+        goto block_72;
+    }
+    var = 1;
+    goto block_73;
+block_72:
+    var = -1;
+block_73:
+    m_unk19A84 += var;
+    if ((unsigned int)m_unk19A84 < 3) {
+        goto block_75;
+    }
+    m_unk19A84 = (pad == 0) ? 2 : 0;
+block_75:
+    *(float *)((char *)m_unk19A88[m_unk19A84] + 8) = 1.0f;
+    PlaySoundUbiquitous__6PSoundFUi(gSound, 0x40);
+block_76:
+block_77:
+    return m_unk19A7C & 3;
 }
 
 // FUNCTION: 0x0013F6B0 __dt__10MaximoMainFv
