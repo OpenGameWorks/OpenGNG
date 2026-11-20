@@ -21,6 +21,9 @@ extern "C" void __ct__5PListFv(void *pThis);
 extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, bool bFlagA, bool bFlagB);
 extern unsigned char __vt__11BattleArena[0x40];
 
+// The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("BattleArena.cpp", line, #cond))
+
 // Virtual layout of EntityBaseClass as the vtable exposes it: slot N is virtual (N - 8) / 4.
 // Slot 0x08 is the destructor (virtual 0); slot 0x44 is IsArenaApparition (virtual 15).
 class EntityVirtualView {
@@ -103,14 +106,11 @@ void BattleArena::SpawnEnemyFromCurrentWave(unsigned int nApparitionId) {
     }
 }
 
-// DRAFT: 0x001C7600 SetEditableVars__11BattleArenaFPc
-// note: layout matches; the assert test !"..." folds to a constant, original keeps a runtime sltu/xori/bnez on the literal address (tried !"..." and !(bool)"...").
+// FUNCTION: 0x001C7600 SetEditableVars__11BattleArenaFPc
 void BattleArena::SetEditableVars(char *pSrc) {
     memcpy(&m_unk1B0, pSrc, 0x34);
     if (m_unk1B4 < 0) {
-        if (!(!"BattleArena AnimID shouldn't be -1. Designer, Please fix")) {
-            CdsAssert__FPciPc("BattleArena.cpp", 0x25E, "!\"BattleArena AnimID shouldn't be -1. Designer, Please fix\"");
-        }
+        CDS_ASSERT(0x25E, !"BattleArena AnimID shouldn't be -1. Designer, Please fix");
     }
 }
 

@@ -98,6 +98,9 @@ extern "C" void sceVu0Normalize(float *pOut, float *pIn);
 extern "C" float DistanceXZ__7MathAPIFPA4_fPA4_f(float (*pA)[4], float (*pB)[4]);
 extern float mHitPos__15EntityBaseClass[4];
 
+// The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Raven.cpp", line, #cond))
+
 // FUNCTION: 0x001B25E0 __dt__5RavenFv
 extern "C" void *__dt__5RavenFv(Raven *pThis, short nFlag) {
     if (pThis != 0) {
@@ -245,15 +248,13 @@ void Raven::FlyToFlyToPos(int nMode) {
 }
 
 // DRAFT: 0x001B2B40 SetEditableVars__5RavenFPc
-// note: DIFF 53 words; original asserts via CdsAssert before the sprintf/printf block and is 0x12c vs our 0x120.
+// note: DIFF 51 words; the original keeps a nop in the bnez delay slot before the 0x35D assert (ours fills it with lui $a0), shifting later offsets; size 0x128 vs 0x12c; CheckVariable call reloc missing at 0x114. Tried: plain CdsAssert call (54), hoisting pSrc (51), inverted ternary (54), (void)0 vs 0 arm.
 void Raven::SetEditableVars(char *pArg) {
     char buf[0x80];
     memcpy(&m_unk1B0, pArg, 0x14);
     m_unk179 = 0;
     if (m_unk1B0 == 0.0f && m_unk1B4 == 0.0f && m_unk1B8 == 0.0f) {
-        if ("eif 0, 0, 0 error.  see keith or ted" != 0) {
-            CdsAssert__FPciPc("Raven.cpp", 0x35D, "!\"eif 0, 0, 0 error.  see keith or ted\"");
-        }
+        CDS_ASSERT(0x35D, !"eif 0, 0, 0 error.  see keith or ted");
         float *pSrc = m_unk3C ? (float *)((char *)m_unk3C + 0x80) : m_unk190;
         m_unk1B0 = pSrc[0];
         m_unk1B4 = pSrc[1];

@@ -13,6 +13,9 @@ extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void *__construct_new_array(void *pArray, void (*pCtor)(void *), void (*pDtor)(void *), unsigned int nElemSize, int nCount);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 
+// The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("CEifInstance.cpp", line, #cond))
+
 // FUNCTION: 0x172A50 GetEditVarData__12CEifInstanceFi
 tagEditableVariableData *CEifInstance::GetEditVarData(int nIndex)
 {
@@ -38,8 +41,7 @@ void CEifInstance::GetStartPosition(float &fX, float &fY, float &fZ)
     fZ = m_unk114;
 }
 
-// DRAFT: 0x172B30 Read__12CEifInstanceFP8PPakFileUi
-// note: 41 differing words; shared-exit branch targets (0x7C/0x9C) and the assert guard's sltu/xori form differ. Tried: goto-based single exit (92 words), folded string tests, local pMsg.
+// FUNCTION: 0x172B30 Read__12CEifInstanceFP8PPakFileUi
 int CEifInstance::Read(PPakFile *pFile, unsigned int nVersion)
 {
     int nCount;
@@ -68,13 +70,8 @@ int CEifInstance::Read(PPakFile *pFile, unsigned int nVersion)
         }
         memset(m_unk128, 0, m_unk124 * 0x38);
         if (nVersion < 0x10003) {
-            const char *pMsg = "Out of date EIF. Re-save EIF with latest runtime.";
-            if (!(!pMsg)) {
-                CdsAssert__FPciPc("CEifInstance.cpp", 0x76, "!\"Out of date EIF. Re-save EIF with latest runtime.\"");
-            }
-            return 1;
-        }
-        {
+            CDS_ASSERT(0x76, !"Out of date EIF. Re-save EIF with latest runtime.");
+        } else {
             unsigned int nBytes = m_unk124 * 0x38;
             if (nBytes != Read__7PCDFileFPvUi(pFile, m_unk128, nBytes)) {
                 if (m_unk128 != 0) {
@@ -84,7 +81,6 @@ int CEifInstance::Read(PPakFile *pFile, unsigned int nVersion)
                 return 0;
             }
         }
-        return 1;
     }
     return 1;
 }
