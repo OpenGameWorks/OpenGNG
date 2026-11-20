@@ -11,10 +11,7 @@ class PStaticInstanceMesh;
 class PArray;
 struct tagParticleFxTriggerData;
 
-// Enumerator values are not recovered yet; the name is what the mangled signatures need.
-enum ePsx2FileVersion {
-    ePsx2FileVersion_Placeholder = 0
-};
+#include "Psx2FileVersion.h"
 
 class PWorld {
 public:

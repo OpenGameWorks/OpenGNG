@@ -5,11 +5,7 @@ class PMeshFragment;
 class PPakFile;
 class PArray;
 
-// File version selector for pak loaders. Enumerator values are not yet
-// recovered; same placeholder as PWorld.h and PParticleManager.h.
-enum ePsx2FileVersion {
-    ePsx2FileVersion_Placeholder = 0
-};
+#include "Psx2FileVersion.h"
 
 // Mesh header: fragment array at 0x00, fragment count at 0x04, and two
 // 128-bit bounding corners at 0x10 and 0x20. Size 0x30.

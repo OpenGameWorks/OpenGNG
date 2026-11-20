@@ -35,11 +35,7 @@ enum ePSLayer {
     ePSLayer_2 = 2
 };
 
-// File version selector for pak loaders. Enumerator values are not yet
-// recovered; same placeholder as PWorld.h.
-enum ePsx2FileVersion {
-    ePsx2FileVersion_Placeholder = 0
-};
+#include "Psx2FileVersion.h"
 
 class PParticleManager {
 public:

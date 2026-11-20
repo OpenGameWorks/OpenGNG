@@ -7,10 +7,7 @@
 class PAnim;
 class PPakFile;
 
-// Enumerator values are not recovered yet; the name is what the mangled signatures need.
-enum ePsx2FileVersion {
-    ePsx2FileVersion_Placeholder = 0
-};
+#include "Psx2FileVersion.h"
 
 // One 0x28-byte fx trigger record held in PMeshNodeAnimData::m_unk8; only the two trailing words are named.
 struct tagPMeshNodeFxTrigger {

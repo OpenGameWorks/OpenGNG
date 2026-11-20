@@ -7,6 +7,7 @@
 #include "PMat4.h"
 #include "PParticleRipples.h"
 #include "PParticleSystem.h"
+#include "PParticleManager.h"
 
 // TODO(header): foreign declarations
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
@@ -27,12 +28,6 @@ extern "C" void sceVu0UnitMatrix(float *pOut);
 extern "C" void sceVu0ScaleVector(float *pOut, float *pIn, float fScale);
 extern "C" void sceVu0AddVector(float *pOut, float *pA, float *pB);
 extern char gGfxEng[1504384];
-// PParticleManager.h redeclares ePsx2FileVersion (PMesh.h defines it too), so the two members used here are declared directly.
-class PParticleManager {
-public:
-    int GetFxTexture(unsigned int hFx);
-    void Add(PParticleSystem *pSystem);
-};
 // Polymorphic view of PParticleSystem: ModifyPosition is virtual slot 3 (vtable offset 0x14).
 class PSysView {
 public:
