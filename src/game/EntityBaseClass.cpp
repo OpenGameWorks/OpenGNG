@@ -11,17 +11,37 @@ public:
 };
 extern PSound gSound;
 
-class PParticleSystem;
 class PMNode;
+
+// Virtual order follows the vtable: slot 0x08 is the destructor, 0x0C is an unnamed null entry, Start is slot 0x20.
+class PParticleSystem {
+public:
+    virtual ~PParticleSystem();
+    virtual void _unk0C();
+    virtual void Render();
+    virtual void ModifyPosition(float (*arg0)[4]);
+    virtual void FrustrumTest(void *arg0, float *arg1, float arg2, float arg3);
+    virtual void FadeAndDie(unsigned int arg0);
+    virtual void Start();
+};
 
 class PParticleManager {
 public:
     void Remove(PParticleSystem *pSystem);
+    void Add(PParticleSystem *pSystem);
     void CreateSulphurReaction(float *arg0, float arg1);
     void CreateFireDamageFx(PMNode *arg0, unsigned int arg1);
     int IsValid(PParticleSystem *pSystem);
 };
 extern char gGfxEng[1504384];
+
+// PZinDamageFx size is 0xF0 (the operator new argument); the placeholder keeps the allocation size.
+class PZinDamageFx {
+public:
+    PZinDamageFx();
+    void Create(EntityBaseClass *arg0, float arg1, unsigned int arg2);
+    char _pad000[0xF0];
+};
 
 class MathAPI {
 public:
@@ -35,6 +55,7 @@ extern EntityBaseClass *mPlayerAPI__13EntityManager;
 class PArray {
 public:
     void Remove(void *arg0);
+    void Add(void *arg0);
     char _pad000[0x10];
 };
 extern PArray mBGAnimList__7Physics;
@@ -113,6 +134,24 @@ public:
     char _pad000[0x10];
 };
 extern EntityAttackManager *mpEntMgr__15EntityBaseClass;
+
+class TriggerSystemWakeKillRec;
+
+// EntityManager size is unknown; only FindTrigger is needed, reached through a cast of mpEntMgr.
+class EntityManager {
+public:
+    void *FindTrigger(unsigned int arg0, int arg1);
+    void *GetPtrToApparition(unsigned int arg0);
+};
+
+// TriggerSystem is 0x50 bytes; only the constructor and the m_unk9 state byte are needed.
+class TriggerSystem {
+public:
+    TriggerSystem(int arg0, float (*arg1)[4], unsigned int arg2, short arg3, bool arg4, short arg5, float arg6, bool arg7, unsigned int arg8, unsigned int arg9, TriggerSystemWakeKillRec *arg10);
+    char _pad000[0x9];
+    signed char m_unk9;
+    char _pad00A[0x46];
+};
 
 extern "C" void sceVu0ScaleVector(float *pDst);
 extern "C" void sceVu0AddVector(float *pDst, float *pSrc0, float *pSrc1);
@@ -223,6 +262,22 @@ void EntityBaseClass::OnInnocentAttack(EntityBaseClass *arg0, int arg1) {
     this->CreateHitMarkFx(0, (eHitObjectType)hitType, (eHitWeaponType)0, false);
 }
 
+// FUNCTION: 0x0014AA40 CreateDamageFx__15EntityBaseClassFfUi
+PZinDamageFx *EntityBaseClass::CreateDamageFx(float arg0, unsigned int arg1) {
+    PZinDamageFx *pFx;
+    unsigned long long flags;
+
+    pFx = new PZinDamageFx();
+    if (pFx == 0) {
+        CdsAssert__FPciPc("EntityBaseClass.cpp", 0xAFD, "apFx");
+    }
+    flags = arg1 ? (unsigned long long)arg1 : (((unsigned long long)0x8300 << 16) | 0x206);
+    pFx->Create(this, arg0, (unsigned int)flags);
+    ((PParticleManager *)(gGfxEng + 0x154F00))->Add((PParticleSystem *)pFx);
+    ((PParticleSystem *)pFx)->Start();
+    return pFx;
+}
+
 // FUNCTION: 0x0014B080 FlashTexture__15EntityBaseClassFUii
 void EntityBaseClass::FlashTexture(unsigned int arg0, int arg1) {
     if (arg0 == 0) {
@@ -265,6 +320,24 @@ int EntityBaseClass::ProcessHitBack() {
         ret = 0;
     }
     return ret;
+}
+
+// FUNCTION: 0x0014B210 TriggerBGAnim__15EntityBaseClassFUiibUiP24TriggerSystemWakeKillRec
+void EntityBaseClass::TriggerBGAnim(unsigned int arg0, int arg1, bool arg2, unsigned int arg3, TriggerSystemWakeKillRec *arg4) {
+    TriggerSystem *pTrig;
+
+    pTrig = (TriggerSystem *)((EntityManager *)mpEntMgr__15EntityBaseClass)->FindTrigger(arg0, arg1);
+    if (pTrig != 0) {
+        if (pTrig->m_unk9 == 0) {
+            pTrig->m_unk9 = 2;
+        }
+    } else if (arg0 != 0 || arg1 >= 0) {
+        pTrig = new TriggerSystem(m_unk04, (float (*)[4])((m_unk3C != 0) ? (m_unk3C + 0x80) : ((char *)this + 0x190)), arg0, 0, true, (short)arg1, 0.0f, arg2, arg3, 0, arg4);
+        if (pTrig->m_unk9 == 0) {
+            pTrig->m_unk9 = 2;
+        }
+        ((PArray *)((char *)mpEntMgr__15EntityBaseClass + 0x5B60))->Add(pTrig);
+    }
 }
 
 // FUNCTION: 0x0014B330 IsBGAnimating__15EntityBaseClassFUi
@@ -524,6 +597,32 @@ void EntityBaseClass::RadiusAdjust(float arg0, float (*arg1)[4]) {
     this->m_unkD0 = 0;
 }
 
+// DRAFT: 0x0014D6D0 AddCollision__15EntityBaseClassFP15EntityBaseClass
+// note: loop shape and store addressing differ (34 words); tried explicit this+0x110 base and post-loop store (35 words)
+void EntityBaseClass::AddCollision(EntityBaseClass *arg0) {
+    unsigned int i;
+    unsigned int off;
+    unsigned int target;
+    void *pEnt;
+
+    i = 0;
+    off = 0;
+    while (i < 10) {
+        target = *(unsigned int *)((char *)this + off + 0x110);
+        if (target == 0) {
+            this->m_unk110[i] = arg0->m_unk04;
+            return;
+        }
+        pEnt = ((EntityManager *)mpEntMgr__15EntityBaseClass)->GetPtrToApparition(target);
+        if (pEnt == 0 || ((unsigned char *)pEnt)[0x163] == 6) {
+            this->m_unk110[i] = arg0->m_unk04;
+            return;
+        }
+        off += 4;
+        i++;
+    }
+}
+
 // DRAFT: 0x0014D680 RemoveCollision__15EntityBaseClassFP15EntityBaseClass
 // note: 16 differing words (0x44 vs 0x50); source-level loop/store variants (return vs break, index init order, char-pointer and local-pointer store, compare operand swap) do not change the store and delay-slot allocation (original fills bne slot with nop and stores via sll a1 + addiu + addu).
 void EntityBaseClass::RemoveCollision(EntityBaseClass *arg0) {
@@ -679,6 +778,29 @@ void EntityBaseClass::AddToBGAnimList() {
     }
 }
 
+// DRAFT: 0x0014DC20 ReadApparitionData__15EntityBaseClassFiUi
+// note: saved-register order is swapped (compiler puts iOffset in s1, original in s0); 27 words differ. Tried: local index copy, local offset copy after the first branch; same output.
+char EntityBaseClass::ReadApparitionData(int iOffset, unsigned int uIndex) {
+    if (m_unk18 == 0 && uIndex == 0) {
+        return 0;
+    }
+    int off = iOffset;
+    if (!(off < 4)) {
+        CdsAssert__FPciPc("EntityBaseClass.cpp", 0x398, "iOffset < STATIC_APPARITION_DATA_SIZE");
+    }
+    if (uIndex == 0) {
+        uIndex = m_unk04;
+    }
+    char *pSlot = 0;
+    if (uIndex < *(unsigned int *)((char *)mpEntMgr__15EntityBaseClass + 0x5054)) {
+        pSlot = (char *)mpEntMgr__15EntityBaseClass + 0x53A0 + uIndex * 4;
+    }
+    if (pSlot == 0) {
+        return 0;
+    }
+    return pSlot[off];
+}
+
 // DRAFT: 0x0014E250 PlaySequence__15EntityBaseClassFPUi
 // note: DIFF 2 words; original fills the ProcessSequence delay slot with sb zero,0x162 and computes a0 before jal, ours fills it with the a0 daddu. Tried: this->ProcessSequence() (no gain).
 int EntityBaseClass::PlaySequence(unsigned int *arg0) {
@@ -753,6 +875,18 @@ void EntityBaseClass::SetState(int arg0) {
         }
     }
     this->m_unk20 = arg0;
+}
+
+// FUNCTION: 0x0014EE40 FreeActiveLoad__15EntityBaseClassFv
+void EntityBaseClass::FreeActiveLoad() {
+    if (this->m_unk19 != 0) {
+        this->m_unk19 = 0;
+        mLoadTable__15EntityBaseClass[this->m_unk10].m0 -= this->m_unk14;
+        if (mLoadTable__15EntityBaseClass[this->m_unk10].m0 < 0) {
+            CdsAssert__FPciPc("EntityBaseClass.cpp", 0x102, "(int)mLoadTable[meLoadClass][CURRENT_CLASS_LOAD_VALUE] >= 0");
+        }
+        mLoadTable__15EntityBaseClass[this->m_unk10].m8 -= 1;
+    }
 }
 
 // FUNCTION: 0x0014EF00 SetActiveLoad__15EntityBaseClassFv

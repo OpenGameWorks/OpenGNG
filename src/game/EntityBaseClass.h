@@ -6,6 +6,8 @@
 class AnimData;
 class Physics;
 class PMNode;
+class PZinDamageFx;
+class TriggerSystemWakeKillRec;
 
 class EntityBaseClass {
 public:
@@ -20,6 +22,7 @@ public:
     int ProcessHitBack();
     int ChangeDamageFxInterval(unsigned int arg0, float arg1);
     long long IsBGAnimating(unsigned int arg0);
+    void TriggerBGAnim(unsigned int arg0, int arg1, bool arg2, unsigned int arg3, TriggerSystemWakeKillRec *arg4);
     int MusicChangePrimary(unsigned int arg0, unsigned int arg1);
     void UpdateSulphurFx(float arg0);
     void FacePlayer(float arg0);
@@ -29,6 +32,7 @@ public:
     void SetRenderPass(int arg0);
     int ChangedState();
     void RotateTo(float arg0, float arg1);
+    void AddCollision(EntityBaseClass *arg0);
     void RemoveCollision(EntityBaseClass *arg0);
     int FindCollision(EntityBaseClass *arg0);
     void RemovePhysicsAnimList();
@@ -40,6 +44,7 @@ public:
     void AddToBGAnimList();
     void SetState(int arg0);
     void SetActiveLoad();
+    void FreeActiveLoad();
     void FlashTexture(unsigned int arg0, int arg1);
     void ResetCollisions();
     void UpdateShadowVolume();
@@ -48,6 +53,7 @@ public:
     void SetFreeze(float arg0);
     void CreateHitMarkFx(float (*arg0)[4], eHitObjectType arg1, eHitWeaponType arg2, bool arg3);
     void OnInnocentAttack(EntityBaseClass *arg0, int arg1);
+    PZinDamageFx *CreateDamageFx(float arg0, unsigned int arg1);
     void CheckVariable(int arg0, int arg1);
     void RequestAttack(EntityBaseClass *arg0, unsigned int arg1);
     void CreateFireDamageFx(float arg0);
@@ -62,6 +68,7 @@ public:
     void ResumeAmbientSoundsByObject();
     void StopSoundBySoundRef(unsigned int arg0);
     void ProcessSequence();
+    char ReadApparitionData(int arg0, unsigned int arg1);
 
     char _pad000[0x4];
     int m_unk04;                // 0x004
