@@ -5,6 +5,8 @@
 
 class PMat4;
 struct tagVuLine;
+struct tagVuStaticInstance;
+struct tagVuSprite;
 
 class PDisplayList {
 public:
@@ -37,6 +39,8 @@ public:
     void SetWorldMatrix(PMat4 *pMat);
     void KickVifDmaChain(bool bWait);
     void DrawLines(struct tagVuLine *pLines, int nCount);
+    void DrawStaticInstances(struct tagVuStaticInstance *pInstances, int nNum, int nBatch, int nA, int nB, bool bFlag);
+    void DrawSprites(struct tagVuSprite *pSprite, int nCount, bool bFlag);
     void ClearFrameBuffer(short nX, short nY, short nW, short nH, char nR, char nG, char nB, char nA, unsigned int nFlags);
     void ClearZBuffer(short nX, short nY, short nW, unsigned int nFlags);
     void DrawFogParticles(float (*pVerts)[4], int nCount, float fA, float fB, float fC, float *pColor);

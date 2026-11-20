@@ -359,6 +359,72 @@ void PDisplayList::SetTexSyncPacket() {
     }
 }
 
+// DRAFT: 0x181DF0 DrawStaticInstances__12PDisplayListFP19tagVuStaticInstanceiiiib
+// note: packet and source pointers as in the asm; frame and store order still differ
+void PDisplayList::DrawStaticInstances(struct tagVuStaticInstance *pInstances, int nNum, int nBatch, int nA, int nB, bool bFlag) {
+    if (pInstances == 0) {
+        CdsAssert("PDisplayList.cpp", 0x4F1, "pInstances");
+    }
+    if (nNum == 0) {
+        CdsAssert("PDisplayList.cpp", 0x4F2, "iNumInstances");
+    }
+    int nLoops = nNum / nBatch;
+    if (nNum % nBatch != 0) {
+        nLoops += 1;
+    }
+    int nIdx = 0;
+    if (bFlag) {
+        while (nIdx < nLoops) {
+            int n = (nNum < nBatch) ? nNum : nBatch;
+            char *pSrc = (char *)pInstances + (((nIdx * nBatch) * 5) << 4);
+            nNum -= n;
+            char *pPkt = (char *)AllocEntries(n * 5 + 3);
+            if (pPkt == 0) {
+                CdsAssert("PDisplayList.cpp", 0x509, "0");
+            }
+            int nCount = n * 5 + 2;
+            *(long long *)pPkt = (long long)(nCount | 0x10000000);
+            *(int *)(pPkt + 8) = 0x10000000;
+            *(int *)(pPkt + 0xC) = nA | ((nCount - 1) << 16) | 0x6C000000;
+            pPkt += 0x10;
+            *(int *)pPkt = n;
+            *(int *)(pPkt + 4) = 0;
+            *(int *)(pPkt + 8) = 0;
+            *(int *)(pPkt + 0xC) = 0;
+            pPkt += 0x10;
+            QwordCopy((u_long128 *)pPkt, (u_long128 *)pSrc, nCount - 2);
+            pPkt += (nCount - 2) << 4;
+            nIdx += 1;
+            *(unsigned int *)pPkt = 0x11000000;
+            *(unsigned int *)(pPkt + 4) = 0x17000000;
+            *(int *)(pPkt + 8) = 0;
+            *(int *)(pPkt + 0xC) = 0;
+        }
+    } else {
+        while (nIdx < nLoops) {
+            int n = (nNum < nBatch) ? nNum : nBatch;
+            char *pSrc = (char *)pInstances + (((nIdx * nBatch) * 5) << 4);
+            nNum -= n;
+            char *pPkt = (char *)AllocEntries(4);
+            if (pPkt == 0) {
+                CdsAssert("PDisplayList.cpp", 0x52F, "0");
+            }
+            int nQw = n * 5;
+            *(long long *)pPkt = 0x10000001LL;
+            *(int *)(pPkt + 8) = 0x10000000;
+            *(int *)(pPkt + 0xC) = nA | 0x6C010000;
+            *(int *)(pPkt + 0x10) = n;
+            *(long long *)(pPkt + 0x20) = ((long long)(unsigned int)pSrc << 32) | 0x30000000LL | (long long)nQw;
+            *(int *)(pPkt + 0x28) = 0;
+            *(int *)(pPkt + 0x2C) = nB | (nQw << 16) | 0x6C000000;
+            *(long long *)(pPkt + 0x30) = 0x10000000LL;
+            *(unsigned int *)(pPkt + 0x38) = 0x11000000;
+            *(unsigned int *)(pPkt + 0x3C) = 0x17000000;
+            nIdx += 1;
+        }
+    }
+}
+
 // DRAFT: 0x182100 DrawFogParticles__12PDisplayListFPA4_fifffPf
 // note: 102 differing words; frame 0xC0 vs 0xB0 with pColor spilled and extra locals live across the call (tried 5 variants, best kept)
 void PDisplayList::DrawFogParticles(float (*pVerts)[4], int nCount, float fA, float fB, float fC, float *pColor) {
@@ -403,6 +469,71 @@ void PDisplayList::DrawFogParticles(float (*pVerts)[4], int nCount, float fA, fl
     asm {
         sync
     }
+}
+
+// DRAFT: 0x1830A0 DrawSprites__12PDisplayListFP11tagVuSpriteib
+// note: loop A (bFlag) and loop B packet layout as in the asm; frame and store order still differ
+void PDisplayList::DrawSprites(struct tagVuSprite *pSprite, int nCount, bool bFlag) {
+    if (pSprite == 0) {
+        CdsAssert("PDisplayList.cpp", 0x23A, "pSprites");
+    }
+    if (nCount == 0) {
+        CdsAssert("PDisplayList.cpp", 0x23B, "iNumSprites");
+    }
+    int nLoops = (nCount + 0x27) / 40;
+    if (bFlag) {
+        int nIdx = 0;
+        while (nIdx < nLoops) {
+            int n = (nCount < 40) ? nCount : 40;
+            nCount -= n;
+            if (nLoops >= 2 && nCount == 1) {
+                nCount = 2;
+                n -= 1;
+            }
+            char *pPkt = (char *)AllocEntries(n * 4 + 3);
+            if (pPkt == 0) {
+                CdsAssert("PDisplayList.cpp", 0x252, "0");
+            }
+            int nQw = n * 4 + 2;
+            *(long long *)pPkt = (long long)(nQw | 0x10000000);
+            *(int *)(pPkt + 8) = 0;
+            *(int *)(pPkt + 0xC) = ((nQw - 1) << 16) | 0x6C008000;
+            *(int *)(pPkt + 0x10) = n;
+            pPkt += 0x20;
+            QwordCopy((u_long128 *)pPkt, (u_long128 *)pSprite, nQw - 2);
+            pSprite = (struct tagVuSprite *)((char *)pSprite + (n << 6));
+            pPkt += (nQw - 2) << 4;
+            *(unsigned int *)pPkt = 0x17000000;
+            nIdx += 1;
+            *(int *)(pPkt + 4) = 0;
+            *(int *)(pPkt + 8) = 0;
+            *(int *)(pPkt + 0xC) = 0;
+        }
+    } else {
+        int nIdx = 0;
+        while (nIdx < nLoops) {
+            int n = (nCount < 40) ? nCount : 40;
+            nCount -= n;
+            char *pPkt = (char *)AllocEntries(4);
+            if (pPkt == 0) {
+                CdsAssert("PDisplayList.cpp", 0x27D, "0");
+            }
+            int nQw = n * 4;
+            *(long long *)pPkt = 0x10000001LL;
+            *(int *)(pPkt + 8) = 0;
+            *(int *)(pPkt + 0xC) = 0x6C018000;
+            *(int *)(pPkt + 0x10) = n;
+            *(long long *)(pPkt + 0x20) = ((long long)(unsigned int)pSprite << 32) | 0x30000000LL | (long long)nQw;
+            *(int *)(pPkt + 0x28) = 0;
+            *(int *)(pPkt + 0x2C) = (nQw << 16) | 0x6C008001;
+            *(long long *)(pPkt + 0x30) = 0x10000000LL;
+            *(unsigned int *)(pPkt + 0x38) = 0x17000000;
+            *(int *)(pPkt + 0x3C) = 0;
+            pSprite = (struct tagVuSprite *)((char *)pSprite + (n << 6));
+            nIdx += 1;
+        }
+    }
+    asm { sync }
 }
 
 // FUNCTION: 0x183380 BeginFxLoop__12PDisplayListFUi
