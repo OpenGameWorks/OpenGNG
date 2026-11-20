@@ -1,8 +1,12 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "HolyGround.h"
 #include "EntityManager.h"
 #include "TimerAPI.h"
 #include "PMNode.h"
+#include "PMat4.h"
+#include "PParticleRipples.h"
+#include "PParticleSystem.h"
 
 // TODO(header): foreign declarations
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
@@ -16,12 +20,89 @@ extern float gEng[4][4];
 extern unsigned int HolyGround_IdleSeq[0x10];
 extern unsigned int HolyGround_ActiveSeq[0x10];
 extern unsigned int HolyGround_ShatterSeq[0x10];
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__16PParticleRipplesFv(void *pThis);
+extern "C" void sceVu0UnitMatrix(float *pOut);
+extern "C" void sceVu0ScaleVector(float *pOut, float *pIn, float fScale);
+extern "C" void sceVu0AddVector(float *pOut, float *pA, float *pB);
+extern char gGfxEng[1504384];
+// PParticleManager.h redeclares ePsx2FileVersion (PMesh.h defines it too), so the two members used here are declared directly.
+class PParticleManager {
+public:
+    int GetFxTexture(unsigned int hFx);
+    void Add(PParticleSystem *pSystem);
+};
+// Polymorphic view of PParticleSystem: ModifyPosition is virtual slot 3 (vtable offset 0x14).
+class PSysView {
+public:
+    virtual void Slot0();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void ModifyPosition(PMat4 *pMat);
+};
+
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("HolyGround.cpp", line, #cond))
 
 // FUNCTION: 0x001A3A20 __ct__10HolyGroundFv
 HolyGround::HolyGround() : EntityBaseClass((LoadClass)5, 0U) {}
 
 // FUNCTION: 0x001A32C0 __dt__10HolyGroundFv
 HolyGround::~HolyGround() {}
+
+// DRAFT: 0x001A3330 CreateRipplesFx__10HolyGroundFv
+// note: 6 words differ, all in block 2 AutoEmit float constants (ours loads 120.0f via v1 before a0/a1 setup; original uses v0 after). Tried: direct ModifyPosition 85, pGfx local 91, block-scope b array 197.
+void HolyGround::CreateRipplesFx() {
+    PMNode *pNode;
+    PParticleRipples *apFx;
+    if (m_unk3C) {
+        pNode = ((PMNode *)m_unk3C)->Find(0x7BF9ACB7);
+        if (pNode) {
+            float a[4] = {1.2f, 1.2f, 1.2f, 1.0f};
+            float b[4] = {0.4f, 1.1f, 1.5f, 1.0f};
+            float mat[4][4];
+            apFx = (PParticleRipples *)__nw__FUi(0x8C0);
+            if (apFx) apFx = (PParticleRipples *)__ct__16PParticleRipplesFv(apFx);
+            CDS_ASSERT(0xDF, apFx);
+            *(float *)((char *)apFx + 0x898) = 0.4f;
+            *(float *)((char *)apFx + 0x89C) = 0.45f;
+            *(float *)((char *)apFx + 0x8A0) = 0.45f;
+            *(float *)((char *)apFx + 0x8A4) = 0.5f;
+            apFx->Init(10, true, true);
+            apFx->AutoEmit(120.0f, a, 0.0f, 18.0f, 0.0f, 45.0f);
+            *(unsigned char *)((char *)apFx + 0x19) = 1;
+            *(int *)((char *)apFx + 0x28) = 0;
+            *(int *)((char *)apFx + 0x2C) = 0;
+            ((PParticleManager *)(gGfxEng + 0x154F00))->Add((PParticleSystem *)apFx);
+            sceVu0UnitMatrix((float *)mat);
+            float w[4] = {0.0f, 1.0f, 0.0f, 1.0f};
+            ((PMat4 *)mat)->RotateX(*(float *)(m_unk3C ? m_unk3C + 0x90 : (char *)this + 0x1A0));
+            ((PMat4 *)mat)->RotateY(*(float *)((m_unk3C ? m_unk3C + 0x90 : (char *)this + 0x1A0) + 4));
+            ((PMat4 *)mat)->RotateZ(*(float *)((m_unk3C ? m_unk3C + 0x90 : (char *)this + 0x1A0) + 8));
+            ((PMat4 *)mat)->MulVector(w, w);
+            sceVu0UnitMatrix((float *)mat);
+            sceVu0ScaleVector(w, w, 4.8f);
+            sceVu0AddVector(mat[3], w, (float *)(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190));
+            ((PSysView *)apFx)->ModifyPosition((PMat4 *)mat);
+            pNode->AttachFx((unsigned int)apFx, 0.0f, 0.0f, -1.0f, -1.0f, true);
+
+            apFx = (PParticleRipples *)__nw__FUi(0x8C0);
+            if (apFx) apFx = (PParticleRipples *)__ct__16PParticleRipplesFv(apFx);
+            CDS_ASSERT(0xFB, apFx);
+            *(float *)((char *)apFx + 0x898) = 0.0f;
+            *(float *)((char *)apFx + 0x89C) = 0.0f;
+            *(float *)((char *)apFx + 0x8A0) = 0.0f;
+            *(float *)((char *)apFx + 0x8A4) = 0.7f;
+            apFx->Init(10, false, false);
+            *(int *)((char *)apFx + 0x10) = ((PParticleManager *)(gGfxEng + 0x154F00))->GetFxTexture(0x84000005);
+            *(long long *)((char *)apFx + 0x30) = 0x48;
+            apFx->AutoEmit(120.0f, b, 0.0f, 18.0f, 0.0f, 45.0f);
+            ((PParticleManager *)(gGfxEng + 0x154F00))->Add((PParticleSystem *)apFx);
+            ((PSysView *)apFx)->ModifyPosition((PMat4 *)mat);
+            pNode->AttachFx((unsigned int)apFx, 0.0f, 0.0f, -1.0f, -1.0f, true);
+        }
+    }
+}
 
 // FUNCTION: 0x001A3690 OnTimerEvent__10HolyGroundFUi
 void HolyGround::OnTimerEvent(unsigned int nId) {
