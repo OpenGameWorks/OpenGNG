@@ -52,7 +52,7 @@ void PWaterTexture::InitWobbleStrip(tagWobbleStrip *pStrip, char cA, short sB, s
 }
 
 // DRAFT: 0x001EEB60 WobbleSTGrids__13PWaterTextureFP21tagGsWobbleCopyStripsf
-// note: loop, wrap and FastMath calls follow the asm; the VU0 lqc2/vmul/vadd/sqc2 chain is plain C with z=w=0, not byte-matched.
+// note: DIFF 85; VU0 chain in asm over C locals; frame 0xA0 not 0xB0 with no fp save, loop head differs; tried pCur shift form (86), else-if wrap (86), pDst offset in sqc2 (86), vec[2..3] stores (85), vec decl first (86).
 void PWaterTexture::WobbleSTGrids(tagGsWobbleCopyStrips *pStrips, float fScale) {
     int nPhase = (int)fScale;
     char *pBase = (char *)pStrips;
@@ -63,21 +63,38 @@ void PWaterTexture::WobbleSTGrids(tagGsWobbleCopyStrips *pStrips, float fScale) 
             nPhase -= 0xF;
             if (nPhase < 0) {
                 nPhase += 0x168;
-            } else if (nPhase >= 0x168) {
+            }
+            if (nPhase >= 0x168) {
                 nPhase -= 0x168;
             }
-            float fCos = FastMath_IntCos180(nPhase - 0xB4);
-            float fSin = FastMath_IntSin180(nPhase - 0xB4);
+            float vec[4] = {0.0f, 0.0f, 0.001f, 2.0f};
+            vec[0] = FastMath_IntCos180(nPhase - 0xB4);
+            vec[1] = FastMath_IntSin180(nPhase - 0xB4);
+            float *pVec = vec;
             float *pSrc = (float *)(pCur + nCol * 64);
             float *pDst = (float *)(pPrev + nCol * 64 + 0x20);
-            float fZ = 0.0f;
-            float fW = 0.0f;
-            float fX = pSrc[0] + fCos * fZ + (fCos * fSin) * fZ;
-            float fY = pSrc[1] + fSin * fZ + (fSin * fZ) * (fW * (fSin * fCos));
-            pDst[0] = fX;
-            pDst[1] = fY;
-            pDst[2] = pSrc[2];
-            pDst[3] = pSrc[3];
+            asm {
+                lqc2 vf1, 0x0(pVec)
+                lqc2 vf2, 0x0(pSrc)
+                vmulx.y vf3, vf1, vf1x
+                vmuly.x vf3, vf1, vf1y
+                vmulz.x vf4, vf1, vf1z
+                vmulz.y vf4, vf1, vf1z
+                vmuly.w vf5, vf1, vf3y
+                vnop
+                vmulz.x vf6, vf3, vf1z
+                vmulw.y vf6, vf4, vf5w
+                vadd.xy vf2, vf2, vf4
+                vnop
+                vnop
+                vnop
+                vadd.xy vf2, vf2, vf6
+                vnop
+                vnop
+                vnop
+                sqc2 vf2, 0x0(pSrc)
+                sqc2 vf2, 0x0(pDst)
+            }
         }
     }
 }
