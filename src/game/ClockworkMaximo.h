@@ -53,8 +53,9 @@ public:
     void SetSpawnedFromEntity(float *arg0, float *arg1, int arg2);
     void SetEditableVars(char *arg0);
     ClockworkMaximo();
+    int OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3);
 
-    void *m_unk0;                   // 0x000 vtable pointer
+    void *m_unk0;                  // 0x000 vtable pointer
     char _pad004[0x1B - 0x04];
     unsigned char m_unk1B;          // 0x01B
     char _pad01C[0x20 - 0x1C];

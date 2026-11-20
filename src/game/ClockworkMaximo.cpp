@@ -69,6 +69,11 @@ extern "C" float sceVu0InnerProduct(float *, float *);
 extern "C" float sqrtf(float);
 extern "C" void InitShield__6ShieldFP15EntityBaseClassfPA4_fPA4_fUiPbi(void *, void *, float, float (*)[4], float (*)[4], unsigned int, bool *, int);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *, int, unsigned int);
+extern "C" void PlaySequence__15EntityBaseClassFPUi(void *, void *);
+extern "C" unsigned int CreateDamageFx__15EntityBaseClassFfUi(void *, float, unsigned int);
+extern "C" void ChangeDamageFxInterval__15EntityBaseClassFUif(void *, unsigned int, float);
+extern "C" float GetFrameTime__6PMNodeFv(void *);
+extern char CMaximo_HitOnGroundSeq[0x34];
 
 // Slot numbers are declaration order; Slot13 is the call at vtable offset 0x3C.
 class VirtualSlots {
@@ -557,6 +562,117 @@ void ClockworkMaximo::OnTimerEvent(unsigned int arg0) {
     }
     if (arg0 == (unsigned int)m_unk278) {
         m_unk278 = 0;
+    }
+}
+
+// DRAFT: 0x00211800 OnHitEvent__15ClockworkMaximoFP15EntityBaseClassiUiUi
+// note: 145 words, size 0x440 vs 0x450: branch targets off by one insn at 0x60/0x70/0xB4/0xCC/0xE0; wrap block f0/f1/f2 register assignment inverted (decl swap and +180 operand order tried, no change).
+int ClockworkMaximo::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3) {
+    EntityBaseClass *var_s4 = arg0;
+    unsigned int temp_s0 = arg2 & ~0x5C0;
+    int temp_s1 = m_unk20;
+    float f0;
+    float f2;
+    char *base;
+    unsigned int temp_a1;
+    int temp_v1_2;
+
+    m_unk264 = arg2;
+    if (*(int *)((char *)this + 0xF4) != 0) {
+        m_unk240 -= arg1;
+        if (m_unk240 > 0) {
+            return 1;
+        }
+        SetState__15EntityBaseClassFi(this,0x1E);
+        return 2;
+    }
+    if (temp_s1 == 6) {
+        ((m_unk1E8 != 0) ? (void)0 : CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x7A1, "mEVars.m_bHasShield"));
+        SetState__15EntityBaseClassFi(this,7);
+        return 4;
+    }
+    if (temp_s1 == 5) {
+        SetState__15EntityBaseClassFi(this,0x1E);
+        return 2;
+    }
+    if (temp_s1 == 7) {
+        return 0;
+    }
+    {
+        f0 = GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (void *)(*(int *)((char *)arg0 + 0x3C) + 0x80)) + 180.0f;
+        base = (m_unk3C != 0) ? (char *)m_unk3C + 0x90 : (char *)this + 0x1A0;
+        f2 = *(float *)(base + 4) + f0;
+        if (f2 < -180.0f) {
+            f2 += 360.0f;
+        } else if (!(f2 <= 180.0f)) {
+            f2 -= 360.0f;
+        }
+        *(float *)((char *)this + 0xD8) = f2;
+        *(int *)((char *)this + 0xDC) = 0x3E99999A;
+        if ((temp_s1 == 0x19) || (temp_s1 == 0x1A)) {
+            m_unk258 = 0;
+            if (m_unk25C >= (int)GetFrameTime__6PMNodeFv((void *)m_unk3C)) {
+                m_unk258 = !(arg2 & 0x200) ? 0 : 1;
+                m_unk264 = arg2;
+                m_unk240 -= arg1;
+                if (m_unk240 <= 0) {
+                    *(unsigned int *)((char *)this + 0x268) = arg2;
+                    SetState__15EntityBaseClassFi(this,5);
+                    return 2;
+                }
+                SetState__15EntityBaseClassFi(this,0x1A);
+                return 1;
+            }
+            return 0;
+        }
+        if (m_unk278 != 0) {
+            if (GetFrameTime__6PMNodeFv((void *)m_unk3C) < 30.0f) {
+                if (m_unk140 != (int)CMaximo_HitOnGroundSeq) {
+                    return 0;
+                }
+            }
+            switch (temp_s0) {
+            case 0x2:
+                m_unk240 = 0;
+                *(int *)((char *)this + 0x10C) &= 0xFDFFFFFF;
+                SetState__15EntityBaseClassFi(this,0x1D);
+                return 2;
+            case 0x220:
+            case 0x201:
+            case 0x1:
+                m_unk240 -= arg1;
+                if (m_unk240 <= 0) {
+                    m_unk240 = 0;
+                    *(int *)((char *)this + 0x10C) &= 0xFDFFFFFF;
+                    SetState__15EntityBaseClassFi(this,0x1D);
+                    return 2;
+                }
+                PlaySequence__15EntityBaseClassFPUi(this, CMaximo_HitOnGroundSeq);
+                return 1;
+            default:
+                return 3;
+            }
+        } else {
+            if ((m_unk250 == 0) && ((float)m_unk240 <= (0.75f * (float)*(int *)((char *)this + 0x244)))) {
+                m_unk250 = CreateDamageFx__15EntityBaseClassFfUi(this, 90.0f, 0U);
+            }
+            temp_a1 = m_unk250;
+            if ((temp_a1 != 0) && ((float)m_unk240 <= (0.5f * (float)*(int *)((char *)this + 0x244)))) {
+                ChangeDamageFxInterval__15EntityBaseClassFUif(this, temp_a1, 20.0f);
+            }
+            m_unk240 -= arg1;
+            if (m_unk240 > 0) {
+                temp_v1_2 = *(int *)((char *)arg0 + 0x8);
+                if ((temp_v1_2 == 0x2D) || (temp_v1_2 == 5)) {
+                    var_s4 = *(EntityBaseClass **)((char *)mpEntMgr__15EntityBaseClass + 0x505C);
+                }
+                FaceHit(var_s4);
+                SetState__15EntityBaseClassFi(this,4);
+                return 1;
+            }
+            SetState__15EntityBaseClassFi(this,5);
+            return 2;
+        }
     }
 }
 
