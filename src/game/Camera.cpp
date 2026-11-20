@@ -88,7 +88,9 @@ public:
     unsigned short m_unk148; // 0x148
     char _pad14A[0x178 - 0x14A];
     int m_unk178;           // 0x178 (float bits)
-    char _pad17C[0x218 - 0x17C];
+    char _pad17C[0x210 - 0x17C];
+    int m_unk210;           // 0x210
+    char _pad214[0x218 - 0x214];
     int m_unk218;           // 0x218
     char _pad21C[0x6318 - 0x21C];
     unsigned int m_unk6318; // 0x6318
@@ -125,6 +127,13 @@ CVector3 Camera::Normalize(CVector3 arg0) {
 // FUNCTION: 0x00178380 Magnitude__6CameraF8CVector3
 float Camera::Magnitude(CVector3 arg0) {
     return sqrtf(arg0.m_unk0 * arg0.m_unk0 + arg0.m_unk4 * arg0.m_unk4 + arg0.m_unk8 * arg0.m_unk8);
+}
+
+// FUNCTION: 0x001783D0 GetEntityYOffset__6CameraFv
+unsigned short Camera::GetEntityYOffset() {
+    if (m_unkBC != 0) {
+        return ((CameraFollow *)m_unkBC)->m_unk148;
+    }
 }
 
 // FUNCTION: 0x001783F0 SetEntityYOffset__6CameraFUs
@@ -211,6 +220,11 @@ void Camera::SetupCutCamera_Fixed(unsigned int arg0, unsigned int arg1, float ar
     if (m_unkC0 != 0) {
         ((CameraCutManager *)m_unkC0)->SetupCutCamera_Fixed(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
     }
+}
+
+// FUNCTION: 0x00178920 ControlledByApp__6CameraFUi
+int Camera::ControlledByApp(unsigned int arg0) {
+    return (arg0 == m_unk2E4) ? 1 : 0;
 }
 
 // DRAFT: 0x00178940 SetControlled__6CameraFUib
@@ -353,6 +367,51 @@ void Camera::SetupShakeScreen(float arg0, float arg1, float arg2, int arg3, int 
     m_unk174 = arg2;
 }
 
+struct CameraShakeEntry {
+    float m_x;   // +0x0
+    float m_y;   // +0x4
+    float m_z;   // +0x8
+    float m_div; // +0xC
+    float m_mul; // +0x10
+};
+
+// FUNCTION: 0x00179A00 ShakeScreenTable__6CameraFR5PVec3R5PVec3b
+int Camera::ShakeScreenTable(PVec3 &arg0, PVec3 &arg1, bool arg2) {
+    if (m_unk14C == 0) {
+        CdsAssert__FPciPc("Camera.cpp", 0x242, "m_pCurrentShakeTable");
+    }
+    if (m_unk128 != 0) {
+        CameraShakeEntry *pEntry = (CameraShakeEntry *)m_unk14C + m_unk144;
+        m_unk130 = (pEntry->m_x * pEntry->m_mul) / pEntry->m_div;
+        m_unk134 = (pEntry->m_y * pEntry->m_mul) / pEntry->m_div;
+        m_unk138 = (pEntry->m_z * pEntry->m_mul) / pEntry->m_div;
+        m_unk140 = pEntry->m_div;
+        m_unk128 = 0;
+    }
+    float fTime = m_unk140;
+    if (fTime > 0.0f) {
+        float fScale = 1.0f;
+        m_unk140 = fTime - 1.0f;
+        if (arg2) {
+            fScale = 0.5f;
+        }
+        arg0.m_v[0] += m_unk130 * fScale;
+        arg0.m_v[1] += m_unk134 * fScale;
+        arg0.m_v[2] += m_unk138 * fScale;
+        arg1.m_v[0] += m_unk130 * fScale;
+        arg1.m_v[1] += m_unk134 * fScale;
+        arg1.m_v[2] += m_unk138 * fScale;
+    } else {
+        m_unk144 += 1;
+        CameraShakeEntry *pNext = (CameraShakeEntry *)m_unk14C + m_unk144;
+        if (pNext->m_x == 0.0f && pNext->m_y == 0.0f && pNext->m_z == 0.0f) {
+            return 1;
+        }
+        m_unk128 = 1;
+    }
+    return 0;
+}
+
 // FUNCTION: 0x00179F20 CheckCameraShake__6CameraFR5PVec3R5PVec3b
 void Camera::CheckCameraShake(PVec3 &arg0, PVec3 &arg1, bool arg2) {
     if (m_unk179 != 0) {
@@ -429,6 +488,13 @@ bool Camera::PlayerInFixedCamBox() {
     return false;
 }
 
+// FUNCTION: 0x0017A170 ResetCamBoxCount__6CameraFv
+void Camera::ResetCamBoxCount() {
+    if (m_unkBC != 0) {
+        ((CameraFollow *)m_unkBC)->m_unk210 = 0;
+    }
+}
+
 // DRAFT: 0x0017A190 SetCamBoxValue_FollowHeight__6CameraFf
 // note: 27 differing words; frame 0x30 vs 0x40 and this in s0 vs s1; original builds the 3.0 double in s0 before fptodp, ours after. Tried literal 3.0 in printf, local double inside the if, function-scope double, cast removed; count unchanged at 27.
 void Camera::SetCamBoxValue_FollowHeight(float arg0) {
@@ -439,6 +505,13 @@ void Camera::SetCamBoxValue_FollowHeight(float arg0) {
         }
         ((CameraFollow *)m_unkBC)->SetCamBoxValue_FollowHeight(arg0);
     }
+}
+
+// FUNCTION: 0x0017A210 GetForwardVector__6CameraFRA4_f
+void Camera::GetForwardVector(float (&arg0)[4]) {
+    arg0[0] = m_unk30[0][2];
+    arg0[1] = m_unk30[1][2];
+    arg0[2] = m_unk30[2][2];
 }
 
 // FUNCTION: 0x0017A230 SetHeadCam__6CameraFb

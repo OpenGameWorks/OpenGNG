@@ -15,6 +15,11 @@ public:
     float Dot(CVector3 arg0, CVector3 arg1);
     float Magnitude(CVector3 arg0);
     void SetEntityYOffset(unsigned short arg0);
+    unsigned short GetEntityYOffset();
+    int ControlledByApp(unsigned int arg0);
+    int ShakeScreenTable(PVec3 &arg0, PVec3 &arg1, bool arg2);
+    void ResetCamBoxCount();
+    void GetForwardVector(float (&arg0)[4]);
     CVector3 Normalize(CVector3 arg0);
     void UpdateFromApparition();
     void CreateViewMatrix(PMat4 &arg0, PVec3 arg1, PVec3 arg2);
@@ -71,7 +76,14 @@ public:
     int m_unkD0;            // 0x0D0
     int m_unkD4[20];        // 0x0D4
     int m_unk124;           // 0x124
-    char _pad128[0x148 - 0x128];
+    unsigned char m_unk128; // 0x128
+    char _pad129[0x130 - 0x129];
+    float m_unk130;         // 0x130
+    float m_unk134;         // 0x134
+    float m_unk138;         // 0x138
+    char _pad13C[0x140 - 0x13C];
+    float m_unk140;         // 0x140
+    int m_unk144;           // 0x144
     int m_unk148;           // 0x148
     int m_unk14C;           // 0x14C
     char _pad150[0x158 - 0x150];
