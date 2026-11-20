@@ -26,6 +26,7 @@ public:
     int Create(tagParticleLiteExplosionParams *pParams, float fA, float fB, float fC);
     void Start(float fScale);
     void Start();
+    void ModifyPosition(PMat4 *pMat);
 
     float m_unkE0[4];           // 0x0E0 position, offset by Create's fA/fB/fC
     float m_unkF0[4];           // 0x0F0 vector used by Create

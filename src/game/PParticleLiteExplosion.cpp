@@ -1,5 +1,6 @@
 #include "types.h"
 #include "PParticleLiteExplosion.h"
+#include "PMat4.h"
 
 // TODO(header): foreign declarations
 extern "C" void *__ct__15PParticleSystemFv(void *);
@@ -20,6 +21,11 @@ void PParticleLiteExplosion::Start(float fScale) {
     m_unk98 = m_unk160;
     m_unk9C = sqrtf(m_unk90 * m_unk90 + m_unk94 * m_unk94 + m_unk98 * m_unk98);
     ((PParticleLiteExplosionView *)this)->Start();
+}
+
+// FUNCTION: 0x001F6D50 ModifyPosition__22PParticleLiteExplosionFP5PMat4
+void PParticleLiteExplosion::ModifyPosition(PMat4 *pMat) {
+    pMat->MulVector(m_unk1B0, m_unkE0);
 }
 
 // DRAFT: 0x001F6D70 Start__22PParticleLiteExplosionFv
