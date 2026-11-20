@@ -104,6 +104,7 @@ public:
     int LoadTexture(PPakFile *poFile, tagPs2TexDataHeader *pTexHeader, void **ppvTexClutPacket, void **ppvTexImagePacket);
     void SetTexture(int nHandle, PDisplayList *pDisplayList, tagGsTextureEnvironment **ppEnv, bool &bOut);
     int SetTextures(int *pHandles, int nCount, PDisplayList *pDisplayList, bool &bOut);
+    int UploadTextures(int *pHandles, int nCount, PDisplayList *pDisplayList);
     void UploadDynamicTexturesToVram(int *pArray, int nCount, int nA, int nB, bool bFlag);
 
     int m_unk0;                 // 0x000

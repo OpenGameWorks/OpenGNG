@@ -18,19 +18,23 @@ public:
     void FadeOut(float fFade);
     void FadeAndDie(unsigned int nUnused);
     int Create(tagParticleGasParams *pParams, float fA, float fB, float fC);
+    void Animate(float fTime);
+    void AnimateRotatableParticles(float fTime);
 
     float m_unkE0;              // 0x0E0 parameter block copied from pParams by Create (0x70 bytes)
     float m_unkE4;              // 0x0E4
     float m_unkE8;              // 0x0E8
     char _padEC[0x04];          // 0x0EC
     float m_unkF0[4];           // 0x0F0 vector; m_unkF0[1] is 0x0F4, m_unkF0[2] is 0x0F8
-    char _pad100[0x10];         // 0x100
+    float m_unk100[3];          // 0x100 vector used by Animate as the scale source
+    float m_unk10C;             // 0x10C triangle-wave value in Animate
     float m_unk110;             // 0x110
     float m_unk114;             // 0x114
-    char _pad118[0x04];         // 0x118
+    float m_unk118;             // 0x118 spawn scale in Animate
     float m_unk11C;             // 0x11C
     float m_unk120;             // 0x120
-    char _pad124[0x08];         // 0x124
+    unsigned int m_unk124;      // 0x124 loop count in Animate
+    float m_unk128;             // 0x128
     float m_unk12C;             // 0x12C copied to m_unk160 by Start
     float m_unk130;             // 0x130 clamped to at least 4.0f by Create
     float m_unk134;             // 0x134 clamped to at least 1.0f by Create
