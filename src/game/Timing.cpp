@@ -4,11 +4,18 @@
 
 // TODO(header): foreign declarations
 extern "C" void __dl__FPv(void *pMem);
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
 class PProgressBar {
 public:
     void SetReading(float fReading);
     void Render();
+    void Init(float fX, float fY, float fW, float fH, int nFrames);
+    void SetColor1(float fR, float fG, float fB, float fA);
+    void SetColor2(float fR, float fG, float fB, float fA);
+    void SetBgColor(float fR, float fG, float fB, float fA);
+    void SetRange(float fRange);
+    void ResetReading();
 };
 
 struct PGfxEngineRef {
@@ -24,6 +31,10 @@ extern "C" long long fptodp(float fValue);
 extern "C" void *__dt__12PProgressBarFv(void *pThis, short nFlag);
 extern "C" void __destroy_arr(void *pArr, void *(*pDtor)(ESubTimer *, short), unsigned int nSize, int nCount);
 extern "C" void *__dt__9ESubTimerFv(ESubTimer *pThis, short nFlag);
+extern "C" void *__ct__9ESubTimerFv(void *pThis);
+extern "C" void *__ct__12PProgressBarFv(void *pThis);
+extern "C" void *__construct_array(void *pBlock, void *(*pCtor)(void *), void *(*pDtor)(void *, short), int nSize, int nCount);
+extern int SCREEN_HEIGHT;
 class Debug {
 public:
     void DebugDisp(char *pText);
@@ -53,6 +64,66 @@ int ESubTimer::GenerateStringWSuffix(char *pOut, unsigned int nArg) {
     }
     sprintf(pOut, "%s: %s %s\n", (char *)m_unk040, aBuf, aSuffix);
     return 1;
+}
+
+// DRAFT: 0x00169640 GenerateString__9ESubTimerFPcUiUi
+// note: DIFF 110; beqz skip length, assert delay slot, float compare shape (c.le.s vs c.lt.s), nArg2==1 float scheduling, tail scheduling. Tried: nMask per-branch, fScaled condition reversed, aAcc[0x70] frame 0x100.
+void ESubTimer::GenerateString(char *pOut, unsigned int nArg, unsigned int nArg2) {
+    char aTmp[0x20];
+    char aAcc[0x70];
+    int nTime = 0;
+    unsigned int nMask = nArg;
+    int nCount = 0;
+    aAcc[0] = 0;
+    if (nArg != 0) {
+        do {
+            unsigned int nPrev = nMask;
+            if (nMask & 1) {
+                nTime = m_unk004;
+                nMask &= -2;
+            } else if (nMask & 2) {
+                nTime = m_unk00C;
+                nMask &= -3;
+            } else if (nMask & 4) {
+                nTime = m_unk010;
+                nMask &= -5;
+            } else if (nMask & 8) {
+                nTime = m_unk014;
+                nMask &= -9;
+            }
+            ((nPrev != nMask) ? (void)0 : CdsAssert__FPciPc("Timing.cpp", 0x356, "uDurationStylePre != uDurationStyle"));
+            if (nCount > 0) {
+                strcat(aAcc, ", ");
+            }
+            if (nArg2 == 1) {
+                float fVal;
+                if (nTime >= 0) {
+                    fVal = (float)nTime;
+                } else {
+                    fVal = 2.0f * (float)(((unsigned int)nTime >> 1) | (nTime & 1));
+                }
+                sprintf(aTmp, "%.0f", fptodp((fVal * gEng.m_unk1E8) / 1000.0f));
+            } else {
+                float fVal2;
+                if (nTime >= 0) {
+                    fVal2 = (float)nTime;
+                } else {
+                    fVal2 = 2.0f * (float)(((unsigned int)nTime >> 1) | (nTime & 1));
+                }
+                float fScaled = fVal2 * gEng.m_unk1E8;
+                int nInt;
+                if (!(fScaled >= 2.1474836e9f)) {
+                    nInt = (int)fScaled;
+                } else {
+                    nInt = (int)(fScaled - 2.1474836e9f) | 0x80000000;
+                }
+                sprintf(aTmp, "% 5d", nInt);
+            }
+            strcat(aAcc, aTmp);
+            nCount += 1;
+        } while (nMask != 0);
+    }
+    strcat(pOut, aAcc);
 }
 
 // DRAFT: 0x00169930 ZeroTimer__9ESubTimerFv
@@ -93,13 +164,14 @@ void ESubTimer::ZeroTimer() {
 }
 
 // DRAFT: 0x00169890 StopTimer__9ESubTimerFv
-// note: 8 differing lines. The mnemonic mfc0 drops the sel bit (0x4006C800, original 0x4006C801); the .word form gives v0 instead of a2. Tried .word reads, mnemonic read, and reversed max compares (9 to 8 lines); the compare load order still differs.
+// note: 8 differing lines. Two mfpc (dummy, counter) match; compare block loads m_unk008/m_unk004 into swapped a1/v1 (tried <, >, explicit sum, nElapsed local).
 void ESubTimer::StopTimer() {
     if (m_unk044 != 0) {
+        unsigned int nDummy;
         unsigned int nCounter;
         asm {
-            .word 0x4003C801
-            mfc0 nCounter, $25
+            mfpc nDummy, 0
+            mfpc nCounter, 0
         }
         m_unk004 += nCounter - m_unk000;
         m_unk044 = 0;
@@ -112,14 +184,11 @@ void ESubTimer::StopTimer() {
     }
 }
 
-// DRAFT: 0x00169910 StartTimer__9ESubTimerFv
-// note: bytes match (fncmp MATCH) with a .word counter read; kept DRAFT because inline asm is not a FUNCTION. Tried mfc0 mnemonic (extra insn), mfc0 sel 1 (unsupported), uninit local (stores v0).
+// FUNCTION: 0x00169910 StartTimer__9ESubTimerFv
 void ESubTimer::StartTimer() {
-    unsigned int nCounter = 1;
-    m_unk044 = nCounter;
-    asm {
-        .word 0x4003C801
-    }
+    unsigned int nCounter;
+    m_unk044 = 1;
+    asm { mfpc nCounter, 0 }
     m_unk000 = nCounter;
 }
 
@@ -371,11 +440,37 @@ extern "C" void *__dt__7ETimingFv(ETiming *pThis, short nFlag) {
 }
 
 // FUNCTION: 0x0016A390 __dt__9ESubTimerFv
-extern "C" void *__dt__9ESubTimerFv(ESubTimer *pThis, short nFlag) {
-    if (pThis != 0) {
-        if (nFlag > 0) {
-            __dl__FPv(pThis);
-        }
-    }
-    return pThis;
+ESubTimer::~ESubTimer() {}
+
+// DRAFT: 0x0016A3E0 __ct__7ETimingFv
+// note: DIFF 51; bar Init/SetRange temps differ (this reload a2/v1 vs a0/v0, float constant order). Tried: explicit construct_array removed (184 to 132), member-array bar form (132 to 51).
+ETiming::ETiming() {
+    __ct__12PProgressBarFv((char *)this + 0x640);
+    __ct__12PProgressBarFv((char *)this + 0x890);
+    __ct__12PProgressBarFv((char *)this + 0xAE0);
+    ((PProgressBar *)m_unk640)->Init(610.0f, (float)SCREEN_HEIGHT - 4.0f, 15.0f, 65.0f, 120);
+    ((PProgressBar *)m_unk640)->SetColor1(0.0f, 180.0f, 0.0f, 80.0f);
+    ((PProgressBar *)m_unk640)->SetColor2(180.0f, 0.0f, 0.0f, 80.0f);
+    ((PProgressBar *)m_unk640)->SetBgColor(40.0f, 40.0f, 40.0f, 80.0f);
+    ((PProgressBar *)m_unk640)->SetRange(100.0f);
+    ((PProgressBar *)m_unk640)->ResetReading();
+    ((PProgressBar *)m_unk890)->Init(590.0f, (float)SCREEN_HEIGHT - 4.0f, 15.0f, 65.0f, 120);
+    ((PProgressBar *)m_unk890)->SetColor1(0.0f, 0.0f, 180.0f, 80.0f);
+    ((PProgressBar *)m_unk890)->SetColor2(180.0f, 0.0f, 0.0f, 80.0f);
+    ((PProgressBar *)m_unk890)->SetBgColor(65.0f, 65.0f, 65.0f, 80.0f);
+    ((PProgressBar *)m_unk890)->SetRange(100.0f);
+    ((PProgressBar *)m_unk890)->ResetReading();
+    ((PProgressBar *)m_unkAE0)->Init(610.0f, (float)SCREEN_HEIGHT - 4.0f, 15.0f, 65.0f, 120);
+    ((PProgressBar *)m_unkAE0)->SetColor1(180.0f, 180.0f, 180.0f, 80.0f);
+    ((PProgressBar *)m_unkAE0)->SetColor2(180.0f, 0.0f, 0.0f, 80.0f);
+    ((PProgressBar *)m_unkAE0)->SetBgColor(40.0f, 40.0f, 40.0f, 80.0f);
+    ((PProgressBar *)m_unkAE0)->SetRange(100.0f);
+    ((PProgressBar *)m_unkAE0)->ResetReading();
+    m_unkD30 = 0;
+    m_unkD34 = 0x14;
+    m_unk0 = 1;
+    m_unkD38 = 0;
+    m_unk634 = 0;
+    m_unk638 = 0;
+    m_unk63C = 0;
 }
