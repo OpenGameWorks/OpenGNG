@@ -12,6 +12,7 @@ public:
     void DeletePoolContents(int nPool);
     void DeAllocateAligned(void *pMem);
     void Delete(void *pMem);
+    void *AllocateAligned(int nSize, unsigned int nAlign);
     void *New(unsigned int nSize);
 
     char _pad000[0x18];         // 0x000
