@@ -14,6 +14,7 @@ public:
     MaximoMain();
     void InitGameTimes();
     void Controls();
+    void TVAdjust();
     void UpdateGameTimes();
     void LoadTitleMesh();
     int LoadGame();
@@ -43,6 +44,7 @@ public:
     int TitleDemo();
     int GameSelect();
     void Options();
+    void GameOptions();
     void MapscreenPrintInfo(FontManager *arg0, int arg1);
 
     char _pad000[0xD0];
@@ -78,7 +80,8 @@ public:
     PMNode *m_unk19ACC;     // 0x19ACC, title animation node found by LoadTitleMesh
     PMNode *m_unk19AD0;     // 0x19AD0, copyright node found by LoadTitleMesh
     int m_unk19AD4;         // 0x19AD4, press-start state counter (0 to 30 pulse)
-    char _pad19AD8[0x19AE0 - 0x19AD8];
+    int m_unk19AD8;         // 0x19AD8, render count accumulated by GameOptions
+    char _pad19ADC[0x19AE0 - 0x19ADC];
     void *m_unk19AE0;       // 0x19AE0, FontNode colored by RefreshOptionsValue (sound mono)
     void *m_unk19AE4;       // 0x19AE4, FontNode colored by RefreshOptionsValue (sound mono)
     char _pad19AE8[0x19B04 - 0x19AE8];

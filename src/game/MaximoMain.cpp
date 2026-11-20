@@ -47,7 +47,7 @@ extern "C" void ResetGameData__10MemoryCardFv(void *);
 extern "C" void InitLoadGame__10MemoryCardFv(void *);
 extern "C" void InitRenderFrame__9MaxEngineFbUi(void *, bool, unsigned int);
 extern "C" int LoadGame__10MemoryCardFv(void *);
-extern "C" void Render__9InterfaceFi(void *, int);
+extern "C" int Render__9InterfaceFi(void *, int);
 extern "C" void SetInputMode__3PadFQ23Pad10eInputModePQ23Pad9InputDatai(void *, int, void *, int);
 extern int miAbilityCount__15EntityBaseClass;
 extern int miRandom__7MathAPI;
@@ -58,6 +58,14 @@ extern unsigned char gPad[448];
 extern unsigned char gEng[0x1A000];
 extern "C" void DisplayLevelName__9InterfaceFii(void *, int, int);
 extern "C" void SetMonoOut__6PSoundFb(void *, unsigned char);
+extern "C" int RenderSkybox__9MaxEngineFi(void *, int);
+extern "C" void RenderWorld__9MaxEngineFib(void *, int, bool);
+extern "C" int Render__13EntityManagerFP13PLightManager(void *, void *);
+extern "C" void RenderParticleFx__9MaxEngineFP6Camerai8ePSLayer(void *, void *, int, int);
+extern "C" unsigned int GetPauseCategories__6PSoundFv(void *);
+extern "C" void SetPauseCategories__6PSoundFUi(void *, unsigned int);
+extern "C" void PlayMusic__6PSoundFUi(void *, unsigned int);
+extern short gbMusic;
 extern "C" void SetMainMusicRelVolume__6PSoundFUi(void *, unsigned int);
 extern "C" void SetEffectsRelVolume__6PSoundFUi(void *, unsigned int);
 extern "C" void ScaleSet__6PMNodeFffff(void *, float, float, float, float);
@@ -202,6 +210,79 @@ void MaximoMain::Controls() {
     }
 }
 
+// Element list at gInterface + 0x404: count, next index, element pointers.
+struct TVList {
+    unsigned int m_unk0;
+    unsigned int m_unk4;
+    char **m_unk8;
+};
+
+// FUNCTION: 0x001359D0 TVAdjust__10MaximoMainFv
+void MaximoMain::TVAdjust() {
+    int nState = 0;
+    TVList *pList = (TVList *)(gInterface + 0x404);
+    char *pElem;
+    PMNode *pNode;
+    int nPad;
+    unsigned int nIdx;
+
+    pList->m_unk4 = 0;
+    pElem = (pList->m_unk0 != 0) ? pList->m_unk8[0] : 0;
+    while (pElem != 0) {
+        *(int *)(pElem + 0x2C) = 0;
+        nIdx = pList->m_unk4 + 1;
+        pList->m_unk4 = nIdx;
+        pElem = (nIdx < pList->m_unk0) ? pList->m_unk8[pList->m_unk4] : 0;
+    }
+    pNode = GetResource__16PResourceManagerFUib((char *)this + 0x188A4, 0x81000036U, false);
+    if (pNode == 0) {
+        CdsAssert__FPciPc("MaximoMain.cpp", 0x16F0, "pMeshNode");
+    }
+    AddMeshLayer__9InterfaceFP6PMNode(gInterface, pNode);
+    ((FontManager *)(gInterface + 0x80))->DisplayString(0x25A, 0, 0, false);
+    for (;;) {
+        nPad = *(unsigned short *)(gPad + 0x110);
+        InitRenderFrame__9MaxEngineFbUi(this, false, 0);
+        switch (nState) {
+        case 0:
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 17.0f, true, 0);
+            nState++;
+            break;
+        case 1:
+            if (gInterface[0x425] == 0) {
+                nState++;
+            }
+            break;
+        case 2:
+            if (nPad & 0x1000) {
+                PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+                nState++;
+            }
+            break;
+        case 3:
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 17.0f, true, 0);
+            nState++;
+            break;
+        case 4:
+            if (gInterface[0x425] == 0) {
+                ((FontManager *)(gInterface + 0x80))->RemoveText((unsigned short)6);
+                DeleteMeshLayer__9InterfaceFP6PMNode(gInterface, pNode);
+                pList->m_unk4 = 0;
+                pElem = (pList->m_unk0 != 0) ? pList->m_unk8[0] : 0;
+                while (pElem != 0) {
+                    *(int *)(pElem + 0x2C) = 0x3F800000;
+                    nIdx = pList->m_unk4 + 1;
+                    pList->m_unk4 = nIdx;
+                    pElem = (nIdx < pList->m_unk0) ? pList->m_unk8[pList->m_unk4] : 0;
+                }
+                return;
+            }
+            break;
+        }
+        Render__9InterfaceFi(gInterface, 0);
+    }
+}
+
 // Byte fields of MemorySetting read by RefreshOptionsValue; the struct is only a view.
 struct MemorySettingBytes {
     unsigned char m_unk0;
@@ -243,6 +324,65 @@ void MaximoMain::RefreshOptionsValue(MemorySetting *arg0, bool arg1) {
             SetColor__8FontNodeF9FontColor(m_unk19B04, 7);
             SetColor__8FontNodeF9FontColor(m_unk19B08, 4);
         }
+    }
+}
+
+// DRAFT: 0x00137190 GameOptions__10MaximoMainFv
+// note: 113 words differ: dispatch uses v1 for the constant 1 (original v0) and the case bodies sit in another order; the original's render calls follow the case-0 body, ours follow the loop. Tried case 2 before default with goto (113), skybox store after the call (113), accumulator temporaries for the entity and UI renders (113).
+void MaximoMain::GameOptions() {
+    int state = 0;
+    unsigned int cats;
+    int music;
+
+    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 8.5f, true, 0);
+    ((FontManager *)(gInterface + 0x80))->RemoveText((unsigned short)4);
+    music = m_unk19B48;
+    if (music == 0) {
+        music = 5;
+    }
+    if (gbMusic != 0) {
+        PlayMusic__6PSoundFUi(gSound, music);
+    }
+    cats = GetPauseCategories__6PSoundFv(gSound);
+    SetPauseCategories__6PSoundFUi(gSound, cats & ~2u);
+    for (;;) {
+        switch (state) {
+        case 0:
+            if (gInterface[0x425] == 0) {
+                state = 1;
+            }
+            break;
+        case 1:
+            *(int *)(gInterface + 0x1C0) = 0x89;
+            Options();
+            *(int *)(gInterface + 0x1C0) = 0xF;
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 8.5f, true, 0);
+            PauseDisplay(1);
+            state = 2;
+            /* fall through */
+        default:
+        block_16:
+            InitRenderFrame__9MaxEngineFbUi(this, false, 0);
+            continue;
+        case 2:
+            if (gInterface[0x425] == 0) {
+                m_unk19A70 = 1;
+            }
+            break;
+        }
+        break;
+    }
+    m_unk19AD8 = RenderSkybox__9MaxEngineFi(this, 3);
+    RenderWorld__9MaxEngineFib(this, 3, false);
+    m_unk19AD8 = m_unk19AD8 + Render__13EntityManagerFP13PLightManager((char *)this + 0x137E0, (char *)this + 0x1F0);
+    RenderParticleFx__9MaxEngineFP6Camerai8ePSLayer(this, (char *)this + 0x19760, 3, 2);
+    m_unk19AD8 = m_unk19AD8 + Render__9InterfaceFi(gInterface, 3);
+    if (m_unk19A70 == 2) {
+        goto block_16;
+    }
+    SetPauseCategories__6PSoundFUi(gSound, cats);
+    if (music != m_unk19B48 && gbMusic != 0) {
+        PlayMusic__6PSoundFUi(gSound, m_unk19B48);
     }
 }
 
