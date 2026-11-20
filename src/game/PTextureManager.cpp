@@ -12,6 +12,7 @@ extern "C" void DmaWaitForCompletion__Fib(int nChannel, bool bFlag);
 extern "C" void __dla__FPv(void *pMem);
 extern "C" void __dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
+extern "C" void SetTexSyncPacket__12PDisplayListFv(PDisplayList *pThis);
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PTextureManager.cpp", line, #cond))
 #define CDS_ASSERT_TEX(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PTexture.h", line, #cond))
@@ -861,6 +862,103 @@ void PTextureManager::PrepareDynamicClutPacket(tagGsClut256 *pClut, tagGsTexture
     }
     PrepareImageXferInfo((tagGsImageXferInfo *)pClut, 0x10, 0x10, 0, nTmp / 256);
     GsSetClutBaseAddr(pTexEnv, nTmp);
+}
+
+// DRAFT: 0x0018B630 UploadTextures__15PTextureManagerFPiiP12PDisplayList
+// note: DIFF 200 words; loop-2 counter/pointer registers (s2 vs s6), AllocEntries argument order, capacity-check $at vs $v0; 8 attempts, best = bFlag == false form
+int PTextureManager::UploadTextures(int *pHandles, int nCount, PDisplayList *pDisplayList) {
+    PTexture::eTextureType eType = PTexture::eTextureType_Unknown;
+    int nIndex = -1;
+    bool bFlag = false;
+    PTexture *pTex;
+    int nSum1;
+    int nSum2;
+    int i;
+
+    CDS_ASSERT_MSG(0x2A3, pHandles, "phTextures");
+    nSum1 = 0;
+    nSum2 = 0;
+    for (i = 0; i < nCount; i++) {
+        int nHandle = pHandles[i];
+        if (nHandle == 0) {
+            return 0;
+        }
+        DecodeTextureHandle(nHandle, bFlag, eType, nIndex);
+        CDS_ASSERT_MSG(0x2B1, nIndex >= 0, "aiIndex >= 0");
+        CDS_ASSERT_MSG(0x2B2, bFlag == false, "abStatic == false");
+        pTex = GetTexture(bFlag, eType, nIndex);
+        CDS_ASSERT_MSG(0x2B5, pTex, "apoTexture");
+        if (!pTex->m_unkA8) {
+            tagPs2TexDataHeader *pHeader = (tagPs2TexDataHeader *)pTex->m_unk4;
+            nSum2 += pHeader->unk5;
+            nSum1 += pHeader->unk26 - pHeader->unk5;
+        }
+    }
+
+    if (m_pCurBuf->m_unk4 < (nSum1 << 8) || m_pCurBuf->m_unk10 < (nSum2 << 8)) {
+        return 0;
+    }
+    if (!(m_pCurBuf->m_unk8 + (nSum1 << 8) < m_pCurBuf->m_unk0 + m_pCurBuf->m_unk4 &&
+          m_pCurBuf->m_unk14 + (nSum2 << 8) < m_pCurBuf->m_unkC + m_pCurBuf->m_unk10)) {
+        FlipTextureBuffers();
+        ((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->NextBatch();
+        SetTexSyncPacket__12PDisplayListFv(pDisplayList);
+    }
+
+    if (nCount > 0) {
+        i = 0;
+        do {
+            DecodeTextureHandle(pHandles[i], bFlag, eType, nIndex);
+            CDS_ASSERT_MSG(0x2DE, nIndex >= 0, "aiIndex >= 0");
+            CDS_ASSERT_MSG(0x2DF, !bFlag, "abStatic == false");
+            pTex = GetTexture(bFlag, eType, nIndex);
+            CDS_ASSERT_MSG(0x2E2, pTex, "apoTexture");
+            if (!pTex->m_unkA8) {
+                tagPs2TexDataHeader *pHeader = (tagPs2TexDataHeader *)pTex->m_unk4;
+                int nVram;
+                int nTmp;
+                bool bLocal = false;
+                tagImageDmaPacket *pClut;
+                tagImageDmaPacket *pImage;
+                int nW;
+                int nH;
+
+                CDS_ASSERT_MSG(0x2EE, eType == 1, "aeType == PTexture::TEXTURE_IMAGE");
+                CDS_ASSERT_MSG(0x2FE, AllocDynamicVramForTexture(pHeader, 0, nVram, nTmp, bLocal, false), "0");
+                CDS_ASSERT_MSG(0x308, !bLocal, "abBufferFlipped == false");
+                pTex->m_unkA8 = 1;
+                m_pCurBuf->m_apTex[m_pCurBuf->m_unkD8] = pTex;
+                m_pCurBuf->m_unkD8++;
+                CDS_ASSERT_MSG(0x30F, m_pCurBuf->m_unkD8 < 0x30, "mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH");
+
+                if (pHeader->type == 0x14 || pHeader->type == 0x13) {
+                    pClut = (tagImageDmaPacket *)((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->AllocEntries(0xE);
+                    CDS_ASSERT_MSG(0x315, pClut, "apDmaChain");
+                    pImage = (tagImageDmaPacket *)((char *)pClut + 0x70);
+                } else {
+                    pImage = (tagImageDmaPacket *)((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->AllocEntries(7);
+                    CDS_ASSERT_MSG(0x31E, pImage, "apDmaChain");
+                    pClut = 0;
+                }
+                if (pClut) {
+                    int nDim = (pHeader->type == 0x14) ? 8 : 0x10;
+                    PrepareImageDmaPacket(pClut, pTex->m_unk30, *(short *)(pTex->m_unk4 + 0x24), nDim, nDim, 0, nTmp / 256);
+                    GsSetClutBaseAddr((tagGsTextureEnvironment *)pTex->m_unk40, nTmp);
+                }
+                if (pHeader->unk6 && pHeader->unk7) {
+                    nW = 1 << pHeader->unk6;
+                    nH = 1 << pHeader->unk7;
+                } else {
+                    nW = 1 << pHeader->unk0;
+                    nH = 1 << pHeader->unk1;
+                }
+                PrepareImageDmaPacket(pImage, pTex->m_unk34, pHeader->unk8, nW, nH, pHeader->unk4, nVram / 256);
+                GsSetTexBaseAddr((tagGsTextureEnvironment *)pTex->m_unk40, nVram);
+            }
+            i++;
+        } while (i < nCount);
+    }
+    return 0;
 }
 
 // DRAFT: 0x0018BB60 SetTextures__15PTextureManagerFPiiP12PDisplayListRb
