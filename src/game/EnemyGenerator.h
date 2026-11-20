@@ -26,7 +26,9 @@ public:
     unsigned int m_unk4;            // 0x004 timer argument
     char _pad008[0x20 - 0x08];
     int m_unk20;                    // 0x020 state
-    char _pad024[0x190 - 0x24];
+    char _pad024[0x3C - 0x24];
+    void *m_unk3C;                  // 0x03C apparition whose offsets place the spawn point, or null
+    char _pad040[0x190 - 0x40];
     float m_unk190[4];              // 0x190 position measured against the player by Execute
     char _pad1A0[0x1B0 - 0x1A0];
     unsigned char m_unk1B0;         // 0x1B0 set to 1 by OnTimerEvent
@@ -45,6 +47,7 @@ public:
     float m_unk1EC;                 // 0x1EC threshold read by Execute
     int m_unk1F0[3];                // 0x1F0 per-type values, summed in Execute
     EnemyGeneratorSlotGuard m_unk1FC;
+    unsigned int m_unk200;          // 0x200 instance id of the innocent entity, checked by InstanceIsValid
 };
 
 extern "C" EnemyGenerator *__dt__14EnemyGeneratorFv(EnemyGenerator *pThis, short nFlag);
