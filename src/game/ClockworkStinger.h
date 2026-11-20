@@ -13,8 +13,11 @@ public:
     void SetEditableVars(char *arg0);
     void OnStopAttack();
     void OnTimerEvent(unsigned int arg0);
+    void OnEffectDelete(unsigned int arg0);
     int GetSequenceState();
     int IsStalled(float arg0, float (*arg1)[4]);
+    int MoveTo(float (*arg0)[4]);
+    void DetermineStateChange();
 
     char _pad000[4];
     unsigned int m_unk4;            // 0x004 timer argument for CreateTimer
@@ -59,10 +62,7 @@ public:
     int m_unk214;
     int m_unk218;
     int m_unk21C;
-    int m_unk220;
-    int m_unk224;
-    int m_unk228;
-    int m_unk22C;
+    u_long128 m_unk220;             // 0x220 16-byte slot, written by MoveTo
     int m_unk230;
     int m_unk234;
     int m_unk238;

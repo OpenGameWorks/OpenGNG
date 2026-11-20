@@ -27,6 +27,19 @@ class MathAPI;
 extern "C" float DistanceXZ__7MathAPIFPA4_fPA4_f(MathAPI *, float (*)[4]);
 extern "C" float FastMath_Fabs__Ff(float f);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
+extern char *mPlayerAPI__13EntityManager;
+extern "C" float Distance__7MathAPIFPA4_fPA4_f(void *, void *);
+extern "C" float GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, void *);
+extern "C" int RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(void *, void *, unsigned int);
+extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, void *);
+extern "C" void RotateTo__15EntityBaseClassFff(void *, float, float);
+extern "C" void GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(void *, float *);
+extern "C" float GetAngleBetweenVectors__7MathAPIFPfPf(float *, float *);
+extern "C" void PlaySound__15EntityBaseClassFUi(void *, unsigned int);
+extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
+extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
+extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float t);
+extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
 
 // FUNCTION: 0x001E6500 GetSequenceState__16ClockworkStingerFv
 int ClockworkStinger::GetSequenceState() {
@@ -60,6 +73,107 @@ int ClockworkStinger::IsStalled(float arg0, float (*arg1)[4]) {
     d1 = DistanceXZ__7MathAPIFPA4_fPA4_f((MathAPI *)((char *)this + 0x220), arg1);
     d2 = DistanceXZ__7MathAPIFPA4_fPA4_f(pRef, arg1);
     return (FastMath_Fabs__Ff(d1 - d2) <= arg0) ? 1 : 0;
+}
+
+// DRAFT: 0x001E6760 MoveTo__16ClockworkStingerFPA4_f
+// note: first compile, branch layout and store order not yet compared
+int ClockworkStinger::MoveTo(float (*arg0)[4]) {
+    float sp50[4];
+    float sp60[4];
+    float sp70[4];
+    float sp80[4];
+    int s0;
+    char *s1;
+    char *pr;
+    float f20;
+    float f21;
+
+    s0 = 0;
+    *(u_long128 *)sp50 = *(u_long128 *)arg0;
+    s1 = *(char **)(*(char **)((char *)this + 0x38) + 0xE4);
+    pr = m_unk3C ? (char *)m_unk3C + 0x80 : (char *)this + 0x190;
+    f20 = DistanceXZ__7MathAPIFPA4_fPA4_f((MathAPI *)sp50, (float (*)[4])pr);
+    if ((m_unk1B0 == 0 || m_unk244 != 1) && !(Distance__7MathAPIFPA4_fPA4_f((char *)this + 0x200, sp50) <= m_unk1D4)) {
+        sceVu0SubVector(sp50, sp50, (float *)((char *)this + 0x200));
+        sceVu0Normalize(sp50, sp50);
+        sceVu0ScaleVector(sp50, sp50, m_unk1D4);
+        sceVu0AddVector(sp50, (float *)((char *)this + 0x200), sp50);
+    }
+    if (s1 != 0) {
+        *(u_long128 *)sp80 = *(u_long128 *)(s1 + 0x10);
+        GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(this, sp60);
+        pr = m_unk3C ? (char *)m_unk3C + 0x80 : (char *)this + 0x190;
+        sceVu0SubVector(sp70, sp50, (float *)pr);
+        sceVu0Normalize(sp60, sp60);
+        sceVu0Normalize(sp80, sp80);
+        f21 = GetAngleBetweenVectors__7MathAPIFPfPf(sp80, sp60);
+        if (!(GetAngleBetweenVectors__7MathAPIFPfPf(sp80, sp70) <= 90.0f) && !(f21 <= 120.0f)) {
+            s0 = (s1[0xC] & 0x80) ? 8 : 4;
+        }
+    }
+    RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, sp50), 0.06f);
+    if ((*(unsigned char *)((char *)m_unk3C + 0x3F)) & 4) {
+        PlaySound__15EntityBaseClassFUi(this, 0x4E32);
+        if (IsStalled(1.0f, (float (*)[4])sp50) != 0) {
+            s0 |= 1;
+        }
+        pr = m_unk3C ? (char *)m_unk3C + 0x80 : (char *)this + 0x190;
+        *(u_long128 *)((char *)this + 0x220) = *(u_long128 *)pr;
+    }
+    return s0 | ((f20 <= 1.0f) ? 2 : 0);
+}
+
+// DRAFT: 0x001E69C0 DetermineStateChange__16ClockworkStingerFv
+// note: DIFF 36; gp displacement for mPlayerAPI+0x3C, join offsets in ladders, angle block and epilogue order; tried if/else angle block, ternary angle block, reordered tests
+void ClockworkStinger::DetermineStateChange() {
+    float f20;
+    float f21;
+    float angle;
+    PMNode *pn;
+    PMNode *tn;
+    char *pr;
+    char *tr;
+    int s0;
+
+    s0 = 3;
+    pn = *(PMNode **)(mPlayerAPI__13EntityManager + 0x3C);
+    pr = pn ? (char *)pn + 0x80 : mPlayerAPI__13EntityManager + 0x190;
+    f20 = Distance__7MathAPIFPA4_fPA4_f((char *)this + 0x200, pr);
+    pn = *(PMNode **)(mPlayerAPI__13EntityManager + 0x3C);
+    pr = pn ? (char *)pn + 0x80 : mPlayerAPI__13EntityManager + 0x190;
+    tn = m_unk3C;
+    tr = tn ? (char *)tn + 0x80 : (char *)this + 0x190;
+    f21 = Distance__7MathAPIFPA4_fPA4_f(tr, pr);
+    if (m_unk1B0 == 0) {
+        if (m_unk240 == 0) {
+            if (f21 <= 5.0f && m_unk258 == 0 && RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(this, mPlayerAPI__13EntityManager, 0) != 0) {
+                s0 = 9;
+            } else if (f20 <= m_unk1D4) {
+                s0 = 7;
+            } else if (f21 <= 30.0f) {
+                s0 = 4;
+            }
+        } else {
+            if (f20 <= m_unk1D4) {
+                s0 = 6;
+            } else if (f21 <= 30.0f) {
+                s0 = 4;
+            }
+        }
+    } else {
+        pn = *(PMNode **)(mPlayerAPI__13EntityManager + 0x3C);
+        pr = pn ? (char *)pn + 0x80 : mPlayerAPI__13EntityManager + 0x190;
+        angle = GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, pr);
+        if (f21 <= 15.0f) {
+            s0 = 4;
+            if (FastMath_Fabs__Ff(angle) <= 55.0f) {
+                s0 = 8;
+            }
+        }
+    }
+    if (s0 != m_unk20) {
+        SetState__15EntityBaseClassFi(this, s0);
+    }
 }
 
 // FUNCTION: 0x001E6BA0 SetRiseAndAttack__16ClockworkStingerFPA4_fff
@@ -159,6 +273,14 @@ void ClockworkStinger::OnTimerEvent(unsigned int arg0) {
     }
 }
 
+// FUNCTION: 0x001E6E80 OnEffectDelete__16ClockworkStingerFUi
+void ClockworkStinger::OnEffectDelete(unsigned int arg0) {
+    if (arg0 == (unsigned int)m_unk264) {
+        m_unk25C = 1;
+        m_unk264 = 0;
+    }
+}
+
 // FUNCTION: 0x001E8CF0 __dt__16ClockworkStingerFv
 extern "C" ClockworkStinger *__dt__16ClockworkStingerFv(ClockworkStinger *pThis, short nFlag) {
     if (pThis != 0) {
@@ -185,10 +307,10 @@ extern "C" ClockworkStinger *__ct__16ClockworkStingerFv(ClockworkStinger *pThis)
     pThis->m_unk214 = 0;
     pThis->m_unk218 = 0;
     pThis->m_unk21C = 0;
-    pThis->m_unk220 = 0;
-    pThis->m_unk224 = 0;
-    pThis->m_unk228 = 0;
-    pThis->m_unk22C = 0;
+    *(int *)((char *)pThis + 0x220) = 0;
+    *(int *)((char *)pThis + 0x224) = 0;
+    *(int *)((char *)pThis + 0x228) = 0;
+    *(int *)((char *)pThis + 0x22C) = 0;
     pThis->m_unk230 = 0;
     pThis->m_unk234 = 0;
     pThis->m_unk238 = 0;
