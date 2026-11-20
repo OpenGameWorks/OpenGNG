@@ -25,7 +25,6 @@ extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, bool bFlagA, bool
 extern "C" void StartCutCamera__6CameraFUib(void *pThis, unsigned int arg0, bool bFlag);
 extern "C" void Kill__6PlayerFv(void *pThis);
 extern "C" void SetMaxValue__12HudBossMeterFsi(void *pThis, short nValue, int nFlag);
-extern unsigned char __vt__6Tinker[0x10];
 extern "C" void __dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __dl__FPv(void *pMem);
@@ -43,7 +42,6 @@ extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 struct tagWaypointGroup { char _pad000[4]; unsigned int m_unk4; };
 extern "C" float *GetWaypoint__15WaypointManagerFP16tagWaypointGroupUiRUc(void *pThis, tagWaypointGroup *pGroup, unsigned int nIndex, unsigned char &rbFlag);
 extern "C" int ReadApparitionData__15EntityBaseClassFiUi(void *pThis, int nMode, unsigned int nId);
-extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int eLoadClass, unsigned int nFlags);
 extern "C" void __ct__6PArrayFv(void *pThis);
 extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
 extern "C" float GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(EntityBaseClass *pEntity, float (*pPos)[4]);
@@ -77,23 +75,13 @@ public:
 };
 
 // FUNCTION: 0x00208D60 __dt__6TinkerFv
-extern "C" Tinker *__dt__6TinkerFv(Tinker *pThis, short nFlag) {
-    if (pThis != 0) {
-        *(unsigned char **)pThis = __vt__6Tinker;
-        __dt__6PArrayFv((char *)pThis + 0x2D0, -1);
-        __dt__15EntityBaseClassFv(pThis, 0);
-        if (nFlag > 0) {
-            __dl__FPv(pThis);
-        }
-    }
-    return pThis;
-}
+Tinker::~Tinker() {}
 
 // FUNCTION: 0x00208E10 AttackSound__6TinkerFv
 void Tinker::AttackSound() {
-    if (m_unk140 == (void *)Tinker_AttackSeq) {
+    if (m_unk140 == (int)Tinker_AttackSeq) {
         PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x2A4, 0xB);
-    } else if (m_unk140 == (void *)Tinker_Attack2Seq) {
+    } else if (m_unk140 == (int)Tinker_Attack2Seq) {
         PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x2A4, 0xB);
     } else if ((void *)Manda_AttackSeq != 0) {
         PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0xD9, 0xE);
@@ -103,7 +91,7 @@ void Tinker::AttackSound() {
 // FUNCTION: 0x00208E90 FootstepSound__6TinkerFv
 void Tinker::FootstepSound() {
     int nType = m_unk1B0;
-    int nSeq = (int)m_unk140;
+    int nSeq = m_unk140;
     switch (nType) {
     case 1:
         if (nSeq == (int)Baron_WalkSeq || nSeq == (int)Baron_RunSeq) {
@@ -150,7 +138,7 @@ void Tinker::SetAsActivatedEnemyTarget() {
         if (pEnt != 0) {
             ApparitionVirtual *pObj = (ApparitionVirtual *)InstanceIsValid__15EntityBaseClassFUi(pEnt);
             if (pObj != 0) {
-                pObj->Slot12(m_unk00C);
+                pObj->Slot12(*(int *)((char *)this + 0x0C));
             }
         }
     }
@@ -160,7 +148,7 @@ void Tinker::SetAsActivatedEnemyTarget() {
 void Tinker::SetAsEnemyTarget(unsigned int arg0, bool arg1) {
     void *pObj = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, arg0);
     if (pObj != 0) {
-        int v = arg1 ? m_unk00C : 0;
+        int v = arg1 ? *(int *)((char *)this + 0x0C) : 0;
         ((ApparitionVirtual *)pObj)->Slot12(v);
     }
 }
@@ -404,7 +392,7 @@ void Tinker::ActivateAttackingEnemies() {
                     ((unsigned char *)pValid)[0x1A] = 1;
                 }
                 if (m_unk280 == 0) {
-                    pValid->Slot12(m_unk00C);
+                    pValid->Slot12(*(int *)((char *)this + 0x0C));
                 }
                 *(EntityBaseClass **)((char *)this + off + 0x2AC) = pEnt;
             }
@@ -514,7 +502,7 @@ void Tinker::OnTimerEvent(unsigned int arg0) {
     if (arg0 == m_unk2EC) {
         EnableSleep__15EntityBaseClassFbb(this, false, false);
         StartCutCamera__6CameraFUib(gEng + 0x19760, m_unk218, false);
-        m_unk17A = 0;
+        *(unsigned char *)((char *)this + 0x17A) = 0;
     } else if (arg0 == m_unk278) {
         m_unk2F4 = 1;
         m_unk278 = 0;
@@ -551,7 +539,7 @@ int Tinker::OnHitEvent(EntityBaseClass *pOther, int arg1, unsigned int arg2, uns
         } else {
             SetState__15EntityBaseClassFi(this, 0x14);
         }
-        m_unk0E8 = 3;
+        m_unkE8 = 3;
         return 1;
     }
     int nPrevState = m_unk20;
@@ -608,13 +596,10 @@ void Tinker::OnDestroyEvent() {
     }
 }
 
-// DRAFT: 0x0020C160 __ct__6TinkerFv
-// note: 17 words differ; frame, this spill at 0x1C(sp) and member store order match, but the original runs the EntityBaseClass ctor before the implicit PArray construction and ours does the reverse (base ctor is a body call). Tried: volatile pSelf (55), integer-bit float stores (49), PArray as real member (17).
-Tinker::Tinker() {
-    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 6, 0);
-    *(unsigned char **)this = __vt__6Tinker;
+// FUNCTION: 0x0020C160 __ct__6TinkerFv
+Tinker::Tinker() : EntityBaseClass((LoadClass)6, 0) {
     m_unk2F0 = 0;
-    m_unk0D4 = 0;
+    m_unkD4 = 0;
     m_unk2C4 = -1;
     m_unk2CC = -1;
     m_unk280 = 0;
@@ -627,6 +612,6 @@ Tinker::Tinker() {
     m_unk28C = 0;
     m_unk290 = 0;
     m_unk294 = 0;
-    m_unk104 = 1.5f;
-    m_unk108 = 3.0f;
+    *(float *)((char *)this + 0x104) = 1.5f;
+    *(float *)((char *)this + 0x108) = 3.0f;
 }

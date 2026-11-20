@@ -4,9 +4,11 @@
 #include "EntityBaseClass.h"
 #include "PArray.h"
 
-class Tinker {
+// EntityBaseClass occupies 0x000..0x18F; Tinker fields start at 0x190.
+class Tinker : public EntityBaseClass {
 public:
     Tinker();
+    virtual ~Tinker();
     void AttackSound();
     void FootstepSound();
     void SetAsActivatedEnemyTarget();
@@ -27,24 +29,6 @@ public:
     void OnTimerEvent(unsigned int arg0);
     int OnHitEvent(EntityBaseClass *pOther, int arg1, unsigned int arg2, unsigned int arg3);
 
-    char _pad000[0x0C];
-    int m_unk00C;                       // 0x00C
-    char _pad010[0x20 - 0x10];
-    int m_unk20;                        // 0x020
-    char _pad024[0x3C - 0x24];
-    char *m_unk3C;                      // 0x03C
-    char _pad040[0xD4 - 0x40];
-    int m_unk0D4;                       // 0x0D4
-    char _pad0D8[0xE8 - 0xD8];
-    unsigned char m_unk0E8;             // 0x0E8
-    char _pad0E9[0x104 - 0xE9];
-    float m_unk104;                     // 0x104
-    float m_unk108;                     // 0x108
-    char _pad10C[0x140 - 0x10C];
-    void *m_unk140;                     // 0x140, current attack sequence
-    char _pad144[0x17A - 0x144];
-    unsigned char m_unk17A;             // 0x17A
-    char _pad17B[0x190 - 0x17B];
     float m_unk190[4];                  // 0x190
     char _pad1A0[0x1B0 - 0x1A0];
     int m_unk1B0;                       // 0x1B0
