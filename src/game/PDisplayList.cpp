@@ -16,10 +16,14 @@ void DmaWaitForCompletion(int nChannel, bool bWait);
 extern "C" void sceGsSetDefClear(void *pPacket, int nW, short nCX, short nCY, short nX, short nY, int nZero0, int nZero1, int nZero2, int nZero3, unsigned int nFlags);
 extern char shared_vertices_start[];
 extern char gHermiteMat[0x40];
-extern char guFxPipelineVuConstants[0x10];
-extern char gu3dPipelineVuConstants[0x10];
+extern char guFxPipelineVuConstants[0x280];
+extern char gu3dPipelineVuConstants[0x280];
 extern char vu_fx_microcode_dma_packet[0x10];
 extern char vu_shadow_microcode_dma_packet[0x10];
+extern int SCREEN_WIDTH;
+extern int SCREEN_HEIGHT;
+extern int SCREEN_OFFSET_X;
+extern int SCREEN_OFFSET_Y;
 void DmaScratchPadToMainMem(void *pSrc, void *pDst, short nQw, bool bA, bool bB);
 
 // FUNCTION: 0x180400 DeAllocEntries__12PDisplayListFi
@@ -1345,6 +1349,98 @@ void PDisplayList::Reset() {
     m_unkA3344 = 0;
     m_unkA334C = 0;
     m_unkA3350 = 0;
+}
+
+#define PDL_LO(p, v) (*(unsigned char *)(p) = (unsigned char)((*(unsigned char *)(p) & 0xF0) | (v)))
+#define PDL_HI(p, v) (*(unsigned char *)(p) = (unsigned char)((*(unsigned char *)(p) & 0x0F) | ((v) << 4)))
+
+// DRAFT: 0x184180 Init__12PDisplayListFv
+// note: frame 0x50 vs original 0xA0, only s0/s1 saved vs s0..s7, constant registers not hoisted; 244 words differ (inverted nibble masks gave 247, quad merged into w gave 246)
+void PDisplayList::Init() {
+    int w[4];
+    float *fw = (float *)w;
+    u_long128 q;
+    unsigned long long gif1;
+    unsigned long long gif2;
+    unsigned char *t8;
+    unsigned char *s5;
+
+    Reset__16PTextureDmaChainFv(m_unkA3380);
+    m_unkA3348 = 1;
+    *(int *)(gu3dPipelineVuConstants + 0x30) = 0x237;
+    *(int *)(gu3dPipelineVuConstants + 0x3C) = 0x373;
+    *(int *)(gu3dPipelineVuConstants + 0x34) = 0;
+    *(int *)(gu3dPipelineVuConstants + 0x38) = 0;
+    q = *(u_long128 *)(guFxPipelineVuConstants + 0xA0);
+    *(u_long128 *)w = q;
+    gif1 = 0x8000ULL | ((unsigned long long)0xF002C000 << 32);
+    gif2 = 0x8000ULL | ((unsigned long long)0x90024000 << 32);
+    fw[2] = (float)SCREEN_WIDTH;
+    fw[3] = (float)SCREEN_HEIGHT;
+    *(int *)(guFxPipelineVuConstants + 0x30) = w[0];
+    *(int *)(guFxPipelineVuConstants + 0x34) = w[1];
+    *(int *)(guFxPipelineVuConstants + 0x38) = w[2];
+    *(int *)(guFxPipelineVuConstants + 0x3C) = w[3];
+
+    t8 = (unsigned char *)(guFxPipelineVuConstants + 0x70);
+    *(u_long128 *)t8 = 0;
+    *(unsigned long long *)t8 = gif1;
+    PDL_LO(t8 + 0x8, 0);
+    PDL_HI(t8 + 0x8, 2);
+    PDL_LO(t8 + 0x9, 1);
+    PDL_HI(t8 + 0x9, 5);
+    PDL_LO(t8 + 0xA, 2);
+    PDL_HI(t8 + 0xA, 1);
+    PDL_LO(t8 + 0xB, 5);
+    PDL_HI(t8 + 0xB, 2);
+    PDL_LO(t8 + 0xC, 5);
+    PDL_HI(t8 + 0xC, 2);
+    PDL_LO(t8 + 0xD, 5);
+    PDL_HI(t8 + 0xD, 2);
+    PDL_LO(t8 + 0xE, 5);
+    PDL_HI(t8 + 0xE, 2);
+    PDL_LO(t8 + 0xF, 5);
+
+    s5 = (unsigned char *)(guFxPipelineVuConstants + 0x90);
+    *(u_long128 *)s5 = 0;
+    *(unsigned long long *)s5 = gif2;
+    PDL_LO(s5 + 0x8, 2);
+    PDL_HI(s5 + 0x8, 1);
+    PDL_LO(s5 + 0x9, 5);
+    PDL_HI(s5 + 0x9, 2);
+    PDL_LO(s5 + 0xA, 5);
+    PDL_HI(s5 + 0xA, 2);
+    PDL_LO(s5 + 0xB, 5);
+    PDL_HI(s5 + 0xB, 2);
+    PDL_LO(s5 + 0xC, 5);
+
+    w[0] = ((int *)&q)[0];
+    w[1] = w[0];
+    w[2] = 0;
+    fw[3] = 1.0f;
+    *(int *)(gu3dPipelineVuConstants + 0x80) = w[0];
+    *(int *)(gu3dPipelineVuConstants + 0x84) = w[1];
+    *(int *)(gu3dPipelineVuConstants + 0x88) = w[2];
+    *(int *)(gu3dPipelineVuConstants + 0x8C) = w[3];
+    fw[0] = (float)SCREEN_OFFSET_X;
+    fw[1] = (float)SCREEN_OFFSET_Y;
+    fw[2] = 1.0f / (float)SCREEN_WIDTH;
+    fw[3] = 1.0f / (float)SCREEN_HEIGHT;
+    *(int *)(gu3dPipelineVuConstants + 0x90) = w[0];
+    *(int *)(gu3dPipelineVuConstants + 0x94) = w[1];
+    *(int *)(gu3dPipelineVuConstants + 0x98) = w[2];
+    *(int *)(gu3dPipelineVuConstants + 0x9C) = w[3];
+
+    w[0] = 0;
+    w[1] = 0;
+    w[2] = 0;
+    w[3] = 0;
+    *(u_long128 *)(gu3dPipelineVuConstants + 0x50) = *(u_long128 *)w;
+    w[0] = 0x457FF000;
+    w[1] = 0x457FF000;
+    w[2] = 0x457FF000;
+    w[3] = 0x457FF000;
+    *(u_long128 *)(gu3dPipelineVuConstants + 0x40) = *(u_long128 *)w;
 }
 
 // FUNCTION: 0x184570 __dt__12PDisplayListFv

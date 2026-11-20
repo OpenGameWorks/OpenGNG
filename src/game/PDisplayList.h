@@ -36,6 +36,7 @@ public:
     void SendGsPacket(void *pvData, int iSize, bool bFlag);
     void SetGsRegisters(u_long128 *pRegData, int nNumRegs);
     void Reset();
+    void Init();
     void RenderShadowVolume(void *pvData, int iSize);
     void BeginShadowVolume(PMat4 *pMat, float *pA, float *pB, float *pC, float *pD, float *pE);
     void DrawVertices(void *pvData, int iSize);
