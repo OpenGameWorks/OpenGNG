@@ -4,6 +4,7 @@
 
 // TODO(header): foreign declarations
 extern "C" void __dl__FPv(void *pMem);
+extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
 // DRAFT: 0x00131990 RemoveAll__5PListFv
@@ -89,7 +90,68 @@ void PList::RemoveCurrent() {
     m_unk0 -= 1;
 }
 
+// FUNCTION: 0x00131BB0 InsertBefore__5PListFPv
+void PList::InsertBefore(void *pItem) {
+    if (m_unk4 == 0) {
+        CdsAssert__FPciPc("PList.cpp", 0x5D, "mpList");
+    }
+    if (m_unkC == 0) {
+        CdsAssert__FPciPc("PList.cpp", 0x5E, "mpCur");
+    }
+    PListNode *pNode = (PListNode *)__nw__FUi(0xC);
+    if (pNode == 0) {
+        CdsAssert__FPciPc("PList.cpp", 0x61, "pNode");
+    }
+    pNode->m_unk0 = pItem;
+    pNode->m_unk4 = m_unkC;
+    PListNode *prev = m_unkC->m_unk8;
+    pNode->m_unk8 = prev;
+    if (prev == 0) {
+        m_unk4 = pNode;
+    } else {
+        prev->m_unk4 = pNode;
+    }
+    m_unkC->m_unk8 = pNode;
+    m_unk0 += 1;
+}
+
+// FUNCTION: 0x00131C90 Add__5PListFPv
+int PList::Add(void *pItem) {
+    PListNode *pNode = (PListNode *)__nw__FUi(0xC);
+    if (pNode == 0) {
+        CdsAssert__FPciPc("PList.cpp", 0x33, "apNode");
+    }
+    if (pNode == 0) {
+        return 0;
+    }
+    pNode->m_unk0 = pItem;
+    pNode->m_unk4 = 0;
+    pNode->m_unk8 = 0;
+    if (m_unk4 == 0) {
+        m_unk4 = pNode;
+        m_unk8 = m_unk4;
+    } else {
+        if (m_unk8 == 0) {
+            CdsAssert__FPciPc("PList.cpp", 0x48, "mpTail");
+        }
+        pNode->m_unk8 = m_unk8;
+        m_unk8->m_unk4 = pNode;
+        m_unk8 = pNode;
+    }
+    m_unk0 += 1;
+    m_unkC = 0;
+    return 1;
+}
+
 // FUNCTION: 0x00131D70 __dt__5PListFv
 PList::~PList() {
     RemoveAll();
+}
+
+// FUNCTION: 0x00131DD0 __ct__5PListFv
+PList::PList() {
+    m_unk4 = 0;
+    m_unk8 = 0;
+    m_unkC = 0;
+    m_unk0 = 0;
 }

@@ -11,7 +11,10 @@ struct PListNode {
 
 class PList {
 public:
+    PList();
     ~PList();
+    int Add(void *pItem);
+    void InsertBefore(void *pItem);
     void RemoveAll();
     int Remove(void *pItem);
     void RemoveAt(void *pNode);
