@@ -40,6 +40,8 @@ extern char fx_heathaze_fan_clip_init[];
 extern char fx_glow_particle_clip_init[];
 extern char fx_fog_particle_clip_init[];
 extern char fx_rot_particle_clip_init[];
+extern char fx_particle_clip_init[];
+extern char fx_sprite_noclip_init[];
 extern char fx_instance_screen_st_mesh_init[];
 extern char noclip_static_instance_cull_mesh_init[];
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
@@ -546,6 +548,16 @@ void PGfxEngine::DrawParticles(struct tagVuParticle *pParticles, int nCount, flo
     m_unk154C80->DrawParticles(pParticles, nCount, fA, fB, bFlag, 0x28);
 }
 
+// FUNCTION: 0x185400 BeginParticles__10PGfxEngineF13eBoxIntersect
+void PGfxEngine::BeginParticles(eBoxIntersect eBox) {
+    m_unk154C80->BeginFxLoop(((unsigned int)(fx_particle_clip_init + 0x418)) >> 3);
+}
+
+// FUNCTION: 0x185440 BeginSprites__10PGfxEngineFv
+void PGfxEngine::BeginSprites() {
+    m_unk154C80->BeginFxLoop(((unsigned int)(fx_sprite_noclip_init + 0x150)) >> 3);
+}
+
 // FUNCTION: 0x185460 EndFxRender__10PGfxEngineFv
 void PGfxEngine::EndFxRender() {
     m_unk154C80->m_unkA3348 = 1;
@@ -561,6 +573,60 @@ void PGfxEngine::BeginFxRender() {
         m_unk158E1C = pFx;
         m_unk154C80->SetVu1Microcode(m_unk158E1C);
     }
+}
+
+// DRAFT: 0x185540 DrawBox__10PGfxEngineFPA2_A4_ffff
+// note: 27 words; loop register allocation differs (counter/pointer in a0/a1 vs offset in a2, base not hoisted); index, char-base and pointer-walk loop forms tried
+void PGfxEngine::DrawBox(float (*pBox)[2][4], float arg1, float arg2, float arg3) {
+    if (pBox == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x6EF, "pBox");
+    }
+    float Xd = pBox[0][0][0] - pBox[0][1][0];
+    float Yd = pBox[0][0][1] - pBox[0][1][1];
+    float Zd = pBox[0][0][2] - pBox[0][1][2];
+    float Xs = pBox[0][0][0] + pBox[0][1][0];
+    float Ys = pBox[0][0][1] + pBox[0][1][1];
+    float Zs = pBox[0][0][2] + pBox[0][1][2];
+    float lines[12][4][4];
+
+    lines[0][0][0] = Xd; lines[0][0][1] = Yd; lines[0][0][2] = Zd; lines[0][0][3] = 1.0f;
+    lines[0][1][0] = Xd; lines[0][1][1] = Ys; lines[0][1][2] = Zd; lines[0][1][3] = 1.0f;
+    lines[1][0][0] = Xd; lines[1][0][1] = Ys; lines[1][0][2] = Zd; lines[1][0][3] = 1.0f;
+    lines[1][1][0] = Xs; lines[1][1][1] = Ys; lines[1][1][2] = Zd; lines[1][1][3] = 1.0f;
+    lines[2][0][0] = Xs; lines[2][0][1] = Ys; lines[2][0][2] = Zd; lines[2][0][3] = 1.0f;
+    lines[2][1][0] = Xs; lines[2][1][1] = Yd; lines[2][1][2] = Zd; lines[2][1][3] = 1.0f;
+    lines[3][0][0] = Xs; lines[3][0][1] = Yd; lines[3][0][2] = Zd; lines[3][0][3] = 1.0f;
+    lines[3][1][0] = Xd; lines[3][1][1] = Yd; lines[3][1][2] = Zd; lines[3][1][3] = 1.0f;
+    lines[4][0][0] = Xd; lines[4][0][1] = Yd; lines[4][0][2] = Zs; lines[4][0][3] = 1.0f;
+    lines[4][1][0] = Xd; lines[4][1][1] = Ys; lines[4][1][2] = Zs; lines[4][1][3] = 1.0f;
+    lines[5][0][0] = Xd; lines[5][0][1] = Ys; lines[5][0][2] = Zs; lines[5][0][3] = 1.0f;
+    lines[5][1][0] = Xs; lines[5][1][1] = Ys; lines[5][1][2] = Zs; lines[5][1][3] = 1.0f;
+    lines[6][0][0] = Xs; lines[6][0][1] = Ys; lines[6][0][2] = Zs; lines[6][0][3] = 1.0f;
+    lines[6][1][0] = Xs; lines[6][1][1] = Yd; lines[6][1][2] = Zs; lines[6][1][3] = 1.0f;
+    lines[7][0][0] = Xs; lines[7][0][1] = Yd; lines[7][0][2] = Zs; lines[7][0][3] = 1.0f;
+    lines[7][1][0] = Xd; lines[7][1][1] = Yd; lines[7][1][2] = Zs; lines[7][1][3] = 1.0f;
+    lines[8][0][0] = Xd; lines[8][0][1] = Yd; lines[8][0][2] = Zd; lines[8][0][3] = 1.0f;
+    lines[8][1][0] = Xd; lines[8][1][1] = Yd; lines[8][1][2] = Zs; lines[8][1][3] = 1.0f;
+    lines[9][0][0] = Xd; lines[9][0][1] = Ys; lines[9][0][2] = Zd; lines[9][0][3] = 1.0f;
+    lines[9][1][0] = Xd; lines[9][1][1] = Ys; lines[9][1][2] = Zs; lines[9][1][3] = 1.0f;
+    lines[10][0][0] = Xs; lines[10][0][1] = Yd; lines[10][0][2] = Zd; lines[10][0][3] = 1.0f;
+    lines[10][1][0] = Xs; lines[10][1][1] = Yd; lines[10][1][2] = Zs; lines[10][1][3] = 1.0f;
+    lines[11][0][0] = Xs; lines[11][0][1] = Ys; lines[11][0][2] = Zd; lines[11][0][3] = 1.0f;
+    lines[11][1][0] = Xs; lines[11][1][1] = Ys; lines[11][1][2] = Zs; lines[11][1][3] = 1.0f;
+
+    int i = 0;
+    float (*row)[4][4] = lines;
+    for (; i < 12; i++, row++) {
+        (*row)[2][0] = arg1;
+        (*row)[2][1] = arg2;
+        (*row)[2][2] = arg3;
+        (*row)[2][3] = 128.0f;
+        (*row)[3][0] = arg1;
+        (*row)[3][1] = arg2;
+        (*row)[3][2] = arg3;
+        (*row)[3][3] = 128.0f;
+    }
+    DrawLines((struct tagVuLine *)lines, 12);
 }
 
 // FUNCTION: 0x1857C0 BeginDebugRender__10PGfxEngineFv
@@ -719,6 +785,37 @@ void PGfxEngine::SetDirLightColor(int nIndex, float fR, float fG, float fB) {
         pLight->m_fG = 128.0f * fG;
         pLight->m_fB = 128.0f * fB;
         pLight->m_nW = 0;
+    }
+}
+
+// FUNCTION: 0x186020 RenderRefractionMappedFragments__10PGfxEngineFv
+void PGfxEngine::RenderRefractionMappedFragments() {
+    if (m_unk16D40C != 0 && m_unk169310 != 0) {
+        m_unk154C80->m_unkA3348 = 1;
+        m_unk154C80->SetScreenMatrix((PMat4 *)m_unk16D3C0);
+        m_unk154C80->SetViewMatrix((PMat4 *)m_unk16D380);
+        m_unk154C80->SetClipMatrix((PMat4 *)m_unk16D340);
+        m_unk158F00 = 1;
+        m_unk158E20 = true;
+        SetZBufferUpdate(true, (eGsContext)0);
+        unsigned char nSavedF0 = m_unk158E22;
+        for (int i = 0; i < m_unk169310; i++) {
+            tagBlendedFragmentInfo *pInfo = (tagBlendedFragmentInfo *)(m_unk159310 + (*(int *)(m_unk158F04 + i * 4) << 8));
+            if (pInfo->m_unkF1 != 0) {
+                RenderBlendedFragment(pInfo);
+            }
+        }
+        ResetBlendedFragmentTable();
+        m_unk158E24 = 0;
+        m_unk16D400 = 0;
+        m_unk158F00 = 0;
+        m_unk158E20 = false;
+        m_unk158E22 = nSavedF0;
+        SetZBufferUpdate(false, (eGsContext)0);
+        BeginFxRender();
+        m_unk154C80->SetScreenMatrix((PMat4 *)m_unk16D3C0);
+        m_unk154C80->SetViewMatrix((PMat4 *)m_unk16D380);
+        m_unk154C80->SetClipMatrix((PMat4 *)m_unk16D340);
     }
 }
 

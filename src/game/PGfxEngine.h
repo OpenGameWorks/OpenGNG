@@ -56,6 +56,8 @@ public:
     void BeginVertexGlow();
     void BeginFogParticles(eBoxIntersect eBox);
     void BeginRotatableParticles();
+    void BeginParticles(eBoxIntersect eBox);
+    void BeginSprites();
     int RenderParticleSystems(ePSLayer eLayer, PZBufferFog *pFog);
     void RenderBlendedFragments(float *pVec);
     void RenderBlendedFragment(tagBlendedFragmentInfo *pInfo);
@@ -65,6 +67,9 @@ public:
     void EndFxRender();
     void BeginFxRender();
     void BeginDebugRender();
+    void DrawBox(float (*pBox)[2][4], float arg1, float arg2, float arg3);
+    void DrawLines(struct tagVuLine *pLines, int nCount);
+    void RenderRefractionMappedFragments();
     void UpdateLights(struct tagVuLightingInfo *pInfo);
     void UpdateLights(PMat4 *pDirMat, PMat4 *pColorMat, float (*pAmbient)[4]);
     void UpdateLights();
