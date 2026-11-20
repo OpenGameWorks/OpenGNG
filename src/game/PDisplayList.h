@@ -8,6 +8,7 @@ struct tagVuLine;
 struct tagVuStaticInstance;
 struct tagVuSprite;
 struct tagVuParticle;
+struct tagVuRotatableParticle;
 
 class PDisplayList {
 public:
@@ -46,6 +47,7 @@ public:
     void ClearZBuffer(short nX, short nY, short nW, unsigned int nFlags);
     void DrawFogParticles(float (*pVerts)[4], int nCount, float fA, float fB, float fC, float *pColor);
     void DrawParticles(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag, int nChunk);
+    void DrawRotatableParticles(struct tagVuRotatableParticle *pParticles, int nCount, float fA, float fB, bool bFlag, int nChunk);
     void SetVu1Microcode(void *pData);
 
     char _pad000[0xA3340];
