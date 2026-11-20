@@ -220,7 +220,8 @@ public:
     unsigned int m_unk2AC;  // 0x2AC effect id, EffectValid and DeleteEffect by InitCutScene
     unsigned int m_unk2B0;  // 0x2B0 apparition id, GetPtrToApparition and Projectile::Delete by InitCutScene
     unsigned int m_unk2B4;  // 0x2B4 sound ref, StopSoundBySoundRef by InitCutScene
-    char _pad2B8[0x2C0 - 0x2B8];
+    void *m_unk2B8;         // 0x2B8 sound ref, StopSoundBySoundRef by ~Player
+    char _pad2BC[4];
     unsigned int m_unk2C0;  // 0x2C0 apparition id passed to GetPtrToApparition by ReleaseCheck
     int m_unk2C4;           // 0x2C4 hit counter, incremented and passed to OnHitEvent by ReleaseCheck
     int m_unk2C8;           // 0x2C8 countdown, reset to CAUGHT_TIME by ReleaseCheck
@@ -263,6 +264,9 @@ public:
     char _pad23D2[2];
     int m_unk23D4;          // 0x23D4 set to 5 by InitAttachableJoints
     void FinishCutScene(PMeshNode *arg0, PMat4 *arg1, int arg2);
+    void GrimAirAttackMove();
+    void SphereCheck();
+    ~Player();
 };
 
 #endif

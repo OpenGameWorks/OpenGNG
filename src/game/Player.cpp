@@ -6,6 +6,20 @@
 extern unsigned char gEng[0x1A000];
 extern PResourceManager *mpResMgr__15EntityBaseClass;
 extern char mMaximoData__6Player[0x100];
+extern "C" float sqrtf(float x);
+extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
+extern "C" void *__dt__6ShadowFv(void *pThis, short nFlag);
+extern "C" void *__dt__15PGrimReaperCapeFv(void *pThis, short nFlag);
+extern "C" void EnableFullScreenFx__10PGfxEngineFb(void *pThis, bool bEnable);
+extern unsigned char __vt__6Player[124];
+extern unsigned char gMC[0x1000];
+extern char gGfxEng[1504384];
+extern int miRandom__7MathAPI;
+extern "C" int rand();
+class VirtualSlot08Object {
+public:
+    virtual void Slot08(int arg0);
+};
 struct SpinEffectEntry {
     unsigned int a;
     unsigned int b;
@@ -14,6 +28,9 @@ extern "C" void SetFrameRate__6PMNodeFfb(PMNode *, float, bool);
 extern "C" void sceVu0UnitMatrix(float (*)[4]);
 extern "C" void CalculateMatrix__6PMNodeFfP6PMNodePA4_A4_f(PMeshNode *, float, PMNode *, float (*)[4][4]);
 extern "C" void SetHolyGround__13EntityManagerFPA4_ffb(void *, float (*)[4], float, bool);
+extern float GRIM_AIRATTACKG;
+extern float GRIM_AIRATTACKV;
+extern float GRIM_AIRATTACKY;
 class Interface {
 public:
     char _pad000[0x10];
@@ -2120,6 +2137,48 @@ void Player::GrimIdleMove() {
     p[2] = 0;
 }
 
+// FUNCTION: 0x0015EC00 GrimAirAttackMove__6PlayerFv
+void Player::GrimAirAttackMove() {
+    switch (m_unk250) {
+    case 0:
+        m_unk250 = 1;
+        m_unk260 = 0x82;
+        break;
+    case 1:
+        if ((int)((float *)m_unk3C)[13] < 9) {
+            return;
+        }
+        m_unk250 = 2;
+        {
+            float v[4];
+            v[3] = 1.0f;
+            v[1] = GRIM_AIRATTACKG;
+            v[0] = GRIM_AIRATTACKV * FastMath_Sin180__Ff(m_unk1C4);
+            v[2] = GRIM_AIRATTACKV * FastMath_Cos180__Ff(m_unk1C4);
+            *(u_long128 *)m_unk38 = *(u_long128 *)v;
+        }
+        {
+            Physics *phys = (Physics *)m_unk38;
+            phys->m_unk11C = Round180__Ff(m_unk1C4);
+        }
+        break;
+    case 2:
+        if (!(((Physics *)m_unk38)->m_unkF8 < GRIM_AIRATTACKY)) {
+            return;
+        }
+        m_unk250 = 3;
+        {
+            PMNode *node = (PMNode *)m_unk3C;
+            node->Slot10((float)(((unsigned char *)m_unk254)[5] + 1));
+            node->SetAnimLoopCount(1, false);
+        }
+        ((float *)m_unk38)[0x110 / 4] = ((float *)m_unk25C)[0x38 / 4];
+        ((Physics *)m_unk38)->SetPhysicsType(0x1032, 0);
+        m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(0x810002E4, 0x820004D2, 0, 0, (EntityBaseClass *)this, 1.0f, false, 0, false);
+        break;
+    }
+}
+
 // note: 36 words; the tier-zero block is inline where the original places it out of line, and the m_unk260 compares are ordered differently (original uses beq to the fp[13] block). Local fp with tier != 0 outer is the best form (36); tier == 0 outer gave 41.
 // DRAFT: 0x0015F0E0 GrimRunMove__6PlayerFv
 void Player::GrimRunMove() {
@@ -2616,6 +2675,40 @@ PMNode *Player::IsPlayerOnNode(PMeshNode *arg0, bool arg1) {
     return node;
 }
 
+// note: 67 words differ: sqrtf(d2)/sqrtf(d2) is CSE'd to one sqrt.s plus div.s f3,f3,f3 (original: two sqrt.s then div.s f4,f4,f0), so later branch offsets and loads shift; prologue zero lands in f1 (original f0). Tried split sqrt locals (67), reversed 0.0f compare (67), unsigned epilogue pointer (67, kept).
+// DRAFT: 0x00163700 SphereCheck__6PlayerFv
+void Player::SphereCheck() {
+    float sp60[4];
+    float sp70[4];
+    *(u_long128 *)sp60 = *(u_long128 *)((char *)m_unk3C + 0x80);
+    if (*(float *)&m_unk344 != 0.0f) {
+        sceVu0SubVector(sp70, sp60, m_unk350);
+        sp70[1] = 0.0f;
+        float d2 = sceVu0InnerProduct(sp70, sp70);
+        if (d2 > *(float *)&m_unk344) {
+            float f4 = sqrtf(d2) / sqrtf(d2);
+            sp60[0] = m_unk350[0] + sp70[0] * f4;
+            sp60[2] = m_unk350[2] + sp70[2] * f4;
+        }
+    }
+    for (int i = 0; i < 4; i++) {
+        PMNode *node = m_unk360[i].node;
+        if (node != 0) {
+            float *c = (float *)((char *)node + 0x70);
+            sceVu0SubVector(sp70, sp60, c);
+            float d2 = sceVu0InnerProduct(sp70, sp70);
+            if (d2 < m_unk360[i].r2) {
+                float f4 = sqrtf(d2) / sqrtf(d2);
+                sp60[0] = c[0] + sp70[0] * f4;
+                sp60[2] = c[2] + sp70[2] * f4;
+            }
+        }
+    }
+    unsigned char *p = (unsigned char *)m_unk3C;
+    *(u_long128 *)(p + 0x80) = *(u_long128 *)sp60;
+    p[0x3E] |= 8;
+}
+
 // note: 37 words differ: the first compare is c.eq.s f0,f12 against the original f12,f0; the original uses two base pointers (0x360, 0x364) and no sll. Tried swapped init order (39), off-based stores (37), separate char* bases (39), and the i-loop with off (37, kept).
 // DRAFT: 0x00163880 SetBoundingSphere__6PlayerFP6PMNodef
 void Player::SetBoundingSphere(PMNode *arg0, float arg1) {
@@ -2667,6 +2760,49 @@ int Player::MightyBlowCheck(unsigned int arg0) {
         return 1;
     }
     return 0;
+}
+
+// FUNCTION: 0x00166690 __dt__6PlayerFv
+extern "C" void *__dt__6PlayerFv(void *pThis, short nFlag) {
+    if (pThis != 0) {
+        Player *self = (Player *)pThis;
+        *(unsigned char **)pThis = __vt__6Player;
+        if (self->m_unk2B8 != 0) {
+            ((EntityBaseClass *)self)->StopSoundBySoundRef((unsigned int)self->m_unk2B8);
+            self->m_unk2B8 = 0;
+        }
+        if (self->m_unk229 == 4) {
+            self->m_unk229 = MaximoArmor[self->m_unk1DC];
+        }
+        self->SavePlayerData((Player::PlayerData *)(gMC + 0x234));
+        self->ResetPling();
+        EnableFullScreenFx__10PGfxEngineFb(gGfxEng, 0);
+        if (self->m_unk2AC != 0) {
+            mEffectAPI__13EntityManager.DeleteEffect(self->m_unk2AC);
+            self->m_unk2AC = 0;
+        }
+        if (self->m_unk288 != 0) {
+            if (self->m_unk288 != 0) {
+                ((VirtualSlot08Object *)self->m_unk288)->Slot08(1);
+            }
+            self->m_unk288 = 0;
+        }
+        if (self->m_unk23CC != 0) {
+            __dt__6ShadowFv(self->m_unk23CC, 1);
+            self->m_unk23CC = 0;
+        }
+        if (self->m_unk23C8 != 0) {
+            __dt__6ShadowFv(self->m_unk23C8, 1);
+            self->m_unk23C8 = 0;
+        }
+        miRandom__7MathAPI = (int)(0.5f + (12345.0f + (41976.0f * ((float)rand() / 2.1474836e9f))));
+        __dt__15PGrimReaperCapeFv((char *)self + 0x390, -1);
+        __dt__15EntityBaseClassFv(self, 0);
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
 }
 
 // FUNCTION: 0x00163F80 ShowPlayer__6PlayerFb
