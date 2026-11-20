@@ -77,6 +77,11 @@ extern "C" void __ct__13EntityManagerFv(void *);
 extern "C" void __ct__6CameraFv(void *);
 extern int U_MILLISEC_PER_FRAME_HI;
 extern int U_MILLISEC_PER_FRAME_LO;
+extern "C" void SoundGainEEControl__9InterfaceFv(void *);
+extern "C" void RestartAndLoadInterfaceTypeBank__6PSoundFUi(void *, unsigned int);
+extern "C" void StopMusic__6PSoundFv(void *);
+extern "C" void ResetWarning__11FontManagerFv(void *);
+extern "C" float GetFrameTime__6PMNodeFv(void *);
 extern "C" PMNode *Load__9InterfaceFPCc(void *, char const *);
 extern "C" void *__nw__FUi(unsigned int);
 extern unsigned char __vt__6PMNode[16];
@@ -135,6 +140,7 @@ public:
     int m_unk2C;            // 0x2C, zeroed by LoadTitleMesh
     char _pad030[0x3E - 0x30];
     unsigned char m_unk3E;  // flags
+    signed char m_unk3F;  // flags, low 3 bits tested by TitleDemo
 };
 
 // FUNCTION: 0x00134940 UpdateGameTimes__10MaximoMainFv
@@ -541,6 +547,114 @@ void MaximoMain::InitStaticDemo() {
     m_unkD0 = 0;
     m_unkD4 = 0;
     m_unkD8 = 0x42180000;
+}
+
+// DRAFT: 0x00137680 TitleDemo__10MaximoMainFv
+// note: 4 words differ: case 5 FadeScreen loads 4.25f into f13 before 255.0f into f12 in the original, as in ScreenAdjust and Controls; tried a local float, int 255, double literals, 17.0f / 4, a member call on class Interface, and inline FadeOut/FadeTo wrappers (all 4).
+int MaximoMain::TitleDemo() {
+    int state = 0;
+    int result = 0;
+    int timer = (int)(30.0f * GAME_FPS);
+    SoundGainEEControl__9InterfaceFv(gInterface);
+    LoadTitleMesh();
+    m_unk19B4C = 0;
+    RestartAndLoadInterfaceTypeBank__6PSoundFUi(gSound, 0x72U);
+    if (gbMusic != 0) {
+        m_unk19B48 = 3;
+        PlayMusic__6PSoundFUi(gSound, 3U);
+    }
+    ResetWarning__11FontManagerFv(gInterface + 0x80);
+    for (;;) {
+        InitRenderFrame__9MaxEngineFbUi(this, false, 0);
+        switch (state) {
+        case 0:
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 4.25f, true, 0);
+            state += 1;
+            /* fall through */
+        case 1:
+            if (*(unsigned char *)(gInterface + 0x425) == 0) {
+                state += 1;
+                if (gbMusic != 0) {
+                    PlayMusic__6PSoundFUi(gSound, 3U);
+                }
+            }
+            break;
+        case 2:
+            if (*(unsigned short *)(gPad + 0x110) & 8) {
+                m_unk19ACC->Slot2(1000.0f);
+                state += 3;
+                PlaySoundUbiquitous__6PSoundFUi(gSound, 0x1CA);
+            } else if (!(GetFrameTime__6PMNodeFv(m_unk19ACC) <= 35.0f)) {
+                PlaySoundUbiquitous__6PSoundFUi(gSound, 0x1CC);
+                state += 1;
+            }
+            break;
+        case 3:
+            if (*(unsigned short *)(gPad + 0x110) & 8) {
+                m_unk19ACC->Slot2(1000.0f);
+                PlaySoundUbiquitous__6PSoundFUi(gSound, 0x1CB);
+                state += 2;
+            } else if (!(GetFrameTime__6PMNodeFv(m_unk19ACC) <= 75.0f)) {
+                PlaySoundUbiquitous__6PSoundFUi(gSound, 0x1CB);
+                state += 1;
+            }
+            break;
+        case 4: {
+            signed char flags = m_unk19ACC->m_unk3F & 7;
+            if (flags == 0 || (*(unsigned short *)(gPad + 0x110) & 8)) {
+                m_unk19ACC->Slot2(1000.0f);
+                state += 1;
+            }
+            break;
+        }
+        case 5:
+            PressStart(-0x78);
+            if (*(unsigned short *)(gPad + 0x110) & 8) {
+                PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+                result = 1;
+            } else {
+                timer -= 1;
+                if (timer <= 0) {
+                    state += 1;
+                    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 4.25f, true, 0);
+                    if (gbMusic != 0) {
+                        FadeOutAllMusic__6PSoundFUi(gSound, 0x1F4U);
+                    }
+                }
+                if (m_unk19AD0 != 0) {
+                    float f = *(float *)&m_unk19AD0->m_unk2C;
+                    if (f < 1.0f) {
+                        f += 0.2f;
+                        if (!(f < 1.0f)) {
+                            f = 1.0f;
+                        }
+                        *(float *)&m_unk19AD0->m_unk2C = f;
+                    }
+                }
+            }
+            break;
+        case 6:
+            if (*(unsigned char *)(gInterface + 0x425) == 0) {
+                if (gbMusic != 0) {
+                    StopMusic__6PSoundFv(gSound);
+                }
+                return 0;
+            }
+            if (*(unsigned short *)(gPad + 0x110) & 8) {
+                if (gbMusic != 0) {
+                    StopMusic__6PSoundFv(gSound);
+                }
+                FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 8.5f, true, 0);
+                result = 1;
+            }
+            break;
+        }
+        m_unk19AC8->Slot4(0, 0.0f, 1.0f, 0, 0);
+        Render__9InterfaceFi(gInterface, 0);
+        if (result != 0) {
+            return result;
+        }
+    }
 }
 
 // FUNCTION: 0x00137B00 InitPlayDemo__10MaximoMainFi
