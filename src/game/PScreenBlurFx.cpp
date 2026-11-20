@@ -13,6 +13,12 @@ extern "C" float FastMath_IntSin180__Fi(int);
 extern u_long128 lit_00252670[2];
 extern u_long128 lit_00252690;
 extern u_long128 lit_004D19C0;
+extern char gGfxEng[1504384];
+extern "C" void SetPrevFrameBufferAsTexture__10PGfxEngineFv(void *);
+extern "C" void UpdateHeatHazeBuffer__16PParticleManagerFv(void *);
+extern "C" void SetTexture__10PGfxEngineFi(void *, int);
+extern "C" void SetGsRegisters__12PDisplayListFP1i(void *, u_long128 *, int);
+extern "C" void SendGsPacket__12PDisplayListFPvib(void *, void *, int, bool);
 
 // DRAFT: 0x00216500 WobbleSTGrids__13PScreenBlurFxFP21tagGsScreenBlurPacketf
 // note: 122 words differ; register roles and frame/spill layout differ, table-index loop form also differs. Tried: baseline, two-if angle wrap (123 to 122).
@@ -116,6 +122,140 @@ void PScreenBlurFx::InitBlurStrip(tagBlurStrip *pStrip, char cA, short sA, short
         nX += nStepX;
         nOff += 0x40;
     } while (i < 0x21);
+}
+
+// DRAFT: 0x002168A0 InitBlurPacket__13PScreenBlurFxFP21tagGsScreenBlurPacketiicccc
+// note: 209 words (attempt 3); the original keeps cA..cD sign extension and saves before header zeroing, and emits andi $zero zero terms; zero local and store-order swap gave no change
+struct GifTagBits {
+    unsigned long long nloop : 15;
+    unsigned long long eop : 1;
+    unsigned long long unused0 : 30;
+    unsigned long long pre : 1;
+    unsigned long long prim : 11;
+    unsigned long long flg : 2;
+    unsigned long long nreg : 4;
+    unsigned long long regs;
+};
+
+void PScreenBlurFx::InitBlurPacket(tagGsScreenBlurPacket *pPacket, int nWidth, int nHeight, char cA, char cB, char cC, char cD) {
+    unsigned char *p = (unsigned char *)pPacket;
+    *(int *)(p + 0x20) = cA;
+    *(int *)(p + 0x24) = cB;
+    *(int *)(p + 0x28) = cC;
+    *(int *)(p + 0x2C) = cD;
+    short sC = nWidth / 32;
+    short sD = nHeight / 16;
+    short sA = 0x800 - nWidth / 2;
+    short sB = 0x800 - nHeight / 2;
+    GifTagBits *t = (GifTagBits *)p;
+    *(u_long128 *)p = 0;
+    t->prim = 0;
+    t->pre = 0;
+    t->nloop = 1;
+    t->eop = 0;
+    t->flg = 0;
+    t->nreg = 2;
+    p[8] = (p[8] & ~0x0F) | 2;
+    p[8] = (p[8] & ~0xF0) | (1 << 4);
+    *(int *)(p + 0x10) = 0;
+    *(int *)(p + 0x14) = 0;
+    *(float *)(p + 0x18) = 1.0f;
+    GifTagBits *t2 = (GifTagBits *)(p + 0x30);
+    *(u_long128 *)(p + 0x30) = 0;
+    t2->prim = 4;
+    t2->pre = 1;
+    t2->nloop = 0x210;
+    t2->eop = 1;
+    t2->flg = 0;
+    t2->nreg = 4;
+    p[0x38] = (p[0x38] & ~0x0F) | 2;
+    p[0x38] = (p[0x38] & ~0xF0) | 0x50;
+    p[0x39] = (p[0x39] & ~0x0F) | 2;
+    p[0x39] = (p[0x39] & ~0xF0) | 0x50;
+
+    float fStep = m_unk845C / 16.0f;
+    float fAcc = 0.0f;
+    int nOff = 0;
+    int i = 0;
+    do {
+        InitBlurStrip((tagBlurStrip *)((char *)pPacket + nOff + 0x40), cD, sA, sB, sC, sD, fAcc, i > 0, m_unk8458, m_unk845C);
+        sB = (short)(sB + sD);
+        i++;
+        nOff += 0x840;
+        fAcc += fStep;
+    } while (i < 16);
+}
+
+struct GsAD {
+    unsigned long long lo;
+    unsigned long long hi;
+};
+
+// DRAFT: 0x00216C00 Render__13PScreenBlurFxFv
+// note: 116 words; packet stores via aPkt[] (attempt 4 pointer form 126, worse); byte/branch order still differs
+void PScreenBlurFx::Render() {
+    GsAD aPkt[5];
+    float f;
+    int nByte;
+
+    if (m_unk84A0 == 4) {
+        return;
+    }
+    if (m_unk84A4) {
+        SetPrevFrameBufferAsTexture__10PGfxEngineFv(gGfxEng);
+        aPkt[0].lo = 0;
+    } else {
+        UpdateHeatHazeBuffer__16PParticleManagerFv(gGfxEng + 0x154F00);
+        SetTexture__10PGfxEngineFi(gGfxEng, *(int *)(gGfxEng + 0x155570));
+        aPkt[0].lo = 0;
+    }
+    aPkt[0].hi = 0x1A;
+    aPkt[1].lo = 0x58;
+    aPkt[1].hi = 0x1B;
+    aPkt[2].lo = 0x44;
+    aPkt[2].hi = 0x42;
+    aPkt[3].lo = 0x30000;
+    aPkt[3].hi = 0x47;
+    aPkt[4].lo = 5;
+    aPkt[4].hi = 8;
+    SetGsRegisters__12PDisplayListFP1i((void *)*(int *)(gGfxEng + 0x154C80), (u_long128 *)aPkt, 5);
+
+    f = *(float *)&m_unk8480[0];
+    if (f >= 2147483648.0f) {
+        nByte = ((int)(f - 2147483648.0f) | 0x80000000) & 0xFF;
+    } else {
+        nByte = (int)f & 0xFF;
+    }
+    *(int *)((char *)this + 0x30) = nByte;
+
+    f = *(float *)&m_unk8480[1];
+    if (f >= 2147483648.0f) {
+        nByte = ((int)(f - 2147483648.0f) | 0x80000000) & 0xFF;
+    } else {
+        nByte = (int)f & 0xFF;
+    }
+    *(int *)((char *)this + 0x34) = nByte;
+
+    f = *(float *)&m_unk8480[2];
+    if (f >= 2147483648.0f) {
+        nByte = ((int)(f - 2147483648.0f) | 0x80000000) & 0xFF;
+    } else {
+        nByte = (int)f & 0xFF;
+    }
+    *(int *)((char *)this + 0x38) = nByte;
+
+    f = *(float *)&m_unk8480[3];
+    if (f >= 2147483648.0f) {
+        nByte = ((int)(f - 2147483648.0f) | 0x80000000) & 0xFF;
+    } else {
+        nByte = (int)f & 0xFF;
+    }
+    *(int *)((char *)this + 0x3C) = nByte;
+
+    SendGsPacket__12PDisplayListFPvib((void *)*(int *)(gGfxEng + 0x154C80), (char *)this + 0x10, 0x8440, true);
+    aPkt[0].lo = 0;
+    aPkt[0].hi = 8;
+    SetGsRegisters__12PDisplayListFP1i((void *)*(int *)(gGfxEng + 0x154C80), (u_long128 *)aPkt, 1);
 }
 
 // FUNCTION: 0x00216EA0 Animate__13PScreenBlurFxFf
