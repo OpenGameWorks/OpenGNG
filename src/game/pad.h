@@ -23,6 +23,7 @@ public:
     void SetVibrate(VibType type, unsigned char value);
     unsigned short RemapButton(unsigned short mask);
     void DeletePad();
+    void UpdatePad();
 
     char _pad000[0x100];
     int m_unk100;                   // 0x100 scePad2 socket handle, -1 when none
@@ -48,6 +49,7 @@ public:
     unsigned short *m_unk178;       // 0x178 input sequence table, 4 halfwords per entry
     int m_unk17C;                   // 0x17C index into the input sequence table
     int m_unk180;                   // 0x180 input sequence capacity
+    int m_unk184;                   // 0x184 scePad2GetState result
 };
 
 void PadInit();
