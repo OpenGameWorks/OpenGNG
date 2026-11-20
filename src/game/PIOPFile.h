@@ -24,16 +24,20 @@ private:
     static PIOPFile *mst_pOpenFiles[2];
     char _pad0[0x100];               // 0x000
     unsigned char m_unk100;          // 0x100 nonzero while a file is open
-    char _pad101[0x7];               // 0x101
+    unsigned char m_unk101;          // 0x101 set at end of file
+    unsigned char m_unk102;          // 0x102 set at end of file
+    char _pad103[0x1];               // 0x103
+    unsigned int m_unk104;           // 0x104 logical read position
     int m_unk108;                    // 0x108 file id
     int m_unk10C;                    // 0x10C file size
     int m_unk110;                    // 0x110 sound stream id
     int m_unk114;                    // 0x114 compared against gSndEEDSSR entries
     int m_unk118;                    // 0x118
     int m_unk11C;                    // 0x11C
-    char _pad120[0x4];               // 0x120
-    int m_unk124;                    // 0x124
-    char _pad128[0x8];               // 0x128
+    int m_unk120;                    // 0x120 current buffer index
+    int m_unk124;                    // 0x124 other buffer index
+    unsigned int m_unk128;           // 0x128 offset within current buffer
+    char _pad12C[0x4];               // 0x12C
     int m_unk130;                    // 0x130 bytes already requested
     int m_unk134[2];                 // 0x134 per buffer
     int m_unk13C[2];                 // 0x13C per buffer

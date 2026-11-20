@@ -152,6 +152,82 @@ int PIOPFile::WaitOnBufferFill() {
     return 0;
 }
 
+// DRAFT: 0x001DAFC0 ReadEx__8PIOPFileFPvUi
+// note: DIFF 205 words, size 0x344 vs 0x394. Prologue save order and s-register map differ, entry branch lands in loop top not bottom test, EOF exit returns through v0 path. Tried: while(nDone<nSize) (205), while(nRemaining!=0&&nDone<nSize) (209), pBuf direct copy (205)
+int PIOPFile::ReadEx(void *pBuf, unsigned int nSize) {
+    unsigned int nDone = 0;
+    unsigned int nRemaining = nSize;
+    char *pDst = (char *)pBuf;
+    if ((unsigned int)m_unk104 >= (unsigned int)m_unk10C) {
+        printf("Read %s failed, no data left\n", this);
+        m_unk102 = 1;
+        return 0;
+    }
+    while (nDone < nSize) {
+        if ((unsigned int)m_unk104 >= (unsigned int)m_unk10C) {
+            m_unk101 = 1;
+            m_unk102 = 1;
+            return nDone;
+        }
+        if (m_unk144[m_unk120] != 1 && (unsigned int)m_unk130 < (unsigned int)m_unk10C) {
+            WaitOnBufferFill();
+            RequestNextBuf(m_unk154);
+        }
+        if (m_unk104 < m_unk134[m_unk120]) {
+            CdsAssert("PIOPFile.cpp", 0x16A, "muLogicalReadPosition >= muBufLogicalStart[muBufNumCur]");
+        }
+        if (!(m_unk104 < m_unk134[m_unk120] + m_unk13C[m_unk120])) {
+            CdsAssert("PIOPFile.cpp", 0x16B, "muLogicalReadPosition < muBufLogicalStart[muBufNumCur] + muBufActiveSize[muBufNumCur]");
+        }
+        if (!(m_unk128 < 0x8000)) {
+            CdsAssert("PIOPFile.cpp", 0x16D, "muWithinBufferReadOffset < kBufferSize");
+        }
+        if (!(m_unk128 < m_unk13C[m_unk120])) {
+            CdsAssert("PIOPFile.cpp", 0x16E, "muWithinBufferReadOffset < muBufActiveSize[muBufNumCur]");
+        }
+        if (!(m_unk13C[m_unk120] <= 0x8000)) {
+            CdsAssert("PIOPFile.cpp", 0x16F, "muBufActiveSize[muBufNumCur] <= kBufferSize");
+        }
+        unsigned int nAvail = (unsigned int)(m_unk13C[m_unk120] - m_unk128);
+        unsigned int nChunk;
+        int bEnd;
+        if (nRemaining < nAvail) {
+            nChunk = nRemaining;
+            bEnd = 0;
+        } else {
+            nChunk = nAvail;
+            bEnd = 1;
+        }
+        FlushCache(0);
+        asm {
+            sync
+            sync.p
+        }
+        memcpy(pDst, (void *)(((unsigned int)(&m_unk1C4)[m_unk120] + m_unk128) | 0x20000000), nChunk);
+        nDone += nChunk;
+        pDst += nChunk;
+        m_unk104 += nChunk;
+        m_unk128 += nChunk;
+        nRemaining -= nChunk;
+        if (m_unk104 >= m_unk10C) {
+            m_unk102 = 1;
+        }
+        if (bEnd) {
+            if (m_unk128 >= 0x8000) {
+                m_unk144[m_unk120] = 0;
+                m_unk13C[m_unk120] = 0;
+                m_unk128 = 0;
+                int nOld = m_unk120;
+                m_unk120 = m_unk124;
+                m_unk124 = nOld;
+            } else if (nRemaining != 0) {
+                CdsAssert("PIOPFile.cpp", 0x19B, "0 == uRemaining");
+            }
+        }
+    }
+    return nDone;
+}
+
 // FUNCTION: 0x001DB360 Read__8PIOPFileFPvUi
 void PIOPFile::Read(void *pBuf, unsigned int nSize) {
     if (pBuf == 0) {
