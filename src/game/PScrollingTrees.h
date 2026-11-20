@@ -38,6 +38,7 @@ public:
     int Render();
     void Init(float *pVecA, float *pVecB, float fScale, PResourceManager *pResMgr);
     int CreateFloor();
+    int Create(int nA, int nB, int nType);
 
 private:
     char _pad00[0x10];                 // 0x00

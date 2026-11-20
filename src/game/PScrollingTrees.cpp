@@ -18,6 +18,11 @@ extern PScrollingTreeIds lit_0024DDC0;
 extern PScrollingTreeQuad lit_0024DDE0;
 extern char gGfxEng[1504384];
 extern float gUnitMatrix[16];
+extern "C" int rand(void);
+extern "C" void *__nwa__FUi(unsigned int nSize);
+float FastMath_Fabs(float fVal);
+void FastMath_RotateMatrix(float (*pA)[4][4], float (*pB)[4][4], float (*pRot)[4], float (*pC)[4][4]);
+extern PScrollingTreeQuad lit_0024DDF0;
 
 // DRAFT: 0x1FAC10 Render__15PScrollingTreesFv
 // note: 115 words; frame 0x90 vs 0x80; this in s7 vs s0; first-call args and gUnitMatrix load order; loop 1 offset reg s6 (addu s6,s7,s5). Tried: local class stubs, nCount removal, per-iter entry pointer (118), nTotal after first call (115, kept), this-derived loop 2 base (no change).
@@ -82,6 +87,75 @@ void PScrollingTrees::Animate(float fTime) {
             pN2->m_unk38 = -350.0f + (fVal - 170.0f);
         }
     }
+}
+
+// DRAFT: 0x1FAF30 Create__15PScrollingTreesFiii
+// note: DIFF 216, size 0x3F8 vs 0x3E4 (frame 0x110 vs 0x100); this/nB register assignment, float save order, FastMath_RotateMatrix reloc differ. Tried: ids/rot hoisting, brace-init in loop, Z block first, field stores for rot, nOff/pNodes removal (240-247), ids load after assert (222).
+int PScrollingTrees::Create(int nA, int nB, int nType) {
+    PScrollingTreeQuad ids = lit_0024DDF0;
+    PScrollingTreeQuad pos;
+    PScrollingTreeQuad rot = (PScrollingTreeQuad){{0.0f, 0.0f, 0.0f, 1.0f}};
+    if (m_unk670 == 0) {
+        CdsAssert__FPciPc("PScrollingTrees.cpp", 0x6D, "mpResMgr");
+    }
+    float fSpanX = m_unk20[0] - m_unk10[0];
+    float fStepX = fSpanX / (float)nB;
+    float fHalfX = 0.5f * fSpanX;
+    float fCenterX = 0.5f * (m_unk20[0] + m_unk10[0]);
+    float fSpanZ = m_unk20[2] - m_unk10[2];
+    float fStepZ = fSpanZ / (float)nA;
+    float fHalfStepX = 0.5f * fStepX;
+    float fHalfStepZ = 0.5f * fStepZ;
+    float fX = m_unk10[0] + fHalfStepX;
+    float fZ = m_unk10[2] + fHalfStepZ;
+    int nCount = nA * nB;
+    PScrollingTreeEntry *pEnt = &m_unk34[nType];
+    pEnt->m_unk8 = nCount;
+    pEnt->m_unk0 = (int)m_unk670->GetResource(*(unsigned int *)((char *)&ids + nType * 4), false);
+    if (pEnt->m_unk0 == 0) {
+        CdsAssert__FPciPc("PScrollingTrees.cpp", 0x7D, "mInstanceData[iType].pMasterMesh");
+    }
+    pEnt->m_unk4 = __nwa__FUi(nCount * 0x50);
+    if (pEnt->m_unk4 == 0) {
+        CdsAssert__FPciPc("PScrollingTrees.cpp", 0x80, "mInstanceData[iType].pInstanceData");
+    }
+    char *pNodes = (char *)pEnt->m_unk4;
+    int nRow = 0;
+    for (int i = 0; i < nA; i++) {
+        int nOff = nRow;
+        for (int j = 0; j < nB; j++) {
+            char *pCell = pNodes + nOff;
+            float fA = 0.3f * fStepX;
+            float u1 = (float)rand() / 2147483648.0f;
+            pos.f[0] = fX + (fA + ((0.3f * -fStepX - fA) * u1));
+            pos.f[1] = m_unk10[1];
+            float fB = 0.3f * fStepZ;
+            float u2 = (float)rand() / 2147483648.0f;
+            pos.f[2] = fZ + (fB + ((0.3f * -fStepZ - fB) * u2));
+            pos.f[3] = 1.0f;
+            float u3 = (float)rand() / 2147483648.0f;
+            rot.f[1] = -180.0f + 360.0f * u3;
+            float fT = FastMath_Fabs(pos.f[0] - fCenterX) / fHalfX;
+            float u4 = (float)rand() / 2147483648.0f;
+            float fS = 1.0f + 0.5f * u4;
+            sceVu0UnitMatrix(pCell);
+            *(float *)(pCell + 0x0) = fS;
+            *(float *)(pCell + 0x14) = 1.0f + 0.5f * fT;
+            *(float *)(pCell + 0x28) = fS;
+            FastMath_RotateMatrix((float (*)[4][4])pCell, (float (*)[4][4])pCell, (float (*)[4])rot.f, 0);
+            *(PScrollingTreeQuad *)(pCell + 0x30) = pos;
+            *(float *)(pCell + 0x40) = 1.0f;
+            *(float *)(pCell + 0x44) = 1.0f;
+            *(float *)(pCell + 0x48) = 1.0f;
+            *(float *)(pCell + 0x4C) = 1.0f;
+            nOff += 0x50;
+            nRow += 0x50;
+            fX += fStepX;
+        }
+        fZ += fStepZ;
+        fX = m_unk10[0] + fHalfStepX;
+    }
+    return 1;
 }
 
 // DRAFT: 0x1FB320 CreateFloor__15PScrollingTreesFv
