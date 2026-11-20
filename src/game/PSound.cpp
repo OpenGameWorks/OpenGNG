@@ -123,6 +123,12 @@ extern "C" unsigned int SOUND_PlayDialogRelVol(unsigned int, unsigned int, unsig
 extern "C" void SOUND_FadeMusicStream(unsigned int, unsigned int, int, unsigned int);
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
+extern "C" int sceOpen(char *pName, int nFlags);
+extern "C" int sceClose(int nFd);
+extern "C" char *strcpy(char *pDst, const char *pSrc);
+extern "C" char *strcat(char *pDst, const char *pSrc);
+extern "C" int printf(const char *pFmt, ...);
+extern char gszFilePrefix[128];
 extern "C" int IsEBoxWithinEBox__7MathAPIFP6tagBOXP6tagBOX(tagBOX *pA, tagBOX *pB);
 extern "C" float SetE_BOX_Radius__7MathAPIFP6tagBOX(tagBOX *pBox);
 extern "C" unsigned int SOUND_PlayMusicRelVol(unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
@@ -2982,6 +2988,117 @@ int PSound::WriteLineToPCFile(int nFd, char *pLine) {
         return -1;
     }
     return 0;
+}
+
+// FUNCTION: 0x001AB4F0 WriteSoundFileToPC__6PSoundFv
+int PSound::WriteSoundFileToPC() {
+    char spB0[0x100];
+    char sp1B0[0x80];
+    char sp230[0x20];
+    char sp250[0x20];
+    PSoundUsage *sp27C;
+    int nRet;
+    bool bErr;
+    int nFd;
+    unsigned int nIdx;
+    SpotInfo *pSpot;
+    int nLevel;
+    char *pBankName;
+
+    nRet = 0;
+    sp27C = 0;
+    bErr = false;
+    strcpy(spB0, gszFilePrefix);
+    strcat(spB0, "Tools\\Reports\\SoundReportFromPS2.txt");
+    FlushCache(0);
+    nFd = sceOpen(spB0, 0x602);
+    if (nFd >= 0) {
+        nLevel = *(int *)(gEng + 0x19A78);
+        GetLevelFile__10MaximoMainFi(gEng, -1);
+        pBankName = "UnknownBankName";
+        strcpy(sp230, pBankName);
+        sprintf(sp1B0, "; idx     id vol loPch hiPch use chn pri Vol SPri ARidx Flg spuOff\r\n");
+        if (WriteLineToPCFile(nFd, sp1B0) != 0) {
+            bErr = true;
+            goto block_end;
+        }
+        sprintf(sp1B0, "[LEVEL %d %d %s]\r\n", m_unk10, nLevel, sp230);
+        if (WriteLineToPCFile(nFd, sp1B0) != 0) {
+            bErr = true;
+            goto block_end;
+        }
+        pSpot = (SpotInfo *)m_unk2EB4;
+        nIdx = 0;
+        while (nIdx < m_unk14) {
+            unsigned int nVol = pSpot->m_unk10;
+            if (nVol > 100) {
+                nVol = 100;
+            }
+            sprintf(sp1B0, "  %6d %3d %5d %5d  %2d  %2d %3d  %3d   %2d  %02x %06x\r\n",
+                    pSpot->m_unk00, nVol,
+                    ((unsigned int)pSpot->m_unk08 * 0xBB80u) >> 12,
+                    ((unsigned int)pSpot->m_unk0A * 0xBB80u) >> 12,
+                    pSpot->m_unk0E, pSpot->m_unk0F,
+                    pSpot->m_unk11, pSpot->m_unk15, pSpot->m_unk12,
+                    pSpot->m_unk0C, pSpot->m_unk04);
+            if (WriteLineToPCFile(nFd, sp1B0) != 0) {
+                bErr = true;
+                goto block_end;
+            }
+            pSpot++;
+            nIdx++;
+        }
+        sprintf(sp1B0, "[\\LEVEL %d %d %s]\r\n\r\n\r\n", m_unk10, nLevel, sp230);
+        if (WriteLineToPCFile(nFd, sp1B0) != 0) {
+            bErr = true;
+            goto block_end;
+        }
+        sprintf(sp1B0, ";   id   all  dropped outOfBank far\r\n");
+        if (WriteLineToPCFile(nFd, sp1B0) != 0) {
+            bErr = true;
+            goto block_end;
+        }
+        WaitOnVSync();
+        sprintf(sp1B0, "[CALLUSAGE]\r\n");
+        if (WriteLineToPCFile(nFd, sp1B0) != 0) {
+            bErr = true;
+            goto block_end;
+        }
+        sp27C = 0;
+usage_loop:
+        UsageFindNextHigherID(&sp27C);
+        if (sp27C != 0) {
+            sprintf(sp1B0, " %6d %5d %5d %5d %5d\r\n", sp27C->m_unk0, sp27C->m_unk4,
+                    sp27C->m_unk8, sp27C->m_unk10, sp27C->m_unkC);
+            if (WriteLineToPCFile(nFd, sp1B0) != 0) {
+                bErr = true;
+                goto block_end;
+            }
+            goto usage_loop;
+        }
+        sprintf(sp1B0, "[\\CALLUSAGE]\r\n\r\n");
+        if (WriteLineToPCFile(nFd, sp1B0) != 0) {
+            bErr = true;
+            goto block_end;
+        }
+    }
+block_end:
+    if (nFd < 0) {
+        sprintf(sp1B0, "Could not open file %s\n", spB0);
+        nRet = -1;
+    } else {
+        sceClose(nFd);
+        if (bErr) {
+            sprintf(sp1B0, "Error writing sound changes to %s\n", spB0);
+            nRet = -1;
+        } else {
+            pBankName = "New file";
+            strcpy(sp250, pBankName);
+            sprintf(sp1B0, "Sound changes written to %s OK (%s)\n", spB0, sp250);
+        }
+    }
+    printf(sp1B0);
+    return nRet;
 }
 
 // FUNCTION: 0x001ACB40 DebugFindPrevID__6PSoundFPUiPUiUi
