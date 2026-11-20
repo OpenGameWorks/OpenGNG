@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "sound.h"
 
 // TODO(header): foreign declarations
@@ -23,6 +24,46 @@ extern int SOUND_IOP_REQUEST_LOAD;
 extern int gSOUND_uEECallCnt;
 extern int gSOUND_EEMainSyncCount3Sent;
 extern int gSOUND_EEMainSyncCount3Returned;
+extern int sbuff2[128];
+extern int SOUND_STREAM_ON[4];
+extern int SOUND_STREAM_STATUS16[4];
+extern int SOUND_STREAM_PLAY_HALF[4];
+extern int SOUND_STREAM_ENV[4];
+extern int SOUND_STREAM_CD_READ_PHASE[4];
+extern int SOUND_STREAM_SPU_PHASE[4];
+extern int SOUND_STREAM_SPU_PHASE_WAITING[4];
+extern int SOUND_STREAM_SPU_ADDR[4];
+extern int SOUND_STREAM_ID[4];
+extern int SOUND_STREAM_CD_ACCESS;
+extern char gSndEEDSSR[0x48];
+extern int gSndRecentTransaction_IOPImageArray[12];
+extern int gTransaction_IOPImageArray[4];
+extern int SOUND_CD_IDLE;
+extern int SOUND_CD_READY;
+extern int SOUND_CD_IDLE_AND_READY;
+extern int SOUND_CD_OUR_DISK_OP_ACTIVE;
+extern int SOUND_CD_STAGE;
+extern int SOUND_CD_TRAY_OPEN;
+extern int SOUND_CD_CONTINUE_AFTER_TRAY_CLOSE;
+extern int SOUND_IOP_CD_STATUS;
+extern int SOUND_IOP_DISK_TYPE;
+extern int SOUND_IOP_DATA_ADDRESS;
+extern int SOUND_IOP_DATA_SIZE;
+extern int SOUND_IOP_DATA_SEEK;
+extern int SOUND_IOP_DATA_CHECK;
+extern int SOUND_IOP_DATA_ID;
+extern int SOUND_SFX_TRANSFER_END;
+extern int SOUND_SPU_ADDR;
+extern int SOUND_TRANSFER_DATA_BLOCK_TO_EE_STATUS;
+extern int gSOUND_EEControl;
+extern int gSOUND_EESync3AtStartOfIOPDiskOp;
+extern int gSOUND_TrayCheckMjnlLoopCount;
+extern int gSOUND_HardwarePhase;
+extern int gSOUND_StageCountSeek;
+extern int gSOUND_StageCountRead;
+extern int gSOUND_StageCountDone;
+extern int gSOUND_uEECallCntReturned;
+void CdsAssert__FPciPc(char *, int, char *);
 
 static unsigned int fst_uEECallCnt;
 static int fst_WaitUpdateArray;
@@ -107,6 +148,13 @@ void SOUND_EnableFeatures(unsigned int arg0, unsigned int arg1) {
     IOPCommandData[1] = (short)(arg0 & 0xFFFF);
     IOPCommandData[2] = (short)(arg1 >> 16);
     SetIOPCommand(0x2A, 4);
+}
+
+// FUNCTION: 0x001ADC20 SOUND_SetOverallMusicPitch
+void SOUND_SetOverallMusicPitch(short arg0, short arg1) {
+    IOPCommandData[0] = arg0;
+    IOPCommandData[1] = arg1;
+    SetIOPCommand(0x29, 2);
 }
 
 // FUNCTION: 0x001ADC40 SOUND_MusicAddExciteHits
@@ -205,6 +253,13 @@ void SOUND_ReverbSetAdrs(unsigned int arg0, unsigned int arg1) {
     IOPCommandData[1] = (short)(arg0 & 0xFFFF);
     IOPCommandData[2] = (short)(arg1 >> 16);
     SetIOPCommand(0x4A, 4);
+}
+
+// FUNCTION: 0x001ADE60 SOUND_ClearReverbWorkArea
+void SOUND_ClearReverbWorkArea(short arg0, short arg1) {
+    IOPCommandData[0] = arg0;
+    IOPCommandData[1] = arg1;
+    SetIOPCommand(0x2B, 2);
 }
 
 // FUNCTION: 0x001ADE80 SOUND_ChangeReverbCore
@@ -400,6 +455,19 @@ void SOUND_CloseStreamBuffer(short arg0) {
 void SOUND_SetLanguage(short arg0) {
     IOPCommandData[0] = arg0;
     SetIOPCommand(0x21, 1);
+}
+
+// FUNCTION: 0x001AE450 SOUND_InitStreamData
+void SOUND_InitStreamData(short arg0) {
+    IOPCommandData[0] = arg0;
+    SetIOPCommand(0xC, 1);
+}
+
+// FUNCTION: 0x001AE490 SOUND_GetStatus
+void SOUND_GetStatus(int arg0, int arg1) {
+    IOPCommandData[0] = arg0;
+    IOPCommandData[1] = arg1;
+    SetIOPCommand(0x9, 2);
 }
 
 // FUNCTION: 0x001AE5E0 SOUND_SetChannelPitch
@@ -619,4 +687,100 @@ loop_3:
         return 1;
     }
     goto loop_1;
+}
+
+// DRAFT: 0x001AEDA0 SOUND_CopyIOPBuffer
+// note: 337 words off; frame -0xB0 (orig -0xC0, missing 16-byte spill at 0xA0 from reg pressure), clear loop unrolled, base pointers not hoisted, sync placement differs.
+void SOUND_CopyIOPBuffer(void) {
+    volatile int spB0;
+    volatile int spA0[4];
+    int i;
+    int j;
+    int s2;
+    int w;
+    int w2;
+    int v;
+
+    spB0 = 0;
+    FlushCache(0);
+    asm {
+        sync
+        sync.p
+    }
+    SOUND_STREAM_CD_ACCESS = 0;
+    for (i = 0; i < 0x30; i++) {
+        SOUND_STREAM_ON[i] = 0;
+        SOUND_STREAM_STATUS16[i] = 0;
+    }
+    ((sbuff2[0] * 4 < 0x201) ? (void)0 : CdsAssert__FPciPc("sound.c", 0xC0, "(nWritten*4) <= IOP_RETURN_BUFFER_BYTES"));
+    fst_uEECallCntReturned = sbuff2[2];
+    gSOUND_uEECallCntReturned = fst_uEECallCntReturned;
+    gSOUND_EEMainSyncCount3Returned = sbuff2[3];
+    SOUND_SFX_TRANSFER_END = sbuff2[4];
+    SOUND_SPU_ADDR = sbuff2[5];
+    SOUND_IOP_REQUEST_LOAD = sbuff2[6];
+    SOUND_CD_IDLE = sbuff2[7];
+    SOUND_CD_READY = sbuff2[8];
+    SOUND_CD_IDLE_AND_READY = sbuff2[9];
+    SOUND_CD_OUR_DISK_OP_ACTIVE = sbuff2[10];
+    SOUND_CD_STAGE = sbuff2[11];
+    SOUND_CD_TRAY_OPEN = sbuff2[12];
+    SOUND_CD_CONTINUE_AFTER_TRAY_CLOSE = sbuff2[13];
+    SOUND_IOP_CD_STATUS = sbuff2[14];
+    SOUND_IOP_DISK_TYPE = sbuff2[15];
+    gSOUND_EESync3AtStartOfIOPDiskOp = sbuff2[16];
+    gSOUND_TrayCheckMjnlLoopCount = sbuff2[17];
+    SOUND_TRANSFER_DATA_BLOCK_TO_EE_STATUS = sbuff2[18];
+    gSOUND_EEControl = sbuff2[19];
+    gSOUND_HardwarePhase = sbuff2[20];
+    gSOUND_StageCountSeek = sbuff2[21];
+    gSOUND_StageCountRead = sbuff2[22];
+    gSOUND_StageCountDone = sbuff2[23];
+    for (i = 0; i < 12; i++) {
+        gSndRecentTransaction_IOPImageArray[i] = sbuff2[24 + i];
+    }
+    for (i = 0; i < 4; i++) {
+        gTransaction_IOPImageArray[i] = sbuff2[36 + i];
+    }
+    SOUND_IOP_DATA_ADDRESS = sbuff2[40];
+    SOUND_IOP_DATA_SIZE = sbuff2[41];
+    SOUND_IOP_DATA_SEEK = sbuff2[42];
+    SOUND_IOP_DATA_CHECK = sbuff2[43];
+    SOUND_IOP_DATA_ID = sbuff2[44];
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < 16; j++) {
+            v = (sbuff2[45 + i] >> (0x1E - 2 * j)) & 3;
+            if (v == 0 && SOUND_SPUKeyStatus[i * 16 + j] == 3) {
+                v = 4;
+            }
+            SOUND_SPUKeyStatus[i * 16 + j] = v;
+        }
+    }
+    s2 = 48;
+    for (i = 0; i < 2; i++) {
+        w = sbuff2[s2];
+        SOUND_STREAM_ON[i] = 0;
+        SOUND_STREAM_STATUS16[i] = w & 0xFFFF;
+        if (w & 0x8000) {
+            SOUND_STREAM_ON[i] = 1;
+            spB0++;
+        }
+        SOUND_STREAM_PLAY_HALF[i] = (w >> 16) & 3;
+        SOUND_STREAM_ENV[i] = w & 0xFFFF;
+        w2 = sbuff2[s2 + 1];
+        SOUND_STREAM_CD_READ_PHASE[i] = w2 & 0xFF;
+        SOUND_STREAM_SPU_PHASE[i] = (w2 >> 8) & 0xFF;
+        SOUND_STREAM_SPU_PHASE_WAITING[i] = (w2 >> 16) & 0xFF;
+        SOUND_STREAM_SPU_ADDR[i] = sbuff2[s2 + 2];
+        SOUND_STREAM_ID[i] = sbuff2[s2 + 3];
+        s2 += 4;
+    }
+    for (i = 0; i < 2; i++) {
+        memcpy(gSndEEDSSR + 0x24 * i, &sbuff2[s2], 0x24);
+        SOUND_STREAM_ON[i + 2] = 0;
+        if (*(int *)(gSndEEDSSR + 0x24 * i + 0xC) & 8) {
+            SOUND_STREAM_ON[i + 2] = 1;
+        }
+        s2 += 9;
+    }
 }
