@@ -3,6 +3,9 @@
 
 class tagGsWobbleCopy;
 class tagGsWobbleCopyStrips;
+class tagWobbleStrip;
+class tagProceduralTextureData;
+class PArray;
 
 // Water texture object. Three ints at 0x00, a 0x140 block at 0x10, a 0x8410
 // block at 0x150, a 0x140 block at 0x8560, four words at 0x86A0 and five
@@ -11,9 +14,12 @@ class PWaterTexture {
 public:
     PWaterTexture();
     void Reset();
+    void Update();
     int Init(int nA, int nB, int nC);
+    int Init(tagProceduralTextureData *pData, PArray *pArr);
     void InitWobblePacket(tagGsWobbleCopy *pPacket, tagGsWobbleCopyStrips *pStrips, int nA, int nB, bool bFlag, char cFlag, unsigned long nC, int nD, float fA, float fB);
     void WobbleSTGrids(tagGsWobbleCopyStrips *pStrips, float fScale);
+    void InitWobbleStrip(tagWobbleStrip *pStrip, char cA, short sB, short sC, short sD, short sE, float fA, bool bFlag, float fB, float fC);
 
     int m_unk0;                 // 0x00
     int m_unk4;                 // 0x04
