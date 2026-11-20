@@ -43,6 +43,19 @@ struct SpinEffectEntry {
     unsigned int b;
 };
 extern "C" void SetFrameRate__6PMNodeFfb(PMNode *, float, bool);
+// AnimStateCall as RunMove calls it: Slot18 takes the action, Slot28 takes no argument.
+class AnimStateRunCall {
+public:
+    virtual void Slot08();
+    virtual void Slot0C();
+    virtual void Slot10();
+    virtual void Slot14();
+    virtual int Slot18(int arg0);
+    virtual void Slot1C();
+    virtual void Slot20();
+    virtual void Slot24();
+    virtual int Slot28();
+};
 struct SwordEntry {
     unsigned int uId;
     char _pad004[3];
@@ -257,7 +270,9 @@ class Physics {
 public:
     char _pad000[0xF8];
     float m_unkF8;
-    char _pad0FC[0x11C - 0xFC];
+    char _pad0FC[0x100 - 0xFC];
+    float m_unk100;
+    char _pad104[0x11C - 0x104];
     float m_unk11C;
     void SetPhysicsType(unsigned int arg0, float (*arg1)[4]);
     void SetVelocity(float arg0, float arg1);
@@ -1090,6 +1105,136 @@ int Player::CheckHammer(bool arg0) {
         i++;
     } while (i < 8);
     return 0;
+}
+
+// DRAFT: 0x0015A8E0 CheckAbility__6PlayerFi
+// note: 166 words; attempts 1-6 tried (separate returns 207, single result 192, default at bottom 166 kept, default at top 177, index order and mask-operand order no gain); remaining: default li -1 tail placement, jump-table relocs, case 3/4 loop registers, missing 0x304 AbilityTable reloc, case 8 and 11/12 tails.
+int Player::CheckAbility(int arg0) {
+    int a1 = arg0;
+    int a2 = a1 - 0x25;
+    int result;
+    if (a2 >= 0) {
+        a1 = 0x25;
+    }
+    signed char *entry = AbilityTable + a1 * 16;
+    switch (entry[4]) {
+    case 1:
+    case 2:
+        result = FindCurrentItem(a1, true);
+        break;
+    case 5:
+    case 7:
+        result = FindCurrentItem(a1, false);
+        break;
+    case 6:
+        if (m_unk214 < 0x6B) {
+            result = -3;
+        } else if (m_unk214 < 0xA0) {
+            result = (a1 == 0x13) ? -1 : -2;
+        } else {
+            result = (a1 == 0x12) ? -1 : -2;
+        }
+        break;
+    case 8:
+        result = -2;
+        if (m_unk204 / 10 + 0x1A == a1) {
+            result = -1;
+        }
+        break;
+    case 9:
+        result = ((m_unk1D0 & *(unsigned int *)entry) == 0) ? -1 : -3;
+        break;
+    case 4:
+        a1 = 3;
+        a2 = 2;
+        goto block19;
+    case 3:
+        a1 = 1;
+        a2 = 0;
+    block19:
+        if (m_unk1D0 & *(unsigned int *)entry) {
+            result = -3;
+            break;
+        }
+        {
+            signed char *base = (signed char *)this + a2 * 8;
+            int i = 0;
+            result = -2;
+            do {
+                if (base[i + 0x22B] == a1) {
+                    result = -1;
+                    break;
+                }
+                i++;
+            } while (i < 8);
+        }
+        break;
+    case 10: {
+        unsigned int mask = *(unsigned int *)entry;
+        unsigned int half;
+        if (m_unk1D0 & mask) {
+            result = -3;
+            break;
+        }
+        half = mask >> 1;
+        result = -2;
+        if (half == (m_unk1D0 & (mask | half))) {
+            result = -1;
+        }
+        break;
+    }
+    case 11:
+        if (m_unk1DC < m_unk1D4) {
+            result = -1;
+            break;
+        }
+        result = -4;
+        if (m_unk1D8 < m_unk1DC * 0xC8) {
+            result = -1;
+        }
+        break;
+    case 12:
+        result = -1;
+        if (m_unk1D8 >= m_unk1DC * 0xC8) {
+            result = -4;
+        }
+        break;
+    case 13:
+        result = -1;
+        if (m_unk20C >= m_unk208 * 0x280) {
+            result = -2;
+        }
+        break;
+    case 14:
+        if ((unsigned int)a2 < 0x1E) {
+            if (!(m_unk224 & (1 << a2))) {
+                result = -1;
+                break;
+            }
+        }
+        result = -4;
+        break;
+    case 15:
+        if (m_unk1D0 & *(unsigned int *)entry) {
+            result = -3;
+            break;
+        }
+        result = (CheckHammer(false) == 0) ? -2 : -1;
+        break;
+    case 16:
+        result = (m_unk208 + 0x21 == a1) ? -1 : -2;
+        break;
+    case 17:
+        result = -4;
+        if (m_unk1F8 < 0x63) {
+            result = -1;
+        }
+        break;
+    default:
+        result = -1;
+        break;
+    }
+    return result;
 }
 
 // FUNCTION: 0x0015ABE0 FindCurrentItem__6PlayerFib
@@ -2955,6 +3100,105 @@ void Player::FootStepSound(unsigned short *arg0) {
         }
         ((EntityBaseClass *)this)->PlaySound(sound);
         m_unk27C += 1;
+    }
+}
+
+static float SLOW_RATE = 0.8f;
+
+// DRAFT: 0x0015F330 RunMove__6PlayerFv
+// note: 90 words; remaining: branch offsets 0x68-0xF8, Slot18 test shape, speed-index chain, SLOW_RATE and SetVelocity order, duplicated SetFrameRate tail 0x26C-0x284, size 0x298 vs 0x2a4; unsigned m_unk23D1 gives lbu but no gain.
+void Player::RunMove() {
+    int action = GetGroundAction();
+    switch (action) {
+    case 0:
+        if (m_unk260 != 1) {
+            SetAction(1);
+        }
+        if (EndAction() != 0) {
+            *(u_long128 *)m_unk38 = *(u_long128 *)&gUnitMatrix[12];
+        }
+        return;
+    default:
+        SetAction(action);
+        return;
+    case 2: {
+        static unsigned short RunSound[3] = {0x0F, 0x22, 0xFFFF};
+        static unsigned short HammerRunSound[3] = {0x0000, 0x0009, 0xFFFF};
+        unsigned short *snd = 0;
+        switch (m_unk154) {
+        case 0x82000002:
+            snd = RunSound;
+            break;
+        case 0x820000CD:
+            snd = HammerRunSound;
+            break;
+        }
+        if (snd != 0) {
+            FootStepSound(snd);
+        }
+    }
+    /* fallthrough */
+    case 1: {
+        if (m_unk260 != action) {
+            SetAction(action);
+            return;
+        }
+        PMNode *node = (PMNode *)m_unk3C;
+        int result = 0;
+        if (node->m_unk24 != 0) {
+            result = ((AnimStateRunCall *)node->m_unk24)->Slot28();
+        } else {
+            result = 0;
+        }
+        if (result == 0) {
+            int moving = 0;
+            if (node->m_unk24 != 0) {
+                moving = ((AnimStateRunCall *)node->m_unk24)->Slot18(action) != 0;
+            }
+            if (!(moving & 0xFF)) {
+                goto block_27;
+            }
+        } else {
+block_27:
+            SetAction(action);
+        }
+        Physics *phys = (Physics *)m_unk38;
+        phys->m_unk11C = Round180__Ff(m_unk1C4);
+        int idx;
+        if (m_unk1BC < 0x32) {
+            idx = 0;
+        } else if (m_unk1BC < 0x4B) {
+            idx = 1;
+        } else if (m_unk1BC < 0x64) {
+            idx = 2;
+        } else {
+            idx = 3;
+        }
+        char *rec = (char *)m_unk25C + idx * 8;
+        float f2 = *(float *)(rec + 0x18);
+        if (m_unk23D1 != 0) {
+            f2 *= SLOW_RATE;
+        }
+        float f1 = m_unk1C8;
+        if (!(f1 <= f2)) {
+            m_unk1C8 = f2;
+        } else {
+            m_unk1C8 = f1 + *(float *)(rec + 0x1C);
+        }
+        phys->SetVelocity(phys->m_unk11C, m_unk1C8);
+        float f12 = phys->m_unk100;
+        if (f12 < 0.8f) {
+            f12 = 0.8f;
+        }
+        if (!(m_unk264 & 0x40)) {
+            f12 *= 0.5f;
+        }
+        if (m_unk23D1 != 0) {
+            f12 *= SLOW_RATE;
+        }
+        SetFrameRate__6PMNodeFfb(node, f12, false);
+        break;
+    }
     }
 }
 

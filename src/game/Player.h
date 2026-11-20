@@ -61,6 +61,7 @@ public:
     void GrimIdleMove();
     void GrimMove();
     void GrimRunMove();
+    void RunMove();
     void *ComboTarget(float arg0, float arg1, bool arg2);
     void HammerDSlashMove();
     void DSlashMove();
@@ -174,7 +175,9 @@ public:
     unsigned char m_unk103; // 0x103 set to 0xFE by ForceDie
     char _pad104[0x10C - 0x104];
     int m_unk10C;           // 0x10C flags word, bit 0x01000000 cleared by CyclockDamageMove
-    char _pad110[0x15C - 0x110];
+    char _pad110[0x154 - 0x110];
+    int m_unk154;           // 0x154 read by RunMove (action 2 sound check)
+    char _pad158[0x15C - 0x158];
     unsigned short m_unk15C; // 0x15C read by OutputDebug
     unsigned short m_unk15E; // 0x15E read by OutputDebug
     char _pad160[0x190 - 0x160];
@@ -203,8 +206,10 @@ public:
     int m_unk1F4;           // 0x1F4 flag, UpdateKey takes the first key mesh when set
     int m_unk1F8;           // 0x1F8 remaining-lives counter, decremented by SetDeath
     int m_unk1FC;           // 0x1FC compared with 2 by MightyBlowCheck
-    char _pad200[0x20C - 0x200];
-    int m_unk20C;           // 0x20C compared with the MightyCost value by MightyBlowCheck
+    char _pad200[4];
+    int m_unk204;           // 0x204 read by CheckAbility (ability 8)
+    int m_unk208;           // 0x208 read by CheckAbility (abilities 13 and 16)
+    int m_unk20C;          // 0x20C compared with the MightyCost value by MightyBlowCheck
     int m_unk210;           // 0x210 state, IsMidasActive requires it to equal 1
     int m_unk214;           // 0x214 ground action code, read by GetShieldPass
     int m_unk218;           // 0x218 state, NotifyTreasure requires it to equal 1
