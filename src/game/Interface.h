@@ -12,6 +12,7 @@ public:
     void UpdateCover();
     void UpdateStatus(bool arg0);
     void Init(PMeshNode *meshNode, HudData *hud);
+    void Reset();
     void Delete();
 
     char _pad000[0x4];
@@ -159,10 +160,12 @@ public:
     void AddMeshLayer(PMNode *node);
     void DeleteMeshLayer();
     void DisplayFadeRectangle();
+    void Render(int arg0);
     int AbilityScreen();
     void ResetGameHud();
     void ProcessScreenFade();
     void UpdateStatus(unsigned int arg0, bool arg1);
+    int StaticDemo(const char *, unsigned int, unsigned int, int, unsigned short);
     // Enumerator names are placeholders; only the type identity (Q29Interface10eFadeColor) matters.
     enum eFadeColor { eFadeColor_Value0 = 0, eFadeColor_Value1 = 1, eFadeColor_Value2 = 2 };
     void FadeScreen(float arg0, float arg1, bool arg2, eFadeColor arg3);
@@ -214,7 +217,7 @@ public:
     int m_unk41C;               // 0x41C
     int m_unk420;               // 0x420
     signed char m_unk424;       // 0x424
-    signed char m_unk425;       // 0x425
+    unsigned char m_unk425;     // 0x425
     signed char m_unk426;       // 0x426
     unsigned char m_unk427;     // 0x427 nonzero enables the warning and display-refresh path
 };

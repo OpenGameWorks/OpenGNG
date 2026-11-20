@@ -27,10 +27,16 @@ public:
     void SetAllowCallOneFrameHasElapsed(bool flag);
     void AbilityScreenEnter();
     void AbilityScreenLeave();
-    void PlaySoundUbiquitous(unsigned int id);
+    int PlaySoundUbiquitous(unsigned int id);
+    void RestartAndLoadInterfaceTypeBank(unsigned int id);
+    void StopSoundBySoundRef(unsigned int id);
     char _pad000[0x10];
 };
 extern PSound gSound;
+extern float GAME_FPS;
+extern "C" void InitRenderFrame__9MaxEngineFbUi(void *pThis, bool bFlag, unsigned int nFlags);
+extern "C" void InitStaticDemo__10MaximoMainFv(void *pThis);
+extern "C" void ResetWarning__11FontManagerFv(void *pThis);
 
 class FileUtils {
 public:
@@ -40,6 +46,8 @@ public:
 class PParticleManager {
 public:
     void Remove(PParticleSystem *pSystem);
+    int IsValid(PParticleSystem *pSystem);
+    void Add(PParticleSystem *pSystem);
 };
 extern char gGfxEng[1504384];
 
@@ -478,6 +486,77 @@ void HudGrim::UpdateCover() {
         off += 4;
         threshold += 0xA;
     } while (i < 3);
+}
+
+// Grim aura particle positions: 40 (x, y) pairs read by SetParticlePos.
+static float GrimFxPos[80] = {
+    -27.326f, 21.321f, -26.996f, 21.264f, -26.717f, 21.144f, -26.47f, 20.985f,
+    -26.185f, 20.77f, -25.988f, 20.56f, -25.817f, 20.3f, -25.671f, 20.041f,
+    -25.525f, 19.762f, -25.443f, 19.457f, -25.478f, 18.518f, -25.558f, 18.214f,
+    -25.67f, 17.911f, -25.83f, 17.663f, -26.062f, 17.4f, -26.198f, 17.184f,
+    -26.494f, 17.0f, -26.742f, 16.856f, -27.046f, 16.729f, -27.35f, 16.649f,
+    -28.317f, 16.649f, -28.597f, 16.761f, -28.901f, 16.88f, -29.157f, 17.0f,
+    -29.405f, 17.216f, -29.615f, 17.415f, -29.791f, 17.703f, -29.959f, 17.943f,
+    -30.087f, 18.23f, -30.143f, 18.534f, -30.159f, 19.492f, -30.103f, 19.788f,
+    -29.967f, 20.091f, -29.823f, 20.347f, -29.615f, 20.61f, -29.383f, 20.818f,
+    -29.135f, 21.018f, -28.847f, 21.162f, -28.551f, 21.257f, -28.255f, 21.353f,
+};
+
+// Spawn values copied into the Create argument block.
+static float GrimFxSpawn[4] = {90.0f, 160.0f, 250.0f, 120.0f};
+
+// DRAFT: 0x13FF40 Reset__7HudGrimFv
+// note: DIFF 119 words; register assignment for the flag/branch sequence and the order of later loads differ. Tried asm-order variants (122, 129), kept the 119 form.
+void HudGrim::Reset() {
+    float aSpawn[4];
+    float aPos[4];
+    PArray *arr;
+    int flag;
+    int s1;
+    char *base;
+    int off;
+    void *ring;
+
+    m_unkF = 0;
+    off = (unsigned int)m_unkE << 2;
+    base = (char *)((unsigned int)mpPlayerData__7GameHud + 4);
+    m_unkC = *(short *)(base + off);
+    if (m_unkC > 0x28) {
+        m_unkC = 0x28;
+    }
+    ring = m_unk10;
+    flag = (m_unkC >= 10) ? 1 : 0;
+    arr = (PArray *)((char *)m_unk4 + 0x14);
+    if (ring != 0) {
+        *(int *)((char *)ring + 0xC) = flag;
+    }
+    *(int *)((char *)m_unk4 + 0xC) = 1;
+    if (m_unk20 != 0 && ((PParticleManager *)(gGfxEng + 0x154F00))->IsValid(m_unk20) == 0) {
+        m_unk20 = 0;
+    }
+    if (m_unk20 == 0) {
+        m_unk20 = new PGrimBarAura;
+    }
+    ((m_unk20 != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0xA94, "mpFx"));
+    *(u_long128 *)aSpawn = *(u_long128 *)GrimFxSpawn;
+    ((PGrimBarAura *)m_unk20)->Create(40, 1.5f, 0.5f, 120.0f, aSpawn);
+    aPos[2] = 10.0f;
+    aPos[3] = 1.0f;
+    for (int i = 0; i < 40; i++) {
+        aPos[0] = GrimFxPos[i * 2];
+        aPos[1] = GrimFxPos[i * 2 + 1];
+        ((PGrimBarAura *)m_unk20)->SetParticlePos(i, aPos);
+    }
+    ((PParticleManager *)(gGfxEng + 0x154F00))->Add(m_unk20);
+    s1 = flag ? m_unkC : -1;
+    for (int i = 0; i < 40; i++) {
+        void *elem = (i < arr->m_unk0) ? arr->m_unk8[i] : 0;
+        if (elem != 0) {
+            *(int *)((char *)elem + 0xC) = (i < m_unkC) ? 1 : 0;
+        }
+        ((PGrimBarAura *)m_unk20)->EnableParticle(i, i < s1);
+    }
+    UpdateCover();
 }
 
 // FUNCTION: 0x140180 Delete__7HudGrimFv
@@ -1503,6 +1582,56 @@ void GameHud::Init(PMeshNode *meshNode, HudData *hud) {
     m_unk4 = ((PMNode *)meshNode)->Find(hud->m_unk0);
     m_unkF = hud->m_unk5;
     m_unkE = hud->m_unk4;
+}
+
+// DRAFT: 0x001446F0 StaticDemo__9InterfaceFPCcUiUiiUs
+// note: DIFF 116 words; dispatch compares (0x64-0x7C) use bne with a different block order than the original beq chain, the m_unk425 test for state 1 is placed differently, and the lwc1 GAME_FPS in the 0x84 branch slot does not match. Tried: switch dispatch (123), case 0 fall-through, declaration reorder (116, neutral), node uninitialised (116, kept).
+int Interface::StaticDemo(const char *name, unsigned int a2, unsigned int sid, int timer, unsigned short keys) {
+    int fp = 0;
+    int soundRef = 0;
+    int state = 0;
+    PMNode *node;
+    for (;;) {
+        InitRenderFrame__9MaxEngineFbUi(gEng, false, 0);
+        if (state == 3) {
+            if (m_unk425 == 0) {
+                if (soundRef != 0) {
+                    gSound.StopSoundBySoundRef(soundRef);
+                }
+                Destroy();
+                return fp;
+            }
+        } else if (state == 2) {
+            if ((keys & gPad.m_unk110) != 0) {
+                fp = 1;
+            } else {
+                timer--;
+                if (timer >= 0) {
+                    goto tail;
+                }
+            }
+            FadeScreen(255.0f, 4.25f, true, eFadeColor_Value0);
+            state = 3;
+        } else if (state == 1) {
+            if (m_unk425 == 0) {
+                state = 2;
+            }
+        } else if (state == 0) {
+            FadeScreen(0.0f, 4.25f, true, eFadeColor_Value0);
+            gInterface.SoundGainEEControl();
+            node = Load(name);
+            gSound.RestartAndLoadInterfaceTypeBank(0x72);
+            if (sid != 0) {
+                soundRef = gSound.PlaySoundUbiquitous(sid);
+            }
+            ResetWarning__11FontManagerFv((char *)this + 0x80);
+            InitStaticDemo__10MaximoMainFv(gEng);
+            state = 1;
+        }
+    tail:
+        node->Slot04(0.0f, 60.0f / GAME_FPS, 0, 0, false);
+        Render(0);
+    }
 }
 
 // FUNCTION: 0x144930 LoadingDisplayGuts__9InterfaceFUi
