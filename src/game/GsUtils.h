@@ -61,12 +61,22 @@ typedef struct tagFogSpritePacket {
     char m_unk50[0x280];        // 0x050 twenty pairs of XYZ2 words, 0x20 apart
 } tagFogSpritePacket;           // size >= 0x2D0
 
+typedef struct tagGsClearSprites {
+    char _pad000[0x460];        // 0x000 GIF tag, clear sprite pairs; memset target
+} tagGsClearSprites;            // size >= 0x460
+
+typedef struct tagTexturedFogSpritePacket {
+    char _pad000[0x290];        // 0x000 GIF tag, fog sprite pairs (stride 0x40)
+} tagTexturedFogSpritePacket;   // size >= 0x290
+
 void GsInitClut256(tagGsClut256 *pClut);
 void FudgeBytesToBMPFormat(char *pBuf, int nWidth, int nHeight, float fA, float fB);
 int GsSwapDBuff(sceGsDBuff *pDBuff, int nIdx);
 void GsSetFrameBufferCopyInfo(tagGsFrameBufferCopy *pInfo, int nX, int nY);
 void GsSetTCC(tagGsTextureEnvironment *pTexEnv, bool bFlag);
 void GsSetSpriteCoords(sprite_tag *pSprite, short nX0, short nX1, short nX2, short nX3, int nOffX, int nOffY, int nW, int nH, short nFlag);
+int GsInitClearPacket(tagGsClearSprites *pPacket, int nW, int nH, char cR, char cG, char cB, char cA, bool bFlag);
+void GsInitTexturedFogSprite(tagTexturedFogSpritePacket *pPacket, char cR, char cG, char cB, unsigned int nZ);
 void GsInitFogSprite(tagFogSpritePacket *pPacket, char cR, char cG, char cB, unsigned int nZ);
 
 #endif

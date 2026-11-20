@@ -11,6 +11,8 @@ extern "C" void sceGsPutDrawEnv(void *pEnv);
 extern int SCREEN_OFFSET_X;
 extern int SCREEN_OFFSET_Y;
 extern int SCREEN_HEIGHT;
+extern unsigned char MODE_PAL;
+void FTOI4(float *pDst, float *pSrc);
 struct sceGifPacket {
     unsigned int m_unk0;
     unsigned int m_unk4;
@@ -168,6 +170,61 @@ void GsDumpFrameBuffersAsBmp(int nA, int nB) {
     sceClose(fd);
 }
 
+// DRAFT: 0x0017E560 GsInitClearPacket__FP17tagGsClearSpritesiiccccb
+// note: first C draft from asm; header words, RGBAQ and loop not yet compared
+int GsInitClearPacket(tagGsClearSprites *pPacket, int nW, int nH, char cR, char cG, char cB, char cA, bool bFlag) {
+    int nCount = nW / 32;
+    int nSize = 0x460 - ((0x20 - nCount) << 5);
+    unsigned char *pB = (unsigned char *)pPacket;
+    unsigned long long nRgbaq;
+    unsigned short nHdr;
+    short nX;
+    short nY;
+    short nYH;
+    int i;
+
+    memset(pPacket, 0, 0x460);
+    *(u_long128 *)pPacket = 0;
+
+    nRgbaq = (unsigned long long)(long long)cR | ((unsigned long long)(long long)cG << 8) | ((unsigned long long)(long long)cB << 16) | ((unsigned long long)(long long)cA << 24) | ((unsigned long long)0x3F800000 << 32);
+
+    nHdr = *(unsigned short *)pPacket;
+    *(unsigned short *)pPacket = (nHdr & 0x8000) | (((nCount << 1) + 5) & 0x7FFF);
+    pB[1] = (pB[1] & 0x7F) | 0x80;
+    pB[7] = (pB[7] & 0x0F) | 0x10;
+    pB[8] = (pB[8] & 0xF0) | 0x0E;
+
+    *(unsigned long long *)(pB + 0x30) = 0x30000;
+    *(unsigned long long *)(pB + 0x38) = 0x47;
+    *(unsigned long long *)(pB + 0x10) = 1;
+    *(unsigned long long *)(pB + 0x18) = 0x1A;
+    *(unsigned long long *)(pB + 0x20) = ((unsigned long long)bFlag << 6) | 6;
+    *(unsigned long long *)(pB + 0x28) = 0;
+    *(unsigned long long *)(pB + 0x40) = 0x44;
+    *(unsigned long long *)(pB + 0x48) = 0x42;
+    *(unsigned long long *)(pB + 0x50) = nRgbaq;
+    *(unsigned long long *)(pB + 0x58) = 1;
+
+    nX = (short)(0x800 - nW / 2);
+    nY = (short)(0x800 - nH / 2);
+    nYH = (short)nH;
+
+    for (i = 0; i < nCount; i++) {
+        unsigned char *pE = pB + i * 0x20;
+        *(short *)(pE + 0x60) = (short)(nX << 4);
+        *(short *)(pE + 0x62) = (short)(nY << 4);
+        nX += 0x20;
+        *(short *)(pE + 0x70) = (short)(nX << 4);
+        *(short *)(pE + 0x72) = (short)((nY + nYH) << 4);
+        *(unsigned long long *)(pE + 0x68) = 5;
+        *(unsigned long long *)(pE + 0x78) = 5;
+        *(unsigned long long *)(pE + 0x60) = (*(unsigned long long *)(pE + 0x60) & ~0ULL) | 0;
+        *(unsigned long long *)(pE + 0x70) = (*(unsigned long long *)(pE + 0x70) & ~0ULL) | 0;
+    }
+
+    return nSize;
+}
+
 // FUNCTION: 0x0017E820 GsSetSpriteCoords__FP10sprite_tagssssiiiis
 void GsSetSpriteCoords(sprite_tag *pSprite, short nX0, short nX1, short nX2, short nX3, int nOffX, int nOffY, int nW, int nH, short nFlag) {
     pSprite->m_unk20 = nX0 << 4;
@@ -194,6 +251,58 @@ void GsSetSpriteCoords(sprite_tag *pSprite, short nX0, short nX1, short nX2, sho
     pSprite->m_unk04 = 0x80;
     pSprite->m_unk08 = 0x80;
     pSprite->m_unk0C = 0x80;
+}
+
+// DRAFT: 0x0017E920 GsInitTexturedFogSprite__FP26tagTexturedFogSpritePacketcccUi
+// note: first C draft from asm; header/byte RMW, fixed stores, PAL float init and 20-step loop written, not yet compared
+void GsInitTexturedFogSprite(tagTexturedFogSpritePacket *pPacket, char cR, char cG, char cB, unsigned int nZ) {
+    float aSrc[4];
+    int aDst[4];
+    unsigned long long nZHi = (unsigned long long)nZ << 32;
+    long long nRGB = (long long)cR | ((long long)cG << 8) | ((long long)cB << 16) | 0x3F80000080000000LL;
+    *(u_long128 *)pPacket = 0;
+    unsigned short nHdr = *(unsigned short *)pPacket;
+    *(unsigned short *)pPacket = (nHdr & 0x8000) | 0x54;
+    unsigned char *pB = (unsigned char *)pPacket;
+    pB[1] = (pB[1] & 0x7F) | 0x80;
+    pB[7] = (pB[7] & 0x0F) | 0x10;
+    pB[8] = (pB[8] & 0xF0) | 0x0E;
+    *(long long *)(pB + 0x10) = 0x70000;
+    *(long long *)(pB + 0x18) = 0x47;
+    *(long long *)(pB + 0x30) = 0x156;
+    *(long long *)(pB + 0x38) = 0;
+    *(long long *)(pB + 0x20) = 0x11;
+    *(long long *)(pB + 0x28) = 0x42;
+    *(long long *)(pB + 0x40) = nRGB;
+    *(long long *)(pB + 0x48) = 1;
+    if (MODE_PAL != 0) {
+        aSrc[0] = 0.5f;
+        aSrc[1] = 0.5f;
+        aSrc[2] = 32.5f;
+        aSrc[3] = 0.5f + (float)SCREEN_HEIGHT;
+    } else {
+        aSrc[0] = 0.0f;
+        aSrc[1] = 0.0f;
+        aSrc[2] = 32.0f;
+        aSrc[3] = (float)SCREEN_HEIGHT;
+    }
+    for (int i = 0; i < 20; i++) {
+        int nOff = i * 0x20;
+        unsigned char *pE = (unsigned char *)pPacket + i * 0x40;
+        *(long long *)(pE + 0x60) = nZHi | ((long long)((SCREEN_OFFSET_Y << 4)) << 16) | (long long)((SCREEN_OFFSET_X + nOff) << 4);
+        *(long long *)(pE + 0x68) = 5;
+        *(long long *)(pE + 0x80) = nZHi | ((long long)((SCREEN_OFFSET_Y + SCREEN_HEIGHT) << 4) << 16) | (long long)((SCREEN_OFFSET_X + nOff + 0x20) << 4);
+        *(long long *)(pE + 0x88) = 5;
+        *(long long *)(pE + 0x58) = 3;
+        *(long long *)(pE + 0x78) = 3;
+        FTOI4((float *)aDst, aSrc);
+        *(unsigned short *)(pE + 0x50) = (*(unsigned short *)(pE + 0x50) & 0xC000) | (aDst[0] & 0x3FFF);
+        *(unsigned short *)(pE + 0x52) = (*(unsigned short *)(pE + 0x52) & 0xC000) | (aDst[1] & 0x3FFF);
+        *(unsigned short *)(pE + 0x70) = (*(unsigned short *)(pE + 0x70) & 0xC000) | (aDst[2] & 0x3FFF);
+        *(unsigned short *)(pE + 0x72) = (*(unsigned short *)(pE + 0x72) & 0xC000) | (aDst[3] & 0x3FFF);
+        aSrc[0] = aSrc[0] + 32.0f;
+        aSrc[2] = aSrc[2] + 32.0f;
+    }
 }
 
 // DRAFT: 0x0017EBD0 GsInitFogSprite__FP18tagFogSpritePacketcccUi
