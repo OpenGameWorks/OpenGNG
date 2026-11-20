@@ -1,22 +1,12 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "PFireDamageFx.h"
+#include "PMNode.h"
+#include "PParticleManager.h"
 
 // TODO(header): foreign declarations
-// PMNode.h and PParticleManager.h both define enum ePsx2FileVersion (through
-// PMesh.h), so only the members used here are declared.
 class PParticleSystem;
 class PParticleOneShot;
-class PMNode {
-public:
-    PMNode *Find(unsigned int uID);
-    void *AttachFx(unsigned int uID, float fA, float fB, float fC, float fD, bool bFlag);
-};
-class PParticleManager {
-public:
-    PParticleOneShot *Create(unsigned int hFx, float fA, float fB, float fC, PMNode *pNode, bool bFlag);
-    int IsValid(PParticleSystem *pSystem);
-};
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
