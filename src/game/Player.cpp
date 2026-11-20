@@ -23,6 +23,8 @@ public:
 };
 extern Interface gInterface;
 extern signed char AbilityTable[];
+extern unsigned short HSpin360Attack;
+extern unsigned short HSpin720Attack;
 struct AttackEntry {
     unsigned short m_unk0;
     unsigned short m_unk2;
@@ -262,6 +264,10 @@ extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
 extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
 extern "C" void sceVu0ApplyMatrix(float *pDst, float *pMat, float *pSrc);
+extern "C" void sceVu0Normalize(float *, float *);
+extern "C" void *Spawn__13EntityManagerFUibi(void *, unsigned int, bool, int);
+extern "C" void InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(void *, int, float *, float *, float *);
+extern "C" void *ComboTarget__6PlayerFffb(void *, float, float, bool);
 extern "C" float atan2f(float fY, float fX);
 extern "C" float Round180__Ff(float fAngle);
 extern "C" float FastMath_Sin180__Ff(float fAngle);
@@ -981,6 +987,47 @@ void Player::UnlockGateMove() {
     }
 }
 
+// DRAFT: 0x0015BAB0 UnlockChestMove__6PlayerFv
+// note: 2 words differ; the m_unk328 load must precede the mpEntMgr gp load (delay slot), tried hoisting id, mgr copy, pre-declared pApparition, Player *self
+void Player::UnlockChestMove() {
+    int state = m_unk250;
+    int h = (int)m_unk3C[13];
+    switch (state) {
+    case 0:
+        if (!((float)h < 16.0f)) {
+            m_unk250 = 1;
+            GameVarSub(7, 1);
+            UpdateKey();
+        }
+        break;
+    case 1:
+        if (h >= 0x19) {
+            m_unk250 = 2;
+            ((EntityBaseClass *)this)->PlaySound(0x99);
+        }
+        break;
+    case 2:
+        if (h >= 0x2D) {
+            m_unk250 = 3;
+            ((EntityBaseClass *)this)->PlaySound(0xB5);
+        }
+        break;
+    case 3: {
+        void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk328);
+        if (pApparition == 0) {
+            m_unk250 = 4;
+            break;
+        }
+        if (!((float)h <= 70.0f)) {
+            m_unk250 = 4;
+            ((ApparitionVirtuals *)pApparition)->OnHitEvent(this, 0, 0x1FF, 0);
+        }
+        AlignPosition((EntityBaseClass *)pApparition);
+        break;
+    }
+    }
+}
+
 // note: 2 words differ: the gp global mpEntMgr loads into a0 before the m_unk328 load into a1; the original has them reversed. Tried a hoisted id local (worse), a cast local (same).
 // DRAFT: 0x0015BC20 OpenChestMove__6PlayerFv
 void Player::OpenChestMove() {
@@ -1385,6 +1432,15 @@ void Player::Over3Move() {
     MultipleAttack(&Over3Attacks[0]);
 }
 
+// FUNCTION: 0x0015D3A0 HSpinMove__6PlayerFv
+void Player::HSpinMove() {
+    unsigned short *attack = &HSpin720Attack;
+    if (m_unk260 == 0x40) {
+        attack = &HSpin360Attack;
+    }
+    MultipleAttack(attack);
+}
+
 // DRAFT: 0x0015D3C0 Spin360Move__6PlayerFv
 // note: 49 words; branch layout differs (original places the 720 and 360 blocks out of line), and the Spin360Attack address is hoisted before the compares; tried reordered store, folded index
 void Player::Spin360Move() {
@@ -1486,6 +1542,53 @@ void Player::AirSlash2Move() {
         SetAction(Air2Moves[m_unk250]);
     }
     *(float *)((char *)m_unk38 + 0x110) = *(float *)((char *)m_unk25C + 0x38);
+}
+
+// DRAFT: 0x0015D790 AirSlashMove__6PlayerFv
+// note: 93 words differ: AirMoves is a plain local because the original's function-local static (79 words) broke DuckLaunchMove MATCH; a2/m_unk250 swap, ternary 2:0 emits movz, m_unk250==0 block layout
+void Player::AirSlashMove() {
+    unsigned char AirMoves[5] = {0x00, 0x00, 0x26, 0x0f, 0x10};
+    int h = (int)m_unk3C[13];
+    int st = m_unk250;
+    int a2;
+    if (st == -1) {
+        return;
+    }
+    if (st == 0) {
+        m_unk250 = 1;
+        float *f = (float *)m_unk38;
+        f[0] = f[0] * AIR_ATTACK_SPEED;
+        f[2] = f[2] * AIR_ATTACK_SPEED;
+        m_unk38[1] = 0x33D6BF95;
+        m_unk38[0x44] = 0;
+        return;
+    }
+    if (h >= 0x14) {
+        return;
+    }
+    if (m_unk1D0 & 2) {
+        a2 = 0;
+    } else if (m_unk1B2 & 0x1000) {
+        a2 = (m_unk268 < 2) ? 3 : 4;
+    } else {
+        a2 = (m_unk1B2 & 0x8000) ? 2 : 0;
+    }
+    if (m_unk250 < a2) {
+        m_unk250 = a2;
+    }
+    if (h < 0xE) {
+        return;
+    }
+    *(float *)((char *)m_unk38 + 0x110) = *(float *)((char *)m_unk25C + 0x38);
+    if (m_unk250 < 2) {
+        return;
+    }
+    if (*(float *)((char *)m_unk38 + 0xF8) < 1.0f) {
+        m_unk250 = -1;
+        return;
+    }
+    ComboTarget(-1.0f, 100.0f, true);
+    SetAction(AirMoves[m_unk250]);
 }
 
 // FUNCTION: 0x0015D900 DuckLaunchMove__6PlayerFv
@@ -1742,6 +1845,46 @@ void Player::GrimSliceMove() {
         if ((int)((PMNode *)m_unk3C)->GetFrameTime() >= 0x21) {
             m_unk250 = 2;
             ((EntityBaseClass *)this)->PlaySound(0x11B);
+        }
+        break;
+    }
+}
+
+// FUNCTION: 0x0015E800 GrimProjectileMove__6PlayerFv
+void Player::GrimProjectileMove() {
+    static float vOffset[4] = {0.0f, 3.0f, -3.0f, 1.0f};
+    float sp40[4];
+    float sp50[4];
+    switch (m_unk250) {
+    case 0:
+        *(int *)((char *)m_unk38 + 0x110) = 0;
+        m_unk250 = 1;
+        break;
+    case 1:
+        if ((int)m_unk3C[13] >= 0xC) {
+            m_unk250 = 2;
+            *(float *)((char *)m_unk38 + 0x110) = *(float *)((char *)m_unk25C + 0x38);
+            void *proj = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x2D, false, 0);
+            if (proj != 0) {
+                float *pm = m_unk3C;
+                sceVu0ApplyMatrix(sp40, (float *)((char *)pm + 0x40), vOffset);
+                void *tgt = ComboTarget__6PlayerFffb(this, 0.5f, 900.0f, false);
+                if (tgt != 0) {
+                    int sub = *(int *)((char *)tgt + 0x3C);
+                    void *src = (char *)tgt + 0x190;
+                    if (sub != 0) {
+                        src = (char *)sub + 0x80;
+                    }
+                    sceVu0SubVector(sp50, (float *)src, sp40);
+                    sceVu0Normalize(sp50, sp50);
+                } else {
+                    *(u_long128 *)sp50 = *(u_long128 *)((char *)pm + 0x60);
+                    sceVu0ScaleVector(sp50, sp50, -0.7070000171661377f);
+                    sp50[1] = -0.7070000171661377f;
+                    sp50[3] = 1.0f;
+                }
+                InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(proj, 0, sp40, (float *)((char *)pm + 0x90), sp50);
+            }
         }
         break;
     }
@@ -2199,6 +2342,40 @@ int Player::GetGroundAction() {
         r2 = 1;
     }
     return r2;
+}
+
+// DRAFT: 0x00162090 SetShockwave__6PlayerFi
+// note: DIFF 60 words; frame and s1/s2/s3 spill order now match; remaining diff is the if-test branch layout (beq/bne to tail, andi hoisted into delay slot) and sll scheduling; tried !=0 mask test, flag split (63), s1*4.
+void Player::SetShockwave(int arg0) {
+    void *proj;
+    int s1;
+    float *p80 = (float *)((char *)m_unk3C + 0x80);
+    float *p90 = (float *)((char *)m_unk3C + 0x90);
+    proj = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x2D, false, 0);
+    if (proj == 0) {
+        CdsAssert__FPciPc("Player.cpp", 0xC67, "pPrj");
+    }
+    m_unk2B0 = *(unsigned int *)((char *)proj + 4);
+    s1 = m_unk1FC;
+    unsigned int v1 = m_unk1D0;
+    if (arg0 == 9 || (arg0 == 10 && (v1 & 2))) {
+        unsigned int a0 = m_unk250;
+        if (v1 & 2) {
+            v1 >>= 5;
+            a0 >>= 5;
+        }
+        if (v1 & (a0 & 0xC00)) {
+            int t = m_unk20C;
+            if ((v1 & 0x800) && t >= 0x300 && (s1 & 1)) {
+                arg0 = 0xC;
+                GameVarSub(0xE, 0x300);
+            } else if ((v1 & 0x400) && t >= 0x100) {
+                arg0 = 0xB;
+                GameVarSub(0xE, 0x100);
+            }
+        }
+    }
+    InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(proj, arg0 + (s1 << 2), p80, p90, 0);
 }
 
 // FUNCTION: 0x00162E50 ForceDie__6PlayerFi

@@ -27,6 +27,7 @@ public:
     void AdjustPositionOfAttacker(EntityBaseClass *arg0, EntityBaseClass *arg1, float arg2, float arg3, float arg4);
     void ResurrectionMove();
     void UnlockGateMove();
+    void UnlockChestMove();
     void AlignPosition(EntityBaseClass *arg0);
     int SetPowerupMotion(int arg0);
     unsigned char IsHanging();
@@ -48,6 +49,7 @@ public:
     void StabDownMove();
     int CancelAttack(unsigned int arg0);
     void CancelMove();
+    void GrimProjectileMove();
     void GrimSlash2Move();
     void GrimSlashMove();
     void GrimAirSlashMove();
@@ -97,6 +99,7 @@ public:
     void CyclockDamageMove();
     void MBlowMove();
     void AirSlash2Move();
+    void AirSlashMove();
     void GetKeyMove();
     void DialogMove();
     void GrabObjectMove();
@@ -129,6 +132,7 @@ public:
     void DuckLaunchMove();
     void MBlow2Move();
     void SpinSlashMove();
+    void HSpinMove();
     void Spin360Move();
     void CSliceMove();
     void SliceMove();
