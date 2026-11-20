@@ -22,6 +22,7 @@ public:
     void UpdateBridgeRope();
     void LoadBridgeRope();
     void LoadBridgeParts();
+    void LeanOnSides();
     void OnTimerEvent(unsigned int arg0);
 
     void *m_unk0;               // 0x000 vtable pointer (inherited from EntityBaseClass)

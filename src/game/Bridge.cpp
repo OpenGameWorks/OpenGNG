@@ -21,6 +21,11 @@ extern unsigned int BridgeRopeName[9];
 extern unsigned int BridgeName[9];
 extern "C" void *GetResource__16PResourceManagerFUib(void *pThis, unsigned int nId, bool bFlag);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
+extern float aBridgeHalfLength;
+extern char *mPlayerAPI__13EntityManager;
+extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
+extern "C" float FastMath_Fabs__Ff(float fValue);
+extern "C" float sqrtf(float x);
 
 // Placeholder for the object at Bridge+0x3C: only the three words copied by Render are placed.
 class BridgeSource {
@@ -157,6 +162,41 @@ void Bridge::UpdateBridgeRope() {
     }
     Animate__6PMNodeFffP5PMat4ib(m_unk34C, 0.0f, 0.0f, 0, 0, false);
     ((PMNode *)m_unk34C)->m_unk3E |= 8;
+}
+
+// DRAFT: 0x001DCCA0 LeanOnSides__6BridgeFv
+// note: 16 words differ: clamp compare sense (c.le.s/bc1t vs c.lt.s/bc1f), mul.s operand order at 0x17C, slt operand at 0x194, loop-body register and interleave (a0/a1). Tried: negated and reversed clamp ternary (118), swapped product operands (no change), flipped segment ternary (23 to 16).
+void Bridge::LeanOnSides() {
+    float vec[4];
+    void *t = *(void **)((char *)mPlayerAPI__13EntityManager + 0x3C);
+    float *a1 = t ? (float *)((char *)t + 0x80) : (float *)((char *)mPlayerAPI__13EntityManager + 0x190);
+    int h = m_unk330 / 2;
+    sceVu0SubVector(vec, a1, (float *)((char *)this + (h << 5) + 0x210));
+    float *src = m_unk3C ? (float *)((char *)m_unk3C + 0x90) : (float *)((char *)this + 0x1A0);
+    MathAPI::VectorRotateY((float (*)[4])vec, -src[1]);
+    float f20 = vec[0];
+    float d = (FastMath_Fabs__Ff(vec[2]) < 1.0f) ? 1.0f : FastMath_Fabs__Ff(vec[2]);
+    float f21 = 40.0f / sqrtf(sqrtf(d)) / (float)(m_unk330 / 2);
+    for (int i = 0, off = 0; i < m_unk330; i++, off += 4) {
+        float f3 = (aBridgeHalfLength < FastMath_Fabs__Ff(f20)) ? aBridgeHalfLength : FastMath_Fabs__Ff(f20);
+        if (f20 > 0.0f) {
+            f3 = f3 * -1.0f;
+        }
+        float x = ((m_unk330 / 2) >= i) ? (float)i * f21 : f21 * (float)(m_unk330 - i);
+        f3 = f3 * (x / aBridgeHalfLength);
+        if (f3 < -180.0f) {
+            f3 += 360.0f;
+        } else if (f3 > 180.0f) {
+            f3 -= 360.0f;
+        }
+        float tmp[4];
+        void *node = *(void **)((char *)this + off + 0x1E4);
+        tmp[0] = *(float *)((char *)node + 0x90);
+        tmp[1] = *(float *)((char *)node + 0x94);
+        tmp[2] = f3;
+        *(u_long128 *)((char *)*(void **)((char *)this + off + 0x1E4) + 0x90) = *(u_long128 *)tmp;
+        ((PMNode *)*(void **)((char *)this + off + 0x1E4))->m_unk3E |= 8;
+    }
 }
 
 // DRAFT: 0x001DD830 Clamp__6BridgeFRf
