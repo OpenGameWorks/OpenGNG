@@ -19,10 +19,11 @@ public:
     float ShieldDistance(float (*arg0)[4]);
     int HoverCheck();
     void DeleteShield();
+    void Execute();
 
     char _pad190[0x20];
     int m_unk1B0;                   // 0x1B0 compared against 2 by OnAttackEvent
-    char _pad1B4[0x1B8 - 0x1B4];
+    float m_unk1B4;                 // 0x1B4 written by Execute
     void *m_unk1B8;                 // 0x1B8
     EntityBaseClass *m_unk1BC;      // 0x1BC cleared by constructor
     void *m_unk1C0;                 // 0x1C0 cleared by constructor

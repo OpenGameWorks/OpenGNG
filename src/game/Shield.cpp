@@ -2,6 +2,7 @@
 #include "types.h"
 #include "Shield.h"
 #include "EntityBaseClass.h"
+#include "PArray.h"
 
 // TODO(header): foreign declarations
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int state);
@@ -22,7 +23,7 @@ extern "C" void Animate__15EntityBaseClassFif(void *pThis, int arg, float dt);
 extern "C" int IsValid__16PParticleManagerFP15PParticleSystem(void *pThis, void *pSystem);
 extern "C" void FreezeCheck__15EntityBaseClassFP15EntityBaseClassi(void *pThis, EntityBaseClass *arg0, int arg1);
 extern "C" void CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(void *pThis, float (*matrix)[4], int objType, unsigned int weaponType, unsigned char flag);
-extern "C" void PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int sound);
+extern "C" int PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int sound);
 extern "C" void ExtendCombo__6PlayerFv(void *pThis);
 extern "C" void GameVarAdd__6PlayerFUiii(void *pThis, unsigned int var, int a, int b);
 extern "C" char mHitPos__15EntityBaseClass[0x10];
@@ -32,6 +33,19 @@ extern "C" void SetFlyingShield__6PlayerFP6Shield(void *pThis, Shield *arg0);
 extern "C" void UpdateShieldStatus__15ClockworkMaximoFP6Shield(void *pThis, Shield *arg0);
 // gEng is a pointer read at its own address; the 16-byte placeholder keeps the load absolute.
 extern "C" char gEng[0x10];
+extern "C" PArray mTempArray__15EntityBaseClass;
+extern "C" void *mpEntMgr__15EntityBaseClass;
+extern "C" float RICOCHET_RADIUS;
+extern "C" int GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(void *pThis, int loadClass, PArray *pArray, float (*pos)[4], float radius, int a4, unsigned char a5, unsigned char a6);
+extern "C" void *GetPtrToApparition__13EntityManagerFUi(void *pThis, unsigned int handle);
+extern "C" void sceVu0Normalize(float (*dst)[4], float (*src)[4]);
+extern "C" void sceVu0ScaleVector(float (*dst)[4], float (*src)[4], float scale);
+extern "C" void CheckSwordBGAnim__13EntityManagerFP6PMNode(void *pThis, void *node);
+extern "C" int CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(void *pThis, unsigned int a1, unsigned int a2, float (*a3)[4], float (*a4)[4], EntityBaseClass *a5, float a6, bool a7, int a8, bool a9);
+extern "C" unsigned int HoverSound[8];
+extern "C" void *CreateGhost__9EffectAPIFP9PMeshNode(void *pThis, void *node);
+extern "C" float sqrtf(float fX);
+extern "C" void ResetCollisions__15EntityBaseClassFv(void *pThis);
 
 // Leading virtuals of PParticleSystem's vtable (__vt__15PParticleSystem); a call
 // through this view loads the slot into $t9 as the original's virtual calls do.
@@ -95,6 +109,71 @@ void Shield::Animate(int arg0, float arg1) {
         }
         *(u_long128 *)(dst + 0x30) = *(u_long128 *)tmp;
     }
+}
+
+// FUNCTION: 0x00168330 CheckRicochet__6ShieldFP15EntityBaseClass
+int Shield::CheckRicochet(EntityBaseClass *arg0) {
+    EntityBaseClass *s0;
+    float (*target)[4];
+    EntityBaseClass *s4;
+    int s2;
+    float vec[4];
+    float (*t)[4];
+    float f0;
+    float f20;
+    unsigned int id;
+
+    if (m_unk3C != 0) {
+        target = (float (*)[4])(m_unk3C + 0x80);
+    } else {
+        target = (float (*)[4])((char *)this + 0x190);
+    }
+    if (mTempArray__15EntityBaseClass.m_unk8 != 0) {
+        mTempArray__15EntityBaseClass.m_unk0 = 0;
+        mTempArray__15EntityBaseClass.m_unk4 = 0;
+    }
+    if (GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 3, &mTempArray__15EntityBaseClass, target, RICOCHET_RADIUS, 0, 1, 0) != 0) {
+        s2 = arg0->m_unk04;
+        f20 = 1000.0f;
+        s0 = 0;
+        mTempArray__15EntityBaseClass.m_unk4 = 0;
+        id = (mTempArray__15EntityBaseClass.m_unk0 != 0) ? (unsigned int)mTempArray__15EntityBaseClass.m_unk8[0] : 0;
+        while (id != 0) {
+            if (id != (unsigned int)s2) {
+                s4 = (EntityBaseClass *)GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, id);
+                if (s4->m_unk3C != 0) {
+                    t = (float (*)[4])(s4->m_unk3C + 0x80);
+                } else {
+                    t = (float (*)[4])((char *)s4 + 0x190);
+                }
+                sceVu0SubVector((float (*)[4])vec, t, target);
+                f0 = sceVu0InnerProduct((float (*)[4])vec, (float (*)[4])vec);
+                if (f0 < f20) {
+                    f20 = f0;
+                    s0 = s4;
+                }
+            }
+            id = (++mTempArray__15EntityBaseClass.m_unk4 < mTempArray__15EntityBaseClass.m_unk0) ? (unsigned int)mTempArray__15EntityBaseClass.m_unk8[mTempArray__15EntityBaseClass.m_unk4] : 0;
+        }
+        if (s0 != 0) {
+            if (s0->m_unk3C != 0) {
+                t = (float (*)[4])(s0->m_unk3C + 0x80);
+            } else {
+                t = (float (*)[4])((char *)s0 + 0x190);
+            }
+            sceVu0SubVector((float (*)[4])vec, t, target);
+            vec[1] += 2.0f;
+            sceVu0Normalize((float (*)[4])vec, (float (*)[4])vec);
+            sceVu0ScaleVector((float (*)[4])vec, (float (*)[4])vec, 0.7f);
+            vec[3] = 1.0f;
+            *(u_long128 *)m_unk38 = *(u_long128 *)vec;
+            SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x94, 0);
+            *(float *)((char *)this + 0x1B4) = 20.0f;
+            SetState__15EntityBaseClassFi(this, 0);
+            return 1;
+        }
+    }
+    return 0;
 }
 
 // DRAFT: 0x00168570 OnAttackEvent__6ShieldFP15EntityBaseClassi
@@ -185,6 +264,85 @@ float Shield::ShieldDistance(float (*arg0)[4]) {
     return sceVu0InnerProduct(arg0, arg0);
 }
 
+// DRAFT: 0x00168860 Execute__6ShieldFv
+// note: DIFF 145; switch order -1,0,1,2 best of 3 (if-chain 218, order 1,0,-1,2 210, HoverCheck!=0 reorder 194); open: case 0 branch layout (bnez far), f0/f2 float order, a3[1] += sequence, ShieldDistance call symbol
+void Shield::Execute() {
+    float vec[4];
+    float dist;
+    float f1;
+    float f0;
+    float *a3;
+    float len;
+    float scale;
+
+    switch (m_unk20) {
+    case -1:
+        m_unk1D0 = PlaySound__15EntityBaseClassFUi(this, HoverSound[m_unk1B0]);
+        SetState__15EntityBaseClassFi(this, 0);
+        return;
+    case 0:
+        if (HoverCheck() == 0) {
+            CheckSwordBGAnim__13EntityManagerFP6PMNode(mpEntMgr__15EntityBaseClass, m_unk3C);
+            f1 = m_unk1B4 - *(float *)gEng;
+            m_unk1B4 = f1;
+            if (f1 <= 0.0f) {
+                SetState__15EntityBaseClassFi(this, 2);
+                SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 5, 0);
+                m_unk1DA = 1;
+            }
+        } else if (*(int *)((char *)m_unk38 + 0xE4) != 0) {
+            m_unk1DA = 1;
+            a3 = (float *)(m_unk3C ? (char *)m_unk3C + 0x80 : (char *)this + 0x190);
+            CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(mEffectAPI__13EntityManager, 0x8100002A, 0x8200005C, (float (*)[4])a3, 0, 0, 0.5f, 0, 0, 0);
+            PlaySound__15EntityBaseClassFUi(this, 0x1B);
+        } else {
+            f0 = *(float *)((char *)m_unk38 + 0xF8);
+            if (f0 < 2.0f) {
+                a3 = (float *)(m_unk3C ? (char *)m_unk3C + 0x80 : (char *)this + 0x190);
+                a3[1] += 2.0f - f0;
+            }
+        }
+        if (m_unk1DA != 0 && ShieldDistance(&vec) < 4.0f) {
+            SetState__15EntityBaseClassFi(this, -2);
+        } else if (sceVu0InnerProduct((float (*)[4])m_unk38, (float (*)[4])m_unk38) < 0.001f) {
+            SetState__15EntityBaseClassFi(this, 2);
+            SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 5, 0);
+            m_unk1DA = 1;
+        }
+        break;
+    case 1:
+        if (m_unk1DB != 0) {
+            if ((*(unsigned short *)((char *)m_unk1B8 + 0x1B0) & 0x200) == 0) {
+                SetState__15EntityBaseClassFi(this, 2);
+                SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 5, 0);
+                m_unk1C0 = CreateGhost__9EffectAPIFP9PMeshNode(mEffectAPI__13EntityManager, m_unk3C);
+            }
+        }
+        if (ShieldDistance(&vec) < 4.0f) {
+            SetState__15EntityBaseClassFi(this, -2);
+        }
+        break;
+    case 2:
+        dist = ShieldDistance(&vec);
+        if (dist < 4.0f) {
+            SetState__15EntityBaseClassFi(this, -2);
+            return;
+        }
+        if (HoverCheck() == 0) {
+            len = sqrtf(dist);
+            scale = 0.7f / len;
+            sceVu0ScaleVector(&vec, &vec, scale);
+            vec[3] = 1.0f;
+            *(u_long128 *)m_unk38 = *(u_long128 *)vec;
+            CheckSwordBGAnim__13EntityManagerFP6PMNode(mpEntMgr__15EntityBaseClass, m_unk3C);
+        }
+        break;
+    }
+    if (m_unk3C != 0 && (*(signed char *)((char *)m_unk3C + 0x3F) & 4)) {
+        ResetCollisions__15EntityBaseClassFv(this);
+    }
+}
+
 // FUNCTION: 0x00168BF0 HoverCheck__6ShieldFv
 int Shield::HoverCheck() {
     if (m_unk1D9 != 0) {
@@ -195,7 +353,7 @@ int Shield::HoverCheck() {
                 ((unsigned int *)tmp)[1] = 0;
                 m_unk1C0 = 0;
             }
-            *(u_long128 *)m_unk38 = *(u_long128 *)gUnitMatrix;
+            *(u_long128 *)m_unk38 = *(u_long128 *)gUnitMatrix[3];
             SetState__15EntityBaseClassFi(this, 1);
             return 1;
         }
