@@ -1,13 +1,15 @@
 #ifndef PEDDLER_H
 #define PEDDLER_H
 
-class EntityBaseClass;
+#include "EntityBaseClass.h"
+
 class PeddlerItems;
 struct tagWaypointGroup;
 
-class Peddler {
+class Peddler : public EntityBaseClass {
 public:
     Peddler();
+    virtual ~Peddler();
     bool TrappedEntityRemoved();
     void OutputDebug();
     void OnTimerEvent(unsigned int arg0);
@@ -25,20 +27,7 @@ public:
     void ExitPeddlerView();
     int OnHitEvent(EntityBaseClass *pEntity, int nArg1, unsigned int nEvent, unsigned int nArg2);
 
-    void *m_unk0;                   // 0x000 vtable pointer
-    unsigned int m_unk4;            // 0x004 owner id passed to Add2DependencyList
-    char _pad008[4];
-    int m_unkC;                     // 0x00C passed to the entity's 0x30 slot
-    char _pad010[0x20 - 0x10];
-    int m_unk20;                    // 0x020
-    char _pad024[0x038 - 0x024];
-    char *m_unk38;                  // 0x038 object with 0x11C float
-    char *m_unk3C;                  // 0x03C object with 0x80 vector
-    char _pad040[0x0D4 - 0x040];
-    int m_unkD4;                    // 0x0D4 cleared by constructor
-    char _pad0D8[0x0E8 - 0x0D8];
-    unsigned char m_unkE8;          // 0x0E8 set to 3 by OnHitEvent
-    char _padE9[0x1CC - 0x0E9];
+    char _pad190[0x1CC - 0x190];    // 0x190..0x1CB: EntityBaseClass ends at 0x190
     int m_unk1CC;                   // 0x1CC alive when greater than zero
     char _pad1D0[0x1E4 - 0x1D0];
     float m_unk1E4;                 // 0x1E4

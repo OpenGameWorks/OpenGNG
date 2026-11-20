@@ -252,9 +252,9 @@ void Peddler::ActivateAttackingEnemies() {
                 if (pInst->Slot44() == 0) {
                     pInst->m_unk1A = 1;
                 }
-                pInst->SetSlot30(m_unkC);
+                pInst->SetSlot30(*(int *)((char *)this + 0xC));
                 *(EntityBaseClass **)((char *)this + nOff + 0x2C8) = pEnt;
-                Add2DependencyList__13EntityManagerFUiUi(mpEntMgr__15EntityBaseClass, pInst->m_unk4, m_unk4);
+                Add2DependencyList__13EntityManagerFUiUi(mpEntMgr__15EntityBaseClass, pInst->m_unk4, m_unk04);
             }
         }
         i++;
@@ -546,7 +546,7 @@ void Peddler::LookAtPeddler() {
         fYaw = Round180__Ff(57.295776f * atan2f(afPos[0], afPos[2]));
         *(float *)(pObj + 0x94) = fYaw;
         *(unsigned char *)(pObj + 0x3E) |= 8;
-        *(float *)(m_unk38 + 0x11C) = Round180__Ff(fYaw);
+        *(float *)((char *)m_unk38 + 0x11C) = Round180__Ff(fYaw);
         afPos[1] = 0.0f;
         sceVu0Normalize(afPos, afPos);
         sceVu0ScaleVector(afPos, afPos, -5.0f);
@@ -828,14 +828,14 @@ void Peddler::ValidateItems() {
 }
 
 // DRAFT: 0x001D3870 __dt__7PeddlerFv
-// note: 18 diff lines; register permutation of this/nFlag/slot (orig this=s4, nFlag=s3, slot=s2). Tried 3 local orders (nOff,ppSlot,i best; ppSlot-first 20, nOff-first alt 18).
+// note: 18 diff lines; register permutation of this/nFlag/slot (orig this=s4, nFlag=s3, slot=s2). Raw vtable store restored (50 without it). Tried 3 local orders (nOff,ppSlot,i best; ppSlot-first 20, nOff-first alt 18), for-loop form (18, no change).
 extern "C" Peddler *__dt__7PeddlerFv(Peddler *pThis, short nFlag) {
     unsigned int nOff;
     PeddlerItems **ppSlot;
     int i;
 
     if (pThis != 0) {
-        pThis->m_unk0 = __vt__7Peddler;
+        *(void **)pThis = __vt__7Peddler;
         i = 0;
         nOff = 0;
         do {
@@ -858,11 +858,8 @@ extern "C" Peddler *__dt__7PeddlerFv(Peddler *pThis, short nFlag) {
     return pThis;
 }
 
-// DRAFT: 0x001D3950 __ct__7PeddlerFv
-// note: 36 diff lines; original spills this to 0x1C(sp) with frame 0x20 and reloads it per store, ours keeps this in s0 with a 0x10 frame. Tried: void* param, cast to EntityBaseClass*, volatile local pointer (41), flags -inline off (36), -O0 (38), -opt nolink (36). Scratch derived-base probe (src/scratch/ctorsweep-2/peddler_derived.cpp) matches, but in-tree needs Peddler : EntityBaseClass, which clashes with base 0x00C padding and base 0x038 Physics* / 0x0E8 signed char; deferred to coordinator.
-Peddler::Peddler() {
-    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 6, 0);
-    m_unk0 = __vt__7Peddler;
+// FUNCTION: 0x001D3950 __ct__7PeddlerFv
+Peddler::Peddler() : EntityBaseClass((LoadClass)6, 0) {
     m_unk24C = 0;
     m_unk248 = 0;
     m_unk22C = 0;
