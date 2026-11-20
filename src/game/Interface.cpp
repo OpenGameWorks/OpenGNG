@@ -2,6 +2,7 @@
 #include "types.h"
 #include "Interface.h"
 #include "PTextureManager.h"
+#include "PArray.h"
 
 // TODO(header): foreign declarations
 class Player {
@@ -63,6 +64,17 @@ public:
     virtual void Slot05(int flag);
 };
 
+// Same vtable layout as PVirtObj; Slot05 takes the bool argument unconverted.
+class PVirtObjBool {
+public:
+    virtual void Slot00();
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual void Slot03(int flag);
+    virtual void Slot04();
+    virtual void Slot05(bool flag);
+};
+
 // Object at PMNode+0x24; virtual slots 10, 12, 13 and 15 are called by GameHud::UpdateStatus.
 class PVirtSlots {
 public:
@@ -95,7 +107,7 @@ public:
     virtual void Slot01();
     virtual void Slot02();
     virtual void Slot03();
-    virtual void Slot04(float fA, float fB, PMat4 *pMat, int arg3, bool bFlag);
+    virtual int Slot04(float fA, float fB, PMat4 *pMat, int arg3, bool bFlag);
     void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
     PMNode *Find(unsigned int id);
     void RecurseSetSTAnimOptions(bool flag);
@@ -107,7 +119,11 @@ public:
 
     char _pad004[0x8];
     int m_unkC;                 // 0x00C
-    char _pad010[0x70];
+    char _pad010[0x4];
+    int m_unk14;                // 0x014 element count of the walk list
+    int m_unk18;                // 0x018 walk index
+    PMNode **m_unk1C;           // 0x01C element pointer array
+    char _pad020[0x60];
     float m_unk80;              // 0x080
 };
 
@@ -123,6 +139,7 @@ extern "C" void RefreshDisplay__10PGfxEngineFv(void *pThis);
 extern "C" void SoundOneFrameHasElapsed_R__9MaxEngineFRiRi(void *pThis, int *pA, int *pB);
 extern "C" void IncrementSecondarySyncCounts__9MaxEngineFv(void *pThis);
 extern "C" void SetFrameRate__6PMNodeFfb(PMNode *pThis, float rate, bool flag);
+extern "C" PMNode *Find__6PMNodeFUi(PMNode *pThis, unsigned int uID);
 extern unsigned char MODE_PAL;
 extern int SCREEN_WIDTH;
 extern int SCREEN_HEIGHT;
@@ -143,6 +160,7 @@ public:
     void Reset();
     void UpdateGroup(int arg0);
     void UpdateStatus(bool flag);
+    void Delete();
     int SwapCheck(unsigned int arg0);
     void UpdateShieldIcon();
 
@@ -167,13 +185,6 @@ extern unsigned char __vt__8HudSuper[];
 extern unsigned char __vt__9HudHealth[];
 class HudHealth;
 extern "C" void __dl__FPv(void *pMem);
-
-class PArray {
-public:
-    void Allocate(unsigned int count);
-    void Add(void *item);
-    void Remove(void *item);
-};
 
 class FontNode;
 
@@ -256,6 +267,44 @@ void Interface::LevelClear() {
     ((PVirtObj *)((char *)this + 0x290))->Slot04();
     ((PVirtObj *)((char *)this + 0x250))->Slot04();
     m_unk1C0 &= ~8;
+}
+
+// FUNCTION: 0x13FA20 UpdateStatus__9InterfaceFUib
+void Interface::UpdateStatus(unsigned int arg0, bool arg1) {
+    int saved = *(int *)(MemMgr + 0x18);
+    *(int *)(MemMgr + 0x18) = 0;
+    switch (arg0) {
+    case 3:
+        ((PVirtObjBool *)((char *)this + 0x1FC))->Slot05(arg1);
+        break;
+    case 4:
+        ((PVirtObjBool *)((char *)this + 0x1EC))->Slot05(arg1);
+        break;
+    case 9:
+        ((PVirtObjBool *)((char *)this + 0x20C))->Slot05(arg1);
+        break;
+    case 7:
+        ((PVirtObjBool *)((char *)this + 0x21C))->Slot05(arg1);
+        break;
+    case 13:
+        ((HudSuper *)((char *)this + 0x1DC))->UpdateMaxSuper();
+        break;
+    case 11:
+        ((PVirtObj *)((char *)this + 0x22C))->Slot05(0);
+        break;
+    case 12:
+        ((HudGrim *)((char *)this + 0x22C))->UpdateCover();
+        break;
+    case 20:
+        break;
+    case 18:
+        ((PVirtObjBool *)((char *)this + 0x290))->Slot05(arg1);
+        break;
+    case 16:
+        ((HudInventory *)((char *)this + 0x2E8))->UpdateShieldIcon();
+        break;
+    }
+    *(int *)(MemMgr + 0x18) = saved;
 }
 
 // FUNCTION: 0x13FB90 HudUpdate__9InterfaceFi
@@ -360,6 +409,39 @@ void HudSuper::Update(int arg0) {
         }
         UpdateBar(m_unkC);
     }
+}
+
+// DRAFT: 0x140550 UpdateBar__8HudSuperFi
+// note: 30 words differ; the gate uses slti/beqz not slti/bnez, the 1.0f load is hoisted before the gate, and the loop-exit branch is one instruction short. Tried nested-if, empty-then and swapped-inner variants; all worse.
+void HudSuper::UpdateBar(int arg0) {
+    void *pBase = m_unk4;
+    PArray *pWalk;
+    PMNode *pNode;
+    ((PMNode *)pBase)->m_unk18 = 0;
+    pWalk = (PArray *)((char *)pBase + 0x14);
+    pNode = (pWalk->m_unk0 != 0) ? (PMNode *)pWalk->m_unk8[0] : 0;
+    if (pNode != 0) {
+        do {
+            PMNode *pBlock = pNode->Find(0x136CC35A);
+            if (pBlock == 0) {
+                CdsAssert__FPciPc("Interface.cpp", 0x9F9, "pBlock");
+            }
+            float fScale = 1.0f;
+            if (arg0 < 640) {
+                if (arg0 > 0) {
+                    fScale = (float)arg0 / 640.0f;
+                } else {
+                    fScale = 0.0f;
+                }
+            }
+            pBlock->ScaleSet(fScale, 1.0f, 1.0f, 1.0f);
+            int nIndex = pWalk->m_unk4 + 1;
+            pWalk->m_unk4 = nIndex;
+            arg0 -= 640;
+            pNode = (nIndex < pWalk->m_unk0) ? (PMNode *)pWalk->m_unk8[nIndex] : 0;
+        } while (pNode != 0);
+    }
+    ((PMNode *)m_unk4)->Slot04(0.0f, 0.0f, 0, 8, false);
 }
 
 // FUNCTION: 0x1411C0 AbilityScreen__9InterfaceFv
@@ -469,6 +551,41 @@ void HudBossMeter::Init(PMeshNode *meshNode, HudData *hud) {
         m_unk16 = 0;
     }
     SetFace();
+}
+
+// DRAFT: 0x001417F0 Update__8HudComboFi
+// note: 29 words differ; case 2 loads m_unk8 into $f2 and swaps sub.s operands (original loads $f1 first, then 0x3F80 into $f2); case 3 Slot04 loads 1.0f into $f13 before 0.0f into $f12 (ours reverses); original shares one epilogue b between case 3 and default and is 0x16C bytes vs our 0x174. Tried: local fStep vs compound -= (31), local fOne for 1.0f (29, no change), default before case 3 (44).
+void HudCombo::Update(int arg0) {
+    switch (m_unkF) {
+    case 1:
+        if ((signed char)(*(signed char *)((char *)m_unk4 + 0x3F) & 7) == 0) {
+            m_unkF = m_unkF + 1;
+            *(float *)&m_unk8 = 80.0f;
+        }
+        break;
+    case 2:
+        if (arg0 == 0) {
+            float fStep = *(float *)&m_unk8 - 1.0f;
+            *(float *)&m_unk8 = fStep;
+            if (fStep <= 0.0f) {
+                m_unkF = 3;
+                m_unk4->EnableAnim(true, false);
+                m_unk4->SetAnimLoopCount(1, false);
+                SetFrameRate__6PMNodeFfb(m_unk4, -0.5f, false);
+                *(int *)((char *)m_unk48 + 0x2C) = 0x3F800000;
+            }
+        }
+        break;
+    case 3:
+        if ((m_unk4->Slot04(0.0f, 1.0f, 0, 0, false) & 7) == 0) {
+            m_unkF = 0;
+            m_unk4->SetAllFrustrumTest((eBoxIntersect)0);
+        }
+        return;
+    default:
+        return;
+    }
+    m_unk4->Slot04(0.0f, 1.0f, 0, 0, false);
 }
 
 // DRAFT: 0x00141960 UpdateStatus__8HudComboFb
@@ -638,6 +755,13 @@ void HudInventory::UpdateStatus(bool flag) {
     gSound.PlaySoundUbiquitous(0x3A);
 }
 
+// FUNCTION: 0x1430B0 Delete__12HudInventoryFv
+void HudInventory::Delete() {
+    m_unk4 = 0;
+    m_unk10 = 1;
+    m_unk3C = -1;
+}
+
 // DRAFT: 0x1430D0 UpdateShieldIcon__12HudInventoryFv
 // note: 64 words differ, size 0x110 vs 0x128. Original keeps elem in v1 and the PArray in a0; the m44 switch lays out 0x6A last; tail loop uses positive-branch sb body. Tried: if/else-if node (73), ternary node (73), switch m44 (73), if-chain m44 (67), reordered tail compares (73), explicit PArray pointer (65), ternary store (64), restored compare order (64).
 void HudInventory::UpdateShieldIcon() {
@@ -769,6 +893,48 @@ HudInventory::HudInventory() {
 GameHud::~GameHud() {
     m_unk0 = __vt__7GameHud;
     ((PVirtObj *)this)->Slot01();
+}
+
+// DRAFT: 0x143BC0 EnableBG__7HudHintFb
+// note: DIFF 57; ours is 0x170 bytes vs 0x180. Dispatch and loop-entry branches differ (original enters the for loop with a b to its test, ours falls in), and the Find call has no reloc. Tried: static initialiser, member Find call, extern "C" Find, while loop.
+void HudHint::EnableBG(bool arg0) {
+    static unsigned int InventoryNames[4] = {0x4781EFDE, 0x59DDFCBB, 0xFCFE9AB1, 0xBBCD34F9};
+    unsigned int i;
+    void *pBase;
+    PArray *pWalk;
+    PMNode *pNode;
+    PMNode *pFound;
+    float fValue;
+    int nIndex;
+
+    fValue = arg0 ? 1.0f : 0.0f;
+    pBase = gInterface.m_unk1C4;
+    pWalk = (PArray *)((char *)pBase + 0x14);
+    pWalk->m_unk4 = 0;
+    pNode = (pWalk->m_unk0 != 0) ? (PMNode *)pWalk->m_unk8[0] : 0;
+    if (pNode != 0) {
+        do {
+            switch (*(unsigned int *)((char *)pNode + 0x8)) {
+            case 0x2BA0F70C:
+                for (i = 0; i < 4; i++) {
+                    pFound = pNode->Find(InventoryNames[i]);
+                    if (pFound != 0) {
+                        *(float *)((char *)pFound + 0x2C) = fValue;
+                    }
+                }
+                break;
+            case 0xFBD2D937:
+                *(int *)((char *)m_unkB4 + 0xC) = (arg0 == 0) ? 1 : 0;
+                break;
+            default:
+                *(float *)((char *)pNode + 0x2C) = fValue;
+                break;
+            }
+            nIndex = pWalk->m_unk4 + 1;
+            pWalk->m_unk4 = nIndex;
+            pNode = (nIndex < (int)pWalk->m_unk0) ? (PMNode *)pWalk->m_unk8[pWalk->m_unk4] : 0;
+        } while (pNode != 0);
+    }
 }
 
 // DRAFT: 0x143D40 WriteHint__7HudHintFv

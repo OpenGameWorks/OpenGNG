@@ -26,8 +26,11 @@ class HudSuper {
 public:
     void Update(int arg0);
     void UpdateBar(int arg0);
+    void UpdateMaxSuper();
 
-    char _pad000[0xC];
+    char _pad000[0x4];
+    void *m_unk4;               // 0x004 element list walked by UpdateBar
+    char _pad008[0x4];
     short m_unkC;               // 0x00C current super value, stepped toward the player's target
 };
 
@@ -58,6 +61,7 @@ public:
     void ComboFinish();
     void ComboNumber();
     void UpdateStatus(bool flag);
+    void Update(int arg0);
 
     char _pad000[0x4];
     PMNode *m_unk4;             // 0x004 node whose frustum test and frame rate are set
@@ -78,6 +82,7 @@ public:
     void Init(unsigned int arg0);
     void WriteHint();
     void InitNode(PMeshNode *node);
+    void EnableBG(bool arg0);
 
     int m_unk0;                 // 0x000
     int m_unk4;                 // 0x004
@@ -131,6 +136,7 @@ public:
     int AbilityScreen();
     void ResetGameHud();
     void ProcessScreenFade();
+    void UpdateStatus(unsigned int arg0, bool arg1);
     // Enumerator names are placeholders; only the type identity (Q29Interface10eFadeColor) matters.
     enum eFadeColor { eFadeColor_Value0 = 0, eFadeColor_Value1 = 1, eFadeColor_Value2 = 2 };
     void FadeScreen(float arg0, float arg1, bool arg2, eFadeColor arg3);
@@ -141,7 +147,8 @@ public:
     int m_unk1B8;               // 0x1B8
     int m_unk1BC;               // 0x1BC
     int m_unk1C0;               // 0x1C0
-    char _pad1C4[0x8];
+    void *m_unk1C4;             // 0x1C4 pointer to a list object (PArray at 0x14) walked by HudHint::EnableBG
+    char _pad1C8[0x4];
     void *m_unk1CC;             // 0x1CC embedded object; its vtable slot 4 (offset 0x18) is called with &m_unk1CC
     char _pad1D0[0xC];
     void *m_unk1DC;             // 0x1DC same element kind as 0x1CC
