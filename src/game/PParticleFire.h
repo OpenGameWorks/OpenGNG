@@ -17,6 +17,7 @@ public:
     void ModifyPosition(PMat4 *pMat);
     void SetPosition(float *pPos, float *pUnused);
     int Create(tagParticleFireParams *pParams, float fX, float fY, float fZ);
+    void Animate(float fDt);
 
     void *m_unkE0;              // 0x0E0 buffer released by the destructor
     void *m_unkE4;              // 0x0E4 buffer of 0x10-byte entries filled by ModifyPosition and SetPosition
