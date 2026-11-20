@@ -27,6 +27,9 @@ struct ItemEntry {
 extern ItemEntry ItemTable[0x3C];
 
 void CdsAssert(char *pFile, int nLine, char *pExpr);
+extern int mbHard__15EntityBaseClass;
+extern "C" void memcpy(void *, const void *, unsigned int);
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("Peddler.cpp", line, #cond))
 // Player is declared only for ValidateItem; the entity manager state at 0x505C is passed as its this.
 class Player {
 public:
@@ -39,6 +42,7 @@ extern "C" void DeleteMeshLayer__9InterfaceFP6PMNode(void *pThis, PMNode *pNode)
 extern unsigned char gInterface[];
 extern float gUnitMatrix[16];
 extern "C" float Round180__Ff(float fAngle);
+extern "C" float FastMath_Fabs__Ff(float fVal);
 extern "C" void *__nw__FUi(unsigned int nSize);
 inline void *operator new(unsigned int, void *pWhere) { return pWhere; }
 extern "C" void CheckVariable__15EntityBaseClassFii(void *pThis, int nFlags, int nValue);
@@ -97,11 +101,16 @@ public:
     virtual void Render();
     virtual void SetFrameTime();
     virtual void CreateObjectDisplayList();
-    virtual void Animate();
+    virtual void Animate(int, int, int, float, float);
     virtual void SetAllAnimFlags();
     virtual int Slot20(void *pNode);
     void ScaleSet(float a, float b, float c, float d);
-    char _pad004[0x2C - 0x04];
+    int m_unk04;                    // 0x04 node type; 2 = list head
+    char _pad008[0x0C];
+    int m_unk14;                    // 0x14 list count
+    int m_unk18;                    // 0x18 list index
+    PMNode **m_unk1C;               // 0x1C list entries
+    char _pad020[0x0C];
     float m_unk2C;                  // 0x2C fade value
     char _pad030[0x3E - 0x30];
     unsigned char m_unk3E;          // 0x3E flags; 0x08 = scale set
@@ -479,6 +488,64 @@ int PeddlerItems::AnimateVector(float (&afVec)[4], float (&afTarget)[4], float f
     return 0;
 }
 
+// DRAFT: 0x001D0FB0 Animate__12PeddlerItemsFffff
+// note: 49 words differ: fDelta register placement (f12 copied to f26), lwc1 order for fScaleB, virtual Animate call scheduling, sltu bool tail at 0x2B4; variants tried: afScale[4], scalar fScaleA/B, inline fabs recompute (best 49)
+int PeddlerItems::Animate(float fA, float fB, float fC, float fD) {
+    float afSp80[4];
+    float afSp90[4];
+    float fScaleA, fScaleB;
+    float fDelta, fWrap, fAbs, fAbsW, fSign;
+    unsigned char bDone0, bDone1, bDone2, bDone3;
+    PMNode *pNode;
+
+    fScaleA = m_unk4->m_unkA0[0];
+    fScaleB = m_unk4->m_unk2C;
+    *(u_long128 *)afSp80 = *(u_long128 *)(m_unk4->_pad080);
+    *(u_long128 *)afSp90 = *(u_long128 *)(m_unk0->_pad080 + 0x10);
+
+    fDelta = fB - afSp90[2];
+    fWrap = 360.0f - FastMath_Fabs__Ff(fDelta);
+    if (FastMath_Fabs__Ff(fDelta) > FastMath_Fabs__Ff(fWrap)) {
+        fSign = (fDelta < 0.0f) ? -1.0f : 1.0f;
+        afSp90[2] = fB + fWrap * fSign;
+    } else if (FastMath_Fabs__Ff(fDelta) == FastMath_Fabs__Ff(fWrap)) {
+        if (fB > afSp90[2]) {
+            fSign = (fDelta < 0.0f) ? -1.0f : 1.0f;
+            afSp90[2] = fB + fWrap * fSign;
+        }
+    }
+
+    m_unk10[0] = fA;
+    m_unk20[2] = fB;
+    m_unk8 = fC;
+    m_unkC = fD;
+    bDone0 = AnimateVector(afSp80, m_unk10, 0.4f);
+    pNode = m_unk4;
+    *(u_long128 *)(pNode->_pad080) = *(u_long128 *)afSp80;
+    pNode->m_unk3E |= 0x08;
+    bDone1 = AnimateVector(afSp90, m_unk20, 3.5f);
+    pNode = m_unk0;
+    *(u_long128 *)(pNode->_pad080 + 0x10) = *(u_long128 *)afSp90;
+    pNode->m_unk3E |= 0x08;
+    afSp90[2] *= -1.0f;
+    pNode = m_unk4;
+    *(u_long128 *)(pNode->_pad080 + 0x10) = *(u_long128 *)afSp90;
+    pNode->m_unk3E |= 0x08;
+    bDone2 = AnimateFloat(fScaleA, m_unk8, 0.25f);
+    m_unk4->ScaleSet(fScaleA, fScaleA, fScaleA, 1.0f);
+    bDone3 = AnimateFloat(fScaleB, m_unkC, 0.1f);
+    pNode = m_unk4;
+    if (pNode->m_unk04 == 2) {
+        pNode->m_unk18 = 0;
+        pNode = (pNode->m_unk14 != 0) ? pNode->m_unk1C[0] : 0;
+        pNode->m_unk2C = fScaleB;
+    } else {
+        pNode->m_unk2C = fScaleB;
+    }
+    m_unk0->Animate(0, 0, 0, 0.0f, 1.0f);
+    return bDone0 && bDone1 && bDone2 && bDone3;
+}
+
 // FUNCTION: 0x001D12F0 __dt__12PeddlerItemsFv
 PeddlerItems::~PeddlerItems() {
     if (m_unk0 != 0) {
@@ -702,6 +769,34 @@ void Peddler::InitItems() {
         fAngle = fAngle + 72.0f;
     } while (i < 5);
     FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 16.0f, 0.85f, 1, 0);
+}
+
+// FUNCTION: 0x001D1BA0 SetEditableVars__7PeddlerFPc
+void Peddler::SetEditableVars(char *pName) {
+    memcpy((char *)this + 0x1B0, pName, 0x68);
+    m_unk1CC *= 50;
+    if (!mbHard__15EntityBaseClass) {
+        m_unk1CC += 50;
+    }
+    m_unk2C8[0] = m_unk1F4[0];
+    m_unk2C8[1] = m_unk1F4[1];
+    m_unk2C8[2] = m_unk1F4[2];
+    CheckVariable__15EntityBaseClassFii(this, m_unk1C4, 2);
+    if (m_unk1D4 == 0.0f && m_unk1D8 == 0.0f && m_unk1DC == 0.0f) {
+        CDS_ASSERT(0x541, !"eif 0, 0, 0 error.  see keith or ted");
+        m_unk260 = ((float *)(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190))[0];
+        m_unk264 = ((float *)(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190))[1];
+        m_unk268 = ((float *)(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190))[2];
+    } else {
+        m_unk260 = m_unk1D4;
+        m_unk264 = m_unk1D8;
+        m_unk268 = m_unk1DC;
+    }
+    if (m_unk1E4 == 0.0f && m_unk1E8 == 0.0f && m_unk1EC == 0.0f) {
+        m_unk1E4 = ((float *)(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190))[0];
+        m_unk1E8 = ((float *)(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190))[1];
+        m_unk1EC = ((float *)(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190))[2];
+    }
 }
 
 // FUNCTION: 0x001D1DB0 OnTimerEvent__7PeddlerFUi

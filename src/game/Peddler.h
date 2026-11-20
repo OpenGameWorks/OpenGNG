@@ -26,10 +26,17 @@ public:
     int AnimateItems();
     void ExitPeddlerView();
     int OnHitEvent(EntityBaseClass *pEntity, int nArg1, unsigned int nEvent, unsigned int nArg2);
+    void SetEditableVars(char *pName);
 
-    char _pad190[0x1CC - 0x190];    // 0x190..0x1CB: EntityBaseClass ends at 0x190
+    char _pad190[0x1C4 - 0x190];    // 0x190..0x1C3: EntityBaseClass ends at 0x190
+    int m_unk1C4;                   // 0x1C4 CheckVariable argument
+    char _pad1C8[0x1CC - 0x1C8];
     int m_unk1CC;                   // 0x1CC alive when greater than zero
-    char _pad1D0[0x1E4 - 0x1D0];
+    char _pad1D0[0x1D4 - 0x1D0];
+    float m_unk1D4;                 // 0x1D4
+    float m_unk1D8;                 // 0x1D8
+    float m_unk1DC;                 // 0x1DC
+    char _pad1E0[0x1E4 - 0x1E0];
     float m_unk1E4;                 // 0x1E4
     float m_unk1E8;                 // 0x1E8
     float m_unk1EC;                 // 0x1EC
@@ -46,7 +53,11 @@ public:
     unsigned short m_unk246;        // 0x246 hit argument
     int m_unk248;                   // 0x248
     int m_unk24C;                   // 0x24C
-    char _pad250[0x284 - 0x250];
+    char _pad250[0x260 - 0x250];
+    float m_unk260;                 // 0x260
+    float m_unk264;                 // 0x264
+    float m_unk268;                 // 0x268
+    char _pad26C[0x284 - 0x26C];
     tagWaypointGroup *m_unk284;     // 0x284
     int m_unk288;                   // 0x288
     int m_unk28C;                   // 0x28C
@@ -89,8 +100,8 @@ public:
     PMNode *m_unk4;                 // 0x004 item node
     float m_unk8;                   // 0x008 animated scale
     float m_unkC;                   // 0x00C animated fade
-    char _pad010[0x10];             // 0x010 unit matrix copy
-    char _pad020[0x10];             // 0x020 unit matrix copy
+    float m_unk10[4];               // 0x010 first AnimateVector target (m_unk10[0] = Animate arg0)
+    float m_unk20[4];               // 0x020 second AnimateVector target (m_unk20[2] = Animate arg1)
 };
 
 unsigned int GetItemID(unsigned int arg0);
