@@ -31,6 +31,35 @@ extern float GAME_FPS;
 extern char g_Stabdown_ShakeTable[0x60];
 extern char g_Stabdown_ShakeTable_FixedCam[0x40];
 extern char g_Stabdown2_ShakeTable[0x500];
+extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
+extern "C" void sceVu0AddVector(float *dst, float *a, float *b);
+extern "C" void sceVu0Normalize(float *dst, float *src);
+extern "C" void sceVu0ScaleVector(float *dst, float *src, float s);
+extern "C" void GetGroundPos__7PhysicsFv(float *pPos, void *pPhysics);
+extern "C" void SetSourceAndTarget__12CameraFollowF5PVec35PVec3(void *pThis, PVec3 a, PVec3 b);
+
+// Layout of the object at Camera::m_unk2B4 as UpdateFromCamBox reads it.
+struct CamBoxState {
+    unsigned int m_unk00;   // 0x00 init flag
+    char _pad04[0x0C];
+    float m_unk10[4];       // 0x10 target position
+    float m_unk20[4];       // 0x20 source position; m_unk20[0] is a timer in case 2
+    float m_unk30;          // 0x30 blend t
+    float m_unk34;          // 0x34 blend step
+    float m_unk38;          // 0x38 duration
+    unsigned int m_unk3C;   // 0x3C
+    float m_unk40[4];       // 0x40 goal position
+    float m_unk50[4];       // 0x50 scratch vector; m_unk50[1] is the distance at 0x54
+    char _pad60[0x70 - 0x60];
+    float m_unk70;          // 0x70
+    float m_unk74;          // 0x74
+    float m_unk78;          // 0x78
+    unsigned char m_unk80;  // 0x80
+    unsigned char m_unk81;  // 0x81
+    unsigned char m_unk82;  // 0x82
+    char _pad83;
+    float m_unk84;          // 0x84
+};
 
 class CVector3 {
 public:
@@ -353,6 +382,141 @@ void Camera::SetCamBoxData(int arg0, void *arg1) {
         m_unk2B4 = arg1;
         break;
     }
+}
+
+// DRAFT: 0x00178B30 UpdateFromCamBox__6CameraFv
+// note: rebuilt by hand from the m2c draft; case 5 ring average, ground offset and ClosestPointOnLine blend are omitted, and the CheckCameraShake arguments are a guess, so the size and instruction order differ.
+int Camera::UpdateFromCamBox() {
+    PVec3 sp150;
+    PVec3 sp160;
+    PVec3 sp170;
+    PVec3 sp180;
+    float spE0[4];
+    float spF0[4];
+    float sp90[4];
+    float spA0[4];
+    float spB0[4];
+    CamBoxState *pBox;
+    char *pPlayer;
+    char *pTarget;
+    float t;
+    int ret;
+    int i;
+
+    if (m_unk2B0 != 2 && m_unk2BC == 0) {
+        return 1;
+    }
+    pPlayer = *(char **)&gEng[0x1883C];
+    ((pPlayer != 0) ? (void)0 : CdsAssert__FPciPc("Camera.cpp", 0x2D0, "pPlayer"));
+    pTarget = pPlayer + 0x190;
+    if (*(char **)(pPlayer + 0x3C) != 0) {
+        pTarget = *(char **)(pPlayer + 0x3C) + 0x80;
+    }
+    ret = 0;
+    switch (m_unk2B0) {
+    case 2:
+        pBox = (CamBoxState *)m_unk2B4;
+        if (pBox->m_unk00 == 0) {
+            m_unkD0 = 0;
+            pBox->m_unk00 = 1;
+        }
+        if (!(pBox->m_unk20[0] <= 0.0f)) {
+            m_unk2B8 = 1;
+            pBox->m_unk20[0] = pBox->m_unk20[0] - *(float *)&gEng[0x1E8];
+            m_unk00[0] = pBox->m_unk10[0];
+            m_unk00[1] = pBox->m_unk10[1];
+            m_unk00[2] = pBox->m_unk10[2];
+            sceVu0CopyVector(m_unk10, (float *)pTarget);
+            m_unk10[1] += 5.0f;
+        } else {
+            m_unk2B8 = 0;
+            sp150 = *(PVec3 *)m_unk00;
+            sp160 = *(PVec3 *)m_unk10;
+            SetSourceAndTarget__12CameraFollowF5PVec35PVec3(m_unkBC, sp150, sp160);
+        }
+        break;
+    case 3:
+        pBox = (CamBoxState *)m_unk2B4;
+        if (pBox->m_unk00 == 0) {
+            sceVu0CopyVector(pBox->m_unk20, m_unk00);
+            pBox->m_unk30 = 0.0f;
+            if (pBox->m_unk38 != 0.0f) {
+                pBox->m_unk34 = 1.0f / pBox->m_unk38;
+            } else {
+                pBox->m_unk34 = 1.0f;
+            }
+            if (pBox->m_unk40[0] != 0.0f) {
+                pBox->m_unk3C = 1;
+            }
+            pBox->m_unk00 = 1;
+        }
+        pBox->m_unk30 = pBox->m_unk30 + pBox->m_unk34;
+        if (!(pBox->m_unk30 <= 1.0f)) {
+            pBox->m_unk30 = 1.0f;
+        }
+        m_unk00[0] = pBox->m_unk20[0] + pBox->m_unk30 * (pBox->m_unk10[0] - pBox->m_unk20[0]);
+        m_unk00[1] = pBox->m_unk20[1] + pBox->m_unk30 * (pBox->m_unk10[1] - pBox->m_unk20[1]);
+        m_unk00[2] = pBox->m_unk20[2] + pBox->m_unk30 * (pBox->m_unk10[2] - pBox->m_unk20[2]);
+        sceVu0CopyVector(spE0, m_unk10);
+        sceVu0CopyVector(spF0, (float *)pTarget);
+        spF0[1] += 5.0f;
+        m_unk10[0] = spE0[0] + 0.1f * (spF0[0] - spE0[0]);
+        m_unk10[1] = spE0[1] + 0.1f * (spF0[1] - spE0[1]);
+        m_unk10[2] = spE0[2] + 0.1f * (spF0[2] - spE0[2]);
+        if (pBox->m_unk3C != 0) {
+            if (pBox->m_unk30 <= 1.0f) {
+                sceVu0SubVector(pBox->m_unk50, m_unk00, m_unk10);
+            } else {
+                sceVu0SubVector(pBox->m_unk50, pBox->m_unk10, m_unk10);
+            }
+            sceVu0Normalize(sp90, pBox->m_unk50);
+            sceVu0SubVector(spA0, m_unk10, m_unk00);
+            t = sqrtf(spA0[0] * spA0[0] + spA0[1] * spA0[1] + spA0[2] * spA0[2]);
+            if (t != pBox->m_unk40[0]) {
+                float s = t + 0.1f * (pBox->m_unk40[0] - t);
+                sceVu0ScaleVector(spB0, sp90, s);
+                m_unk00[0] = m_unk10[0] + spB0[0];
+                m_unk00[2] = m_unk10[2] + spB0[2];
+            }
+        }
+        ret = 0;
+        break;
+    case 5:
+        pBox = (CamBoxState *)m_unk2B4;
+        if (pBox->m_unk00 == 0) {
+            for (i = 0; i < 20; i++) {
+                m_unkD4[i] = 0;
+            }
+            m_unk2C8 = 20;
+            pBox->m_unk84 = 0.001f;
+            pBox->m_unk00 = 1;
+        }
+        sceVu0CopyVector(spE0, m_unk10);
+        sceVu0CopyVector(spF0, (float *)pTarget);
+        if (pBox->m_unk84 > 0.1f) {
+            pBox->m_unk84 = 0.1f;
+        }
+        m_unk10[0] = spE0[0] + pBox->m_unk84 * (spF0[0] - spE0[0]);
+        m_unk10[1] = spE0[1] + pBox->m_unk84 * (spF0[1] - spE0[1]);
+        m_unk10[2] = spE0[2] + pBox->m_unk84 * (spF0[2] - spE0[2]);
+        ret = 0;
+        break;
+    default:
+        CdsAssert__FPciPc("Camera.cpp", 0x41F, "0");
+        break;
+    }
+    sp150 = *(PVec3 *)m_unk00;
+    sp160 = *(PVec3 *)m_unk10;
+    CheckCameraShake(sp150, sp160, false);
+    CreateViewMatrix(*(PMat4 *)m_unk30, sp150, sp160);
+    if (m_unk2B0 == 3 || m_unk2B0 == 5) {
+        if (m_unkBC != 0) {
+            sp170 = *(PVec3 *)m_unk00;
+            sp180 = *(PVec3 *)m_unk10;
+            SetSourceAndTarget__12CameraFollowF5PVec35PVec3(m_unkBC, sp170, sp180);
+        }
+    }
+    return ret;
 }
 
 // DRAFT: 0x00179810 RestoreCamBox__6CameraFv

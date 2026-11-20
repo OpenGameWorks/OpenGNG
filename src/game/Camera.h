@@ -109,7 +109,14 @@ public:
     char _pad2B9[3];
     int m_unk2BC;           // 0x2BC
     int m_unk2C0;           // 0x2C0
-    char _pad2C4[0x2E4 - 0x2C4];
+    char _pad2C4[4];
+    int m_unk2C8;           // 0x2C8
+    char _pad2CC[4];
+    float m_unk2D0;         // 0x2D0
+    float m_unk2D4;         // 0x2D4
+    float m_unk2D8;         // 0x2D8
+    char _pad2DC[4];
+    float m_unk2E0;         // 0x2E0
     unsigned int m_unk2E4;  // 0x2E4
     char _pad2E8[0x2F0 - 0x2E8];
     float m_unk2F0[4];      // 0x2F0
