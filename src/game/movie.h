@@ -5,11 +5,13 @@
 
 class Movie {
 public:
+    static void UpdateFadeMusicVolume();
     static void BeginFadeMusicVolume(unsigned int msecs, unsigned int target);
     static void MovieOutputCurVol();
     static void MovieVolInit();
     static unsigned int MovieIOPAlloc(unsigned int size, const char *name);
     static int MovieMemAlign64(unsigned int size, const char *name);
+    static int PlayMovie(int movieID, int arg1, unsigned int arg2, bool arg3);
 
     static int mst_bMusicFading;
     static float mst_fMusicRelVolFadeCur;
