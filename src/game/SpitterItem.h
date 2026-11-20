@@ -24,6 +24,7 @@ public:
     void OnHitEvent(EntityBaseClass *pArg, int nType, unsigned int nA, unsigned int nB);
     void OnAttackEvent(EntityBaseClass *pArg, int nType);
     void SpitterItemBounceOff();
+    void Execute();
 
     void *m_unk0;                   // 0x000 vtable pointer (inherited from EntityBaseClass)
     char _pad004[0x20 - 0x04];
