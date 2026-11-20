@@ -7,6 +7,7 @@ class PArray;
 class PLight;
 class PPakFile;
 class PAnim;
+class PFrustrum;
 
 // Placeholder for the anim table passed to RecurseAttachAnim; only the layout used by that function is known.
 class PMeshNodeAnimDataTable {
@@ -25,7 +26,9 @@ public:
 // Pickup record reached through PMeshNode::m_unk10; only the two floats clamped by AdjustPickup are named.
 class PMeshPickup {
 public:
-    char _pad00[0x20];
+    char _pad00[0xD];
+    unsigned char m_unk0D;      // 0x0D nonzero: the box at +0x10 is valid
+    char _pad0E[0x12];
     float m_unk20;              // 0x20 clamped to at least 1.0f
     char _pad24[0x4];
     float m_unk28;              // 0x28 clamped to at least 1.0f
@@ -37,6 +40,7 @@ public:
     PMeshNode(PMeshNode &other);
     ~PMeshNode();
     void AdjustPickup();
+    void TestMeshNodeInFrustum(PFrustrum *pFrustrum);
     void DetachLight(PLight *pLight);
     void RemoveFromCollisionArray(PArray *pArr);
     int BuildCollisionArray(PArray *pArr, unsigned int flag);
@@ -44,17 +48,28 @@ public:
     void InitMembers();
     int RecurseAttachAnim(PMeshNodeAnimDataTable *pAnimDataTable);
     void LoadCollision(PPakFile *pPak);
+    void ComputeBoundingBox();
 
     void *m_unk00;              // 0x000 vtable
     int m_unk04;                // 0x004 PResource state; 1 after InitMembers
-    char _pad008[0x8];
+    char _pad008[4];
+    int m_unkC;                 // 0x00C result of PFrustrum::IntersectBox
     PMeshPickup *m_unk10;       // 0x010 pickup record; PMeshPickup fields at +0x20 and +0x28
     unsigned int m_unk14;       // 0x014 child count (PArray)
     unsigned int m_unk18;       // 0x018 child index (PArray)
     PMeshNode **m_unk1C;        // 0x01C child array (PArray)
-    char _pad020[0x20];
+    char _pad020[0xC];
+    float m_unk2C;              // 0x02C fade factor set by TestMeshNodeInFrustum
+    char _pad030[0xE];
+    unsigned char m_unk3E;      // 0x03E flags; bit 0x4 clamps m_unkA0..A8, bit 0x20 sets m_unk2C
+    char _pad03F[0x1];
     float m_unk40[4][4];        // 0x040 matrix
-    char _pad080[0x58];
+    float m_unk80[4];           // 0x080 offset added to the child's m_unk110 by ComputeBoundingBox
+    char _pad090[0x10];
+    float m_unkA0;              // 0x0A0 scale clamp input
+    float m_unkA4;              // 0x0A4 scale clamp input
+    float m_unkA8;              // 0x0A8 scale clamp input
+    char _padAC[0x2C];
     char m_unkD8[0xC];          // 0x0D8 PArray, size 0xC, not recovered further
     char _padE4[0x1C];
     short m_unk100;             // 0x100

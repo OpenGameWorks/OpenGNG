@@ -27,6 +27,18 @@ public:
     short m_unk8;
 };
 
+enum eBoxIntersect { eBoxIntersect_Placeholder = 0 };
+
+class PMat4;
+
+// PFrustrum.h does not declare IntersectBox or the member at 0xE0; only those are named here.
+class PFrustrum {
+public:
+    int IntersectBox(float (*pArr)[2][4], PMat4 *pMat);
+    char _pad000[0xE0];
+    float m_unkE0;
+};
+
 class PMNode {
 public:
     void InitMembers();
@@ -35,6 +47,7 @@ public:
     void AttachAnim(PAnim *pAnim, bool bFlag);
     void AddFxTriggers(PArray *pArr, bool bFlag);
     void CopyMNode(PMNode &src, bool bFlag);
+    void SetAllFrustrumTest(eBoxIntersect eType);
 };
 
 extern "C" void *__ct__6PArrayFv(void *pThis);
@@ -46,6 +59,9 @@ extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void CdsAssert__FPciPc(const char *pFile, int line, const char *pExpr);
 extern "C" void *__nwa__FUi(unsigned int size);
 extern "C" void FlushCache(int mode, unsigned int addr, void *pTable, int count);
+extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
+extern "C" void PBoundBoxToBoundBox__FPA2_A4_fPA2_A4_f(float (*pSrc)[2][4], float (*pDst)[2][4]);
+extern "C" void MakePBoundBox__FPfPfPA2_A4_f(float *pMin, float *pMax, float (*pBox)[2][4]);
 
 class PCDFile {
 public:
@@ -56,6 +72,56 @@ extern unsigned char __vt__9PMeshNode[];
 extern unsigned char __vt__6PMNode[];
 extern unsigned char __vt__9PResource[];
 extern float gUnitMatrix[16];
+extern float FADE_DISTANCE;
+extern float TRANS_DISTANCE;
+
+// FUNCTION: 0x001901C0 TestMeshNodeInFrustum__9PMeshNodeFP9PFrustrum
+void PMeshNode::TestMeshNodeInFrustum(PFrustrum *pFrustrum) {
+    float (*pMat)[2][4] = (float (*)[2][4])m_unk110;
+    if (m_unk3E & 4) {
+        float scale = 1.0f;
+        if (m_unkA0 > scale) {
+            scale = m_unkA0;
+        }
+        if (m_unkA4 > scale) {
+            scale = m_unkA4;
+        }
+        if (m_unkA8 > scale) {
+            scale = m_unkA8;
+        }
+        if (scale != 1.0f) {
+            float clip[2][4];
+            *(u_long128 *)&clip[0][0] = *(u_long128 *)pMat;
+            *(u_long128 *)&clip[1][0] = *(u_long128 *)((char *)pMat + 0x10);
+            clip[1][3] *= scale;
+            pMat = &clip;
+        }
+    }
+    int result = pFrustrum->IntersectBox(pMat, (PMat4 *)m_unk40);
+    m_unkC = result;
+    if (result == 0) {
+        ((PMNode *)this)->SetAllFrustrumTest(eBoxIntersect_Placeholder);
+        return;
+    }
+    if (m_unk3E & 0x20) {
+        if (result == 4 && pFrustrum->m_unkE0 > FADE_DISTANCE) {
+            float d = TRANS_DISTANCE - pFrustrum->m_unkE0;
+            m_unk2C = (d > 0.0f) ? d / (TRANS_DISTANCE - FADE_DISTANCE) : 0.0f;
+        } else {
+            m_unk2C = 1.0f;
+        }
+    }
+    m_unk18 = 0;
+    PMeshNode *var = (m_unk14 != 0) ? m_unk1C[0] : 0;
+    if (var != 0) {
+        do {
+            var->TestMeshNodeInFrustum(pFrustrum);
+            unsigned int next = m_unk18 + 1;
+            m_unk18 = next;
+            var = (next < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (var != 0);
+    }
+}
 
 // DRAFT: 0x00190390 AdjustPickup__9PMeshNodeFv
 // note: 11 words differ; original addresses the first clamp through m_unk10+0x10 (one base reg) and reloads m_unk10 for the second clamp. Tried a cached local pointer (15 words, worse).
@@ -78,6 +144,15 @@ void PMeshNode::AdjustPickup() {
             var = (next < m_unk14) ? m_unk1C[m_unk18] : 0;
         } while (var != 0);
     }
+}
+
+// FUNCTION: 0x00190470 DetachAllLights__9PMeshNodeFv
+void PMeshNode::DetachAllLights() {
+    if (m_unk138 != 0) {
+        m_unk130 = 0;
+        m_unk134 = 0;
+    }
+    m_unk102 = 1;
 }
 
 // FUNCTION: 0x00190490 DetachLight__9PMeshNodeFP6PLight
@@ -178,6 +253,76 @@ void PMeshNode::LoadCollision(PPakFile *pPak) {
         }
         FlushCache(0, 0x20000000, table, count);
     }
+}
+
+// Leading virtuals of PMeshNode's vtable (__vt__9PMeshNode); a call through this view
+// loads the slot into $t9 as the original's virtual calls do. ComputeBoundingBox is index 7.
+class PMeshNodeVirtuals {
+public:
+    virtual ~PMeshNodeVirtuals();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void Slot3();
+    virtual void Slot4();
+    virtual void Slot5();
+    virtual void Slot6();
+    virtual void ComputeBoundingBox();
+};
+
+// DRAFT: 0x00190BC0 ComputeBoundingBox__9PMeshNodeFv
+// note: 98 words differ; pickup flag loaded into v0 not a0, and the pSrc/call-arg branch order and box-to-bounds store order differ. Tried: &&-gated ternary, if-form pickup test (121), w-constant reorder (no change).
+void PMeshNode::ComputeBoundingBox() {
+    float pts[2][4];
+    float box[2][4];
+    float bounds[2][4];
+    PMeshNode *child;
+    float (*pSrc)[2][4];
+    int i;
+
+    pSrc = (m_unk10 != 0) ? ((m_unk10->m_unk0D != 0) ? (float (*)[2][4])((char *)m_unk10 + 0x10) : 0) : 0;
+    if (pSrc != 0) {
+        PBoundBoxToBoundBox__FPA2_A4_fPA2_A4_f((m_unk10->m_unk0D != 0) ? (float (*)[2][4])((char *)m_unk10 + 0x10) : 0, &box);
+        bounds[0][0] = box[0][0];
+        bounds[0][1] = box[0][1];
+        bounds[0][2] = box[0][2];
+        bounds[0][3] = 1.0f;
+        bounds[1][0] = box[1][0];
+        bounds[1][1] = box[1][1];
+        bounds[1][2] = box[1][2];
+        bounds[1][3] = 1.0f;
+    } else {
+        bounds[0][0] = 32767.0f;
+        bounds[0][1] = 32767.0f;
+        bounds[0][2] = 32767.0f;
+        bounds[0][3] = 1.0f;
+        bounds[1][0] = -32767.0f;
+        bounds[1][1] = -32767.0f;
+        bounds[1][2] = -32767.0f;
+        bounds[1][3] = 1.0f;
+    }
+
+    m_unk18 = 0;
+    child = (m_unk14 != 0) ? m_unk1C[0] : 0;
+    while (child != 0) {
+        float *pm;
+        ((PMeshNodeVirtuals *)child)->ComputeBoundingBox();
+        pm = child->m_unk110;
+        *(u_long128 *)pts[0] = *(u_long128 *)pm;
+        sceVu0AddVector(pts[0], pts[0], child->m_unk80);
+        *(u_long128 *)pts[1] = *(u_long128 *)(pm + 4);
+        PBoundBoxToBoundBox__FPA2_A4_fPA2_A4_f(&pts, &box);
+        for (i = 0; i < 3; i++) {
+            if (box[0][i] < bounds[0][i]) {
+                bounds[0][i] = box[0][i];
+            }
+            if (box[1][i] > bounds[1][i]) {
+                bounds[1][i] = box[1][i];
+            }
+        }
+        m_unk18++;
+        child = (m_unk18 < m_unk14) ? m_unk1C[m_unk18] : 0;
+    }
+    MakePBoundBox__FPfPfPA2_A4_f(bounds[0], bounds[1], (float (*)[2][4])m_unk110);
 }
 
 // One 0x18-byte entry of a PMeshNodeAnimDataTable: key, anim, then a PArray at +8.
