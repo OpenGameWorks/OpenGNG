@@ -3,6 +3,7 @@
 #include "Interface.h"
 #include "PTextureManager.h"
 #include "PArray.h"
+#include "PGrimBarAura.h"
 
 // TODO(header): foreign declarations
 class Player {
@@ -165,7 +166,8 @@ extern int SCREEN_HEIGHT;
 // PMat4 member; the call passes the matrix object as pThis. PMat4.h has no declaration for it.
 extern "C" void MakeParallelProjectionMatrix__5PMat4Fffffffffffff(void *pThis, float, float, float, float, float, float, float, float, float, float, float, float);
 extern "C" void EnableAllText__11FontManagerFb(void *pThis, bool bFlag);
-extern "C" void DisplayString__11FontManagerFPcffi9FontColor9FontAlign(void *pThis, char *pStr, float fX, float fY, int nZ, int nColor, int nAlign);
+extern "C" void *DisplayString__11FontManagerFPcffi9FontColor9FontAlign(void *pThis, char *pStr, float fX, float fY, int nZ, int nColor, int nAlign);
+extern "C" void JapanAddNumber__11FontManagerFPUsPUsi(unsigned short *pDst, unsigned short *pSrc, int nVal);
 extern "C" int printf(const char *fmt, ...);
 extern "C" int strcasecmp(const char *pA, const char *pB);
 extern "C" unsigned int strlen(const char *pStr);
@@ -178,6 +180,16 @@ extern "C" void RemoveNullAnimation__6PMNodeFv(PMNode *pThis);
 class PDeletable {
 public:
     virtual ~PDeletable();
+};
+
+// Vtable whose slot 0x18 (index 4) returns int; slots 0..3 are placeholders.
+class PVirtIntSlot4 {
+public:
+    virtual void Slot00();
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual int Slot04();
 };
 
 class HudData {
@@ -198,6 +210,8 @@ public:
     int SwapCheck(unsigned int arg0);
     void UpdateShieldIcon();
     void Init(PMeshNode *arg0, HudData *arg1);
+    void Update(int arg0);
+    void InfoScreen();
 
     char _pad000[0x4];
     void *m_unk4;               // 0x004
@@ -374,6 +388,59 @@ extern GameHud *mpPlayerData__7GameHud;
 // TODO(header): IconTable is a 0x20-byte-stride table indexed by icon type; AbilityTable is shared with Player.cpp.
 extern char IconTable[0x1100];
 extern signed char AbilityTable[];
+
+// DRAFT: 0x0013FCC0 Update__7HudGrimFi
+// note: DIFF 116; the +4 folds into lw 4(v0) where the original uses addiu before addu and lw 0(v0); prologue and register allocation also differ.
+void HudGrim::Update(int arg0) {
+    int idx = m_unkE;
+    char *base = (char *)mpPlayerData__7GameHud + 4;
+    int target = *(int *)(base + (idx << 2));
+    if (target > 0x28) {
+        target = 0x28;
+    }
+    if (m_unkC != target) {
+        m_unkF--;
+        if ((signed char)m_unkF <= 0) {
+            m_unkF = 4;
+            char *list = (char *)m_unk4 + 0x14;
+            short cur = m_unkC;
+            int dir;
+            bool bEnable = false;
+            short idx;
+            if (target - cur >= 0) {
+                idx = cur;
+                dir = 1;
+                m_unkC = cur + 1;
+                if (m_unkC == 10) {
+                    for (int i = 0; i < 10; i++) {
+                        ((PGrimBarAura *)m_unk20)->EnableParticle(i, true);
+                    }
+                }
+                bEnable = (m_unkC < 10) ? (*(signed char *)((char *)mpPlayerData__7GameHud + 0x59) == 4) : true;
+            } else {
+                cur = cur - 1;
+                dir = 0;
+                m_unkC = cur;
+                idx = cur;
+            }
+            int count = *(int *)list;
+            void **storage = *(void ***)(list + 8);
+            PMNode *elem = ((unsigned int)idx < (unsigned int)count) ? (PMNode *)storage[idx] : 0;
+            *(int *)((char *)elem + 0xC) = dir;
+            ((PGrimBarAura *)m_unk20)->EnableParticle(idx, bEnable);
+            if (m_unkC == 0) {
+                *(int *)((char *)m_unk4 + 0xC) = 0;
+            }
+            if (m_unk10 != 0) {
+                *(int *)((char *)m_unk10 + 0xC) = (m_unkC < 10) ? 0 : 1;
+            }
+        }
+    }
+    m_unk4->Slot04(0.0f, 1.0f, 0, 0, false);
+    if (m_unk10 != 0 && *(int *)((char *)m_unk10 + 0xC) != 0) {
+        ((PMNode *)m_unk10)->Slot04(0.0f, 1.0f, 0, 0, false);
+    }
+}
 
 // FUNCTION: 0x13FEC0 UpdateStatus__7HudGrimFb
 void HudGrim::UpdateStatus(bool arg0) {
@@ -776,6 +843,59 @@ int HudInventory::SwapCheck(unsigned int arg0) {
     ((Player *)*(char **)(gEng + 0x1883C))->SwapAbility(icon);
     m_unk40 = *(int *)(IconTable + 0x1008 + (group << 5));
     return 1;
+}
+
+// DRAFT: 0x00142DD0 Update__12HudInventoryFi
+// note: DIFF 120; frame is 0x50 with this in s0 (original 0x60 with this in s2), state dispatch order and the gInterface base register differ.
+void HudInventory::Update(int arg0) {
+    unsigned char state = m_unkF;
+    if (state == 3) {
+        PMNode *node = Find__6PMNodeFUi((PMNode *)m_unk4, 0x7BDFB173);
+        if (node != 0) {
+            PVirtIntSlot4 *sub = *(PVirtIntSlot4 **)((char *)node + 0x24);
+            int r = 0;
+            if (sub != 0) {
+                r = sub->Slot04();
+            }
+            if (r == 0) {
+                *(int *)((char *)m_unk4 + 0xC) = 0;
+                m_unkF = 0;
+                *(int *)((char *)&gInterface + 0x18D0) = 15;
+            }
+        }
+    } else if (state == 2) {
+        InfoScreen();
+    } else if (state == 1) {
+        PMNode *node = Find__6PMNodeFUi((PMNode *)m_unk4, 0x7BDFB173);
+        if (node != 0) {
+            PVirtIntSlot4 *sub = *(PVirtIntSlot4 **)((char *)node + 0x24);
+            int r = 0;
+            if (sub != 0) {
+                r = sub->Slot04();
+            }
+            if (r == 0) {
+                m_unk10 = 0;
+                m_unkF = 2;
+                Interface *ui = &gInterface;
+                char *p = *(char **)((char *)ui + 0x100);
+                char *s1 = p + 0xA14;
+                if (*(signed char *)(p + 0xA1E) < 0xC) {
+                    ((FontManager *)ui)->DisplayString(0xD6, 0, 0, false);
+                } else {
+                    unsigned short buf[16];
+                    buf[0] = 0x7B;
+                    buf[1] = 0x20;
+                    JapanAddNumber__11FontManagerFPUsPUsi(&buf[2], *(unsigned short **)s1, -1);
+                    void *fm = DisplayString__11FontManagerFPcffi9FontColor9FontAlign((void *)ui, (char *)buf, 145.0f, -215.0f, *(signed char *)(s1 + 0xA), 0, 0);
+                    *(short *)((char *)fm + 6) = 0x15;
+                    ((FontManager *)ui)->DisplayString(0xD6, 0, 0, false);
+                }
+            }
+        }
+    } else if (state == 0) {
+        return;
+    }
+    ((PMNode *)m_unk4)->Slot04(0.0f, 1.0f, 0, 0, false);
 }
 
 // FUNCTION: 0x142FF0 UpdateStatus__12HudInventoryFb

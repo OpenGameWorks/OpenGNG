@@ -8,6 +8,7 @@ class HudData;
 
 class HudGrim {
 public:
+    void Update(int arg0);
     void UpdateCover();
     void UpdateStatus(bool arg0);
     void Init(PMeshNode *meshNode, HudData *hud);
@@ -15,7 +16,9 @@ public:
 
     char _pad000[0x4];
     PMNode *m_unk4;             // 0x004
-    char _pad008[0x7];
+    char _pad008[0x4];
+    short m_unkC;               // 0x00C signed index, compared against the 10-entry particle ring
+    unsigned char m_unkE;       // 0x00E player-data index (mpPlayerData array selector)
     unsigned char m_unkF;       // 0x00F set to 1 by UpdateStatus
     void *m_unk10;              // 0x010 PMNode::Find(0x303B74C6) result
     void *m_unk14[3];           // 0x014 cover element pointers
