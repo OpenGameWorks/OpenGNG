@@ -4,6 +4,7 @@
 // Forward declarations of foreign classes named by PSound member parameters.
 class GameSoundTrigletPawn;
 class PMNode;
+class SoundRoom;
 struct tagBOX_OR_SPHERE;
 struct tagVuMatrixBox;
 enum EnumEnclosureType {
@@ -131,6 +132,8 @@ public:
     void SetDistLinearPercent(unsigned int nPercent);
     void SetPositionalRangeOneshot(unsigned int nRange);
     int PlayMusic(unsigned int nTrack);
+    void RegisterSoundEntityAmounts(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3);
+    int RegisterRoom(SoundRoom *pRoom);
     void PSoundReInitSoundRooms();
     void PSoundReInitSub(unsigned int nMode);
     void PSoundReInitSubWSoundCalls();
@@ -147,9 +150,11 @@ public:
     int StartPreppedDialog(unsigned int nArg);
     int GetDialogStreamReadiness(unsigned int nArg);
     int GetDialogPlayingStatus();
+    void GetTrayRelated(int *pTrayOpen, int *pStatus, int *pReady, int *pType);
     void FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned int nFrames);
     void AmbientFadeToFree(AmbientChannelState *pState);
     void FadeAmbientChannel(AmbientChannelState *pState, unsigned int nChan);
+    void AdjustEffectVolumes(unsigned int &nOutA, unsigned int &nOutB, float &fInA, float &fInB);
     int PauseAllAmbientSounds();
     int ResumeAllAmbientSounds();
     int StopAllSounds();
@@ -195,6 +200,10 @@ public:
     void Pause();
     void ResumeAmbientEntry(AmbientEntry *pEntry);
     int ResumeAmbientSoundsByOriginatorRef(unsigned int nOriginator, unsigned int nFlags);
+    int IsObjectPlayingAmbientByID(unsigned int nID, unsigned int nOriginator, unsigned int nFlags);
+    int StopAmbientSoundsByOriginatorRef(unsigned int nOriginator, unsigned int nFlags);
+    int StopSoundsByOriginatorRef(unsigned int nOriginator, unsigned int nArg1, unsigned int nFlags);
+    int PauseAmbientSoundsByOriginatorRef(unsigned int nOriginator, unsigned int nFlags);
     int AddChanToMultipleResumes(unsigned int nChan);
     int AddChanToMultiplePauses(unsigned int nChan);
     int AddChanToMultipleStops(unsigned int nChan);
@@ -306,7 +315,8 @@ public:
     int m_unk5444;          // 0x5444, PSoundReInitSoundRooms sets -1
     char _pad5448[0x544C - 0x5448];
     int m_unk544C;          // 0x544C, PSoundReInitSoundRooms clears it
-    char _pad5450[0x5460 - 0x5450];
+    unsigned int m_unk5450; // 0x5450, RegisterSoundEntityAmounts sets it
+    char _pad5454[0x5460 - 0x5454];
     char m_unk5460[0x2580]; // 0x5460, PSoundReInitSoundRooms clears it
     int m_unk79E0[6];       // 0x79E0
     char *m_unk79F8;        // 0x79F8, triglet table base (0x150-byte records)

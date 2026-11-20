@@ -49,6 +49,18 @@ extern unsigned char gInterface[2656];
 extern "C" int SOUND_MakeSoundStreamRef();
 extern "C" unsigned int SOUND_PlayDialogRelVol(unsigned int, unsigned int, unsigned int, short, unsigned int);
 extern "C" void SOUND_FadeMusicStream(unsigned int, unsigned int, int, unsigned int);
+extern "C" unsigned int SOUND_PlayMusicRelVol(unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
+extern short gbMusic;
+extern "C" int sceCdStatus();
+extern "C" int sceCdDiskReady(int);
+extern "C" int sceCdGetDiskType();
+extern int SOUND_CD_READY;
+extern int SOUND_CD_TRAY_OPEN;
+extern int SOUND_IOP_CD_STATUS;
+extern int SOUND_IOP_DISK_TYPE;
+extern int SOUND_STREAM_ID[4];
+extern int SOUND_STREAM_STATUS16[4];
+extern unsigned int gSOUND_EEMainSyncCount3Returned;
 class PTranslateATable {
 public:
     static int FindASubTableRandomItem(unsigned int *pOut, unsigned int nIdx, int (*pfnBank)(unsigned int), const unsigned int *pTable);
@@ -187,6 +199,40 @@ unsigned int PSound::FindFreeAmbientChannel() {
     return -1;
 }
 
+// FUNCTION: 0x001A40C0 GetTrayRelated__6PSoundFPiPiPiPi
+void PSound::GetTrayRelated(int *pTrayOpen, int *pStatus, int *pReady, int *pType) {
+    int nTrayOpen;
+    int nStatus;
+    int nReady;
+    int nType;
+    if (GetEEControlStatus() == 3) {
+        nTrayOpen = 0;
+        nStatus = sceCdStatus();
+        nReady = sceCdDiskReady(1);
+        nType = sceCdGetDiskType();
+        if (nStatus == 1) {
+            nTrayOpen = 1;
+        }
+    } else {
+        nTrayOpen = SOUND_CD_TRAY_OPEN;
+        nStatus = SOUND_IOP_CD_STATUS;
+        nReady = SOUND_CD_READY;
+        nType = SOUND_IOP_DISK_TYPE;
+    }
+    if (pTrayOpen != 0) {
+        *pTrayOpen = nTrayOpen;
+    }
+    if (pStatus != 0) {
+        *pStatus = nStatus;
+    }
+    if (pReady != 0) {
+        *pReady = nReady;
+    }
+    if (pType != 0) {
+        *pType = nType;
+    }
+}
+
 // FUNCTION: 0x001A41A0 WaitOnVSync__6PSoundFv
 void PSound::WaitOnVSync() {
     int nVBlank = gCDSVBlankCount;
@@ -296,6 +342,33 @@ int PSound::StartPreppedDialog(unsigned int nArg) {
     return 0;
 }
 
+// FUNCTION: 0x001A46F0 GetDialogStreamReadiness__6PSoundFUi
+int PSound::GetDialogStreamReadiness(unsigned int nArg) {
+    int nRef;
+
+    if ((nArg < 0xC8U) || (nArg >= 0xE4U)) {
+        CdsAssert("PSound.cpp", 0x22CD, "0");
+        return -1;
+    }
+    nRef = m_unk2E50[2];
+    if (nArg != (unsigned int)nRef) {
+        return -1;
+    }
+    if (m_unk2E50[0] == 0) {
+        return -1;
+    }
+    if (gSOUND_EEMainSyncCount3Returned <= (unsigned int)m_unk2E60) {
+        return 1;
+    }
+    if ((SOUND_STREAM_STATUS16[0] & 0xC000) != 0xC000) {
+        return 1;
+    }
+    if (SOUND_STREAM_ID[0] != nRef) {
+        CdsAssert("PSound.cpp", 0x22E7, "0");
+    }
+    return 0;
+}
+
 // FUNCTION: 0x001A47D0 StartAndHoldDialog__6PSoundFUi
 int PSound::StartAndHoldDialog(unsigned int nArg) {
     m_unk2E50[0] = SOUND_MakeSoundStreamRef();
@@ -380,6 +453,36 @@ int PSound::EnableTrigletByInstanceID(unsigned int nInstanceID, bool bEnable) {
         }
     }
     return -1;
+}
+
+// FUNCTION: 0x001A51C0 RegisterSoundEntityAmounts__6PSoundFUiUiUiUi
+void PSound::RegisterSoundEntityAmounts(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3) {
+    ((m_unk544C == 0) ? (void)0 : CdsAssert("PSound.cpp", 0x1FFE, "0 == mNSoundRooms"));
+    ((m_unk79E0[0] == 0) ? (void)0 : CdsAssert("PSound.cpp", 0x1FFF, "0 == mNTrigletPawns"));
+    ((m_unk79E0[4] == 0) ? (void)0 : CdsAssert("PSound.cpp", 0x2000, "0 == mNTrigletMasters"));
+    m_unk5450 = p0;
+    m_unk79E0[1] = p1;
+    m_unk79E0[3] = p2;
+    m_unk79E0[5] = p3;
+    m_unk79E0[0] = 0;
+    m_unk79E0[4] = 0;
+    m_unk79E0[2] = 0;
+}
+
+// DRAFT: 0x001A5290 RegisterRoom__6PSoundFP9SoundRoom
+// note: frame 0x50 vs 0x40 (pRoom+0x1B0 hoisted to s0, extra s3); third MakeMatrixBox arg is an uninit local that lands on pRoom reg, original leaves a3 untouched; dead lw pRoom+0xC missing. Tried block-scope/function-scope uninit, literal 0, unsigned compare.
+int PSound::RegisterRoom(SoundRoom *pRoom) {
+    tagBOX *pUnset;
+    if (!((unsigned int)m_unk544C < 0x28)) {
+        CdsAssert("PSound.cpp", 0x1FE7, "0");
+        return -1;
+    }
+    char *pRec = m_unk5460 + m_unk544C * 0xF0;
+    memcpy(pRec + 0xA0, (char *)pRoom + 0x1B0, 0x40);
+    *(int *)(pRec + 0xE0) = ((MathAPI *)pRec)->MakeMatrixBox((tagVuMatrixBox *)(pRec + 0xA0), (tagBOX *)((char *)pRoom + 0x1B0), pUnset, 0.0f);
+    ((MathAPI *)(pRec + 0x50))->MakeMatrixBox(0, (tagBOX *)((char *)pRoom + 0x1B0), pUnset, 1.0f);
+    m_unk544C += 1;
+    return 0;
 }
 
 // FUNCTION: 0x001A5590 SetMusicPitchBend__6PSoundFb
@@ -484,6 +587,30 @@ void PSound::FadeAmbientChannel(AmbientChannelState *pState, unsigned int nChan)
     }
 }
 
+// DRAFT: 0x001A6260 AdjustEffectVolumes__6PSoundFRUiRUiRfRf
+// note: 5 words; the three flag compares use $v1/$a0 where the original uses $at. Tried: nested bLowA variant (5), no-local variant (5), ternary clamps (11).
+void PSound::AdjustEffectVolumes(unsigned int &nOutA, unsigned int &nOutB, float &fInA, float &fInB) {
+    unsigned int nA = (unsigned int)fInA;
+    unsigned int nB = (unsigned int)fInB;
+    int bLowA = nA < 0x3E9U;
+    if (m_unk30 != 0) {
+        if (nA < nB) {
+            nA = nB;
+        } else {
+            nB = nA;
+        }
+        bLowA = nA < 0x3E9U;
+    }
+    if (bLowA == 0) {
+        nA = 0x3E8;
+    }
+    if (nB >= 0x3E9U) {
+        nB = 0x3E8;
+    }
+    nOutA = nA;
+    nOutB = nB;
+}
+
 // FUNCTION: 0x001A71D0 PlaySoundTrigletUbiquitous__6PSoundFUiUiPC20GameSoundTrigletPawn
 int PSound::PlaySoundTrigletUbiquitous(unsigned int p0, unsigned int p1, const GameSoundTrigletPawn *pPawn) {
     if (pPawn != 0) {
@@ -497,8 +624,8 @@ int PSound::PlaySoundTriglet(unsigned int p0, unsigned int p1, const GameSoundTr
     if (pPawn == 0) {
         return 0;
     }
-    if (gPSndDbg[25] != 0 && fst_StartMultiple == (int)p0) {
-        PlayMultipleAtOnce(gPSndDbg[0]);
+    if (gPSndDbg[51] != 0 && fst_StartMultiple == (int)p0) {
+        PlayMultipleAtOnce(gPSndDbg[26]);
     }
     return PlaySoundWPitch(p0, p1, (unsigned int)pPawn, 0x40, 0);
 }
@@ -522,6 +649,72 @@ int PSound::StopAllRegularSounds() {
     SOUND_StopAllRegularSounds();
     PSoundReInitRegularSounds();
     return 0;
+}
+
+// FUNCTION: 0x001A8090 IsObjectPlayingAmbientByID__6PSoundFUiUiUi
+int PSound::IsObjectPlayingAmbientByID(unsigned int nID, unsigned int nOriginator, unsigned int nFlags) {
+    if (IsAmbientSoundByID(nID) == 0) {
+        return 0;
+    }
+    if (nOriginator != 0) {
+        if (nOriginator != 0x80000000) {
+            AmbientEntry *pEntry = (AmbientEntry *)((char *)this + 0x380);
+            AmbientEntry *pEnd = (AmbientEntry *)((char *)this + 0x2220);
+            if (pEntry < pEnd) {
+                do {
+                    if (nOriginator == pEntry->m_unk1C && ((unsigned short)pEntry->m_unk14 & nFlags) && nID == pEntry->m_unk10) {
+                        return 1;
+                    }
+                    pEntry = (AmbientEntry *)((char *)pEntry + 0x70);
+                } while (pEntry < pEnd);
+            }
+        }
+    }
+    return 0;
+}
+
+// FUNCTION: 0x001A8150 StopSoundsByOriginatorRef__6PSoundFUiUiUi
+int PSound::StopSoundsByOriginatorRef(unsigned int nOriginator, unsigned int nArg1, unsigned int nFlags) {
+    CheckAllChannelsMatch();
+    int nStopped = 0;
+    if (nOriginator != 0 && nOriginator != 0x80000000) {
+        if (nFlags & 2) {
+            nStopped = StopAmbientSoundsByOriginatorRef(nOriginator, nArg1);
+        }
+        if (nFlags & 1) {
+            unsigned int i = m_unk2E30;
+            char *pEnt = (char *)this + (i << 6) + 0x2220;
+            for (; m_unk2E34 >= i; i++, pEnt += 0x40) {
+                if (nOriginator == *(unsigned int *)(pEnt + 0x18)) {
+                    StopOneShot(i);
+                    nStopped++;
+                }
+            }
+        }
+    }
+    CheckAllChannelsMatch();
+    return nStopped;
+}
+
+// FUNCTION: 0x001A8230 StopAmbientSoundsByOriginatorRef__6PSoundFUiUi
+int PSound::StopAmbientSoundsByOriginatorRef(unsigned int nOriginator, unsigned int nFlags) {
+    int nCount = 0;
+    if (nOriginator != 0) {
+        if (nOriginator != 0x80000000) {
+            AmbientEntry *pEntry = (AmbientEntry *)((char *)this + 0x380);
+            AmbientEntry *pEnd = (AmbientEntry *)((char *)this + 0x2220);
+            if (pEntry < pEnd) {
+                do {
+                    if (nOriginator == pEntry->m_unk1C && ((unsigned short)pEntry->m_unk14 & nFlags)) {
+                        StartAESoftwareFadeout(pEntry, 0);
+                        nCount++;
+                    }
+                    pEntry = (AmbientEntry *)((char *)pEntry + 0x70);
+                } while (pEntry < pEnd);
+            }
+        }
+    }
+    return nCount;
 }
 
 // FUNCTION: 0x001A82F0 DebugStopAllSoundsBySoundID__6PSoundFUi
@@ -587,6 +780,27 @@ int PSound::ResumeAmbientSoundsByOriginatorRef(unsigned int nOriginator, unsigne
                 do {
                     if (nOriginator == pEntry->m_unk1C && ((unsigned short)pEntry->m_unk14 & nFlags)) {
                         ResumeAmbientEntry(pEntry);
+                        nCount++;
+                    }
+                    pEntry = (AmbientEntry *)((char *)pEntry + 0x70);
+                } while (pEntry < pEnd);
+            }
+        }
+    }
+    return nCount;
+}
+
+// FUNCTION: 0x001A8560 PauseAmbientSoundsByOriginatorRef__6PSoundFUiUi
+int PSound::PauseAmbientSoundsByOriginatorRef(unsigned int nOriginator, unsigned int nFlags) {
+    int nCount = 0;
+    if (nOriginator != 0) {
+        if (nOriginator != 0x80000000) {
+            AmbientEntry *pEntry = (AmbientEntry *)((char *)this + 0x380);
+            AmbientEntry *pEnd = (AmbientEntry *)((char *)this + 0x2220);
+            if (pEntry < pEnd) {
+                do {
+                    if (nOriginator == pEntry->m_unk1C && ((unsigned short)pEntry->m_unk14 & nFlags)) {
+                        PauseAmbientEntry(pEntry, 0);
                         nCount++;
                     }
                     pEntry = (AmbientEntry *)((char *)pEntry + 0x70);
@@ -1036,6 +1250,33 @@ void PSound::FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned
     }
 }
 
+// DRAFT: 0x001A9720 PlayMusicOnStream__6PSoundFUiUiUi
+// note: 2 words differ: clamp sltiu/bnez uses $v0 not $at; tried !(n<0x65), ternary, compare on param, empty-then if/else
+int PSound::PlayMusicOnStream(unsigned int arg0, unsigned int arg1, unsigned int arg2) {
+    if (arg2 >= 0x65U) {
+        arg2 = 0x64;
+    }
+    if (arg0 < 2U && arg1 < 0x21U) {
+        unsigned int *pState = m_unk70[arg0];
+        pState[0] = arg1;
+        if (arg1 == 0) {
+            SOUND_StopStream(arg0);
+            return 1;
+        }
+        unsigned int nVol = arg2 * 10;
+        pState[3] = nVol;
+        pState[1] = SOUND_MakeSoundStreamRef();
+        if (gbMusic == 0) {
+            return 1;
+        }
+        if (arg1 >= 3U) {
+            SOUND_PlayMusicRelVol(arg0, arg1, pState[1], nVol, 0);
+        }
+        return 1;
+    }
+    return 0;
+}
+
 // FUNCTION: 0x001A9800 PlayMusic__6PSoundFUi
 int PSound::PlayMusic(unsigned int nTrack) {
     if (nTrack < 0x21) {
@@ -1436,7 +1677,7 @@ int PSound::UsageAdd(unsigned int nID) {
 // FUNCTION: 0x001AB330 DebugClearPlayedInGame__6PSoundFv
 void PSound::DebugClearPlayedInGame() {
     int *p = (int *)fst_Usage;
-    int *end = (int *)(fst_Usage + 0x6DC0);
+    int *end = (int *)(fst_Usage + 24000);
     if (p < end) {
         do {
             if (p[0] == -1) {
