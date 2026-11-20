@@ -36,6 +36,7 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 - The performance-counter read the disassembler shows as `.word 0x4???C801` (`mfc0 rt, Reserved25`, sel 1) is `mfpc nCounter, 0` in the asm block; the assembler encodes sel 1 from that mnemonic (`src/game/Timing.cpp` StartTimer).
 - `local NAME data differs from original NAME2` from `fncmp.py` means a function-local static or string literal holds other bytes than the original: a static needs its initialiser and the element count matching the original symbol's size (decimal bytes in `config/symbols.tsv`; data past that size belongs to the next symbol), and a literal pool in another order means the file's strings are first used in another order.
 - A ctor that spills `this` to `0x1C(sp)` and reloads it before stores needs a member sub-object with an empty user-declared destructor.
+- A constant 1 loaded with `daddiu reg,$zero,1` where an int would give `addiu`/`li` is a `bool` local: `bool f;`, `f = true;` / `f = false;`, `if (!f)`; `f == 0` adds an `andi 0xFF` (`ReadData` in `src/game/PCDFile.cpp`). `tools/permute.py FILE 0xADDR` tries this respelling among others.
 
 ## Finishing
 
