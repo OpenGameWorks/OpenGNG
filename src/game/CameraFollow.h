@@ -21,7 +21,8 @@ public:
     ~tag_CurveData();
 
     float m_v[4];          // 0x00
-    char _pad010[0x10];
+    float m_unk10;         // 0x10 (accumulated arc length)
+    char _pad014[0xC];
 };
 
 class CameraSpline {
@@ -35,7 +36,7 @@ public:
     int m_iNumCtrlPoints;               // 0x000
     int m_unk4;                         // 0x004
     int m_unk8;                         // 0x008
-    char _pad00C[0x10 - 0x00C];
+    float m_unkC;                       // 0x00C (minimum arc length)
     tag_CurveData m_curves[750];        // 0x010
     tag_ControlData m_ctrlPts[15];      // 0x5DD0
 };
@@ -64,6 +65,7 @@ public:
     void CamCollideCylinder(PVec3 arg0, float arg1, float arg2);
     float GetAngleBetweenCamAndPlayer(float &arg0);
     int ProcessCamBox();
+    void ProcessHeadCam();
     int PlayerMovedSinceLastSwing();
     int PlayerExitingLevel();
     void SetFollowCameraParams(float arg0, float arg1);
@@ -123,7 +125,8 @@ public:
     char _pad1A6[0x1A8 - 0x1A6];
     float m_unk1A8;         // 0x1A8
     float m_unk1AC;         // 0x1AC
-    char _pad1B0[0x1B8 - 0x1B0];
+    float m_unk1B0;         // 0x1B0
+    float m_unk1B4;         // 0x1B4
     signed char m_unk1B8;   // 0x1B8
     signed char m_unk1B9;   // 0x1B9
     unsigned char m_unk1BA; // 0x1BA
@@ -140,8 +143,12 @@ public:
     unsigned char m_unk1F0; // 0x1F0
     char _pad1F1[0x1F4 - 0x1F1];
     float m_unk1F4;         // 0x1F4
-    signed char m_unk1F8;   // 0x1F8
-    char _pad1F9[0x210 - 0x1F9];
+    unsigned char m_unk1F8; // 0x1F8
+    char _pad1F9[0x200 - 0x1F9];
+    float m_unk200;         // 0x200
+    float m_unk204;         // 0x204
+    float m_unk208;         // 0x208
+    char _pad20C[0x210 - 0x20C];
     int m_unk210;           // 0x210
     float m_unk214;         // 0x214
     int m_unk218;           // 0x218

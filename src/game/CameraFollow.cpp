@@ -45,6 +45,11 @@ extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 extern "C" int printf(const char *fmt, ...);
 extern "C" int fptodp(float f);
 extern Debug gDebug;
+extern "C" int CheckCameraShake__6CameraFR5PVec3R5PVec3b(void *pThis, float *pA, float *pB, int bFlag);
+extern "C" void MakeViewMatrix__5PMat4FPfPfPf(float *pMat, float *pA, float *pB, float *pC);
+extern "C" void Mul__5PMat4F5PMat4(float *pOut, float *pA, float *pB);
+extern "C" void SetPosAndRot__6CameraFPA4_fPA4_f(void *pThis, float (*pPos)[4], float (*pRot)[4]);
+extern "C" int _dpfge(long long a, long long b);
 
 class PVec3 {
 public:
@@ -113,6 +118,48 @@ void CameraFollow::DrawTextDebug() {
     gDebug.DebugDisp(m_unk639C);
     sprintf(m_unk639C, "Player idle ctr = %d\n", m_unk6314);
     gDebug.DebugDisp(m_unk639C);
+}
+
+// DRAFT: 0x00173860 Create__12CameraSplineFv
+// note: B-spline coefficients and arc length match in shape; accumulator fusion (mula/madd) not reproduced.
+void CameraSpline::Create() {
+    unsigned int numInner = m_unk4;
+    int numCtrl = m_iNumCtrlPoints;
+    int curveIdx = 0;
+    for (int seg = 0; seg < (int)((unsigned int)(numCtrl - 3)); seg++) {
+        for (int j = 0; j < (int)numInner; j++) {
+            float u = (float)j / (float)numInner;
+            float u2 = u * u;
+            float u3 = u2 * u;
+            float b0 = 1.0f + (((-1.0f) * u3 + 3.0f * u2) - 3.0f * u);
+            float b1 = 4.0f + (3.0f * u3 - 6.0f * u2);
+            float b2 = 1.0f + (3.0f * u + ((-3.0f) * u3 + 3.0f * u2));
+            ((curveIdx < 0x2EE) ? (void)0 : CdsAssert__FPciPc("CameraFollow.cpp", 0x85B, "iIndex < MAX_CURVE_POINTS"));
+            tag_CurveData *cur = &m_curves[curveIdx];
+            for (int c = 0; c < 3; c++) {
+                float t = m_ctrlPts[seg].m_v[c] * b0 + m_ctrlPts[seg + 1].m_v[c] * b1;
+                float t2 = m_ctrlPts[seg + 2].m_v[c] * b2 + t;
+                cur->m_v[c] = (t2 + u3 * m_ctrlPts[seg + 3].m_v[c]) / 6.0f;
+            }
+            if (j == 0 && seg == 0) {
+                cur->m_unk10 = 0.0f;
+                m_unkC = 65536.0f;
+            } else {
+                PVec3 spD0;
+                PVec3 spC0;
+                __mi__5PVec3FR5PVec3(spD0.m_v, cur->m_v, m_curves[curveIdx - 1].m_v);
+                sceVu0CopyVector(spC0.m_v, spD0.m_v);
+                float len = GetLength__5PVec3Fv(spC0.m_v);
+                float acc = m_curves[curveIdx - 1].m_unk10 + len;
+                cur->m_unk10 = acc;
+                if (acc < m_unkC) {
+                    m_unkC = acc;
+                }
+            }
+            curveIdx++;
+        }
+    }
+    m_unk8 = curveIdx;
 }
 
 // FUNCTION: 0x00173B30 AddControlPoint__12CameraSplineF5PVec3
@@ -325,6 +372,69 @@ int CameraFollow::ProcessCamBox() {
         break;
     }
     return 1;
+}
+
+// DRAFT: 0x00174C60 ProcessHeadCam__12CameraFollowFv
+// note: DIFF 64: sp40 frame at 0x30 not 0x40 (local reorder no effect); clamp branch shapes; fptodp via jalr not jal (direct call gave 125); double constant register order.
+void CameraFollow::ProcessHeadCam() {
+    float sp30[3];
+    float sp40[4][4];
+    float sp80[4];
+    float sp90[4][4];
+    float spD0[4][4];
+    float var_f1;
+    float var_f1_2;
+
+    sceVu0UnitMatrix(sp40[0]);
+    if (m_unk1F8 != 0) {
+        m_unk1F8 = 0;
+        m_unk1B0 = 0.0f;
+        m_unk1B4 = 0.0f;
+        m_unk200 = m_unk184[0];
+        m_unk204 = m_unk184[1];
+        m_unk208 = m_unk184[2];
+    }
+    if (!(FastMath_Fabs__Ff(m_unk1A8) < 0.3f)) {
+        var_f1 = m_unk1B0 - m_unk1A8;
+        if (var_f1 < 0.0f) {
+            if (var_f1 < -90.0f) {
+                var_f1 = -90.0f;
+            }
+        } else if (!(var_f1 <= 90.0f)) {
+            var_f1 = 90.0f;
+        }
+        m_unk1B0 = var_f1;
+    }
+    if (_dpfge(((long long (*)(float))fptodp)(FastMath_Fabs__Ff(m_unk1AC)), 0x3FD3333333333333LL) != 0) {
+        var_f1_2 = m_unk1B4 + m_unk1AC;
+        if (var_f1_2 < 0.0f) {
+            if (var_f1_2 < -45.0f) {
+                var_f1_2 = -45.0f;
+            }
+        } else if (!(var_f1_2 <= 45.0f)) {
+            var_f1_2 = 45.0f;
+        }
+        m_unk1B4 = var_f1_2;
+    }
+    Round180__Ff(m_unk1B0);
+    Round180__Ff(m_unk1B4);
+    RotateY__5PMat4Ff(sp40[0], m_unk1B0);
+    RotateX__5PMat4Ff(sp40[0], m_unk1B4);
+    m_unk20[0] = m_unk180[0];
+    m_unk20[1] = m_unk180[1] + m_unk164;
+    m_unk20[2] = m_unk180[2];
+    sp30[0] = -m_unkA0[8];
+    sp30[1] = -m_unkA0[9];
+    sp30[2] = -m_unkA0[10];
+    CheckCameraShake__6CameraFR5PVec3R5PVec3b(m_pCamera, m_unk20, m_unk40, 0);
+    MakeViewMatrix__5PMat4FPfPfPf((float *)_pad060, m_unk20, sp30, (float *)&m_unk0E0);
+    sceVu0CopyMatrix(sp90, (float (*)[4])_pad060);
+    Mul__5PMat4F5PMat4(spD0[0], sp40[0], sp90[0]);
+    sceVu0CopyMatrix((float (*)[4])_pad060, spD0);
+    sp80[0] = Round180__Ff(sp80[0] = m_unk200 + m_unk1B4);
+    sp80[1] = Round180__Ff(sp80[1] = m_unk204 + m_unk1B0);
+    sp80[2] = 0.0f;
+    SetPosAndRot__6CameraFPA4_fPA4_f(m_pCamera, (float (*)[4])m_unk20, (float (*)[4])sp80);
 }
 
 // DRAFT: 0x00174F20 CanDoHeadcam__12CameraFollowFv
