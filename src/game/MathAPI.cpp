@@ -77,7 +77,7 @@ int MathAPI::IsESphereWithinESphere(tagSPHERE *arg0, tagSPHERE *arg1) {
 }
 
 // DRAFT: 0x1576B0 IsEBoxWithinEBox__7MathAPIFP6tagBOXP6tagBOX
-// note: 62 differing words; size 0xFC vs 0xEC (frame 0x180 vs 0x170); s2/s1 register assignment differs across the sceVu0UnitMatrix call; tried pointer loop (63->62) and local reorder (no change).
+// note: 61 differing words; frame 0x180 vs 0x170, draft saves s0-s2 vs original s0-s1; s2/s1 register assignment differs across sceVu0UnitMatrix. Tried: pointer loop (63->62), local reorder (no change), uninitialized local as MakeVertexList arg2 (62->61), third memcpy from arg0+0x10 (no change, kept as correct source).
 int MathAPI::IsEBoxWithinEBox(tagBOX *arg0, tagBOX *arg1) {
     float sp30[4];
     float sp40[4];
@@ -91,12 +91,13 @@ int MathAPI::IsEBoxWithinEBox(tagBOX *arg0, tagBOX *arg1) {
     if (this == 0 || arg0 == 0) {
         return 0;
     }
-    MakeVertexList((tagBOX *)sp60, (float (*)[4])arg1);
+    float (*unset)[4];
+    MakeVertexList((tagBOX *)sp60, unset);
     memcpy(sp40, (char *)arg0 + 0x20, 0x10);
     memcpy(sp50, arg0, 0x10);
     ((PMat4 *)mat1)->InverseByRT(sp40, sp50);
     sceVu0CopyMatrix(mat2, mat1);
-    memcpy(sp160, m_unk10, 0x10);
+    memcpy(sp160, (char *)arg0 + 0x10, 0x10);
     float (*vp)[4] = sp60;
     for (i = 0; i < 8; i++) {
         *(u_long128 *)sp30 = *(u_long128 *)vp;
