@@ -9,6 +9,7 @@ public:
     void AttachDamageEffect(class PMNode *pNode, unsigned int nId, float fA, float fB, float fC);
     int PlayerFacingUs();
     int DetermineIdleState();
+    int DetermineNewState();
     void DeleteTimers();
     int GetSuckingSucker();
     int GetSuckingPos(float (&)[4]);
@@ -22,6 +23,7 @@ public:
     void FaceHit();
     void AddSoulValue(int nValue);
     void OnWakeEvent();
+    void OnTimerEvent(unsigned int nTimer);
     void *GetTarget();
     void SetupType();
     void ScaleSpikes(float fArg);
@@ -40,7 +42,9 @@ public:
     char _pad024[0x38 - 0x24];
     class Physics *m_unk38; // 0x038 physics object, first argument of SetPhysicsType
     int m_unk3C;            // 0x03C target entity pointer; +0x80 used when non-null
-    char _pad040[0x103 - 0x40];
+    char _pad040[0xDC - 0x40];
+    int m_unkDC;            // 0x0DC cleared by OnTimerEvent
+    char _pad0E0[0x103 - 0xE0];
     unsigned char m_unk103; // 0x103 flag byte set by SetupType
     int m_unk104;           // 0x104 float bits set by SetupType
     int m_unk108;           // 0x108 float bits set by SetupType
@@ -74,10 +78,10 @@ public:
     char _pad230[0x234 - 0x230];
     unsigned int m_unk234;  // 0x234 target handle, resolved by GetTarget
     unsigned int m_unk238;  // 0x238 handle passed to DestroyDamageFx in the destructor
-    char _pad23C[0x240 - 0x23C];
+    float m_unk23C;         // 0x23C frame rate passed to PMNode::SetFrameRate
     unsigned int m_unk240;  // 0x240 timer handle, killed by DeleteTimers
     unsigned int m_unk244;  // 0x244 timer handle, killed by DeleteTimers
-    int m_unk248;           // 0x248
+    float m_unk248;         // 0x248
     int m_unk24C;           // 0x24C initialised to 1.0f by the constructor
     int m_unk250;           // 0x250
     unsigned char m_unk254; // 0x254
