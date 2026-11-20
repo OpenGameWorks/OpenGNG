@@ -92,6 +92,10 @@ class EntityBaseClass {
 public:
     char _pad00[4];
     int m_unk4;
+    char _pad08[0x34];
+    void *m_unk3C;
+    char _pad40[0x127];
+    unsigned char m_unk167;
 };
 
 class PMNode {
@@ -100,7 +104,7 @@ public:
     virtual void Unk0C();
     virtual void Unk10();
     virtual void Unk14();
-    virtual void Unk18();
+    virtual void Unk18(float arg0, float arg1, int arg2, int arg3, int arg4);
     virtual void Unk1C();
     virtual void Unk20(void *arg0);
     void SetAllFrustrumTest(eBoxIntersect arg0);
@@ -113,7 +117,9 @@ public:
 
     char _pad04[8];
     int m_unkC;
-    char _pad10[0x2E];
+    char _pad10[0x1C];
+    float m_unk2C;
+    char _pad30[0xE];
     unsigned char m_unk3E;
     char _pad3F[0x41];
     u_long128 m_unk80;
@@ -186,6 +192,48 @@ MotionBlurEffect *EffectAPI::CreateMotionBlurEffect(PMNode *arg0, unsigned int a
         pEffect->m_unk8 = nId;
     }
     return pEffect;
+}
+
+// DRAFT: 0x00155AC0 Update__11PlingEffectFf
+// note: 81 words differ; float reg for t/m14, lq/lw order in owner copy, one-word shift before jal (also tried: swapped float compare operands, local m14 variant, no change)
+int PlingEffect::Update(float arg0) {
+    float f20 = arg0;
+    if (m_unk4 != 0) {
+        if (m_unk10 != 0 && m_unk20[0] == 0.0f) {
+            EntityBaseClass *owner = m_unk10;
+            u_long128 *src;
+            if (owner->m_unk3C != 0) {
+                src = (u_long128 *)((char *)owner->m_unk3C + 0x80);
+            } else {
+                src = (u_long128 *)((char *)owner + 0x190);
+            }
+            u_long128 tmp = *src;
+            ((float *)&tmp)[1] += m_unk20[1];
+            *(u_long128 *)(m_unk4 + 0x80) = tmp;
+            ((unsigned char *)m_unk4)[0x3E] |= 8;
+        }
+        if (*(float *)&m_unk14 != 0.0f) {
+            float t = *(float *)(m_unk4 + 0x2C) - *(float *)&m_unk14;
+            if (t <= 0.0f) {
+                SendDeleteEvent(m_unk18);
+                return 0;
+            }
+            *(float *)(m_unk4 + 0x2C) = t;
+        }
+        float *pSlot = (float *)(m_unk4 + 0x90);
+        pSlot[1] = Round180(180.0f + *(float *)(gEng + 0x19784));
+        if (m_unk10->m_unk167 == 0) {
+            f20 = 0.0f;
+        }
+        ((PMNode *)m_unk4)->Unk18(0.0f, f20, 0, 0, 0);
+        int test = mpFrustum__15EntityBaseClass->IntersectBox((float (*)[2][4])(m_unk4 + 0x110), (PMat4 *)(m_unk4 + 0x40));
+        ((PMNode *)m_unk4)->SetAllFrustrumTest((eBoxIntersect)test);
+        if ((signed char)(((signed char *)m_unk4)[0x3F] & 7) != 0) {
+            return 1;
+        }
+    }
+    SendDeleteEvent(m_unk18);
+    return 0;
 }
 
 // FUNCTION: 0x155C70 FindPling__9EffectAPIFP15EntityBaseClass
@@ -491,6 +539,51 @@ int EffectAPI::CreateOneshot(unsigned int arg0, unsigned int arg1, float (*arg2)
         pOneshot->m_unk8 = nId;
     }
     return nId;
+}
+
+// FUNCTION: 0x00156980 __ct__13OneshotEffectFUiUiPA4_fPA4_fP15EntityBaseClassfbib
+OneshotEffect::OneshotEffect(unsigned int arg0, unsigned int arg1, float (*arg2)[4], float (*arg3)[4], EntityBaseClass *arg4, float arg5, bool arg6, int arg7, bool arg8) {
+    m_unkC = arg6;
+    m_unk1C = arg8;
+    m_unk4 = (int)mpResMgr__15EntityBaseClass->GetResource(arg0, 0);
+    if (m_unk4 == 0) {
+        CdsAssert("EffectAPI.cpp", 0xC9, "mpMeshNode");
+    }
+    m_unk14 = arg4;
+    if (arg4 == 0) {
+        m_unk10 = 0;
+        m_unk18 = 0;
+        {
+            char *node = (char *)m_unk4;
+            *(u_long128 *)(node + 0x80) = *(u_long128 *)arg2;
+            ((unsigned char *)node)[0x3E] |= 8;
+        }
+        if (arg3 != 0) {
+            char *node = (char *)m_unk4;
+            *(u_long128 *)(node + 0x90) = *(u_long128 *)arg3;
+            ((unsigned char *)node)[0x3E] |= 8;
+        }
+    } else {
+        m_unk18 = arg4->m_unk4;
+        void *owner = arg4->m_unk3C;
+        if (owner == 0) {
+            CdsAssert("EffectAPI.cpp", 0xD6, "pNode");
+        }
+        m_unk10 = (int)((char *)owner + 0x40);
+    }
+    if (arg1 != 0) {
+        PMNode *pAnim = mpResMgr__15EntityBaseClass->GetResource(arg1, 0);
+        if (pAnim == 0) {
+            CdsAssert("EffectAPI.cpp", 0xDB, "pAnim");
+        }
+        ((PMNode *)m_unk4)->Unk20(pAnim);
+        ((PMNode *)m_unk4)->EnableAnim(true, true);
+        if (arg5 != 0.5f) {
+            ((PMNode *)m_unk4)->SetFrameRate(arg5, true);
+        }
+    }
+    ((PMNode *)m_unk4)->EnableOneRenderPassOnly(arg7);
+    ((PMNode *)m_unk4)->Unk14();
 }
 
 // DRAFT: 0x00156E00 Animate__9EffectAPIFf

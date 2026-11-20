@@ -58,6 +58,7 @@ class PlingEffect : public EffectNode {
 public:
     PlingEffect(EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4);
     virtual ~PlingEffect();
+    int Update(float arg0);
 
     EntityBaseClass *m_unk10;   // 0x010 owner entity
     int m_unk14;                // 0x014 cleared when an existing pling is reused
@@ -85,6 +86,7 @@ public:
 class OneshotEffect : public EffectNode {
 public:
     OneshotEffect(unsigned int arg0, unsigned int arg1, PMat4 *arg2, EntityBaseClass *arg3, float arg4, int arg5, bool arg6);
+    OneshotEffect(unsigned int arg0, unsigned int arg1, float (*arg2)[4], float (*arg3)[4], EntityBaseClass *arg4, float arg5, bool arg6, int arg7, bool arg8);
     virtual ~OneshotEffect();
     int Update(float arg0);
 
