@@ -39,6 +39,16 @@ public:
     short m_unkC;               // 0x00C current super value, stepped toward the player's target
 };
 
+class HudHealth {
+public:
+    void Update(int arg0);
+
+    char _pad000[0x4];
+    void **m_unk4;              // 0x004 PMNode list object; its PArray at 0x14 holds the health nodes
+    float m_unk8;               // 0x008 target value for the last node's float at 0x80
+    short m_unkC;               // 0x00C current health value, stepped toward the player's target
+};
+
 class HudBossMeter {
 public:
     void Reset();

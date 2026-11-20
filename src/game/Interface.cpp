@@ -181,6 +181,16 @@ public:
     virtual int Slot04(float fA, float fB, PMat4 *pMat, int arg3);
 };
 
+// Node list object at HudHealth::m_unk4; slot 0x18 (virtual 4) takes five integer arguments at the call site.
+class HudHealthList {
+public:
+    virtual void Slot00(int flag);
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual int Slot04(int a, int b, int c, int d, int e);
+};
+
 // Placeholder size; the original object is larger than the 8-byte small-data threshold.
 extern char CoinAnim[0x10];
 extern char DefaultLoopAnim[0x10];
@@ -770,6 +780,114 @@ void HudSuper::Reset() {
     nValue = *(int *)((char *)mpPlayerData__7GameHud + 0x3C);
     m_unkC = (short)nValue;
     UpdateBar(nValue);
+}
+
+// DRAFT: 0x00140980 Update__9HudHealthFi
+// note: first draft; the wanted-count branch order and the tail-node removal path are unverified.
+void HudHealth::Update(int arg0) {
+    PArray *pList;
+    PMNode *pCur;
+    PMNode *pCap;
+    PMNode *pNew;
+    PMNode *pBar;
+    int nCount;
+    int nTarget;
+    int nDelta;
+    int nStep;
+    int nRem;
+    int nWanted;
+    float fStep;
+    float fCur;
+    float fGoal;
+    bool bRemove;
+    bool bDirty;
+
+    bDirty = false;
+    pList = (PArray *)((char *)m_unk4 + 0x14);
+    nCount = pList->m_unk0;
+    nTarget = *(int *)((char *)mpPlayerData__7GameHud + 8);
+    nDelta = m_unkC - nTarget;
+    pCur = (nCount != 0) ? (PMNode *)pList->m_unk8[nCount - 1] : 0;
+    if (nDelta != 0) {
+        if (nDelta < 0) {
+            m_unkC += 4;
+            if (nTarget < m_unkC) {
+                m_unkC = (short)nTarget;
+            }
+            if (nCount * 200 < m_unkC) {
+                pCap = pCur->Find(0x851A08AB);
+                ((pCap != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x980, "pCap"));
+                ((PArray *)((char *)pCur + 0x14))->Remove(pCap);
+                pNew = (PMNode *)__nw__FUi(0x100);
+                if (pNew != 0) {
+                    *(void **)pNew = __vt__9PResource;
+                    *(int *)((char *)pNew + 4) = 0;
+                    *(void **)pNew = __vt__6PMNode;
+                    __ct__6PArrayFv((char *)pNew + 0x14);
+                    sceVu0UnitMatrix((char *)pNew + 0x40);
+                    __ct__6PArrayFv((char *)pNew + 0xD8);
+                    InitMembers__6PMNodeFv(pNew);
+                }
+                CopyMNode__6PMNodeFR6PMNodeb(pNew, pCur, true);
+                ((PArray *)((char *)pNew + 0x14))->Add(pCap);
+                pList->Add(pNew);
+                nCount += 1;
+                fStep = 3.3f + pCur->m_unk80;
+                pCur = pNew;
+                m_unk8 = fStep;
+            }
+        } else {
+            m_unkC -= 3;
+            if (m_unkC < nTarget) {
+                m_unkC = (short)nTarget;
+            }
+        }
+        nStep = m_unkC;
+        nRem = nStep % 200;
+        bRemove = false;
+        if (nRem == 0) {
+            if (nDelta < 0) {
+                nRem = 200;
+            } else if (nStep != 0) {
+                bRemove = true;
+            }
+        } else {
+            nWanted = (m_unkC / 200) + ((unsigned int)nStep >> 31) + 1;
+            if (nWanted < nCount) {
+                bRemove = true;
+            } else if (nCount < nWanted) {
+                nRem = 200;
+            }
+        }
+        if (bRemove) {
+            pCap = pCur->Find(0x851A08AB);
+            ((pCap != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x9A4, "pCap"));
+            ((PArray *)((char *)pCur + 0x14))->Remove(pCap);
+            pList->Remove(pCur);
+            delete (PDeletable *)pCur;
+            nCount = pList->m_unk0;
+            pCur = (nCount != 0) ? (PMNode *)pList->m_unk8[nCount - 1] : 0;
+            ((PArray *)((char *)pCur + 0x14))->Add(pCap);
+            nRem = 200;
+            m_unk8 = pCur->m_unk80;
+        }
+        pBar = pCur->Find(0x3F379B9F);
+        ((pBar != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x9B0, "pBar"));
+        bDirty = true;
+        *(float *)((char *)pBar + 0xA0) = 0.145f + ((0.77f * (float)nRem) / 200.0f);
+    }
+    fCur = pCur->m_unk80;
+    if (fCur < m_unk8) {
+        pCur->m_unk80 = fCur + 0.3f;
+        fGoal = m_unk8;
+        bDirty = true;
+        if (!(pCur->m_unk80 < fGoal)) {
+            pCur->m_unk80 = fGoal;
+        }
+    }
+    if (bDirty) {
+        ((HudHealthList *)m_unk4)->Slot04(0, 8, 0, 0, 0);
+    }
 }
 
 // FUNCTION: 0x1411C0 AbilityScreen__9InterfaceFv
