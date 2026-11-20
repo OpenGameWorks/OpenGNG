@@ -20,6 +20,17 @@ extern "C" void __construct_array(void *pArray, void (*pCtor)(void *), void (*pD
 extern "C" void __ct__5PListFv(void *pThis);
 extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, bool bFlagA, bool bFlagB);
 extern unsigned char __vt__11BattleArena[0x40];
+class PMNode;
+struct PMNodeHolder {
+    PMNode *ptr;
+    char _pad004[0x1E4];
+    float m_unk1E8;
+};
+extern PMNodeHolder gEng;
+extern char mPlayerAPI__13EntityManager[0x10];
+extern "C" int CheckHammer__6PlayerFb(void *pThis, bool bFlag);
+extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
+extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*pA)[4], float (*pB)[4]);
 
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("BattleArena.cpp", line, #cond))
@@ -162,6 +173,66 @@ void BattleArena::SetEditableVars(char *pSrc) {
     memcpy(&m_unk1B0, pSrc, 0x34);
     if (m_unk1B4 < 0) {
         CDS_ASSERT(0x25E, !"BattleArena AnimID shouldn't be -1. Designer, Please fix");
+    }
+}
+
+// DRAFT: 0x001C7660 Execute__11BattleArenaFv
+// note: prologue, gEng assert and switch dispatch are in place; cases 1-5, 7-12 and -2 are empty stubs, so the body is far from the 0x10DC original.
+void BattleArena::Execute() {
+    if (gEng.ptr == 0) {
+        CdsAssert__FPciPc("BattleArena.cpp", 0x26, "pRoot");
+    }
+    switch (m_unk20) {
+    case -2:
+        break;
+    case -1:
+        for (int i = 0; i < 10; i++) {
+            char *e = (char *)this + 0x204 + i * 0x2C;
+            *(int *)(e + 0x00) = 0;
+            *(int *)(e + 0x04) = 0;
+            *(int *)(e + 0x08) = 0;
+            *(int *)(e + 0x0C) = -1;
+            *(int *)(e + 0x10) = 0;
+            *(int *)(e + 0x14) = 0;
+            *(float *)(e + 0x18) = 0.0f;
+        }
+        m_unk3BC = 0;
+        m_unk3C0 = 0;
+        m_unk3E8 = 60.0f * m_unk1B8;
+        SetState__15EntityBaseClassFi(this, 1);
+        return;
+    case 0:
+        if (m_unk1E0 == 1 && CheckHammer__6PlayerFb(*(void **)mPlayerAPI__13EntityManager, false) == 0) {
+            return;
+        }
+        {
+            char *pPl = *(char **)mPlayerAPI__13EntityManager;
+            char *pPlA = *(char **)(pPl + 0x3C);
+            char *pPlPos = (pPlA != 0) ? pPlA + 0x80 : *(char **)(pPl + 0x190);
+            char *pThA = *(char **)((char *)this + 0x3C);
+            char *pThPos = (pThA != 0) ? pThA + 0x80 : *(char **)((char *)this + 0x190);
+            if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pThPos, (float (*)[4])pPlPos) <=
+                (float)*(int *)((char *)this + 0x3E0)) {
+                *(int *)((char *)this + 0x3E0) = 0;
+                SetState__15EntityBaseClassFi(this, 6);
+                return;
+            }
+        }
+        break;
+    case 1:
+        SetState__15EntityBaseClassFi(this, 0);
+        return;
+    case 6: {
+        int t = *(int *)((char *)this + 0x3E0);
+        if (t > 0) {
+            *(int *)((char *)this + 0x3E0) = (int)((float)t - gEng.m_unk1E8);
+            return;
+        }
+        SetState__15EntityBaseClassFi(this, 2);
+        return;
+    }
+    default:
+        return;
     }
 }
 
