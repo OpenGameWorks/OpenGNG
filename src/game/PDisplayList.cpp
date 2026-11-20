@@ -14,6 +14,7 @@ void QwordCopy(u_long128 *pDst, u_long128 *pSrc, unsigned int nQwords);
 extern "C" void FlushCache(int nMode);
 void DmaWaitForCompletion(int nChannel, bool bWait);
 extern "C" void sceGsSetDefClear(void *pPacket, int nW, short nCX, short nCY, short nX, short nY, int nZero0, int nZero1, int nZero2, int nZero3, unsigned int nFlags);
+extern char shared_vertices_start[];
 extern char gHermiteMat[0x40];
 extern char guFxPipelineVuConstants[0x10];
 extern char gu3dPipelineVuConstants[0x10];
@@ -359,6 +360,87 @@ void PDisplayList::SetTexSyncPacket() {
         sync
     }
 }
+
+// DRAFT: 0x00181770 SetMaterials__12PDisplayListFP13tagGsMaterialibbPfPUlPUl
+// note: DIFF 193 words, size 0x284 vs 0x340; prologue saves/spills differ (this in s5 not fp, pTagB spilled), nHeader in s1 not stack, DeAllocEntries reloc at 0x023c/0x0304 misplaced; tried nHeader ternary vs if/else (same count 197 in the other body)
+void PDisplayList::SetMaterials(struct tagGsMaterial *pMat, int nCount, bool bA, bool bB, float *pScale, unsigned long *pTagA, unsigned long *pTagB) {
+    int nHeader;
+    int nAddr;
+    int nPacket;
+    int nTotal;
+    int nIdx;
+    int nDone;
+    char *pDst;
+    char *pElem;
+    char *pTagEl;
+
+    if (pMat == 0) {
+        CdsAssert("PDisplayList.cpp", 0x612, "pMaterials");
+    }
+    if (nCount <= 0 || nCount >= 5) {
+        CdsAssert("PDisplayList.cpp", 0x613, "iNumPasses > 0 && iNumPasses <= MAX_PASSES_PER_SHADER");
+    }
+    nHeader = (m_unkA3348 == 2) ? 0x3AC : 0x372;
+    if (nCount != 1) {
+        CdsAssert("PDisplayList.cpp", 0x618, "iNumPasses == 1");
+    }
+    if (bA) {
+        SetTexSyncPacket();
+    }
+    nTotal = nCount * 9 + 1;
+    nPacket = AllocEntries(nTotal);
+    if (nPacket == 0) {
+        CdsAssert("PDisplayList.cpp", 0x62D, "0");
+    }
+    ((int *)nPacket)[4] = nCount - 1;
+    ((int *)nPacket)[5] = 0;
+    ((int *)nPacket)[6] = 0;
+    ((int *)nPacket)[7] = 0;
+
+    pDst = (char *)nPacket + 0x20;
+    nDone = 0;
+    nAddr = ((unsigned int)shared_vertices_start + 0x2C10) >> 3;
+    for (nIdx = 0; nIdx < nCount; nIdx++) {
+        pElem = (char *)pMat + nIdx * 0x20;
+        pTagEl = (char *)pElem + 0x90;
+        ((int *)pDst)[0] = 0;
+        ((int *)pDst)[1] = 0;
+        ((int *)pDst)[2] = 0;
+        ((int *)pDst)[3] = (*(int *)(pElem + 0x90) != 0) ? ((0x0E + 4) << 16) : (0x0E << 16);
+        *(u_long128 *)(pDst + 0x10) = *(u_long128 *)(pElem + 0x00);
+        *(u_long128 *)(pDst + 0x20) = *(u_long128 *)(pElem + 0x10);
+        *(u_long128 *)(pDst + 0x30) = *(u_long128 *)(pElem + 0x20);
+        *(u_long128 *)(pDst + 0x40) = *(u_long128 *)(pElem + 0x30);
+        *(u_long128 *)(pDst + 0x50) = *(u_long128 *)(pElem + 0x40);
+        *(u_long128 *)(pDst + 0x60) = *(u_long128 *)(pElem + 0x50);
+        *(u_long128 *)(pDst + 0x70) = *(u_long128 *)(pElem + 0x10);
+        *(u_long128 *)(pDst + 0x80) = *(u_long128 *)(pElem + 0x20);
+        *(u_long128 *)(pDst + 0x90) = *(u_long128 *)(pElem + 0x30);
+        *(u_long128 *)(pDst + 0xA0) = *(u_long128 *)(pElem + 0x40);
+        *(u_long128 *)(pDst + 0xB0) = *(u_long128 *)(pElem + 0x50);
+        *(u_long128 *)(pDst + 0xC0) = *(u_long128 *)(pElem + 0x60);
+        *(u_long128 *)(pDst + 0xD0) = *(u_long128 *)(pElem + 0x70);
+        ((int *)pDst)[0x34 / 4] = 0;
+        ((int *)pDst)[0x35 / 4] = 0;
+        if (bB) {
+            ((float *)pDst)[0xCC / 4] = pScale[nIdx];
+            *(long long *)(pDst + 0x90) = *(long long *)pTagA;
+            *(long long *)(pDst + 0xB0) = *(long long *)pTagB;
+        }
+        pDst += 0xF0;
+        nDone += 4;
+    }
+
+    ((int *)nPacket)[0] = (0x6C00 << 16) | nHeader;
+    ((int *)nPacket)[1] = 0;
+    ((int *)nPacket)[2] = 0x10000000;
+    DeAllocEntries(nTotal - nDone);
+    ((unsigned int *)nPacket)[3] = (0x6C01 << 16) | nHeader;
+    asm {
+        sync
+    }
+}
+
 
 // DRAFT: 0x181AB0 DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib
 // note: 180 words differ; frame 0xB0 vs 0xA0 (this spilled to 0xAC(sp), fp not used), arg registers a1..a3 not s7/s1/s0, packet store order

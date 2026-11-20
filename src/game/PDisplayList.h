@@ -10,6 +10,7 @@ struct tagVuSprite;
 struct tagVuParticle;
 struct tagVuRotatableParticle;
 struct tagVuFxInstance;
+struct tagGsMaterial;
 
 class PDisplayList {
 public:
@@ -60,6 +61,7 @@ public:
     int m_unkA3350;         // 0xA3350
     char _padA3354[0x2C];
     char m_unkA3380[1];     // 0xA3380 PTextureDmaChain, size not yet recovered
+    void SetMaterials(struct tagGsMaterial *pMat, int nCount, bool bA, bool bB, float *pScale, unsigned long *pTagA, unsigned long *pTagB);
 };
 
 #endif
