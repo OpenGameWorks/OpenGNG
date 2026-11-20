@@ -13,6 +13,7 @@ void DisplayExceptionMessage(char *pMsg, bool bFatal, bool bReboot);
 void QwordCopy(u_long128 *pDst, u_long128 *pSrc, unsigned int nQwords);
 extern "C" void FlushCache(int nMode);
 void DmaWaitForCompletion(int nChannel, bool bWait);
+extern "C" void sceGsSetDefClear(void *pPacket, int nW, short nCX, short nCY, short nX, short nY, int nZero0, int nZero1, int nZero2, int nZero3, unsigned int nFlags);
 
 // FUNCTION: 0x180400 DeAllocEntries__12PDisplayListFi
 void PDisplayList::DeAllocEntries(int nCount) {
@@ -97,6 +98,58 @@ void PDisplayList::BeginShadowVolume(PMat4 *pMat, float *pA, float *pB, float *p
     asm { sync }
 }
 
+// DRAFT: 0x1807A0 DrawLines__12PDisplayListFP9tagVuLinei
+// note: DIFF 108; original frame 0x90 with s0-s7 saved, ours needs fp (0xA0); tried data pointer before alloc, batch count via ternary, index increment before tail; register map and loop-bottom layout still differ
+void PDisplayList::DrawLines(struct tagVuLine *pLines, int nCount) {
+    int nLeft = nCount;
+    int nBatch;
+    int nRem;
+    int nIdx;
+    if (pLines == 0) {
+        CdsAssert("PDisplayList.cpp", 0x886, "pLines");
+    }
+    nBatch = nCount >> 4;
+    if (nCount == 0) {
+        CdsAssert("PDisplayList.cpp", 0x887, "iNumLines");
+        nBatch = nCount >> 4;
+    }
+    nRem = nCount & 0xF;
+    if (nCount < 0) {
+        nBatch = (nCount + 0xF) >> 4;
+        nRem = nCount & 0xF;
+        if (nRem != 0) {
+            nRem -= 0x10;
+        }
+    }
+    if (nRem != 0) {
+        nBatch += 1;
+    }
+    nIdx = 0;
+    while (nIdx < nBatch) {
+        int nNum = (nLeft < 0x10) ? nLeft : 0x10;
+        u_long128 *pData = (u_long128 *)((char *)pLines + (nIdx << 10));
+        nLeft -= nNum;
+        int nPacket = AllocEntries(nNum * 4 + 3);
+        if (nPacket == 0) {
+            CdsAssert("PDisplayList.cpp", 0x89D, "0");
+        }
+        int nQw = nNum * 4 + 1;
+        *(long long *)nPacket = (long long)(nQw | 0x10000000);
+        ((unsigned int *)nPacket)[2] = 0;
+        ((unsigned int *)nPacket)[3] = (nQw << 16) | 0x6C008000;
+        ((int *)nPacket)[4] = nNum;
+        QwordCopy((u_long128 *)(nPacket + 0x20), pData, nQw - 1);
+        nIdx += 1;
+        int nEnd = nPacket + 0x20 + (nQw - 1) * 0x10;
+        *(long long *)nEnd = 0x10000000LL;
+        ((unsigned int *)nEnd)[2] = 0;
+        ((unsigned int *)nEnd)[3] = 0x17000000;
+    }
+    asm {
+        sync
+    }
+}
+
 // DRAFT: 0x180960 EndMatrixList__12PDisplayListFv
 // note: 39 lines differ; first m_unkA334C load uses lui v1/ori/addu/lw 0(v1) where original uses lui at/addu at/lw 0x334C(at), shifting the rest by one word; 64-bit arithmetic matches; tried void* member, !ptr test, local copy (void* and int), = int local (41 lines)
 void PDisplayList::EndMatrixList() {
@@ -146,6 +199,58 @@ void PDisplayList::BeginMatrixList() {
         CdsAssert("PDisplayList.cpp",0x844, "0");
     }
     m_unkA3350 = 0;
+}
+
+// DRAFT: 0x180B90 ClearFrameBuffer__12PDisplayListFssssccccUi
+// note: DIFF 105; ours hoists the 0x10000007 header lui into the bnez delay slot and duplicates it (original delay slot holds the assert string lui, header uses v0); also v0/v1 swapped. Tried (unsigned char) arg casts: no change.
+void PDisplayList::ClearFrameBuffer(short nX, short nY, short nW, short nH, char nR, char nG, char nB, char nA, unsigned int nFlags) {
+    int nPacket = AllocEntries(8);
+    if (nPacket == 0) {
+        CdsAssert("PDisplayList.cpp",0x820, "0");
+    }
+    *(long long *)nPacket = 0x10000007LL;
+    ((unsigned int *)nPacket)[2] = 0x11000000;
+    ((unsigned int *)nPacket)[3] = 0x50000007;
+    short nCX = nX - nW / 2;
+    short nCY = nY - nH / 2;
+    sceGsSetDefClear((void *)(nPacket + 0x20), 1, nCX, nCY, nW, nH, (unsigned char)nR, (unsigned char)nG, (unsigned char)nB, (unsigned char)nA, nFlags);
+    *(unsigned char *)(nPacket + 0x20) = (*(unsigned char *)(nPacket + 0x20) & 0xFE) | 1;
+    *(unsigned char *)(nPacket + 0x20) = (*(unsigned char *)(nPacket + 0x20) & 0xF1) | ((0 & 7) * 2);
+    *(unsigned char *)(nPacket + 0x21) = (*(unsigned char *)(nPacket + 0x21) & 0xCF) | 0x10;
+    *(u_long128 *)(nPacket + 0x10) = 0;
+    *(unsigned short *)(nPacket + 0x10) = (*(unsigned short *)(nPacket + 0x10) & 0x8000) | 6;
+    *(unsigned char *)(nPacket + 0x11) = (*(unsigned char *)(nPacket + 0x11) & 0x7F) | 0x80;
+    *(unsigned char *)(nPacket + 0x17) = (*(unsigned char *)(nPacket + 0x17) & 0x0F) | 0x10;
+    *(unsigned char *)(nPacket + 0x18) = (*(unsigned char *)(nPacket + 0x18) & 0xF0) | 0x0E;
+    asm {
+        sync
+    }
+}
+
+// DRAFT: 0x180D90 ClearZBuffer__12PDisplayListFsssUi
+// note: s-register map is rotated (ours s4<-nW, s3<-nX, s2<-nY; original s4<-nX, s3<-nY, s2<-nW); tried locals before/after AllocEntries, int locals; 92 words in all
+void PDisplayList::ClearZBuffer(short nX, short nY, short nW, unsigned int nFlags) {
+    int nPacket = AllocEntries(8);
+    if (nPacket == 0) {
+        CdsAssert("PDisplayList.cpp",0x7FB, "0");
+    }
+    *(long long *)nPacket = 0x10000007LL;
+    ((unsigned int *)nPacket)[2] = 0x11000000;
+    ((unsigned int *)nPacket)[3] = 0x50000007;
+    short nCX = 0x800 - nX / 2;
+    short nCY = 0x800 - nY / 2;
+    sceGsSetDefClear((void *)(nPacket + 0x20), nW, nCX, nCY, nX, nY, 0, 0, 0, 0, nFlags);
+    *(unsigned char *)(nPacket + 0x20) = (*(unsigned char *)(nPacket + 0x20) & 0xFE) | 1;
+    *(unsigned char *)(nPacket + 0x20) = (*(unsigned char *)(nPacket + 0x20) & 0xF1) | 0;
+    *(unsigned char *)(nPacket + 0x21) = (*(unsigned char *)(nPacket + 0x21) & 0xCF) | 0x20;
+    *(u_long128 *)(nPacket + 0x10) = 0;
+    *(unsigned short *)(nPacket + 0x10) = (*(unsigned short *)(nPacket + 0x10) & 0x8000) | 6;
+    *(unsigned char *)(nPacket + 0x11) = (*(unsigned char *)(nPacket + 0x11) & 0x7F) | 0x80;
+    *(unsigned char *)(nPacket + 0x17) = (*(unsigned char *)(nPacket + 0x17) & 0x0F) | 0x10;
+    *(unsigned char *)(nPacket + 0x18) = (*(unsigned char *)(nPacket + 0x18) & 0xF0) | 0x0E;
+    asm {
+        sync
+    }
 }
 
 // FUNCTION: 0x180F50 WriteToVu1Mem__12PDisplayListFUiP1i

@@ -4,6 +4,7 @@
 #include "types.h"
 
 class PMat4;
+struct tagVuLine;
 
 class PDisplayList {
 public:
@@ -35,6 +36,9 @@ public:
     void SetViewMatrix(PMat4 *pMat);
     void SetWorldMatrix(PMat4 *pMat);
     void KickVifDmaChain(bool bWait);
+    void DrawLines(struct tagVuLine *pLines, int nCount);
+    void ClearFrameBuffer(short nX, short nY, short nW, short nH, char nR, char nG, char nB, char nA, unsigned int nFlags);
+    void ClearZBuffer(short nX, short nY, short nW, unsigned int nFlags);
 
     char _pad000[0xA3340];
     int m_unkA3340;         // 0xA3340 entry count, decremented by DeAllocEntries
