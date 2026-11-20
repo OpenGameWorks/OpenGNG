@@ -15,12 +15,15 @@ public:
     void ModifyPosition(PMat4 *pMat);
     void SetPosition(float *pFrom, float *pTo);
     void Start();
+    void Render();
     void ComputeTracerAxes();
     void InitTracers();
 
     float m_unkE0[4];           // 0x0E0 source vector read by ModifyPosition
     float m_unkF0[4];           // 0x0F0 vector, direction written by SetPosition
-    char _pad100[0x24];         // 0x100
+    float m_unk100[4];          // 0x100 vector read by InitTracers
+    char _pad110[0x10];         // 0x110
+    int m_unk120;               // 0x120 tracer count, loop bound of InitTracers
     float m_unk124;             // 0x124 squared length from InnerProduct
     char _pad128[0x28];         // 0x128
     int m_unk150;               // 0x150 random value set by Start
@@ -29,6 +32,10 @@ public:
     float m_unk170;             // 0x170
     void *m_unk174;             // 0x174 tracer array, freed by the destructor
     int m_unk178;               // 0x178 tracer count, tested by SetPosition
+    char _pad17C[4];            // 0x17C
+    float m_unk180[4];          // 0x180 tracer axis vector, written by ComputeTracerAxes
+    float m_unk190[4];          // 0x190 outer product of m_unk180 and m_unk1A0
+    float m_unk1A0[4];          // 0x1A0 vector copied from m_unkF0 and scaled by -1
 };
 
 #endif
