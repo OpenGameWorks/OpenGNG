@@ -1437,15 +1437,12 @@ void Interface::LoadingDisplayGuts(unsigned int arg0) {
 }
 
 // DRAFT: 0x001449C0 LoadingDisplayNew__9InterfaceFUi
-// note: 104 words differ, size 0x1B0 vs 0x1C8. Original reads COP0 Count inline (mfc0) in the busy-wait; the ReadCountReg helper call and the fst_nFramesTotal/fst_fAvgCallsPerFrame relocs differ. Tried: helper asm, plain C wait loop.
-static unsigned int ReadCountReg() {
-    asm { .word 0x40024800 }
-}
-
+// note: 101 words differ, size 0x1B0 vs 0x1C8. Original keeps VBlank in t0, CDS in a2, doGuts in v1; ours has VBlank in t1, CDS in t0, doGuts in a3; the busy-wait reads COP0 Count via inline mfc0. Tried: helper call, plain C wait loop, inline mfc0 asm (104->101), doCall flag, declaration reorders, scoped t/target, doGuts initialized at declaration: all 101.
 void Interface::LoadingDisplayNew(unsigned int arg0) {
     int a;
     int b;
     int doGuts;
+    int doCall;
     unsigned int t;
     unsigned int target;
     doGuts = 0;
@@ -1455,16 +1452,22 @@ void Interface::LoadingDisplayNew(unsigned int arg0) {
     }
     if (fst_VBlankCount < gCDSVBlankCount) {
         doGuts = 1;
+        doCall = doGuts;
         fst_callsThisFrame = 0;
         fst_VBlankCount = gCDSVBlankCount;
         fst_nFramesTotal += 1;
     } else {
         fst_callsThisFrame += 1;
+        doCall = 1;
         if (fst_callsThisFrame >= 2) {
-            t = ReadCountReg();
+            asm {
+                mfc0 t, $9
+            }
             target = t + (0x3A0458 / fst_maxCallsPerFrameAllowed);
             while (t < target) {
-                t = ReadCountReg();
+                asm {
+                    mfc0 t, $9
+                }
             }
         }
     }
@@ -1472,7 +1475,9 @@ void Interface::LoadingDisplayNew(unsigned int arg0) {
         LoadingDisplayGuts(arg0);
         fst_VBlankCount = gCDSVBlankCount;
     }
-    SoundOneFrameHasElapsed_R__9MaxEngineFRiRi(gEng, &a, &b);
+    if (doCall) {
+        SoundOneFrameHasElapsed_R__9MaxEngineFRiRi(gEng, &a, &b);
+    }
     fst_nCallsTotal += 1;
     if (fst_maxCallsPerFrameDone < fst_callsThisFrame) {
         fst_maxCallsPerFrameDone = fst_callsThisFrame;
