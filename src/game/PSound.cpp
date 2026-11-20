@@ -3,9 +3,17 @@
 #include "MathAPI.h"
 #include "PIOPFile.h"
 #include "PCDFile.h"
+#include "PMat4.h"
 
 // TODO(header): foreign declarations
 void CdsAssert(char *pFile, int nLine, char *pExpr);
+class Debug {
+public:
+    // Debug size is unknown; the placeholder keeps gDebug out of small data (threshold 8 bytes).
+    char _pad000[0x10];
+};
+extern Debug gDebug;
+extern int fst_bProcessTriglets;
 extern "C" void SOUND_StopAllSounds();
 extern "C" void SOUND_SetGlobalRelVols(int, int, int, int, int, int, int, int);
 extern int fst_ReverbRecProposed[5];
@@ -28,7 +36,6 @@ extern "C" void SOUND_StopAllStreams();
 extern signed char fst_bCalledByDebug;
 extern "C" void FlushIOPCommand(int, int, int);
 extern "C" void SOUND_CopyIOPBuffer();
-extern "C" void ProcessTriglets__6PSoundFv(PSound *);
 extern "C" void ProcessSFXChannels__6PSoundFv(PSound *);
 extern "C" void ProcessAmbientChannels__6PSoundFv(PSound *);
 extern "C" void PlayEffect__6PSoundFUiUi(PSound *, unsigned int, unsigned int);
@@ -112,6 +119,10 @@ extern unsigned char gInterface[2656];
 extern "C" int SOUND_MakeSoundStreamRef();
 extern "C" unsigned int SOUND_PlayDialogRelVol(unsigned int, unsigned int, unsigned int, short, unsigned int);
 extern "C" void SOUND_FadeMusicStream(unsigned int, unsigned int, int, unsigned int);
+extern "C" void sceVu0UnitMatrix(float *pMatrix);
+extern "C" int sprintf(char *pDst, const char *pFmt, ...);
+extern "C" int IsEBoxWithinEBox__7MathAPIFP6tagBOXP6tagBOX(tagBOX *pA, tagBOX *pB);
+extern "C" float SetE_BOX_Radius__7MathAPIFP6tagBOX(tagBOX *pBox);
 extern "C" unsigned int SOUND_PlayMusicRelVol(unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
 extern short gbMusic;
 extern "C" int sceCdStatus();
@@ -652,6 +663,68 @@ void PSound::KillByCategories(unsigned int nCategory) {
     }
 }
 
+// DRAFT: 0x001A4AB0 ProcessTriglets__6PSoundFv
+// note: 88 words differ; loop index/offset regs swapped (s1/s2 vs s7/s6), nOuter mask and pRec+0x136 hoisting differ. Tried: case order, nNow order, nSnd before pRec, hoisted type pointer.
+int PSound::ProcessTriglets() {
+    if (*((unsigned char *)&gDebug + 0x2C) != 0) {
+        return 0;
+    }
+    if (fst_bProcessTriglets == 0) {
+        return 0;
+    }
+    if (!m_unkD0) {
+        return 0;
+    }
+    if (m_unk68 == 0) {
+        return 0;
+    }
+    if (*(unsigned int *)(gEng + 0x19A7C) & 7) {
+        return 0;
+    }
+    unsigned int i = 0;
+    unsigned int nOff = 0;
+    unsigned int nNow = m_unk6C;
+    for (; i < (unsigned int)m_unk79E0[0]; nOff += 0x150, i++) {
+        unsigned int nSnd;
+        char *pRec = m_unk79F8 + nOff;
+        if (((unsigned char *)pRec)[0x130] != 0 && *(unsigned int *)(pRec + 0x114) == 0 && *(unsigned int *)(pRec + 0x118) != 0) {
+            nSnd = *(unsigned int *)(pRec + 0x124);
+            int nOuter = PointInEnclosure((float *)m_unk2E90, (tagBOX_OR_SPHERE *)(pRec + 0x40), (tagVuMatrixBox *)(pRec + 0xC0), (EnumEnclosureType)((unsigned char *)pRec)[0x136]) & 0xFF;
+            int nInner = nOuter ? (PointInEnclosure((float *)m_unk2E90, (tagBOX_OR_SPHERE *)(pRec + 0x10), (tagVuMatrixBox *)(pRec + 0x70), (EnumEnclosureType)((unsigned char *)pRec)[0x136]) & 0xFF) : 0;
+            pRec[0x134] = nInner;
+            pRec[0x135] = nOuter;
+            switch (*(unsigned int *)(pRec + 0x12C)) {
+            case 1:
+                if (nOuter == 0) {
+                    StartAESoftwareFadeout(nSnd, 0);
+                    StopSoundBySoundRef(nSnd);
+                    *(unsigned int *)(pRec + 0x124) = 0;
+                    *(unsigned int *)(pRec + 0x12C) = 0;
+                } else if (nSnd && *(unsigned short *)(pRec + 0x138) && *(unsigned int *)(pRec + 0x140) < nNow && IsAmbientSoundBySoundRef(nSnd) == 0) {
+                    *(unsigned int *)(pRec + 0x12C) = 0;
+                }
+                break;
+            case 0:
+                if (nInner && (*(unsigned int *)(pRec + 0x148) == 0 || *(unsigned short *)(pRec + 0x13A) == 0 || *(unsigned int *)(pRec + 0x140) < nNow)) {
+                    int nPlay = (*(unsigned int *)(pRec + 0x120) & 2) ? PlaySoundTrigletUbiquitous(*(unsigned int *)(pRec + 0x118), 0, (const GameSoundTrigletPawn *)pRec) : PlaySoundTriglet(*(unsigned int *)(pRec + 0x118), 0, (const GameSoundTrigletPawn *)pRec);
+                    *(int *)(pRec + 0x124) = nPlay;
+                    *(int *)(pRec + 0x148) += 1;
+                    *(unsigned int *)(pRec + 0x13C) = nNow;
+                    *(unsigned int *)(pRec + 0x140) = nNow + MathAPI::RandomIntRange(*(unsigned short *)(pRec + 0x138), *(unsigned short *)(pRec + 0x13A));
+                }
+                if (*(unsigned int *)(pRec + 0x124) != 0) {
+                    *(unsigned int *)(pRec + 0x12C) = 1;
+                }
+                break;
+            default:
+                CdsAssert("PSound.cpp", 0x2163, "0");
+                break;
+            }
+        }
+    }
+    return 0;
+}
+
 // DRAFT: 0x001A4D80 PointInEnclosure__6PSoundFPfP16tagBOX_OR_SPHEREP14tagVuMatrixBox17EnumEnclosureType
 // note: DIFF 3; matrix-call argument order (daddu a1,a3 before addiu a0,a0,0x2E90) and daddiu vs addiu for constant 1 on the sphere path. Bool nRet gave DIFF 14.
 int PSound::PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType) {
@@ -688,6 +761,98 @@ int PSound::EnableTrigletByInstanceID(unsigned int nInstanceID, bool bEnable) {
         }
     }
     return -1;
+}
+
+// DRAFT: 0x001A4ED0 RegisterSoundTrigletPawn__6PSoundFP15EntityBaseClass24EnumSoundTrigletPawnType
+// note: DIFF 12; type-2 memcpy arg order (a0=pRec+0x10 before a1) and sprintf/assert string placement at 0x228-0x258 differ. Tried: case order, nTime order, lhu bounds (16->12), hoisted memcpy source (12).
+int PSound::RegisterSoundTrigletPawn(EntityBaseClass *pEntity, EnumSoundTrigletPawnType eType) {
+    bool bValid = true;
+    float mat[4][4];
+    char buf[0x80];
+    int bWithin;
+    unsigned int nInstanceID = *(unsigned int *)((char *)pEntity + 0xC);
+    unsigned int nCount;
+    int nTime = 0;
+
+    sceVu0UnitMatrix((float *)mat);
+    nCount = m_unk79E0[0];
+    if (nCount >= 0xC8) {
+        CdsAssert("PSound.cpp", 0x2021, "0");
+        return -1;
+    }
+    char *pRec = m_unk79F8 + nCount * 0x150;
+    pRec[0x131] = 0;
+    pRec[0x132] = 0;
+    pRec[0x130] = 0;
+    *(unsigned int *)(pRec + 0x128) = nInstanceID;
+    *(int *)(pRec + 0x110) = eType;
+    *(int *)(pRec + 0x114) = 0;
+    *(int *)(pRec + 0x124) = 0;
+    pRec[0x137] = 0;
+    *(int *)(pRec + 0x144) = 1000;
+    *(int *)(pRec + 0x148) = 0;
+    *(int *)(pRec + 0x11C) = 1000;
+
+    switch (eType) {
+    case SOUND_TRIGLET_PAWN_TYPE_1: {
+        char *pSrc = (char *)pEntity + 0x1B0;
+        *(int *)(pRec + 0x120) = *(int *)((char *)pEntity + 0x1E0);
+        pRec[0x136] = 0;
+        *(int *)(pRec + 0x118) = *(int *)((char *)pEntity + 0x1D0);
+        *(int *)(pRec + 0x114) = 0;
+        nTime = *(int *)((char *)pEntity + 0x1D4);
+        *(short *)(pRec + 0x138) = *(unsigned short *)((char *)pEntity + 0x1D8);
+        *(short *)(pRec + 0x13A) = *(unsigned short *)((char *)pEntity + 0x1DC);
+        memcpy(pRec + 0x10, pSrc, 0x30);
+        memcpy(pRec + 0x40, pSrc + 0x10, 0x30);
+        memcpy(pRec, pRec + 0x10, 0x10);
+        bWithin = MathAPI::IsESphereWithinESphere((tagSPHERE *)(pRec + 0x10), (tagSPHERE *)(pRec + 0x40));
+        break;
+    }
+    case SOUND_TRIGLET_PAWN_TYPE_2:
+        *(int *)(pRec + 0x120) = *(int *)((char *)pEntity + 0x220);
+        pRec[0x136] = 1;
+        *(int *)(pRec + 0x118) = *(int *)((char *)pEntity + 0x210);
+        *(int *)(pRec + 0x114) = 0;
+        nTime = *(int *)((char *)pEntity + 0x214);
+        *(short *)(pRec + 0x138) = *(unsigned short *)((char *)pEntity + 0x218);
+        *(short *)(pRec + 0x13A) = *(unsigned short *)((char *)pEntity + 0x21C);
+        memcpy(pRec + 0x10, (char *)pEntity + 0x1B0, 0x30);
+        memcpy(pRec + 0x40, (char *)pEntity + 0x1E0, 0x30);
+        SetE_BOX_Radius__7MathAPIFP6tagBOX((tagBOX *)(pRec + 0x10));
+        SetE_BOX_Radius__7MathAPIFP6tagBOX((tagBOX *)(pRec + 0x40));
+        memcpy(pRec, pRec + 0x10, 0x10);
+        ((PMat4 *)mat)->InverseByRT((float *)(pRec + 0x30), (float *)(pRec + 0x10));
+        sceVu0CopyMatrix((float (*)[4])(pRec + 0x70), mat);
+        *(u_long128 *)(pRec + 0xB0) = *(u_long128 *)(pRec + 0x20);
+        ((PMat4 *)mat)->InverseByRT((float *)(pRec + 0x60), (float *)(pRec + 0x40));
+        sceVu0CopyMatrix((float (*)[4])(pRec + 0xC0), mat);
+        *(u_long128 *)(pRec + 0x100) = *(u_long128 *)(pRec + 0x50);
+        bWithin = IsEBoxWithinEBox__7MathAPIFP6tagBOXP6tagBOX((tagBOX *)(pRec + 0x10), (tagBOX *)(pRec + 0x40));
+        break;
+    default:
+        CdsAssert("PSound.cpp", 0x206D, "0");
+        bValid = false;
+        break;
+    }
+
+    if (bValid) {
+        if (bWithin == 0) {
+            sprintf(buf, "Apparition %d inner not within outer\n", nInstanceID);
+        }
+        ((bWithin) ? (void)0 : CdsAssert("PSound.cpp", 0x2075, "bInnerWithinOuter"));
+        pRec[0x131] = 1;
+        pRec[0x132] = 1;
+        pRec[0x130] = 1;
+        pRec[0x133] = 1;
+        *(int *)(pRec + 0x12C) = 0;
+        pRec[0x134] = 0;
+        pRec[0x135] = 0;
+        *(int *)(pRec + 0x11C) = nTime * 10;
+        *(int *)(pRec + 0x140) = 0;
+        m_unk79E0[0] += 1;
+    }
+    return 0;
 }
 
 // FUNCTION: 0x001A51C0 RegisterSoundEntityAmounts__6PSoundFUiUiUiUi
@@ -898,7 +1063,7 @@ int PSound::OneFrameHasElapsed_R(float *pElapsed, float fFrame, int &rA, int &rB
         m_unk5440 = m_unk543C;
     }
     ProcessMusic();
-    ProcessTriglets__6PSoundFv(this);
+    ProcessTriglets();
     ProcessSFXChannels__6PSoundFv(this);
     ProcessAmbientChannels__6PSoundFv(this);
     if (m_unkC0[0] || m_unkC0[1]) {

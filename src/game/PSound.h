@@ -11,6 +11,11 @@ enum EnumEnclosureType {
     ENCLOSURE_SPHERE = 0,
     ENCLOSURE_MATRIX_BOX = 1
 };
+class EntityBaseClass;
+enum EnumSoundTrigletPawnType {
+    SOUND_TRIGLET_PAWN_TYPE_1 = 1,
+    SOUND_TRIGLET_PAWN_TYPE_2 = 2
+};
 
 class PSound {
 public:
@@ -142,6 +147,7 @@ public:
     int PlayMusic(unsigned int nTrack);
     void RegisterSoundEntityAmounts(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3);
     int RegisterRoom(SoundRoom *pRoom);
+    int RegisterSoundTrigletPawn(EntityBaseClass *pEntity, EnumSoundTrigletPawnType eType);
     void PSoundReInitSoundRooms();
     void PSoundReInitSub(unsigned int nMode);
     void PSoundReInitSubWSoundCalls();
@@ -178,6 +184,7 @@ public:
     void PSoundReInitTriglets();
     void EnableLevelProcessing(bool bEnable);
     void EnableProcessTriglets(bool bEnable);
+    int ProcessTriglets();
     void LinkAmbientEntry(AmbientEntry *pEntry, AmbientEntry *pNext);
     void InsertAEAtHead(AmbientEntry **ppHead, AmbientEntry *pEntry);
     void AddAEToFreeList(AmbientEntry *pEntry);
