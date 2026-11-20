@@ -863,6 +863,107 @@ void PTextureManager::PrepareDynamicClutPacket(tagGsClut256 *pClut, tagGsTexture
     GsSetClutBaseAddr(pTexEnv, nTmp);
 }
 
+// DRAFT: 0x0018BB60 SetTextures__15PTextureManagerFPiiP12PDisplayListRb
+// note: 213 words; differs in loop-2 counter register (s2 vs s6, extra s4 zero), bnez target at 0xCC, slt dest at 0x154 ($at vs $v0); tried nSum order, loop-2 counter j, 0 < nCount guard (220), nIndex/eType swap (213 kept)
+int PTextureManager::SetTextures(int *pHandles, int nCount, PDisplayList *pDisplayList, bool &bOut) {
+    PTexture::eTextureType eType = PTexture::eTextureType_Unknown;
+    int nIndex = -1;
+    bool bFlag = false;
+    int nSum1;
+    int nSum2;
+    PTexture *pTex;
+    int i;
+
+    CDS_ASSERT_MSG(0x1E7, pHandles, "phTextures");
+    nSum1 = 0;
+    nSum2 = 0;
+    for (i = 0; i < nCount; i++) {
+        int nHandle = pHandles[i];
+        if (nHandle) {
+            DecodeTextureHandle(nHandle, bFlag, eType, nIndex);
+            CDS_ASSERT_MSG(0x1F5, nIndex >= 0, "aiIndex >= 0");
+            if (!bFlag) {
+                pTex = GetTexture(bFlag, eType, nIndex);
+                CDS_ASSERT_MSG(0x1FD, pTex, "apoTexture");
+            }
+            if (!bFlag && !pTex->m_unkA8) {
+                tagPs2TexDataHeader *pHeader = (tagPs2TexDataHeader *)pTex->m_unk4;
+                nSum2 += pHeader->unk5;
+                nSum1 += pHeader->unk26 - pHeader->unk5;
+            }
+        }
+    }
+
+    if (m_pCurBuf->m_unk4 < (nSum1 << 8) || m_pCurBuf->m_unk10 < (nSum2 << 8)) {
+        return 0;
+    }
+    if (!(m_pCurBuf->m_unk8 + (nSum1 << 8) < m_pCurBuf->m_unk0 + m_pCurBuf->m_unk4 &&
+          m_pCurBuf->m_unk14 + (nSum2 << 8) < m_pCurBuf->m_unkC + m_pCurBuf->m_unk10)) {
+        FlipTextureBuffers();
+        ((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->NextBatch();
+        bOut = true;
+    } else {
+        bOut = false;
+    }
+
+    if (0 < nCount) {
+        for (i = 0; i < nCount; i++) {
+            int nHandle = pHandles[i];
+            if (nHandle) {
+                DecodeTextureHandle(nHandle, bFlag, eType, nIndex);
+                CDS_ASSERT_MSG(0x22E, nIndex >= 0, "aiIndex >= 0");
+                if (!bFlag) {
+                    pTex = GetTexture(bFlag, eType, nIndex);
+                    CDS_ASSERT_MSG(0x237, pTex, "apoTexture");
+                    if (!pTex->m_unkA8) {
+                        tagPs2TexDataHeader *pHeader = (tagPs2TexDataHeader *)pTex->m_unk4;
+                        int nVram;
+                        int nTmp;
+                        bool bLocal = false;
+                        tagImageDmaPacket *pClut;
+                        tagImageDmaPacket *pImage;
+                        int nW;
+                        int nH;
+
+                        CDS_ASSERT_MSG(0x243, eType == 1, "aeType == PTexture::TEXTURE_IMAGE");
+                        CDS_ASSERT_MSG(0x24B, AllocDynamicVramForTexture(pHeader, 0, nVram, nTmp, bLocal, false), "0");
+                        CDS_ASSERT_MSG(0x24F, !bLocal, "abBufferFlipped == false");
+                        pTex->m_unkA8 = 1;
+                        m_pCurBuf->m_apTex[m_pCurBuf->m_unkD8] = pTex;
+                        m_pCurBuf->m_unkD8++;
+                        CDS_ASSERT_MSG(0x256, m_pCurBuf->m_unkD8 < 0x30, "mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH");
+
+                        if (pHeader->type == 0x14 || pHeader->type == 0x13) {
+                            pClut = (tagImageDmaPacket *)((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->AllocEntries(0xE);
+                            CDS_ASSERT_MSG(0x25C, pClut, "apDmaChain");
+                            pImage = (tagImageDmaPacket *)((char *)pClut + 0x70);
+                        } else {
+                            pImage = (tagImageDmaPacket *)((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->AllocEntries(7);
+                            CDS_ASSERT_MSG(0x265, pImage, "apDmaChain");
+                            pClut = 0;
+                        }
+                        if (pClut) {
+                            int nDim = (pHeader->type == 0x14) ? 8 : 0x10;
+                            PrepareImageDmaPacket(pClut, pTex->m_unk30, *(short *)(pTex->m_unk4 + 0x24), nDim, nDim, 0, nTmp / 256);
+                            GsSetClutBaseAddr((tagGsTextureEnvironment *)pTex->m_unk40, nTmp);
+                        }
+                        if (pHeader->unk6 && pHeader->unk7) {
+                            nW = 1 << pHeader->unk6;
+                            nH = 1 << pHeader->unk7;
+                        } else {
+                            nW = 1 << pHeader->unk0;
+                            nH = 1 << pHeader->unk1;
+                        }
+                        PrepareImageDmaPacket(pImage, pTex->m_unk34, pHeader->unk8, nW, nH, pHeader->unk4, nVram / 256);
+                        GsSetTexBaseAddr((tagGsTextureEnvironment *)pTex->m_unk40, nVram);
+                    }
+                }
+            }
+        }
+    }
+    return 1;
+}
+
 // DRAFT: 0x0018C070 SetTexture__15PTextureManagerFiP12PDisplayListPP23tagGsTextureEnvironmentRb
 // note: 139 words differ: prologue s1/s2 copy order, pHeader/pDisplayList register swap, store order 0x17C-0x1A8, lb vs lbu at 0xF0, branch offsets 0x50/0xD8/0x108
 void PTextureManager::SetTexture(int nHandle, PDisplayList *pDisplayList, tagGsTextureEnvironment **ppEnv, bool &bOut) {
