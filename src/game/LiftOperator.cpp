@@ -19,6 +19,11 @@ extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(unsigned int nId);
 extern "C" void *Spawn__13EntityManagerFUibi(void *pThis, unsigned int nType, bool bFlag, int nArg);
 extern "C" float RandomFloatRange__7MathAPIFff(float fLo, float fHi);
 extern "C" void SetSpawnedFromLift__15ClockworkReaperFv(void *pThis);
+extern "C" float Distance__7MathAPIFPA4_fPA4_f(void *pA, void *pB);
+extern void *mPlayerAPI__13EntityManager;
+
+// MinSpawnCount is indexed by miSpawnLevel; the values come from the original .data at 0x251630.
+static int MinSpawnCount[7] = {0, 5, 5, 5, 4, 4, 3};
 
 // PMNode.h declares SetFrameTime, Animate and SetAllAnimFlags non-virtual; the original
 // calls them through vtable slots 0x10, 0x18 and 0x1C, so this view supplies those slots.
@@ -200,6 +205,137 @@ void LiftOperator::SetEditableVars(char *pSrc) {
         m_unk1F8->SetFrameRate(0.5f, true);
         ((PMNodeVirtView *)m_unk1F8)->SetAllAnimFlags(0);
         m_unk1F8->EnableAnim(false, true);
+    }
+}
+
+// DRAFT: 0x00210000 Execute__12LiftOperatorFv
+// note: 258 words, size 0x494 vs 0x438. Differs: switch range branch at 0x18 (0x103 vs 0x11A), case -1 store/call delay-slot fill at 0x54-0x78, gEng/player and Distance branch shapes 0x98-0xF0, case 0 E9 test and tail layout from 0xF8. Tried: 0x1FE store after the first memcpy (259 to 258, kept); 0x200 store after the second memcpy (262, reverted).
+void LiftOperator::Execute() {
+    static unsigned char acheckwake;
+    static char init;
+    static short mAnimData[8] = {0, -1, 0, -1, 1, 6, 0, 0};
+    int cnt;
+
+    switch (m_unk20) {
+    case -2:
+    case 1:
+        break;
+    case -1:
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            EnableSleep(false, false);
+            memcpy(m_unk220, m_unk1B0, 0xC);
+            m_unk1FE = 0;
+            m_unk200 = 0;
+            memcpy(m_unk230, m_unk1D8, 0xC);
+            memcpy(m_unk210, m_unk1E8, 0xC);
+        }
+        if (*(int *)(gEng + 0x19A78) == 0x12) {
+            char *pPlayer = (char *)mPlayerAPI__13EntityManager;
+            miSpawnLevel__12LiftOperator = 4;
+            char *pT = *(char **)(pPlayer + 0x3C);
+            char *pTarget = pT ? pT + 0x80 : pPlayer + 0x190;
+            if (Distance__7MathAPIFPA4_fPA4_f(m_unk210, pTarget) <= m_unk1F4) {
+                SetState(0);
+            }
+        } else {
+            SetState(0);
+        }
+        return;
+    case 0:
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            if (*(int *)(gEng + 0x19A78) == 8) {
+                m_unk1FC = RandomIntRange__7MathAPIFii(0, 0x190);
+            } else {
+                m_unk1FC = RandomIntRange__7MathAPIFii(0, 0x3C);
+            }
+            return;
+        }
+        if (--m_unk1FC > 0) {
+            return;
+        }
+        if (init == 0) {
+            acheckwake = 0;
+            init = 1;
+        }
+        cnt = EnemiesInRadius((float (*)[4])m_unk230, m_unk1E4, acheckwake);
+        if (cnt < MinSpawnCount[miSpawnLevel__12LiftOperator]) {
+            SetState(4);
+        } else {
+            m_unk1FC = RandomIntRange__7MathAPIFii(0, 0x190);
+        }
+        return;
+    case 4:
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            SpawnEnemy();
+        } else {
+            if ((m_unk1F8->m_unk3F & 7) == 0) {
+                PlaySound(0x2CA);
+                SetState(3);
+            }
+            return;
+        }
+        {
+            short v = m_unk1C4 >> 1;
+            mAnimData[0] = 0;
+            mAnimData[2] = 0;
+            mAnimData[1] = v;
+            mAnimData[3] = v;
+        }
+        (*(PMNode **)gEng)->RecurseSetAnimFlagsByID(m_unk1C0, (AnimData *)mAnimData);
+        PlaySound(0x2CC);
+        return;
+    case 3:
+        if (EnemiesInRadius((float (*)[4])m_unk220, m_unk1BC, true) == 0) {
+            SetState(2);
+        }
+        return;
+    case 2:
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            short v = m_unk1C4 >> 1;
+            mAnimData[0] = v;
+            mAnimData[2] = v;
+            mAnimData[1] = m_unk1C4;
+            mAnimData[3] = m_unk1C4;
+            (*(PMNode **)gEng)->RecurseSetAnimFlagsByID(m_unk1C0, (AnimData *)mAnimData);
+            PlaySound(0x2CC);
+            return;
+        }
+        if ((m_unk1F8->m_unk3F & 7) != 0) {
+            return;
+        }
+        PlaySound(0x2CA);
+        if (*(int *)(gEng + 0x19A78) == 0x12) {
+            if (m_unk1FE < m_unk1D4 + (m_unk1D0 << 1)) {
+                SetState(0);
+            } else {
+                SetState(5);
+            }
+        } else {
+            SetState(0);
+        }
+        return;
+    case 5:
+        if (*(unsigned char *)((char *)this + 0xE9) != 0) {
+            mAnimData[0] = 0;
+            mAnimData[2] = 0;
+            mAnimData[1] = 10;
+            mAnimData[3] = 10;
+            (*(PMNode **)gEng)->RecurseSetAnimFlagsByID(m_unk1C0, (AnimData *)mAnimData);
+            PlaySound(0x2CC);
+            if ((m_unk1F8->m_unk3F & 7) == 0) {
+                PlaySound(0x2CA);
+                SetState(6);
+            }
+            return;
+        }
+        SetState(0);
+        return;
+    case 6:
+        if (EnemiesInRadius((float (*)[4])m_unk230, m_unk1E4, true) == 0) {
+            SetState(-2);
+            WriteApparitionData(1, -3, 0);
+        }
+        return;
     }
 }
 
