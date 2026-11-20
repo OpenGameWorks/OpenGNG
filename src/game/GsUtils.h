@@ -101,4 +101,53 @@ typedef struct tagGsFullScreenSprites {
 
 void GsSetFullScreenSprites(tagGsFullScreenSprites *pInfo, char cA, char cB, char cC, char cD, bool bA, bool bB, bool bC);
 
+typedef struct tagGs16BitShadowBufferSetup {
+    unsigned short m_unk00;     // 0x00 halfword, bit 15 kept, low bits set to 9
+    unsigned char m_unk01;      // 0x01 low 7 bits cleared, bit 7 cleared
+    char _pad02[5];             // 0x02
+    unsigned char m_unk07;      // 0x07 bits 1..3 cleared, bit 4 set
+    unsigned char m_unk08;      // 0x08 low nibble set to 0xE
+    char _pad09[7];             // 0x09
+    long long m_unk10;          // 0x10 packed header
+    long long m_unk18;          // 0x18 register data 0x4D
+    long long m_unk20;          // 0x20 packed header
+    long long m_unk28;          // 0x28 register data 0x19
+    long long m_unk30;          // 0x30 packed width and height minus one
+    long long m_unk38;          // 0x38 register data 0x41
+    long long m_unk40;          // 0x40 packed, register data 0x3A00 high
+    long long m_unk48;          // 0x48 register data 0x4F
+    long long m_unk50;          // 0x50 register data 0x30000
+    long long m_unk58;          // 0x58 register data 0x48
+    long long m_unk60;          // 0x60 register data 0xA4, 0x80 high
+    long long m_unk68;          // 0x68 register data 0x43
+    long long m_unk70;          // 0x70 zero
+    long long m_unk78;          // 0x78 register data 0x4B
+    long long m_unk80;          // 0x80 one
+    long long m_unk88;          // 0x88 register data 0x1A
+    long long m_unk90;          // 0x90 packed register data 0x240 and 0x246
+    long long m_unk98;          // 0x98 register data 0x1B
+    unsigned short m_unkA0;     // 0xA0 halfword, mask and 0x7FFF-style bits
+    unsigned char m_unkA1;      // 0xA1 bit field
+    char _padA2[3];             // 0xA2
+    unsigned char m_unkA5;      // 0xA5 bit field
+    char _padA6;               // 0xA6
+    unsigned char m_unkA7;      // 0xA7 bit field
+    unsigned char m_unkA8;      // 0xA8 low nibble set to 0xF
+    unsigned char m_unkA9;      // 0xA9 low nibble set to 5
+    unsigned char m_unkAA;      // 0xAA bit field
+    char _padAB[5];             // 0xAB
+    char _padB0[0x500];         // 0xB0 loop writes at stride 0x50, 20 rows
+} tagGs16BitShadowBufferSetup;  // size >= 0x5B0
+
+typedef struct tagShadowVolumeBuffer {
+    char _pad00[0x04];          // 0x00
+    int m_unk04;                // 0x04
+    int m_unk08;                // 0x08
+    int m_unk0C;                // 0x0C
+    char _pad10[0x0C];          // 0x10
+    int m_unk1C;                // 0x1C
+} tagShadowVolumeBuffer;        // size >= 0x20
+
+void Gs16BitShadowBufferSetup(tagGs16BitShadowBufferSetup *pInfo, tagShadowVolumeBuffer *pBufferInfo);
+
 #endif

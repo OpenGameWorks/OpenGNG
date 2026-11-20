@@ -670,6 +670,96 @@ void GsSetFullScreenSprites(tagGsFullScreenSprites *pInfo, char cA, char cB, cha
     }
 }
 
+// DRAFT: 0x0017F4F0 Gs16BitShadowBufferSetup__FP27tagGs16BitShadowBufferSetupP21tagShadowVolumeBuffer
+// note: 316 of 324 words differ; frame 0xC0 vs 0xE0 (arrays at sp+0xA0 vs C0/D0), FTOI4 reloc None; decl reorder no change
+void Gs16BitShadowBufferSetup(tagGs16BitShadowBufferSetup *pInfo, tagShadowVolumeBuffer *pBufferInfo)
+{
+    float aSrc[4] = {0.5f, 0.5f, 32.5f, 0.0f};
+    int aDst[4];
+    int nFlag = 0;
+    short nHalfW;
+    short nTop;
+    short nLeft;
+    short nStep;
+    int nRowY;
+    int nRowStep;
+    int nOff;
+    int i;
+
+    CDS_ASSERT(0x1B4, pInfo);
+    CDS_ASSERT(0x1B5, pBufferInfo);
+
+    *(u_long128 *)pInfo = 0;
+    pInfo->m_unk00 = (pInfo->m_unk00 & 0x8000) | 9;
+    pInfo->m_unk01 = (pInfo->m_unk01 & ~0x80) | ((nFlag & 1) << 7);
+    pInfo->m_unk07 = (pInfo->m_unk07 & ~0xF0) | 0x10;
+    pInfo->m_unk08 = (pInfo->m_unk08 & ~0x0F) | 0x0E;
+    pInfo->m_unk10 = 0xFFFFFFFF01000000LL | ((long long)(pBufferInfo->m_unk08 / 64) << 16) | (long long)(pBufferInfo->m_unk1C / 0x2000);
+    pInfo->m_unk18 = 0x4D;
+    pInfo->m_unk20 = ((long long)((0x800 - (pBufferInfo->m_unk08 >> 1)) << 4)) | ((long long)((0x800 - (pBufferInfo->m_unk0C >> 1)) << 4));
+    pInfo->m_unk28 = 0x19;
+    pInfo->m_unk30 = ((long long)(pBufferInfo->m_unk08 - 1) << 16) | ((long long)(pBufferInfo->m_unk0C - 1) << 48);
+    pInfo->m_unk38 = 0x41;
+    pInfo->m_unk40 = (long long)(pBufferInfo->m_unk04 / 0x2000) | 0x3A000000LL;
+    pInfo->m_unk48 = 0x4F;
+    pInfo->m_unk50 = 0x30000;
+    pInfo->m_unk58 = 0x48;
+    pInfo->m_unk60 = (0x80LL << 32) | 0xA4;
+    pInfo->m_unk68 = 0x43;
+    pInfo->m_unk70 = 0;
+    pInfo->m_unk78 = 0x4B;
+    pInfo->m_unk80 = 1;
+    pInfo->m_unk88 = 0x1A;
+    pInfo->m_unk90 = 0x240;
+    pInfo->m_unk98 = 0x1B;
+    *(u_long128 *)&pInfo->m_unkA0 = 0;
+    *(long long *)&pInfo->m_unkA0 = (*(long long *)&pInfo->m_unkA0 & 0xFC007FFFFFFFFFFFLL) | (0x246LL << 47);
+    pInfo->m_unkA5 = (pInfo->m_unkA5 & ~0x40) | 0x40;
+    pInfo->m_unkA0 = (pInfo->m_unkA0 & 0x8000) | 0x14;
+    pInfo->m_unkA1 = (pInfo->m_unkA1 & ~0x80) | 0x80;
+    pInfo->m_unkA7 = (pInfo->m_unkA7 & ~0xF0) | 0x50;
+    pInfo->m_unkA7 = (pInfo->m_unkA7 & ~0x0C) | ((nFlag & 3) << 2);
+    pInfo->m_unkA8 = (pInfo->m_unkA8 & ~0x0F) | 0x0F;
+    pInfo->m_unkA8 = (pInfo->m_unkA8 & ~0xF0) | 0x10;
+    pInfo->m_unkA9 = (pInfo->m_unkA9 & ~0x0F) | 5;
+    pInfo->m_unkA9 = (pInfo->m_unkA9 & ~0xF0) | 0xF0;
+    pInfo->m_unkAA = (pInfo->m_unkAA & ~0x0F) | 3;
+
+    nHalfW = (short)pBufferInfo->m_unk0C;
+    nStep = (short)(pBufferInfo->m_unk08 / 20);
+    nLeft = (short)(0x800 - pBufferInfo->m_unk08 / 2);
+    nTop = (short)(0x800 - pBufferInfo->m_unk0C / 2);
+    aSrc[3] = 0.5f + (float)pBufferInfo->m_unk0C;
+
+    nRowY = nLeft << 4;
+    nRowStep = nStep << 4;
+    nOff = 0;
+    for (i = 0; i < 20; i++) {
+        char *base;
+        FTOI4((float *)aDst, aSrc);
+        base = (char *)pInfo + nOff;
+        *(int *)(base + 0xB0) = aDst[0];
+        *(int *)(base + 0xB4) = aDst[1];
+        *(int *)(base + 0xC0) = 0xFF;
+        *(int *)(base + 0xC4) = 0xFF;
+        *(int *)(base + 0xC8) = 0xFF;
+        *(int *)(base + 0xCC) = 0xFF;
+        *(int *)(base + 0xD0) = nRowY;
+        *(int *)(base + 0xD4) = nTop << 4;
+        nRowY += nRowStep;
+        *(int *)(base + 0xD8) = 0;
+        *(int *)(base + 0xE0) = aDst[2];
+        *(int *)(base + 0xE4) = aDst[3];
+        *(int *)(base + 0xF0) = (nLeft + nStep) << 4;
+        *(int *)(base + 0xF4) = (nTop + nHalfW) << 4;
+        *(int *)(base + 0xF8) = 0;
+        nLeft = (short)(nLeft + nStep);
+        aSrc[0] = aSrc[0] + 32.0f;
+        aSrc[2] = aSrc[2] + 32.0f;
+        nOff += 0x50;
+    }
+}
+
 // FUNCTION: 0x0017FA00 GsSwapDBuff__FP10sceGsDBuffi
 int GsSwapDBuff(sceGsDBuff *pDBuff, int nIdx) {
     int nBuf = nIdx & 1;
