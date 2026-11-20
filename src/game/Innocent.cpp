@@ -49,6 +49,17 @@ extern "C" void Add2DependencyList__13EntityManagerFUiUi(EntityManager *pThis, u
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
+extern "C" void *memcpy(void *, const void *, unsigned int);
+extern "C" int printf(const char *, ...);
+extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
+extern "C" void PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
+extern "C" void FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(void *pThis, EntityBaseClass *pEntity);
+extern "C" void CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(void *pThis, void *pPos, int eObjType, int eWeaponType, bool bFlag);
+// Small type keeps mbHard in small data (gp-relative lw in the original).
+extern int mbHard__15EntityBaseClass;
+// Per-type sequence records, 0x4C bytes each, indexed by m_unk1B0; the size covers the ten types.
+extern unsigned char InnocentSeqData[0x2B8];
+extern char lit_00268980[];
 extern int InnocentDialogID[0x100];
 extern unsigned char gInterface[2656];
 // Leading virtuals of EntityBaseClass's vtable (__vt__15EntityBaseClass), declared in slot order
@@ -212,6 +223,43 @@ void Innocent::OutputDebug() {
     gDebug.DebugDisp(buf);
 }
 
+// DRAFT: 0x0019F760 SetEditableVars__8InnocentFPc
+// note: DIFF 4 at 0x0128-0x0134; original sltu/xori/bnez on lit_00268980 vs ours xor/sltiu; branch form only.
+void Innocent::SetEditableVars(char *pText) {
+    memcpy(&m_unk1B0, pText, 0x6C);
+    m_unk1B8 *= 50;
+    if (mbHard__15EntityBaseClass == 0) {
+        m_unk1B8 += 0x32;
+    }
+    // m_unk294..0x29C are EntityBaseClass handles in the header, but the original stores ints here.
+    ((int *)m_unk294)[0] = m_unk1E0;
+    ((int *)m_unk294)[1] = m_unk1E4;
+    ((int *)m_unk294)[2] = m_unk1E8;
+    if ((unsigned int)m_unk1B0 >= 10) {
+        CdsAssert__FPciPc("Innocent.cpp", 0x687, "mEVars.m_iInnocentType < MAX_INNOCENT_TYPES");
+    }
+    if (*(int *)(InnocentSeqData + m_unk1B0 * 0x4C) == 0) {
+        printf("ERROR - Bad Innocent type found - shutting down\n", m_unk1B0);
+        SetState__15EntityBaseClassFi(this, -2);
+        return;
+    }
+    if (m_unk208 < 0) {
+        m_unk208 = 0;
+    }
+    if (m_unk1C0 == 0.0f && m_unk1C4 == 0.0f && m_unk1C8 == 0.0f) {
+        int noLit = (unsigned int)lit_00268980 == 0;
+        if (noLit == 0) {
+            CdsAssert__FPciPc("Innocent.cpp", 0x696, "!\"eif 0, 0, 0 error.  see keith or ted\"");
+        }
+        m_unk230 = ((m_unk3C != 0) ? (float *)((char *)m_unk3C + 0x80) : &m_unk190)[0];
+        m_unk234 = ((m_unk3C != 0) ? (float *)((char *)m_unk3C + 0x80) : &m_unk190)[1];
+        m_unk238 = ((m_unk3C != 0) ? (float *)((char *)m_unk3C + 0x80) : &m_unk190)[2];
+    }
+    m_unk230 = m_unk1C0;
+    m_unk234 = m_unk1C4;
+    m_unk238 = m_unk1C8;
+}
+
 // FUNCTION: 0x0019F940 OnTimerEvent__8InnocentFUi
 void Innocent::OnTimerEvent(unsigned int nTimer) {
     if (nTimer == m_unk250) {
@@ -235,6 +283,63 @@ void Innocent::OnTimerEvent(unsigned int nTimer) {
     if (nTimer == m_unk288) {
         m_unk288 = 0;
     }
+}
+
+// DRAFT: 0x0019F9F0 OnHitEvent__8InnocentFP15EntityBaseClassiUiUi
+// note: DIFF 108; s1/s2 swapped (original s2=pEnt, s1=nDamage; ours reversed). Tried int damage copy, goto single exit, pEnt local copy; no change.
+int Innocent::OnHitEvent(EntityBaseClass *pEnt, int nDamage, unsigned int nHitId, unsigned int nUnused) {
+    int state = m_unk20;
+    int result;
+    unsigned char *pSeq;
+    if (state == 8 || state == 6) {
+        result = 0;
+        goto done;
+    }
+    if (nHitId == 0x1FE) {
+        m_unkE8 = 3;
+        SetState__15EntityBaseClassFi(this, 8);
+        result = 1;
+        goto done;
+    }
+    if (state >= 17 && (*(unsigned int *)((char *)pEnt + 0x10C) & 1)) {
+        result = (*(int *)((char *)pEnt + 8) == 3) ? 0 : 4;
+        goto done;
+    }
+    if (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) != 0) {
+        result = 5;
+        goto done;
+    }
+    if (!(*(unsigned int *)((char *)pEnt + 0x10C) & 1)) {
+        if (m_unk254 != m_unk258) {
+            if (m_unk1B4 != 2) {
+                result = 5;
+                goto done;
+            }
+            if (state != 2) {
+                result = 5;
+                goto done;
+            }
+        }
+    }
+    FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(this, pEnt);
+    if (!(*(unsigned int *)((char *)pEnt + 0x10C) & 1)) {
+        m_unk1B8 -= nDamage;
+        CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(this, 0, 3, 0, false);
+    }
+    pSeq = InnocentSeqData + m_unk1B0 * 0x4C;
+    if (m_unk1B8 > 0) {
+        m_unk260 = state;
+        m_unk264 = (m_unk140 == *(int *)(pSeq + 4));
+        SetState__15EntityBaseClassFi(this, 6);
+        PlaySound__15EntityBaseClassFUi(this, *(unsigned int *)(pSeq + 0x40));
+        result = 1;
+        goto done;
+    }
+    SetState__15EntityBaseClassFi(this, 5);
+    PlaySound__15EntityBaseClassFUi(this, *(unsigned int *)(pSeq + 0x44));
+    result = 1;
+done:
+    return result;
 }
 
 // DRAFT: 0x0019FBD0 IsEnemyReady__8InnocentFPUi
@@ -309,6 +414,16 @@ int Innocent::GetNextPosition(float (&pos)[4]) {
         }
     }
     return 0;
+}
+
+// DRAFT: 0x0019FE00 IsAlive__8InnocentFv
+// note: compiler emits lw/jr/slt (3 words); original is lw/bgtz with li 1 in the delay slot (6 words); local-variable variant gave 4 words, branch-out variant 5, ternary and if/else 5.
+int Innocent::IsAlive() {
+    int result = 0;
+    if (m_unk1B8 > 0) {
+        result = 1;
+    }
+    return result;
 }
 
 // FUNCTION: 0x0019FE20 AwardCheck__8InnocentFv
