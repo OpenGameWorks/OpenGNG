@@ -64,6 +64,10 @@ extern "C" float GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, v
 extern "C" int GetGroundPos__7MathAPIFPA4_f(void *);
 extern "C" void sceVu0ScaleVector(float *, float *, float);
 extern "C" void sceVu0AddVector(float *, float *, float *);
+extern "C" void sceVu0SubVector(float *, float *, float *);
+extern "C" float sceVu0InnerProduct(float *, float *);
+extern "C" float sqrtf(float);
+extern "C" void InitShield__6ShieldFP15EntityBaseClassfPA4_fPA4_fUiPbi(void *, void *, float, float (*)[4], float (*)[4], unsigned int, bool *, int);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *, int, unsigned int);
 
 // Slot numbers are declaration order; Slot13 is the call at vtable offset 0x3C.
@@ -167,6 +171,57 @@ void ClockworkMaximo::UpdateShieldStatus(Shield *arg0) {
         }
     }
     m_unk280 = arg0;
+}
+
+// DRAFT: 0x00210830 ThrowShield__15ClockworkMaximoFv
+// 30 words: frame 0x214 vs 0x210, m_unk38 load order around Round180, final sp40 stores and 16-byte copy.
+void ClockworkMaximo::ThrowShield() {
+    if (m_unk280 != 0) {
+        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA69, "mpShield == NULL");
+    }
+    m_unk280 = (Shield *)Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 5, false, 0);
+    if (m_unk280 == 0) {
+        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA6C, "mpShield");
+    }
+    void *pSkel = (void *)m_unk3C;
+    if (pSkel == 0) {
+        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA76, "apSkeleton");
+    }
+    void *pBone = Find__6PMNodeFUi(pSkel, 0x6499DC24);
+    if (pBone == 0) {
+        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA79, "apBone");
+    }
+    float sp30[4];
+    float sp40[4];
+    *(u_long128 *)sp40 = *(u_long128 *)((char *)pBone + 0x70);
+    ClockworkMaximo *pTarget = GetTarget();
+    if (pTarget == 0) {
+        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA7E, "pTarget");
+    }
+    float *pSrc;
+    if (pTarget->m_unk3C != 0) {
+        pSrc = (float *)(pTarget->m_unk3C + 0x80);
+    } else {
+        pSrc = (float *)((char *)pTarget + 0x190);
+    }
+    *(u_long128 *)sp30 = *(u_long128 *)pSrc;
+    sp30[1] += 2.0f;
+    sceVu0SubVector(sp30, sp30, sp40);
+    float dot = sceVu0InnerProduct(sp30, sp30);
+    sceVu0ScaleVector(sp30, sp30, 0.7f / sqrtf(dot));
+    float *pSrc2;
+    if (m_unk3C != 0) {
+        pSrc2 = (float *)(m_unk3C + 0x90);
+    } else {
+        pSrc2 = (float *)((char *)this + 0x1A0);
+    }
+    float yaw = Round180__Ff(pSrc2[1]);
+    m_unk38->m_unk11C = yaw;
+    sp30[3] = 1.0f;
+    InitShield__6ShieldFP15EntityBaseClassfPA4_fPA4_fUiPbi(m_unk280, this, 22.142857f, (float (*)[4])sp40, (float (*)[4])sp30, 0, (bool *)0, 0);
+    sp40[0] = *(float *)(m_unk3C + 0x80);
+    sp40[2] = *(float *)(m_unk3C + 0x88);
+    *(u_long128 *)((char *)*(void **)((char *)m_unk280 + 0x38) + 0xA0) = *(u_long128 *)sp40;
 }
 
 // FUNCTION: 0x00210A40 SetShockwave__15ClockworkMaximoFv

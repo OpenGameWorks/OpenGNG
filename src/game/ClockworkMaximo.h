@@ -37,6 +37,7 @@ public:
     void AttachWeapon(WEAPON_TYPE arg0);
     void DetachWeapon(WEAPON_TYPE arg0);
     void UpdateShieldStatus(Shield *arg0);
+    void ThrowShield();
     bool TargetFacingUs();
     bool FacingTarget(EntityBaseClass *arg0);
     void FaceHit(EntityBaseClass *arg0);
