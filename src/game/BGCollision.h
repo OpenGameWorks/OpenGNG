@@ -29,11 +29,14 @@ public:
     void BGDetection(float (*pArr)[2][4], PMat4 *pMat, float fLen, SurfaceInfo &rSurf, int nFlag, PMeshNode *pMesh);
     void BGDetectionST(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo *pSurf, int nFlag);
     void BGDetectionAnim(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo *pSurf, int nFlag, PMeshNode *pMesh);
+    int ReadCollisionData(char *pName, PMeshNode *pMesh);
 
     float m_unk0;           // 0x000 grid origin X
     char _pad04[0x4];
     float m_unk8;           // 0x008 grid origin Z
-    char _pad0C[0x24];
+    char _pad0C[0x4];
+    float m_unk10[4];       // 0x010 half extent vector
+    float m_unk20[4];       // 0x020 half extent from origin; [0] and [2] feed the cell counts
     float m_unk30;          // 0x030 cell size X
     float m_unk34;          // 0x034 cell size Z
     unsigned int m_unk38;   // 0x038 cell count X
@@ -45,7 +48,11 @@ public:
     float m_unk50;          // 0x050
     char _pad54[0x4];
     float m_unk58;          // 0x058
-    char _pad5C[0x14];
+    char _pad5C[0x4];
+    float m_unk60;          // 0x060 half of m_unk30
+    char _pad64[0x4];
+    float m_unk68;          // 0x068 half of m_unk34
+    char _pad6C[0x4];
     PArray m_unk70;         // 0x070 allocated with 0x80 slots by the ctor
 };
 

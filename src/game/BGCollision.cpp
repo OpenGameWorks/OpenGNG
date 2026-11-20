@@ -19,6 +19,17 @@ extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0ApplyMatrix(float *, float *, float *);
 extern "C" void sceVu0InversMatrix(float *, float *);
 void InversMatrix(float (*)[4][4], float (*)[4][4]);
+#include "PCDFile.h"
+#include "PMeshNode.h"
+extern PCDFile gPFile;
+extern "C" char *strcpy(char *, const char *);
+extern "C" char *strcat(char *, const char *);
+extern "C" unsigned int strlen(const char *);
+extern "C" void *__nwa__FUi(unsigned int);
+extern "C" void FlushCache(int);
+
+// The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("BGCollision.cpp", line, #cond))
 
 // DRAFT: 0x0016C8A0 CheckCeiling__11BGCollisionFPA4_f
 // note: only the two lui/addiu words differ; the reloc target is vUp$1253, which C++ cannot name (vUp_1253 emitted).
@@ -665,6 +676,86 @@ int BGCollision::GetGroundPos(float (*pPos)[4])
         return 1;
     }
     return 0;
+}
+
+// DRAFT: 0x00170A20 ReadCollisionData__11BGCollisionFPcP9PMeshNode
+int BGCollision::ReadCollisionData(char *pName, PMeshNode *pMesh)
+{
+    int aHeader[12];
+    char aPath[0x40];
+    int aTrailer[4];
+
+    if (m_unk70.m_unk8 != 0) {
+        m_unk70.m_unk0 = 0;
+        m_unk70.m_unk4 = 0;
+    }
+    if (pMesh != 0) {
+        pMesh->BuildCollisionArray(&m_unk70, 0);
+    }
+    if (m_unk4C != 0) {
+        __dl__FPv(m_unk4C);
+        m_unk4C = 0;
+    }
+    strcpy(aPath, pName);
+    int len = strlen(pName);
+    char *p = aPath - 3;
+    p += len;
+    *p = 0;
+    strcat(aPath, "CMP");
+    if (!gPFile.Open(aPath, OPEN_READ)) {
+        return 0;
+    }
+    if (gPFile.Read(aHeader, 0x30) != 0x30) {
+        return 0;
+    }
+    aHeader[11] -= 0x30;
+    m_unk4C = __nwa__FUi(aHeader[11]);
+    void *mpData = m_unk4C;
+    CDS_ASSERT(0x68, mpData);
+    *(u_long128 *)&m_unk0 = *(u_long128 *)aHeader;
+    sceVu0AddVector(m_unk10, (float *)aHeader, (float *)(aHeader + 4));
+    sceVu0ScaleVector(m_unk10, m_unk10, 0.5f);
+    sceVu0SubVector(m_unk20, m_unk10, (float *)aHeader);
+    m_unk30 = (float)((short *)aHeader)[18];
+    m_unk34 = (float)((short *)aHeader)[19];
+    m_unk60 = 0.5f * m_unk30;
+    m_unk68 = 0.5f * m_unk34;
+    m_unk38 = (unsigned int)(2.0f * m_unk20[0] / m_unk30);
+    m_unk3C = (unsigned int)(2.0f * m_unk20[2] / m_unk34);
+    int nSize = aHeader[11];
+    if (gPFile.Read(m_unk4C, nSize) != nSize) {
+        CDS_ASSERT(0x76, !"CMP read error\n");
+        __dl__FPv(m_unk4C);
+        return 0;
+    }
+    gPFile.Read(aTrailer, 0x10);
+    gPFile.Close();
+
+    int a2 = (int)m_unk4C;
+    int a3 = a2 - 0x30;
+    m_unk40 = a2 + aTrailer[3] - 0x30;
+    int *v1 = (int *)m_unk40;
+    for (int t0 = aHeader[8]; t0 != 0; t0--, v1++) {
+        if (*v1 != 0) {
+            *v1 += a3;
+            int *p = (int *)*v1;
+            int t1 = p[2];
+            if (t1 != 0) {
+                int *a0 = p + 3;
+                for (; t1 != 0; t1--, a0++) {
+                    *a0 += a3;
+                    int *a1 = (int *)*a0;
+                    if ((unsigned int)a1[0] < (unsigned int)a2) {
+                        a1[0] = (a1[0] << 4) + a2;
+                        a1[1] = (a1[1] << 4) + a2;
+                        a1[2] = (a1[2] << 4) + a2;
+                    }
+                }
+            }
+        }
+    }
+    FlushCache(0);
+    return 1;
 }
 
 // FUNCTION: 0x00170DD0 Destroy__11BGCollisionFv
