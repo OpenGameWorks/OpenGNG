@@ -110,11 +110,11 @@ int PDynamicBuffer::WriteMatrix(PMat4 *pMat, unsigned int nMemOffset) {
         CdsAssert__FPciPc("PDynamicBuffer.cpp", 0x8D, "pMat");
     }
     if (nMemOffset >= 0x400) {
-        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0x8E, "nMemOffset < 0x400");
+        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0x8E, "uVu1MemOffset < 1024");
     }
     u_long128 *pBlock = (u_long128 *)Allocate(5);
     if (pBlock == 0) {
-        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0x92, "pBlock");
+        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0x92, "apMatrix");
     }
     PDynamicBufferTag *pTag = (PDynamicBufferTag *)pBlock;
     pTag->nTag = 0x10000004;

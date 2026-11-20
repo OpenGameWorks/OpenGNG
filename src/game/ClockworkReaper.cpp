@@ -8,7 +8,73 @@ public:
     void SequenceViewer(unsigned int **arg0, int arg1);
 };
 
-static unsigned int *SequenceTable[32];
+extern unsigned int ClockworkReaper_ViewerIdleGruntSeq[];
+extern unsigned int ClockworkReaper_Idle1Seq[];
+extern unsigned int ClockworkReaper_Idle2Seq[];
+extern unsigned int ClockworkReaper_RunSeq[];
+extern unsigned int ClockworkReaper_HitBySingleSlashSeq[];
+extern unsigned int ClockworkReaper_HitByDoubleSlashSeq[];
+extern unsigned int ClockworkReaper_AssembleSeq[];
+extern unsigned int ClockworkReaper_UpwardStrikeSeq[];
+extern unsigned int ClockworkReaper_GetBackUpSeq[];
+extern unsigned int ClockworkReaper_KnockBackSeq[];
+extern unsigned int ClockworkReaper_KnockDownSeq[];
+extern unsigned int ClockworkReaper_OverheadHitSeq[];
+extern unsigned int ClockworkReaper_LaunchSeq[];
+extern unsigned int ClockworkReaper_JuggleSeq[];
+extern unsigned int ClockworkReaper_Taunt1Seq[];
+extern unsigned int ClockworkReaper_Taunt2Seq[];
+extern unsigned int ClockworkReaper_WalkBackwardsSeq[];
+extern unsigned int ClockworkReaper_SideStepLeftSeq[];
+extern unsigned int ClockworkReaper_SideStepRightSeq[];
+extern unsigned int ClockworkReaper_WalkForwardsSeq[];
+extern unsigned int ClockworkReaper_HitSeq[];
+extern unsigned int ClockworkReaper_Hit2Seq[];
+extern unsigned int ClockworkReaper_BlockSeq[];
+extern unsigned int ClockworkReaper_BlockReactSeq[];
+extern unsigned int ClockworkReaper_JuggleInAirSeq[];
+extern unsigned int ClockworkReaper_JuggleInAir3rdHitSeq[];
+extern unsigned int ClockworkReaper_AttackSeq[];
+extern unsigned int ClockworkReaper_OverheadAttackSeq[];
+extern unsigned int ClockworkReaper_ViewerIdleVeteranSeq[];
+extern unsigned int ClockworkReaper_VeteranDoubleComboSeq[];
+extern unsigned int ClockworkReaper_VeteranDashSeq[];
+extern unsigned int ClockworkReaper_VeteranDodgeSeq[];
+
+static unsigned int *SequenceTable[32] = {
+    ClockworkReaper_ViewerIdleGruntSeq,
+    ClockworkReaper_Idle1Seq,
+    ClockworkReaper_Idle2Seq,
+    ClockworkReaper_RunSeq,
+    ClockworkReaper_HitBySingleSlashSeq,
+    ClockworkReaper_HitByDoubleSlashSeq,
+    ClockworkReaper_AssembleSeq,
+    ClockworkReaper_UpwardStrikeSeq,
+    ClockworkReaper_GetBackUpSeq,
+    ClockworkReaper_KnockBackSeq,
+    ClockworkReaper_KnockDownSeq,
+    ClockworkReaper_OverheadHitSeq,
+    ClockworkReaper_LaunchSeq,
+    ClockworkReaper_JuggleSeq,
+    ClockworkReaper_Taunt1Seq,
+    ClockworkReaper_Taunt2Seq,
+    ClockworkReaper_WalkBackwardsSeq,
+    ClockworkReaper_SideStepLeftSeq,
+    ClockworkReaper_SideStepRightSeq,
+    ClockworkReaper_WalkForwardsSeq,
+    ClockworkReaper_HitSeq,
+    ClockworkReaper_Hit2Seq,
+    ClockworkReaper_BlockSeq,
+    ClockworkReaper_BlockReactSeq,
+    ClockworkReaper_JuggleInAirSeq,
+    ClockworkReaper_JuggleInAir3rdHitSeq,
+    ClockworkReaper_AttackSeq,
+    ClockworkReaper_OverheadAttackSeq,
+    ClockworkReaper_ViewerIdleVeteranSeq,
+    ClockworkReaper_VeteranDoubleComboSeq,
+    ClockworkReaper_VeteranDashSeq,
+    ClockworkReaper_VeteranDodgeSeq,
+};
 
 class MathAPI {
 public:
@@ -334,19 +400,19 @@ void ClockworkReaper::LoadCorrectMesh(bool arg0) {
             if (m_unk2B6 == 0) {
                 PMNode *node = m_unk3C;
                 if (node == 0) {
-                    CdsAssert("ClockworkReaper.cpp", 0xBE4, "pNode");
+                    CdsAssert("ClockworkReaper.cpp", 0xBE4, "pSkeleton");
                 }
                 PMNode *found = Find__6PMNodeFUi(node, 0x8EA3DD30U);
                 if (found == 0) {
-                    CdsAssert("ClockworkReaper.cpp", 0xBE7, "pEffect");
+                    CdsAssert("ClockworkReaper.cpp", 0xBE7, "pHeadJoint");
                 }
                 PMNode *res = GetResource__16PResourceManagerFUib(mpResMgr__15EntityBaseClass, 0x81000197U, true);
                 if (res == 0) {
-                    CdsAssert("ClockworkReaper.cpp", 0xBEA, "pResource");
+                    CdsAssert("ClockworkReaper.cpp", 0xBEA, "pHeadNode");
                 }
                 PMNode *found2 = Find__6PMNodeFUi(res, 0x8EA3DD30U);
                 if (found2 == 0) {
-                    CdsAssert("ClockworkReaper.cpp", 0xBED, "pSource");
+                    CdsAssert("ClockworkReaper.cpp", 0xBED, "pNewHeadJoint");
                 }
                 PMNode *v1 = (PMNode *)found2->m_unk10;
                 found->m_unk10 = v1;
