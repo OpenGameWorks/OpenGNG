@@ -129,6 +129,13 @@ public:
     virtual void Slot15(float flag);
 };
 
+// Render-list node at Interface+0x1C4 and in the mesh layer list at Interface+0x40C; virtual slot 1 (offset 0xC) is Render.
+class PIntRenderNode {
+public:
+    virtual void Slot00();
+    virtual int Render(void *pLM, int nArg1, int nArg2);
+};
+
 // Only the mangled name (13eBoxIntersect) matters here; the enumerator names are placeholders.
 enum eBoxIntersect { eBoxIntersect_Value0 = 0, eBoxIntersect_Value1 = 1 };
 
@@ -190,6 +197,14 @@ extern "C" PMNode *Find__6PMNodeFUi(PMNode *pThis, unsigned int uID);
 extern unsigned char MODE_PAL;
 extern int SCREEN_WIDTH;
 extern int SCREEN_HEIGHT;
+extern int SCREEN_OFFSET_Y;
+extern "C" void StartTimer__5DebugFUi(void *pThis, unsigned int nId);
+extern "C" void StopTimer__5DebugFUi(void *pThis, unsigned int nId);
+extern "C" void RenderAnimation__Fv(void);
+extern "C" int Find__6PArrayFPv(void *pThis, void *pItem);
+extern "C" void RenderParticleSystems__10PGfxEngineF8ePSLayerP11PZBufferFog(void *pThis, int nLayer, void *pZBuffer);
+extern "C" void Update__16PParticleManagerFfP6CameraP9PFrustrum8ePSLayer(void *pThis, float fDelta, void *pCamera, void *pFrustum, int nLayer);
+extern "C" void Render__11FontManagerFbb(void *pThis, bool bA, bool bB);
 // PMat4 member; the call passes the matrix object as pThis. PMat4.h has no declaration for it.
 extern "C" void MakeParallelProjectionMatrix__5PMat4Fffffffffffff(void *pThis, float, float, float, float, float, float, float, float, float, float, float, float);
 extern "C" void EnableAllText__11FontManagerFb(void *pThis, bool bFlag);
@@ -2522,6 +2537,89 @@ void Interface::DisplayLevelName(int arg0, int arg1) {
         m_unk1B8 = ((FontManager *)((char *)this + 0x80))->DisplayString(arg0 + 0x270, arg1, 0, false);
         m_unk1BC = arg1;
     }
+}
+
+// DRAFT: 0x00145450 Render__9InterfaceFi
+// note: 12 words differ: gs register constants 8/0x1B/0x44 land in swapped v0/v1 at 0x70..0x88; StartTimer gDebug address and the sb store are scheduled differently at 0x398..0x3AC.
+int Interface::Render(int arg0) {
+    unsigned long long gs[6];
+    float vec[4];
+    int ret = 0;
+    int diff = m_unk414 - m_unk416;
+    bool flag;
+    if (diff != 0) {
+        m_unk416 += (diff > 0) ? 1 : -1;
+    }
+    if (m_unk416 != 0) {
+        gs[0] = 0;
+        gs[1] = 0x1A;
+        {
+            unsigned long long *p = &gs[2];
+            p[0] = 8;
+            p[1] = 0x1B;
+        }
+        {
+            unsigned long long *q = &gs[4];
+            q[0] = 0x44;
+            q[1] = 0x42;
+        }
+        PDisplayList *pd = *(PDisplayList **)(gGfxEng + 0x154C80);
+        pd->SetGsRegisters((u_long128 *)gs, 3);
+        pd = *(PDisplayList **)(gGfxEng + 0x154C80);
+        pd->ClearFrameBuffer(0x800, (short)(SCREEN_OFFSET_Y - 0x14 + m_unk416), SCREEN_WIDTH, 0x14, 0, 0, 0, -0x80, 0);
+        pd = *(PDisplayList **)(gGfxEng + 0x154C80);
+        pd->ClearFrameBuffer(0x800, (short)(SCREEN_HEIGHT / 2 + 0x814 - m_unk416), SCREEN_WIDTH, 0x14, 0, 0, 0, -0x80, 0);
+    }
+    gGfxEng[0x158F01] = 1;
+    StartTimer__5DebugFUi(gDebug, 0xB);
+    InitRender();
+    if (m_unk1C0 & 0x20) {
+        RenderAnimation__Fv();
+    } else {
+        if (m_unk1C0 & 2) {
+            HudUpdate(arg0);
+        }
+        if (m_unk1C0 & 0x10) {
+            ((HudHint *)((char *)this + 0x32C))->HintScreen();
+        }
+        flag = (m_unk1C4 != 0) && ((m_unk1C0 & 6) != 0) && (diff <= 0);
+        if (flag) {
+            ret += ((PIntRenderNode *)m_unk1C4)->Render(0, 0x80, 0);
+        }
+        if (m_unk1C0 & 8) {
+            m_unk408 = 0;
+            void *p = (m_unk404 != 0) ? m_unk40C[0] : 0;
+            while (p != 0) {
+                ret += ((PIntRenderNode *)p)->Render(0, 0x80, 0);
+                p = (++m_unk408 < m_unk404) ? m_unk40C[m_unk408] : 0;
+                flag = true;
+            }
+        }
+        sceVu0CopyVector(vec, (float *)((char *)this + 0x70));
+        sceVu0ScaleVectorXYZ(vec, vec, -1.0f);
+        RenderBlendedFragments__10PGfxEngineFPf(gGfxEng, vec);
+        Update__16PParticleManagerFfP6CameraP9PFrustrum8ePSLayer(gGfxEng + 0x154F00, 1.0f, 0, 0, 3);
+        if (flag && (m_unk1C0 & 0x80) == 0) {
+            RenderParticleSystems__10PGfxEngineF8ePSLayerP11PZBufferFog(gGfxEng, 3, 0);
+        }
+        if (*(unsigned char *)&m_unk424 == 0) {
+            ProcessScreenFade();
+        }
+        if (m_unk1C0 & 1) {
+            Render__11FontManagerFbb((char *)this + 0x80, false, false);
+        }
+        if (*(unsigned char *)&m_unk424 != 0) {
+            ProcessScreenFade();
+        }
+        if (m_unk1B8 != 0) {
+            if (Find__6PArrayFPv((char *)this + 0x80, (void *)m_unk1B8) < 0) {
+                m_unk1B8 = 0;
+            }
+        }
+    }
+    StopTimer__5DebugFUi(gDebug, 0xB);
+    gGfxEng[0x158F01] = 0;
+    return ret;
 }
 
 // FUNCTION: 0x145820 InitRender__9InterfaceFv
