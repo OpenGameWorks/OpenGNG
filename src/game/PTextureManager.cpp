@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "PTextureManager.h"
+#include "PPakFile.h"
 
 // TODO(header): foreign declarations
 extern "C" void FlushCache(int nMode);
@@ -20,6 +21,8 @@ extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
 void GsSetTexBaseAddr(tagGsTextureEnvironment *pEnv, unsigned int nBase);
 void GsSetClutBaseAddr(tagGsTextureEnvironment *pEnv, unsigned int nBase);
 extern "C" int sceDmaGetChan(int nChannel);
+extern "C" void *__nwa__FUi(unsigned int nSize);
+extern "C" void __dl__FPv(void *pMem);
 enum eGsContext {
     eGsContext_0 = 0
 };
@@ -113,6 +116,45 @@ void PTextureManager::KickDmaChain(void *pBuf, bool bWait) {
     }
 }
 
+// DRAFT: 0x00189590 PrepareStaticTextureForDma__15PTextureManagerFP1P19tagPs2TexDataHeaderPvPvP23tagGsTextureEnvironment
+// note: 5 words differ: nWidth goes to t1 in the original (ours t0) at 0x0F8/0x0FC and the 0x128 copy direction is reversed; lw a3,unk8 precedes lb t2,unk4 at 0x1A0/0x1A8
+int PTextureManager::PrepareStaticTextureForDma(u_long128 *pDmaChain, tagPs2TexDataHeader *pTexHeader, void *pvTexClutPacket, void *pvTexImagePacket, tagGsTextureEnvironment *pTexEnv) {
+    int nQwords = 0;
+    int nWidth;
+    int nBase;
+    int nW;
+    int nH;
+    CDS_ASSERT(0x6FD, pTexHeader);
+    CDS_ASSERT(0x6FE, pvTexImagePacket);
+    CDS_ASSERT(0x6FF, pTexEnv);
+    CDS_ASSERT(0x700, pDmaChain);
+    if (pTexHeader->type == 0x14 || pTexHeader->type == 0x13) {
+        CDS_ASSERT(0x705, pvTexClutPacket);
+        nQwords = 7;
+        if (pTexHeader->type == 0x14) {
+            nWidth = 8;
+        } else {
+            nWidth = 0x10;
+        }
+        nBase = m_unk4 / 256 + pTexHeader->unk28;
+        PrepareImageDmaPacket((tagImageDmaPacket *)pDmaChain, pvTexClutPacket, pTexHeader->unk24, nWidth, nWidth, 0, nBase);
+        GsSetClutBaseAddr(pTexEnv, nBase << 8);
+    }
+    tagImageDmaPacket *pPacket = (tagImageDmaPacket *)(pDmaChain + nQwords);
+    if (pTexHeader->unk6 == 0 || pTexHeader->unk7 == 0) {
+        nW = 1 << pTexHeader->unk0;
+        nH = 1 << pTexHeader->unk1;
+    } else {
+        nW = 1 << pTexHeader->unk6;
+        nH = 1 << pTexHeader->unk7;
+    }
+    nBase = m_unk4 / 256 + pTexHeader->unk2A;
+    PrepareImageDmaPacket(pPacket, pvTexImagePacket, pTexHeader->unk8, nW, nH, pTexHeader->unk4, nBase);
+    GsSetTexBaseAddr(pTexEnv, nBase << 8);
+    m_unk10 += pTexHeader->unk26 << 8;
+    return nQwords + 7;
+}
+
 // DRAFT: 0x001897A0 PrepareImageXferInfo__15PTextureManagerFP18tagGsImageXferInfoiiii
 // note: 64 lines differ: struct and lbu/sb now match; register allocation differs (original holds tag in v1, 0xE in t2, nBlocks in v1; mine uses t2 for tag/nBlocks); tried 0xE hoisted local (andi mask appears), tag local (no change), unsigned nCtl load (lbu match)
 void PTextureManager::PrepareImageXferInfo(tagGsImageXferInfo *pInfo, int nWidth, int nHeight, int nPsm, int nBase) {
@@ -161,6 +203,44 @@ void PTextureManager::PrepareImageDmaPacket(tagImageDmaPacket *pPacket, void *pD
     }
     pDma->unk60 = nVal;
     asm { sync }
+}
+
+// FUNCTION: 0x001899C0 LoadTexture__15PTextureManagerFP8PPakFileP19tagPs2TexDataHeaderPPvPPv
+int PTextureManager::LoadTexture(PPakFile *poFile, tagPs2TexDataHeader *pTexHeader, void **ppvTexClutPacket, void **ppvTexImagePacket) {
+    CDS_ASSERT(0x678, poFile);
+    CDS_ASSERT(0x679, pTexHeader);
+    CDS_ASSERT(0x67A, ppvTexImagePacket);
+    CDS_ASSERT(0x67B, ppvTexClutPacket);
+    *ppvTexClutPacket = 0;
+    *ppvTexImagePacket = 0;
+    if (poFile->Read(pTexHeader, 0x2C) != 0x2C) {
+        CDS_ASSERT(0x683, 0);
+        return 0;
+    }
+    CDS_ASSERT(0x688, pTexHeader->cNumMipMaps == 0);
+    *ppvTexImagePacket = __nwa__FUi(pTexHeader->unk8);
+    CDS_ASSERT(0x692, *ppvTexImagePacket);
+    if (pTexHeader->unk24 != 0) {
+        *ppvTexClutPacket = __nwa__FUi(pTexHeader->unk24);
+        CDS_ASSERT(0x699, *ppvTexClutPacket);
+        if (poFile->Read(*ppvTexClutPacket, pTexHeader->unk24) != pTexHeader->unk24) {
+            __dl__FPv(*ppvTexClutPacket);
+            __dl__FPv(*ppvTexImagePacket);
+            *ppvTexClutPacket = 0;
+            *ppvTexImagePacket = 0;
+            CDS_ASSERT(0x6A1, 0);
+            return 0;
+        }
+    }
+    if (poFile->Read(*ppvTexImagePacket, pTexHeader->unk8) != pTexHeader->unk8) {
+        __dl__FPv(*ppvTexClutPacket);
+        __dl__FPv(*ppvTexImagePacket);
+        *ppvTexClutPacket = 0;
+        *ppvTexImagePacket = 0;
+        CDS_ASSERT(0x6AC, 0);
+        return 0;
+    }
+    return 1;
 }
 
 // DRAFT: 0x00189BF0 AddTexture__15PTextureManagerFP8PTextureP6PArray

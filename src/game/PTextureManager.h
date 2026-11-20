@@ -3,13 +3,31 @@
 
 #include "types.h"
 
-struct tagPs2TexDataHeader;
+// Texture header read from the pak file, 0x2C bytes.
+struct tagPs2TexDataHeader {
+    char unk0;                  // 0x00
+    char unk1;                  // 0x01
+    char type;                  // 0x02 texture type, 0x13 and 0x14 carry a CLUT
+    char cNumMipMaps;           // 0x03
+    char unk4;                  // 0x04
+    char _pad5;                 // 0x05
+    char unk6;                  // 0x06
+    char unk7;                  // 0x07
+    int unk8;                   // 0x08 image data size
+    char _pad0C[0x24 - 0x0C];   // 0x0C
+    short unk24;                // 0x24 CLUT data size
+    short unk26;                // 0x26
+    short unk28;                // 0x28
+    short unk2A;                // 0x2A
+};
+
 struct tagGsTextureEnvironment;
 struct tagGsImageXferInfo;
 struct tagImageDmaPacket;
 struct tagGsClut256;
 class PArray;
 class PDisplayList;
+class PPakFile;
 
 // Texture group argument of PTexture::InitRendered.
 enum eTextureGroup {
@@ -79,6 +97,8 @@ public:
     int AllocRenderedTexture(int nHandle, int nSecond, bool &bOut, bool bFlag);
     int AllocDynamicVramForTexture(tagPs2TexDataHeader *pHeader, int nSecond, int &nVram, int &nTmp, bool &bOut, bool bFlag);
     void PrepareDynamicClutPacket(tagGsClut256 *pClut, tagGsTextureEnvironment *pTexEnv, bool bFlag, PDisplayList *pDisplayList);
+    int PrepareStaticTextureForDma(u_long128 *pDmaChain, tagPs2TexDataHeader *pTexHeader, void *pvTexClutPacket, void *pvTexImagePacket, tagGsTextureEnvironment *pTexEnv);
+    int LoadTexture(PPakFile *poFile, tagPs2TexDataHeader *pTexHeader, void **ppvTexClutPacket, void **ppvTexImagePacket);
 
     int m_unk0;                 // 0x000
     int m_unk4;                 // 0x004
