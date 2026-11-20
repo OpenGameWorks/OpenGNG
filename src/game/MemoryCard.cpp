@@ -8,7 +8,14 @@ extern "C" void __dl__FPv(void *pMem);
 extern "C" int CheckPlayerData__6PlayerFPQ26Player10PlayerData(void *pThis);
 extern "C" int DisplayString__11FontManagerFiiib(void *pThis, int nX, int nY, int nZ, bool bFlag);
 extern "C" void DisplayString__11FontManagerFPcffi9FontColor9FontAlign(void *pThis, char *pStr, float fX, float fY, int nZ, int nColor, int nAlign);
-extern "C" void InitScreen__10MemoryCardFv(void *pThis);
+extern char gEng[105360];
+extern "C" void *GetResource__16PResourceManagerFUib(void *pThis, unsigned int nId, bool bFlag);
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
+extern "C" void AddMeshLayer__9InterfaceFP6PMNode(void *pThis, void *pNode);
+extern "C" void *Find__6PMNodeFUi(void *pThis, unsigned int nId);
+extern "C" void ScaleSet__6PMNodeFffff(void *pThis, float fX, float fY, float fZ, float fW);
+extern unsigned int SlotNames[6];
+extern float BoxSize[4];
 extern "C" void EnableAllText__11FontManagerFb(void *pThis, bool bFlag);
 extern char LoadGameMC[16];
 extern char SaveGameMC[16];
@@ -25,6 +32,10 @@ extern unsigned char gPad[448];
 extern unsigned char gSound[98496];
 extern unsigned char gGfxEng[1504384];
 extern "C" void ResetPlayerData__6PlayerFPQ26Player10PlayerData(void *pThis);
+extern "C" void PlaySoundNonPositional__6PSoundFUi(void *pThis, unsigned int nSnd);
+extern "C" void SetColor__8FontNodeF9FontColor(void *pThis, int nColor);
+extern "C" void SetAnimLoopCount__6PMNodeFib(void *pThis, int nCount, bool bFlag);
+extern char DefaultLoopAnim[0x10];
 
 // Virtual interface at 0x3F6C; slot 0x18 is virtual index 4, slot 0x08 is the destructor.
 class MemoryCardView {
@@ -35,6 +46,42 @@ public:
     virtual void Slot3();
     virtual void Slot4(int nA, int nB, int nC, float fX, float fY);
 };
+
+// Cast view of PMNode for its virtual table; SetAllAnimFlags is virtual index 5 (slot 0x1C).
+class PMNodeView {
+public:
+    virtual ~PMNodeView();
+    virtual void Render();
+    virtual void SetFrameTime();
+    virtual void CreateObjectDisplayList();
+    virtual void Animate(float fA, float fB, void *pMat, int nC, bool bD);
+    virtual void SetAllAnimFlags(void *pAnim);
+    virtual void Slot20(void *pNode);
+};
+
+// DRAFT: 0x0014FD40 UpdateHeader__10MemoryCardFUc
+// note: 12 words differ: original keeps loop byte in v1 and i*0x31 in t1 (ours t1/t2), and reloads m_unk22E into a1 in a different order; tried pointer walk (16), nSum before header block (18), cached level (67)
+void MemoryCard::UpdateHeader(unsigned char nVal) {
+    if (nVal > m_unk22E) {
+        m_unk22E = nVal;
+        m_unk22C = nVal;
+    }
+    int nSum = 0;
+    for (int i = 0; i <= m_unk22E && i < 0x15; i++) {
+        signed char nVal2 = _pad2B0[i * 0x31];
+        if (nVal2 >= 0) {
+            if (nVal2 >= 0x65) {
+                nVal2 = 0x64;
+            }
+            nSum += nVal2;
+        }
+    }
+    float fVal = (float)(nSum * 100) / 2100.0f;
+    if (fVal < 99.5f) {
+        fVal += 0.5f;
+    }
+    m_unk22D = (unsigned char)(unsigned int)fVal;
+}
 
 // FUNCTION: 0x0014FE70 SetSetting__10MemoryCardFP13MemorySetting
 int MemoryCard::SetSetting(MemorySetting *pSetting) {
@@ -47,6 +94,11 @@ int MemoryCard::SetSetting(MemorySetting *pSetting) {
     SetEffectsRelVolume__6PSoundFUi(gSound, m_unk218.m_unk5);
     SetTvOffset__10PGfxEngineFii(gGfxEng, m_unk218.m_unk6, m_unk218.m_unk8);
     return 1;
+}
+
+// FUNCTION: 0x0014FF00 GetSetting__10MemoryCardFP13MemorySetting
+void MemoryCard::GetSetting(MemorySetting *pDst) {
+    memcpy(pDst, &m_unk218, 10);
 }
 
 // DRAFT: 0x0014FF20 ResetGameData__10MemoryCardFv
@@ -171,6 +223,45 @@ void MemoryCard::DisplayMCText(int nArg) {
     m_unk200 = DisplayString__11FontManagerFiiib(pFont, nArg, 0, 0, 0);
 }
 
+// DRAFT: 0x001504F0 SelectSlot__10MemoryCardFUi
+// note: 109 words differ; original uses 0x70 frame saving s0-s5, branch-tree layout for the 0x4000/0x1000/0xF0 tests with s0 shared exit, and re-reads m_unk210 per use. Tried straight-line early returns (118), shared nRet with reloads (109).
+int MemoryCard::SelectSlot(unsigned int nArg) {
+    int nRet = -1;
+    if (m_unk1C8 == 0xB) {
+        if (nArg & 0x4000) {
+            nRet = 0xB;
+        } else if (nArg & 0x1000) {
+            m_unk1E6 = 0x1000;
+            nRet = 9;
+        } else if (nArg & 0xF0) {
+            PlaySoundNonPositional__6PSoundFUi(gSound, 0x40);
+            SetColor__8FontNodeF9FontColor(m_unk3F88[m_unk210][0], 7);
+            if (m_unk3F88[m_unk210][1]) {
+                SetColor__8FontNodeF9FontColor(m_unk3F88[m_unk210][1], 7);
+            }
+            SetAnimLoopCount__6PMNodeFib(m_unk3F70[m_unk210], 1, false);
+            int q = m_unk210 / 3;
+            int r = m_unk210 % 3;
+            if (nArg & 0x50) {
+                r += (nArg & 0x10) ? -1 : 1;
+                if ((unsigned int)r >= 3) {
+                    r = (nArg & 0x10) ? 2 : 0;
+                }
+            }
+            if (nArg & 0xA0) {
+                q ^= 1;
+            }
+            m_unk210 = r + q * 3;
+            SetColor__8FontNodeF9FontColor(m_unk3F88[m_unk210][0], 4);
+            if (m_unk3F88[m_unk210][1]) {
+                SetColor__8FontNodeF9FontColor(m_unk3F88[m_unk210][1], 4);
+            }
+            ((PMNodeView *)m_unk3F70[m_unk210])->SetAllAnimFlags(DefaultLoopAnim);
+        }
+    }
+    return nRet;
+}
+
 // FUNCTION: 0x00151D10 IssueCommand__10MemoryCardFPCc
 void MemoryCard::IssueCommand(const char *pCmd) {
     m_unk1DC = (int)pCmd | 0x30000000;
@@ -213,7 +304,7 @@ int MemoryCard::LoadGame() {
 void MemoryCard::InitLoadGame() {
     m_unk1F4 = 0;
     IssueCommand(LoadGameMC);
-    InitScreen__10MemoryCardFv(this);
+    InitScreen();
     char *pInfo = *(char **)(gInterface + 0x1890);
     DisplayString__11FontManagerFPcffi9FontColor9FontAlign(gInterface + 0x1790, *(char **)(pInfo + 0x78), 0.0f, 175.0f, *(signed char *)(pInfo + 0x82), 4, 1);
 }
@@ -231,7 +322,7 @@ void MemoryCard::InitSaveGame(Player::PlayerData *pData, int nVal, bool bFlag) {
     }
     unsigned char *pFont = gInterface + 0x1790;
     EnableAllText__11FontManagerFb(pFont, 0);
-    InitScreen__10MemoryCardFv(this);
+    InitScreen();
     char *pInfo = *(char **)(pFont + 0x100);
     DisplayString__11FontManagerFPcffi9FontColor9FontAlign(pFont, *(char **)(pInfo + 0x90), 0.0f, 175.0f, *(signed char *)(pInfo + 0x9A), 4, 1);
 }
@@ -242,6 +333,30 @@ void MemoryCard::DeleteScreen() {
     DeleteMeshLayer__9InterfaceFP6PMNode(gInterface + 0x1710, *(void **)((char *)this + 0x3F6C));
     RemoveAll__11FontManagerFb(gInterface + 0x1790, true);
     *(int *)(gInterface + 0x18D0) = *(int *)((char *)this + 0x3F68);
+}
+
+// FUNCTION: 0x001524E0 InitScreen__10MemoryCardFv
+void MemoryCard::InitScreen() {
+    char *pEng = gEng;
+    m_unk3F6C = (MemoryCardView *)GetResource__16PResourceManagerFUib(pEng, 0x810003E5, 0);
+    if (m_unk3F6C == 0) {
+        CdsAssert__FPciPc("MemoryCard.cpp", 0x15A, "mpSaveNode");
+    }
+    void *pNode = GetResource__16PResourceManagerFUib(pEng, 0x820006AE, 0);
+    ((PMNodeView *)m_unk3F6C)->Slot20(pNode);
+    AddMeshLayer__9InterfaceFP6PMNode(gInterface + 0x1710, m_unk3F6C);
+    m_unk3F68 = *(int *)(gInterface + 0x18D0);
+    *(int *)(gInterface + 0x18D0) = 0xC9;
+    for (int i = 0; i < 6; i++) {
+        m_unk3F70[i] = (PMNode *)Find__6PMNodeFUi(m_unk3F6C, SlotNames[i]);
+        m_unk3F88[i][0] = 0;
+        m_unk3F88[i][1] = 0;
+    }
+    void *pFind = Find__6PMNodeFUi(m_unk3F6C, 0xBBCD34F9);
+    if (pFind != 0) {
+        ScaleSet__6PMNodeFffff(pFind, BoxSize[*(signed char *)(gInterface + 0x17A3)], 1.0f, 1.0f, 1.0f);
+    }
+    ((PMNodeView *)m_unk3F6C)->Animate(0.0f, 1.0f, 0, 0, false);
 }
 
 // FUNCTION: 0x001528F0 RemoveMCText__10MemoryCardFv
