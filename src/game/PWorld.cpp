@@ -587,7 +587,6 @@ PWorld::~PWorld() {
     __dt__11PZBufferFogFv((char *)this + 0x8750, -1);
     __destroy_arr((char *)this + 0x220, __dt__15PCutScenePlayerFv, 0x2140, 4);
     __dt__13PLightManagerFv((char *)this + 0x1F0, -1);
-    __dt__9PFrustrumFv((char *)this + 0xF0, -1);
 }
 
 // DRAFT: 0x19C2E0 __ct__6PWorldFv
