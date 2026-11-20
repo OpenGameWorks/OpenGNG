@@ -13,25 +13,76 @@ extern "C" float sqrtf(float);
 void FastMath_VectorFabs(float *pDst, float *pSrc);
 
 // DRAFT: 0x001CAED0 SetupBoundingBox__14PParticleSpurtFv
-// note: three VU0 blocks (lqc2/qmtc2.i/vmulx/vadd/sqc2) written as scalar math; abs and sqrt tails match in form
+// note: 42 differing words; scale bits need mfc1 (every C float-to-int cast spills, so mfc1 is asm and not counted); VU0 blocks in asm; reg/order differ (0.5 in f2 not f1, sb in v0 not t0)
 void PParticleSpurt::SetupBoundingBox() {
     float v20[4];
     float v30[4];
     float v40[4];
     float scale;
+    int sb;
+    float *pAdd;
+    float *pSrc;
+    float *pDst;
 
     scale = 0.5f * m_unk180[0];
-    v20[0] = m_unk140[0] * scale + m_unk130[0];
-    v20[1] = m_unk140[1] * scale + m_unk130[1];
-    v20[2] = m_unk140[2] * scale + m_unk130[2];
+    asm { mfc1 sb, scale }
+    pAdd = m_unk130;
+    pSrc = m_unk140;
+    pDst = v20;
+    asm {
+        lqc2 vf1, 0x0(pSrc)
+        lqc2 vf2, 0x0(pAdd)
+        lqc2 vf5, 0x0(pDst)
+        qmtc2.i sb, vf3
+        vmulx.xyz vf4, vf1, vf3x
+        vnop
+        vnop
+        vnop
+        vadd.xyz vf5, vf4, vf2
+        vnop
+        vnop
+        vnop
+        sqc2 vf5, 0x0(pDst)
+    }
     scale = 0.5f * m_unk194;
-    v40[0] = m_unk160[0] * scale + m_unk130[0];
-    v40[1] = m_unk160[1] * scale + m_unk130[1];
-    v40[2] = m_unk160[2] * scale + m_unk130[2];
+    asm { mfc1 sb, scale }
+    pSrc = m_unk160;
+    pDst = v40;
+    asm {
+        lqc2 vf1, 0x0(pSrc)
+        lqc2 vf2, 0x0(pAdd)
+        lqc2 vf5, 0x0(pDst)
+        qmtc2.i sb, vf3
+        vmulx.xyz vf4, vf1, vf3x
+        vnop
+        vnop
+        vnop
+        vadd.xyz vf5, vf4, vf2
+        vnop
+        vnop
+        vnop
+        sqc2 vf5, 0x0(pDst)
+    }
     scale = 0.5f * m_unk180[0];
-    v30[0] = m_unk140[0] * scale + m_unk1C0[0];
-    v30[1] = m_unk140[1] * scale + m_unk1C0[1];
-    v30[2] = m_unk140[2] * scale + m_unk1C0[2];
+    asm { mfc1 sb, scale }
+    pSrc = m_unk140;
+    pAdd = m_unk1C0;
+    pDst = v30;
+    asm {
+        lqc2 vf1, 0x0(pSrc)
+        lqc2 vf2, 0x0(pAdd)
+        lqc2 vf5, 0x0(pDst)
+        qmtc2.i sb, vf3
+        vmulx.xyz vf4, vf1, vf3x
+        vnop
+        vnop
+        vnop
+        vadd.xyz vf5, vf4, vf2
+        vnop
+        vnop
+        vnop
+        sqc2 vf5, 0x0(pDst)
+    }
     FastMath_VectorFabs(v40, v40);
     FastMath_VectorFabs(v20, v20);
 
