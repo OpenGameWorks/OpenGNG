@@ -54,6 +54,18 @@ extern "C" float *GetWaypoint__15WaypointManagerFP16tagWaypointGroupUiRUc(void *
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern void *mpEntMgr__15EntityBaseClass;
 extern void *mPlayerAPI__13EntityManager;
+extern "C" void GetGroundPos__7PhysicsFv(float *pOut, void *pPhysics);
+extern "C" int SulfurCheck__7PhysicsFv(void *pThis);
+extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *pThis, unsigned int nType, float (*pPos)[4]);
+extern "C" void *__ct__7PhysicsFv(void *pThis);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__6ShadowFQ26Shadow10ShadowTypeUi(void *pThis, int nType, unsigned int nArg);
+extern "C" void WriteApparitionData__15EntityBaseClassFicUi(void *pThis, int nA, char cB, unsigned int nC);
+extern "C" void PlaySequence__15EntityBaseClassFPUi(void *pThis, unsigned int *pSeq);
+extern "C" void PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
+extern "C" struct tagWaypointGroup *GetWaypointGroupInfo__15WaypointManagerFUi(void *pThis, unsigned int nGroupId);
+extern "C" int sprintf(char *pBuf, const char *pFmt, ...);
+extern char ClockworkFlyer_LoadMeshSeq[20];
 struct tagWaypointGroup {
     char _pad000[4];
     unsigned int nCount;
@@ -490,6 +502,159 @@ int ClockworkFlyer::OnHitEvent(EntityBaseClass *pOther, int nDmg, unsigned int a
     m_unk238 = a;
     SetState__15EntityBaseClassFi(this, 0xE);
     return 1;
+}
+
+// DRAFT: 0x001E9C60 Execute__14ClockworkFlyerFv
+// note: prologue, block A/9, case -1/9 and default transcribed; cases 0/10 onward untranscribed
+void ClockworkFlyer::Execute() {
+    float sp1E0[4];
+    char sp50[0x20];
+    char *pTarget;
+    char *var_a0;
+    void *p;
+    int nState;
+
+    if (m_unk38 != 0) {
+        pTarget = m_unk3C;
+        var_a0 = (char *)&_pad190;
+        if (pTarget != 0) {
+            var_a0 = pTarget + 0x80;
+        }
+        if (!(Distance__7MathAPIFPA4_fPA4_f(var_a0, (float (*)[4])m_unk220) <= (15.0f + *(float *)&m_unk1D8))) {
+            nState = m_unk20;
+            if (nState != 8 && nState != 0x11 && nState != 0x10 && nState != 0xE) {
+                SetState__15EntityBaseClassFi(this, 8);
+                SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x10U, 0);
+                return;
+            }
+        }
+    }
+
+    GetGroundPos__7PhysicsFv(sp1E0, *(void **)(*(char **)(gEng + 0x1883C) + 0x38));
+    m_unk240 = sp1E0[1];
+    if (m_unk38 != 0 && SulfurCheck__7PhysicsFv(m_unk38) != 0) {
+        WriteApparitionData__15EntityBaseClassFicUi(this, 0, 1, 0U);
+        if (m_unk38 != 0) {
+            __dl__FPv(m_unk38);
+        }
+        m_unk38 = 0;
+        SetState__15EntityBaseClassFi(this, 0x11);
+        return;
+    }
+
+    switch (m_unk20) {
+    case -1:
+    case 9:
+        if (m_unkE9 != 0) {
+            m_unk10C &= 0xF8FFFFFF;
+            m_unk10C |= 0x071B1902;
+            m_unk103 = 0x40;
+            m_unk220[0] = m_unk1CC[0];
+            m_unk220[1] = m_unk1CC[1];
+            m_unk220[2] = m_unk1CC[2];
+            m_unk230 = 0;
+            if (m_unk1BC == 0.0f) {
+                if (m_unk1C0 == 0.0f && m_unk1C4 == 0.0f) {
+                    pTarget = m_unk3C;
+                    var_a0 = (char *)&_pad190;
+                    if (pTarget != 0) {
+                        var_a0 = pTarget + 0x80;
+                    }
+                    m_unk1BC = *(float *)var_a0;
+                    m_unk1C0 = *(float *)(var_a0 + 4);
+                    m_unk1C4 = *(float *)(var_a0 + 8);
+                }
+            }
+            m_unk15C = 0xC;
+            m_unk15E = 0;
+            m_unk104 = 0x40400000;
+            m_unk108 = 0x40600000;
+            if (m_unk1DC != 0) {
+                m_unk1C8 = m_unk18C;
+                m_unk1D8 = m_unk18C;
+            }
+            m_unk2A4 = 0;
+            if (m_unk200 >= 0) {
+                m_unk2A4 = (char *)GetWaypointGroupInfo__15WaypointManagerFUi((char *)mpEntMgr__15EntityBaseClass + 0x30, (unsigned int)m_unk200);
+                if (m_unk2A4 == 0) {
+                    sprintf(sp50, "Flyer refers to bad waypoint group ( group id = %d )", m_unk200);
+                    CdsAssert__FPciPc("ClockworkFlyer.cpp", 0x17B, sp50);
+                }
+            }
+            m_unk2A8 = 0;
+            m_unk2AC = (m_unk2A4 != 0) ? (int)((struct tagWaypointGroup *)m_unk2A4)->nCount : 0;
+        }
+        if (m_unk1E4 != 2) {
+            ClockworkFlyer *pTgt = GetTarget();
+            char *var_a1 = (char *)pTgt + 0x190;
+            if (pTgt->m_unk3C != 0) {
+                var_a1 = pTgt->m_unk3C + 0x80;
+            }
+            float *var_s0 = &m_unk1A0;
+            if (m_unk3C != 0) {
+                var_s0 = (float *)(m_unk3C + 0x90);
+            }
+            var_s0[1] = GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, var_a1);
+        }
+        m_unk210[0] = m_unk1BC;
+        m_unk210[1] = m_unk1C0;
+        m_unk210[2] = m_unk1C4;
+        {
+            char *pPl = (char *)mPlayerAPI__13EntityManager;
+            char *var_a1_2 = pPl + 0x190;
+            if (*(char **)(pPl + 0x3C) != 0) {
+                var_a1_2 = *(char **)(pPl + 0x3C) + 0x80;
+            }
+            if (Distance__7MathAPIFPA4_fPA4_f(m_unk210, (float (*)[4])var_a1_2) <= *(float *)&m_unk1C8) {
+                if (m_unk38 == 0) {
+                    p = __nw__FUi(0x120U);
+                    if (p != 0) {
+                        p = __ct__7PhysicsFv(p);
+                    }
+                    m_unk38 = (float *)p;
+                    if (m_unk38 == 0) {
+                        CdsAssert__FPciPc("ClockworkFlyer.cpp", 0x193, "mpPhysics");
+                    }
+                    if (m_unk1B8 == 0) {
+                        if (((char *)m_unk38 + 0xA0) == 0) {
+                            CdsAssert__FPciPc("ClockworkFlyer.cpp", 0x196, "pInfo");
+                        }
+                        *((unsigned char *)m_unk38 + 0xEC) &= ~0x80;
+                    }
+                    SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x10U, 0);
+                }
+                if (m_unkD4 == 0) {
+                    p = __nw__FUi(0x10U);
+                    if (p != 0) {
+                        p = __ct__6ShadowFQ26Shadow10ShadowTypeUi(p, 1, 0x87000007U);
+                    }
+                    m_unkD4 = p;
+                    if (m_unkD4 == 0) {
+                        CdsAssert__FPciPc("ClockworkFlyer.cpp", 0x19E, "mpShadow");
+                    }
+                    if (m_unkD4 != 0) {
+                        *(unsigned char *)m_unkD4 = 1;
+                        if (*(char **)((char *)m_unkD4 + 0xC) != 0) {
+                            *(unsigned char *)(*(char **)((char *)m_unkD4 + 0xC) + 0x18) = 1;
+                        }
+                    }
+                }
+                if (m_unk1E4 != 0) {
+                    SetState__15EntityBaseClassFi(this, 0);
+                    return;
+                }
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkFlyer_LoadMeshSeq);
+                *(int *)((char *)m_unk38 + 0x84) = 0x40000000;
+                PlaySound__15EntityBaseClassFUi(this, 0x4DU);
+                nState = DetermineStateByDistance();
+                SetState__15EntityBaseClassFi(this, nState);
+                return;
+            }
+        }
+        break;
+    default:
+        return;
+    }
 }
 
 // FUNCTION: 0x001EB320 __dt__14ClockworkFlyerFv

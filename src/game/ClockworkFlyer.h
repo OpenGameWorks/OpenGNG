@@ -31,23 +31,42 @@ public:
     void SetupDartDest();
     int DoDartTasks();
     void PitchLevelOut();
+    void Execute();
 
     char _pad000[0x4];                  // 0x000 vtable
     unsigned int m_unk4;                // 0x004 owner id passed to CreateTimer
-    char _pad008[0x38 - 0x8];
+    char _pad008[0x20 - 0x8];
+    int m_unk20;                        // 0x020 state selector switched on by Execute
+    char _pad024[0x38 - 0x24];
     float *m_unk38;                     // 0x038 16-byte output pointer
     char *m_unk3C;                     // 0x03C target entity pointer; +0x80 used when non-null
-    char _pad040[0xF4 - 0x40];
+    char _pad040[0xD4 - 0x40];
+    void *m_unkD4;                      // 0x0D4 shadow object, created by Execute
+    char _padD8[0xE9 - 0xD8];
+    unsigned char m_unkE9;              // 0x0E9 nonzero: first-entry sequence and sound pass
+    char _padEA[0xF4 - 0xEA];
     int m_unkF4;                        // 0x0F4 nonzero selects the damage-absorb path in OnHitEvent
-    char _pad0F8[0x190 - 0xF8];
+    char _pad0F8[0x103 - 0xF8];
+    unsigned char m_unk103;             // 0x103
+    int m_unk104;                       // 0x104 float bits 3.0f (Execute case -1/9)
+    int m_unk108;                       // 0x108 float bits 3.5f (Execute case -1/9)
+    int m_unk10C;                       // 0x10C flag word, bits set by Execute case -1/9
+    char _pad110[0x15C - 0x110];
+    short m_unk15C;                     // 0x15C
+    short m_unk15E;                     // 0x15E
+    int m_unk160;                       // 0x160 countdown; zero lets the state change
+    char _pad164[0x18C - 0x164];
+    int m_unk18C;                       // 0x18C
     ClockworkFlyerPad190 _pad190;       // 0x190 16-byte block, address taken
     float m_unk1A0;                     // 0x1A0 position read by FlyerPitchChange
     char _pad1A4[0x1B0 - 0x1A4];
     int m_unk1B0;                       // 0x1B0 type argument of SetSpawnedFromEntity
-    char _pad1B4[0x1BC - 0x1B4];
-    int m_unk1BC;                       // 0x1BC
-    int m_unk1C0;                       // 0x1C0
-    int m_unk1C4;                       // 0x1C4
+    char _pad1B4[0x1B8 - 0x1B4];
+    int m_unk1B8;                       // 0x1B8 nonzero skips the Physics collision-flag clear
+
+    float m_unk1BC;                     // 0x1BC
+    float m_unk1C0;                     // 0x1C0
+    float m_unk1C4;                     // 0x1C4
     int m_unk1C8;                       // 0x1C8 float bits 25.0f (SetDefaultVars), 75.0f (SetSpawnedFromEntity)
     float m_unk1CC[3];                  // 0x1CC position copied by SetSpawnedFromEntity
     int m_unk1D8;                       // 0x1D8 float bits 35.0f (SetDefaultVars), 150.0f (SetSpawnedFromEntity)
@@ -61,11 +80,15 @@ public:
     int m_unk1F8;                       // 0x1F8
     int m_unk1FC;                       // 0x1FC float bits 0.1f
     int m_unk200;                       // 0x200
-    char _pad204[0x230 - 0x204];
+    char _pad204[0x210 - 0x204];
+    float m_unk210[4];                  // 0x210 position vector used by the Distance checks in Execute
+    float m_unk220[4];                  // 0x220 copy of the position and the Distance target row
     int m_unk230;                       // 0x230 timer id slot
     unsigned int m_unk234;              // 0x234 state-change argument set by OnHitEvent on death
     unsigned int m_unk238;              // 0x238 argument set by OnHitEvent on hit
-    char _pad23C[0x248 - 0x23C];
+    char _pad23C[0x240 - 0x23C];
+    float m_unk240;                     // 0x240 ground height copied from the GetGroundPos result
+    char _pad244[0x248 - 0x244];
     char *m_unk248;                     // 0x248 target entity read by GetTarget
     char _pad24C[0x250 - 0x24C];
     u_long128 m_unk250;                 // 0x250 16-byte copy of target block
@@ -79,7 +102,8 @@ public:
     int m_unk2A0;                       // 0x2A0 timer id slot
     char *m_unk2A4;                     // 0x2A4 waypoint group, count at +4
     int m_unk2A8;                       // 0x2A8 next waypoint index
-    char _pad2AC[0x2C0 - 0x2AC];
+    int m_unk2AC;                       // 0x2AC waypoint index result of Execute case -1/9
+    float m_unk2B0[4];                  // 0x2B0 dart target vector passed to FlyerFlyTo
     float m_unk2C0;                     // 0x2C0 bobbing phase
 
     unsigned char m_unk2C4;             // 0x2C4 flag cleared by SetupDartDest
