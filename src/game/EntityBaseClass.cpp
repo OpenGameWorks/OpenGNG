@@ -91,6 +91,7 @@ public:
     static float GetAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]);
     static float RandomFloatRange(float arg0, float arg1);
     static void GetForwardVector(EntityBaseClass *arg0, float (&arg1)[4]);
+    static void VectorRotateY(float (*arg0)[4], float arg1);
 };
 
 extern EntityBaseClass *mPlayerAPI__13EntityManager;
@@ -116,6 +117,7 @@ public:
 class BGCollision {
 public:
     int CheckCeiling(float (*arg0)[4]);
+    int CheckIntersect(float (&arg0)[4], float (&arg1)[4], float (*arg2)[4], unsigned int arg3);
     char _pad000[0x10];
 };
 extern BGCollision mBGCollision__15EntityBaseClass;
@@ -193,6 +195,10 @@ public:
     EntityBaseClass *m_unk505C;
     char _pad5060[0x14];
     float m_unk5074;
+    char _pad5078[0x38];
+    unsigned int m_unk50B0;
+    unsigned int m_unk50B4;
+    void **m_unk50B8;
 };
 extern EntityAttackManager *mpEntMgr__15EntityBaseClass;
 extern PFrustrum *mpFrustum__15EntityBaseClass;
@@ -370,6 +376,102 @@ public:
 };
 
 float Round180(float arg0);
+
+// DRAFT: 0x0014A380 SetupInnocentCamera__15EntityBaseClassFv
+// note: 171 words differ (size 0x3a0 vs 0x3c0); walk head reloads mpEntMgr, spAC zero is sh $zero not lh @1474, sp80/sp74 slots and s2 pointer differ; while-loop shape tried, no drop.
+void EntityBaseClass::SetupInnocentCamera() {
+    struct EntWalk {
+        unsigned int count;
+        unsigned int idx;
+        void **data;
+    };
+    static float SCAN_RAD2;
+    static signed char init;
+    float sp60[4];
+    float sp70[4];
+    float sp80[4];
+    float sp90[4];
+    unsigned char spAC[2];
+    EntityBaseClass *pEnt;
+    EntityBaseClass *pNode;
+    EntWalk *pWalk;
+    float fDot0;
+    float fDot1;
+    float fSide;
+    float fTmp;
+    float fCam;
+    int nType;
+    int nIdx;
+    unsigned int nNext;
+
+    mCameraAPI__13EntityManager.TakeControlOfCamera(this, false);
+    if (init == 0) {
+        SCAN_RAD2 = 40.0f;
+        init = 1;
+    }
+    pEnt = mpEntMgr__15EntityBaseClass->m_unk505C;
+    *(u_long128 *)sp80 = *(u_long128 *)(pEnt->m_unk3C ? pEnt->m_unk3C + 0x80 : (char *)pEnt + 0x190);
+    sceVu0AddVector(sp60, sp80, (float *)(this->m_unk3C ? this->m_unk3C + 0x80 : (char *)this + 0x190));
+    sceVu0ScaleVector(sp60, sp60, 0.5f);
+    sceVu0SubVector(sp70, sp80, (float *)(this->m_unk3C ? this->m_unk3C + 0x80 : (char *)this + 0x190));
+    *(int *)&sp70[1] = 0;
+    sceVu0Normalize(sp70, sp70);
+    sceVu0SubVector(sp80, sp80, sp60);
+    fDot0 = sceVu0InnerProduct(sp80, sp80);
+    mpEntMgr__15EntityBaseClass->m_unk50B4 = 0;
+    pWalk = (EntWalk *)&mpEntMgr__15EntityBaseClass->m_unk50B0;
+    *(short *)spAC = 0;
+    pNode = (pWalk->count != 0) ? (EntityBaseClass *)pWalk->data[0] : 0;
+    if (pNode != 0) {
+        do {
+            nType = pNode->m_unk10;
+            if ((nType != 3) && (nType != 6)) {
+            } else if (pNode != this) {
+                float *pNodePos = (float *)(pNode->m_unk3C ? pNode->m_unk3C + 0x80 : (char *)pNode + 0x190);
+                sceVu0SubVector(sp80, pNodePos, sp60);
+                fDot1 = sceVu0InnerProduct(sp80, sp80);
+                if (!(fDot1 <= fDot0) && (fDot1 < SCAN_RAD2) && !(sceVu0InnerProduct(sp70, sp80) <= 0.0f)) {
+                    fTmp = sp80[0];
+                    sp80[0] = -sp80[2];
+                    sp80[2] = fTmp;
+                    if (sceVu0InnerProduct(sp80, sp70) <= 0.0f) {
+                        spAC[1] = 1;
+                    } else {
+                        spAC[0] = 1;
+                    }
+                }
+            }
+            nNext = pWalk->idx + 1;
+            pWalk->idx = nNext;
+            pNode = (nNext < pWalk->count) ? (EntityBaseClass *)pWalk->data[nNext] : 0;
+        } while (pNode != 0);
+    }
+    sp60[1] += 3.0f;
+    sceVu0ScaleVector(sp70, sp70, 4.0f);
+    *(int *)&sp70[1] = 0x40800000;
+    if (spAC[0] != spAC[1]) {
+        if (spAC[0] != 0) {
+            fSide = -60.0f;
+        } else {
+            fSide = 60.0f;
+        }
+    } else {
+        fCam = *(float *)((char *)mCameraAPI__13EntityManager.m_unk0 + 0x24);
+        if ((fCam - (57.295776f * atan2f(sp70[0], sp70[2]))) < 0.0f) {
+            fSide = -60.0f;
+        } else {
+            fSide = 60.0f;
+        }
+    }
+    *(u_long128 *)sp90 = *(u_long128 *)sp70;
+    MathAPI::VectorRotateY((float (*)[4])sp70, fSide);
+    sceVu0AddVector(sp70, (float *)(pEnt->m_unk3C ? pEnt->m_unk3C + 0x80 : (char *)pEnt + 0x190), sp70);
+    if (mBGCollision__15EntityBaseClass.CheckIntersect(sp60, sp70, 0, 2) != 0) {
+        MathAPI::VectorRotateY((float (*)[4])sp90, -fSide);
+        sceVu0AddVector(sp70, (float *)(pEnt->m_unk3C ? pEnt->m_unk3C + 0x80 : (char *)pEnt + 0x190), sp90);
+    }
+    mCameraAPI__13EntityManager.SetCameraLookAtParams(this, sp70, sp60);
+}
 
 // FUNCTION: 0x0014A740 ProcessPhysics__15EntityBaseClassFfi
 void EntityBaseClass::ProcessPhysics(float arg0, int arg1) {

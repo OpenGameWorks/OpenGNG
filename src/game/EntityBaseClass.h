@@ -42,6 +42,7 @@ public:
     void FacePlayer(float arg0);
     void FaceHitDirection(EntityBaseClass *arg0);
     void ProcessMeshFade();
+    void SetupInnocentCamera();
     float GetDistFromPlayer();
     void SetRenderPass(int arg0);
     int ChangedState();
