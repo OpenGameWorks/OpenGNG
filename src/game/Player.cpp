@@ -75,15 +75,31 @@ public:
     virtual int IsAnimate();
 };
 class PMat4;
-class PMNode {
+class AnimStateObject {
 public:
     virtual void Slot08();
     virtual void Slot0C();
     virtual void Slot10();
     virtual void Slot14();
+    virtual int Slot18();
+    virtual void Slot1C();
+    virtual void Slot20();
+    virtual void Slot24();
+    virtual int Slot28();
+};
+
+class PMNode {
+public:
+    virtual void Slot08();
+    virtual void Slot0C();
+    virtual void Slot10(float arg0);
+    virtual void Slot14();
     virtual void Animate(float arg0, float arg1, PMat4 *arg2, int arg3, bool arg4);
+    char _pad04[0x20];
+    AnimStateObject *m_unk24;
     void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
     void EnableFx(bool arg0, bool arg1);
+    void SetAnimLoopCount(int arg0, bool arg1);
     float GetFrameTime();
     PMNode *FindAnimNode(unsigned int arg0);
     int Find(PMNode *arg0);
@@ -101,6 +117,7 @@ public:
     char _pad000[0x11C];
     float m_unk11C;
     void SetPhysicsType(unsigned int arg0, float (*arg1)[4]);
+    void SetVelocity(float arg0, float arg1);
 };
 class Debug {
 public:
@@ -148,6 +165,8 @@ extern AttachableJoint m_AttachableJoints[5];
 extern "C" void *GetPtrToApparition__13EntityManagerFUi(void *, unsigned int);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
+extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
+extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
 extern "C" float atan2f(float fY, float fX);
 extern "C" float Round180__Ff(float fAngle);
 class Pad {
@@ -334,6 +353,31 @@ void Player::PumpkinGrabMove() {
     }
 }
 
+// FUNCTION: 0x00159FE0 AdjustPosition__6PlayerFP15EntityBaseClassP15EntityBaseClassfff
+void Player::AdjustPosition(EntityBaseClass *arg0, EntityBaseClass *arg1, float arg2, float arg3, float arg4) {
+    float sp40[4];
+    float sp50[4];
+    float sp60[4];
+    float *s0 = (float *)(*(char **)((char *)arg0 + 0x3C) + 0x40);
+    sceVu0ScaleVector(sp40, s0 + 8, arg2);
+    sceVu0AddVector(sp40, sp40, s0 + 0xC);
+    if (arg4 != 0.0f) {
+        sceVu0ScaleVector(sp50, s0, arg4);
+        sceVu0AddVector(sp40, sp40, sp50);
+    }
+    if (arg3 != 0.0f) {
+        sceVu0ScaleVector(sp60, s0 + 4, arg3);
+        sceVu0AddVector(sp40, sp40, sp60);
+    }
+    char *obj = *(char **)((char *)arg1 + 0x3C);
+    if (obj != 0) {
+        *(u_long128 *)(obj + 0x80) = *(u_long128 *)sp40;
+        *(unsigned char *)(obj + 0x3E) |= 8;
+    } else {
+        *(u_long128 *)((char *)arg1 + 0x190) = *(u_long128 *)sp40;
+    }
+}
+
 // FUNCTION: 0x0015A0E0 ReleaseCheck__6PlayerFv
 int Player::ReleaseCheck() {
     void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk2C0);
@@ -472,12 +516,75 @@ void Player::GetBoxer(int arg0) {
     gInterface.AddAbility(arg0);
 }
 
+// FUNCTION: 0x0015AF20 SwapAbility__6PlayerFi
+void Player::SwapAbility(int arg0) {
+    int temp;
+    signed char *entry = &AbilityTable[arg0 * 16];
+    switch (entry[5]) {
+    case 0:
+    case 2:
+        temp = m_unk1FC;
+        if ((arg0 ^ temp) & 2) {
+            m_unk22A = (signed char)temp;
+        }
+        m_unk1FC = arg0;
+        SetSword();
+        if (m_unk260 < 0x3F) {
+            if (m_unk260 == 0x3A) {
+                m_unk260 = 0;
+            }
+            SetAction(m_unk260);
+        }
+        break;
+    case 1:
+        GameVarSet(0xF, arg0 - 4);
+        break;
+    case 3:
+        GameVarSet(0x11, arg0 - 0x15);
+        break;
+    default:
+        return;
+    }
+    ((EntityBaseClass *)this)->PlaySound(0xE4U);
+}
+
 // DRAFT: 0x0015B2A0 ResurrectionMove__6PlayerFv
 // note: 23 words, size 0x64 vs 0x6c; original uses beqz with addiu v1,2 in delay slot and a shared b exit; if-body, if/else-return, goto and early-return forms all stay at 23 (bnez + nop).
 void Player::ResurrectionMove() {
     if (m_unk250 == 0) {
         m_unk250 = 2;
         mEffectAPI__13EntityManager.CreateOneshot(0x81000038, 0x8200006D, (float (*)[4])((char *)m_unk3C + 0x80), (float (*)[4])((char *)m_unk3C + 0x90), 0, 0.5f, false, 0, false);
+    }
+}
+
+// note: 1 word differs at 0x14: original copies this to s1 at entry and loads 0x328(s1); ours loads 0x328(a0). Tried hoisted id local, plain this, self pointer, and ((Player *)self) cast; all the same.
+// DRAFT: 0x0015B9B0 UnlockGateMove__6PlayerFv
+void Player::UnlockGateMove() {
+    Player *self = this;
+    void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, ((Player *)self)->m_unk328);
+    if (pApparition != 0) {
+        int state = self->m_unk250;
+        int h = (int)self->m_unk3C[13];
+        switch (state) {
+        case 0:
+            ((ApparitionVirtuals *)pApparition)->OnHitEvent(self, 0, 0x1FF, 0);
+            self->m_unk250 = 1;
+            break;
+        case 1:
+            if (h >= 0xD) {
+                self->m_unk250 = 2;
+                self->GameVarSub(8, 1);
+                self->UpdateKey();
+            }
+            break;
+        case 2:
+            if (h >= 0x23) {
+                self->m_unk250 = 3;
+                ((EntityBaseClass *)self)->PlaySound(0x99);
+            }
+            break;
+        }
+        self->AlignPosition((EntityBaseClass *)pApparition);
     }
 }
 
@@ -880,6 +987,41 @@ void Player::AirOverheadMove() {
     }
 }
 
+// FUNCTION: 0x0015E490 JogLandMove__6PlayerFv
+void Player::JogLandMove() {
+    static unsigned short JogLandStep[2] = {0x13, 0xFFFF};
+    int action = GetGroundAction();
+    switch (action) {
+    case 2:
+        FootStepSound(JogLandStep);
+        break;
+    default:
+        SetAction(action);
+        return;
+    }
+    Physics *phys = (Physics *)m_unk38;
+    phys->m_unk11C = Round180__Ff(m_unk1C4);
+    int idx;
+    if (m_unk1BC < 0x32) {
+        idx = 0;
+    } else if (m_unk1BC < 0x4B) {
+        idx = 1;
+    } else if (m_unk1BC < 0x64) {
+        idx = 2;
+    } else {
+        idx = 3;
+    }
+    char *entry = (char *)m_unk25C + idx * 8;
+    float *pf = (float *)(entry + 0x18);
+    float t = pf[0];
+    if (m_unk1C8 > t) {
+        m_unk1C8 = t;
+    } else {
+        m_unk1C8 = m_unk1C8 + pf[1];
+    }
+    ((Physics *)m_unk38)->SetVelocity(((Physics *)m_unk38)->m_unk11C, m_unk1C8);
+}
+
 // FUNCTION: 0x0015E590 GrimSliceMove__6PlayerFv
 void Player::GrimSliceMove() {
     switch (m_unk250) {
@@ -984,6 +1126,33 @@ void Player::LandingMove() {
     if (action != 0xA && action != 0 && action != m_unk260) {
         SetAction(action);
     }
+}
+
+// note: DIFF 36 best (separate null guard); nested guard DIFF 43; bool/uchar Slot18 and early-return variants worse. Differs: beqz/bnez at 0x1C, sltu/andi after Slot18 call, branch-to-tail shape.
+// DRAFT: 0x0015F8F0 EndAction__6PlayerFv
+int Player::EndAction() {
+    PMNode *node = (PMNode *)m_unk3C;
+    if (node->m_unk24 == 0) {
+        return 0;
+    }
+    if (node->m_unk24->Slot18()) {
+        if (node->m_unk24 != 0 && node->m_unk24->Slot28() == 1) {
+            return 0;
+        }
+        int raw = ((unsigned char *)m_unk254)[5];
+        if ((signed char)raw != -1) {
+            float f;
+            if (raw >= 0) {
+                f = (float)raw;
+            } else {
+                f = 2.0f * (float)((raw >> 1) | (raw & 1));
+            }
+            node->Slot10(f);
+        }
+        node->SetAnimLoopCount(1, false);
+        return 1;
+    }
+    return 0;
 }
 
 // note: 16 words differ: original keeps the constant 1 in v0 for the 0x9F path and loads 2/0 into v0 for the others; compiled code uses a2. Tried if/else chain (16 lines), int idx = 1 (about 14, branch layout differs).

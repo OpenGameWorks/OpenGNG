@@ -21,7 +21,10 @@ public:
     int IsPlayerOnAnimNode(unsigned int arg0);
     int ReleaseCheck();
     void PumpkinGrabMove();
+    void AdjustPosition(EntityBaseClass *arg0, EntityBaseClass *arg1, float arg2, float arg3, float arg4);
     void ResurrectionMove();
+    void UnlockGateMove();
+    void AlignPosition(EntityBaseClass *arg0);
     int SetPowerupMotion(int arg0);
     unsigned char IsHanging();
     unsigned char Ready2Clear();
@@ -30,6 +33,8 @@ public:
     int ValidateItem(int arg0);
     void ForceDie(int arg0);
     void GetBoxer(int arg0);
+    void SwapAbility(int arg0);
+    void SetSword();
     void GameVarSet(unsigned int arg0, int arg1);
     int GameVarSub(unsigned int arg0, int arg1);
     int MightyBlowCheck(unsigned int arg0);
@@ -64,7 +69,9 @@ public:
     void EnablePlayerShadow(bool arg0);
     void GetShieldPass(bool *arg0);
     void LandingMove();
+    void JogLandMove();
     void RollMove();
+    int EndAction();
     void BackToMaximo();
     void ShowPlayer(bool arg0);
     void RenderCutScene();
@@ -122,7 +129,8 @@ public:
     int m_unk1BC;          // 0x1BC compared with 0x32 and 0x64 by GetGroundAction
     char _pad1C0[0x1C4 - 0x1C0];
     float m_unk1C4;         // 0x1C4 set from Physics float 0x11C by CatchIdleMove
-    char _pad1C8[0x1D0 - 0x1C8];
+    float m_unk1C8;         // 0x1C8 running float, updated by JogLandMove
+    char _pad1CC[0x1D0 - 0x1CC];
     int m_unk1D0;           // 0x1D0
     char _pad1D4[0x1D8 - 0x1D4];
     int m_unk1D8;           // 0x1D8 cleared by ForceDie
@@ -139,14 +147,15 @@ public:
     int m_unk220;          // 0x220 read by OutputDebug
     char _pad224[0x229 - 0x224];
     signed char m_unk229;   // 0x229 state byte, compared with 4 by BackToMaximo
-    char _pad22A[0x23B - 0x22A];
+    signed char m_unk22A;   // 0x22A previous ability id, stored by SwapAbility
+    char _pad22B[0x23B - 0x22B];
     signed char m_unk23B[8]; // 0x23B list of 8 signed bytes, scanned by CheckHammer
     char _pad243[0x24C - 0x243];
     float m_unk24C;         // 0x24C read by Over3Move as the CreateOneshot scale
     int m_unk250;           // 0x250
     void *m_unk254;         // 0x254 object whose byte 4 is the attack limit read by CancelMove
     void *m_unk258;         // 0x258 AttackTable entry set by MultipleAttack
-    char _pad25C[0x260 - 0x25C];
+    void *m_unk25C;         // 0x25C table pointer, 8-byte entries read by JogLandMove
     int m_unk260;           // 0x260
     int m_unk264;           // 0x264
     signed char m_unk268;   // 0x268 cleared by GrimIdleMove
