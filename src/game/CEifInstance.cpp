@@ -1,0 +1,90 @@
+// FLAGS: -str readonly
+#include "CEifInstance.h"
+#include "types.h"
+
+// TODO(header): foreign declarations
+class PPakFile;
+class tagEditableVariableData;
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
+extern "C" int Read__7PCDFileFPvUi(void *pThis, void *pBuffer, unsigned int nSize);
+extern "C" void __ct__23tagEditableVariableDataFv(void *pThis);
+extern "C" void __dla__FPv(void *pBlock);
+extern "C" void *__nwa__FUi(unsigned int nSize);
+extern "C" void *__construct_new_array(void *pArray, void (*pCtor)(void *), void (*pDtor)(void *), unsigned int nElemSize, int nCount);
+extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
+
+// FUNCTION: 0x172A50 GetEditVarData__12CEifInstanceFi
+tagEditableVariableData *CEifInstance::GetEditVarData(int nIndex)
+{
+    if (nIndex >= m_unk124) {
+        CdsAssert__FPciPc("CEifInstance.cpp", 0x104, "iVarIndex < mData.iNumEditVars");
+    }
+    return (tagEditableVariableData *)((char *)m_unk128 + nIndex * 0x38);
+}
+
+// FUNCTION: 0x172AD0 GetStartOrientation__12CEifInstanceFRfRfRf
+void CEifInstance::GetStartOrientation(float &fX, float &fY, float &fZ)
+{
+    fX = m_unk118;
+    fY = m_unk11C;
+    fZ = m_unk120;
+}
+
+// FUNCTION: 0x172AF0 GetStartPosition__12CEifInstanceFRfRfRf
+void CEifInstance::GetStartPosition(float &fX, float &fY, float &fZ)
+{
+    fX = m_unk10C;
+    fY = m_unk110;
+    fZ = m_unk114;
+}
+
+// DRAFT: 0x172B30 Read__12CEifInstanceFP8PPakFileUi
+// note: 41 differing words; shared-exit branch targets (0x7C/0x9C) and the assert guard's sltu/xori form differ. Tried: goto-based single exit (92 words), folded string tests, local pMsg.
+int CEifInstance::Read(PPakFile *pFile, unsigned int nVersion)
+{
+    int nCount;
+
+    if (pFile == 0) {
+        CdsAssert__FPciPc("CEifInstance.cpp", 0x2B, "pFile");
+    }
+    if (m_unk128 != 0) {
+        if (m_unk128 != 0) {
+            __dla__FPv((char *)m_unk128 - 0x10);
+        }
+        m_unk128 = 0;
+    }
+    if (Read__7PCDFileFPvUi(pFile, this, 0x104) != 0x104) {
+        return 0;
+    }
+    if (Read__7PCDFileFPvUi(pFile, (char *)this + 0x104, 0x24) != 0x24) {
+        return 0;
+    }
+    nCount = m_unk124;
+    if (nCount != 0) {
+        m_unk128 = (tagEditableVariableData *)__construct_new_array(
+            __nwa__FUi(nCount * 0x38 + 0x10), __ct__23tagEditableVariableDataFv, 0, 0x38, nCount);
+        if (m_unk128 == 0) {
+            CdsAssert__FPciPc("CEifInstance.cpp", 0x6F, "mpEditVarsData");
+        }
+        memset(m_unk128, 0, m_unk124 * 0x38);
+        if (nVersion < 0x10003) {
+            const char *pMsg = "Out of date EIF. Re-save EIF with latest runtime.";
+            if (!(!pMsg)) {
+                CdsAssert__FPciPc("CEifInstance.cpp", 0x76, "!\"Out of date EIF. Re-save EIF with latest runtime.\"");
+            }
+            return 1;
+        }
+        {
+            unsigned int nBytes = m_unk124 * 0x38;
+            if (nBytes != Read__7PCDFileFPvUi(pFile, m_unk128, nBytes)) {
+                if (m_unk128 != 0) {
+                    __dla__FPv((char *)m_unk128 - 0x10);
+                }
+                m_unk128 = 0;
+                return 0;
+            }
+        }
+        return 1;
+    }
+    return 1;
+}
