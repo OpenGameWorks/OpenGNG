@@ -40,6 +40,10 @@ extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float t);
 extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
+extern "C" void StopSoundBySoundRef__15EntityBaseClassFUi(void *, unsigned int);
+extern "C" void RemoveFromAttackSystem__15EntityBaseClassFv(void *);
+extern "C" unsigned int CreateDamageFx__15EntityBaseClassFfUi(void *, float, unsigned int);
+extern "C" void ChangeDamageFxInterval__15EntityBaseClassFUif(void *, unsigned int, float);
 
 // FUNCTION: 0x001E6500 GetSequenceState__16ClockworkStingerFv
 int ClockworkStinger::GetSequenceState() {
@@ -279,6 +283,98 @@ void ClockworkStinger::OnEffectDelete(unsigned int arg0) {
         m_unk25C = 1;
         m_unk264 = 0;
     }
+}
+
+// DRAFT: 0x001E6EA0 OnHitEvent__16ClockworkStingerFP15EntityBaseClassiUiUi
+// note: this/arg0 land in s3/s2 (original s2/s3), 150 words; tried declaration order and local alias (both worse); body is 0x2A8 vs 0x280
+int ClockworkStinger::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3)
+{
+    unsigned int s0;
+    int a1;
+    PMNode *pn;
+    char *pr;
+    float *p3;
+
+    s0 = arg2;
+    if (m_unk20 == 0xF) {
+        return 0;
+    }
+    if (m_unk260 != 0) {
+        StopSoundBySoundRef__15EntityBaseClassFUi(this, m_unk260);
+    }
+    m_unk260 = 0;
+    if (*(int *)((char *)arg0 + 8) == 0x37) {
+        if (m_unk1B0 == 1) {
+            if (m_unkF4 != 0) {
+                SetState__15EntityBaseClassFi(this, 0xF);
+            }
+            return 2;
+        }
+        if (m_unk244 == 2) {
+            SetState__15EntityBaseClassFi(this, 0xA);
+            return 2;
+        }
+    }
+    RemoveFromAttackSystem__15EntityBaseClassFv(this);
+    if (m_unkF4 != 0) {
+        int t = m_unk1FC - arg1;
+        if (t > 0) {
+            m_unk1FC = t;
+        }
+        return 1;
+    }
+    m_unk23C = arg2;
+    pn = *(PMNode **)(mPlayerAPI__13EntityManager + 0x3C);
+    pr = pn ? (char *)pn + 0x80 : mPlayerAPI__13EntityManager + 0x190;
+    p3 = (float *)(m_unk3C ? (char *)m_unk3C + 0x90 : (char *)this + 0x1A0);
+    p3[1] = GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, pr);
+    *(unsigned int *)((char *)m_unk38 + 0x118) = 0;
+    if (((ClockworkStinger *)m_unk38)->GetSequenceState() == 0) {
+        arg1 -= 0x1E;
+        if (arg1 < 0) {
+            arg1 = 0;
+        }
+    }
+    m_unk1FC -= arg1;
+    if (m_unk1FC < 0x46) {
+        if (m_unk250 == 0) {
+            m_unk250 = CreateDamageFx__15EntityBaseClassFfUi(this, 60.0f, 0);
+        }
+    }
+    if (m_unk1FC < 0x19) {
+        if (m_unk250 != 0) {
+            ChangeDamageFxInterval__15EntityBaseClassFUif(this, m_unk250, 15.0f);
+        }
+    }
+    PlaySound__15EntityBaseClassFUi(this, 0x12A);
+    if (m_unk1FC > 0) {
+        s0 = 1;
+        a1 = 0xC;
+    } else {
+        a1 = 0xC;
+        if ((s0 & -0x5C1) == 0xF) {
+            a1 = 0xE;
+            s0 = 2;
+        } else if ((s0 & 0x48) == 0x48) {
+            a1 = 0xE;
+            s0 = 2;
+        } else if (m_unk254 != 0) {
+            a1 = 0xF;
+            s0 = 2;
+        } else if (m_unk1B0 == 1) {
+            a1 = (m_unk244 == 1 || m_unk244 == 2) ? 0xF : 0xE;
+            s0 = 2;
+        } else {
+            a1 = 0xE;
+            s0 = 2;
+        }
+    }
+    if (m_unk1B0 == 1 && m_unk244 == 2) {
+        s0 = 2;
+        a1 = 0xF;
+    }
+    SetState__15EntityBaseClassFi(this, a1);
+    return s0;
 }
 
 // FUNCTION: 0x001E8CF0 __dt__16ClockworkStingerFv

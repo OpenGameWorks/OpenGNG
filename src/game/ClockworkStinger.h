@@ -4,6 +4,7 @@
 #include "types.h"
 
 class PMNode;
+class EntityBaseClass;
 
 class ClockworkStinger {
 public:
@@ -18,14 +19,18 @@ public:
     int IsStalled(float arg0, float (*arg1)[4]);
     int MoveTo(float (*arg0)[4]);
     void DetermineStateChange();
+    int OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3);
 
     char _pad000[4];
     unsigned int m_unk4;            // 0x004 timer argument for CreateTimer
     char _pad008[0x20 - 0x08];
     int m_unk20;                    // 0x020 state
-    char _pad024[0x3C - 0x24];
+    char _pad024[0x38 - 0x24];
+    void *m_unk38;                  // 0x038 sequence owner, GetSequenceState chain
     PMNode *m_unk3C;                // 0x03C animation node
-    char _pad040[0x103 - 0x40];
+    char _pad040[0xF4 - 0x40];
+    int m_unkF4;                    // 0x0F4 flag tested in OnHitEvent
+    char _padF8[0x103 - 0xF8];
     unsigned char m_unk103;         // 0x103 ctor default 0x10
     int m_unk104;                   // 0x104 ctor default 2.0f
     int m_unk108;                   // 0x108 ctor default 1.5f
