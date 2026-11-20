@@ -46,6 +46,7 @@ public:
     int GameSelect();
     void Options();
     void GameOptions();
+    void GameOver();
     void MapscreenPrintInfo(FontManager *arg0, int arg1);
 
     char _pad000[0xD0];

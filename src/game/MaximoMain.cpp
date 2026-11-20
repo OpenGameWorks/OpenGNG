@@ -118,6 +118,45 @@ extern "C" int PlayMovie__9MaxEngineFiiUi(void *, int, int, unsigned int);
 extern "C" void StopAllSounds__6PSoundFv(void *);
 extern "C" void Unload__15PCutScenePlayerFb(void *, int);
 extern float GAME_FPS;
+extern unsigned char gUnitMatrix[64];
+extern unsigned char lit_002403B0[128];
+extern u_long128 lit_00240380;
+extern u_long128 lit_00240390;
+extern u_long128 lit_002403A0;
+extern u_long128 lit_003016E0;
+extern u_long128 lit_003016F0;
+extern "C" void sceVu0AddVector(void *pDst, void *pA, void *pB);
+extern "C" void sceVu0MulVector(void *pDst, void *pA, void *pB);
+extern "C" void StopAllRegularSounds__6PSoundFv(void *pThis);
+extern "C" int Init__13PScreenBlurFxFfffffffb(void *pThis, float, float, float, float, float, float, float, bool);
+extern "C" void __ct__13PScreenBlurFxFv(void *pThis);
+extern "C" void *__dt__13PScreenBlurFxFv(void *pThis, short nFlag);
+extern "C" void Animate__13PScreenBlurFxFf(void *pThis, float fStep);
+extern "C" void Render__13PScreenBlurFxFv(void *pThis);
+extern "C" void SkipToFadeOut__13PScreenBlurFxFv(void *pThis);
+extern "C" void BeginFxRender__10PGfxEngineFv(void *pThis);
+extern "C" void EndFxRender__10PGfxEngineFv(void *pThis);
+extern "C" void BeginSprites__10PGfxEngineFv(void *pThis);
+extern "C" void EndSprites__10PGfxEngineFv(void *pThis);
+extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *pThis, int nTex, void *pVec, bool bFlag, unsigned int nA, unsigned int nB);
+extern "C" void SetScreenMatrix__10PGfxEngineFP5PMat4(void *pThis, void *pMat);
+extern "C" void SetViewMatrix__10PGfxEngineFP5PMat4(void *pThis, void *pMat);
+extern "C" void SetClipMatrix__10PGfxEngineFP5PMat4(void *pThis, void *pMat);
+extern "C" void DrawSprites__10PGfxEngineFP11tagVuSpriteib(void *pThis, void *pSprites, int nA, bool bFlag);
+// GameOver frame: PScreenBlurFx at 0x50, four-float vectors at 0x8500..0x8550, sprite table at 0x8550.
+union GameOverVec4 {
+    u_long128 q;
+    float f[4];
+};
+struct GameOverFrame {
+    char blur[0x84B0];
+    GameOverVec4 v8500;
+    GameOverVec4 v8510;
+    GameOverVec4 v8520;
+    GameOverVec4 v8530;
+    GameOverVec4 v8540;
+    unsigned char sprites[0x80];
+};
 struct PMChildList {
     unsigned int count;     // child count
     unsigned int m_unk4;
@@ -425,6 +464,122 @@ void MaximoMain::RefreshOptionsValue(MemorySetting *arg0, bool arg1) {
             SetColor__8FontNodeF9FontColor(m_unk19B08, 4);
         }
     }
+}
+
+// DRAFT: 0x00136BD0 GameOver__10MaximoMainFv
+// note: 331 words differ: frame is 0x8630 vs 0x85D0 (saves s3..s7 and fp, the frame base and vector addresses kept live across calls, where the original recomputes sp+N); this kept in s3 not s2; fAcc multiply sits before the ctor call. Tried ctor first (358 words, worse).
+void MaximoMain::GameOver()
+{
+    GameOverFrame frame;
+    PMNode *pTex;
+    float fAcc;
+    float fStep;
+    float fTwo;
+    int nState;
+    int nLeft;
+    unsigned char *pSrc;
+    unsigned char *pDst;
+    u_long128 qTemp;
+
+    fAcc = 4.0f * GAME_FPS;
+    __ct__13PScreenBlurFxFv(&frame);
+    frame.v8500.q = lit_00240380;
+    frame.v8510.q = lit_003016E0;
+    fStep = 4.0f * GAME_FPS;
+    frame.v8510.f[3] = 1.0f / fStep;
+    frame.v8520.q = lit_00240390;
+    frame.v8530.q = lit_002403A0;
+    frame.v8540.q = lit_003016F0;
+    frame.v8540.f[0] = 0.4f / fStep;
+
+    pSrc = lit_002403B0;
+    pDst = frame.sprites;
+    nLeft = 4;
+    do {
+        nLeft--;
+        qTemp = *(u_long128 *)(pSrc + 0x10);
+        *(u_long128 *)pDst = *(u_long128 *)pSrc;
+        pSrc += 0x20;
+        *(u_long128 *)(pDst + 0x10) = qTemp;
+        pDst += 0x20;
+    } while (nLeft > 0);
+
+    pTex = GetResource__16PResourceManagerFUib((char *)this + 0x137E0 + 0x50C4, 0x840001B8U, false);
+    fTwo = 2.0f * GAME_FPS;
+    Init__13PScreenBlurFxFfffffffb(&frame, fTwo, fAcc, fTwo, 129.0f, 129.0f, 129.0f, 96.0f, true);
+    StopAllRegularSounds__6PSoundFv(gSound);
+    nState = 0;
+loop_3:
+    switch (nState) {
+    case 3:
+        break;
+    case 0:
+        nState = 2;
+        Destroy__9InterfaceFv(gInterface);
+        FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 2.125f, true, 0);
+        SetMainMusicRelVolume__6PSoundFUi(gSound, gMC[0x21D]);
+        PlayMusic__6PSoundFUi(gSound, 0x1C);
+    default:
+    block_17:
+        if (nState > 0) {
+            if (!(fAcc <= 0.0f)) {
+                fAcc -= 1.0f;
+            } else {
+                fAcc = 0.0f;
+            }
+        }
+        if ((frame.v8500.f[3] < 1.0f) || !(frame.v8500.f[3] <= 0.0f)) {
+            sceVu0AddVector(&frame.v8500, &frame.v8500, &frame.v8510);
+            if (frame.v8520.f[3] < 1.0f) {
+                sceVu0AddVector(&frame.v8530, &frame.v8530, &frame.v8540);
+                sceVu0MulVector(&frame.sprites[0x30], &frame.v8520, &frame.v8530);
+            }
+        }
+        this->m_unk19AD8 = RenderSkybox__9MaxEngineFi(this, 3);
+        RenderWorld__9MaxEngineFib(this, 3, false);
+        this->m_unk19AD8 += Render__13EntityManagerFP13PLightManager((char *)this + 0x137E0, (char *)this + 0x1F0);
+        RenderParticleFx__9MaxEngineFP6Camerai8ePSLayer(this, (char *)this + 0x19760, 3, 2);
+        Animate__13PScreenBlurFxFf(&frame, 1.0f);
+        Render__13PScreenBlurFxFv(&frame);
+        Render__9InterfaceFi(gInterface, 0);
+        BeginFxRender__10PGfxEngineFv(gGfxEng);
+        SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, (int)pTex, &frame.v8500, true, 0x48, 0x50000);
+        SetScreenMatrix__10PGfxEngineFP5PMat4(gGfxEng, gInterface);
+        SetViewMatrix__10PGfxEngineFP5PMat4(gGfxEng, gInterface + 0x40);
+        SetClipMatrix__10PGfxEngineFP5PMat4(gGfxEng, gEng + 0x50);
+        SetWorldMatrix__10PGfxEngineFP5PMat4(gGfxEng, gUnitMatrix);
+        BeginSprites__10PGfxEngineFv(gGfxEng);
+        DrawSprites__10PGfxEngineFP11tagVuSpriteib(gGfxEng, frame.sprites, 2, true);
+        EndSprites__10PGfxEngineFv(gGfxEng);
+        EndFxRender__10PGfxEngineFv(gGfxEng);
+        InitRenderFrame__9MaxEngineFbUi(this, false, 0);
+        goto loop_3;
+    case 1:
+        if (gInterface[0x425] == 0) {
+            nState += 1;
+        }
+        goto block_17;
+    case 2:
+        if ((fAcc == 0.0f) || (*(unsigned short *)(gPad + 0x110) & 0x1000)) {
+            SkipToFadeOut__13PScreenBlurFxFv(&frame);
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 2.125f, true, 0);
+            nState += 1;
+            frame.v8510.f[3] = -frame.v8510.f[3];
+        }
+        goto block_17;
+    }
+    if (gInterface[0x425] != 0) {
+        goto block_17;
+    }
+    if (!(frame.v8500.f[3] <= 0.0f)) {
+        goto block_17;
+    }
+    SetMainMusicRelVolume__6PSoundFUi(gSound, gMC[0x21C]);
+    Destroy__9InterfaceFv(gInterface);
+    Reset__13EntityManagerFb((char *)this + 0x137E0, true);
+    Destroy__9MaxEngineFv(this);
+    gGfxEng[0x158E26] = 1;
+    __dt__13PScreenBlurFxFv(&frame, -1);
 }
 
 // DRAFT: 0x00137190 GameOptions__10MaximoMainFv
