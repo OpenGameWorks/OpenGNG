@@ -119,6 +119,8 @@ public:
     void DelinkAmbientEntry(AmbientEntry *pEntry);
     int PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag);
     AmbientEntry *FindAmbientEntry(unsigned int nID);
+    int StartAESoftwareFadeout(unsigned int nID, unsigned int nArg);
+    int StartAESoftwareFadeout(AmbientEntry *pEntry, unsigned int nArg);
     int IsAmbientSoundBySoundRef(unsigned int nSoundRef);
     int TranslateIntoADSR(unsigned int nArg);
     void PSoundLevelClear();
@@ -132,7 +134,9 @@ public:
     int PlaySoundPMNode(unsigned int p0, unsigned int p1, const PMNode *pNode);
     int StopAllRegularSounds();
     void StopStreamsAndRequestEEControl();
+    int GetEEControlStatus();
     int DebugPlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int p2);
+    void DebugClearPlayedInGame();
     void PSoundReInitRegularSounds();
     void SetEEControlOfIOP(unsigned int nMode);
     void Resume();
@@ -147,7 +151,8 @@ public:
     void SoundEditEnter();
     unsigned int FindFadingAmbientChannel();
 
-    char _pad000[0x01C];
+    int m_unk00;            // 0x000, GetEEControlStatus tests it
+    char _pad004[0x01C - 0x004];
     unsigned int m_unk1C;   // 0x01C, PlayMusic stores its argument
     char _pad020[0x024 - 0x020];
     unsigned int m_unk024;  // 0x024
@@ -180,7 +185,9 @@ public:
     int m_unk2E48;          // 0x2E48, SoundEditLeave copies 0x2E4C here
     int m_unk2E4C;          // 0x2E4C, SoundEditLeave/Enter category mask
     int m_unk2E50[4];       // 0x2E50, PSoundStopDialog zeroes 0x2E50..0x2E5C
-    char _pad2E60[0x2EB4 - 0x2E60];
+    char _pad2E60[0x2E74 - 0x2E60];
+    int m_unk2E74;          // 0x2E74, GetEEControlStatus stores its result
+    char _pad2E78[0x2EB4 - 0x2E78];
     char m_unk2EB4[0x2580]; // 0x2EB4, 400 SpotInfo records of 0x18 bytes, GetSpotInfo scans them
     char _pad5434[0x5438 - 0x5434];
     unsigned int m_unk5438; // 0x5438, SetProposedReverbParams arg 0

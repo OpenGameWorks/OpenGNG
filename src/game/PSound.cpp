@@ -1,7 +1,8 @@
-// FLAGS: -Cpp_exceptions off
+// FLAGS: -Cpp_exceptions off -str readonly
 #include "PSound.h"
 
 // TODO(header): foreign declarations
+void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern "C" void SOUND_StopAllSounds();
 extern "C" void SOUND_SetGlobalRelVols(int, int, int, int, int, int, int, int);
 extern int fst_ReverbRecProposed[5];
@@ -20,11 +21,29 @@ extern "C" int SOUND_StopStream(unsigned int);
 extern int fst_ADSR_Translate_Attack[16];
 extern int fst_ADSR_Translate_Release[16];
 extern char fst_Usage[24000];
+extern int fst_dialogSpecialVol;
+extern int gSOUND_EEControl;
+extern int gSOUND_EEControlReqCallCnt;
+extern int gSOUND_uEECallCntReturned;
 
 // FUNCTION: 0x001A3C70 AddAEToFreeList__6PSoundFPQ26PSound12AmbientEntry
 void PSound::AddAEToFreeList(AmbientEntry *pEntry) {
     pEntry->Init();
     InsertAEAtHead(&m_unkF4, pEntry);
+}
+
+// FUNCTION: 0x001A3D80 InsertAEAtHead__6PSoundFPPQ26PSound12AmbientEntryPQ26PSound12AmbientEntry
+void PSound::InsertAEAtHead(AmbientEntry **ppHead, AmbientEntry *pEntry) {
+    if (ppHead != 0 && pEntry != 0) {
+        AmbientEntry *pTemp = *ppHead;
+        pEntry->m_unk50 = pTemp;
+        if (pTemp != 0) {
+            pTemp->m_unk54 = pEntry;
+        }
+        *ppHead = pEntry;
+        return;
+    }
+    CdsAssert("PSound.cpp", 0x2562, "0");
 }
 
 // FUNCTION: 0x001A3E60 LinkAmbientEntry__6PSoundFPQ26PSound12AmbientEntryPQ26PSound12AmbientEntry
@@ -74,6 +93,24 @@ unsigned int PSound::FindFadingAmbientChannel() {
         p += 8;
     }
     return -1U;
+}
+
+// FUNCTION: 0x001A4340 SetMainMusicSpecialVolume__6PSoundFQ26PSound20EnumMusicSpecialVols
+void PSound::SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol) {
+    int nVol = 0x3E8;
+    if ((int)eVol == 0) {
+        m_unk40 = nVol;
+    } else {
+        if ((int)eVol == 1) {
+            nVol = 0x1F4;
+        } else if ((int)eVol == 2) {
+            nVol = fst_dialogSpecialVol;
+        } else if ((int)eVol == 3) {
+            nVol = 0x64;
+        }
+        m_unk40 = nVol;
+    }
+    InternalUpdateRelVolumes();
 }
 
 // FUNCTION: 0x001A4390 AbilityScreenLeave__6PSoundFv
@@ -222,6 +259,16 @@ int PSound::IsAmbientSoundByID(unsigned int nID) {
     return (pInfo->m_unk0C & 2) != 0;
 }
 
+// FUNCTION: 0x001A8B30 StartAESoftwareFadeout__6PSoundFUiUi
+int PSound::StartAESoftwareFadeout(unsigned int nID, unsigned int nArg) {
+    AmbientEntry *pEntry = FindAmbientEntry(nID);
+
+    if (pEntry != 0) {
+        return StartAESoftwareFadeout(pEntry, nArg);
+    }
+    return 1;
+}
+
 // DRAFT: 0x001A8FA0 GetSpotInfo__6PSoundFUi
 // note: 13 words differ; original keeps the scan pointer in a0 (in-place addiu from this) and the end in a2, ours puts the pointer in v0 and the end in a0; byte cursor, SpotInfo cursor, for, do-while and while forms tried, best 13
 PSound::SpotInfo *PSound::GetSpotInfo(unsigned int nID) {
@@ -349,6 +396,22 @@ int PSound::PlayMusic(unsigned int nTrack) {
 void PSound::PSoundFlushIOPCommandsWaitFinish() {
     FlushIOPCommand(0, *(int *)(gEng + 0x19A80), *(int *)(gEng + 0x137A4));
     SOUND_CopyIOPBuffer();
+}
+
+// FUNCTION: 0x001A9B10 GetEEControlStatus__6PSoundFv
+int PSound::GetEEControlStatus() {
+    int nStatus = 3;
+
+    if (m_unk00 == 0) {
+        m_unk2E74 = nStatus;
+    } else if (gSOUND_uEECallCntReturned == 0) {
+        m_unk2E74 = 0;
+    } else if ((unsigned int)gSOUND_uEECallCntReturned >= (unsigned int)gSOUND_EEControlReqCallCnt) {
+        m_unk2E74 = gSOUND_EEControl;
+    } else {
+        m_unk2E74 = 1;
+    }
+    return m_unk2E74;
 }
 
 // FUNCTION: 0x001A9B60 StopStreamsAndRequestEEControl__6PSoundFv
@@ -493,6 +556,24 @@ void PSound::UsageInit() {
     if (p < end) {
         do {
             *p = -1;
+            p += 5;
+        } while (p < end);
+    }
+}
+
+// FUNCTION: 0x001AB330 DebugClearPlayedInGame__6PSoundFv
+void PSound::DebugClearPlayedInGame() {
+    int *p = (int *)fst_Usage;
+    int *end = (int *)(fst_Usage + 0x6DC0);
+    if (p < end) {
+        do {
+            if (p[0] == -1) {
+                break;
+            }
+            p[1] = 0;
+            p[2] = 0;
+            p[4] = 0;
+            p[3] = 0;
             p += 5;
         } while (p < end);
     }
