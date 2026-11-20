@@ -193,6 +193,7 @@ extern int SCREEN_HEIGHT;
 // PMat4 member; the call passes the matrix object as pThis. PMat4.h has no declaration for it.
 extern "C" void MakeParallelProjectionMatrix__5PMat4Fffffffffffff(void *pThis, float, float, float, float, float, float, float, float, float, float, float, float);
 extern "C" void EnableAllText__11FontManagerFb(void *pThis, bool bFlag);
+extern "C" void SetColor__8FontNodeF9FontColor(void *pThis, int nColor);
 extern "C" void *DisplayString__11FontManagerFPcffi9FontColor9FontAlign(void *pThis, char *pStr, float fX, float fY, int nZ, int nColor, int nAlign);
 extern "C" unsigned short *JapanAddNumber__11FontManagerFPUsPUsi(unsigned short *pDst, unsigned short *pSrc, int nVal);
 extern "C" int printf(const char *fmt, ...);
@@ -1797,6 +1798,87 @@ HudInventory::HudInventory() {
 GameHud::~GameHud() {
     m_unk0 = __vt__7GameHud;
     ((PVirtObj *)this)->Slot01();
+}
+
+// DRAFT: 0x00143840 HintScreen__7HudHintFv
+// note: DIFF 199 words; first difference at 0x20 (switch dispatch is a beq chain 4,3,2,1,0, ours differs), prologue differs (original has a 0x50 frame and zeroes s0 first, ours 0x40), and gInterface is loaded with lui $a0,0 where the original has lui 0x30 plus reloc. Tried: fm in case 3 (199), single ret variable with breaks (219), symbol-relative gInterface offsets (199).
+int HudHint::HintScreen() {
+    int s0;
+    switch (m_unk0) {
+    case 0:
+        if (gInterface.m_unk425 == 0) {
+            m_unk0 = 1;
+            gInterface.FadeScreen(0.0f, 17.0f, true, Interface::eFadeColor_Value0);
+            gInterface.m_unk1C0 = 0xD5;
+            EnableBG(false);
+            InitHint();
+        }
+        return 0;
+    case 1:
+        if (gInterface.m_unk425 == 0) {
+            m_unk0 = 2;
+        }
+        m_unkB4->Slot04(0.0f, 1.0f, 0, 0, false);
+        return 0;
+    case 2:
+        s0 = gPad.ReadPush() & 0xFFFF;
+        if (s0 & 0x1000) {
+            m_unk0 = 3;
+            gInterface.FadeScreen(255.0f, 17.0f, true, Interface::eFadeColor_Value0);
+        } else if (s0 & 0x50) {
+            int oldIdx;
+            int var;
+            int page;
+            char *base = (char *)this;
+            int s2;
+            int s0b;
+            gSound.PlaySoundUbiquitous(0x3D);
+            oldIdx = m_unkC;
+            var = oldIdx + (((s0 & 0x40) == 0) ? -1 : 1);
+            if (var >= m_unkB0) {
+                var = m_unkB0 - 1;
+                if ((s0 & 0x40) != 0) {
+                    var = 0;
+                }
+            }
+            page = var / 5;
+            m_unkC = var;
+            if (page != oldIdx / 5) {
+                DisplayTitle(page * 5);
+            } else {
+                s2 = (oldIdx % 5) * 8;
+                SetColor__8FontNodeF9FontColor(*(void **)(base + 0x10 + s2), 7);
+                SetColor__8FontNodeF9FontColor(*(void **)(base + 0x14 + s2), 7);
+                s0b = (var % 5) * 8;
+                SetColor__8FontNodeF9FontColor(*(void **)(base + 0x10 + s0b), 4);
+                SetColor__8FontNodeF9FontColor(*(void **)(base + 0x14 + s0b), 4);
+            }
+            WriteHint();
+        }
+        m_unkB4->Slot04(0.0f, 1.0f, 0, 0, false);
+        return 0;
+    case 3:
+        if (gInterface.m_unk425 == 0) {
+            m_unk0 = 4;
+            gInterface.FadeScreen(0.0f, 17.0f, true, Interface::eFadeColor_Value1);
+            gInterface.m_unk1C0 = m_unk4 | 0x10;
+            EnableBG(true);
+            FontManager *fm = (FontManager *)((char *)&gInterface + 0x80);
+            fm->RemoveText((unsigned short)0);
+            fm->RemoveText((unsigned short)0x14);
+            EnableAllText__11FontManagerFb(fm, true);
+        }
+        m_unkB4->Slot04(0.0f, 1.0f, 0, 0, false);
+        return 0;
+    case 4:
+        if (gInterface.m_unk425 == 0) {
+            gInterface.m_unk1C0 = m_unk4;
+            return 1;
+        }
+        return 0;
+    default:
+        return 0;
+    }
 }
 
 // DRAFT: 0x143BC0 EnableBG__7HudHintFb

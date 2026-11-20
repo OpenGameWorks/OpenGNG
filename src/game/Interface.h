@@ -95,6 +95,7 @@ public:
     void WriteHint();
     void InitNode(PMeshNode *node);
     void EnableBG(bool arg0);
+    int HintScreen();
 
     int m_unk0;                 // 0x000
     int m_unk4;                 // 0x004
