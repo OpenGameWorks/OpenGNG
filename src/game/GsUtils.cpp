@@ -3,22 +3,90 @@
 #include "GsUtils.h"
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pExpr, int nLine, char *pFile);
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("GsUtils.cpp", line, #cond))
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void sceGsPutDispEnv(void *pEnv);
 extern "C" void sceGsPutDrawEnv(void *pEnv);
 extern int SCREEN_OFFSET_X;
 extern int SCREEN_OFFSET_Y;
 extern int SCREEN_HEIGHT;
+struct sceGifPacket {
+    unsigned int m_unk0;
+    unsigned int m_unk4;
+    unsigned int m_unk8;
+    unsigned int m_unkC;
+};
+struct GsDmaTag {
+    unsigned long long m_unk0;
+    unsigned int m_unk8;
+    unsigned int m_unkC;
+};
+extern "C" void sceGifPkInit(sceGifPacket *pPk, unsigned int nFlags);
+extern "C" void sceGifPkReset(sceGifPacket *pPk);
+extern "C" void sceGifPkAddGsData(sceGifPacket *pPk, unsigned long long nData);
+extern "C" void sceGifPkTerminate(sceGifPacket *pPk);
+extern "C" unsigned int sceGifPkSize(sceGifPacket *pPk);
+extern "C" int sceGsSyncPath(int nMode, int nWait);
+void DmaSendSrcChain(int nChannel, void *pData, bool bWait, bool bFlag, bool bTte);
+extern "C" int sprintf(char *pDst, const char *pFmt, ...);
+extern "C" int printf(const char *pFmt, ...);
+extern "C" int sceOpen(const char *pName, int nFlags);
+extern "C" int sceWrite(int nFd, void *pBuf, int nSize);
+extern "C" int sceClose(int nFd);
+void Vif1DmaFrameBuffer(u_long128 *pBuf, short nA, short nB, short nC, short nD, short nE, short nF, short nG);
+extern int guGrabFrameNumber;
+extern int SCREEN_WIDTH;
+extern u_long128 *gpFrameGrabBuf1;
+extern u_long128 *gpFrameGrabBuf2;
 
 // FUNCTION: 0x0017D750 GsInitClut256__FP12tagGsClut256
 void GsInitClut256(tagGsClut256 *pClut) {
-    if (pClut == 0) {
-        CdsAssert__FPciPc("pClut", 0x599, "GsUtils.cpp");
-    }
+    CDS_ASSERT(0x599, pClut);
     memset(pClut, 0, 0x460);
     pClut->m_unk50 = 0;
     *(long long *)&pClut->m_unk50 = 0x0800000000008040LL;
+}
+
+// DRAFT: 0x0017DB90 GsClearVRAM__FUcUcUcUcsss
+// note: DIFF 56 words; prologue copies nA/nX/nY into s6/s2/s1 in the wrong order (ours nY/nA/nX), which shifts the width term and scissor word; tried scissor operand order, nXi first, nA-first colour OR, and nY<<20 final term (no drop)
+void GsClearVRAM(unsigned char nR, unsigned char nG, unsigned char nB, unsigned char nA, short nX, short nY, short nW) {
+    sceGifPacket pk;
+    sceGifPkInit(&pk, 0x70001000);
+    sceGifPkReset(&pk);
+    sceGifPkAddGsData(&pk, (0x10000000ULL << 32) | 0x800B);
+    sceGifPkAddGsData(&pk, 0xE);
+    sceGifPkAddGsData(&pk, 1);
+    sceGifPkAddGsData(&pk, 0x1A);
+    int nXi = nX;
+    sceGifPkAddGsData(&pk, (long long)(nXi / 64) << 16);
+    sceGifPkAddGsData(&pk, 0x4C);
+    sceGifPkAddGsData(&pk, (1ULL << 32) | 0x31000180);
+    sceGifPkAddGsData(&pk, 0x4E);
+    sceGifPkAddGsData(&pk, 0);
+    sceGifPkAddGsData(&pk, 0x18);
+    sceGifPkAddGsData(&pk, ((long long)nX << 16) | ((long long)nY << 48));
+    sceGifPkAddGsData(&pk, 0x40);
+    sceGifPkAddGsData(&pk, 0x30000);
+    sceGifPkAddGsData(&pk, 0x47);
+    sceGifPkAddGsData(&pk, 0x44);
+    sceGifPkAddGsData(&pk, 0x42);
+    sceGifPkAddGsData(&pk, 6);
+    sceGifPkAddGsData(&pk, 0);
+    sceGifPkAddGsData(&pk, (unsigned long long)nR | ((unsigned long long)nG << 8) | ((unsigned long long)nB << 16) | ((unsigned long long)nA << 24) | (0x3F800000ULL << 32));
+    sceGifPkAddGsData(&pk, 1);
+    sceGifPkAddGsData(&pk, 0);
+    sceGifPkAddGsData(&pk, 4);
+    sceGifPkAddGsData(&pk, (((long long)nY << 4) << 16) | (long long)(nXi << 4));
+    sceGifPkAddGsData(&pk, 4);
+    sceGifPkTerminate(&pk);
+    unsigned int nSize = sceGifPkSize(&pk);
+    GsDmaTag tag;
+    tag.m_unk0 = ((unsigned long long)pk.m_unk4 << 32) | 0x8000000000000000ULL | nSize;
+    tag.m_unk8 = 0;
+    tag.m_unkC = 0;
+    DmaSendSrcChain(2, &tag, false, false, true);
+    sceGsSyncPath(0, 0);
 }
 
 // FUNCTION: 0x0017E280 FudgeBytesToBMPFormat__FPciiff
@@ -29,6 +97,75 @@ void FudgeBytesToBMPFormat(char *pBuf, int nWidth, int nHeight, float fA, float 
         p[0] = p[2];
         p[2] = c;
     }
+}
+
+#pragma pack(1)
+struct BmpFileHeader {
+    unsigned short m_unk0;
+    unsigned int m_unk2;
+    unsigned short m_unk6;
+    unsigned short m_unk8;
+    unsigned int m_unkA;
+};
+#pragma pack()
+
+struct BmpInfoHeader {
+    unsigned int m_unk0;
+    int m_unk4;
+    int m_unk8;
+    unsigned short m_unkC;
+    unsigned short m_unkE;
+    unsigned int m_unk10;
+    unsigned int m_unk14;
+    unsigned int m_unk18[4];
+};
+
+// DRAFT: 0x0017E2C0 GsDumpFrameBuffersAsBmp__Fii
+// note: DIFF 6 words: the second FudgeBytesToBMPFormat call reloads a2=3 (original reuses it), and the nOff-branch block at 0x1DC has an extra nop. Tried: loop var before offset (fixed s3/s4 swap), nOff update before printf (fixed delay slot), `!nA == !nB` (broke prologue).
+void GsDumpFrameBuffersAsBmp(int nA, int nB) {
+    BmpInfoHeader ih;
+    char szName[0x80];
+    BmpFileHeader fh;
+    guGrabFrameNumber++;
+    sprintf(szName, "host:Frame%06d.bmp", guGrabFrameNumber);
+    int fd = sceOpen(szName, 0x602);
+    fh.m_unk0 = 0x4D42;
+    fh.m_unk2 = SCREEN_WIDTH * (SCREEN_HEIGHT * 2) * 3 + 0x36;
+    fh.m_unk6 = 0;
+    fh.m_unk8 = 0;
+    fh.m_unkA = 0x36;
+    memset(&ih, 0, 0x28);
+    ih.m_unk0 = 0x28;
+    ih.m_unkC = 1;
+    ih.m_unk10 = 0;
+    ih.m_unkE = 0x18;
+    ih.m_unk4 = SCREEN_WIDTH;
+    ih.m_unk8 = SCREEN_HEIGHT * 2;
+    ih.m_unk14 = SCREEN_WIDTH * (SCREEN_HEIGHT * 2) * 3;
+    sceWrite(fd, &fh, 0xE);
+    sceWrite(fd, &ih, 0x28);
+    u_long128 *pBuf1 = gpFrameGrabBuf1;
+    u_long128 *pBuf2 = gpFrameGrabBuf2;
+    Vif1DmaFrameBuffer(pBuf1, 0, 1, 0, 0, 0x280, 0xE0, 0x280);
+    Vif1DmaFrameBuffer(pBuf2, (short)((SCREEN_WIDTH * SCREEN_HEIGHT) / 64), 1, 0, 0, 0x280, 0xE0, 0x280);
+    int i;
+    int nOff = 0x68880;
+    for (i = 0; i < 0xE0; i++) {
+        char *pS1 = (char *)pBuf1 + nOff;
+        FudgeBytesToBMPFormat(pS1, 0x280, 3, 0.3f, 0.3f);
+        char *pS2 = (char *)pBuf2 + nOff;
+        FudgeBytesToBMPFormat(pS2, 0x280, 3, 0.3f, 0.3f);
+        if ((!nA && !nB) || (nA && nB)) {
+            sceWrite(fd, pS1, 0x780);
+            sceWrite(fd, pS2, 0x780);
+        } else {
+            sceWrite(fd, pS2, 0x780);
+            sceWrite(fd, pS1, 0x780);
+        }
+        nOff -= 0x780;
+        printf("written line:%d\n", i);
+    }
+    sceClose(fd);
 }
 
 // FUNCTION: 0x0017E820 GsSetSpriteCoords__FP10sprite_tagssssiiiis
@@ -111,9 +248,7 @@ int GsSwapDBuff(sceGsDBuff *pDBuff, int nIdx) {
 // DRAFT: 0x0017FA80 GsSetFrameBufferCopyInfo__FP20tagGsFrameBufferCopyii
 // note: 48 diff words; the compiler copies args into s1/s0/s2 in a different order from the original (pInfo s2, nX s1, nY s0); the 64-bit masks and sign-extension match; tried int-first vs mask-first order (no change)
 void GsSetFrameBufferCopyInfo(tagGsFrameBufferCopy *pInfo, int nX, int nY) {
-    if (pInfo == 0) {
-        CdsAssert__FPciPc("pInfo", 0x18B, "GsUtils.cpp");
-    }
+    CDS_ASSERT(0x18B, pInfo);
     int nV = nY >> 13;
     pInfo->m_unkC0 &= 0xFFFFFFFFFFFFFE00LL;
     if (nY < 0) {
@@ -131,9 +266,7 @@ void GsSetFrameBufferCopyInfo(tagGsFrameBufferCopy *pInfo, int nX, int nY) {
 // DRAFT: 0x001800A0 GsSetTCC__FP23tagGsTextureEnvironmentb
 // note: DIFF 4 words; byte load (lbu a1) matches, but the bit term and ~4 mask swap registers (a0/v1); tried 8 operand and declaration orders
 void GsSetTCC(tagGsTextureEnvironment *pTexEnv, bool bFlag) {
-    if (pTexEnv == 0) {
-        CdsAssert__FPciPc("pTexEnv", 0x10E, "GsUtils.cpp");
-    }
+    CDS_ASSERT(0x10E, pTexEnv);
     unsigned int nOld = pTexEnv->m_unk34;
     unsigned int nBit = ((unsigned int)bFlag & 1u) << 2;
     pTexEnv->m_unk34 = (nOld & ~4u) | nBit;
