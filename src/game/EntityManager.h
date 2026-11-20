@@ -6,6 +6,7 @@
 class PMNode;
 class PMeshNode;
 class TimerAPI;
+class CEifFile;
 
 struct BGAnimNode {
     int m_unk00;                // 0x00 animation id, 0 ends the list
@@ -51,18 +52,22 @@ public:
     void *FindTrigger(unsigned int arg0, int arg1);
     void LoadApparitionData(int arg0);
     void Destroy(unsigned int arg0, unsigned int arg1);
+    void *SpawnEntity(unsigned int arg0, int arg1);
+    void *Spawn(unsigned int arg0, bool arg1, int arg2);
     void LoadOverlay(char *arg0, char *arg1);
     void Reset(bool arg0);
     void LoadResource(char *arg0, bool arg1);
     void AddToRenderList(struct EntityBaseClass *arg0);
     void RemoveFromRenderList(struct EntityBaseClass *arg0);
     int BGAnimIsReset(int arg0);
+    void EnableParticleFx(bool arg0);
     void UpdateSwordBGAnim();
     void ResetSwordBGAnim();
     void CheckSwordBGAnim(PMNode *pNode);
     void InitSwordBGAnimList(PMeshNode *pMesh);
     void SaveApparitionData(int arg0);
     void SetEifPosition(unsigned int arg0, unsigned int arg1, float (*arg2)[4]);
+    void ModifyEifPosition();
     void RunPhysics(float arg0);
     void ObjectCollision();
     void Process();
@@ -75,10 +80,12 @@ public:
 
     static void *mCameraAPI;    // MathAPI instance read by EntityBaseClass::CameraLookingAtMe
 
-    char _pad000[0x5054];
+    char _pad000[0x5050];
+    unsigned int m_unk5050;     // 0x5050 entity id counter, used by Spawn
     unsigned int m_unk5054;     // 0x5054 bound for dependency flag indices
     int m_unk5058;              // 0x5058 physics pass argument, not yet named
-    char _pad505C[0x5078 - 0x505C];
+    void *m_unk505C;            // 0x505C player entity, stored by Spawn for arg0 == 3
+    char _pad5060[0x5078 - 0x5060];
     unsigned int m_unk5078;     // 0x5078 PArray count of apparitions put to sleep
     int m_unk507C;              // 0x507C PArray index
     void **m_unk5080;           // 0x5080 PArray entries, removed by Destroy
@@ -94,8 +101,10 @@ public:
     void **m_unk50B8;           // 0x50B8 physics list entries, EntityBaseClass pointers
     char _pad50BC[0x50C0 - 0x50BC];
     void *m_unk50C0;            // 0x50C0 OverlayManager *, used by LoadOverlay
-    char _pad50C4[0x519C - 0x50C4];
-    int m_unk519C;              // 0x519C dependency count (max 0x40)
+    char _pad50C4[0x5194 - 0x50C4];
+    CEifFile *m_unk5194;        // 0x5194 CEifFile *, walked by ModifyEifPosition
+    char _pad5198[0x519C - 0x5198];
+    int m_unk519C;             // 0x519C dependency count (max 0x40)
     DependencyEntry m_unk51A0[0x40];    // 0x51A0 dependency list
     char _pad53A0[0x53A1 - 0x53A0];
     char m_unk53A1[0x5B24 - 0x53A1];    // 0x53A1 per-entry flag bytes, indexed by value*4
@@ -119,7 +128,11 @@ public:
     char _pad5B90[0x5D48 - 0x5B90];
     int m_unk5D48;              // 0x5D48 countdown, decremented by ProcessApparitions
     int m_unk5D4C;              // 0x5D4C cleared by LoadOverlay
-    char _pad5D50[0x5F74 - 0x5D50];
+    char _pad5D50[0x5F54 - 0x5D50];
+    void **m_unk5F54;           // 0x5F54 icon list entries, IconEntry pointers
+    char _pad5F58[0x5F5C - 0x5F58];
+    void **m_unk5F5C;           // 0x5F5C icon list cursor (node: [0] entry, [1] next)
+    char _pad5F60[0x5F74 - 0x5F60];
     float m_unk5F74[2];         // 0x5F74 indexed by ItemCounterType
 };
 

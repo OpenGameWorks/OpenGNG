@@ -8,8 +8,12 @@ class PHashTable {
 public:
     ~PHashTable();
     int Lookup(void *pKey, void *&pValue);
+    void Add(void *pKey, void *pValue);
     void *Remove(void *pKey);
 };
+
+class MathAPI;
+extern MathAPI *mPlayerAPI__13EntityManager;
 
 class PList {
 public:
@@ -30,7 +34,7 @@ public:
     virtual void Slot01();
     virtual void Slot02();
     virtual void Slot03();
-    virtual void Slot04();
+    virtual void Animate(float arg0, float arg1, PMat4 *arg2, int arg3, bool arg4);   // 0x18, virtual #4
     virtual void SetAllAnimFlags(AnimData *pData);   // 0x1C, virtual #5
     int CheckAnimated();
     void RecurseResetAnimByID(unsigned int arg0);
@@ -40,13 +44,18 @@ public:
 
     char _pad004[0x28 - 0x4];
     float (*m_unk28)[2][4];     // 0x28
-    char _pad02C[0x3C - 0x2C];
+    float m_unk2C;              // 0x2C
+    char _pad030[0x3C - 0x30];
     unsigned char m_unk3C;      // 0x3C
-    char _pad03D[0x40 - 0x3D];
+    char _pad03D[0x3F - 0x3D];
+    signed char m_unk3F;        // 0x3F, low 3 bits tested by ProcessIcons
     float m_unk40[4][4];        // 0x40
     char _pad080[0x110 - 0x80];
     float m_unk110[2][4];       // 0x110
 };
+
+extern "C" void DeleteMeshLayer__9InterfaceFP6PMNode(void *pThis, PMNode *pNode);
+extern unsigned char gInterface[2656];
 
 class PWorld {
 public:
@@ -215,6 +224,35 @@ public:
 
 extern char *mpEntMgr__15EntityBaseClass;   // pointer global, its target holds the Player at 0x505C
 
+extern "C" void EnableFx__6PMNodeFbb(PMNode *pNode, bool arg0, bool arg1);
+extern "C" void EnableFxByType__16PParticleManagerF7ePSTypeb(void *pMgr, int theType, bool arg0);
+class EffectAPI {
+public:
+    char _pad000[20];
+};
+extern "C" void EnableParticleFx__9EffectAPIFb(EffectAPI *pApi, bool arg0);
+extern EffectAPI mEffectAPI__13EntityManager;
+extern char gGfxEng[1504384];
+
+class CEifInstance {
+public:
+    int GetEntityID();
+    int GetInstanceID();
+    void SetStartPosition(float arg0, float arg1, float arg2);
+};
+
+class CEifInstanceGroup {
+public:
+    int GetNumInstances();
+    CEifInstance *GetInstanceData(int arg0);
+};
+
+class CEifFile {
+public:
+    int GetNumInstanceGroups();
+    CEifInstanceGroup *GetInstanceGroup(int arg0);
+};
+
 // DRAFT: 0x001460D0 BGAnimIsReset__13EntityManagerFi
 // note: 21 diffs; entry beqz targets differ (orig +0x1F to shared return-0, ours +0x1B); tried guard form, while form (34), local cursor (21), flipped cursor order (25), early return (30+)
 int EntityManager::BGAnimIsReset(int arg0) {
@@ -249,6 +287,62 @@ int EntityManager::BGAnimIsReset(int arg0) {
         } while (v != 0);
     }
     return 0;
+}
+
+struct ParticleSubList {
+    unsigned int m_unk00;
+    unsigned int m_unk04;
+    void **m_unk08;
+};
+
+struct ParticleNode {
+    char _pad00[8];
+    int m_unk08;
+    char _pad0C[0x3C - 0x0C];
+    PMNode *m_unk3C;
+};
+
+// DRAFT: 0x00146180 EnableParticleFx__13EntityManagerFb
+// note: 30 diffs, all register/index-reload; orig keeps new index in reg; tried swap found/i (30, kept), inner idx local (56), outer idx local (49)
+void EntityManager::EnableParticleFx(bool arg0) {
+    int keys[1] = { 3 };
+    ParticleSubList *pList;
+    ParticleNode *pNode;
+    PMNode *pChild;
+    int found;
+    int i;
+
+    this->m_unk50A4 = 0;
+    pList = (this->m_unk50A0 != 0) ? (ParticleSubList *)this->m_unk50A8[0] : 0;
+    if (pList != 0) {
+        do {
+            pList->m_unk04 = 0;
+            pNode = (pList->m_unk00 != 0) ? (ParticleNode *)pList->m_unk08[0] : 0;
+            if (pNode != 0) {
+                do {
+                    found = 0;
+                    for (i = 0; i < 1; i++) {
+                        if (pNode->m_unk08 == keys[i]) {
+                            found = 1;
+                            break;
+                        }
+                    }
+                    if (found == 0) {
+                        pChild = pNode->m_unk3C;
+                        if (pChild != 0) {
+                            EnableFx__6PMNodeFbb(pChild, arg0, 1);
+                        }
+                    }
+                    pList->m_unk04++;
+                    pNode = (pList->m_unk04 < pList->m_unk00) ? (ParticleNode *)pList->m_unk08[pList->m_unk04] : 0;
+                } while (pNode != 0);
+            }
+            this->m_unk50A4++;
+            pList = (this->m_unk50A4 < this->m_unk50A0) ? (ParticleSubList *)this->m_unk50A8[this->m_unk50A4] : 0;
+        } while (pList != 0);
+    }
+    EnableFxByType__16PParticleManagerF7ePSTypeb((void *)(gGfxEng + 0x154F00), 0x1A, arg0);
+    EnableParticleFx__9EffectAPIFb(&mEffectAPI__13EntityManager, arg0);
 }
 
 // DRAFT: 0x00146310 UpdateSwordBGAnim__13EntityManagerFv
@@ -579,6 +673,66 @@ void EntityManager::RestoreHolyGround() {
     }
 }
 
+struct IconEntry {
+    PMNode *m_unk00;            // 0x00 icon mesh node
+    char _pad04[8];
+    unsigned char m_unk0C;      // 0x0C active flag, gates the countdown
+    unsigned char m_unk0D;      // 0x0D live flag, clear means release the mesh
+    char _pad0E[2];
+    int m_unk10;                // 0x10 countdown
+    int m_unk14;                // 0x14 countdown total
+    unsigned char m_unk18;      // 0x18 scale-by-progress flag
+};
+
+// DRAFT: 0x00147040 ProcessIcons__13EntityManagerFv
+// note: 65 diffs; m_unk3F test lacks the original's sign-extend, release/countdown order, float-store reload and cursor-advance order differ; int cast on m_unk3F test did not change count
+void EntityManager::ProcessIcons() {
+    IconEntry *pEntry;
+    PMNode *pNode;
+
+    m_unk5F5C = m_unk5F54;
+    pEntry = m_unk5F54 ? (IconEntry *)*m_unk5F54 : 0;
+    if (pEntry != 0) {
+        do {
+            if (pEntry->m_unk0D != 0) {
+                pNode = pEntry->m_unk00;
+                pNode->Animate(0.0f, 1.0f, 0, 0, false);
+                if (pEntry->m_unk0C != 0) {
+                    if ((pNode->m_unk3F & 7) == 0) {
+                        if (pEntry->m_unk10 == 0) {
+                            DeleteMeshLayer__9InterfaceFP6PMNode(gInterface, pEntry->m_unk00);
+                            pEntry->m_unk00 = 0;
+                            pEntry->m_unk0D = 0;
+                        } else {
+                            pEntry->m_unk10 = pEntry->m_unk10 - 1;
+                            if (pEntry->m_unk18 != 0) {
+                                pEntry->m_unk00->m_unk2C = (float)pEntry->m_unk10 / (float)pEntry->m_unk14;
+                            }
+                        }
+                    }
+                }
+            } else {
+                pNode = pEntry->m_unk00;
+                if (pNode != 0) {
+                    DeleteMeshLayer__9InterfaceFP6PMNode(gInterface, pNode);
+                    pEntry->m_unk00 = 0;
+                }
+            }
+            if (m_unk5F5C == 0) {
+                m_unk5F5C = m_unk5F54;
+                pEntry = m_unk5F54 ? (IconEntry *)*m_unk5F54 : 0;
+            } else {
+                if (((void **)m_unk5F5C)[1] != 0) {
+                    m_unk5F5C = (void **)((void **)m_unk5F5C)[1];
+                    pEntry = (IconEntry *)((void **)m_unk5F5C)[0];
+                } else {
+                    pEntry = 0;
+                }
+            }
+        } while (pEntry != 0);
+    }
+}
+
 // DRAFT: 0x00147760 ValidateDependencyList__13EntityManagerFv
 // note: 7 lines; loop counter and byte offset swap registers (original keeps offset in a3 and counter in a1, ours offset a1 and counter a2); tried scoped counter (9 lines), unsigned offset (9 lines), counter-first ordering (7 lines, kept).
 void EntityManager::ValidateDependencyList() {
@@ -673,8 +827,8 @@ struct EifEntry {
     float m_unk00;
     float m_unk04;
     float m_unk08;
-    short m_unk0C;
-    short m_unk0E;
+    unsigned short m_unk0C;
+    unsigned short m_unk0E;
 };
 
 // DRAFT: 0x00147BC0 SetEifPosition__13EntityManagerFUiUiPA4_f
@@ -695,6 +849,38 @@ void EntityManager::SetEifPosition(unsigned int arg0, unsigned int arg1, float (
         return;
     }
     printf("Too many SetEifPosition() call\n");
+}
+
+// FUNCTION: 0x00147C80 ModifyEifPosition__13EntityManagerFv
+void EntityManager::ModifyEifPosition() {
+    unsigned int count = m_unk5D4C;
+    EifEntry *entry = (EifEntry *)((char *)this + 0x5D50);
+    if (count != 0) {
+        do {
+            int numGroups = m_unk5194->GetNumInstanceGroups();
+            for (int g = 0; g < numGroups; g++) {
+                CEifInstanceGroup *pGroup = m_unk5194->GetInstanceGroup(g);
+                if (pGroup == 0) {
+                    CdsAssert("EntityManager.cpp", 0x433, "pEifInstanceGroup");
+                }
+                int numInst = pGroup->GetNumInstances();
+                for (int i = 0; i < numInst; i++) {
+                    CEifInstance *pInst = pGroup->GetInstanceData(i);
+                    if (entry->m_unk0E != pInst->GetEntityID()) {
+                        break;
+                    }
+                    if (entry->m_unk0C == pInst->GetInstanceID()) {
+                        pInst->SetStartPosition(entry->m_unk00, entry->m_unk04, entry->m_unk08);
+                        goto next;
+                    }
+                }
+            }
+next:
+            count--;
+            entry++;
+        } while (count != 0);
+    }
+    m_unk5D4C = 0;
 }
 
 // FUNCTION: 0x00148960 GetPtrToInstance__13EntityManagerFUi
@@ -887,6 +1073,47 @@ void EntityManager::Destroy(unsigned int arg0, unsigned int arg1) {
             pObj->Slot02(1);
         }
     }
+}
+
+// FUNCTION: 0x001495A0 Spawn__13EntityManagerFUibi
+void *EntityManager::Spawn(unsigned int arg0, bool arg1, int arg2) {
+    void *pEnt;
+    if (arg1) {
+        pEnt = SpawnEntity(arg0, arg2);
+    } else {
+        pEnt = SpawnEntity(arg0, -1);
+    }
+    if (pEnt == (void *)-1) {
+        char buf[0x100];
+        sprintf(buf, "EIF file for level ( %s ) out of date. Re-export with latest BEF files", (char *)this + 0x5C10);
+        CdsAssert("EntityManager.cpp", 0x107, buf);
+    }
+    if (pEnt == 0) {
+        CdsAssert("EntityManager.cpp", 0x10B, "pEnt");
+    }
+    *((char *)pEnt + 0x18) = (char)arg1;
+    ((EntityBaseClass *)pEnt)->m_unk08 = arg0;
+    ((EntityBaseClass *)pEnt)->m_unk04 = m_unk5050;
+    if (!arg1) {
+        ((PVirtObj *)pEnt)->Slot08();
+    }
+    if (arg0 == 3) {
+        if (!((m_unk505C != 0) ^ 1)) {
+            CdsAssert("EntityManager.cpp", 0x118, "!mpPlayer");
+        }
+        m_unk505C = pEnt;
+        mPlayerAPI__13EntityManager = (MathAPI *)m_unk505C;
+    }
+    if (m_unk5078 >= 0x180) {
+        CdsAssert("EntityManager.cpp", 0x11D, "mActiveApparitions.GetCount() < MAX_ACTIVE_APPARITIONS");
+    }
+    ((PArray *)&m_unk5078)->Add(pEnt);
+    int saved = MemMgr.m_unk18;
+    MemMgr.m_unk18 = 0;
+    ((PHashTable *)m_unk5088)->Add((void *)m_unk5050, pEnt);
+    MemMgr.m_unk18 = saved;
+    m_unk5050 += 1;
+    return pEnt;
 }
 
 // DRAFT: 0x00149B10 LoadOverlay__13EntityManagerFPcPc
