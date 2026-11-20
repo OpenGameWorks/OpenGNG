@@ -62,6 +62,15 @@ extern unsigned char InnocentSeqData[0x2B8];
 extern char lit_00268980[];
 extern int InnocentDialogID[0x100];
 extern unsigned char gInterface[2656];
+extern "C" void PlaySequence__15EntityBaseClassFPUi(void *pThis, unsigned int *pSeq);
+extern "C" void WriteApparitionData__15EntityBaseClassFicUi(void *pThis, int nMode, char cValue, unsigned int nId);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__7PhysicsFv(void *pThis);
+extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *pThis, unsigned int eType, float (*pBox)[4]);
+extern "C" void *__ct__6ShadowFQ26Shadow10ShadowTypeUi(void *pThis, int eType, unsigned int nFlags);
+extern "C" tagWaypointGroup *GetWaypointGroupInfo__15WaypointManagerFUi(void *pThis, unsigned int nGroup);
+extern "C" void FacePlayer__15EntityBaseClassFf(void *pThis, float fAngle);
+extern "C" void PlingInnocent__15EntityBaseClassFv(void *pThis);
 // Leading virtuals of EntityBaseClass's vtable (__vt__15EntityBaseClass), declared in slot order
 // so that GetHealth (slot 0x34, virtual number 11) is called through $t9 as the original does.
 class PLightManager;
@@ -438,6 +447,122 @@ int Innocent::AwardCheck() {
         }
     }
     return (m_unk26C != 0) ^ 1;
+}
+
+// DRAFT: 0x0019FED0 Execute__8InnocentFv
+// note: DIFF 1376 words; cases 4, 3, 6, 7, 5, 14, 11, 8, 17, 18 and the case 2 tail are not written yet.
+void Innocent::Execute() {
+    unsigned int *pSeq = (unsigned int *)((char *)InnocentSeqData + m_unk1B0 * 0x4C);
+    switch (m_unk20) {
+    case -1: {
+        void *pNew;
+        m_unk10C = (m_unk10C & 0xF8FFFFFF) | 0x03000000;
+        WriteApparitionData__15EntityBaseClassFicUi(this, 3, (char)ReadApparitionData__15EntityBaseClassFiUi(this, 0, 0), 0);
+        if (m_unk38 == 0) {
+            pNew = __nw__FUi(0x120);
+            if (pNew != 0) {
+                pNew = __ct__7PhysicsFv(pNew);
+            }
+            m_unk38 = (Physics *)pNew;
+            if (m_unk38 == 0) {
+                CdsAssert__FPciPc("Innocent.cpp", 0x2C9, "mpPhysics");
+            }
+        }
+        SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12, 0);
+        if (m_unkD4 == 0) {
+            pNew = __nw__FUi(0x10);
+            if (pNew != 0) {
+                pNew = __ct__6ShadowFQ26Shadow10ShadowTypeUi(pNew, 1, 0x87000006);
+            }
+            m_unkD4 = (Shadow *)pNew;
+            if (m_unkD4 == 0) {
+                CdsAssert__FPciPc("Innocent.cpp", 0x2CF, "mpShadow");
+            }
+        }
+        if (m_unkD4 != 0) {
+            *(int *)m_unkD4 = 1;
+            if (*(void **)((char *)m_unkD4 + 0xC) != 0) {
+                *(int *)(*(char **)((char *)m_unkD4 + 0xC) + 0x18) = 1;
+            }
+        }
+        m_unk290 = 0;
+        m_unk278 = 1;
+        m_unk26F = 1;
+        m_unk271 = 1;
+        m_unk25C = 0;
+        for (int i = 0; i < 3; i++) {
+            if (m_unk294[i] != 0 && InstanceIsValid__15EntityBaseClassFUi(m_unk294[i]) != 0) {
+                m_unk25C += 1;
+            }
+        }
+        m_unk270 = (m_unk25C == 0) ? 1 : 0;
+        SetState__15EntityBaseClassFi(this, 1);
+        if (m_unk1BC >= 0) {
+            char sMsg[0x80];
+            m_unk290 = GetWaypointGroupInfo__15WaypointManagerFUi((char *)mpEntMgr__15EntityBaseClass + 0x30, m_unk1BC);
+            if (m_unk290 == 0) {
+                sprintf(sMsg, "Innocent refers to bad waypoint group ( group id = %d )", m_unk1BC);
+                CdsAssert__FPciPc("Innocent.cpp", 0x2ED, sMsg);
+            }
+        }
+        m_unk269 = 0;
+        if ((int)m_unk1F8 == 7 || (int)m_unk1F8 == 8) {
+            m_unk26C = (ReadApparitionData__15EntityBaseClassFiUi(this, 1, 0) == 0) ? 0 : 1;
+        } else {
+            m_unk26C = (ReadApparitionData__15EntityBaseClassFiUi(this, 0, 0) == 0) ? 0 : 1;
+        }
+        m_unk254 = 0;
+        m_unk258 = (m_unk290 != 0) ? m_unk290->m_unk4 : 0;
+        return;
+    }
+    case 1:
+        if (ActivatedEnemiesDead() != 0) {
+            if (TrappedEntityRemoved() != 0) {
+                if (m_unk290 != 0) {
+                    unsigned char bFlag;
+                    float *pWp;
+                    float wp[4];
+                    m_unk254 = m_unk290->m_unk4;
+                    m_unk258 = m_unk254;
+                    pWp = GetWaypoint__15WaypointManagerFP16tagWaypointGroupUiRUc((char *)mpEntMgr__15EntityBaseClass + 0x30, m_unk290, m_unk254 - 1, bFlag);
+                    wp[0] = pWp[0];
+                    wp[1] = pWp[1];
+                    wp[2] = pWp[2];
+                    wp[3] = 1.0f;
+                    if (m_unk3C != 0) {
+                        memcpy((char *)m_unk3C + 0x80, wp, 16);
+                        *((unsigned char *)m_unk3C + 0x3E) |= 8;
+                    } else {
+                        memcpy(&m_unk190, wp, 16);
+                    }
+                    m_unk10C |= 0x40000;
+                }
+            }
+        }
+        SetState__15EntityBaseClassFi(this, 2);
+        return;
+    case 2:
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, &pSeq[0]);
+            (*(void (**)(void *))((char *)m_unk0 + 0x78))(this);
+            switch (m_unk1B4) {
+            case 1:
+            case 0:
+            case 3:
+                PlaySequence__15EntityBaseClassFPUi(this, &pSeq[3]);
+                break;
+            case 2:
+                PlaySequence__15EntityBaseClassFPUi(this, &pSeq[12]);
+                break;
+            default:
+                CdsAssert__FPciPc("Innocent.cpp", 0x32C, "Invalid Innocent AI mode");
+                break;
+            }
+        }
+        break;
+    default:
+        break;
+    }
 }
 
 // FUNCTION: 0x001A1460 __ct__8InnocentFv
