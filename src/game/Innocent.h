@@ -11,16 +11,23 @@ public:
     Innocent();
     int AnimationViewer(int arg0);
     void OnWakeEvent();
+    void *FindClosestEnemy(float (*pBox)[4]);
     int EnemiesInCheckRadius();
     int ActivatedEnemiesDead();
     int TrappedEntityRemoved();
     void OutputDebug();
     void OnTimerEvent(unsigned int nTimer);
+    int IsEnemyReady(unsigned int *pOut);
+    void ActivateAttackingEnemies();
     int GetNextPosition(float (&pos)[4]);
     int AwardCheck();
+    int BuildDialogTable();
 
     void *m_unk0;                   // 0x000 vtable pointer
-    char _pad004[0x20 - 0x04];
+    unsigned int m_unk4;
+    char _pad008[0x0C - 0x08];
+    int m_unkC;
+    char _pad010[0x20 - 0x10];
     int m_unk20;                    // 0x020 state, printed by OutputDebug
     char _pad024[0x3C - 0x24];
     PMNode *m_unk3C;                // 0x03C

@@ -4,7 +4,7 @@
 
 // TODO(header): foreign declarations
 // Only the fields read by AwardCheck are placed; the rest of EntityBaseClass is unknown.
-class EntityBaseClass { public: char _pad000[4]; unsigned int m_unk4; char _pad008[8]; int m_unk10; };
+class EntityBaseClass { public: char _pad000[4]; unsigned int m_unk4; char _pad008[8]; int m_unk10; char _pad014[0x1A - 0x14]; unsigned char m_unk1A; char _pad01B[0x3C - 0x1B]; unsigned int m_unk3C; };
 class PMNode;
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int eLoadClass, unsigned int nFlags);
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
@@ -36,6 +36,43 @@ extern EntityManager *mpEntMgr__15EntityBaseClass;
 extern "C" int GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(EntityManager *pThis, int eLoadClass, PArray *pArray, float (*pBox)[4], float fRadius, int nFlags, bool bFlagA, bool bFlagB);
 struct tagWaypointGroup { char _pad000[4]; unsigned int m_unk4; };
 extern "C" float *GetWaypoint__15WaypointManagerFP16tagWaypointGroupUiRUc(void *pThis, tagWaypointGroup *pGroup, unsigned int nIndex, unsigned char &rbFlag);
+// Apparition handle list filled by GetAllActiveApparitionsInRadius (same layout as PArray's first words).
+struct TempApparitionArray {
+    int m_count;            // 0x00
+    int m_unk04;            // 0x04 cleared with m_count
+    unsigned int *m_pData;  // 0x08
+    char _pad0C[4];
+};
+extern TempApparitionArray mTempArray__15EntityBaseClass;
+extern "C" void *GetPtrToApparition__13EntityManagerFUi(EntityManager *pThis, unsigned int nId);
+extern "C" void Add2DependencyList__13EntityManagerFUiUi(EntityManager *pThis, unsigned int nFrom, unsigned int nTo);
+extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
+extern "C" float sceVu0InnerProduct(float *pA, float *pB);
+extern "C" void CdsAssert__FPciPc(char *, int, char *);
+extern int InnocentDialogID[0x100];
+extern unsigned char gInterface[2656];
+// Leading virtuals of EntityBaseClass's vtable (__vt__15EntityBaseClass), declared in slot order
+// so that GetHealth (slot 0x34, virtual number 11) is called through $t9 as the original does.
+class PLightManager;
+class EntityBaseClassVirtuals {
+public:
+    virtual ~EntityBaseClassVirtuals();
+    virtual int GetTallyType();
+    virtual void Slot10();
+    virtual void OutputDebug();
+    virtual void Slot18();
+    virtual void SetEditableVars(char *);
+    virtual void SetDefaultVars();
+    virtual void OnTimerEvent(unsigned int);
+    virtual void Render(PLightManager *);
+    virtual void Animate(int, float);
+    virtual void SetInnocentInstanceID(unsigned int);
+    virtual int GetHealth();
+    virtual void OnStopAttack();
+    virtual int IsAlive();
+    virtual int GetArenaWaveID();
+    virtual int IsArenaApparition();
+};
 
 // FUNCTION: 0x0019F260 __dt__8InnocentFv
 extern "C" void *__dt__8InnocentFv(void *pThis, short nFlag) {
@@ -64,6 +101,50 @@ void Innocent::OnWakeEvent() {
             ScaleSet__6PMNodeFffff(pNode, 1.03f, 1.03f, 1.03f, 1.0f);
         }
     }
+}
+
+// DRAFT: 0x0019F390 FindClosestEnemy__8InnocentFPA4_f
+// note: 91 words differ, size 0x188 vs 0x190; 99999.0f folds to int-to-float cvt (original loads bit pattern); mTempArray and mpEntMgr relocations and prologue order differ. Tried: exponent literal 9.9999e4f, count unchanged.
+void *Innocent::FindClosestEnemy(float (*pBox)[4]) {
+    float vec[4];
+    float fBest = 99999.0f;
+    void *pBest = 0;
+    unsigned int nHandle = 0;
+    if (mTempArray__15EntityBaseClass.m_pData != 0) {
+        mTempArray__15EntityBaseClass.m_count = 0;
+        mTempArray__15EntityBaseClass.m_unk04 = 0;
+    }
+    GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 3, (PArray *)&mTempArray__15EntityBaseClass, (float (*)[4])this, 14.0f, -2, true, false);
+    mTempArray__15EntityBaseClass.m_unk04 = 0;
+    if (mTempArray__15EntityBaseClass.m_count != 0) {
+        nHandle = *mTempArray__15EntityBaseClass.m_pData;
+    }
+    if (nHandle != 0) {
+        do {
+            void *pApp = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, nHandle);
+            if (pApp != 0 && ((EntityBaseClassVirtuals *)pApp)->GetHealth() > 0) {
+                int nNode = *(int *)((char *)pApp + 0x3C);
+                char *pPos;
+                if (nNode != 0) {
+                    pPos = (char *)nNode + 0x80;
+                } else {
+                    pPos = (char *)pApp + 0x190;
+                }
+                sceVu0SubVector(vec, (float *)this, (float *)pPos);
+                float fDist = sceVu0InnerProduct(vec, vec);
+                if (fDist < fBest) {
+                    fBest = fDist;
+                    pBest = pApp;
+                }
+            }
+            mTempArray__15EntityBaseClass.m_unk04 = mTempArray__15EntityBaseClass.m_unk04 + 1;
+            nHandle = 0;
+            if ((unsigned int)mTempArray__15EntityBaseClass.m_unk04 < (unsigned int)mTempArray__15EntityBaseClass.m_count) {
+                nHandle = mTempArray__15EntityBaseClass.m_pData[mTempArray__15EntityBaseClass.m_unk04];
+            }
+        } while (nHandle != 0);
+    }
+    return pBest;
 }
 
 // FUNCTION: 0x0019F520 EnemiesInCheckRadius__8InnocentFv
@@ -95,6 +176,31 @@ int Innocent::TrappedEntityRemoved() {
         i++;
         pEnt++;
     } while (i < 3);
+    return 1;
+}
+
+// DRAFT: 0x0019F630 ActivatedEnemiesDead__8InnocentFv
+// note: 45 words differ, size 0x9c vs 0xc0; original has frame 0x50 with sq s3..s0 and a pointer walk over m_unk294. Tried: index loop (47 words), pointer walk with counter (45 words).
+int Innocent::ActivatedEnemiesDead() {
+    if (m_unk25C != 0) {
+        if (m_unk270 == 0) {
+            return 0;
+        }
+        EntityBaseClass **pEnt = m_unk294;
+        int i = 0;
+        do {
+            if (*pEnt != 0) {
+                EntityBaseClass *pValid = InstanceIsValid__15EntityBaseClassFUi(*pEnt);
+                if (pValid != 0 && ((EntityBaseClassVirtuals *)pValid)->GetHealth() > 0) {
+                    return 0;
+                }
+                *pEnt = 0;
+            }
+            i++;
+            pEnt++;
+        } while (i < 3);
+        return 1;
+    }
     return 1;
 }
 
@@ -130,6 +236,62 @@ void Innocent::OnTimerEvent(unsigned int nTimer) {
     if (nTimer == m_unk288) {
         m_unk288 = 0;
     }
+}
+
+// DRAFT: 0x0019FBD0 IsEnemyReady__8InnocentFPUi
+// note: size 0xa8 vs 0xbc, loop-join branch layout and xori/sltiu return differ (23 words); tried byte-offset do-while, counter/offset swap, branchy return (no gain).
+int Innocent::IsEnemyReady(unsigned int *pOut) {
+    int nCleared = 0;
+    int nIndex = 0;
+    unsigned int nOff = 0;
+    do {
+        EntityBaseClass **pSlot = (EntityBaseClass **)((char *)this + nOff);
+        EntityBaseClass *pEnt = *pSlot;
+        if (pEnt != 0) {
+            EntityBaseClass *pValid = InstanceIsValid__15EntityBaseClassFUi(pEnt);
+            if (pValid != 0) {
+                if (pValid->m_unk3C != 0) {
+                    return 1;
+                }
+            } else {
+                *pSlot = 0;
+                nCleared++;
+            }
+        } else {
+            nCleared++;
+        }
+        nIndex++;
+        nOff += 4;
+    } while (nIndex < 3);
+    return nCleared == 3;
+}
+
+// DRAFT: 0x0019FC90 ActivateAttackingEnemies__8InnocentFv
+// note: DIFF 16; size 0xdc vs 0xe0. Original keeps a nop at 0x9C as the join target of both beqz branches; ours schedules addiu $s1 into the jal delay slot. Tried: pointer walk, declaration orders, narrowed IsArenaApparition guard (16), increment order, for loop (53).
+void Innocent::ActivateAttackingEnemies() {
+    EntityBaseClass **pSlot = (EntityBaseClass **)((char *)this + 0x1E0);
+    int nIndex = 0;
+    EntityBaseClass *pEnt;
+    EntityBaseClass *pValid;
+    unsigned int nOff = 0;
+    do {
+        pEnt = *pSlot;
+        if (pEnt != 0) {
+            pValid = InstanceIsValid__15EntityBaseClassFUi(pEnt);
+            if (pValid != 0) {
+                if (((EntityBaseClassVirtuals *)pValid)->IsArenaApparition() == 0) {
+                    pValid->m_unk1A = 1;
+                }
+                ((EntityBaseClassVirtuals *)pValid)->SetInnocentInstanceID(m_unkC);
+                *(EntityBaseClass **)((char *)this + 0x294 + nOff) = pEnt;
+                Add2DependencyList__13EntityManagerFUiUi(mpEntMgr__15EntityBaseClass, pValid->m_unk4, m_unk4);
+            }
+        }
+        nIndex++;
+        nOff += 4;
+        pSlot++;
+    } while (nIndex < 3);
+    m_unk270 = 1;
 }
 
 // FUNCTION: 0x0019FD70 GetNextPosition__8InnocentFRA4_f
@@ -176,4 +338,36 @@ Innocent::Innocent() {
     m_unk103 = 0xFE;
     m_unk104 = 0x40000000;
     m_unk108 = 0x40800000;
+}
+
+struct DialogSlot {
+    int m_unk0;
+    char _pad4[5];
+    signed char m_unk9;
+    char _padA[2];
+};
+
+// DRAFT: 0x001A14D0 BuildDialogTable__8InnocentFv
+// note: DIFF 9; join nop after the flag if (0x64) and the 0x2C test register ($v0 vs $v1) differ; tried int/unsigned char/bool bPrev and an empty else join, bool is best
+int Innocent::BuildDialogTable() {
+    bool bPrev = 0;
+    int nID = 0x3F6;
+    int *pTbl = &InnocentDialogID[20];
+    DialogSlot *pSlot = (DialogSlot *)(*(unsigned char **)(gInterface + 0x180) + 0x2F88);
+    while (pSlot->m_unk0 != 0) {
+        if (bPrev != 0 && !(pSlot->m_unk9 & 4)) {
+            *pTbl = nID;
+            bPrev = 0;
+            pTbl++;
+        }
+        if (pSlot->m_unk9 & 1) {
+            bPrev = 1;
+        }
+        nID++;
+        pSlot++;
+    }
+    if (pTbl > &InnocentDialogID[256]) {
+        CdsAssert__FPciPc("Innocent.cpp", 0x53, "pTbl <= &InnocentDialogID[MAX_DIALOG]");
+    }
+    return nID;
 }
