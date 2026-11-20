@@ -585,21 +585,20 @@ struct DialogSlot {
     char _padA[2];
 };
 
-// DRAFT: 0x001A14D0 BuildDialogTable__8InnocentFv
-// note: DIFF 9; join nop after the flag if (0x64) and the 0x2C test register ($v0 vs $v1) differ; tried int/unsigned char/bool bPrev and an empty else join, bool is best
+// FUNCTION: 0x001A14D0 BuildDialogTable__8InnocentFv
 int Innocent::BuildDialogTable() {
-    bool bPrev = 0;
     int nID = 0x3F6;
+    bool bPrev = false;
     int *pTbl = &InnocentDialogID[20];
     DialogSlot *pSlot = (DialogSlot *)(*(unsigned char **)(gInterface + 0x180) + 0x2F88);
     while (pSlot->m_unk0 != 0) {
-        if (bPrev != 0 && !(pSlot->m_unk9 & 4)) {
+        if (bPrev && !(pSlot->m_unk9 & 4)) {
             *pTbl = nID;
-            bPrev = 0;
+            bPrev = false;
             pTbl++;
         }
         if (pSlot->m_unk9 & 1) {
-            bPrev = 1;
+            bPrev = true;
         }
         nID++;
         pSlot++;
