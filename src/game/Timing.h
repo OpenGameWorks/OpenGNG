@@ -8,6 +8,7 @@ struct PMat4;
 class ESubTimer {
 public:
     ESubTimer();
+    ~ESubTimer();
     void ZeroTimer();
     void StartTimer();
     void StopTimer();
@@ -32,6 +33,7 @@ public:
 
 class ETiming {
 public:
+    ETiming();
     void PrintPerformanceMeter(unsigned int nUnused, PMat4 *pMat);
     void PrintDisplayListStatusMeter(unsigned int nUnused, PMat4 *pMat);
     void PrintCalcTimings();
@@ -47,9 +49,12 @@ public:
 
     int m_unk0;                 // 0x000 header
     ESubTimer m_aTimers[0x16];  // 0x004 22 timers, 0x48 bytes each
-    char _pad634[0x640 - 0x634];
-    char m_unk640[0x890 - 0x640];  // 0x640 PProgressBar, first performance bar
-    char m_unk890[0xD30 - 0x890];  // 0x890 PProgressBar, second performance bar
+    int m_unk634;               // 0x634 cleared by the constructor
+    int m_unk638;               // 0x638 cleared by the constructor
+    int m_unk63C;               // 0x63C cleared by the constructor
+    char m_unk640[0x250];       // 0x640 PProgressBar, first performance bar
+    char m_unk890[0x250];       // 0x890 PProgressBar, second performance bar
+    char m_unkAE0[0x250];       // 0xAE0 PProgressBar, third bar
     unsigned int m_unkD30;      // 0xD30 ring index into the per-frame max history, wraps at 9
     int m_unkD34;               // 0xD34 countdown, reset to 0x14 when it reaches zero
     int m_unkD38;               // 0xD38 frame value, read by the print functions
