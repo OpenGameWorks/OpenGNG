@@ -6,6 +6,8 @@
 class Shield;
 class PlingEffect;
 class FontNode;
+class PMNode;
+class PMeshNode;
 
 class Player {
 public:
@@ -47,12 +49,14 @@ public:
     void SetShockwave(int arg0);
     void UpdatePlayerFx();
     void Kill();
+    void SetDeath();
     int GetGroundAction();
     int SetAction(int arg0);
     void SetMaximo(char arg0, bool arg1);
     void EnablePlayerShadow(bool arg0);
     void GetShieldPass(bool *arg0);
     void LandingMove();
+    void RollMove();
     void BackToMaximo();
     void ShowPlayer(bool arg0);
     void RenderCutScene();
@@ -71,6 +75,9 @@ public:
     void LoadPlayerData(PlayerData *arg0);
     int GetComboLevel();
     void MultipleAttack(unsigned short *arg0);
+    void NotifyTreasure(float (*arg0)[4], float arg1);
+    PMNode *IsPlayerOnNode(PMeshNode *arg0, bool arg1);
+    void SetBoundingSphere(PMNode *arg0, float arg1);
 
     char _pad000[0x20];
     int m_unk20;            // 0x020
@@ -82,7 +89,9 @@ public:
     char _pad104[0x15C - 0x104];
     unsigned short m_unk15C; // 0x15C read by OutputDebug
     unsigned short m_unk15E; // 0x15E read by OutputDebug
-    char _pad160[0x1B0 - 0x160];
+    char _pad160[0x190 - 0x160];
+    float m_unk190[4];      // 0x190 vector read by NotifyTreasure when m_unk3C is null
+    char _pad1A0[0x1B0 - 0x1A0];
     unsigned short m_unk1B0; // 0x1B0 bit 0x200 is tested by IsMidasActive
     unsigned short m_unk1B2; // 0x1B2 bit 0x4000 is tested by CatchIdleMove
     char _pad1B4[0x1BC - 0x1B4];
@@ -94,13 +103,14 @@ public:
     char _pad1D4[0x1D8 - 0x1D4];
     int m_unk1D8;           // 0x1D8 cleared by ForceDie
     int m_unk1DC;           // 0x1DC index into MaximoArmor, read by BackToMaximo
-    char _pad1E0[0x1FC - 0x1E0];
+    char _pad1E0[0x1F8 - 0x1E0];
+    int m_unk1F8;           // 0x1F8 remaining-lives counter, decremented by SetDeath
     int m_unk1FC;           // 0x1FC compared with 2 by MightyBlowCheck
     char _pad200[0x20C - 0x200];
     int m_unk20C;           // 0x20C compared with the MightyCost value by MightyBlowCheck
     int m_unk210;           // 0x210 state, IsMidasActive requires it to equal 1
     int m_unk214;           // 0x214 ground action code, read by GetShieldPass
-    char _pad218[0x21C - 0x218];
+    int m_unk218;           // 0x218 state, NotifyTreasure requires it to equal 1
     int m_unk21C;           // 0x21C cleared by SavePlayerData
     int m_unk220;          // 0x220 read by OutputDebug
     char _pad224[0x229 - 0x224];
@@ -126,7 +136,9 @@ public:
     int m_unk2A8;           // 0x2A8 effect id stored by Over3Move from CreateOneshot
     char _pad2AC[0x2F8 - 0x2AC];
     int m_unk2F8;           // 0x2F8 cleared by InitAttachableJoints
-    char _pad2FC[0x31C - 0x2FC];
+    char _pad2FC[0x308 - 0x2FC];
+    int m_unk308;           // 0x308 cleared by SetDeath
+    char _pad30C[0x31C - 0x30C];
     FontNode *m_unk31C;     // 0x31C font node, passed to FontManager::RemoveText and cleared by ForceDie
     char _pad320[0x324 - 0x320];
     int m_unk324;           // 0x324
@@ -134,9 +146,18 @@ public:
     PlingEffect *m_unk32C;  // 0x32C pling effect object, Slot00(1) called by ResetPling
     char _pad330[0x335 - 0x330];
     signed char m_unk335;   // 0x335 flag, tested by SetPowerupMotion
-    char _pad336[0x33B - 0x336];
+    char _pad336[0x337 - 0x336];
+    signed char m_unk337;   // 0x337 treasure proximity level (1 near, 2 far), set by NotifyTreasure
+    char _pad338[0x33B - 0x338];
     unsigned char m_unk33B; // 0x33B set to (arg0 == 0) by ShowPlayer
-    char _pad33C[0x23D0 - 0x33C];
+    char _pad33C[0x344 - 0x33C];
+    int m_unk344;           // 0x344 cleared by SetDeath
+    char _pad348[0x360 - 0x348];
+    struct BoundingSphere {
+        PMNode *node;       // 0x00 owner, null when the slot is free
+        float r2;           // 0x04 squared radius
+    } m_unk360[4];          // 0x360 bounding spheres set by SetBoundingSphere
+    char _pad380[0x23D0 - 0x380];
     signed char m_unk23D0;  // 0x23D0 cleared by InitAttachableJoints
     signed char m_unk23D1;  // 0x23D1 cleared by InitAttachableJoints
     char _pad23D2[2];

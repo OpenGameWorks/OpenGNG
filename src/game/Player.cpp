@@ -90,6 +90,20 @@ extern void *mpEntMgr__15EntityBaseClass;
 extern int mbHard__15EntityBaseClass;
 extern int ComboLevel[20];
 extern "C" void *GetPtrToApparition__13EntityManagerFUi(void *, unsigned int);
+extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
+extern "C" float sceVu0InnerProduct(float *pA, float *pB);
+class Pad {
+public:
+    enum VibType { VIB_0 = 0, VIB_1 = 1 };
+    void SetVibrate(VibType arg0, unsigned char arg1);
+    char _pad000[0x110];
+    unsigned short m_unk110;
+};
+extern Pad gPad;
+class MaximoMain {
+public:
+    void RestartGame(bool arg0);
+};
 class ApparitionVirtuals {
 public:
     virtual void Slot00();
@@ -231,6 +245,30 @@ unsigned char Player::IsHanging() {
     return ret;
 }
 
+// FUNCTION: 0x0015A4E0 NotifyTreasure__6PlayerFPA4_ff
+void Player::NotifyTreasure(float (*arg0)[4], float arg1) {
+    if (m_unk218 != 1) {
+        return;
+    }
+    float *src;
+    if (m_unk3C) {
+        src = (float *)((char *)m_unk3C + 0x80);
+    } else {
+        src = m_unk190;
+    }
+    float diff[4];
+    sceVu0SubVector(diff, *arg0, src);
+    float dist2 = sceVu0InnerProduct(diff, diff);
+    if (dist2 < arg1 * arg1) {
+        m_unk337 = 1;
+        return;
+    }
+    float outer = 6.0f + arg1;
+    if (dist2 < outer * outer) {
+        m_unk337 = 2;
+    }
+}
+
 // FUNCTION: 0x0015A7F0 ValidateItem__6PlayerFi
 int Player::ValidateItem(int arg0) {
     int result = arg0;
@@ -316,6 +354,26 @@ void Player::OpenChestMove() {
         if (pApparition != 0) {
             ((ApparitionVirtuals *)pApparition)->OnHitEvent(this, 0, 0x1FD, 0);
         }
+    }
+}
+
+// FUNCTION: 0x0015BCB0 SetDeath__6PlayerFv
+void Player::SetDeath() {
+    gPad.SetVibrate((Pad::VibType)0, 0);
+    m_unk308 = 0;
+    m_unk344 = 0;
+    m_unk229 = 0;
+    m_unk1D8 = 0x190;
+    m_unk1DC = 2;
+    int t = m_unk1F8;
+    m_unk1F8 = t - 1;
+    if (t) {
+        if (m_unk20C < 0x1AA) {
+            m_unk20C = 0x1AA;
+        }
+        ((MaximoMain *)gEng)->RestartGame(true);
+    } else {
+        ((MaximoMain *)gEng)->RestartGame(false);
     }
 }
 
@@ -474,6 +532,24 @@ void Player::GrimIdleMove() {
 }
 
 // note: 2 words differ: the move of this into a0 lands in the beq delay slot instead of the jal delay slot. Tried nested ifs, early return, reordered operands and swapped != form (3 lines).
+// FUNCTION: 0x0015F6C0 RollMove__6PlayerFv
+void Player::RollMove() {
+    int v = (int)m_unk3C[0xD];
+    if (v >= 14) {
+        m_unk264 |= 0x30;
+        if (m_unk1D0 & 4) {
+            int g = GetGroundAction();
+            if (g) {
+                SetAction(g);
+            }
+        } else {
+            SetAction(5);
+        }
+    } else if (v >= 12) {
+        m_unk264 &= 0xFFFFEFFF;
+    }
+}
+
 // DRAFT: 0x0015F770 LandingMove__6PlayerFv
 void Player::LandingMove() {
     int action = GetGroundAction();
@@ -557,6 +633,50 @@ void Player::ForceDie(int arg0) {
     if (m_unk31C != 0) {
         ((FontManager *)((char *)&gInterface + 0x1790))->RemoveText(m_unk31C);
         m_unk31C = 0;
+    }
+}
+
+// FUNCTION: 0x00163660 IsPlayerOnNode__6PlayerFP9PMeshNodeb
+PMNode *Player::IsPlayerOnNode(PMeshNode *arg0, bool arg1) {
+    if (!(m_unk1D0 & 4)) {
+        return 0;
+    }
+    PMNode *node = (PMNode *)m_unk38[0x33];
+    if (node == 0 || ((PMNode *)arg0)->Find(node) == 0) {
+        return 0;
+    }
+    if (arg1) {
+        if (m_unk264 & 0x30) {
+            SetAction(3);
+        }
+    }
+    return node;
+}
+
+// note: 37 words differ: the first compare is c.eq.s f0,f12 against the original f12,f0; the original uses two base pointers (0x360, 0x364) and no sll. Tried swapped init order (39), off-based stores (37), separate char* bases (39), and the i-loop with off (37, kept).
+// DRAFT: 0x00163880 SetBoundingSphere__6PlayerFP6PMNodef
+void Player::SetBoundingSphere(PMNode *arg0, float arg1) {
+    int i;
+    int off;
+    if (arg1 != 0.0f) {
+        off = 0;
+        for (i = 0; i < 4; i++) {
+            if (*(PMNode **)((char *)this + 0x360 + off) == 0) {
+                *(PMNode **)((char *)this + 0x360 + i * 8) = arg0;
+                *(float *)((char *)this + 0x364 + i * 8) = arg1 * arg1;
+                return;
+            }
+            off += 8;
+        }
+    } else {
+        off = 0;
+        for (i = 0; i < 4; i++) {
+            if (*(PMNode **)((char *)this + 0x360 + off) == arg0) {
+                *(PMNode **)((char *)this + 0x360 + i * 8) = 0;
+                return;
+            }
+            off += 8;
+        }
     }
 }
 
