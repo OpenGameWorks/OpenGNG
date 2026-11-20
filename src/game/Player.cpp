@@ -3,8 +3,9 @@
 #include "PResourceManager.h"
 
 // TODO(header): foreign declarations
-extern unsigned char gEng[];
+extern unsigned char gEng[0x1A000];
 extern PResourceManager *mpResMgr__15EntityBaseClass;
+extern char mMaximoData__6Player[0x100];
 struct SpinEffectEntry {
     unsigned int a;
     unsigned int b;
@@ -111,6 +112,10 @@ public:
     char _pad28[0x3E - 0x28];
     unsigned char m_unk3E;
     signed char m_unk3F;
+    char _pad40[0x80 - 0x40];
+    u_long128 m_unk80;      // 0x80 vector written by CatchLedgeMove
+    char _pad90[0x94 - 0x90];
+    float m_unk94;          // 0x94 angle written by CatchLedgeMove
     void SetRenderPassStatus(bool bA, bool bB, bool bC, bool bD);
     void *GetFirstMesh();
     void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
@@ -152,12 +157,14 @@ class FreeJoint {
 public:
     int m_unk00;
     unsigned char m_unk04;
-    char _pad05[3];
+    unsigned char _pad05[3];
 };
 extern FreeJoint m_pFreeJoints[5];
 class Physics {
 public:
-    char _pad000[0x11C];
+    char _pad000[0xF8];
+    float m_unkF8;
+    char _pad0FC[0x11C - 0xFC];
     float m_unk11C;
     void SetPhysicsType(unsigned int arg0, float (*arg1)[4]);
     void SetVelocity(float arg0, float arg1);
@@ -207,7 +214,10 @@ extern "C" void *__dt__5PAnimFv(void *pThis, short nFlag);
 extern void *mpEntMgr__15EntityBaseClass;
 extern int mbHard__15EntityBaseClass;
 extern int ComboLevel[20];
+extern "C" void memset(void *, int, unsigned int);
+extern unsigned char GameVarTbl[0x78];
 extern int CAUGHT_TIME;
+extern int LEDGE_UP_TIME;
 extern float AttachedTimer[5];
 class MathAPI {
 public:
@@ -227,8 +237,12 @@ extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
 extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
+extern "C" void sceVu0ApplyMatrix(float *pDst, float *pMat, float *pSrc);
 extern "C" float atan2f(float fY, float fX);
 extern "C" float Round180__Ff(float fAngle);
+extern "C" float FastMath_Sin180__Ff(float fAngle);
+extern "C" float FastMath_Cos180__Ff(float fAngle);
+extern float SLOW_JUMP;
 class Pad {
 public:
     enum VibType { VIB_0 = 0, VIB_1 = 1 };
@@ -377,6 +391,30 @@ void Player::GetAttachableJointOffsets(int arg0, float (*arg1)[4]) {
     *(u_long128 *)arg1 = *(u_long128 *)fVec;
 }
 
+// DRAFT: 0x001595F0 RefreshAttachableJoints__6PlayerFv
+// note: 32 diff words; original keeps loop counter in s2 with two strided pointers (s0 by 8, s1 by 0x14) and enters via b; ours keeps i in s0. Tried unsigned i (32, no gain) and local pointers (70).
+void Player::RefreshAttachableJoints() {
+    int i;
+    for (i = 0; i < 5; i++) {
+        if (m_pFreeJoints[i].m_unk04 == 0) {
+            unsigned int uID;
+            if (i == 4) {
+                uID = m_AttachableJoints[i].m_unk00;
+            } else if (m_pFreeJoints[i]._pad05[1] == 0) {
+                uID = m_AttachableJoints[i].m_unk00;
+            } else {
+                uID = m_AttachableJoints[i].m_unk04;
+            }
+            m_pFreeJoints[i].m_unk00 = (int)((PMNode *)m_unk3C)->Find(uID);
+            if (m_pFreeJoints[i].m_unk00 == 0) {
+                m_pFreeJoints[i].m_unk04 = 1;
+                m_unk23D4 += 1;
+            }
+        }
+    }
+    m_unk2FC = AttachedTimer[5 - m_unk23D4];
+}
+
 // FUNCTION: 0x00159720 InitAttachableJoints__6PlayerFv
 void Player::InitAttachableJoints() {
     m_unk23D0 = 0;
@@ -393,6 +431,64 @@ void Player::InitAttachableJoints() {
     m_pFreeJoints[3].m_unk04 = 1;
     m_pFreeJoints[4].m_unk04 = 1;
     m_pFreeJoints[4].m_unk00 = 0;
+}
+
+struct MaximoAbilityEntry {
+    unsigned int m_unk00;
+    unsigned char m_unk04;
+    unsigned char m_unk05;
+    signed char m_unk06;
+    unsigned char m_unk07;
+    int m_unk08;
+    char _pad0C[0x10];
+};
+
+struct SetAbilityBlock {
+    short m_unk00;
+    short m_unk02;
+    short m_unk04;
+    short m_unk06;
+    short m_unk08;
+    short m_unk0A;
+    float m_unk0C;
+};
+
+// Slots named by vtable offset: Slot08 is the first virtual after the header.
+class AbilityVirtuals {
+public:
+    virtual void Slot08();
+    virtual void Slot0C();
+    virtual void Slot10();
+    virtual void Slot14();
+    virtual int Slot18(int arg0, int arg1);
+    virtual void Slot1C(void *arg0);
+    virtual int Slot20(void *arg0);
+};
+
+// FUNCTION: 0x001599C0 SetAbilityAction__6PlayerFP9PSkeletonii
+void Player::SetAbilityAction(PSkeleton *arg0, int arg1, int arg2) {
+    MaximoAbilityEntry *pEntry;
+    pEntry = *(MaximoAbilityEntry **)(mMaximoData__6Player + (int)arg0 * 76) + arg1;
+    if (pEntry->m_unk00 != 0 && ((AbilityVirtuals *)this)->Slot20(mpResMgr__15EntityBaseClass->GetResource(pEntry->m_unk00, false)) != 0) {
+        SetAbilityBlock blk;
+        int flags = pEntry->m_unk08;
+        blk.m_unk00 = 0;
+        blk.m_unk02 = -1;
+        if (pEntry->m_unk05 == 0) {
+            blk.m_unk06 = -1;
+            blk.m_unk04 = 0;
+        } else {
+            blk.m_unk06 = pEntry->m_unk05;
+            blk.m_unk04 = pEntry->m_unk04;
+        }
+        blk.m_unk08 = pEntry->m_unk06;
+        blk.m_unk0A = pEntry->m_unk07;
+        if (blk.m_unk0A == 2) {
+            blk.m_unk0A = 6;
+        }
+        blk.m_unk0C = (flags & 0x40) ? 1.0f : 0.5f;
+        ((AbilityVirtuals *)this)->Slot1C(&blk);
+    }
 }
 
 // FUNCTION: 0x00159AF0 OutputDebug__6PlayerFv
@@ -533,6 +629,30 @@ void Player::CatchIdleMove() {
     }
 }
 
+// FUNCTION: 0x0015A370 CatchLedgeMove__6PlayerFv
+void Player::CatchLedgeMove() {
+    float sp40[4];
+    PMNode *node = (PMNode *)m_unk3C;
+    if (m_unk2F0 != 0) {
+        float *pMat = (float *)(m_unk2F0 + 0x40);
+        sceVu0ApplyMatrix(sp40, pMat, m_unk2D0);
+        sp40[1] -= 6.0f;
+        *(u_long128 *)&node->m_unk80 = *(u_long128 *)sp40;
+        node->m_unk3E |= 8;
+        sceVu0ApplyMatrix(sp40, pMat, m_unk2E0);
+        float fAngle = Round180__Ff(57.295776f * atan2f(sp40[0], sp40[2]));
+        node->m_unk94 = fAngle;
+        node->m_unk3E |= 8;
+        Physics *phys = (Physics *)m_unk38;
+        phys->m_unk11C = Round180__Ff(fAngle);
+    }
+    if (m_unk260 == 0x2A && (m_unk1B2 & 0x4000) && (int)node->GetFrameTime() >= LEDGE_UP_TIME) {
+        m_unk1C4 = ((Physics *)m_unk38)->m_unk11C;
+        SetAction(0x2C);
+    }
+    ((Physics *)m_unk38)->SetPhysicsType(0x800, 0);
+}
+
 // note: 8 words differ: original keeps the loaded value in v1 and the 1 in v0 before the 0x2A compare; compiled code loads into a0 and uses daddiu. Tried bool, ||, nested if/else and unsigned char locals.
 // DRAFT: 0x0015A4B0 IsHanging__6PlayerFv
 unsigned char Player::IsHanging() {
@@ -568,6 +688,12 @@ void Player::NotifyTreasure(float (*arg0)[4], float arg1) {
     if (dist2 < outer * outer) {
         m_unk337 = 2;
     }
+}
+
+// FUNCTION: 0x0015A5B0 SetProbe__6PlayerFPA4_ff
+void Player::SetProbe(float (*arg0)[4], float arg1) {
+    *(float *)&m_unk344 = arg1 * arg1;
+    *(u_long128 *)m_unk350 = *(u_long128 *)arg0;
 }
 
 // FUNCTION: 0x0015A7F0 ValidateItem__6PlayerFi
@@ -766,6 +892,43 @@ void Player::SetDeath() {
     }
 }
 
+// DRAFT: 0x0015BD50 CyclockDamageMove__6PlayerFv
+// note: 1 word differs at 0x008C: original delay slot is nop, ours is addiu a1,zero,1.
+void Player::CyclockDamageMove() {
+    int state = m_unk250;
+    switch (state) {
+    case 0:
+        m_unk10C &= 0xFEFFFFFF;
+        m_unk250 = 1;
+        /* fallthrough */
+    case 1:
+        if (!(m_unk1D0 & 1)) {
+            m_unk250 = 2;
+        }
+        break;
+    case 2: {
+        void *pObj = *(void **)((char *)m_unk3C + 0x24);
+        int r = (pObj != 0) ? (((AbilityVirtuals *)pObj)->Slot18(1, state) != 0) : 0;
+        if (!(r & 0xFF)) {
+            m_unk250 = 3;
+            gSound.FadeOutAllMusic(0x1F4);
+            if (m_unk1F8 <= 0) {
+                SetDeath();
+                m_unk250 = 4;
+            } else {
+                gInterface.FadeScreen(255.0f, 8.5f, true, (Interface::eFadeColor)0);
+            }
+        }
+        break;
+    }
+    case 3:
+        if (gInterface.m_unk425 == 0) {
+            SetDeath();
+        }
+        break;
+    }
+}
+
 // note: 27 words differ: the bool lives in a1 instead of v1 and the original's andi v1,v1,0xFF truncation is missing. Tried unsigned char flag (27), implicit int-to-bool assignment (27), int flag with if/else (42), and bool with pAnim == 0 || !IsAnimate (44).
 // DRAFT: 0x0015BE80 DieMove__6PlayerFv
 void Player::DieMove() {
@@ -943,6 +1106,44 @@ void Player::MBlow2Move() {
     }
 }
 
+// FUNCTION: 0x0015C960 MBlowMove__6PlayerFv
+void Player::MBlowMove() {
+    static struct {
+        unsigned int id0;
+        unsigned int id1;
+    } MBlowEffects[3] = {
+        {0x81000034, 0x8200006c},
+        {0x81000272, 0x8200042d},
+        {0x81000449, 0x82000746},
+    };
+    static unsigned short HBlowAttack[5] = {0x14, 0x1d, 0x19, 0x1e, 0xffff};
+
+    int h = (int)m_unk3C[13];
+    switch (m_unk250) {
+    case 0: {
+        m_unk250 = 1;
+        int idx = (m_unk1D0 & 2) ? ((m_unk1D0 & 0x4000) ? 2 : 1) : 0;
+        unsigned int *e = &MBlowEffects[idx].id0;
+        m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(e[0], e[1], 0, 0, (EntityBaseClass *)this, 1.0f, false, 0, false);
+        break;
+    }
+    case 1:
+        if (h >= 0x10) {
+            ((EntityBaseClass *)this)->PlaySound((m_unk1D0 & 2) ? 0x283U : 0x177U);
+            m_unk250 = 2;
+        }
+        break;
+    case 2:
+        if (h >= 0x28 && CancelAttack(0x30) != 0) {
+            return;
+        }
+        break;
+    }
+    if (m_unk1D0 & 2) {
+        MultipleAttack(HBlowAttack);
+    }
+}
+
 // DRAFT: 0x0015CA90 StabDownMove__6PlayerFv
 // note: DIFF 18 words; original hoists the 0x400 constant, keeps var_v1 in $v1, and case 1 reuses the andi result for the tail test. Tried: local pointer for m_unk38, bits local removed, if-chain instead of switch (36 words).
 void Player::StabDownMove() {
@@ -1098,7 +1299,7 @@ void Player::Spin360Move() {
 
 // FUNCTION: 0x0015D4C0 UpwardStrikeMove__6PlayerFv
 void Player::UpwardStrikeMove() {
-    static unsigned int UpperFx[3][2] = {{0x8100006A, 0x820000BC}, {0x810001ED, 0x8200039A}, {0x8100020C, 0x82000367}};
+    static unsigned int UpperFx[2][2] = {{0x8100006A, 0x820000BC}, {0x810001ED, 0x8200039A}};
     static unsigned short UpwardStrikeAttack[7] = {0x0F, 0x14, 0x10, 0x14, 0x11, 0x15, 0xFFFF};
     switch (m_unk250) {
     case 0: {
@@ -1130,6 +1331,42 @@ int Player::MultipleAttack(unsigned short *arg0) {
     return 0;
 }
 
+// DRAFT: 0x0015D660 AirSlash2Move__6PlayerFv
+// note: 24 words differ: branch sense at 0x0020 (orig beqz a3 to state-0 block, ours bnez); m_unk250 in $a3 orig vs $a0 ours. Tried: state local, per-store reload, empty then-branch.
+void Player::AirSlash2Move() {
+    static unsigned char Air2Moves[5] = {0x00, 0x00, 0x71, 0x0f, 0x10};
+    int h = (int)m_unk3C[13];
+    if (m_unk250 == 0) {
+        m_unk250 = 1;
+        float *f = (float *)m_unk38;
+        f[0] = f[0] * AIR_ATTACK_SPEED;
+        m_unk38[1] = 0;
+        f[2] = f[2] * AIR_ATTACK_SPEED;
+        m_unk38[0x44] = 0;
+        return;
+    }
+    if (h >= 0x18) {
+        return;
+    }
+    int a2 = 0;
+    if (m_unk1B2 & 0x1000) {
+        a2 = (m_unk268 >= 2) ? 4 : 3;
+    } else if (m_unk1B2 & 0x8000) {
+        a2 = 2;
+    }
+    if (m_unk250 < a2) {
+        m_unk250 = a2;
+    }
+    if (h < 0xF) {
+        return;
+    }
+    if (m_unk250 >= 2) {
+        ComboTarget(-1.0f, 100.0f, true);
+        SetAction(Air2Moves[m_unk250]);
+    }
+    *(float *)((char *)m_unk38 + 0x110) = *(float *)((char *)m_unk25C + 0x38);
+}
+
 // FUNCTION: 0x0015D900 DuckLaunchMove__6PlayerFv
 void Player::DuckLaunchMove() {
     int t = (int)m_unk3C[13];
@@ -1147,8 +1384,8 @@ void Player::DuckLaunchMove() {
         }
     }
     if (t >= 0xB && m_unk250 != 0) {
-        float fHi = 100.0f;
         float fLo = -1.0f;
+        float fHi = 100.0f;
         ComboTarget(fLo, fHi, true);
         SetAction((m_unk250 & 8) ? 0xE : 0xC);
     }
@@ -1254,6 +1491,40 @@ void Player::AirOverheadMove() {
         }
         return;
     }
+}
+
+// DRAFT: 0x0015E350 JumpMove__6PlayerFv
+// note: 70 words differ. Original branches beqz to the body and b to the tail (ours bnez to tail); guard inversion and explicit goto fold back to bnez. Body loads and index-chain registers also differ (pVel computed after slti in original).
+void Player::JumpMove() {
+    if (m_unk250 == 0) {
+        m_unk250 = 1;
+        float *pVel = (float *)((char *)m_unk25C + m_unk268 * 8 + 0x3C);
+        int idx = 1;
+        if (m_unk1BC < 0x32) {
+            idx = 0;
+        } else if (m_unk1BC >= 0x4B) {
+            idx = 3;
+            if (m_unk1BC < 0x64) {
+                idx = 2;
+            }
+        }
+        float out[4];
+        out[1] = pVel[0];
+        float fScale = -*(float *)((char *)m_unk25C + 0x18 + idx * 8) * pVel[1];
+        if (m_unk23D1 != 0) {
+            out[1] *= SLOW_JUMP;
+        }
+        out[3] = 1.0f;
+        out[0] = fScale * FastMath_Sin180__Ff(m_unk1C4);
+        out[2] = fScale * FastMath_Cos180__Ff(m_unk1C4);
+        *(u_long128 *)m_unk38 = *(u_long128 *)out;
+        m_unk268 += 1;
+        if (m_unk38[0x42] & 0x200) {
+            ((EntityBaseClass *)this)->PlaySound(0xE5);
+        }
+    }
+    Physics *pPhys = (Physics *)m_unk38;
+    pPhys->m_unk11C = Round180__Ff(m_unk1C4);
 }
 
 // FUNCTION: 0x0015E490 JogLandMove__6PlayerFv
@@ -1455,6 +1726,37 @@ void Player::LandingMove() {
     }
 }
 
+// note: DIFF 31 best; early-return guard, temp-based idle decrement, gEng local tried. Differs: idle-branch gEng/IdleActions load order, sign-extend of m_unk3F&4 (dsll32/dsra32), SetAction tail.
+// DRAFT: 0x0015F7C0 StandMove__6PlayerFv
+void Player::StandMove() {
+    static int IdleActions[2][4] = {{0, 0x7e, 0x7f, 0}, {0, 0, 0x80, 0x81}};
+    if (((Physics *)m_unk38)->m_unkF8 > 3.0f) {
+        SetAction(5);
+        return;
+    }
+    if (m_unk20 == 0) {
+        switch (m_unk250) {
+        case 0:
+            m_unk340 = MathAPI::RandomIntRange(0x100, 0x1FF);
+            m_unk250 = 1;
+        case 1: {
+            int g = GetGroundAction();
+            if (g != m_unk260) {
+                SetAction(g);
+            } else if (g == 0) {
+                int t = m_unk340 - 1;
+                m_unk340 = t;
+                if (t < 0 && (((PMNode *)m_unk3C)->m_unk3F & 4)) {
+                    SetAction(IdleActions[m_unk1FC >> 1][(*(unsigned int *)(gEng + 0x19A80) >> 9) & 3]);
+                    m_unk260 = 0;
+                }
+            }
+            break;
+        }
+        }
+    }
+}
+
 // note: DIFF 36 best (separate null guard); nested guard DIFF 43; bool/uchar Slot18 and early-return variants worse. Differs: beqz/bnez at 0x1C, sltu/andi after Slot18 call, branch-to-tail shape.
 // DRAFT: 0x0015F8F0 EndAction__6PlayerFv
 int Player::EndAction() {
@@ -1593,7 +1895,7 @@ void Player::ResetEye(bool arg0) {
         if (arg0) {
             v1 = LEye;
         } else {
-            v1 = gUnitMatrix;
+            v1 = &gUnitMatrix[12];
         }
         *(u_long128 *)((char *)v0 + 0x90) = *(u_long128 *)v1;
         *((unsigned char *)v0 + 0x3E) |= 8;
@@ -1604,7 +1906,7 @@ void Player::ResetEye(bool arg0) {
         if (arg0) {
             v1 = REye;
         } else {
-            v1 = gUnitMatrix;
+            v1 = &gUnitMatrix[12];
         }
         *(u_long128 *)((char *)v0 + 0x90) = *(u_long128 *)v1;
         *((unsigned char *)v0 + 0x3E) |= 8;
@@ -1690,7 +1992,7 @@ void Player::ForceDie(int arg0) {
     m_unk103 = 0xFE;
     m_unk1D8 = 0;
     if (m_unk31C != 0) {
-        ((FontManager *)((char *)&gInterface + 0x1790))->RemoveText(m_unk31C);
+        ((FontManager *)((char *)&gInterface + 0x80))->RemoveText(m_unk31C);
         m_unk31C = 0;
     }
 }
@@ -1844,6 +2146,46 @@ void Player::LoadPlayerData(Player::PlayerData *arg0) {
     }
     m_unk21C = 0;
     m_unk220 = 0;
+}
+
+// FUNCTION: 0x00165A20 ResetPlayerData__6PlayerFPQ26Player10PlayerData
+void Player::ResetPlayerData(Player::PlayerData *arg0) {
+    int i;
+    int a1;
+    int a3;
+    if (arg0 == 0) {
+        CdsAssert__FPciPc("Player.cpp", 0x570, "pData");
+    }
+    ((char *)arg0)[0x58] = 0;
+    ((char *)arg0)[0x59] = 0;
+    ((char *)arg0)[0x5A] = -0x80;
+    *(int *)arg0 = 1;
+    i = 0;
+    a1 = 0;
+    a3 = 0;
+    while (i < 0xC) {
+        short *src = (short *)((char *)GameVarTbl + a1);
+        int *dst = (int *)((char *)arg0 + a3);
+        dst[1] = src[0];
+        dst[2] = src[3];
+        dst[3] = src[6];
+        dst[4] = src[9];
+        dst[5] = src[12];
+        dst[6] = src[15];
+        dst[7] = src[18];
+        dst[8] = src[21];
+        i += 8;
+        a1 += 0x30;
+        a3 += 0x20;
+    }
+    for (; i < 0x14; i++) {
+        ((int *)arg0)[i + 1] = ((short *)((char *)GameVarTbl + i * 6))[0];
+    }
+    memset((void *)((unsigned int)arg0 + 0x5B), -1, 0x20);
+    *(int *)((char *)arg0 + 0x54) = 1;
+    ((char *)arg0)[0x5B] = 0;
+    ((char *)arg0)[0x63] = 4;
+    ((char *)arg0)[0x73] = 0x15;
 }
 
 // FUNCTION: 0x00165B60 Kill__6PlayerFv

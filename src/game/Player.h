@@ -10,6 +10,7 @@ class PMNode;
 class PMeshNode;
 class EntityBaseClass;
 class GunTurret;
+class PSkeleton;
 
 class Player {
 public:
@@ -76,6 +77,8 @@ public:
     void GetShieldPass(bool *arg0);
     void LandingMove();
     void JogLandMove();
+    void JumpMove();
+    void StandMove();
     void RollMove();
     int EndAction();
     void BackToMaximo();
@@ -87,6 +90,11 @@ public:
     int CheckHammer(bool arg0);
     void SavePlayerData(PlayerData *arg0);
     void InitAttachableJoints();
+    void RefreshAttachableJoints();
+    void SetAbilityAction(PSkeleton *arg0, int arg1, int arg2);
+    void CyclockDamageMove();
+    void MBlowMove();
+    void AirSlash2Move();
     void GetKeyMove();
     void CatchIdleMove();
     void SetHeadCamera(bool arg0);
@@ -96,11 +104,13 @@ public:
     void OpenChestMove();
     void Over3Move();
     void LoadPlayerData(PlayerData *arg0);
+    static void ResetPlayerData(PlayerData *arg0);
     int GetComboLevel();
     int MultipleAttack(unsigned short *arg0);
     void FootStepSound(unsigned short *arg0);
     void SetPlayerAttack(unsigned short arg0, unsigned short arg1);
     void NotifyTreasure(float (*arg0)[4], float arg1);
+    void SetProbe(float (*arg0)[4], float arg1);
     PMNode *IsPlayerOnNode(PMeshNode *arg0, bool arg1);
     void SetBoundingSphere(PMNode *arg0, float arg1);
     void DetachJoint(int arg0);
@@ -126,7 +136,9 @@ public:
     void *m_unkD4;          // 0x0D4 shadow object, byte 0 set by EnablePlayerShadow, +0xC holds a sub-object
     char _padD8[0x103 - 0xD8];
     unsigned char m_unk103; // 0x103 set to 0xFE by ForceDie
-    char _pad104[0x15C - 0x104];
+    char _pad104[0x10C - 0x104];
+    int m_unk10C;           // 0x10C flags word, bit 0x01000000 cleared by CyclockDamageMove
+    char _pad110[0x15C - 0x110];
     unsigned short m_unk15C; // 0x15C read by OutputDebug
     unsigned short m_unk15E; // 0x15E read by OutputDebug
     char _pad160[0x190 - 0x160];
@@ -192,7 +204,11 @@ public:
     unsigned int m_unk2C0;  // 0x2C0 apparition id passed to GetPtrToApparition by ReleaseCheck
     int m_unk2C4;           // 0x2C4 hit counter, incremented and passed to OnHitEvent by ReleaseCheck
     int m_unk2C8;           // 0x2C8 countdown, reset to CAUGHT_TIME by ReleaseCheck
-    char _pad2CC[0x2F8 - 0x2CC];
+    char _pad2CC[0x2D0 - 0x2CC];
+    float m_unk2D0[4];      // 0x2D0 vector, source of sceVu0ApplyMatrix in CatchLedgeMove
+    float m_unk2E0[4];      // 0x2E0 vector, source of sceVu0ApplyMatrix in CatchLedgeMove
+    int m_unk2F0;           // 0x2F0 matrix holder, +0x40 is the matrix used by CatchLedgeMove
+    char _pad2F4[0x2F8 - 0x2F4];
     int m_unk2F8;           // 0x2F8 cleared by InitAttachableJoints
     float m_unk2FC;         // 0x2FC attached timer value, set by DetachJoint
     char _pad300[0x308 - 0x300];
@@ -210,9 +226,11 @@ public:
     signed char m_unk337;   // 0x337 treasure proximity level (1 near, 2 far), set by NotifyTreasure
     char _pad338[0x33B - 0x338];
     unsigned char m_unk33B; // 0x33B set to (arg0 == 0) by ShowPlayer
-    char _pad33C[0x344 - 0x33C];
+    char _pad33C[0x340 - 0x33C];
+    int m_unk340;           // 0x340 idle timer, set and decremented by StandMove
     int m_unk344;           // 0x344 cleared by SetDeath
-    char _pad348[0x360 - 0x348];
+    char _pad348[0x350 - 0x348];
+    float m_unk350[4];      // 0x350 probe vector, set by SetProbe
     struct BoundingSphere {
         PMNode *node;       // 0x00 owner, null when the slot is free
         float r2;           // 0x04 squared radius
