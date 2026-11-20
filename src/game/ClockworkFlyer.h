@@ -5,8 +5,15 @@
 
 class EntityBaseClass;
 
+struct ClockworkFlyerPad190 {
+    char b[0x10];
+    ~ClockworkFlyerPad190() {}
+    operator char *() { return b; }
+};
+
 class ClockworkFlyer {
 public:
+    ClockworkFlyer();
     void SetSpawnedFromEntity(float *pPos, float *pAlt, int nType);
     int GetNextPosition(float (&rOut)[4]);
     int InCameraView();
@@ -21,15 +28,19 @@ public:
     void SetDefaultVars();
     void OnTimerEvent(unsigned int nId);
     int OnHitEvent(EntityBaseClass *pOther, int nDmg, unsigned int a, unsigned int b);
+    void SetupDartDest();
+    int DoDartTasks();
+    void PitchLevelOut();
 
     char _pad000[0x4];                  // 0x000 vtable
     unsigned int m_unk4;                // 0x004 owner id passed to CreateTimer
-    char _pad008[0x3C - 0x8];
-    char *m_unk3C;                      // 0x03C target entity pointer; +0x80 used when non-null
+    char _pad008[0x38 - 0x8];
+    float *m_unk38;                     // 0x038 16-byte output pointer
+    char *m_unk3C;                     // 0x03C target entity pointer; +0x80 used when non-null
     char _pad040[0xF4 - 0x40];
     int m_unkF4;                        // 0x0F4 nonzero selects the damage-absorb path in OnHitEvent
     char _pad0F8[0x190 - 0xF8];
-    char _pad190[0x1A0 - 0x190];        // 0x190 embedded EntityBaseClass, address taken
+    ClockworkFlyerPad190 _pad190;       // 0x190 16-byte block, address taken
     float m_unk1A0;                     // 0x1A0 position read by FlyerPitchChange
     char _pad1A4[0x1B0 - 0x1A4];
     int m_unk1B0;                       // 0x1B0 type argument of SetSpawnedFromEntity
@@ -64,11 +75,15 @@ public:
     int m_unk284;                       // 0x284 hit points, reduced by OnHitEvent
     char _pad288[0x28C - 0x288];
     char *m_unk28C;                     // 0x28C effect handle, destroyed in dtor
-    char _pad290[0x2A0 - 0x290];
+    float m_unk290[4];                  // 0x290 dart vector; [1] is 0x294 (speed, zeroed in SetupDartDest)
     int m_unk2A0;                       // 0x2A0 timer id slot
     char *m_unk2A4;                     // 0x2A4 waypoint group, count at +4
     int m_unk2A8;                       // 0x2A8 next waypoint index
-    char _pad2AC[0x2C8 - 0x2AC];
+    char _pad2AC[0x2C0 - 0x2AC];
+    float m_unk2C0;                     // 0x2C0 bobbing phase
+
+    unsigned char m_unk2C4;             // 0x2C4 flag cleared by SetupDartDest
+    char _pad2C5[0x2C8 - 0x2C5];
     void *m_unk2C8;                     // 0x2C8 GetTarget cache
 };
 
