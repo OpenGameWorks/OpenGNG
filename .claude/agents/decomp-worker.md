@@ -29,6 +29,8 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 - `lui at,1; addu at,base,at` is a member past offset 0x8000 of a large class.
 - Store order and local declaration order set instruction order; separate early returns or a duplicated tail replace a shared exit.
 - `% 2` versus `& 1`, signed versus unsigned locals, and `for` versus `while` change branch form and shifts.
+- An assert whose original tests a literal's address at runtime (`lui`/`addiu` of the message, `sltu`, `xori 1`, `bnez`, then `CdsAssert`) comes from `assert(!"message")`. The ternary form `((cond) ? (void)0 : CdsAssert__FPciPc("File.cpp", line, #cond))` keeps that test; `if` forms fold it away. A file-local `#define CDS_ASSERT(line, cond)` in that form serves every assert in the file; `src/game/PPakFile.cpp` is the reference.
+- A ctor that spills `this` to `0x1C(sp)` and reloads it before stores needs a member sub-object with an empty user-declared destructor.
 
 ## Finishing
 
