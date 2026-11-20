@@ -68,6 +68,7 @@ public:
     void BackToMaximo();
     void ShowPlayer(bool arg0);
     void RenderCutScene();
+    void Animate(int arg0, float arg1);
     void *IsMidasActive();
     void OutputDebug();
     int CheckHammer(bool arg0);
@@ -89,6 +90,9 @@ public:
     PMNode *IsPlayerOnNode(PMeshNode *arg0, bool arg1);
     void SetBoundingSphere(PMNode *arg0, float arg1);
     void DetachJoint(int arg0);
+    void GetAttachableJointOffsets(int arg0, float (*arg1)[4]);
+    void FinishCutCamera(float (*arg0)[4]);
+    void DuckLaunchMove();
     void MBlow2Move();
     void SpinSlashMove();
     void SliceMove();
@@ -99,7 +103,9 @@ public:
     char _pad024[0x38 - 0x24];
     int *m_unk38;           // 0x038 pointer, m_unk38[1] is written by AirSliceMove, m_unk38[0x42] (0x108) is read by Ready2Clear
     float *m_unk3C;         // 0x03C pointer, float at 0x34 is read by GrimSlash2Move, OutputDebug
-    char _pad040[0x103 - 0x40];
+    char _pad040[0xD4 - 0x40];
+    void *m_unkD4;          // 0x0D4 shadow object, byte 0 set by EnablePlayerShadow, +0xC holds a sub-object
+    char _padD8[0x103 - 0xD8];
     unsigned char m_unk103; // 0x103 set to 0xFE by ForceDie
     char _pad104[0x15C - 0x104];
     unsigned short m_unk15C; // 0x15C read by OutputDebug
@@ -186,7 +192,9 @@ public:
         PMNode *node;       // 0x00 owner, null when the slot is free
         float r2;           // 0x04 squared radius
     } m_unk360[4];          // 0x360 bounding spheres set by SetBoundingSphere
-    char _pad380[0x23D0 - 0x380];
+    char _pad380[0x23C8 - 0x380];
+    void *m_unk23C8;        // 0x23C8 shadow object, cleared or set by EnablePlayerShadow
+    void *m_unk23CC;        // 0x23CC shadow object, cleared or set by EnablePlayerShadow
     signed char m_unk23D0;  // 0x23D0 cleared by InitAttachableJoints
     signed char m_unk23D1;  // 0x23D1 cleared by InitAttachableJoints
     char _pad23D2[2];

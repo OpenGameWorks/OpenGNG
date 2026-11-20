@@ -29,6 +29,16 @@ public:
     void SetState(int arg0);
     void PlaySound(unsigned int arg0);
     void ResetCollisions();
+    void Animate(int arg0, float arg1);
+};
+class PAnim;
+class PGrimReaperCape {
+public:
+    void AnimateControlNode(PAnim *arg0, float arg1);
+};
+class PDynamicSplinePatch {
+public:
+    void Animate(float arg0);
 };
 extern signed char MaximoArmor[8];
 extern unsigned int FootSound[8];
@@ -67,6 +77,11 @@ public:
 class PMat4;
 class PMNode {
 public:
+    virtual void Slot08();
+    virtual void Slot0C();
+    virtual void Slot10();
+    virtual void Slot14();
+    virtual void Animate(float arg0, float arg1, PMat4 *arg2, int arg3, bool arg4);
     void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
     void EnableFx(bool arg0, bool arg1);
     float GetFrameTime();
@@ -122,6 +137,14 @@ extern int mbHard__15EntityBaseClass;
 extern int ComboLevel[20];
 extern int CAUGHT_TIME;
 extern float AttachedTimer[5];
+struct AttachableJoint {
+    int m_unk00;
+    int m_unk04;
+    float m_unk08;
+    float m_unk0C;
+    float m_unk10;
+};
+extern AttachableJoint m_AttachableJoints[5];
 extern "C" void *GetPtrToApparition__13EntityManagerFUi(void *, unsigned int);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
@@ -225,6 +248,21 @@ void Player::DetachJoint(int arg0) {
     }
 }
 
+// FUNCTION: 0x00159260 GetAttachableJointOffsets__6PlayerFiPA4_f
+void Player::GetAttachableJointOffsets(int arg0, float (*arg1)[4]) {
+    float fVec[4];
+    unsigned int uVal;
+    if (m_pFreeJoints[arg0].m_unk00 == 0) {
+        CdsAssert__FPciPc("Player.cpp", 0x2221, "m_pFreeJoints[index].pJoint");
+    }
+    fVec[0] = m_AttachableJoints[arg0].m_unk08;
+    fVec[1] = m_AttachableJoints[arg0].m_unk0C;
+    fVec[2] = m_AttachableJoints[arg0].m_unk10;
+    uVal = (unsigned char)m_pFreeJoints[arg0]._pad05[0];
+    fVec[3] = (float)uVal;
+    *(u_long128 *)arg1 = *(u_long128 *)fVec;
+}
+
 // FUNCTION: 0x00159720 InitAttachableJoints__6PlayerFv
 void Player::InitAttachableJoints() {
     m_unk23D0 = 0;
@@ -249,6 +287,29 @@ void Player::OutputDebug() {
     if (m_unk3C != 0) {
         sprintf(buf, "Action %d, frame %f, Atk(%d, 0x%x), Combo %d", m_unk260, fptodp(m_unk3C[13]), m_unk15C, m_unk15E, m_unk220);
         gDebug.DebugDisp(buf);
+    }
+}
+
+// FUNCTION: 0x00159B60 FinishCutCamera__6PlayerFPA4_f
+void Player::FinishCutCamera(float (*arg0)[4]) {
+    char *obj = (char *)m_unk3C;
+    m_unk1C4 = arg0[0][3];
+    *(float *)(obj + 0x94) = arg0[0][3];
+    ((unsigned char *)obj)[0x3E] |= 8;
+    arg0[0][3] = 1.0f;
+    *(u_long128 *)(obj + 0x80) = *(u_long128 *)arg0;
+    ((unsigned char *)obj)[0x3E] |= 8;
+    *(u_long128 *)m_unk38 = *(u_long128 *)&gUnitMatrix[12];
+    Physics *phys = (Physics *)m_unk38;
+    phys->m_unk11C = Round180__Ff(m_unk1C4);
+    if (m_unk335 == 0) {
+        SetAction(0);
+    }
+    m_unk26C = 0;
+    m_unk33B = 0;
+    EnablePlayerShadow(true);
+    if (m_unk229 == 4) {
+        ((PMNode *)obj)->Animate(0.0f, 0.0f, 0, 0, false);
     }
 }
 
@@ -693,6 +754,30 @@ int Player::MultipleAttack(unsigned short *arg0) {
     return 0;
 }
 
+// FUNCTION: 0x0015D900 DuckLaunchMove__6PlayerFv
+void Player::DuckLaunchMove() {
+    int t = (int)m_unk3C[13];
+    if (t >= 0x1E) {
+        if (CancelAttack(0x30) != 0) {
+            return;
+        }
+    } else if (t != 0) {
+        unsigned short f = m_unk1B2;
+        if (f & 0x8000) {
+            m_unk250 |= 4;
+        }
+        if (f & 0x1000) {
+            m_unk250 |= 8;
+        }
+    }
+    if (t >= 0xB && m_unk250 != 0) {
+        float fHi = 100.0f;
+        float fLo = -1.0f;
+        ComboTarget(fLo, fHi, true);
+        SetAction((m_unk250 & 8) ? 0xE : 0xC);
+    }
+}
+
 // FUNCTION: 0x0015D9F0 HammerSliceMove__6PlayerFv
 void Player::HammerSliceMove() {
     if (((int)m_unk3C[13] < 0x32 || CancelAttack(0x30) == 0) && m_unk250 == 0 && (int)m_unk3C[13] >= 0x1C) {
@@ -926,6 +1011,56 @@ void Player::UpdatePlayerFx() {
     }
 }
 
+// FUNCTION: 0x00160230 EnablePlayerShadow__6PlayerFb
+void Player::EnablePlayerShadow(bool arg0) {
+    bool *shadow = (bool *)m_unkD4;
+    shadow[0] = arg0;
+    char *sub = *(char **)((char *)shadow + 0xC);
+    if (sub != 0) {
+        *(bool *)(sub + 0x18) = arg0;
+    }
+    char *a = (char *)m_unk23C8;
+    if (a != 0 && m_unk23CC != 0) {
+        if (m_unk229 == 4) {
+            *(bool *)a = 0;
+            sub = *(char **)(a + 0xC);
+            if (sub != 0) {
+                *(bool *)(sub + 0x18) = 0;
+            }
+            char *b = (char *)m_unk23CC;
+            *(bool *)b = 0;
+            sub = *(char **)(b + 0xC);
+            if (sub != 0) {
+                *(bool *)(sub + 0x18) = 0;
+            }
+        } else if (m_unk1FC >= 2) {
+            *(bool *)a = arg0;
+            sub = *(char **)(a + 0xC);
+            if (sub != 0) {
+                *(bool *)(sub + 0x18) = arg0;
+            }
+            char *b = (char *)m_unk23CC;
+            *(bool *)b = 0;
+            sub = *(char **)(b + 0xC);
+            if (sub != 0) {
+                *(bool *)(sub + 0x18) = 0;
+            }
+        } else {
+            *(bool *)a = 0;
+            sub = *(char **)(a + 0xC);
+            if (sub != 0) {
+                *(bool *)(sub + 0x18) = 0;
+            }
+            char *b = (char *)m_unk23CC;
+            *(bool *)b = arg0;
+            sub = *(char **)(b + 0xC);
+            if (sub != 0) {
+                *(bool *)(sub + 0x18) = arg0;
+            }
+        }
+    }
+}
+
 // FUNCTION: 0x001605A0 ResetEye__6PlayerFb
 void Player::ResetEye(bool arg0) {
     PMNode *s1 = (PMNode *)m_unk3C;
@@ -1130,6 +1265,28 @@ void Player::SetHeadCamera(bool arg0) {
 void Player::RenderCutScene() {
     ((CutSceneObject *)m_unk28C)->Slot04(0, 0x80, 0);
     ((CutSceneObject *)m_unk284)->Slot04(0, 0x80, 0);
+}
+
+// FUNCTION: 0x00164270 Animate__6PlayerFif
+void Player::Animate(int arg0, float arg1) {
+    PMNode *node = 0;
+    PAnim *anim = 0;
+    if (m_unk229 == 4) {
+        float t = ((PMNode *)m_unk3C)->GetFrameTime();
+        node = ((PMNode *)m_unk3C)->Find(0x9980D6C3U);
+        if (node != 0) {
+            anim = *(PAnim **)((char *)node + 0x24);
+            *(PAnim **)((char *)node + 0x24) = 0;
+            ((PGrimReaperCape *)((char *)this + 0x390))->AnimateControlNode(anim, t);
+        }
+    }
+    ((EntityBaseClass *)this)->Animate(arg0, arg1);
+    if (m_unk229 == 4) {
+        ((PDynamicSplinePatch *)((char *)this + 0x390))->Animate(1.0f);
+        if (node != 0 && anim != 0) {
+            *(PAnim **)((char *)node + 0x24) = anim;
+        }
+    }
 }
 
 // FUNCTION: 0x00164770 ResetPling__6PlayerFv
