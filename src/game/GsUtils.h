@@ -87,5 +87,6 @@ typedef struct tagMoveRgToBaPacket {
 } tagMoveRgToBaPacket;          // size >= 0xAD0
 
 void GsInitMoveRG2BAPacket(tagMoveRgToBaPacket *pPacket, short nA, short nB, short nC, short nD);
+tagMoveRgToBaPacket *GsCreateMoveRG2BAPacket(int nA, int nB, int nC, int nD, int nE, int &rSize);
 
 #endif

@@ -6,6 +6,7 @@
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("GsUtils.cpp", line, #cond))
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
+extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void sceGsPutDispEnv(void *pEnv);
 extern "C" void sceGsPutDrawEnv(void *pEnv);
 extern int SCREEN_OFFSET_X;
@@ -48,6 +49,113 @@ void GsInitClut256(tagGsClut256 *pClut) {
     memset(pClut, 0, 0x460);
     pClut->m_unk50 = 0;
     *(long long *)&pClut->m_unk50 = 0x0800000000008040LL;
+}
+
+// DRAFT: 0x0017D7C0 GsCreateMoveRG2BAPacket__FiiiiiRi
+// note: 231 words differ, size 0x3B8 vs 0x3D0: nE/nD/nC land in fp/s7/s6 with nE spilled to 0xAC (original fp=nE, s7=nD, s6=nC, rSize at 0xAC); nS3 branch shape and sign-test branches differ; second CdsAssert string relocation (@602) differs. Tried: do/while vs while loop, nS3 if/else, nVa8 move (kept), nVa1 reuse in quad (234).
+tagMoveRgToBaPacket *GsCreateMoveRG2BAPacket(int nA, int nB, int nC, int nD, int nE, int &rSize) {
+    int nTiles;
+    int nTotal;
+    int nS3;
+    int nVa0;
+    int nVa1;
+    int nVb;
+    int nVa8;
+    int nI;
+    int nX0;
+    int nX1;
+    int nT3;
+    unsigned char *pb;
+    unsigned char *pv;
+    unsigned char *apPacket;
+
+    nTiles = nB >> 4;
+    if (nB < 0) {
+        nTiles = (nB + 0xF) >> 4;
+    }
+    nS3 = 2;
+    if (nB == 0x20) {
+        nS3 = 0xA;
+    }
+    nTotal = (nTiles * 4) + 0x11;
+    apPacket = (unsigned char *)__nwa__FUi(nTotal * 0x10);
+    CDS_ASSERT(0x53A, apPacket);
+    rSize = nTotal * 0x10;
+    pb = apPacket;
+    *(unsigned short *)pb = (unsigned short)((*(unsigned short *)pb & ~0x7FFF) | ((nTotal - 1) & 0x7FFF));
+    pb[1] = (unsigned char)((pb[1] & ~0x80) | 0x80);
+    pb[7] = (unsigned char)((pb[7] & ~0xF0) | 0x10);
+    pb[8] = (unsigned char)((pb[8] & ~0xF) | 0xE);
+    *(long long *)(pb + 0x10) = 0;
+    *(long long *)(pb + 0x18) = 0x3F;
+    nVb = nB >> 6;
+    if (nB < 0) {
+        nVb = (nB + 0x3F) >> 6;
+    }
+    nVa1 = 1;
+    if (nVb >= 2) {
+        nVa1 = nVb;
+    }
+    nVa0 = nA >> 0xD;
+    if (nA < 0) {
+        nVa0 = (nA + 0x1FFF) >> 0xD;
+    }
+    nVa8 = nA >> 8;
+    if (nA < 0) {
+        nVa8 = (nA + 0xFF) >> 8;
+    }
+    *(long long *)(pb + 0x20) = ((long long)nS3 << 0x18) | ((long long)nVa0 | ((long long)nVa1 << 0x10)) | (0x7FFFLL << 0x20);
+    *(long long *)(pb + 0x28) = 0x4C;
+    *(long long *)(pb + 0x30) = 0;
+    *(long long *)(pb + 0x38) = 0x4A;
+    *(long long *)(pb + 0x40) = 0;
+    *(long long *)(pb + 0x48) = 0x18;
+    *(long long *)(pb + 0x50) = 0x0FFF0000LL | (0x0FFF0000LL << 0x20);
+    *(long long *)(pb + 0x58) = 0x40;
+    *(long long *)(pb + 0x60) = 0;
+    *(long long *)(pb + 0x68) = 8;
+    *(long long *)(pb + 0x70) = 0x31001;
+    *(long long *)(pb + 0x78) = 0x47;
+    *(long long *)(pb + 0x80) = 0x2ALL | (0x80LL << 0x20);
+    *(long long *)(pb + 0x88) = 0x42;
+    *(long long *)(pb + 0x90) = 1;
+    *(long long *)(pb + 0x98) = 0x1A;
+    *(long long *)(pb + 0xA0) = 0;
+    *(long long *)(pb + 0xA8) = 0x45;
+    *(long long *)(pb + 0xB0) = 0x80LL << 0x20;
+    *(long long *)(pb + 0xB8) = 0x3B;
+    *(long long *)(pb + 0xC0) = 1;
+    *(long long *)(pb + 0xC8) = 0x14;
+    pv = pb + 0x100;
+    *(long long *)(pb + 0xD0) = ((((long long)(nE + 1)) << 0x1E) | (((long long)nD) << 0x1A) | (((long long)nS3) << 0x14) | ((long long)nVa8 | (((long long)((nVb < 2) ? 1 : nVb)) << 0xE))) | (0xCLL << 0x20);
+    *(long long *)(pb + 0xD8) = 6;
+    *(long long *)(pb + 0xE0) = 0x116;
+    *(long long *)(pb + 0xE8) = 0;
+    *(long long *)(pb + 0xF0) = (0x8080LL << 0x10) | 0x8080LL | (0x3F800000LL << 0x20);
+    *(long long *)(pb + 0xF8) = 1;
+    nI = 0;
+    if (nTiles > 0) {
+        nX0 = 0;
+        nX1 = 0;
+        nT3 = nC << 5;
+        do {
+            *(long long *)pv = (long long)(nX0 + 8) | 0x80000;
+            *(long long *)(pv + 0x8) = 3;
+            *(long long *)(pv + 0x10) = (long long)(nX1 + 0x80);
+            *(long long *)(pv + 0x18) = 5;
+            *(long long *)(pv + 0x20) = (long long)(nX0 + 0x88) | ((long long)(nT3 + 8) << 0x10);
+            *(long long *)(pv + 0x28) = 3;
+            nI += 1;
+            *(long long *)(pv + 0x30) = (long long)(nX1 + 0x100) | ((long long)nT3 << 0x10);
+            nX0 += 0x100;
+            *(long long *)(pv + 0x38) = 5;
+            nX1 += 0x100;
+            pv += 0x40;
+        } while (nI < nTiles);
+    }
+    *(long long *)pv = 0;
+    *(long long *)(pv + 0x8) = 0x1A;
+    return (tagMoveRgToBaPacket *)apPacket;
 }
 
 // DRAFT: 0x0017DB90 GsClearVRAM__FUcUcUcUcsss
