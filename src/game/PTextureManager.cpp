@@ -2,6 +2,7 @@
 #include "types.h"
 #include "PTextureManager.h"
 #include "PPakFile.h"
+#include "PTextureDmaChain.h"
 
 // TODO(header): foreign declarations
 extern "C" void FlushCache(int nMode);
@@ -708,6 +709,78 @@ void PTextureManager::PrepareDynamicClutPacket(tagGsClut256 *pClut, tagGsTexture
     }
     PrepareImageXferInfo((tagGsImageXferInfo *)pClut, 0x10, 0x10, 0, nTmp / 256);
     GsSetClutBaseAddr(pTexEnv, nTmp);
+}
+
+// DRAFT: 0x0018C070 SetTexture__15PTextureManagerFiP12PDisplayListPP23tagGsTextureEnvironmentRb
+// note: 139 words differ: prologue s1/s2 copy order, pHeader/pDisplayList register swap, store order 0x17C-0x1A8, lb vs lbu at 0xF0, branch offsets 0x50/0xD8/0x108
+void PTextureManager::SetTexture(int nHandle, PDisplayList *pDisplayList, tagGsTextureEnvironment **ppEnv, bool &bOut) {
+    PTexture::eTextureType eType = PTexture::eTextureType_Unknown;
+    bool bFlag = false;
+    int nIndex = -1;
+    int nTmp;
+    int nVram;
+    bool bLocal;
+
+    if (nHandle == 0) {
+        *ppEnv = (tagGsTextureEnvironment *)m_unk1F0;
+        bOut = false;
+        return;
+    }
+    DecodeTextureHandle(nHandle, bFlag, eType, nIndex);
+    CDS_ASSERT_MSG(0x150, nIndex >= 0, "aiIndex >= 0");
+    if (bFlag) {
+        CDS_ASSERT_MSG(0x154, nIndex < m_unk1D4, "aiIndex < miNumStaticTextures");
+        *ppEnv = (tagGsTextureEnvironment *)((char *)m_unk1D0 + nIndex * 0x60);
+        bOut = false;
+        return;
+    }
+    PTexture *pTex = GetTexture(bFlag, eType, nIndex);
+    tagPs2TexDataHeader *pHeader = (tagPs2TexDataHeader *)pTex->m_unk4;
+    if (pTex->m_unkA8) {
+        *ppEnv = (tagGsTextureEnvironment *)pTex->m_unk40;
+        bOut = false;
+        return;
+    }
+    CDS_ASSERT_MSG(0x172, eType == 1, "aeType == PTexture::TEXTURE_IMAGE");
+    CDS_ASSERT_MSG(0x180, AllocDynamicVramForTexture(pHeader, 0, nVram, nTmp, bLocal, false), "0");
+    pTex->m_unkA8 = 1;
+    m_pCurBuf->m_apTex[m_pCurBuf->m_unkD8] = pTex;
+    m_pCurBuf->m_unkD8++;
+    CDS_ASSERT_MSG(0x189, m_pCurBuf->m_unkD8 < 0x30, "mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH");
+    if (bLocal) {
+        ((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->NextBatch();
+    }
+    if (eType == 1) {
+        tagImageDmaPacket *pClut;
+        tagImageDmaPacket *pImage;
+        if (pHeader->type == 0x13 || pHeader->type == 0x14) {
+            pClut = (tagImageDmaPacket *)((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->AllocEntries(0xE);
+            CDS_ASSERT_MSG(0x19E, pClut, "apDmaChain");
+            pImage = (tagImageDmaPacket *)((char *)pClut + 0x70);
+        } else {
+            pImage = (tagImageDmaPacket *)((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->AllocEntries(7);
+            CDS_ASSERT_MSG(0x1A7, pImage, "apDmaChain");
+            pClut = 0;
+        }
+        if (pClut) {
+            int nDim = (pHeader->type == 0x14) ? 8 : 0x10;
+            PrepareImageDmaPacket(pClut, pTex->m_unk30, *(short *)(pTex->m_unk4 + 0x24), nDim, nDim, 0, nTmp / 256);
+            GsSetClutBaseAddr((tagGsTextureEnvironment *)pTex->m_unk40, nTmp);
+        }
+        int nW;
+        int nH;
+        if (pHeader->unk6 != 0 && pHeader->unk7 != 0) {
+            nW = 1 << pHeader->unk6;
+            nH = 1 << pHeader->unk7;
+        } else {
+            nW = 1 << pHeader->unk0;
+            nH = 1 << pHeader->unk1;
+        }
+        PrepareImageDmaPacket(pImage, pTex->m_unk34, *(int *)(pTex->m_unk4 + 8), nW, nH, pHeader->unk4, nVram / 256);
+    }
+    GsSetTexBaseAddr((tagGsTextureEnvironment *)pTex->m_unk40, nVram);
+    *ppEnv = (tagGsTextureEnvironment *)pTex->m_unk40;
+    bOut = bLocal;
 }
 
 // FUNCTION: 0x0018C400 GetTexEnv__15PTextureManagerFi

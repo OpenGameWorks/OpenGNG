@@ -101,6 +101,7 @@ public:
     void PrepareDynamicClutPacket(tagGsClut256 *pClut, tagGsTextureEnvironment *pTexEnv, bool bFlag, PDisplayList *pDisplayList);
     int PrepareStaticTextureForDma(u_long128 *pDmaChain, tagPs2TexDataHeader *pTexHeader, void *pvTexClutPacket, void *pvTexImagePacket, tagGsTextureEnvironment *pTexEnv);
     int LoadTexture(PPakFile *poFile, tagPs2TexDataHeader *pTexHeader, void **ppvTexClutPacket, void **ppvTexImagePacket);
+    void SetTexture(int nHandle, PDisplayList *pDisplayList, tagGsTextureEnvironment **ppEnv, bool &bOut);
 
     int m_unk0;                 // 0x000
     int m_unk4;                 // 0x004
