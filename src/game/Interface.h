@@ -33,13 +33,15 @@ class HudBossMeter {
 public:
     void Reset();
     void SetValue(short value);
+    void SetMaxValue(short arg0, int arg1);
     void SetFace();
+    void Init(PMeshNode *meshNode, HudData *hud);
 
     char _pad000[0x4];
     void *m_unk4;               // 0x004 pointer to a HUD element (fields at 0x0C, 0x2C, 0x84)
     float m_unk8;               // 0x008
     short m_unkC;               // 0x00C
-    char _pad00E[0x1];
+    signed char m_unkE;         // 0x00E
     signed char m_unkF;         // 0x00F
     int m_unk10;                // 0x010
     short m_unk14;              // 0x014
@@ -63,6 +65,7 @@ class HudHint {
 public:
     void Init(unsigned int arg0);
     void WriteHint();
+    void InitNode(PMeshNode *node);
 
     int m_unk0;                 // 0x000
     int m_unk4;                 // 0x004
@@ -70,6 +73,8 @@ public:
     int m_unkC;                 // 0x00C index into m_unk38
     char _pad010[0x28];
     int m_unk38[1];             // 0x038 indexed by m_unkC, values index HintTable
+    char _pad03C[0x78];
+    PMNode *m_unkB4;            // 0x0B4 node found by InitNode
 };
 
 class GameHud {
@@ -109,6 +114,8 @@ public:
     void DeleteMeshLayer();
     void DisplayFadeRectangle();
     int AbilityScreen();
+    void ResetGameHud();
+    void ProcessScreenFade();
     // Enumerator names are placeholders; only the type identity (Q29Interface10eFadeColor) matters.
     enum eFadeColor { eFadeColor_Value0 = 0, eFadeColor_Value1 = 1, eFadeColor_Value2 = 2 };
     void FadeScreen(float arg0, float arg1, bool arg2, eFadeColor arg3);
@@ -119,7 +126,29 @@ public:
     int m_unk1B8;               // 0x1B8
     int m_unk1BC;               // 0x1BC
     int m_unk1C0;               // 0x1C0
-    char _pad1C4[0x133];
+    char _pad1C4[0x8];
+    void *m_unk1CC;             // 0x1CC embedded object; its vtable slot 4 (offset 0x18) is called with &m_unk1CC
+    char _pad1D0[0xC];
+    void *m_unk1DC;             // 0x1DC same element kind as 0x1CC
+    char _pad1E0[0xC];
+    void *m_unk1EC;             // 0x1EC same element kind as 0x1CC
+    char _pad1F0[0xC];
+    void *m_unk1FC;             // 0x1FC same element kind as 0x1CC
+    char _pad200[0xC];
+    void *m_unk20C;             // 0x20C same element kind as 0x1CC
+    char _pad210[0xC];
+    void *m_unk21C;             // 0x21C same element kind as 0x1CC
+    char _pad220[0xC];
+    void *m_unk22C;             // 0x22C same element kind as 0x1CC
+    char _pad230[0x20];
+    void *m_unk250;             // 0x250 same element kind as 0x1CC
+    char _pad254[0x1C];
+    void *m_unk270;             // 0x270 same element kind as 0x1CC
+    char _pad274[0x1C];
+    void *m_unk290;             // 0x290 same element kind as 0x1CC
+    char _pad294[0x54];
+    void *m_unk2E8;             // 0x2E8 same element kind as 0x1CC
+    char _pad2EC[0xB];
     unsigned char m_unk2F7;     // 0x2F7
     char _pad2F8[0x2C];
     int m_unk324;               // 0x324 sign tested by AbilityScreen

@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "Interface.h"
 
@@ -53,13 +54,25 @@ public:
 // Only the mangled name (13eBoxIntersect) matters here; the enumerator names are placeholders.
 enum eBoxIntersect { eBoxIntersect_Value0 = 0, eBoxIntersect_Value1 = 1 };
 
+class PMat4;
+
 class PMNode {
 public:
     virtual void Slot00(int flag);
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual void Slot04(float fA, float fB, PMat4 *pMat, int arg3, bool bFlag);
     PMNode *Find(unsigned int id);
     void RecurseSetSTAnimOptions(bool flag);
     void SetAllFrustrumTest(eBoxIntersect arg0);
     void RecurseSetLoopRateByID(unsigned int id, int arg1, float arg2);
+    void ScaleSet(float arg0, float arg1, float arg2, float arg3);
+
+    char _pad004[0x8];
+    int m_unkC;                 // 0x00C
+    char _pad010[0x70];
+    float m_unk80;              // 0x080
 };
 
 // Placeholder size; the original object is larger than the 8-byte small-data threshold.
@@ -134,6 +147,8 @@ extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern Interface gInterface;
 // HintTable is 120 bytes (symbols.tsv); element size taken from the lw/sll 2 indexing.
 extern int HintTable[30];
+// BoxSize is a table of 12-byte entries; the float fields at offsets 4 and 8 are read by InitNode.
+extern char BoxSize[0x100];
 // gEng is 105360 bytes; the array size keeps it out of small data. InitRender reads gEng + 0x50.
 extern char gEng[105360];
 extern "C" void sceVu0CopyVector(float *dst, float *src);
@@ -302,6 +317,28 @@ void Interface::AddAbility(int arg0) {
     *(int *)(MemMgr + 0x18) = saved;
 }
 
+// FUNCTION: 0x001412B0 SetMaxValue__12HudBossMeterFsi
+void HudBossMeter::SetMaxValue(short arg0, int arg1) {
+    float oldMax = *(float *)&m_unk10;
+    m_unkC = arg0;
+    *(float *)&m_unk10 = (float)arg0;
+    if (m_unk14 < 0) {
+        m_unk14 = arg0;
+    } else {
+        m_unk14 = (short)(((float)m_unk14 * *(float *)&m_unk10) / oldMax);
+    }
+    if ((unsigned char)m_unkF != 2) {
+        m_unkF = 1;
+        *(float *)((char *)m_unk4 + 0x84) = m_unk8 - 5.0f;
+    }
+    if (arg1 > 0 && arg1 != m_unk16) {
+        m_unk16 = (signed char)arg1;
+        SetFace();
+    }
+    ((PMNode *)m_unk4)->Slot04(0.0f, 0.0f, 0, 8, false);
+    *(int *)((char *)m_unk4 + 0xC) = 1;
+}
+
 // FUNCTION: 0x1413A0 SetValue__12HudBossMeterFs
 void HudBossMeter::SetValue(short value) {
     m_unkC = value;
@@ -342,6 +379,25 @@ void HudBossMeter::Reset() {
     m_unk14 = -1;
     m_unk10 = 0x42C80000;
     m_unk17 = 1;
+}
+
+// DRAFT: 0x141710 Init__12HudBossMeterFP9PMeshNodeP7HudData
+// note: DIFF 28 words; branch layout and shared sb $zero,0x16 delay slot differ. Tried ==/!= polarity (33, 28), pre-branch m_unk16 store (44).
+void HudBossMeter::Init(PMeshNode *meshNode, HudData *hud) {
+    m_unk4 = ((PMNode *)meshNode)->Find(hud->m_unk0);
+    m_unkF = hud->m_unk5;
+    m_unkE = hud->m_unk4;
+    m_unk8 = *(float *)((char *)m_unk4 + 0x84);
+    if (hud->m_unk0 != 0xA389995D) {
+        m_unk18 = ((PMNode *)m_unk4)->Find(0x463547C7U);
+        m_unk1C = ((PMNode *)m_unk4)->Find(0x6780BC04U);
+        m_unk16 = 2;
+    } else {
+        m_unk18 = ((PMNode *)m_unk4)->Find(0x2291CBBBU);
+        m_unk1C = ((PMNode *)m_unk4)->Find(0x20DDED4AU);
+        m_unk16 = 0;
+    }
+    SetFace();
 }
 
 // FUNCTION: 0x141A80 ComboFinish__8HudComboFv
@@ -456,6 +512,46 @@ void HudHint::Init(unsigned int arg0) {
     gInterface.m_unk1C0 = m_unk4 | 0x10;
 }
 
+// FUNCTION: 0x1441F0 InitNode__7HudHintFP9PMeshNode
+void HudHint::InitNode(PMeshNode *node) {
+    m_unkB4 = ((PMNode *)node)->Find(0xFBD2D937U);
+    if (m_unkB4 == 0) {
+        CdsAssert__FPciPc("Interface.cpp", 0x3A0, "mpBG");
+    }
+    m_unkB4->m_unkC = 0;
+    float *pBox = (float *)(BoxSize + *(signed char *)((char *)&gInterface + 0x93) * 0xC);
+    PMNode *pNode = ((PMNode *)node)->Find(0x4FEFC567U);
+    if (pNode != 0) {
+        pNode->ScaleSet(pBox[1], 1.0f, 1.0f, 1.0f);
+        pNode->m_unk80 += pBox[2];
+    }
+}
+
+// FUNCTION: 0x001442C0 ResetGameHud__9InterfaceFv
+class HudResetElement {
+public:
+    virtual void Slot0();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void Slot3();
+    virtual void Reset();       // virtual slot 4, vtable offset 0x18
+};
+
+void Interface::ResetGameHud() {
+    m_unk1C0 |= 2;
+    ((HudResetElement *)((char *)this + 0x1CC))->Reset();
+    ((HudResetElement *)((char *)this + 0x1DC))->Reset();
+    ((HudResetElement *)((char *)this + 0x1EC))->Reset();
+    ((HudResetElement *)((char *)this + 0x1FC))->Reset();
+    ((HudResetElement *)((char *)this + 0x20C))->Reset();
+    ((HudResetElement *)((char *)this + 0x21C))->Reset();
+    ((HudResetElement *)((char *)this + 0x22C))->Reset();
+    ((HudResetElement *)((char *)this + 0x250))->Reset();
+    ((HudResetElement *)((char *)this + 0x270))->Reset();
+    ((HudResetElement *)((char *)this + 0x290))->Reset();
+    ((HudResetElement *)((char *)this + 0x2E8))->Reset();
+}
+
 // FUNCTION: 0x144690 Init__7GameHudFP9PMeshNodeP7HudData
 void GameHud::Init(PMeshNode *meshNode, HudData *hud) {
     m_unk4 = ((PMNode *)meshNode)->Find(hud->m_unk0);
@@ -565,6 +661,24 @@ void Interface::DeleteMeshLayer() {
     if (*(void ***)((char *)this + 0x40C) != 0) {
         m_unk404 = 0;
         m_unk408 = 0;
+    }
+}
+
+// DRAFT: 0x001450D0 ProcessScreenFade__9InterfaceFv
+// note: 2 words differ, mul.s operand order and c.eq.s operand order; tried swapped mul operands, read-modify-write form, local temp (4), and both branch forms
+void Interface::ProcessScreenFade() {
+    if (*(unsigned char *)&m_unk425 != 0) {
+        *(float *)&m_unk41C += *(float *)(gEng + 0x1E8) * *(float *)&m_unk418;
+        if (((*(float *)&m_unk418 < 0.0f) && (*(float *)&m_unk41C <= *(float *)&m_unk420)) ||
+            (!(*(float *)&m_unk418 <= 0.0f) && !(*(float *)&m_unk41C < *(float *)&m_unk420))) {
+            *(float *)&m_unk41C = *(float *)&m_unk420;
+            m_unk425 = 0;
+        }
+        DisplayFadeRectangle();
+        return;
+    }
+    if (*(float *)&m_unk41C != 0.0f) {
+        DisplayFadeRectangle();
     }
 }
 
