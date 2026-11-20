@@ -16,6 +16,7 @@ public:
     void SpawnShell();
     void ModifyPosition(PMat4 *pMat);
     void SetDirection(float *pDir);
+    void Animate(float fStep);
     void Render();
     int Create(float fA, float *pA, float *pB, float fC, float fD, float fE);
 

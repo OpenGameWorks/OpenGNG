@@ -20,6 +20,7 @@ extern "C" void memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
+extern "C" void sceVu0AddVector(float *pDst, float *pSrc1, float *pSrc2);
 extern "C" void sceVu0CopyMatrix(float (*)[4], float (*)[4]);
 extern "C" int rand();
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
@@ -187,6 +188,115 @@ void PFallingShellsFx::Render() {
 
     DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(*(void **)gUnk45B300, (void *)0x70001000, m_unk1D50, true);
     gGfxEng.SetZBufferUpdate(false, (eGsContext)0);
+}
+
+// One falling shell, 0x70 bytes, at m_unk150 + i * 0x70.
+struct FallingShell {
+    float fX;           // 0x00 position X
+    float fTimer;       // 0x04
+    float fZ;           // 0x08 position Z
+    char _pad0C[4];
+    float fVec10[4];    // 0x10 position/angles, offset target of sceVu0AddVector
+    float fVel[4];      // 0x20 velocity; [1] = bounce velocity, [2] = Z velocity
+    float _pad30;
+    float fBounceVel;   // 0x34
+    char _pad38[8];
+    float fOffset[4];   // 0x40 random offset
+    float fDyingTimer;  // 0x50
+    float fThreshold;   // 0x54
+    float fAccel;       // 0x58
+    float fRate;        // 0x5C signed rate, negated on bounce
+    unsigned char bBounce;  // 0x60
+    unsigned char bDying;   // 0x61
+    unsigned char bLive;    // 0x62
+    char _pad63[0x0D];
+};
+
+// DRAFT: 0x0020D1E0 Animate__16PFallingShellsFxFf
+// note: DIFF 91; loop regs swapped (ours s1=offset, s2=pointer), c.eq.s operand order, literal 20.0f/10.0f load order swapped, kUnitW reloc at 0x280. Tried: nested guard (245), &&guard (245), decl swap (245/93), reversed compare (91), hoisted pointer (91).
+void PFallingShellsFx::Animate(float fStep) {
+    if (m_unk15 == 0 || fStep == 0.0f) {
+        return;
+    }
+    {
+        if (m_unk130 != 0.0f) {
+            if (m_unk18 != 0) {
+                float fT = m_unk134 - fStep;
+                m_unk134 = fT;
+                if (fT <= 0.0f) {
+                    m_unk134 = m_unk130;
+                    SpawnShell();
+                }
+            }
+        }
+        int nIdx = 0;
+        int nOff = 0;
+        do {
+            FallingShell *pShell = (FallingShell *)(m_unk150 + nOff);
+            if (pShell->bLive != 0) {
+                if (pShell->bDying != 0) {
+                    pShell->fDyingTimer = pShell->fDyingTimer - 0.016666668f;
+                    sceVu0ScaleVector(pShell->fVel, pShell->fVel, 0.94f);
+                    if (pShell->fDyingTimer <= 0.0f) {
+                        pShell->fDyingTimer = 0.0f;
+                        pShell->bLive = 0;
+                        m_unk1D50 -= 1;
+                    }
+                } else {
+                    if (pShell->bBounce != 0) {
+                        float fB = pShell->fVel[1] + pShell->fRate * pShell->fAccel;
+                        pShell->fBounceVel = fB;
+                        pShell->fTimer = pShell->fTimer - fB;
+                        pShell->fAccel = pShell->fAccel + 0.7f;
+                        if (pShell->fTimer <= pShell->fThreshold) {
+                            pShell->fVel[1] = m_unk13C * pShell->fBounceVel;
+                            pShell->fAccel = 0.01f;
+                            pShell->fRate = -pShell->fRate;
+                            pShell->fTimer = pShell->fThreshold;
+                            pShell->bBounce = 0;
+                            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                            pShell->fOffset[0] = 20.0f + 10.0f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF));
+                            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                            pShell->fOffset[1] = 5.0f + 5.0f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF));
+                            if (pShell->fVel[1] <= 0.1f) {
+                                *(u_long128 *)pShell->fOffset = *(u_long128 *)kUnitW;
+                                *(u_long128 *)pShell->fVec10 = *(u_long128 *)kUnitW;
+                                pShell->bDying = 1;
+                            }
+                        }
+                    } else {
+                        float fB = pShell->fVel[1] + pShell->fRate * pShell->fAccel;
+                        pShell->fBounceVel = fB;
+                        pShell->fTimer = pShell->fTimer + fB;
+                        pShell->fAccel = pShell->fAccel + 0.7f;
+                        if (pShell->fBounceVel < 0.0f) {
+                            pShell->bBounce = 1;
+                            pShell->fTimer = (pShell->fThreshold <= pShell->fTimer) ? pShell->fTimer : pShell->fThreshold;
+                            pShell->fVel[1] = 0.0f;
+                            pShell->fAccel = 0.01f;
+                            pShell->fRate = -pShell->fRate;
+                        }
+                    }
+                    sceVu0AddVector(pShell->fVec10, pShell->fVec10, pShell->fOffset);
+                    if (!(pShell->fVec10[0] <= 180.0f)) {
+                        pShell->fVec10[0] = pShell->fVec10[0] - 180.0f;
+                    }
+                    if (!(pShell->fVec10[1] <= 180.0f)) {
+                        pShell->fVec10[1] = pShell->fVec10[1] - 180.0f;
+                    }
+                    if (!(pShell->fVec10[2] <= 180.0f)) {
+                        pShell->fVec10[2] = pShell->fVec10[2] - 180.0f;
+                    }
+                    pShell->fVel[0] = pShell->fVel[0] * 0.99f;
+                    pShell->fVel[2] = pShell->fVel[2] * 0.99f;
+                }
+                pShell->fX = pShell->fX + pShell->fVel[0];
+                pShell->fZ = pShell->fZ + pShell->fVel[2];
+            }
+            nIdx++;
+            nOff += 0x70;
+        } while (nIdx < 0x40);
+    }
 }
 
 // FUNCTION: 0x0020D610 Create__16PFallingShellsFxFfPfPffff
