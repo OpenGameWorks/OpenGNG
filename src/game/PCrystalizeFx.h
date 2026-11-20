@@ -21,8 +21,8 @@ public:
     void *m_unk1E0;             // 0x1E0 freed with __dla__ by the destructor
     int m_unk1E4;               // 0x1E4 count of valid nodes collected by GetValidNodes (max 0x41)
     void *m_unk1E8;             // 0x1E8 effect block: shader, count, entry array
-    int m_unk1EC;               // 0x1EC
-    void *m_unk1F0;             // 0x1F0
+    float m_unk1EC;             // 0x1EC matrix element range start
+    float m_unk1F0;             // 0x1F0 matrix element range end
     int m_unk1F4;               // 0x1F4 copied to m_unkD0 by Animate
     unsigned char m_unk1F8;     // 0x1F8 set to 1 by the constructor
     unsigned char m_unk1F9;     // 0x1F9 set to 1 by the constructor
