@@ -1,0 +1,125 @@
+#include "ClockworkReaperSpear.h"
+#include "types.h"
+
+// TODO(header): foreign declarations
+extern unsigned char __vt__20ClockworkReaperSpear[];
+extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
+extern "C" void __dl__FPv(void *pMem);
+extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
+extern "C" float atan2f(float fY, float fX);
+extern "C" float sqrtf(float fX);
+extern "C" float Round180__Ff(float fAngle);
+extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
+extern u_long128 mHitPos__15EntityBaseClass;
+extern void *mPlayerAPI__13EntityManager;
+extern "C" void *__ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoad, unsigned int nArg);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__7PhysicsFv(void *pThis);
+extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, bool bA, bool bB);
+
+// Leading virtuals of EntityBaseClass's vtable; OnHitEvent sits at slot 0x58 (virtual 20).
+// A call through this view loads the slot into $t9 as the original's virtual calls do.
+class EntityBaseVirtuals {
+public:
+    virtual ~EntityBaseVirtuals();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void Slot3();
+    virtual void Slot4();
+    virtual void Slot5();
+    virtual void Slot6();
+    virtual void Slot7();
+    virtual void Slot8();
+    virtual void Slot9();
+    virtual void Slot10();
+    virtual void Slot11();
+    virtual void Slot12();
+    virtual void Slot13();
+    virtual void Slot14();
+    virtual void Slot15();
+    virtual void Slot16();
+    virtual void Slot17();
+    virtual void Slot18();
+    virtual void Slot19();
+    virtual void OnHitEvent(EntityBaseClass *pOther, int nDmg, unsigned int a, unsigned int b);
+};
+
+// FUNCTION: 0x001F06B0 __dt__20ClockworkReaperSpearFv
+extern "C" ClockworkReaperSpear *__dt__20ClockworkReaperSpearFv(ClockworkReaperSpear *pThis, short nFlag) {
+    if (pThis != 0) {
+        *(unsigned char **)pThis = __vt__20ClockworkReaperSpear;
+        __dt__15EntityBaseClassFv(pThis, 0);
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
+}
+
+// FUNCTION: 0x001F0720 OrientSpear__20ClockworkReaperSpearFv
+void ClockworkReaperSpear::OrientSpear() {
+    float ang[4];
+    float n[4];
+
+    u_long128 *pSrc = (m_unk3C != 0) ? (u_long128 *)((char *)m_unk3C + 0x90) : &m_unk1A0;
+    m_unk1C0 = *pSrc;
+    sceVu0Normalize(n, (m_unk38 != 0) ? (float *)m_unk38 : 0);
+    if (!(n[0] == 0.0f && n[1] == 0.0f && n[2] == 0.0f)) {
+        ang[0] = 57.295776f * atan2f(n[1], sqrtf(n[2] * n[2] + n[0] * n[0]));
+        ang[1] = 57.295776f * (3.1415927f + atan2f(n[0], n[2]));
+        ang[0] = Round180__Ff(ang[0]);
+        ang[1] = Round180__Ff(ang[1]);
+        ang[2] = 0.0f;
+        PMNode *pNode = m_unk3C;
+        if (pNode != 0) {
+            *(u_long128 *)((char *)pNode + 0x90) = *(u_long128 *)ang;
+            *((unsigned char *)pNode + 0x3E) |= 8;
+        } else {
+            m_unk1A0 = *(u_long128 *)ang;
+        }
+    }
+}
+
+// DRAFT: 0x001F08A0 OnTouchEvent__20ClockworkReaperSpearFP15EntityBaseClass
+// note: 36 words differ in block placement; the original tests 0x48 first with an out-of-line block, ours inverts the type-3 test and the 0x24 beqz target differs.
+void ClockworkReaperSpear::OnTouchEvent(EntityBaseClass *arg0) {
+    m_unk10C &= 0xF8FFFFFF;
+    if (arg0 != 0) {
+        u_long128 *pSrc = (m_unk3C != 0) ? (u_long128 *)((char *)m_unk3C + 0x80) : (u_long128 *)((char *)this + 0x190);
+        mHitPos__15EntityBaseClass = *pSrc;
+        int nType = *(int *)((char *)arg0 + 8);
+        if (nType != 0x48) {
+            if (nType == 3) {
+                void *pPlayer = mPlayerAPI__13EntityManager;
+                if (pPlayer == 0) {
+                    CdsAssert__FPciPc("ClockworkReaperSpear.cpp", 0xE7, "pPlayer");
+                }
+                ((EntityBaseVirtuals *)pPlayer)->OnHitEvent((EntityBaseClass *)this, 0x32, 0x1001, 0);
+            }
+        } else {
+            ((EntityBaseVirtuals *)arg0)->OnHitEvent((EntityBaseClass *)this, 0x32, 0, 0);
+        }
+    }
+}
+
+// DRAFT: 0x001F0D40 __ct__20ClockworkReaperSpearFv
+// note: 51 words differ; the original spills this to 0x2C(sp) and saves only s0, ours keeps this in s0 and saves s1. Tried -Cpp_exceptions on, new Physics, and a Physics dtor declaration; none changed the count.
+ClockworkReaperSpear::ClockworkReaperSpear() {
+    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 5, 1);
+    m_unk0 = __vt__20ClockworkReaperSpear;
+    m_unk1D4 = 0;
+    void *pPhys = __nw__FUi(0x120);
+    if (pPhys != 0) {
+        pPhys = __ct__7PhysicsFv(pPhys);
+    }
+    m_unk38 = pPhys;
+    if (m_unk38 == 0) {
+        CdsAssert__FPciPc("ClockworkReaperSpear.cpp", 0x22, "mpPhysics");
+    }
+    unsigned char *pInfo = (unsigned char *)m_unk38 + 0xA0;
+    if (pInfo == 0) {
+        CdsAssert__FPciPc("ClockworkReaperSpear.cpp", 0x25, "pInfo");
+    }
+    *(unsigned int *)(pInfo + 0x4C) &= ~0x80;
+    EnableSleep__15EntityBaseClassFbb(this, 0, 0);
+}
