@@ -6,6 +6,7 @@ cannot run the Wine compiler themselves. This daemon runs outside the sandbox
 and owns the `mwcc` container; clients only exchange files with it:
 
   client  writes build/ccq/<id>.req   {"cwd": ..., "argv": [...]}  (atomic rename)
+  daemon  claims it as build/ccq/<id>.run                          (atomic rename)
   daemon  writes build/ccq/<id>.res   {"rc": int, "out": str}      (atomic rename)
 
 tools/mwcc.py uses the spool automatically while build/ccq/alive is fresh
@@ -31,8 +32,16 @@ Q = ROOT / "build/ccq"
 
 def run(req: Path, container: str) -> None:
     res = req.with_suffix(".res")
+    # Claim the request by renaming it: a stale glob listing can submit the same
+    # request twice, and only one run may answer, or the loser overwrites the
+    # winner's result with a FileNotFoundError.
+    claimed = req.with_suffix(".run")
     try:
-        job = json.loads(req.read_text())
+        req.rename(claimed)
+    except FileNotFoundError:
+        return
+    try:
+        job = json.loads(claimed.read_text())
         cwd = Path(job["cwd"]).resolve()
         # Only compile inside the repository: the spool is writable by any local process.
         if not cwd.is_relative_to(ROOT):
@@ -46,7 +55,7 @@ def run(req: Path, container: str) -> None:
     tmp = res.with_suffix(".tmp")
     tmp.write_text(json.dumps(doc))
     tmp.rename(res)
-    req.unlink(missing_ok=True)
+    claimed.unlink(missing_ok=True)
 
 
 def main() -> int:
