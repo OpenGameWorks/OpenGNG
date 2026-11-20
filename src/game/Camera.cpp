@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "Camera.h"
 
 // TODO(header): foreign declarations
@@ -8,10 +9,18 @@ extern "C" void *__dt__12CameraFollowFv(void *pThis, short nFlag);
 extern "C" void *__dt__16CameraCutManagerFv(void *pThis, short nFlag);
 extern "C" void *__dt__11CameraDebugFv(void *pThis, short nFlag);
 extern "C" void __dl__FPv(void *pMem);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__12CameraFollowFP6Camera(void *pThis, Camera *pCamera);
+extern "C" void *__ct__16CameraCutManagerFP6Camera(void *pThis, Camera *pCamera);
+extern "C" void *__ct__11CameraDebugFP6Camera(void *pThis, Camera *pCamera);
+extern "C" void sceVu0UnitMatrix(float (*pMatrix)[4]);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" int sprintf(char *buf, const char *fmt, ...);
 extern unsigned char gEng[0x1A000];
 extern float GAME_FPS;
+extern char g_Stabdown_ShakeTable[0x60];
+extern char g_Stabdown_ShakeTable_FixedCam[0x40];
+extern char g_Stabdown2_ShakeTable[0x500];
 
 class CVector3 {
 public:
@@ -31,6 +40,7 @@ public:
     int CutCameraExists(unsigned int arg0);
     void StartCutCamera(unsigned int arg0, bool arg1);
     void SetupCutCamera_Fixed(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, unsigned int arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, bool arg11, PVec3 arg12, bool arg13, unsigned int arg14);
+    void SetupCutCamera_MoveTo(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, PVec3 arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, unsigned int arg11, bool arg12, PVec3 arg13, bool arg14, unsigned int arg15);
 
     char _pad000[0x85];
     unsigned char m_unk85;  // 0x085
@@ -40,6 +50,7 @@ class CameraFollow {
 public:
     void ResetAfterReposition();
     void SetFollowCameraParams(float arg0, float arg1);
+    void SetSourceAndTarget(PVec3 arg0, PVec3 arg1);
     void ModifyBossCamera(float arg0, float arg1, float arg2);
     void SetBossPosition(float (*arg0)[4]);
     void SetBossArenaValues(float (*arg0)[4], float arg1, float arg2, bool arg3, bool arg4, float arg5, float arg6, bool arg7);
@@ -51,13 +62,21 @@ public:
     void DrawPolyDebug();
     void DrawTextDebug();
 
-    char _pad000[0x6318];
+    char _pad000[0x118];
+    int m_unk118;           // 0x118
+    int m_unk11C;           // 0x11C
+    char _pad120[0x178 - 0x120];
+    int m_unk178;           // 0x178 (float bits)
+    char _pad17C[0x218 - 0x17C];
+    int m_unk218;           // 0x218
+    char _pad21C[0x6318 - 0x21C];
     unsigned int m_unk6318; // 0x6318
 };
 
 class CameraDebug {
 public:
     void DrawTextDebug();
+    void Init(PVec3 arg0);
 };
 
 // FUNCTION: 0x001781F0 Distance__6CameraF8CVector38CVector3
@@ -101,6 +120,21 @@ unsigned char Camera::PlayingCutCamera() {
     return 0;
 }
 
+// FUNCTION: 0x00178430 RestoreFollowCamPos__6CameraFb
+void Camera::RestoreFollowCamPos(bool arg0) {
+    if (m_unkBC != 0) {
+        if (arg0) {
+            PVec3 sp10 = *(PVec3 *)m_unk2F0;
+            PVec3 sp20 = *(PVec3 *)m_unk300;
+            ((CameraFollow *)m_unkBC)->SetSourceAndTarget(sp10, sp20);
+            return;
+        }
+        PVec3 sp30 = *(PVec3 *)m_unk00;
+        PVec3 sp40 = *(PVec3 *)m_unk10;
+        ((CameraFollow *)m_unkBC)->SetSourceAndTarget(sp30, sp40);
+    }
+}
+
 // FUNCTION: 0x00178500 CleanUpCutCameras__6CameraFv
 void Camera::CleanUpCutCameras() {
     CameraCutManager *temp_a0 = (CameraCutManager *)m_unkC0;
@@ -120,6 +154,14 @@ void Camera::StartCutCamera(unsigned int arg0, bool arg1) {
         char buf[0x100];
         sprintf(buf, "Cut camera with ID = %d doesn't exist\n", arg0);
         CdsAssert__FPciPc("Camera.cpp", 0x51B, buf);
+    }
+}
+
+// DRAFT: 0x00178710 SetupCutCamera_MoveTo__6CameraFUiUiffUi5PVec35PVec35PVec3UiUiUiUib5PVec3bUi
+// note: DIFF 61; original copies the four PVec3 args inside the m_unkC0 check, ours hoists the copies above it (frame 0x90 matches). Tried: direct pass, locals before/inside the if, call-site PVec3 temporaries (107), cached cut pointer (61).
+void Camera::SetupCutCamera_MoveTo(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, PVec3 arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, unsigned int arg11, bool arg12, PVec3 arg13, bool arg14, unsigned int arg15) {
+    if (m_unkC0 != 0) {
+        ((CameraCutManager *)m_unkC0)->SetupCutCamera_MoveTo(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
     }
 }
 
@@ -274,6 +316,44 @@ void Camera::CheckCameraShake(PVec3 &arg0, PVec3 &arg1, bool arg2) {
     }
 }
 
+// FUNCTION: 0x00179F60 SetCamMode__6CameraFsb
+// note: not compared yet; first draft from asm (bool branch, switch on m_unkB8 with default assert).
+void Camera::SetCamMode(short arg0, bool arg1) {
+    if (!arg1) {
+        m_unkB4 = arg0;
+        if (m_unkB4 == 0) {
+            CameraFollow *follow = (CameraFollow *)m_unkBC;
+            follow->m_unk11C = follow->m_unk118;
+            follow->m_unk118 = arg0;
+        }
+        ((CameraFollow *)m_unkBC)->m_unk218 = 5;
+        return;
+    }
+    m_unkC8 = 0;
+    m_unkB8 = arg0;
+    switch (m_unkB8) {
+    case 0:
+        m_unkB4 = 0;
+        ((CameraFollow *)m_unkBC)->m_unk178 = 0x41200000;
+        return;
+    case 1: {
+        m_unkB4 = 3;
+        PVec3 tmp = *(PVec3 *)m_unk00;
+        ((CameraDebug *)m_unkC4)->Init(tmp);
+        return;
+    }
+    case 2:
+        m_unkB4 = 0;
+        m_unkC8 = 1;
+        return;
+    case 3:
+        m_unkB4 = 0;
+        return;
+    default:
+        CdsAssert__FPciPc("Camera.cpp", 0x19B, "0");
+    }
+}
+
 // DRAFT: 0x0017A070 CamCollideCylinder__6CameraF5PVec3ff
 // note: 18 differing words; original keeps the copied PVec3 address in v0 and has no null recheck before the reload of m_unkBC; ours uses v1 and adds a recheck. Tried a temp local and direct m_unkBC access.
 void Camera::CamCollideCylinder(PVec3 arg0, float arg1, float arg2) {
@@ -370,5 +450,65 @@ void Camera::ResetFollowCamera() {
     if (m_unkBC != 0) {
         m_unkB4 = 0;
         ((CameraFollow *)m_unkBC)->Init(false);
+    }
+}
+
+// DRAFT: 0x0017A7B0 Init__6CameraFv
+// note: DIFF 36; zero loop differs (original keeps byte-offset a1 with 8-wide unroll); tried index, pointer, do-while, while, unrolled, end-pointer forms (36-48).
+void Camera::Init() {
+    int i;
+    int *p;
+
+    m_unkB4 = 0;
+    m_unkB1 = 1;
+    m_unkB0 = 0;
+    m_unkC8 = 0;
+    m_unkB8 = m_unkB4;
+    m_unkCC = 0;
+    m_unkD0 = 0;
+    m_unk2B0 = 0;
+    m_unk2B8 = 0;
+    m_unk2BC = 0;
+    m_unk2E4 = 0;
+    m_unk124 = 0;
+    m_unk2C0 = 0;
+    m_unk179 = 0;
+    p = m_unkD4;
+    i = 0;
+    do {
+        *p++ = 0;
+        i++;
+    } while (i < 20);
+    m_unk17C[0] = (int)g_Stabdown_ShakeTable;
+    m_unk17C[1] = (int)g_Stabdown_ShakeTable_FixedCam;
+    m_unk17C[2] = (int)g_Stabdown2_ShakeTable;
+    CleanUpCutCameras();
+}
+
+// DRAFT: 0x0017A880 __ct__6CameraFv
+// note: original spills this to 0x1C(sp) and keeps no s-regs; ours keeps this in s0 (size 0x114 vs 0x11C, DIFF 68); tried a local Camera* copy, same DIFF.
+Camera::Camera() {
+    sceVu0UnitMatrix(m_unk30);
+    sceVu0UnitMatrix(m_unk70);
+    m_unkBC = __nw__FUi(0x64A0);
+    if (m_unkBC != 0) {
+        m_unkBC = __ct__12CameraFollowFP6Camera(m_unkBC, this);
+    }
+    if (m_unkBC == 0) {
+        CdsAssert__FPciPc("Camera.cpp", 0x18, "m_pFollowCam");
+    }
+    m_unkC0 = __nw__FUi(0xD0);
+    if (m_unkC0 != 0) {
+        m_unkC0 = __ct__16CameraCutManagerFP6Camera(m_unkC0, this);
+    }
+    if (m_unkC0 == 0) {
+        CdsAssert__FPciPc("Camera.cpp", 0x1B, "m_pCutManager");
+    }
+    m_unkC4 = __nw__FUi(0x250);
+    if (m_unkC4 != 0) {
+        m_unkC4 = __ct__11CameraDebugFP6Camera(m_unkC4, this);
+    }
+    if (m_unkC4 == 0) {
+        CdsAssert__FPciPc("Camera.cpp", 0x1E, "m_pDebugCam");
     }
 }

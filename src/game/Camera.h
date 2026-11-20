@@ -10,6 +10,7 @@ class PMat4;
 
 class Camera {
 public:
+    Camera();
     float Distance(CVector3 arg0, CVector3 arg1);
     float Dot(CVector3 arg0, CVector3 arg1);
     float Magnitude(CVector3 arg0);
@@ -26,6 +27,7 @@ public:
     void RestoreCamBox();
     void StartCutCamera(unsigned int arg0, bool arg1);
     void SetupCutCamera_Fixed(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, unsigned int arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, bool arg11, PVec3 arg12, bool arg13, unsigned int arg14);
+    void SetupCutCamera_MoveTo(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, PVec3 arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, unsigned int arg11, bool arg12, PVec3 arg13, bool arg14, unsigned int arg15);
     void ResetAfterReposition();
     int FollowCamInBossMode();
     void SetFollowCameraParams(float arg0, float arg1);
@@ -41,19 +43,30 @@ public:
     void TextDebug();
     void ResetFollowCamera();
     int SetControlled(unsigned int arg0, bool arg1);
+    void RestoreFollowCamPos(bool arg0);
+    void SetCamMode(short arg0, bool arg1);
+    void Init();
 
     float m_unk00[4];       // 0x000
     float m_unk10[4];       // 0x010
-    char _pad020[0x90];
+    char _pad020[0x10];
+    float m_unk30[4][4];    // 0x030 (sceVu0UnitMatrix target)
+    float m_unk70[4][4];    // 0x070 (sceVu0UnitMatrix target)
     unsigned char m_unkB0;  // 0x0B0
-    char _pad0B1[3];
-    int m_unkB4;            // 0x0B4
-    char _pad0B8[4];
+    unsigned char m_unkB1;  // 0x0B1
+    char _pad0B2[2];
+    int m_unkB4;           // 0x0B4
+    int m_unkB8;            // 0x0B8
     void *m_unkBC;          // 0x0BC (CameraFollow *)
     void *m_unkC0;          // 0x0C0 (CameraCutManager *)
     void *m_unkC4;          // 0x0C4 (CameraDebug *)
     unsigned char m_unkC8;  // 0x0C8
-    char _pad0C9[0x148 - 0xC9];
+    char _pad0C9[0xCC - 0xC9];
+    int m_unkCC;            // 0x0CC
+    int m_unkD0;            // 0x0D0
+    int m_unkD4[20];        // 0x0D4
+    int m_unk124;           // 0x124
+    char _pad128[0x148 - 0x128];
     int m_unk148;           // 0x148
     int m_unk14C;           // 0x14C
     char _pad150[0x158 - 0x150];
@@ -71,8 +84,14 @@ public:
     int m_unk2B0;           // 0x2B0
     void *m_unk2B4;         // 0x2B4
     unsigned char m_unk2B8; // 0x2B8
-    char _pad2B9[0x2E4 - 0x2B9];
+    char _pad2B9[3];
+    int m_unk2BC;           // 0x2BC
+    int m_unk2C0;           // 0x2C0
+    char _pad2C4[0x2E4 - 0x2C4];
     unsigned int m_unk2E4;  // 0x2E4
+    char _pad2E8[0x2F0 - 0x2E8];
+    float m_unk2F0[4];      // 0x2F0
+    float m_unk300[4];      // 0x300
 };
 
 #endif
