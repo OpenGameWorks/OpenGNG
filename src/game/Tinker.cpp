@@ -47,6 +47,11 @@ extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
 extern "C" float GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(EntityBaseClass *pEntity, float (*pPos)[4]);
 extern "C" float FastMath_Fabs__Ff(float f);
 extern "C" void memcpy(void *, const void *, unsigned int);
+extern "C" void GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(void *pThis, float *pOut);
+extern "C" float GetAngleBetweenVectors__7MathAPIFPfPf(float *pA, float *pB);
+extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *pThis, float (*pPos)[4]);
+extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
+extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" void CheckVariable__15EntityBaseClassFii(EntityBaseClass *pThis, int nValue, int nIndex);
 extern int mbHard__15EntityBaseClass;
 extern "C" void FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(void *pThis, EntityBaseClass *pOther);
@@ -308,6 +313,65 @@ int Tinker::IsStalled(float fDist, float (*arg1)[4]) {
     d1 = DistanceXZ__7MathAPIFPA4_fPA4_f((float (*)[4])m_unk250, arg1);
     d2 = DistanceXZ__7MathAPIFPA4_fPA4_f(pTarget, arg1);
     return ((d1 - d2) <= fDist) ? 1 : 0;
+}
+
+// DRAFT: 0x002099C0 MoveTo__6TinkerFPA4_ff
+// note: 23 words; this/pPath in s1/s2 instead of s2/s1, frame 0xA0 vs 0x90; flag test is a branch not movz; m_unk250 store sunk past the compare. Tried pPath-first load (60->23), local flag, bool range test (33).
+int Tinker::MoveTo(float (*arg0)[4], float arg1) {
+    int nFlags;
+    char *pPath;
+    float pos[4];
+    float fwd[4];
+    float dir[4];
+    float path[4];
+    float f20;
+    float f21;
+    float *pDst;
+
+    nFlags = 0;
+    pPath = *(char **)((char *)m_unk38 + 0xE4);
+    *(u_long128 *)pos = *(u_long128 *)arg0;
+    f20 = DistanceXZ__7MathAPIFPA4_fPA4_f((float (*)[4])pos, (m_unk3C != 0) ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190));
+    if (pPath != 0) {
+        *(u_long128 *)path = *(u_long128 *)(pPath + 0x10);
+        GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(this, fwd);
+        sceVu0SubVector(dir, pos, (float *)((m_unk3C != 0) ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190)));
+        sceVu0Normalize(fwd, fwd);
+        sceVu0Normalize(path, path);
+        sceVu0Normalize(dir, dir);
+        f21 = GetAngleBetweenVectors__7MathAPIFPfPf(path, fwd);
+        if (!(GetAngleBetweenVectors__7MathAPIFPfPf(path, dir) <= 90.0f)) {
+            if (!(f21 <= 120.0f)) {
+                nFlags |= ((*(int *)(pPath + 0xC)) & 0x80) ? 8 : 4;
+            }
+        }
+    }
+    *(int *)((char *)m_unk38 + 0x118) = 0;
+    if (f20 > arg1 + 6.0f) {
+        f21 = GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (float (*)[4])pos);
+        if (FastMath_Fabs__Ff(f21) > 45.0f) {
+            RotateTo(f21, 0.16f);
+        } else {
+            pDst = (m_unk3C != 0) ? (float *)(m_unk3C + 0x90) : (float *)((char *)this + 0x1A0);
+            pDst[1] = GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (float (*)[4])pos);
+        }
+    } else {
+        pDst = (m_unk3C != 0) ? (float *)(m_unk3C + 0x90) : (float *)((char *)this + 0x1A0);
+        pDst[1] = GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (float (*)[4])pos);
+    }
+    {
+        signed char c = m_unk3C[0x3F] & 7;
+        if (c & 4) {
+            if (IsStalled(0.5f, (float (*)[4])pos)) {
+                nFlags |= 1;
+            }
+        }
+    }
+    *(u_long128 *)m_unk250 = *(u_long128 *)((m_unk3C != 0) ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190));
+    if (f20 <= arg1) {
+        nFlags |= 2;
+    }
+    return nFlags;
 }
 
 // FUNCTION: 0x00209C30 FindClosestEnemy__6TinkerFPA4_fQ215EntityBaseClass9LoadClassUi

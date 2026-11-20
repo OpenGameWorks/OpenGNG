@@ -19,6 +19,7 @@ public:
     int AwardCheck();
     void SetAsEnemyTarget(unsigned int arg0, bool arg1);
     int IsStalled(float fDist, float (*arg1)[4]);
+    int MoveTo(float (*arg0)[4], float arg1);
     void *FindClosestEnemy(float (*pBox)[4], EntityBaseClass::LoadClass eLoadClass, unsigned int nFlags);
     int EnemiesInCheckRadius();
     void ActivateAttackingEnemies();
