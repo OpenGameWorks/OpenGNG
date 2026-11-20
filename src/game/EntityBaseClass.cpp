@@ -9,6 +9,8 @@ public:
     int PlayMusic(unsigned int arg0);
     void ResumeAmbientSoundsByOriginatorRef(unsigned int arg0, unsigned int arg1);
     void PauseAmbientSoundsByOriginatorRef(unsigned int arg0, unsigned int arg1);
+    void StopAmbientSoundsByOriginatorRef(unsigned int arg0, unsigned int arg1);
+    void StopSoundsByOriginatorRef(unsigned int arg0, unsigned int arg1, unsigned int arg2);
     char _pad000[0x10];
 };
 extern PSound gSound;
@@ -114,6 +116,7 @@ struct PMNodeHolder {
 extern PMNodeHolder gEng;
 
 int NormalizedBox(float (*arg0)[2][4], float (&arg1)[2][4], float (*arg2)[4][4], float (&arg3)[4][4]);
+int BoxBoxCheck(float (*arg0)[2][4], float (*arg1)[2][4], float (*arg2)[4][4], float (*arg3)[4][4]);
 
 // mLoadTable entries are 12 bytes; the array extent is unknown, the declared extent only keeps the table a complete object.
 struct LoadEntry {
@@ -176,9 +179,12 @@ public:
 };
 
 extern "C" void sceVu0ScaleVector(float *pDst);
+extern "C" void sceVu0ApplyMatrix(float *dst, float (*m)[4], float *src);
 extern "C" void sceVu0AddVector(float *pDst, float *pSrc0, float *pSrc1);
 extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
 extern "C" float sceVu0InnerProduct(float *a, float *b);
+extern "C" void sceVu0Normalize(float *dst, float *src);
+extern float mHitPos__15EntityBaseClass[4];
 extern "C" unsigned char PlayingCutCamera__6CameraFv(void *pCam);
 extern "C" void GetForwardVector__6CameraFRA4_f(void *pCam, float *pOut);
 extern float mfSleepDistance__15EntityBaseClass;
@@ -667,6 +673,16 @@ void EntityBaseClass::PauseAmbientSoundsByObject() {
     gSound.PauseAmbientSoundsByOriginatorRef(m_unk04, 0x10U);
 }
 
+// FUNCTION: 0x0014C1F0 StopAmbientSoundsByObject__15EntityBaseClassFv
+void EntityBaseClass::StopAmbientSoundsByObject() {
+    gSound.StopAmbientSoundsByOriginatorRef(m_unk04, 0x10U);
+}
+
+// FUNCTION: 0x0014C210 StopAllSoundsByObject__15EntityBaseClassFv
+void EntityBaseClass::StopAllSoundsByObject() {
+    gSound.StopSoundsByOriginatorRef(m_unk04, 0x10U, 3U);
+}
+
 // DRAFT: 0x0014C620 FaceHitDirection__15EntityBaseClassFP15EntityBaseClass
 // note: 15 words differ; 57.295776f is pooled via gp where the original builds it inline (lui/ori/mtc1), the tail store order differs, and m_unk38 is not kept in s0. Tried: cached m_unk38 local (20 words, worse, reverted).
 void EntityBaseClass::FaceHitDirection(EntityBaseClass *arg0) {
@@ -762,6 +778,61 @@ void EntityBaseClass::RotateTo(float arg0, float arg1) {
     }
 }
 
+static void NormalizedBoxScaleRow(float *dst, float *src, float s);
+
+// DRAFT: 0x0014C850 SkeletonCollision__15EntityBaseClassFP6PMNodePA2_A4_fRA4_A4_fUc
+// note: scale step uses NormalizedBoxScaleRow (sceVu0ScaleVector is one-argument here, the original calls the three-argument func_104CA8); register and branch order not yet compared.
+int EntityBaseClass::SkeletonCollision(PMNode *arg0, float (*arg1)[2][4], float (&arg2)[4][4], unsigned char arg3) {
+    float local2x4[2][4];
+    float local4x4[4][4];
+    float e0[4];
+    float f0[4];
+    float (*box)[2][4];
+    float (*mtx)[4][4];
+    unsigned int c1;
+    unsigned int c2;
+
+    box = arg0->m_unk28;
+    if (box == 0) {
+        return 0;
+    }
+    if (arg0->m_3C == 0) {
+        return 0;
+    }
+    if (arg0->m_3E & 4) {
+        if (!NormalizedBox(arg0->m_unk28, local2x4, &arg0->m_unk40, local4x4)) {
+            return 0;
+        }
+        box = &local2x4;
+        mtx = &local4x4;
+    } else {
+        mtx = &arg0->m_unk40;
+    }
+    if (!BoxBoxCheck(arg1, box, &arg2, mtx)) {
+        return 0;
+    }
+    c2 = ((unsigned int)arg0->m_3C | 0x20) & 0xFF;
+    c1 = arg3 & 0xFF;
+    if (((c2 | c1) & 0x80) != 0 && mHitPos__15EntityBaseClass[0] == 0.0f) {
+        sceVu0ApplyMatrix(e0, arg2, (float *)arg1);
+        sceVu0ApplyMatrix(f0, arg0->m_unk40, (float *)box);
+        if (c1 & 0x80) {
+            sceVu0SubVector(f0, f0, e0);
+            f0[1] = 0.0f;
+            sceVu0Normalize(f0, f0);
+            NormalizedBoxScaleRow(f0, f0, (*arg1)[1][0]);
+        } else {
+            sceVu0SubVector(e0, e0, f0);
+            e0[1] = 0.0f;
+            sceVu0Normalize(e0, e0);
+            NormalizedBoxScaleRow(e0, e0, (*box)[1][0]);
+        }
+        sceVu0AddVector(mHitPos__15EntityBaseClass, e0, f0);
+        mHitPos__15EntityBaseClass[3] = 1.0f;
+    }
+    return (int)((c1 << 16) | c2);
+}
+
 // DRAFT: 0x0014CD10 SkeletonCollision__15EntityBaseClassFP6PMNodeP15EntityBaseClass
 // note: DIFF 39 words; register allocation differs (original ret=s0, flags=s1, arg1=s2), the original ORs the call result into ret, and an andi on the u8 flag|0x20 argument is extra. Tried: ret|= (40), unsigned int flags (no gain), hoisted u8 flag|0x20 (42), early return (40).
 int EntityBaseClass::SkeletonCollision(PMNode *arg0, EntityBaseClass *arg1) {
@@ -783,6 +854,85 @@ int EntityBaseClass::SkeletonCollision(PMNode *arg0, EntityBaseClass *arg1) {
         }
     }
     return ret;
+}
+
+// PMNode list header: length, walk index, element storage.
+struct PMNodeList {
+    unsigned int length;
+    unsigned int index;
+    PMNode **items;
+};
+
+// DRAFT: 0x0014CDB0 MeshNodeCollision__15EntityBaseClassFP6PMNodeP15EntityBaseClass
+// note: DIFF 107 words; prologue register roles differ (original arg0=s1, arg1=s0, ret=s3; ours arg0=s4, arg1=s3, ret=s1) and the dispatch branch sense is inverted. Tried: ret moved to top (107), key==2 tested first (109), inline dispatch read (107), shared list pointer (107).
+int EntityBaseClass::MeshNodeCollision(PMNode *arg0, EntityBaseClass *arg1) {
+    int ret = 0;
+    PMNodeList *list;
+    float local60[2][4];
+    float local80[4][4];
+    if (*(int *)((char *)arg0 + 0x4) == 1) {
+        if (arg0->m_unk28 != 0) {
+            unsigned char flags = arg0->m_3C;
+            if ((flags & 0xE0) != 0) {
+                if (arg0->m_3E & 4) {
+                    if (NormalizedBox(arg0->m_unk28, local60, &arg0->m_unk40, local80) == 0) {
+                        return 0;
+                    }
+                    ret |= arg1->MeshNodeCollision((PMNode *)arg1->m_unk3C, &local60, local80, flags | 0x20);
+                } else {
+                    ret |= arg1->MeshNodeCollision((PMNode *)arg1->m_unk3C, arg0->m_unk28, arg0->m_unk40, flags | 0x20);
+                }
+            }
+        }
+        list = (PMNodeList *)((char *)arg0 + 0x14);
+        list->index = 0;
+        while (list->index < list->length) {
+            ret |= MeshNodeCollision(list->items[list->index], arg1);
+            list->index++;
+        }
+    } else if (*(int *)((char *)arg0 + 0x4) == 2) {
+        list = (PMNodeList *)((char *)arg0 + 0x150);
+        list->index = 0;
+        while (list->index < list->length) {
+            ret |= SkeletonCollision(list->items[list->index], arg1);
+            list->index++;
+        }
+    }
+    return ret;
+}
+
+// DRAFT: 0x0014CF80 NormalizedBox__FPA2_A4_fRA2_A4_fPA4_A4_fRA4_A4_f
+// note: sqc2 vf0 store and c1 0x4 (divide) are not expressible; the row scale uses a C helper instead of sceVu0ScaleVector.
+static void NormalizedBoxScaleRow(float *dst, float *src, float s) {
+    int k;
+    for (k = 0; k < 4; k++) {
+        dst[k] = src[k] * s;
+    }
+}
+
+int NormalizedBox(float (*arg0)[2][4], float (&arg1)[2][4], float (*arg2)[4][4], float (&arg3)[4][4]) {
+    float len;
+    int i;
+
+    sceVu0ApplyMatrix(arg3[3], arg2[0], (float *)arg0);
+    arg1[0][0] = 0.0f;
+    arg1[0][1] = 0.0f;
+    arg1[0][2] = 0.0f;
+    arg1[0][3] = 1.0f;
+    *(u_long128 *)arg1[1] = *(u_long128 *)arg0[1];
+    for (i = 0; i < 3; i++) {
+        len = sceVu0InnerProduct(arg2[0][i], arg2[0][i]);
+        if (len != 1.0f) {
+            if (len == 0.0f) {
+                return 0;
+            }
+            arg1[1][i] *= len;
+            NormalizedBoxScaleRow(arg3[i], arg2[0][i], 1.0f / len);
+        } else {
+            *(u_long128 *)arg3[i] = *(u_long128 *)arg2[0][i];
+        }
+    }
+    return 1;
 }
 
 // FUNCTION: 0x0014D620 RadiusAdjust__15EntityBaseClassFfPA4_f

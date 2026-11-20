@@ -19,7 +19,10 @@ public:
     enum eHitWeaponType { eHitWeaponType_Unrecovered = 0 };
     enum LoadClass { LoadClass_Unrecovered = 0 };
 
+    // Derived constructors name this base in a mem-initializer; CodeWarrior then stores the vtable once (Rain probe).
+    EntityBaseClass(LoadClass eLoadClass, unsigned int nFlags);
     virtual ~EntityBaseClass();
+    void EnableSleep(bool bA, bool bB);
     void ProcessPhysics(float arg0, int arg1);
     int CheckDie(bool arg0);
     int Render(PLightManager *arg0);
@@ -70,6 +73,8 @@ public:
     void FadeMesh(short arg0, short arg1, unsigned int arg2);
     int SkeletonCollision(PMNode *arg0, EntityBaseClass *arg1);
     int MeshNodeCollision(PMNode *arg0, float (*arg1)[2][4], float (&arg2)[4][4], unsigned char arg3);
+    int SkeletonCollision(PMNode *arg0, float (*arg1)[2][4], float (&arg2)[4][4], unsigned char arg3);
+    int MeshNodeCollision(PMNode *arg0, EntityBaseClass *arg1);
     int PlaySequence(unsigned int *arg0);
     void ModifyLoadClass(LoadClass arg0);
     void LoadMesh(unsigned int arg0, bool arg1, bool arg2);
@@ -78,6 +83,7 @@ public:
     void PauseAmbientSoundsByObject();
     void StopSoundBySoundRef(unsigned int arg0);
     void StopAmbientSoundsByObject();
+    void StopAllSoundsByObject();
     void RemoveFromAttackSystem();
     void ProcessSequence();
     char ReadApparitionData(int arg0, unsigned int arg1);
