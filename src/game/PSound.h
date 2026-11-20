@@ -30,6 +30,7 @@ public:
     public:
         MusicStreamState();
         void Init();
+        void ReInit();
     };
 
     class OneShotChannelState {
@@ -159,6 +160,8 @@ public:
     void Pause();
     void ResumeAmbientEntry(AmbientEntry *pEntry);
     int AddChanToMultipleResumes(unsigned int nChan);
+    int AddChanToMultiplePauses(unsigned int nChan);
+    int AddChanToMultipleStops(unsigned int nChan);
     int RestartAndLoadInterfaceTypeBank(unsigned int nArg);
     int RestartAndLoadPrimarySoundBank(unsigned int nArg);
     int SetLevelParameters(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3);
@@ -175,6 +178,7 @@ public:
     void PSoundReInitMusic();
     void StopMusic();
     int *UsageFind(unsigned int nID);
+    int UsageAdd(unsigned int nID);
     void DebugRestartValues();
     int DebugFindLastID(unsigned int *pValue, unsigned int *pIndex);
     int DebugFindFirstID(unsigned int *pValue, unsigned int *pIndex);
@@ -203,7 +207,7 @@ public:
     char _pad060[0x0B0 - 0x060];
     int m_unkB0;            // 0x0B0, SendStops clears it
     int m_unkB4;            // 0x0B4, SendStops clears it
-    char _pad0B8[0x0C0 - 0x0B8];
+    unsigned int m_unkB8[2];// 0x0B8, AddChanToMultiplePauses bit masks (index 1 for channels 0x18 and up)
     unsigned int m_unkC0[2];// 0x0C0, AddChanToMultipleResumes bit masks (index 1 for channels 0x18 and up)
     int m_unkC8;           // 0x0C8, SoundEditEnter sets 1, SoundEditLeave clears it
     char _padCC[0x0CD - 0x0CC];
@@ -240,6 +244,8 @@ public:
     char _pad5450[0x5460 - 0x5450];
     char m_unk5460[0x2580]; // 0x5460, PSoundReInitSoundRooms clears it
     int m_unk79E0[6];       // 0x79E0
+    char _pad79F8[0x1808C - 0x79F8];
+    char m_unk1808C;        // 0x1808C, AddChanToMultiplePauses/Stops write here at this + 0x1808C + channel
 };
 
 #endif

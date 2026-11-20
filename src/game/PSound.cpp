@@ -8,6 +8,7 @@ extern "C" void SOUND_SetGlobalRelVols(int, int, int, int, int, int, int, int);
 extern int fst_ReverbRecProposed[5];
 extern int gPSndDbg[52];
 extern "C" void SOUND_StopAllRegularSounds();
+extern "C" void SOUND_StopAllMusic();
 extern "C" void SOUND_StopAllStreams();
 extern signed char fst_bCalledByDebug;
 extern "C" void FlushIOPCommand(int, int, int);
@@ -32,6 +33,12 @@ extern "C" void SOUND_SetOverallMusicPitch(int, int);
 extern unsigned char SOUND_SPUKeyStatus[0x40];
 extern "C" int SOUND_MakeSoundStreamRef();
 extern "C" unsigned int SOUND_PlayDialogRelVol(unsigned int, unsigned int, unsigned int, short, unsigned int);
+class PTranslateATable {
+public:
+    static int FindASubTableRandomItem(unsigned int *pOut, unsigned int nIdx, int (*pfnBank)(unsigned int), const unsigned int *pTable);
+};
+int SoundInBankStatus(unsigned int nBank);
+extern unsigned int gSndSetOfIDsTable[16];
 
 // FUNCTION: 0x001A3C70 AddAEToFreeList__6PSoundFPQ26PSound12AmbientEntry
 void PSound::AddAEToFreeList(AmbientEntry *pEntry) {
@@ -273,6 +280,19 @@ void PSound::ResumeAmbientEntry(AmbientEntry *pEntry) {
     }
 }
 
+// DRAFT: 0x001A8660 PauseAmbientEntry__6PSoundFPQ26PSound12AmbientEntryUi
+// note: 2 words differ: original keeps the flag compare in at (sltiu at / bnez at, store after inline return 0), ours compares into v0; tried if/else, result variable, nested return, inverted and local-load forms
+int PSound::PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag) {
+    if (pEntry == 0) {
+        return 0;
+    }
+    if (!(pEntry->m_unk10 < 0x3FFD)) {
+        return 0;
+    }
+    pEntry->m_unk16 |= 1;
+    return 0;
+}
+
 // DRAFT: 0x001A87E0 AddChanToMultipleResumes__6PSoundFUi
 // note: 17 words differ; pointer register allocation (original keeps &m_unkC0[idx] in a2, ours spills it to t0). Tried indexed form, shift-in-branch, if/else split, 1u literal, m_unkC0 + nIdx pointer (all 17 or worse).
 int PSound::AddChanToMultipleResumes(unsigned int nChan) {
@@ -293,17 +313,44 @@ int PSound::AddChanToMultipleResumes(unsigned int nChan) {
     return nRet;
 }
 
-// DRAFT: 0x001A8660 PauseAmbientEntry__6PSoundFPQ26PSound12AmbientEntryUi
-// note: 2 words differ: original keeps the flag compare in at (sltiu at / bnez at, store after inline return 0), ours compares into v0; tried if/else, result variable, nested return, inverted and local-load forms
-int PSound::PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag) {
-    if (pEntry == 0) {
-        return 0;
+// DRAFT: 0x001A8850 AddChanToMultiplePauses__6PSoundFUi
+// note: 16 words differ; index*4 scaled before the shift, base 0xB8 added to a register, and the flag store uses a2 for the constant (original uses a0). Tried indexed, pointer, shift-in-var, signed index, flag-base pointer, base-cast pointer (16, 16, 16, 16, 18, 16).
+int PSound::AddChanToMultiplePauses(unsigned int nChan) {
+    int nRet = 0;
+    int nIdx = 0;
+    unsigned int nShift = nChan;
+    if (nChan >= 0x18) {
+        nShift -= 0x18;
+        nIdx = 1;
     }
-    if (!(pEntry->m_unk10 < 0x3FFD)) {
-        return 0;
+    unsigned int nBit = 1u << nShift;
+    unsigned int *pWord = (unsigned int *)((char *)this + 0xB8) + nIdx;
+    if (*pWord & nBit) {
+        nRet = -1;
     }
-    pEntry->m_unk16 |= 1;
-    return 0;
+    *pWord |= nBit;
+    *((char *)this + 0x1808C + nChan) = 1;
+    return nRet;
+}
+
+// DRAFT: 0x001A88C0 AddChanToMultipleStops__6PSoundFUi
+// note: 17 words differ; same shape as AddChanToMultiplePauses with base 0xB0 and a 0 flag store; see the Pauses note for the register and order differences.
+int PSound::AddChanToMultipleStops(unsigned int nChan) {
+    int nRet = 0;
+    unsigned int nIdx = 0;
+    unsigned int nShift = nChan;
+    if (nChan >= 0x18) {
+        nShift -= 0x18;
+        nIdx = 1;
+    }
+    unsigned int nBit = 1u << nShift;
+    unsigned int *pWord = (unsigned int *)((char *)this + 0xB0) + nIdx;
+    if (*pWord & nBit) {
+        nRet = -1;
+    }
+    *pWord |= nBit;
+    *((char *)this + 0x1808C + nChan) = 0;
+    return nRet;
 }
 
 // DRAFT: 0x001A89E0 FindAmbientEntry__6PSoundFUi
@@ -350,6 +397,23 @@ int PSound::IsAmbientSoundByID(unsigned int nID) {
         return -1;
     }
     return (pInfo->m_unk0C & 2) != 0;
+}
+
+// FUNCTION: 0x001A8AC0 GetSpotInfoPtrByPublicID__6PSoundFUi
+PSound::SpotInfo *PSound::GetSpotInfoPtrByPublicID(unsigned int nID) {
+    unsigned int nOut;
+    unsigned int nIdx = nID;
+
+    if (nID >= 0x4E20) {
+        if (nID < 0x4E74) {
+            if (PTranslateATable::FindASubTableRandomItem(&nOut, nID, SoundInBankStatus, gSndSetOfIDsTable) == 0) {
+                nIdx = nOut;
+            } else {
+                return 0;
+            }
+        }
+    }
+    return GetSpotInfo(nIdx);
 }
 
 // FUNCTION: 0x001A8B30 StartAESoftwareFadeout__6PSoundFUiUi
@@ -494,6 +558,20 @@ void PSound::SetMainMusicRelVolume(unsigned int nVolume) {
     gPSndDbg[5] = nClamped;
     m_unk3C = nClamped * 10;
     InternalUpdateRelVolumes();
+}
+
+// DRAFT: 0x001A9470 StopMusic__6PSoundFv
+// note: size 0x60 vs 0x64; the second loop increment lands in the bnez delay slot, original keeps slti/bnez/nop. Tried for-loop, offset-bounded while, and reordered increments; none closed the gap.
+void PSound::StopMusic() {
+    SOUND_StopAllMusic();
+    int i = 0;
+    int off = 0;
+    do {
+        ((MusicStreamState *)((char *)this + off + 0x70))->ReInit();
+        i++;
+        off += 0x20;
+    } while (i < 2);
+    m_unkCE = 1;
 }
 
 // FUNCTION: 0x001A94E0 SetStandardSecondaryMusicFileID__6PSoundFUi
@@ -745,6 +823,25 @@ int *PSound::UsageFind(unsigned int nID) {
         } while (p < end);
     }
     return 0;
+}
+
+// FUNCTION: 0x001AAEB0 UsageAdd__6PSoundFUi
+int PSound::UsageAdd(unsigned int nID) {
+    unsigned int *p = (unsigned int *)fst_Usage;
+    unsigned int *end = (unsigned int *)(fst_Usage + 24000);
+    if (p < end) {
+        do {
+            if (p[0] == 0xFFFFFFFF) {
+                p[0] = nID;
+                return 1;
+            }
+            if (nID == p[0]) {
+                return 0;
+            }
+            p += 5;
+        } while (p < end);
+    }
+    return -1;
 }
 
 // FUNCTION: 0x001AB330 DebugClearPlayedInGame__6PSoundFv
