@@ -70,6 +70,56 @@ void PGrid::AnimateAlphaGrid(float fAngle) {
     }
 }
 
+// DRAFT: 0x001F1F70 SetGridVertexAlpha__5PGridFv
+// note: 121 words differ: loop-1 cell address and unsigned-scale branch layout (original hoists lui 0x8000, bltz delay slot), loop-2 register allocation (t0/t3 vs a3/t1), wrap b/bottom test. Tried: cell*cf vs cf*cell (129, same), pCell before cf in loop 1 (121), pCell in loop 2 (121), cf before pCell (121).
+void PGrid::SetGridVertexAlpha() {
+    unsigned char *base;
+    int i;
+    int a1;
+    int col;
+    int vOff;
+    int cOff;
+    int vcol;
+    int ccol;
+    int cellRow;
+    float cf;
+    float f;
+    unsigned int r;
+
+    base = (unsigned char *)m_10;
+    vOff = 0;
+    cOff = 0;
+    for (i = 0; i < m_08; i++) {
+        float *pCell = (float *)((unsigned char *)this + cOff + 0x14);
+        cf = (float)m_2014;
+        f = m_2018 * (*pCell * cf);
+        r = (unsigned int)f;
+        *(unsigned int *)(base + vOff + 0x1C) = r;
+        cOff += 4;
+        vOff += 0x60;
+    }
+    cellRow = 0x80;
+    for (a1 = 1; a1 < m_0C; a1++) {
+        vcol = 0;
+        ccol = 0;
+        for (col = 0; col < m_08; col++) {
+            cf = (float)m_2014;
+            f = m_2018 * (cf * *(float *)((unsigned char *)this + cellRow + ccol + 0x14));
+            r = (unsigned int)f;
+            *(unsigned int *)(base + a1 * m_08 * 0x60 + vcol + 0x1C) = r;
+            *(unsigned int *)(base + (a1 - 1) * m_08 * 0x60 + vcol + 0x4C) = r;
+            if (a1 == m_0C - 1) {
+                cf = (float)m_2014;
+                f = m_2018 * (cf * *(float *)((unsigned char *)this + cellRow + 0x80 + ccol + 0x14));
+                *(unsigned int *)(base + a1 * m_08 * 0x60 + vcol + 0x4C) = (unsigned int)f;
+            }
+            vcol += 0x60;
+            ccol += 4;
+        }
+        cellRow += 0x80;
+    }
+}
+
 // DRAFT: 0x001F21F0 InitStrip__5PGridFP18tagGridStripVertexssssUiUiUiUifffb
 // note: 99 words differ: sB/sD kept in fp instead of sp+0xCA/0xC8 spill slots, this at sp+0xEC not 0xCC, original computes fU+fW after the kStripBase copy (ours hoists it). Tried: volatile pSelf and nStep (99, from 114), volatile sB (99), volatile sD (107), volatile sB+sD (107), local volatile copies of sB/sD (109), fU+fW hoisted before the copy (99), non-volatile pSelf (115), non-volatile nStep (100), pSelf declared first (99).
 void PGrid::InitStrip(tagGridStripVertex *pVerts, short sA, short sB, short sC, short sD,

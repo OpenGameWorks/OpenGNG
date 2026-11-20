@@ -38,8 +38,9 @@ public:
     int m_08;                       // 0x008
     int m_0C;                       // 0x00C
     int m_10;                       // 0x010
-    char _pad014[0x2018 - 0x14];
-    float m_2018;                   // 0x2018, reset by Enable(true)
+    char _pad014[0x2014 - 0x14];
+    unsigned int m_2014;            // 0x2014, unsigned scale read by SetGridVertexAlpha
+    float m_2018;                  // 0x2018, reset by Enable(true)
     float m_201C;                   // 0x201C, per-frame step set by Enable
     unsigned char m_bEnabled;       // 0x2020, Render draws only when set
     char _pad2021[3];
