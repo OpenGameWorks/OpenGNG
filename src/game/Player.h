@@ -33,6 +33,7 @@ public:
     int GameVarSub(unsigned int arg0, int arg1);
     int MightyBlowCheck(unsigned int arg0);
     void AirSliceMove();
+    void AirOverheadMove();
     void GrimSliceMove();
     void GuardHitMove();
     void StabDownMove();
@@ -82,6 +83,10 @@ public:
     void NotifyTreasure(float (*arg0)[4], float arg1);
     PMNode *IsPlayerOnNode(PMeshNode *arg0, bool arg1);
     void SetBoundingSphere(PMNode *arg0, float arg1);
+    void DetachJoint(int arg0);
+    void MBlow2Move();
+    void SpinSlashMove();
+    void SliceMove();
 
     char _pad000[0x20];
     int m_unk20;            // 0x020
@@ -148,7 +153,8 @@ public:
     int m_unk2C8;           // 0x2C8 countdown, reset to CAUGHT_TIME by ReleaseCheck
     char _pad2CC[0x2F8 - 0x2CC];
     int m_unk2F8;           // 0x2F8 cleared by InitAttachableJoints
-    char _pad2FC[0x308 - 0x2FC];
+    float m_unk2FC;         // 0x2FC attached timer value, set by DetachJoint
+    char _pad300[0x308 - 0x300];
     int m_unk308;           // 0x308 cleared by SetDeath
     char _pad30C[0x31C - 0x30C];
     FontNode *m_unk31C;     // 0x31C font node, passed to FontManager::RemoveText and cleared by ForceDie

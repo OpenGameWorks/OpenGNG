@@ -35,6 +35,8 @@ extern float GRIM_G;
 extern float gUnitMatrix[16];
 extern float LEye[4];
 extern float REye[4];
+extern float AIR_ATTACK_SPEED;
+extern float FAST_G;
 class CutSceneObject {
 public:
     virtual void Slot00();
@@ -61,7 +63,7 @@ public:
 class FreeJoint {
 public:
     int m_unk00;
-    signed char m_unk04;
+    unsigned char m_unk04;
     char _pad05[3];
 };
 extern FreeJoint m_pFreeJoints[5];
@@ -104,6 +106,7 @@ extern void *mpEntMgr__15EntityBaseClass;
 extern int mbHard__15EntityBaseClass;
 extern int ComboLevel[20];
 extern int CAUGHT_TIME;
+extern float AttachedTimer[5];
 extern "C" void *GetPtrToApparition__13EntityManagerFUi(void *, unsigned int);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
@@ -184,6 +187,25 @@ int Player::IsPauseDisabled() {
         ret = gEng[0x19A18] != 0;
     }
     return ret;
+}
+
+// DRAFT: 0x00159080 DetachJoint__6PlayerFi
+// note: 30 words differ. Ours hoists lui a0 into the bgez delay slot (original has nop); f0/f1 allocation swapped (original zero in f0, timer in f1). Tried direct store, local fTimer, fZero, reversed compare.
+void Player::DetachJoint(int arg0) {
+    if (m_pFreeJoints[arg0].m_unk04 == 0) {
+        m_pFreeJoints[arg0].m_unk00 = 0;
+        m_pFreeJoints[arg0].m_unk04 = 1;
+        m_unk23D4 += 1;
+        if (m_unk23D4 < 0) {
+            CdsAssert__FPciPc("Player.cpp", 0x2260, "m_iNumFreeJoints >= 0");
+        }
+        m_unk23D1 = (unsigned int)m_unk23D4 < 4U;
+        float fTimer = AttachedTimer[5 - m_unk23D4];
+        m_unk2FC = fTimer;
+        if (fTimer == 0.0f) {
+            *(float *)&m_unk2F8 = 0.0f;
+        }
+    }
 }
 
 // FUNCTION: 0x00159720 InitAttachableJoints__6PlayerFv
@@ -469,6 +491,32 @@ void Player::GuardHitMove() {
     }
 }
 
+// FUNCTION: 0x0015C8A0 MBlow2Move__6PlayerFv
+void Player::MBlow2Move() {
+    static struct {
+        unsigned int id0;
+        unsigned int id1;
+    } MBlow2Effect[2] = {
+        {0x810001bd, 0x82000361},
+        {0x81000202, 0x820003b2},
+    };
+
+    switch (m_unk250) {
+    case 0:
+        m_unk250 = 1;
+        int idx = (m_unk1FC != 0) ? 1 : 0;
+        unsigned int *e = &MBlow2Effect[idx].id0;
+        m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(e[0], e[1], 0, 0, (EntityBaseClass *)this, m_unk24C, true, 0, false);
+        break;
+    case 1:
+        if ((int)((PMNode *)m_unk3C)->GetFrameTime() >= 0x20) {
+            ((EntityBaseClass *)this)->PlaySound(0x191U);
+            m_unk250 = 2;
+        }
+        break;
+    }
+}
+
 // DRAFT: 0x0015CA90 StabDownMove__6PlayerFv
 // note: DIFF 18 words; original hoists the 0x400 constant, keeps var_v1 in $v1, and case 1 reuses the andi result for the tail test. Tried: local pointer for m_unk38, bits local removed, if-chain instead of switch (36 words).
 void Player::StabDownMove() {
@@ -502,6 +550,53 @@ void Player::StabDownMove() {
     }
     if (temp_f0 >= 0x4B) {
         CancelAttack(0x30);
+    }
+}
+
+// FUNCTION: 0x0015CB60 SpinSlashMove__6PlayerFv
+void Player::SpinSlashMove() {
+    switch (m_unk250) {
+    case 0:
+        m_unk250 = 1;
+        if (m_unk1FC == 1) {
+            m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(0x81000322U, 0x82000555U, 0, 0, (EntityBaseClass *)this, m_unk24C, false, 0, false);
+        }
+        break;
+    case 1:
+        if ((int)((PMNode *)m_unk3C)->GetFrameTime() >= 4) {
+            m_unk250 = 2;
+            ((EntityBaseClass *)this)->PlaySound(0x2AU);
+        }
+        break;
+    }
+}
+
+// DRAFT: 0x0015CD50 SliceMove__6PlayerFv
+// note: 9 words differ: CancelAttack branch form (inverted test gives 27, a v1-first else gives 32), the ComboTarget literal order (a local float gives 9), and the t!=0 block placement.
+void Player::SliceMove() {
+    static unsigned char SliceMoves[2] = {0x00, 0x73};
+    int v1;
+    int t = (int)m_unk3C[13];
+    if (t >= 0x20) {
+        if (CancelAttack(0x30)) {
+            return;
+        }
+        v1 = t < 0x12;
+    } else {
+        if (t != 0) {
+            int a = 0;
+            if (m_unk1B2 & 0x8000) {
+                a = 1;
+            }
+            if (m_unk250 < a) {
+                m_unk250 = a;
+            }
+        }
+        v1 = t < 0x12;
+    }
+    if (v1 == 0 && m_unk250 != 0) {
+        ComboTarget(-1.0f, 100.0f, true);
+        SetAction(SliceMoves[m_unk250]);
     }
 }
 
@@ -570,6 +665,38 @@ void Player::AirSliceMove() {
     if (m_unk250 == 0) {
         m_unk250 = 1;
         m_unk38[1] = 0x3A83126F;
+    }
+}
+
+// FUNCTION: 0x0015E280 AirOverheadMove__6PlayerFv
+void Player::AirOverheadMove() {
+    switch (m_unk250) {
+    case 0:
+        m_unk250 = 1;
+        {
+            float *p = (float *)m_unk38;
+            p[0] = p[0] * AIR_ATTACK_SPEED;
+            p[2] = p[2] * AIR_ATTACK_SPEED;
+            ((int *)p)[1] = 0x33D6BF95;
+        }
+        m_unk38[0x44] = 0;
+        return;
+    case 1:
+        {
+            unsigned int f = m_unk1B2;
+            if (f & 0x8000) {
+                m_unk250 = 0x10000;
+            } else if (f & 0x1000) {
+                m_unk250 = 0x8000;
+            }
+        }
+        /* fallthrough */
+    default:
+        if ((int)m_unk3C[13] >= 0x10) {
+            *(float *)((char *)m_unk38 + 0x110) = FAST_G;
+            m_unk250 |= 4;
+        }
+        return;
     }
 }
 
