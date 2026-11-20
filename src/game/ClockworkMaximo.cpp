@@ -40,6 +40,7 @@ extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, void
 extern "C" int FacingPoint__7MathAPIFP15EntityBaseClassPA4_ff(void *, void *, float);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void RotateTo__15EntityBaseClassFff(void *, float, float);
+extern "C" float Round180__Ff(float);
 extern char CMaximo_RunSeq[0x40];
 extern char CMaximo_WalkSeq[0x40];
 extern char CMaximo_HammerRunSeq[0x40];
@@ -56,6 +57,13 @@ extern void *mpEntMgr__15EntityBaseClass;
 extern "C" void *Find__6PMNodeFUi(void *, unsigned int);
 extern "C" void BuildDispList__9PSkeletonFv(void *);
 extern "C" void memcpy(void *, const void *, unsigned int);
+extern "C" void GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(void *, float *);
+extern "C" float DistanceXZ__7MathAPIFPA4_fPA4_f(float (*)[4], float (*)[4]);
+extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*)[4], float (*)[4]);
+extern "C" float GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, void *);
+extern "C" int GetGroundPos__7MathAPIFPA4_f(void *);
+extern "C" void sceVu0ScaleVector(float *, float *, float);
+extern "C" void sceVu0AddVector(float *, float *, float *);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *, int, unsigned int);
 
 // Slot numbers are declaration order; Slot13 is the call at vtable offset 0x3C.
@@ -106,6 +114,45 @@ void ClockworkMaximo::FootStepSound(unsigned int arg0) {
         snd = FootSound[(temp->m_unkE8 >> 11) & 7];
     }
     ((EntityBaseClass *)this)->PlaySoundOnFrame(snd, arg0);
+}
+
+// DRAFT: 0x00210650 CanJump__15ClockworkMaximoFPA4_f
+// note: 2 words differ (loop entry b targets the bottom test one word later, delay slot lui not nop); needs -O4,p? while-form tried and worse.
+int ClockworkMaximo::CanJump(float (*arg0)[4]) {
+    float sp60[4];
+    float sp70[4];
+    float sp80[4];
+    float *var_s0;
+    float var_f20;
+    int temp_v0;
+    int var_v1;
+
+    temp_v0 = m_unk3C;
+    if (temp_v0 != 0) {
+        var_s0 = (float *)(temp_v0 + 0x80);
+    } else {
+        var_s0 = (float *)&m_unk190;
+    }
+    for (var_f20 = 3.0f; var_f20 < 10.0f; var_f20 += 1.0f) {
+        GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(this, sp80);
+        sceVu0ScaleVector(sp60, sp80, var_f20);
+        sceVu0AddVector(sp70, sp60, var_s0);
+        sp70[1] += 6.0f;
+        if (GetGroundPos__7MathAPIFPA4_f(sp70)) {
+            float temp_f1 = var_s0[1];
+            float temp_f2 = sp70[1];
+            if (!(temp_f2 <= 0.5f + temp_f1)) {
+                var_v1 = 1;
+                if ((temp_f2 - temp_f1) <= 1.5f) {
+                    var_v1 = 0;
+                }
+                m_unk28C = var_v1;
+                *(u_long128 *)arg0 = *(u_long128 *)sp70;
+                return 1;
+            }
+        }
+    }
+    return 0;
 }
 
 // FUNCTION: 0x002107A0 UpdateShieldStatus__15ClockworkMaximoFP6Shield
@@ -202,6 +249,102 @@ bool ClockworkMaximo::FacingTarget(EntityBaseClass *arg0) {
     return false;
 }
 
+// DRAFT: 0x00210E80 FaceHit__15ClockworkMaximoFP15EntityBaseClass
+// note: DIFF 17 words; compare-chain branch sense and duplicated 150.0f lui in delay slots differ; merged || arm gave 38, nested form 17.
+void ClockworkMaximo::FaceHit(EntityBaseClass *arg0) {
+    float sp30[4];
+    float *sel;
+    float f1;
+    unsigned int type;
+    int m3C;
+    if (arg0 == 0) {
+        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x9B3, "aPlayer");
+    }
+    GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(arg0, sp30);
+    m3C = *(int *)((char *)arg0 + 0x3C);
+    if (m3C != 0) {
+        sel = (float *)(m3C + 0x90);
+    } else {
+        sel = (float *)((char *)arg0 + 0x1A0);
+    }
+    f1 = sel[1];
+    type = *(unsigned int *)((char *)arg0 + 0x154);
+    if (type == 0x0200051D) {
+        return;
+    }
+    if (type == 0x82000010) {
+        return;
+    }
+    if (type != 0x8200000E) {
+        if (type == 0x020004E8) {
+            f1 = f1 - 150.0f;
+        } else if (type == 0x82000007) {
+            f1 = f1 - 150.0f;
+        } else {
+            f1 = f1 - 180.0f;
+        }
+    } else {
+        f1 = f1 - -150.0f;
+    }
+    if (m_unk3C != 0) {
+        sel = (float *)(m_unk3C + 0x90);
+    } else {
+        sel = (float *)&m_unk1A0;
+    }
+    sel[1] = f1;
+    if (m_unk3C != 0) {
+        sel = (float *)(m_unk3C + 0x90);
+    } else {
+        sel = (float *)&m_unk1A0;
+    }
+    ClockworkMaximoState *st = m_unk38;
+    st->m_unk11C = Round180__Ff(sel[1]);
+}
+
+// DRAFT: 0x00210FC0 Stalled__15ClockworkMaximoFfRUi
+// note: DIFF 32; counter reg v1 vs v0, GetTarget call delay slot nop, float-compare reg v1 vs v0 with bc1t, tail sltu; tried delay-slot defaults, inverted counter, explicit tail.
+bool ClockworkMaximo::Stalled(float arg0, unsigned int &arg1) {
+    char *sel;
+    arg1 = 0;
+    if (m_unk38->m_unkE4 != 0) {
+        arg1 = *(unsigned int *)(m_unk38->m_unkE4 + 0xC);
+    }
+    sel = (char *)&m_unk190;
+    if (m_unk3C != 0) {
+        sel = (char *)(m_unk3C + 0x80);
+    }
+    if (DistanceXZ__7MathAPIFPA4_fPA4_f((float (*)[4])&m_unk230, (float (*)[4])sel) <= arg0) {
+        if (m_unk288 < 3) {
+            m_unk288 = m_unk288 + 1;
+        } else {
+            return true;
+        }
+    } else {
+        m_unk288 = 0;
+    }
+    if (m_unk3C != 0) {
+        sel = (char *)(m_unk3C + 0x80);
+    } else {
+        sel = (char *)&m_unk190;
+    }
+    *(u_long128 *)&m_unk230 = *(u_long128 *)sel;
+    if (arg1 & 0x10) {
+        ClockworkMaximo *target = GetTarget();
+        char *sel2;
+        if (target->m_unk3C != 0) {
+            sel2 = (char *)(target->m_unk3C + 0x80);
+        } else {
+            sel2 = (char *)&target->m_unk190;
+        }
+        float rel = GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, sel2);
+        return rel < 15.0f;
+    }
+    if (arg1 & 0x80) {
+        return true;
+    }
+    return false;
+}
+
 // FUNCTION: 0x002110F0 FaceTarget__15ClockworkMaximoFf
 bool ClockworkMaximo::FaceTarget(float arg0) {
     ClockworkMaximo *target = GetTarget();
@@ -229,6 +372,32 @@ bool ClockworkMaximo::InBlockableState() {
         return true;
     default:
         return false;
+    }
+}
+
+// FUNCTION: 0x002111B0 CheckBlockAttack__15ClockworkMaximoFv
+void ClockworkMaximo::CheckBlockAttack() {
+    EntityBaseClass *target = (EntityBaseClass *)mPlayerAPI__13EntityManager;
+    if (target == 0) {
+        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x924, "pPlayer");
+    }
+    if (m_unk240 > 0 && m_unk1E8 != 0 && *((unsigned char *)target + 0x23D2) != 0 &&
+        *(unsigned short *)((char *)target + 0x15E) != 0xD &&
+        *(int *)((char *)target + 0x1CC) == *(int *)((char *)this + 4) && InBlockableState()) {
+        float (*a1)[4] = (float (*)[4])((char *)this + 0x190);
+        int m3C = m_unk3C;
+        if (m3C != 0) {
+            a1 = (float (*)[4])(m3C + 0x80);
+        }
+        float (*a0)[4] = (float (*)[4])((char *)target + 0x190);
+        int t3C = *(int *)((char *)target + 0x3C);
+        if (t3C != 0) {
+            a0 = (float (*)[4])(t3C + 0x80);
+        }
+        if (Distance__7MathAPIFPA4_fPA4_f(a0, a1) <= 20.0f && FacingTarget(target) &&
+            MathAPI::RandomIntRange(0, 0x63) < 10) {
+            SetState__15EntityBaseClassFi(this, 6);
+        }
     }
 }
 

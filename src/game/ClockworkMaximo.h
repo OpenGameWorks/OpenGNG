@@ -10,11 +10,14 @@ class Shield;
 
 class ClockworkMaximoState {
 public:
-    char _pad000[0xE8];
+    char _pad000[0xE4];
+    char *m_unkE4;          // 0x0E4
     unsigned int m_unkE8;   // 0x0E8
     unsigned int m_unkEC;   // 0x0EC
     char _pad0F0[0x108 - 0xF0];
     int m_unk108;           // 0x108
+    char _pad10C[0x11C - 0x10C];
+    float m_unk11C;         // 0x11C
 };
 
 class ClockworkMaximo {
@@ -26,6 +29,7 @@ public:
     };
 
     void FootStepSound(unsigned int arg0);
+    int CanJump(float (*arg0)[4]);
     int DetermineIdleState();
     void OnWakeEvent();
     void OnTimerEvent(unsigned int arg0);
@@ -35,11 +39,14 @@ public:
     void UpdateShieldStatus(Shield *arg0);
     bool TargetFacingUs();
     bool FacingTarget(EntityBaseClass *arg0);
+    void FaceHit(EntityBaseClass *arg0);
     bool IsMoving();
     bool StopMoving();
     ClockworkMaximo *GetTarget();
     bool FaceTarget(float arg0);
+    bool Stalled(float arg0, unsigned int &arg1);
     bool InBlockableState();
+    void CheckBlockAttack();
     void SetDefaultVars();
     void SetShockwave();
     void SetSpawnedFromEntity(float *arg0, float *arg1, int arg2);
@@ -79,7 +86,8 @@ public:
     int m_unk1E0;                   // 0x1E0
     int m_unk1E4;                   // 0x1E4
     int m_unk1E8;                   // 0x1E8
-    char _pad1EC[0x240 - 0x1EC];
+    char _pad1EC[0x230 - 0x1EC];
+    u_long128 m_unk230;             // 0x230
     int m_unk240;                   // 0x240
     char _pad244[0x24C - 0x244];
     int m_unk24C;                   // 0x24C
