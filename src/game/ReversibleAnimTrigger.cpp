@@ -14,6 +14,8 @@ extern "C" void StartCutCamera__6CameraFUib(void *pThis, unsigned int arg0, bool
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int arg0);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void memcpy(void *, const void *, unsigned int);
+extern "C" void RemoveCollision__15EntityBaseClassFP15EntityBaseClass(void *pThis, void *arg0);
+extern "C" int PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
 
 // Leading virtuals of PMNode's vtable (__vt__6PMNode): a call through this view
 // loads the slot into $t9 as the original's virtual calls do.
@@ -60,6 +62,45 @@ void ReversibleAnimTrigger::OnTouchEvent(EntityBaseClass *arg0) {
             StartCutCamera__6CameraFUib(gEng + 0x19760, m_unk1C4, false);
         }
         SetState__15EntityBaseClassFi(this, 1);
+    }
+}
+
+// DRAFT: 0x001EB620 OnHitEvent__21ReversibleAnimTriggerFP15EntityBaseClassiUiUi
+// note: 62 words differ; dispatch order and branch sense match, but the shared return-1 block sits 8 instructions earlier and return 5/return 0 exits lay out differently. Tried: early return, case reorder (66), if/else chain (66).
+int ReversibleAnimTrigger::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3) {
+    if (*(int *)((char *)arg0 + 0x10C) & 1) {
+        if (m_unk1E4) {
+            switch (m_unk1B4) {
+            case 4:
+                if ((arg2 & 0x1F) != 0xF && (arg2 & 0x1F) != 8) {
+                    return 5;
+                }
+                break;
+            case 3:
+                if ((arg2 & ~0x100) != 0x4F && (arg2 & ~0x100) != 0x44 && (arg2 & ~0x100) != 0x42 && (arg2 & ~0x100) != 0x41) {
+                    return 5;
+                }
+                if (*(int *)((char *)arg0->m_unk38 + 0x108) & 1) {
+                    PlaySound__15EntityBaseClassFUi(this, 0x84);
+                } else {
+                    RemoveCollision__15EntityBaseClassFP15EntityBaseClass(arg0, this);
+                    return 0;
+                }
+                break;
+            }
+            if (m_unk1C4 > 0) {
+                StartCutCamera__6CameraFUib(gEng + 0x19760, m_unk1C4, false);
+            }
+            SetState__15EntityBaseClassFi(this, 1);
+        }
+    }
+    return 1;
+}
+
+// FUNCTION: 0x001EB760 OnTimerEvent__21ReversibleAnimTriggerFUi
+void ReversibleAnimTrigger::OnTimerEvent(unsigned int arg0) {
+    if (arg0 == m_unk1E0) {
+        m_unk1E5 = 1;
     }
 }
 

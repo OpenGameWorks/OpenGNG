@@ -13,6 +13,8 @@ public:
     ReversibleAnimTrigger();
     ~ReversibleAnimTrigger();
     void OnTouchEvent(EntityBaseClass *arg0);
+    int OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3);
+    void OnTimerEvent(unsigned int arg0);
     void SetEditableVars(char *pVars);
     void CheckForSound(PMNode *pNode);
 
@@ -20,7 +22,9 @@ public:
     char _pad004[0x103 - 0x04];
     unsigned char m_unk103;     // 0x103 initialised to 0xFF
     char _pad104[0x1B0 - 0x104];
-    char m_unk1B0[0xC];         // 0x1B0 copied from SetEditableVars arg (0x24 bytes)
+    char m_unk1B0[4];           // 0x1B0 copied from SetEditableVars arg (0x24 bytes)
+    int m_unk1B4;               // 0x1B4 state selector read by OnHitEvent
+    char _pad1B8[4];
     int m_unk1BC;               // 0x1BC linked animation node id
     char _pad1C0[0x1C4 - 0x1C0];
     int m_unk1C4;               // 0x1C4 camera cutscene id
