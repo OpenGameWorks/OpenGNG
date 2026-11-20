@@ -1,9 +1,18 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "PCutScenePlayer.h"
+#include "PMat4.h"
 
 // TODO(header): foreign declarations
-class PMat4;
+class PVec3 {
+public:
+    PVec3 operator-(PVec3 &rhs);
+    float m_fX, m_fY, m_fZ, m_fW;
+};
+extern "C" float sqrtf(float fVal);
+extern "C" float atan2f(float fY, float fX);
+extern "C" float sceVu0InnerProduct(float *pA, float *pB);
+extern "C" float Round180__Ff(float fAngle);
 class PFrustrum {
 public:
     int IntersectBox(float (*pBox)[2][4], PMat4 *pMat);
@@ -13,8 +22,20 @@ public:
     void TestMeshNodeInFrustum(PFrustrum *pFrustrum);
 };
 enum eBoxIntersect { eBoxIntersect_Unused };
+class PLightManager;
+struct tagComputedLightCache;
+class PLightManager {
+public:
+    void ComputeLights(float *pPos, bool bA, bool bB, bool bC, tagComputedLightCache *pCache, float (*pMtx)[4], float fScale);
+};
+class PDynamicSplinePatch {
+public:
+    void Render();
+};
 class PMNode {
 public:
+    virtual ~PMNode();
+    virtual void Render(PLightManager *pLightMgr, int nA, int nB);
     void ProcessFxTriggers(float fTime, PMat4 *pMat, bool bA, bool bB);
     PMNode *Find(unsigned int nId);
     void RecurseSetFade(float fFade);
@@ -38,14 +59,16 @@ public:
 class Player {
 public:
     void FinishCutScene(PMeshNode *pNode, PMat4 *pMat, int nFlag);
+    void RenderCutScene();
 };
 class FontManager {
 public:
     void RemoveAll(bool bFlag);
+    void InitSubTitle(int nArg);
 };
 
 extern unsigned char gInterface[];
-extern unsigned char gGfxEng[];
+extern char gGfxEng[1504384];
 extern "C" void __dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" void __dt__15PGrimReaperCapeFv(void *pThis, short nFlag);
 class PMeshNodeAnimDataTable;
@@ -55,6 +78,29 @@ extern "C" int Load__22PMeshNodeAnimDataTableFP8PPakFile16ePsx2FileVersion(PMesh
 extern "C" void *__ct__6PArrayFv(PArray *pThis);
 extern "C" void *__ct__15PGrimReaperCapeFv(PGrimReaperCape *pThis);
 extern "C" void sceVu0UnitMatrix(void *pMat);
+extern "C" int printf(const char *pFmt, ...);
+class PCutSceneAnim {
+public:
+    virtual ~PCutSceneAnim();
+    virtual void V1();
+    virtual void V2();
+    virtual void V3();
+    virtual void V4();
+    virtual void V5();
+    virtual void V6();
+    virtual void V7();
+    virtual void V8();
+    virtual void V9(void *pArg);
+};
+class PCutSceneXform {
+public:
+    virtual ~PCutSceneXform();
+    virtual void V1(PLightManager *pLightMgr, int nA, int nB);
+    virtual void V2();
+    virtual void V3();
+    virtual void V4();
+    virtual void V5(void *pArg);
+};
 
 // DRAFT: 0x001BBBA0 KillActorFx__15PCutScenePlayerFv
 // note: 33 differing lines; the diff starts at the prologue loop guard (original uses sltu $at,$zero,$s0 with a branch over the loop, ours tests the count directly) and the saved s1 register differs.
@@ -91,6 +137,33 @@ bool PCutScenePlayer::LoadNodeNameTable(PPakFile *pFile, unsigned int nCount, PA
         } while (i < nCount);
     }
     return true;
+}
+
+// DRAFT: 0x001BBD10 GetViewMatrix__15PCutScenePlayerFP5PMat4
+// note: DIFF 138; original frame 0xC0 with s0..s5 saves and scratch at 0xB0, ours frame 0x90 with s0..s2; cop1 0x46010344 (sqrt) not reproduced; copying vDelta via sceVu0CopyVector gave 139
+void PCutScenePlayer::GetViewMatrix(PMat4 *pMat) {
+    PVec3 vDelta = *(PVec3 *)((char *)this + 0xE0) - *(PVec3 *)((char *)this + 0xC0);
+    float *v = (float *)&vDelta;
+    float fLen = sqrtf(v[0] * v[0] + v[2] * v[2]);
+    float fPitch = atan2f(-v[1], fLen) * 57.29578f;
+    *(float *)((char *)this + 0xD0) = fPitch;
+    fPitch += 180.0f;
+    *(float *)((char *)this + 0xD0) = fPitch;
+    Round180__Ff(fPitch);
+    *(float *)((char *)this + 0xD4) = atan2f(v[0], -v[2]) * 57.29578f;
+    *(float *)((char *)this + 0xD8) = *(float *)((char *)this + 0xF0);
+    sceVu0UnitMatrix(pMat);
+    pMat->RotateY(*(float *)((char *)this + 0xD4));
+    pMat->RotateX(*(float *)((char *)this + 0xD0));
+    pMat->RotateZ(*(float *)((char *)this + 0xD8));
+    float *m = (float *)pMat;
+    float c0[4] = { m[0], m[4], m[8], 1.0f };
+    float c1[4] = { m[1], m[5], m[9], 1.0f };
+    float c2[4] = { m[2], m[6], m[10], 1.0f };
+    m[12] = -sceVu0InnerProduct(c0, (float *)((char *)this + 0xC0));
+    m[13] = -sceVu0InnerProduct(c1, (float *)((char *)this + 0xC0));
+    m[14] = -sceVu0InnerProduct(c2, (float *)((char *)this + 0xC0));
+    *(float *)((char *)this + 0xD4) = atan2f(-m[2], -m[10]) * 57.29578f;
 }
 
 // DRAFT: 0x001BBEE0 LoadBgAnims__15PCutScenePlayerFP8PPakFileUi
@@ -188,6 +261,81 @@ void PCutScenePlayer::ResetCutScene() {
     m_unk5C = m_unk2130;
     m_unk213C = 0;
     ((PGrimReaperCape *)m_unk100)->Enable(false, 0);
+}
+
+// DRAFT: 0x001BC9C0 ResetAnimations__15PCutScenePlayerFv
+// note: 64 differing words; frame 0x80 vs 0x60 (ours saves s1..s5, original s0..s3), this in s4 vs s2, i/pItem registers permuted, constant copied via temp at sp+0x70 vs direct to sp+0x50. Tried: hoisting i (no change), direct pItem+0x30 reloads (88->64), non-static int[4] local (107).
+void PCutScenePlayer::ResetAnimations() {
+    static const int kParams[4] = {0x0000ffff, 0x0000ffff, 0x00030001, 0x3f000000};
+    u_long128 sp50 = *(u_long128 *)kParams;
+    if (m_unk48 != 0) {
+        m_unk48->V9(&sp50);
+    }
+    if (m_unk4C != 0) {
+        m_unk4C->V9(&sp50);
+    }
+    if (m_unk50 != 0) {
+        m_unk50->V9(&sp50);
+    }
+    if (m_unk54 != 0) {
+        m_unk54->V9(&sp50);
+    } else {
+        ((FontManager *)(gInterface + 0x1790))->InitSubTitle(m_unk2130);
+    }
+    printf("**** Cutscene load ****\n");
+    AttachActors();
+    printf("**** Cutscene load done ****\n");
+    unsigned int n = m_unkB0;
+    unsigned int i = 0;
+    for (; i < n; i++) {
+        void *pItem = (i < m_unkB0) ? m_unkB8[i] : 0;
+        if (pItem == 0) {
+            CdsAssert("PCutScenePlayer.cpp", 0x29F, "apData");
+        }
+        if (*(PCutSceneXform **)((char *)pItem + 0x30) == 0) {
+            CdsAssert("PCutScenePlayer.cpp", 0x2A0, "apData->poTransform");
+        }
+        (*(PCutSceneXform **)((char *)pItem + 0x30))->V5(&sp50);
+    }
+    m_unk213C = 0;
+    m_unk213D &= 0x7F;
+}
+
+// DRAFT: 0x001BCB60 Render__15PCutScenePlayerFP13PLightManager
+// note: DIFF 55; frame 0x70 vs 0x60, this in s5 not s3, pItem in s2 not s4; tried pItem hoist/in-loop, i init placement, void** items
+void PCutScenePlayer::Render(PLightManager *pLightMgr) {
+    if (m_unk40 != 0) {
+        m_unk40->Render(0, 0x80, 0);
+    }
+    gGfxEng[0x158E22] = 1;
+    unsigned int n = m_unkB0;
+    unsigned int i;
+    if (n != 0) {
+        i = 0;
+        do {
+            void **pItem = (i < m_unkB0) ? (void **)m_unkB8[i] : 0;
+            if (pItem == 0) {
+                CdsAssert("PCutScenePlayer.cpp", 0x24E, "apData");
+            }
+            if (pItem[12] == 0) {
+                CdsAssert("PCutScenePlayer.cpp", 0x24F, "apData->poTransform");
+            }
+            char *pObj34 = (char *)pItem[13];
+            if (pObj34 == 0 || *(int *)(pObj34 + 0xC) != 0) {
+                if (pLightMgr != 0) {
+                    pLightMgr->ComputeLights((float *)(pObj34 + 0x70), 1, 1, 1, 0, 0, *(float *)((char *)this + 0xF4));
+                }
+                Player *p = (Player *)pItem[14];
+                if (p != 0) {
+                    p->RenderCutScene();
+                }
+                ((PCutSceneXform *)pItem[12])->V1(0, 0x80, 0);
+            }
+            i++;
+        } while (i < n);
+    }
+    ((PDynamicSplinePatch *)m_unk100)->Render();
+    gGfxEng[0x158E22] = 0;
 }
 
 // DRAFT: 0x001BCCF0 CullTest__15PCutScenePlayerFP9PFrustrum
