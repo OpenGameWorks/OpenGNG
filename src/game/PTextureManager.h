@@ -43,8 +43,7 @@ public:
     };
 
     virtual ~PTexture();               // vtable slot 0x08 (deleting dtor)
-    virtual void VFunc2(int nFlag);
-    int InitRendered(tagPs2TexDataHeader *pTexHeader, tagGsTextureEnvironment *pTexEnv, eTextureGroup eGroup);
+    virtual int InitRendered(tagPs2TexDataHeader *pTexHeader, tagGsTextureEnvironment *pTexEnv, eTextureGroup eGroup); // vtable slot 0x0C
 
     // 0x000 vtable pointer is implicit (virtual dtor).
     char m_unk4[0x2C];          // 0x004 copied texture header
@@ -97,6 +96,7 @@ public:
     void PrepareImageDmaPacket(tagImageDmaPacket *pPacket, void *pData, int nSize, int nWidth, int nHeight, int nPsm, int nBase);
     int AddTexture(PTexture *pTex, PArray *pArray);
     int AllocRenderedTexture(int nHandle, int nSecond, bool &bOut, bool bFlag);
+    int CreateRenderedTexture(short nWidth, short nHeight, short nDepth, short nX, short nY, eTextureGroup eGroup, bool bFlag);
     int AllocDynamicVramForTexture(tagPs2TexDataHeader *pHeader, int nSecond, int &nVram, int &nTmp, bool &bOut, bool bFlag);
     void PrepareDynamicClutPacket(tagGsClut256 *pClut, tagGsTextureEnvironment *pTexEnv, bool bFlag, PDisplayList *pDisplayList);
     int PrepareStaticTextureForDma(u_long128 *pDmaChain, tagPs2TexDataHeader *pTexHeader, void *pvTexClutPacket, void *pvTexImagePacket, tagGsTextureEnvironment *pTexEnv);

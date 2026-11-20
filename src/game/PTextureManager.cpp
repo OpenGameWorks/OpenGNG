@@ -32,6 +32,10 @@ enum eGsContext {
     eGsContext_0 = 0
 };
 void GsInitTexEnv(tagGsTextureEnvironment *pEnv, unsigned int nA, unsigned int nB, unsigned int nC, bool bFlag, eGsContext eCtx);
+unsigned int GsGetBufferWidth(unsigned int nWidth, unsigned int nDepth);
+void GsSetTexClamp(tagGsTextureEnvironment *pEnv, bool bFlag);
+extern short gi32BitExtraVramTable[0x20][5][2];
+extern short gi16BitExtraVramTable[0x20][5][2];
 
 // PArray is defined by another worker. This stub holds the members that AddTexture touches.
 class PArray {
@@ -387,6 +391,60 @@ int PTextureManager::AllocRenderedTexture(int nHandle, int nSecond, bool &bOut, 
         GsSetTexBaseAddr((tagGsTextureEnvironment *)pTex->m_unk40, nVram);
     }
     return nVram;
+}
+
+// DRAFT: 0x0018A550 CreateRenderedTexture__15PTextureManagerFsssss13eTextureGroupb
+// note: DIFF 84 words: slti branch sense (0x64-0x74), table index order (0x194-0x1F8), gi32/gi16 reloc addends 0x5468/0x54D8 need symbols at 0x245468/0x2454D8 (only 0x2454E0/0x245550 exist); tried separate ifs (170), positive form (84), gi32 base offset (84)
+int PTextureManager::CreateRenderedTexture(short nWidth, short nHeight, short nDepth, short nX, short nY, eTextureGroup eGroup, bool bFlag)
+{
+    char aEnv[0x60];
+    unsigned long long nTex0;
+    tagPs2TexDataHeader aHeader;
+    PTexture *pTex;
+
+    if (nDepth < nX || nDepth >= 5 || nX >= 5 || (nY != 0 && nY != 10)) {
+        return 0;
+    }
+
+    GsInitTexEnv((tagGsTextureEnvironment *)aEnv, nDepth, nX, nY, false, eGsContext_0);
+    nTex0 = ((unsigned long long)nX << 30) |
+            (((unsigned long long)nDepth << 26) |
+             (((unsigned long long)nY << 20) |
+              ((unsigned long long)GsGetBufferWidth(nWidth, nY) << 14))) |
+            0x2000000400000000ULL;
+    *(unsigned long long *)(aEnv + 0x30) = nTex0;
+    GsSetTexClamp((tagGsTextureEnvironment *)aEnv, bFlag);
+
+    memset(&aHeader, 0, 0x2C);
+    aHeader.unk0 = nDepth;
+    aHeader.unk1 = nX;
+    aHeader.type = nY;
+    aHeader.unk4 = nY;
+
+    if (nY == 0) {
+        aHeader.unk26 = (gi32BitExtraVramTable[nX][nDepth][0] + ((nWidth * nHeight) << 2)) / 256;
+    } else if (nY == 10) {
+        aHeader.unk26 = (gi16BitExtraVramTable[nX][nDepth][0] + ((nWidth * nHeight) << 1)) / 256;
+    }
+
+    pTex = (PTexture *)__nw__FUi(0xB0);
+    if (pTex) {
+        *(void **)pTex = __vt__8PTexture;
+        pTex->m_unk30 = 0;
+        pTex->m_unk34 = 0;
+        pTex->m_unkA4 = 0;
+        pTex->m_unkA8 = 0;
+        pTex->m_unkAC = 0;
+    }
+    CDS_ASSERT(1261, pTex);
+
+    if (pTex->InitRendered(&aHeader, (tagGsTextureEnvironment *)aEnv, eGroup)) {
+        return AddTexture(pTex, (PArray *)&m_nRenderedCount);
+    }
+    if (pTex) {
+        delete pTex;
+    }
+    return 0;
 }
 
 // FUNCTION: 0x0018A850 __dt__8PTextureFv
