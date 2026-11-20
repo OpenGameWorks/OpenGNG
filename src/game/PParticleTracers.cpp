@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "PParticleTracers.h"
 #include "PMat4.h"
@@ -13,6 +14,7 @@ extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
 extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PParticleTracers.cpp", line, #cond))
 extern "C" void sceVu0OuterProduct(float *pDst, float *pA, float *pB);
 extern "C" float FastMath_Fabs__Ff(float f);
 extern "C" float sqrtf(float x);
@@ -29,6 +31,9 @@ extern "C" void EndFxLines__10PGfxEngineFv(void *pThis);
 extern "C" void BeginFxInstances__10PGfxEngineFPvib(void *pThis, void *pData, int nSize, bool bFlag);
 extern "C" void DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(void *pThis, void *pInstances, int nCount, bool bFlag);
 extern "C" void Render__7PShaderFibPb(void *pThis, int nFlags, bool bFlag, bool *pOut);
+extern "C" void memcpy(void *, const void *, unsigned int);
+extern "C" void *__nwa__FUi(unsigned int nSize);
+extern "C" void *GetResource__16PParticleManagerFUi(void *pThis, unsigned int nId);
 
 // FUNCTION: 0x00203430 ComputeTracerAxes__16PParticleTracersFv
 void PParticleTracers::ComputeTracerAxes() {
@@ -160,6 +165,42 @@ void PParticleTracers::Render() {
             EndFxLines__10PGfxEngineFv(gGfxEng);
         }
     }
+}
+
+// FUNCTION: 0x00203F40 Create__16PParticleTracersFP24tagParticleTracersParamsfff
+int PParticleTracers::Create(tagParticleTracersParams *pParams, float fA, float fB, float fC) {
+    CDS_ASSERT(0x24, pParams);
+    if (PParticleSystem::Create(pParams->m_unk40, false) == 0) {
+        return 0;
+    }
+    memcpy(&m_unkE0, pParams, 0x70);
+    m_unk0C = 0x19;
+    m_unk30 = 0x48;
+    memcpy(&m_unkE0, pParams, 0x70);
+    m_unkE0[0] += fA;
+    m_unkE0[1] += fB;
+    m_unkE0[2] += fC;
+    *(u_long128 *)m_unk160 = *(u_long128 *)m_unkE0;
+    m_unk150 = (int)(0.5f + (12335.0f + (18991.0f * ((float)rand() / 2.1474836e9f))));
+    m_unk170 = 15.0f + (15.0f * (1.0f - m_unk128));
+    m_unk80 = m_unk160[0];
+    m_unk84 = m_unk160[1];
+    m_unk88 = m_unk160[2];
+    m_unk8C = 0x3F800000;
+    m_unk90 = m_unk124;
+    m_unk94 = m_unk124;
+    m_unk98 = m_unk124;
+    m_unk9C = sqrtf(m_unk90 * m_unk90 + m_unk94 * m_unk94 + m_unk98 * m_unk98);
+    sceVu0ScaleVectorXYZ(&m_unkC0, m_unk110, 1.0f / 255.0f);
+    m_unkCC = 1.0f;
+    m_unk174 = __nwa__FUi(m_unk04 << 5);
+    if (m_unk174 == 0) {
+        return 0;
+    }
+    if (m_unk13C != 0) {
+        m_unk178 = (int)GetResource__16PParticleManagerFUi((void *)(gGfxEng + 0x154F00), m_unk13C);
+    }
+    return 1;
 }
 
 // FUNCTION: 0x00204170 __dt__16PParticleTracersFv
