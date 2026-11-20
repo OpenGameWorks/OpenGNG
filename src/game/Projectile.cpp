@@ -8,6 +8,7 @@
 
 // TODO(header): foreign declarations
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
+extern "C" float RandomFloatRange__7MathAPIFff(float fMin, float fMax);
 extern "C" void LoadAnim__15EntityBaseClassFUib(void *pThis, unsigned int nAnim, bool bLoop);
 extern "C" void SetAnimData__15EntityBaseClassFP8AnimData(void *pThis, void *pData);
 extern "C" void *__nw__FUi(unsigned int nSize);
@@ -21,6 +22,7 @@ extern "C" void ShakeScreenUsingTable__9CameraAPIFiUi(void *pThis, int nA, unsig
 extern "C" void DisableAllHitBox__6PMNodeFv(void *pThis);
 extern int mbHard__15EntityBaseClass;
 extern void *mCameraAPI__13EntityManager;
+extern unsigned char mEffectAPI__13EntityManager[];
 extern unsigned char Anim[0x10];
 extern unsigned char __vt__10Projectile[];
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
@@ -39,8 +41,30 @@ extern "C" void GameVarAdd__6PlayerFUiii(void *pPlayer, unsigned int nVar, int n
 extern "C" void CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(void *pThis, float (*pFx)[4], int nObjType, int nWeaponType, bool bFlag);
 extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(unsigned int nHandle);
 extern "C" void StopShooting__10HighwaymanFv(void *pThis);
-extern "C" void PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
+extern "C" unsigned int PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
 extern void *mpEntMgr__15EntityBaseClass;
+extern "C" int CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(void *pThis, unsigned int nA, unsigned int nB, void *pA, void *pB, void *pC, float fScale, bool bA, int nC, bool bD);
+extern "C" void *EffectValid__9EffectAPIFUi(void *pThis, unsigned int nHandle);
+extern "C" void DeleteEffect__9EffectAPIFUi(void *pThis, unsigned int nHandle);
+extern "C" void CheckSwordBGAnim__13EntityManagerFP6PMNode(void *pThis, void *pNode);
+extern "C" float Distance__7MathAPIFPA4_fPA4_f(void *pA, void *pB);
+extern "C" float DistanceXZ__7MathAPIFPA4_fPA4_f(void *pA, void *pB);
+extern "C" void VectorRotateY__7MathAPIFPA4_ff(void *pThis, void *pV, float fAngle);
+extern "C" float GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *pEnt, void *pPos);
+extern "C" int RandomIntRange__7MathAPIFii(int nMin, int nMax);
+extern "C" int GetGroundPos__11BGCollisionFPA4_f(void *pThis, void *pPos);
+extern "C" void StopShockwaveAttack__13SulfurMonsterFv(void *pThis);
+extern "C" void StopSoundBySoundRef__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
+extern "C" void PlaySequence__15EntityBaseClassFPUi(void *pThis, void *pSeq);
+extern "C" void RegisterPotShotDeath__7AchilleFUi(void *pThis, unsigned int nA);
+extern "C" void sceVu0ScaleVector(float *pOut, float *pIn, float fScale);
+extern "C" void sceVu0AddVector(float *pOut, float *pA, float *pB);
+extern void *mPlayerAPI__13EntityManager;
+extern unsigned char mEffectAPI__13EntityManager[0x100];
+extern unsigned char SiegePuncher_ExplodeSeq[0x10];
+extern unsigned int m_AchilleRef__7Achille;
+extern unsigned char mBGCollision__15EntityBaseClass[0x10];
+extern unsigned char gEng[0x1A000];
 
 // Virtual number 21 (vtable slot 0x5C) is OnAttackEvent. The twenty placeholders
 // before it put that method in the same slot as EntityBaseClass::OnAttackEvent.
@@ -182,6 +206,66 @@ void Projectile::InitIceDoom(int nIndex, float (*pOut)[4], float (*pIn)[4]) {
     *(u_long128 *)&m_unk1D0 = *(u_long128 *)pOut;
     *(u_long128 *)&m_unk1C0 = *(u_long128 *)pIn;
     m_unk1B4 = 15.0f;
+}
+
+// DRAFT: 0x00167000 Execute__10ProjectileFv
+// note: partial (size 0x258 vs 0xCD0); cases 0 (m_unk1B0 == 8 block), 1, 4 and 5 are missing, and case 2 omits its m_unk1B0 == 0x1C branch.
+void Projectile::Execute() {
+    switch (m_unk20) {
+    case -1:
+        SetState__15EntityBaseClassFi(this, (m_unk1B0 < 9) ? 0 : 2);
+        return;
+    case -2:
+        if (m_unk1F4 != 0) {
+            DeleteEffect__9EffectAPIFUi(&mEffectAPI__13EntityManager, m_unk1F4);
+            m_unk1F4 = 0;
+        }
+        break;
+    case 0:
+        if (m_unkE9 != 0) {
+            m_unk1E4 = 0.0f;
+            m_unk1E8 = 0.0f;
+        }
+        CheckSwordBGAnim__13EntityManagerFP6PMNode(mpEntMgr__15EntityBaseClass, m_unk3C);
+        if (!(m_unkE8 & *(unsigned int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058))) {
+            m_unk1B4 = m_unk1B4 - *(float *)((char *)gEng + 0x1E8);
+            if (m_unk1B4 <= 0.0f) {
+                SetState__15EntityBaseClassFi(this, -2);
+            } else if (m_unk1B0 != 8 &&
+                       (*(int *)((char *)m_unk38 + 0xE4) != 0 ||
+                        (*(int *)((char *)m_unk38 + 0x108) & 1))) {
+                SetState__15EntityBaseClassFi(this, 1);
+            }
+        }
+        break;
+    case 2:
+        if ((*(unsigned char *)((char *)m_unk3C + 0x3F) & 7) == 0) {
+            SetState__15EntityBaseClassFi(this, -2);
+            return;
+        }
+        break;
+    case 3:
+        CheckSwordBGAnim__13EntityManagerFP6PMNode(mpEntMgr__15EntityBaseClass, m_unk3C);
+        if (m_unk1B4 != 0.0f) {
+            m_unk1B4 = m_unk1B4 - *(float *)((char *)gEng + 0x1E8);
+            if (m_unk1B4 <= 0.0f) {
+                m_unk1B4 = 0.0f;
+                m_unk1BC = m_unk1BC + 1;
+                if ((unsigned int)m_unk1BC < 5U) {
+                    void *pSpawn = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x2D, 0, false);
+                    CDS_ASSERT_NAMED(0x222, "pIce", pSpawn != 0);
+                    ((Projectile *)pSpawn)->InitIceDoom(m_unk1BC, (float (*)[4])&m_unk1D0, (float (*)[4])&m_unk1C0);
+                }
+            }
+        }
+        if ((*(unsigned char *)((char *)m_unk3C + 0x3F) & 7) == 0) {
+            SetState__15EntityBaseClassFi(this, -2);
+            return;
+        }
+        break;
+    default:
+        break;
+    }
 }
 
 // DRAFT: 0x00167CD0 InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f

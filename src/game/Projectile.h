@@ -41,21 +41,26 @@ public:
 
     enum ProjectileType { PROJECTILE_TYPE_COUNT = 31 };
     void InitProjectile(ProjectileType nType, float (*pA)[4], float (*pB)[4], float (*pC)[4]);
+    void Execute();
 
     void *m_unk0;                    // 0x000 vtable pointer
-    char _pad004[0x38 - 0x04];
+    char _pad004[0x1C];
+    int m_unk20;                     // 0x020 state switched on by Execute
+    char _pad024[0x14];
     Physics *m_unk38;                // 0x038 physics object, created by InitProjectile
     PMNode *m_unk3C;                 // 0x03C effect node; Delete processes its triggers and clears it
     char _pad040[0xD4 - 0x40];
     Shadow *m_unkD4;                 // 0x0D4 shadow object, created by InitProjectile
     char _padD8[0xE8 - 0xD8];
     unsigned char m_unkE8;           // 0x0E8 set by InitProjectile
-    char _padE9[0x10C - 0xE9];
+    unsigned char m_unkE9;           // 0x0E9
+    char _padEA[0x10C - 0xEA];
     int m_unk10C;                    // 0x10C flag word edited by InitProjectile
     char _pad110[0x15C - 0x110];
     unsigned short m_unk15C;         // 0x15C damage value written by DoDamage
     unsigned short m_unk15E;         // 0x15E second value written by DoDamage
-    char _pad160[0x190 - 0x160];
+    unsigned char m_unk160;          // 0x160
+    char _pad161[0x190 - 0x161];
     u_long128 m_unk190;              // 0x190 copy of pA
     u_long128 m_unk1A0;              // 0x1A0 copy of pB
 
@@ -65,7 +70,11 @@ public:
     int m_unk1BC;                    // 0x1BC zeroed by the constructor
     u_long128 m_unk1C0;              // 0x1C0 vector written by InitIceDoom
     u_long128 m_unk1D0;              // 0x1D0 vector written by InitIceDoom
-    char _pad1E0[0x1F4 - 0x1E0];
+    float m_unk1E0;                  // 0x1E0
+    float m_unk1E4;                  // 0x1E4
+    float m_unk1E8;                  // 0x1E8 frame-scaled value read by Execute
+    EntityBaseClass *m_unk1EC;       // 0x1EC
+    unsigned int m_unk1F0;           // 0x1F0
     int m_unk1F4;                    // 0x1F4 zeroed by the constructor
 };
 
