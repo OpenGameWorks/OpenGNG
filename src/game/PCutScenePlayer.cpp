@@ -36,11 +36,15 @@ public:
 class PDynamicSplinePatch {
 public:
     void Render();
+    void Animate(float fTime);
 };
 class PMNode {
 public:
     virtual ~PMNode();
     virtual void Render(PLightManager *pLightMgr, int nA, int nB);
+    virtual void Vt2();
+    virtual void Vt3();
+    virtual void Animate(float fA, float fB, PMat4 *pMat, int nA, bool bB);
     void ProcessFxTriggers(float fTime, PMat4 *pMat, bool bA, bool bB);
     PMNode *Find(unsigned int nId);
     void RecurseSetFade(float fFade);
@@ -61,16 +65,23 @@ class PGrimReaperCape {
 public:
     void Enable(bool bFlag, PMNode *pNode);
     void Init(float *pBuf);
+    void AnimateControlNode(void *pAnim, float fTime);
 };
 class Player {
 public:
     void FinishCutScene(PMeshNode *pNode, PMat4 *pMat, int nFlag);
     void RenderCutScene();
+    void UpdatePlayerFx();
 };
 class FontManager {
 public:
     void RemoveAll(bool bFlag);
     void InitSubTitle(int nArg);
+    void RemoveText(int nId);
+    void RemoveText(unsigned short nId);
+    void DisplayString(int nStr, int nX, int nY, bool bFlag);
+    int GetTextCount(int nStr);
+    void ProcessSubtitle(int nArg);
 };
 
 extern unsigned char gInterface[];
@@ -97,10 +108,10 @@ public:
     virtual ~PCutSceneAnim();
     virtual void V1();
     virtual void V2();
-    virtual void V3();
-    virtual void V4();
+    virtual float V3(float fA, float fB, float *pVec, int *pInt, int nFlag);
+    virtual signed char V4();
     virtual void V5();
-    virtual void V6();
+    virtual int V6();
     virtual void V7();
     virtual void V8();
     virtual void V9(void *pArg);
@@ -114,6 +125,8 @@ public:
     virtual void V4();
     virtual void V5(void *pArg);
 };
+
+#define CDS_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert("PCutScenePlayer.cpp", line, msg))
 
 // DRAFT: 0x001BBBA0 KillActorFx__15PCutScenePlayerFv
 // note: 33 differing lines; the diff starts at the prologue loop guard (original uses sltu $at,$zero,$s0 with a branch over the loop, ours tests the count directly) and the saved s1 register differs.
@@ -449,6 +462,105 @@ void PCutScenePlayer::CullTest(PFrustrum *pFrustrum) {
             i++;
         } while (i < nCount);
     }
+}
+
+// DRAFT: 0x001BCE10 Animate__15PCutScenePlayerFf
+// note: 206 words; frame 0xB0 vs 0xC0 with extra s6 spill (nCount), s1/s4 map differs, gGfxEng store reloc differs; decl order and block scope tried.
+bool PCutScenePlayer::Animate(float fTime) {
+    float aVec[4];
+    int aInt[2];
+    float fRes;
+    char *pElem;
+    PMNode *pFind;
+    void *pAnim;
+    unsigned int nCount;
+    unsigned int nIdx;
+    int nText;
+
+    if (m_unk40 != 0) {
+        m_unk40->Animate(0.0f, fTime, 0, 0, false);
+    }
+    if (m_unk48 != 0) {
+        fRes = m_unk48->V3(0.0f, fTime, aVec, aInt, 1);
+        m_unk213C = m_unk48->V4();
+        *(int *)&aVec[3] = 0x3F800000;
+        ((PMat4 *)this)->MulVector(m_unkC0, aVec);
+        if (m_unk2138 != 0.0f) {
+            if (!(fRes <= (float)m_unk48->V6() - 30.0f * m_unk2138)) {
+                m_unk213D |= ~0x7F;
+            }
+        }
+    }
+    if (m_unk4C != 0) {
+        m_unk4C->V3(fRes, 0.0f, aVec, aInt, 1);
+        *(int *)&aVec[3] = 0x3F800000;
+        ((PMat4 *)this)->MulVector(m_unkE0, aVec);
+    }
+    if (m_unk50 != 0) {
+        m_unk50->V3(fRes, 0.0f, aVec, aInt, 1);
+        m_unkF0 = aVec[0];
+    }
+
+    nCount = m_unkB0;
+    nIdx = 0;
+    if (nCount != 0) {
+        do {
+            pElem = (nIdx < m_unkB0) ? (char *)m_unkB8[nIdx] : 0;
+            CDS_ASSERT(0x1AF, pElem != 0, "apData");
+            CDS_ASSERT(0x1B0, *(void **)(pElem + 0x30) != 0, "apData->poTransform");
+            if (*(unsigned int *)(pElem + 0xD0) == 0x81000162ULL) {
+                pAnim = 0;
+                pFind = (*(PMNode **)(pElem + 0x34))->Find(0x9980D6C3U);
+                if (pFind != 0) {
+                    pAnim = *(void **)((char *)pFind + 0x24);
+                    *(void **)((char *)pFind + 0x24) = 0;
+                    ((PGrimReaperCape *)((char *)this + 0x100))->AnimateControlNode(pAnim, fTime);
+                }
+                (*(PMNode **)(pElem + 0x30))->Animate(0.0f, fTime, (PMat4 *)this, 0, false);
+                ((PDynamicSplinePatch *)((char *)this + 0x100))->Animate(1.0f);
+                if (pFind != 0 && pAnim != 0) {
+                    *(void **)((char *)pFind + 0x24) = pAnim;
+                }
+            } else {
+                (*(PMNode **)(pElem + 0x30))->Animate(0.0f, fTime, (PMat4 *)this, 0, false);
+                if (*(char **)(pElem + 0x38) != 0) {
+                    ((Player *)*(char **)(pElem + 0x38))->UpdatePlayerFx();
+                }
+            }
+            nIdx += 1;
+        } while (nIdx < nCount);
+    }
+
+    if (m_unk54 != 0) {
+        m_unk54->V3(fRes, 0.0f, aVec, aInt, 1);
+        nText = (int)*(float *)&aInt[1];
+        if (nText != *(int *)&m_unk58) {
+            *(int *)&m_unk58 = nText;
+            ((FontManager *)(gInterface + 0x80))->RemoveText((unsigned short)0x28);
+            if (nText != 0) {
+                ((FontManager *)(gInterface + 0x80))->DisplayString(m_unk5C, 0, 0, false);
+                m_unk5C += ((FontManager *)(gInterface + 0x80))->GetTextCount(m_unk5C);
+            }
+        }
+    } else if (m_unk2130 != 0) {
+        ((FontManager *)(gInterface + 0x80))->ProcessSubtitle((int)fRes);
+    }
+
+    if (m_unk213C == 0) {
+        SetBgNodesOpacity((PArray *)m_unk80, 0.0f);
+        SetBgNodesOpacity((PArray *)m_unk70, 1.0f);
+        KillActorFx();
+        ((FontManager *)(gInterface + 0x80))->RemoveAll(true);
+        if (m_unk213D & 1) {
+            Unload(true);
+        } else {
+            UpdatePlayer();
+        }
+        *(unsigned char *)(gGfxEng + 0x158E26) = 1;
+    } else {
+        *(unsigned char *)(gGfxEng + 0x158E26) = 0;
+    }
+    return m_unk213C != 0;
 }
 
 // FUNCTION: 0x001BD270 UpdatePlayer__15PCutScenePlayerFv

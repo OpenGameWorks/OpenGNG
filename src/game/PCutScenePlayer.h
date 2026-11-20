@@ -36,6 +36,7 @@ public:
     bool LoadBgAnims(PPakFile *pFile, unsigned int nFlag);
     bool LoadActors(PPakFile *pFile, unsigned int nFlag);
     void CullTest(PFrustrum *pFrustrum);
+    bool Animate(float fTime);
     void GetViewMatrix(PMat4 *pMat);
     void Render(PLightManager *pLightMgr);
 
@@ -59,12 +60,18 @@ public:
     unsigned int m_unkB0;
     unsigned int m_unkB4;
     void **m_unkB8;
-    char m_unkBC[0x44];
+    char m_unkBC[4];
+    float m_unkC0[4];
+    char m_unkD0[0x10];
+    float m_unkE0[4];
+    float m_unkF0;
+    char m_unkF4[0xC];
     char m_unk100[0x20E0 - 0x100];
     int m_unk20E0;
     char m_unk20E4[0x2130 - 0x20E4];
     int m_unk2130;
-    char m_unk2134[0x8];
+    char m_unk2134[4];
+    float m_unk2138;
     signed char m_unk213C;
     signed char m_unk213D;
 };
