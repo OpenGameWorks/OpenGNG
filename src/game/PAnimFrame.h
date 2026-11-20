@@ -5,13 +5,19 @@
 
 // Frame-based animation: the PAnim base (size 0x20) followed by frame range and enable fields. Size 0x34.
 // Only the virtuals defined in PAnimFrame.cpp are declared; the rest of the vtable is not recovered yet.
+class AnimData;
+
 class PAnimFrame : public PAnim {
 public:
     PAnimFrame(short nFrame);
+    PAnimFrame(PAnim *pSrc);
     virtual int Load(PPakFile *pFile);
     virtual int Load(PPakFile *pFile, tagMeshNodeAnimationHeader *pHeader);
     void EnableAnim(bool bEnable);
     void RestoreAnim(PAnimFrame *pSrc);
+    void SetAllAnimFlags(AnimData *pData);
+    virtual float Animate(float fTime, float fUnused, float (*pMatrix)[4], float *pOut, bool bFlag);
+    float AnimateFrame(float fTime);
 
     short m_unk20;                   // 0x20
     short m_unk22;                   // 0x22
