@@ -457,7 +457,7 @@ void PMNode::SetFxColorMultiplier(float *pColor, bool bFlag) {
 // FUNCTION: 0x00192820 AttachFx__6PMNodeFUiffffb
 void *PMNode::AttachFx(unsigned int uID, float fA, float fB, float fC, float fD, bool bFlag) {
     char *pBlk;
-    PParticleManager *pMgr = (PParticleManager *)&gGfxEng;
+    PParticleManager *pMgr = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
     if (pMgr == 0) {
         CdsAssert__FPciPc("PMNode.cpp", 0x7B3, "apParticleMgr");
     }
@@ -483,14 +483,16 @@ void *PMNode::AttachFx(unsigned int uID, float fA, float fB, float fC, float fD,
 }
 
 // DRAFT: 0x00192940 EnableFx__6PMNodeFbb
-// note: 55 words differ; original keeps gGfxEng address in s0 for assert and IsValid call and cnt in s1, ours reloads it and uses s0 for cnt. Tried local pMgr (74), outer m_unkD8 guard (56), gGfxEng cast in IsValid (79).
+// note: 74 words differ; original keeps pMgr in s0, cnt s1, idx s2, this s5, bA s4, bB s3, pSys s6 and no s7; ours puts pMgr in s7 and strength-reduces the m_unkE0 index (s3). Tried local pMgr (74), idx before cnt (74), in-loop m_unkD8 bound (91, also with local pMgr), pTrig via ?: (82), nested if for pSys (74).
 void PMNode::EnableFx(bool bA, bool bB) {
-    if ((PParticleManager *)&gGfxEng == 0) {
+    PParticleManager *pMgr = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
+    if (pMgr == 0) {
         CdsAssert__FPciPc("PMNode.cpp", 0x796, "apParticleMgr");
     }
+    unsigned int idx = 0;
     unsigned int cnt = m_unkD8;
     if (cnt != 0) {
-        unsigned int idx = 0;
+        idx = 0;
         do {
             tagParticleFxTrigger *pTrig = 0;
             if (idx < cnt) {
@@ -498,7 +500,7 @@ void PMNode::EnableFx(bool bA, bool bB) {
             }
             if (pTrig != 0) {
                 PParticleSystem *pSys = (PParticleSystem *)pTrig->m_unk20;
-                if (pSys != 0 && ((PParticleManager *)&gGfxEng)->IsValid(pSys) != 0) {
+                if (pSys != 0 && pMgr->IsValid(pSys) != 0) {
                     pSys->Enable(bA);
                 }
             }
@@ -702,25 +704,23 @@ void PMNode::SetFrameRate(float fRate, bool bFlag) {
 }
 
 // DRAFT: 0x00193170 GetDeltaMove__6PMNodeFP10PAnimFramePA4_f
-// note: DIFF 134 words. Original zeroes pOut with one sqc2 vf0 store (0,0,0,1), which plain C cannot emit; frame is 0x80 vs 0x90 and s4 is not used; register allocation and branch layout differ.
+// note: DIFF 115 words. Zeroing is one asm sqc2 vf0 store; fTime local removed and GetFrameRate >= 0 branch form tried (134 to 115). Still differs: compiled saves s0-s4 where the original saves s0-s3 (sEnd lives in s4, original reuses s1), original keeps fTime in f20 across calls, and the m_unk24 and mode branch layout and prologue store order differ. Also tried: fTime local after m_unk24 (131), unsigned mode with mode > 2 (125), vEnd/vStart swap (116), w store moved (121), x/z temporaries (115), IsAnimate() & 4 != 0 (115).
 int PMNode::GetDeltaMove(PAnimFrame *pFrame, float (*pOut)[4]) {
     float vStart[4];
     float vEnd[4];
-    float fTime = m_unk38;
     PChannel *pChan;
     unsigned char mode;
     short sStart;
     short sEnd;
 
-    (*pOut)[0] = 0.0f;
-    (*pOut)[1] = 0.0f;
-    (*pOut)[2] = 0.0f;
-    (*pOut)[3] = 1.0f;
+    asm {
+        sqc2 vf0, 0x0(pOut)
+    }
 
     if (m_unk24 == 0) {
         return 0;
     }
-    if (*(float *)&m_unk34 == fTime) {
+    if (*(float *)&m_unk34 == m_unk38) {
         return 0;
     }
     mode = m_unk3D & 7;
@@ -732,14 +732,14 @@ int PMNode::GetDeltaMove(PAnimFrame *pFrame, float (*pOut)[4]) {
         return 0;
     }
     if (pFrame->IsAnimate() & 4) {
-        pChan->EvaluateAnim(fTime, vStart, 3, 0.0f);
+        pChan->EvaluateAnim(m_unk38, vStart, 3, 0.0f);
     }
-    if (pFrame->GetFrameRate() < 0.0f) {
-        sStart = pFrame->m_unk26;
-        sEnd = pFrame->m_unk28;
-    } else {
+    if (pFrame->GetFrameRate() >= 0.0f) {
         sEnd = pFrame->m_unk26;
         sStart = pFrame->m_unk28;
+    } else {
+        sStart = pFrame->m_unk26;
+        sEnd = pFrame->m_unk28;
     }
     pChan->EvaluateAnim((float)sStart, vEnd, 3, 0.0f);
     sceVu0SubVector(*pOut, vEnd, vStart);
@@ -838,7 +838,7 @@ void PMNode::AddBoneMatrixToDisplayList(bool bRecurse) {
     PMNode *pChild;
     unsigned int idx;
     if (m_unkD0 >= 0) {
-        gGfxEng.pDisplayList->AddMatrix((PMat4 *)m_unk40, m_unkD0 * 4 + 0x296);
+        (*(PDisplayList **)((char *)&gGfxEng + 0x154C80))->AddMatrix((PMat4 *)m_unk40, m_unkD0 * 4 + 0x296);
     }
     if (bRecurse) {
         m_unk18 = 0;
@@ -1760,22 +1760,23 @@ PMNode::~PMNode() {
     }
 }
 
-// DRAFT: 0x00196220 InitMembers__6PMNodeFv
-// note: sqc2 $vf0 zeroing stores are raw .word; base a1 is scheduled late, small constants take other registers, float constants use mtc1/cvt (25 words differ).
+// FUNCTION: 0x00196220 InitMembers__6PMNodeFv
 void PMNode::InitMembers() {
+    char *pBase;
     m_unk08 = 0;
     m_unk10 = 0;
     m_unk24 = 0;
     m_unk28 = 0;
+    pBase = (char *)this + 0x80;
     m_unk3C = 0;
     m_unk3E = 8;
     m_unk3D = 3;
     m_unk3F = 0;
     asm {
-        .word 0xF8A00000
-        .word 0xF8A00010
-        .word 0xF8A00030
-        .word 0xF8A00040
+        sqc2 vf0, 0x0(pBase)
+        sqc2 vf0, 0x10(pBase)
+        sqc2 vf0, 0x30(pBase)
+        sqc2 vf0, 0x40(pBase)
     }
     m_unkA0[3] = 1.0f;
     m_unkA0[2] = 1.0f;
