@@ -7,7 +7,9 @@ struct tagPs2TexDataHeader;
 struct tagGsTextureEnvironment;
 struct tagGsImageXferInfo;
 struct tagImageDmaPacket;
+struct tagGsClut256;
 class PArray;
+class PDisplayList;
 
 // Texture group argument of PTexture::InitRendered.
 enum eTextureGroup {
@@ -64,6 +66,7 @@ public:
     void Shutdown();
     void FlipTextureBuffers();
     void ResetDynamicBuffers();
+    int Init(int nTexMemStart, int nStaticSize, int nDynamicSize);
 
     void DestroyRenderedTexture(int nHandle);
     void UnloadDynamicTexture(int nHandle);
@@ -73,6 +76,9 @@ public:
     void PrepareImageXferInfo(tagGsImageXferInfo *pInfo, int nWidth, int nHeight, int nPsm, int nBase);
     void PrepareImageDmaPacket(tagImageDmaPacket *pPacket, void *pData, int nSize, int nWidth, int nHeight, int nPsm, int nBase);
     void AddTexture(PTexture *pTex, PArray *pArray);
+    int AllocRenderedTexture(int nHandle, int nSecond, bool &bOut, bool bFlag);
+    int AllocDynamicVramForTexture(tagPs2TexDataHeader *pHeader, int nSecond, int &nVram, int &nTmp, bool &bOut, bool bFlag);
+    void PrepareDynamicClutPacket(tagGsClut256 *pClut, tagGsTextureEnvironment *pTexEnv, bool bFlag, PDisplayList *pDisplayList);
 
     int m_unk0;                 // 0x000
     int m_unk4;                 // 0x004
@@ -89,7 +95,8 @@ public:
     int m_unk1E0;               // 0x1E0 PArray unknown
     PTexture **m_apDyn;         // 0x1E4 PArray element storage
     int m_unk1E8;               // 0x1E8 PArray capacity
-    char m_unk1EC[0x250 - 0x1EC];
+    char m_unk1EC[0x1F0 - 0x1EC];
+    char m_unk1F0[0x250 - 0x1F0]; // 0x1F0 tagGsTextureEnvironment, passed to GsInitTexEnv by Init
     int m_nRenderedCount;       // 0x250 PArray element count
     int m_unk254;               // 0x254
     PTexture **m_apRendered;    // 0x258 PArray element storage
