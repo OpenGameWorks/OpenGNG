@@ -22,6 +22,7 @@ public:
     void SetBoundBox(float (*pBox)[2][4]);
     int Load(PPakFile *pPakFile, PArray *pTextures, unsigned int nCount, unsigned int nUnk, ePsx2FileVersion eVersion, bool bFlag);
     int RenderAllPolys();
+    int Render(int nArg, bool *pbOut, bool bFlag);
     void AnimateShaders(float fDelta, bool bFlag);
     void Destroy();
 

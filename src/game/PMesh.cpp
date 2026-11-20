@@ -14,6 +14,7 @@ extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void *__construct_new_array(void *pArray, void *pCtor, void *pDtor, unsigned int nSize, unsigned int nCount);
 extern "C" void __ct__13PMeshFragmentFv(void);
 extern "C" int Load__13PMeshFragmentFP8PPakFileP6PArray16ePsx2FileVersionb(void *pThis, PPakFile *pPakFile, PArray *pTextures, ePsx2FileVersion eVersion, bool bFlag);
+extern "C" void DrawFragment__10PGfxEngineFP13PMeshFragmentbiPb(void *pThis, void *pFrag, bool bFlag, int nIdx, bool *pOut);
 
 class PShader {
 public:
@@ -182,6 +183,51 @@ int PMesh::RenderAllPolys() {
         ((PDisplayList *)*(void **)gGfxEng)->DrawVertices(*(void **)((char *)m_unk0 + nOffset), *(int *)((char *)m_unk0 + nOffset + 4));
         nSum += *(unsigned short *)((char *)m_unk0 + nOffset + 8);
         nOffset += 0x90;
+    }
+    return nSum;
+}
+
+// DRAFT: 0x0018FB20 Render__5PMeshFiPbb
+// note: 54 words; ours keeps nSum in s5 and bFlag offset in s4, original uses s4/s5. Tried: separate non-bFlag locals (54), offset-first decl (59), offset-first zeroing (54).
+int PMesh::Render(int nArg, bool *pbOut, bool bFlag) {
+    unsigned int nIndex;
+    unsigned int nOffset;
+    int nSum;
+
+    nSum = 0;
+    if (m_unk0 == 0) {
+        CdsAssert__FPciPc("PMesh.cpp", 0x85, "mpMeshFragments");
+    }
+    if (m_unk4 == 0) {
+        CdsAssert__FPciPc("PMesh.cpp", 0x86, "muNumFragments");
+    }
+    if (bFlag) {
+        nIndex = m_unk4 - m_unk8;
+        nOffset = nIndex * 0x90;
+        while (nIndex < m_unk4) {
+            DrawFragment__10PGfxEngineFP13PMeshFragmentbiPb(gGfxEng, (char *)m_unk0 + nOffset, 1, nArg, pbOut);
+            nIndex++;
+            nSum += *(unsigned short *)((char *)m_unk0 + nOffset + 8) * *(int *)((char *)m_unk0 + nOffset + 0x14);
+            nOffset += 0x90;
+        }
+        return nSum;
+    }
+    nIndex = 0;
+    nOffset = 0;
+    if (nArg != 0x80) {
+        while (nIndex < m_unk4) {
+            DrawFragment__10PGfxEngineFP13PMeshFragmentbiPb(gGfxEng, (char *)m_unk0 + nOffset, 1, nArg, pbOut);
+            nIndex++;
+            nSum += *(unsigned short *)((char *)m_unk0 + nOffset + 8) * *(int *)((char *)m_unk0 + nOffset + 0x14);
+            nOffset += 0x90;
+        }
+    } else {
+        while (nIndex < m_unk4) {
+            DrawFragment__10PGfxEngineFP13PMeshFragmentbiPb(gGfxEng, (char *)m_unk0 + nOffset, nIndex >= m_unk4 - m_unk8, nArg, pbOut);
+            nIndex++;
+            nSum += *(unsigned short *)((char *)m_unk0 + nOffset + 8);
+            nOffset += 0x90;
+        }
     }
     return nSum;
 }
