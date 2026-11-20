@@ -250,7 +250,7 @@ int ZCompareFragments(void *pIdx0, void *pIdx1)
 }
 
 // DRAFT: 0x184800 VBlankEndInterruptHandler__Fi
-// note: 2 words differ: the original places daddu v1,zero,zero before sd ra; ours emits sd ra first (tried: scalar/array counter, consolidated/split COP0 asm, lui/sync as .word, nop, daddu in its own asm, unused and used zero local, mfpc reads with named local (10 lines, wrong v0/a0 allocation)).
+// note: 2 words differ: the original places daddu v1,zero,zero before sd ra; ours emits sd ra first. Tried: scalar/array counter, consolidated/split COP0 asm, lui/sync as .word, nop, daddu in its own asm, unused and used zero local (X2: 29 words; X3 asm block with zero local: 5 words), mfpc reads with named local (10 lines, wrong v0/a0 allocation).
 int VBlankEndInterruptHandler(int nIrq) {
     asm { .word 0x0000182D }
     gCDSVBlankCount[0]++;
@@ -1138,17 +1138,15 @@ void PGfxEngine::BeginMesh(eBoxIntersect eBox) {
 }
 
 // DRAFT: 0x186FA0 SetZBufferUpdate__10PGfxEngineFb10eGsContext
-// note: 24 words differ (current form, re-measured): original selects 0x4E/0x4F with movn and builds flag<<32 before the select; ours uses beqz. Tried: unsigned int nData (26), ternary select (22), reordered OR (24), hoisted flag shift (23), int flag (24). An earlier note cited 18 for the reordered OR; re-measuring did not reproduce it.
+// note: 16 words differ (current form, v2): original selects 0x4E/0x4F with movn after building flag<<32; ours uses beqz and different t-register numbers. Tried: unsigned int nData (26), ternary select (22), reordered OR (24), hoisted flag shift (23), int flag (24), inverted ternary with original OR order (21), if-select form (17).
 void PGfxEngine::SetZBufferUpdate(bool bEnable, eGsContext eCtx) {
     unsigned long long aGs[2];
     unsigned long long nData = m_unk158E04;
     unsigned char cFlag = !bEnable;
-    int nCtx = 0x4E;
-    if (eCtx != 0) {
-        nCtx = 0x4F;
-    }
+    int nCtx = (eCtx == 0) ? 0x4E : 0x4F;
+    unsigned long long nFlag = (unsigned long long)cFlag << 32;
     aGs[1] = nCtx;
-    aGs[0] = ((unsigned long long)cFlag << 32) | (nData | ((unsigned long long)m_unk158E02 << 24));
+    aGs[0] = (nData | ((unsigned long long)m_unk158E02 << 24)) | nFlag;
     m_unk154C80->SetGsRegisters((u_long128 *)aGs, 1);
 }
 
@@ -1298,7 +1296,7 @@ void PGfxEngine::SetMaterial(int nIndex, float *pVec, unsigned long nA, unsigned
 }
 
 // DRAFT: 0x187620 SetOverrideTexture__10PGfxEngineFi
-// note: DIFF 3 words; pEnv sits at sp+0x20, original at sp+0x28 (bFlag at 0x2F matches). Tried swapping locals and adding unused pad locals; the optimizer drops both, so the slot does not move.
+// note: 3 words differ; pEnv sits at sp+0x28 in ours, original at sp+0x20 (the sw/addiu/lw lines at 0x4C, 0x5C, 0xA8). Tried: swapping locals, unused pad locals (dropped by the optimizer), initialised declarations (47 words), unsigned char bFlag (does not compile, call needs bool&); slot stayed at 0x28 across eight variants.
 void PGfxEngine::SetOverrideTexture(int nIndex) {
     tagGsTextureEnvironment *pEnv;
     bool bFlag;
@@ -1392,7 +1390,7 @@ void PGfxEngine::FadeFullScreenMotionBlur(char cTarget, int nFrames) {
 }
 
 // DRAFT: 0x001876F0 SetTvOffset__10PGfxEngineFii
-// note: 7 words differ, all in the tail; the compiler hoists the lhu of m_unk158BE8 above the mult (original mults first). Tried /64 /32 fixups, inline and temp product, mask-then-or, height temp reuse (21 words).
+// note: 7 words differ, all in the tail; the compiler hoists the lhu of m_unk158BE8 above the mult (original mults first). Tried: /64 and /32 fixups, inline and temp product, mask-then-or, height temp reuse (21 words); every form keeping the product in one expression gives 7.
 void PGfxEngine::SetTvOffset(int nX, int nY) {
     int nWidth;
     int nHeight;
