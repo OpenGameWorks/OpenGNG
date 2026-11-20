@@ -9,12 +9,14 @@ class HudData;
 class HudGrim {
 public:
     void UpdateCover();
+    void UpdateStatus(bool arg0);
     void Init(PMeshNode *meshNode, HudData *hud);
     void Delete();
 
     char _pad000[0x4];
     PMNode *m_unk4;             // 0x004
-    char _pad008[0x8];
+    char _pad008[0x7];
+    unsigned char m_unkF;       // 0x00F set to 1 by UpdateStatus
     void *m_unk10;              // 0x010 PMNode::Find(0x303B74C6) result
     void *m_unk14[3];           // 0x014 cover element pointers
     PParticleSystem *m_unk20;   // 0x020
@@ -93,10 +95,11 @@ public:
     void Init(PMeshNode *meshNode, HudData *hud);
     void Reset();
     void SetNumber();
+    void UpdateStatus(bool arg0);
 
     void *m_unk0;               // 0x000 vtable pointer (__vt__7GameHud)
     void *m_unk4;               // 0x004
-    char _pad008[0x4];
+    float m_unk8;               // 0x008 set to 2.0f or 80.0f by UpdateStatus
     short m_unkC;               // 0x00C
     unsigned char m_unkE;       // 0x00E
     unsigned char m_unkF;       // 0x00F
@@ -112,6 +115,7 @@ public:
     void LoadingDisplayGuts(unsigned int arg0);
     void InitScreenFadeVars();
     void LevelClear();
+    void HudUpdate(int arg0);
     void AddAbility(int arg0);
     int IsTreasureOK();
     void DisplayLevelName(int arg0, int arg1);

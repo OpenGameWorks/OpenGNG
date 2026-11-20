@@ -4,6 +4,10 @@
 #include "PTextureManager.h"
 
 // TODO(header): foreign declarations
+class Player {
+public:
+    void SwapAbility(int arg0);
+};
 // PSound size is unknown; the placeholder member only keeps gSound out of small data (threshold 8 bytes).
 class PSound {
 public:
@@ -54,9 +58,30 @@ public:
     virtual void Slot00();
     virtual void Slot01();
     virtual void Slot02();
-    virtual void Slot03();
+    virtual void Slot03(int flag);
     virtual void Slot04();
     virtual void Slot05(int flag);
+};
+
+// Object at PMNode+0x24; virtual slots 10, 12, 13 and 15 are called by GameHud::UpdateStatus.
+class PVirtSlots {
+public:
+    virtual void Slot00();
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual void Slot04();
+    virtual void Slot05();
+    virtual void Slot06();
+    virtual void Slot07();
+    virtual void Slot08();
+    virtual void Slot09();
+    virtual void Slot10(int flag);
+    virtual void Slot11();
+    virtual void Slot12(int flag);
+    virtual void Slot13(short flag);
+    virtual void Slot14();
+    virtual void Slot15(float flag);
 };
 
 // Only the mangled name (13eBoxIntersect) matters here; the enumerator names are placeholders.
@@ -77,6 +102,8 @@ public:
     void SetAllFrustrumTest(eBoxIntersect arg0);
     void RecurseSetLoopRateByID(unsigned int id, int arg1, float arg2);
     void ScaleSet(float arg0, float arg1, float arg2, float arg3);
+    void EnableAnim(bool arg0, bool arg1);
+    void SetAnimLoopCount(int arg0, bool arg1);
 
     char _pad004[0x8];
     int m_unkC;                 // 0x00C
@@ -116,14 +143,19 @@ public:
     void Reset();
     void UpdateGroup(int arg0);
     void UpdateStatus(bool flag);
+    int SwapCheck(unsigned int arg0);
+    void UpdateShieldIcon();
 
     char _pad000[0x4];
     void *m_unk4;               // 0x004
     char _pad008[0x7];
     signed char m_unkF;         // 0x00F
     unsigned char m_unk10;      // 0x010
-    char _pad011[0x2B];
+    char _pad011[0xB];
+    void *m_unk1C;              // 0x01C element with a PArray at 0x14 (index 0x18, storage 0x1C)
+    char _pad020[0x1C];
     int m_unk3C;                // 0x03C
+    int m_unk40;                // 0x040 icon index, used by SwapCheck
 };
 
 extern unsigned char __vt__7GameHud[];
@@ -226,11 +258,35 @@ void Interface::LevelClear() {
     m_unk1C0 &= ~8;
 }
 
+// FUNCTION: 0x13FB90 HudUpdate__9InterfaceFi
+void Interface::HudUpdate(int arg0) {
+    int saved = *(int *)(MemMgr + 0x18);
+    *(int *)(MemMgr + 0x18) = 0;
+    ((PVirtObj *)((char *)this + 0x1CC))->Slot03(arg0);
+    ((PVirtObj *)((char *)this + 0x1DC))->Slot03(arg0);
+    ((PVirtObj *)((char *)this + 0x1EC))->Slot03(arg0);
+    ((PVirtObj *)((char *)this + 0x1FC))->Slot03(arg0);
+    ((PVirtObj *)((char *)this + 0x20C))->Slot03(arg0);
+    ((PVirtObj *)((char *)this + 0x21C))->Slot03(arg0);
+    ((PVirtObj *)((char *)this + 0x22C))->Slot03(arg0);
+    ((PVirtObj *)((char *)this + 0x250))->Slot03(arg0);
+    ((PVirtObj *)((char *)this + 0x270))->Slot03(arg0);
+    ((PVirtObj *)((char *)this + 0x290))->Slot03(arg0);
+    ((PVirtObj *)((char *)this + 0x2E8))->Slot03(arg0);
+    *(int *)(MemMgr + 0x18) = saved;
+}
+
 // TODO(header): mpPlayerData__7GameHud is a pointer-sized small-data global.
 extern GameHud *mpPlayerData__7GameHud;
 // TODO(header): IconTable is a 0x20-byte-stride table indexed by icon type; AbilityTable is shared with Player.cpp.
 extern char IconTable[0x1100];
 extern signed char AbilityTable[];
+
+// FUNCTION: 0x13FEC0 UpdateStatus__7HudGrimFb
+void HudGrim::UpdateStatus(bool arg0) {
+    m_unkF = 1;
+    *(int *)((char *)m_unk4 + 0xC) = 1;
+}
 
 // FUNCTION: 0x13FEE0 UpdateCover__7HudGrimFv
 void HudGrim::UpdateCover() {
@@ -463,6 +519,39 @@ void HudCombo::ComboFinish() {
     }
 }
 
+// DRAFT: 0x1424A0 UpdateStatus__7GameHudFb
+// note: switch on m_unkF with case order 0,3,2,1 gives DIFF 54 (if-chain 65, case order 2,3,1,0 67); compare sequence 1,2,3,0 vs original 2,3,1,0 and register use in the CoinAnim/virtual calls differ.
+void GameHud::UpdateStatus(bool arg0) {
+    m_unk8 = arg0 ? 2.0f : 80.0f;
+    switch (m_unkF) {
+    case 0:
+        m_unkF = 1;
+        SetNumber();
+        ((PMNode *)m_unk4)->SetAllFrustrumTest((eBoxIntersect)1);
+        ((PVirtObj *)m_unk4)->Slot05((int)&CoinAnim);
+        break;
+    case 3:
+        m_unkF = 1;
+        {
+            PVirtSlots *pSlots = *(PVirtSlots **)((char *)m_unk4 + 0x24);
+            pSlots->Slot15(1.0f);
+            pSlots->Slot12(1);
+            pSlots->Slot10(0);
+            pSlots->Slot13(*(short *)(CoinAnim + 4));
+        }
+        break;
+    case 2:
+        if (!arg0) {
+            m_unkF = 1;
+            ((PMNode *)m_unk4)->EnableAnim(true, false);
+            ((PMNode *)m_unk4)->SetAnimLoopCount(0, false);
+        }
+        break;
+    case 1:
+        break;
+    }
+}
+
 // DRAFT: 0x142620 Reset__7GameHudFv
 // note: 30 words differ; lbu/bltz match, but the original loads the mpPlayerData pointer before andi and folds +4 into addiu before the index add; ours folds +4 into the lh offset and reloads the global after andi. Tried: int local for m_unkE, char* base + 4, int table view, explicit offset variable.
 void GameHud::Reset() {
@@ -481,6 +570,51 @@ void GameHud::Reset() {
         ((PMNode *)m_unk4)->SetAllFrustrumTest((eBoxIntersect)1);
         ((PVirtObj *)m_unk4)->Slot05((int)&CoinAnim);
     }
+}
+
+// DRAFT: 0x142900 SwapCheck__12HudInventoryFUi
+// note: 69 words differ. Separate early returns where the original shares one return-0 exit; hud + 0x5B is reassociated; gp reload order. Tried: base in two steps, single result variable (84), hudRow temp (69).
+int HudInventory::SwapCheck(unsigned int arg0) {
+    if (!(arg0 & 0x4000)) {
+        return 0;
+    }
+    int idx = m_unk40;
+    if (idx >= 0x18) {
+        return 0;
+    }
+    int group = 2;
+    if (idx < 0xC) {
+        group = 0;
+    }
+    int slot = idx % 12;
+    if (slot >= 7) {
+        group++;
+        slot -= 7;
+    }
+    char *hud = (char *)mpPlayerData__7GameHud;
+    char *base = hud + 0x5B + (group << 3);
+    char *cell = base + slot;
+    int icon = *cell;
+    if (slot == 0) {
+        if (group != 2 && group != 0) {
+            return 0;
+        }
+        if (*(int *)(hud + 0x2C) == icon) {
+            return 0;
+        }
+    }
+    if (icon < 0) {
+        return 0;
+    }
+    if (AbilityTable[(icon << 4) + 6] != -2) {
+        return 0;
+    }
+    *cell = *base;
+    *base = icon;
+    UpdateGroup(group);
+    ((Player *)*(char **)(gEng + 0x1883C))->SwapAbility(icon);
+    m_unk40 = *(int *)(IconTable + 0x1008 + (group << 5));
+    return 1;
 }
 
 // FUNCTION: 0x142FF0 UpdateStatus__12HudInventoryFb
@@ -502,6 +636,51 @@ void HudInventory::UpdateStatus(bool flag) {
     }
     ((PMNode *)m_unk4)->RecurseSetLoopRateByID(-1U, 1, rate);
     gSound.PlaySoundUbiquitous(0x3A);
+}
+
+// DRAFT: 0x1430D0 UpdateShieldIcon__12HudInventoryFv
+// note: 64 words differ, size 0x110 vs 0x128. Original keeps elem in v1 and the PArray in a0; the m44 switch lays out 0x6A last; tail loop uses positive-branch sb body. Tried: if/else-if node (73), ternary node (73), switch m44 (73), if-chain m44 (67), reordered tail compares (73), explicit PArray pointer (65), ternary store (64), restored compare order (64).
+void HudInventory::UpdateShieldIcon() {
+    char *elem = (char *)m_unk1C;
+    *(int *)(elem + 0x18) = 0;
+    char *pa = elem + 0x14;
+    char *node = 0;
+    if (*(unsigned int *)pa != 0) {
+        node = ((char **)*(char ***)(pa + 8))[0];
+    }
+    int m44 = *(int *)((char *)mpPlayerData__7GameHud + 0x44);
+    int sel;
+    int val;
+    switch (m44) {
+    case 0x6A:
+        sel = 2;
+        val = 0x13;
+        break;
+    case 0x9F:
+        sel = 1;
+        val = 0x12;
+        break;
+    default:
+        sel = 0;
+        val = 4;
+        break;
+    }
+    for (int i = 0; i < 3; i++) {
+        char *e = 0;
+        if ((unsigned int)i < *(unsigned int *)(node + 0x14)) {
+            e = ((char **)*(char ***)(node + 0x1C))[i];
+        }
+        if (e) {
+            *(int *)(e + 0xC) = (i == sel) ? 1 : 0;
+        }
+    }
+    char *p = (char *)mpPlayerData__7GameHud + 0x63;
+    for (int k = 0; k < 3; k++, p++) {
+        signed char v = *p;
+        if (v == 4 || v == 0x12 || v == 0x13) {
+            *p = (signed char)val;
+        }
+    }
 }
 
 // DRAFT: 0x00143200 AddIcon__12HudInventoryFi
