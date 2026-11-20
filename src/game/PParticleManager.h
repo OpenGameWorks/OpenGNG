@@ -100,6 +100,7 @@ public:
     void *InitRingMeshPacket(int &nOut, int nCount, bool bFlag, float fA, float fB, int nC, int nD);
     int CreateRingTriStrip(int nCount, float fA, float fB, float fC, float fD, int nE, int nF, float (*pA)[4], float (*pB)[4], float (*pC)[4]);
     void InitShockwaveRings();
+    void RenderShockwaveRings();
     void AnimateGroundDustFx(PFrustrum *pFrustrum, float fDt);
 
     unsigned int m_unk0;        // 0x00 list count

@@ -35,6 +35,9 @@ extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" PParticleRain *__ct__13PParticleRainFv(PParticleRain *pThis);
 extern "C" void *__dt__12PParticleFogFv(PParticleFog *pThis, short nFlags);
 extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *, int, float *, bool, unsigned long, unsigned long);
+extern "C" void SetMaterial__10PGfxEngineFPfbUlUl(void *, float *, bool, unsigned long, unsigned long);
+extern "C" void BeginFxInstances__10PGfxEngineFPvib(void *, void *, int, bool);
+extern "C" void DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(void *, void *, int, bool);
 extern "C" void SetWorldMatrix__10PGfxEngineFP5PMat4(void *, float *);
 extern "C" void BeginParticles__10PGfxEngineF13eBoxIntersect(void *, int);
 extern "C" void DrawParticles__10PGfxEngineFP13tagVuParticleiffb(void *, void *, int, float, float, bool);
@@ -369,6 +372,55 @@ int PParticleManager::CreateRingTriStrip(int nCount, float fA, float fB, float f
         } while (nIdx < nVerts);
     }
     return nVerts;
+}
+
+// DRAFT: 0x001B7C70 RenderShockwaveRings__16PParticleManagerFv
+// note: 78 differing words. Still differs: prologue saves and this/nCount register allocation (original keeps this in s4, nCount in s0), and the copy-store address hoisting (original recomputes lui 0x7000 + addu before each store). Tried: local reorder (141), gGfxEng offset for DrawFx (141 -> lower), in-place m_unk4 index (79), zeroing after first load (78), nOff/nCount swap (79).
+void PParticleManager::RenderShockwaveRings() {
+    float fCol[4];
+    int nCount;
+    unsigned int nOff;
+    char *pElem;
+    u_long128 q;
+
+    m_unk4 = 0;
+    pElem = (m_unk0 != 0) ? (char *)m_unk8[0] : 0;
+    nCount = 0;
+    nOff = 0;
+    while (pElem != 0) {
+        if (*(int *)(pElem + 0xC) == 0x13 && *(unsigned char *)(pElem + 0x15) != 0) {
+            *(u_long128 *)(0x70001000 + nOff) = *(u_long128 *)(pElem + 0xE0);
+            *(u_long128 *)(0x70000000 + nOff + 0x1010) = *(u_long128 *)(pElem + 0xF0);
+            *(u_long128 *)(0x70000000 + nOff + 0x1020) = *(u_long128 *)(pElem + 0x100);
+            *(u_long128 *)(0x70000000 + nOff + 0x1030) = *(u_long128 *)(pElem + 0x110);
+            *(u_long128 *)(0x70000000 + nOff + 0x1040) = *(u_long128 *)(pElem + 0x120);
+            *(u_long128 *)(0x70000000 + nOff + 0x1050) = *(u_long128 *)(pElem + 0x130);
+            nCount++;
+            nOff += 0x60;
+            if (nCount >= 0x21) {
+                break;
+            }
+        }
+        m_unk4++;
+        pElem = (m_unk4 < m_unk0) ? (char *)m_unk8[m_unk4] : 0;
+    }
+    if (nCount != 0) {
+        fCol[0] = 1.1f;
+        fCol[1] = 1.1f;
+        fCol[2] = 1.1f;
+        fCol[3] = 1.0f;
+        SetMaterial__10PGfxEngineFPfbUlUl(gGfxEng, fCol, true, 0x44, 0x50000);
+        BeginFxInstances__10PGfxEngineFPvib(gGfxEng, m_unk2050, m_unk2054, true);
+        DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(*(void **)(gGfxEng + 0x154C80), (void *)0x70001000, nCount, true);
+        fCol[0] = 1.0f;
+        fCol[1] = 1.0f;
+        fCol[2] = 1.0f;
+        fCol[3] = 0.8f;
+        int nTex = GetFxTexture(0x8400000DU);
+        SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, nTex, fCol, true, 0x48, 0x50000);
+        BeginFxInstances__10PGfxEngineFPvib(gGfxEng, m_unk2058, m_unk205C, false);
+        DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(*(void **)(gGfxEng + 0x154C80), (void *)0x70001000, nCount, true);
+    }
 }
 
 // FUNCTION: 0x001B7EC0 InitShockwaveRings__16PParticleManagerFv
