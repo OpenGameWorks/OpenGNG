@@ -80,6 +80,7 @@ public:
     void SetFxColorMultiplier(float *pColor, bool bFlag);
     void EnableFx(bool bA, bool bB);
     void DebugDrawBox(int nMode);
+    void CopyMNode(PMNode &src, bool bFlag);
 
     int m_unk04;           // 0x004 state; 2 skips frustum test
     int m_unk08;            // 0x008 zeroed by InitMembers

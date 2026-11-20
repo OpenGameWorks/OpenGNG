@@ -2,6 +2,7 @@
 #include "types.h"
 #include "PMNode.h"
 #include "PLightManager.h"
+#include "PArray.h"
 
 // TODO(header): foreign declarations
 extern "C" int Render__18PObjectDisplayListF13eBoxIntersect(PObjectDisplayList *, eBoxIntersect);
@@ -41,6 +42,12 @@ extern "C" void *__dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" int Find__6PArrayFPv(void *pThis, void *pItem);
 extern "C" char __vt__9PResource[];
 extern "C" int Create__18PObjectDisplayListFP6PMNodePb(PObjectDisplayList *, PMNode *, bool *);
+extern "C" void sceVu0CopyMatrix(float (*)[4], float (*)[4]);
+extern "C" void *__ct__6PArrayFv(void *);
+extern "C" void *__ct__9PMeshNodeFR9PMeshNode(void *, void *);
+extern "C" char __vt__6PMNode[];
+extern "C" void Allocate__6PArrayFUi(void *, unsigned int);
+extern "C" void Add__6PArrayFPv(void *, void *);
 // TODO(header): PAnimFrame is the 0x34-byte frame object held at PMNode+0x24; only its vtable slots 0x0C and 0x10 are named here.
 class PAnimFrame {
 public:
@@ -1868,6 +1875,79 @@ PMNode::~PMNode() {
     if (this != 0) {
         *(void **)this = __vt__9PResource;
         m_unk04 = 0;
+    }
+}
+
+// DRAFT: 0x00195F50 CopyMNode__6PMNodeFR6PMNodeb
+// note: 97 diff lines; frame 0x60 vs 0x50 and no this spill (0x5C(sp)) in the inline 0x100 ctor path; dispatch branch layout differs. Tried: case order, local mesh ptr, PArray view of src.m_unk14 (kept).
+void PMNode::CopyMNode(PMNode &src, bool bFlag) {
+    PMNode *apCloneChild;
+    PMNode *pChild;
+
+    m_unk08 = src.m_unk08;
+    m_unk3E = 8;
+    m_unk3D = src.m_unk3D;
+    {
+        void *pMesh = src.m_unk10;
+        m_unk10 = pMesh;
+        m_unk3E &= 0xEF;
+        if (pMesh != 0 && ((unsigned char *)pMesh)[0xC] != 0) {
+            m_unk3E |= 0x10;
+        }
+    }
+    m_unk28 = src.m_unk28;
+    m_unk3C = src.m_unk3C;
+    m_unk0C = src.m_unk0C;
+    m_unk24 = src.m_unk24;
+    m_unk2C = src.m_unk2C;
+    m_unk04 = src.m_unk04;
+    m_pObjDisplayList = 0;
+    m_unkD0 = src.m_unkD0;
+    *(u_long128 *)m_unk80 = *(u_long128 *)src.m_unk80;
+    *(u_long128 *)m_unk90 = *(u_long128 *)src.m_unk90;
+    *(u_long128 *)m_unkA0 = *(u_long128 *)src.m_unkA0;
+    *(u_long128 *)m_unkB0 = *(u_long128 *)src.m_unkB0;
+    *(u_long128 *)m_unkC0 = *(u_long128 *)src.m_unkC0;
+    sceVu0CopyMatrix(m_unk40, src.m_unk40);
+    CopyFxTriggers(src);
+    if (bFlag) {
+        PArray *pSrcArr = (PArray *)&src.m_unk14;
+        Allocate__6PArrayFUi(&m_unk14, pSrcArr->m_unk0);
+        pSrcArr->m_unk4 = 0;
+        pChild = (pSrcArr->m_unk0 != 0) ? ((PMNode **)pSrcArr->m_unk8)[0] : 0;
+        if (pChild) {
+            do {
+                switch (pChild->m_unk04) {
+                case 1:
+                    apCloneChild = (PMNode *)__nw__FUi(0x140);
+                    if (apCloneChild) {
+                        apCloneChild = (PMNode *)__ct__9PMeshNodeFR9PMeshNode(apCloneChild, pChild);
+                    }
+                    break;
+                case 3:
+                    apCloneChild = (PMNode *)__nw__FUi(0x100);
+                    if (apCloneChild) {
+                        *(void **)apCloneChild = __vt__9PResource;
+                        apCloneChild->m_unk04 = 0;
+                        *(void **)apCloneChild = __vt__6PMNode;
+                        __ct__6PArrayFv(&apCloneChild->m_unk14);
+                        sceVu0UnitMatrix(apCloneChild->m_unk40);
+                        __ct__6PArrayFv(&apCloneChild->m_unkD8);
+                        apCloneChild->InitMembers();
+                    }
+                    ((apCloneChild) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0xA0, "apCloneChild"));
+                    apCloneChild->CopyMNode(*pChild, true);
+                    break;
+                default:
+                    ((!"no CopyMNode() for this type\n") ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0xA4, "!\"no CopyMNode() for this type\\n\""));
+                    break;
+                }
+                ((apCloneChild) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0xA7, "apCloneChild"));
+                Add__6PArrayFPv(&m_unk14, apCloneChild);
+                pSrcArr->m_unk4++;
+                pChild = ((unsigned int)pSrcArr->m_unk4 < pSrcArr->m_unk0) ? ((PMNode **)pSrcArr->m_unk8)[pSrcArr->m_unk4] : 0;
+            } while (pChild);
+        }
     }
 }
 
