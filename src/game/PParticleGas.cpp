@@ -22,6 +22,8 @@ extern "C" void sceVu0MulVector(void *pDst, void *pA, void *pB);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
 extern "C" float FastMath_Sin180__Ff(float fAngle);
 extern "C" float FastMath_Cos180__Ff(float fAngle);
+extern "C" void Vu0_SinCos(void);
+extern "C" void FastMath_Vu0SinCos__FfPf(float fAngle, float *pOut);
 extern char gGfxEng[1504384];
 
 // Parameter block passed to PParticleGas::Create (0x70 bytes, copied into the object at 0xE0).
@@ -48,6 +50,245 @@ struct tagParticleGasParams {
     float m_unk4C;
     char _pad50[0x20];
 };
+
+// Particle record used by AnimateRotatableParticles. Particles are 0x30 bytes apart;
+// the side record array at m_unk150 is 0x20 bytes per particle.
+struct VuRotatableParticle {
+    float m_unk0;
+    float m_unk4;
+    float m_unk8;
+    float m_unkC;
+    float m_unk10;
+    float m_unk14;
+    float m_unk18;
+    float m_unk1C;
+};
+
+// DRAFT: 0x001EBF10 AnimateRotatableParticles__12PParticleGasFf
+// note: 558 words differ; frame is 0x110 vs 0x120 and saves s0-s5 only (original s0-s7, fp, f20-f22), prologue and early-return branch shape differ, VU0 runs A/B/C are asm/scalar guesses, LCG and angle-wrap order unverified.
+void PParticleGas::AnimateRotatableParticles(float fTime) {
+    float vMin[4];
+    float vMax[4];
+    float vRnd[4];
+    float vScale[4];
+    float vTmp[4];
+    float vSin[4];
+    float *pMin;
+    float *pMax;
+    float *pRnd;
+    VuRotatableParticle *pBase;
+    VuRotatableParticle *pPart;
+    VuRotatableParticle *pSide;
+    float fDt;
+    float fRate;
+    float fFade;
+    float fLife;
+    float fAngle;
+    float fAngle2;
+    float fFrac;
+    float fWave;
+    float fTmp;
+    float fScalar;
+    float *pScalar;
+    float *pScalar2;
+    float *pTmp;
+    unsigned int i;
+    unsigned int nDone;
+    unsigned int nCount;
+
+    if (!m_unk15) {
+        return;
+    }
+    if (m_unk16) {
+        return;
+    }
+    if (!m_unk17 && !m_unkA4) {
+        return;
+    }
+
+    fDt = fTime;
+    m_unkD0 = m_unk158;
+    if (m_unk18 == 0 || m_unk17 != 0) {
+        fDt *= m_unk130;
+    }
+    fRate = 1.0f;
+    if (m_unk168 != 0) {
+        fFade = m_unk164 - fDt;
+        if (!(fFade >= 0.0f)) {
+            fFade = 0.0f;
+        }
+        m_unk164 = fFade;
+        fRate = fFade / m_unk138;
+        if (fFade == 0.0f) {
+            m_unk168 = 0;
+            m_unk15 = 0;
+            m_unk18 = 0;
+            m_unk16 = m_unk17;
+            return;
+        }
+    } else if (m_unk12C != 0.0f) {
+        fFade = m_unk160 - fDt;
+        if (!(fFade >= 0.0f)) {
+            fFade = 0.0f;
+        }
+        m_unk160 = fFade;
+        fRate = 1.0f - (fFade / m_unk12C);
+    }
+
+    pBase = (VuRotatableParticle *)AllocParticles__12PDisplayListFii(gGfxEng + 0x154C80, m_unk04, 3);
+    ((pBase != 0) ? (void)0 : CdsAssert__FPciPc("PParticleGas.cpp", 0x19F, "apVuParticles"));
+    m_unk08 = pBase;
+    nCount = m_unk04;
+    if (nCount < 0xAB) {
+        pBase = (VuRotatableParticle *)0x70001000;
+        ((nCount * 0x30 < 0x2001) ? (void)0 : CdsAssert__FPciPc("PParticleGas.cpp", 0x1AA, "(sizeof(VuRotatableParticle) * muNumParticles) <= SPAD_TEMP_BUFFER_SIZE"));
+    }
+
+    sceVu0SubVector(vMin, &m_unkE0, m_unkF0);
+    sceVu0AddVector(vMax, &m_unkE0, m_unkF0);
+    pMin = vMin;
+    pMax = vMax;
+    nDone = 0;
+
+    for (i = 0; i < (unsigned int)m_unk04; i++) {
+        pPart = (VuRotatableParticle *)((char *)pBase + i * 0x30);
+        pSide = (VuRotatableParticle *)((char *)m_unk150 + (i << 5));
+
+        m_unkD0 = (m_unkD0 * 0x343FD) + 0x269EC3;
+        vRnd[0] = (float)((m_unkD0 >> 16) & 0x7FFF);
+        m_unkD0 = (m_unkD0 * 0x343FD) + 0x269EC3;
+        vRnd[1] = (float)((m_unkD0 >> 16) & 0x7FFF);
+        m_unkD0 = (m_unkD0 * 0x343FD) + 0x269EC3;
+        vRnd[2] = (float)((m_unkD0 >> 16) & 0x7FFF);
+        m_unkD0 = (m_unkD0 * 0x343FD) + 0x269EC3;
+        vRnd[3] = (float)((m_unkD0 >> 16) & 0x7FFF);
+        sceVu0ScaleVector(vRnd, vRnd, 0.000030517578f);
+
+        pRnd = vRnd;
+        asm {
+            lqc2 vf1, 0x0(pMin)
+            lqc2 vf2, 0x0(pMax)
+            lqc2 vf3, 0x0(pRnd)
+            vsub.xyzw vf4, vf2, vf1
+            vmul.xyzw vf5, vf4, vf3
+            vadd.xyzw vf6, vf5, vf1
+            sqc2 vf6, 0x0(pRnd)
+        }
+
+        pSide->m_unkC = pSide->m_unkC + fDt * vRnd[0];
+        if (!(pSide->m_unkC < m_unk154)) {
+            pSide->m_unkC = m_unk154;
+            if (m_unk17 != 0 || m_unk18 == 0) {
+                nDone += 1;
+                if (nDone >= m_unk124) {
+                    m_unk16 = m_unk17;
+                    m_unk15 = 0;
+                    return;
+                }
+                continue;
+            }
+            pSide->m_unkC = pSide->m_unkC - m_unk154;
+            pSide->m_unk0 = vMin[0] + (vMax[0] - vMin[0]) * ((float)rand() / 2147483648.0f);
+            pSide->m_unk4 = vMin[1] + (vMax[1] - vMin[1]) * ((float)rand() / 2147483648.0f);
+            pSide->m_unk8 = vMin[2] + (vMax[2] - vMin[2]) * ((float)rand() / 2147483648.0f);
+        }
+
+        fLife = pSide->m_unkC / m_unk154;
+        if (!(fLife < 0.9999999f)) {
+            fLife = 0.9999999f;
+        }
+        fScalar = fLife;
+        pScalar = &fScalar;
+
+        asm {
+            lqc2 vf1, 0x0(pPart)
+            lqc2 vf2, 0x0(pSide)
+            vmove.xyzw vf5, vf2
+            lw t0, 0(pScalar)
+            qmtc2.i t0, vf3
+            vmulx.xyz vf4, vf1, vf3
+            vnop
+            vnop
+            vnop
+            vadd.xyz vf5, vf4, vf2
+            vnop
+            vnop
+            vnop
+            sqc2 vf5, 0x0(pSide)
+        }
+
+        fAngle = pSide->m_unkC * ((float)m_unk20 + ((float)m_unk24 - (float)m_unk20) * (0.000030517578f * (float)((m_unkD0 = (m_unkD0 * 0x343FD) + 0x269EC3, (m_unkD0 >> 16) & 0x7FFF))));
+        while (!(fAngle <= 180.0f)) {
+            fAngle -= 360.0f;
+        }
+        while (fAngle < -180.0f) {
+            fAngle += 360.0f;
+        }
+
+        if (pSide->m_unk0 <= vMin[0] || !(pSide->m_unk0 < vMax[0])) {
+            pSide->m_unk10 = -pSide->m_unk10;
+        }
+        if (pSide->m_unk4 <= vMin[1] || !(pSide->m_unk4 < vMax[1])) {
+            pSide->m_unk14 = -pSide->m_unk14;
+        }
+        if (pSide->m_unk8 <= vMin[2] || !(pSide->m_unk8 < vMax[2])) {
+            pSide->m_unk18 = -pSide->m_unk18;
+        }
+
+        fAngle2 = (360.0f * fLife) + vRnd[2];
+        if (!(fAngle2 <= 360.0f)) {
+            fAngle2 -= 360.0f;
+        }
+        FastMath_Vu0SinCos__FfPf(fAngle2 - 180.0f, vSin);
+        fTmp = vSin[0] * vSin[1];
+        vTmp[0] = 0.0f;
+        vTmp[1] = vSin[0];
+        vTmp[2] = fTmp;
+        vTmp[3] = 2.0f * vSin[1] * fTmp;
+        vScale[0] = m_unk118;
+        vScale[1] = m_unk118;
+        vScale[2] = m_unk118;
+        vScale[3] = m_unk118;
+        sceVu0MulVector(vTmp, vTmp, vScale);
+
+        pScalar2 = &m_unk128;
+        pTmp = vTmp;
+        asm {
+            lqc2 vf1, 0x0(pTmp)
+            lqc2 vf2, 0x0(pSide)
+            lqc2 vf5, 0x0(pPart)
+            lw t0, 0(pScalar2)
+            qmtc2.i t0, vf3
+            vmulx.xyz vf4, vf1, vf3
+            vnop
+            vnop
+            vnop
+            vadd.xyz vf5, vf4, vf2
+            vnop
+            vnop
+            vnop
+            sqc2 vf5, 0x0(pPart)
+        }
+
+        pPart->m_unkC = vRnd[3];
+        sceVu0ScaleVectorXYZ(&pPart->m_unk10, m_unk100, pSide->m_unk1C);
+
+        fFrac = fLife * m_unk134;
+        fFrac = fFrac - (float)(int)fFrac;
+        if (fFrac <= 0.5f) {
+            fWave = m_unk10C * (2.0f * fFrac);
+        } else {
+            fTmp = m_unk10C;
+            fWave = fTmp - (fTmp * (2.0f * (fFrac - 0.5f)));
+        }
+        pPart->m_unk1C = fWave;
+        pPart->m_unk1C = pPart->m_unk1C * fRate;
+    }
+
+    if (((int)pBase & 0x70000000) == 0x70000000) {
+        DmaScratchPadToMainMem__FPvPvsbb(pBase, m_unk08, (short)(m_unk04 * 0x30), false, false);
+    }
+}
 
 // FUNCTION: 0x001EC810 FadeOut__12PParticleGasFf
 void PParticleGas::FadeOut(float fFade) {
