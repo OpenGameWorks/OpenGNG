@@ -10,6 +10,11 @@ struct tagVuParticle;
 struct tagVuRotatableParticle;
 struct tagVuLightingInfo;
 class PZBufferFog;
+// PDisplayList is embedded by value only in the translation unit that defines PGFXENGINE_EMBED_DISPLAYLIST;
+// other units see two char arrays of the same size, because their local PDisplayList classes would clash.
+#ifdef PGFXENGINE_EMBED_DISPLAYLIST
+#include "PDisplayList.h"
+#endif
 // TODO(header): ePSLayer belongs to PParticleManager.h. Placeholder until that header is included; only the name matters for mangling.
 #ifndef PPARTICLEMANAGER_H
 enum ePSLayer { ePSLayer_2 = 2 };
@@ -43,8 +48,10 @@ public:
         bool m_unkF1;                       // 0xF1, bFlag argument of AddBlendedFragment
         unsigned char m_unkF2;              // 0xF2, selects the bool output pointer for Render
         bool m_unkF3;                       // 0xF3, bool output of Render
+        char _padF4[0x100 - 0xF4];
     };
 
+    PGfxEngine();
     void EndShadowRender();
     void BeginShadowRender();
     void DrawFxLines(struct tagVuFxLine *pLines, int nCount, float fA, float fB, bool bFlag);
@@ -114,7 +121,16 @@ public:
     int Init(short nA, short nB, short nC, short nD, short nE, short nF, int nG, int nH);
     void ResetDisplay(short nA, short nB, short nC, short nD, short nE, short nF, int nG, int nH);
 
-    char _pad000[0x154C80];
+#ifdef PGFXENGINE_EMBED_DISPLAYLIST
+    PDisplayList m_unk0;                // 0x000, constructed by PGfxEngine::PGfxEngine
+    char _pad0A3384[0xAA640 - 0xA3384];
+    PDisplayList m_unkAA640;            // 0xAA640, second display list
+#else
+    char m_unk0[0xA3384];               // 0x000, PDisplayList
+    char _pad0A3384[0xAA640 - 0xA3384];
+    char m_unkAA640[0xA3384];           // 0xAA640, PDisplayList
+#endif
+    char _padAA640End[0x154C80 - 0x14D9C4]; // 0x14D9C4, pad to m_unk154C80
     struct PDisplayList *m_unk154C80;   // 0x154C80
     char _pad154C84[0x154C90 - 0x154C84];
     char m_unk154C90[0x158B00 - 0x154C90]; // 0x154C90, PTextureManager (SetTexture)
@@ -154,7 +170,8 @@ public:
     unsigned char m_unk158E23;          // 0x158E23
     unsigned char m_unk158E24;          // 0x158E24
     bool m_unk158E25;                   // 0x158E25, RenderParticleSystems flag (eLayer == 2 while m_unk16D40C is set)
-    char _pad158E26[0x158E30 - 0x158E26];
+    unsigned char m_unk158E26;          // 0x158E26
+    char _pad158E27[0x158E30 - 0x158E27];
     float m_unk158E30[4];               // 0x158E30, VU lighting block (DMA source address only)
     float m_unk158E40[4];               // 0x158E40
     float m_unk158E50[4];               // 0x158E50

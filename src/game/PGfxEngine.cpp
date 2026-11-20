@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#define PGFXENGINE_EMBED_DISPLAYLIST
 
 // TODO(header): foreign declarations
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
@@ -86,6 +87,15 @@ extern "C" void __dt__13PShadowBufferFv(void *pThis, short nFlag);
 extern "C" void __dt__16PParticleManagerFv(void *pThis, short nFlag);
 extern "C" void __dt__15PTextureManagerFv(void *pThis, short nFlag);
 extern "C" void __dt__12PDisplayListFv(void *pThis, short nFlag);
+extern "C" void __ct__12PDisplayListFv(void *pThis);
+extern "C" void EndMesh__12PDisplayListFv(void *pThis);
+extern "C" void __ct__15PTextureManagerFv(void *pThis);
+extern "C" void __ct__16PParticleManagerFv(void *pThis);
+extern "C" void __ct__13PShadowBufferFv(void *pThis);
+extern "C" void __ct__5PGridFv(void *pThis);
+extern "C" void *__ct__5PMat4Fv(void *pThis);
+extern "C" void *__ct__Q210PGfxEngine22tagBlendedFragmentInfoFv(void *pThis);
+extern "C" void __construct_array(void *pBlock, void *(*pCtor)(void *), void *(*pDtor)(void *, short), int nSize, int nCount);
 extern "C" int Init__12PDisplayListFv(void *pThis);
 extern "C" void sceGsSetDefDBuff(void *pBuf, short nA, short nB, short nC, short nD, short nE, short nF);
 extern "C" int Init__15PTextureManagerFiii(void *pThis, int nA, int nB, int nC);
@@ -95,35 +105,7 @@ extern "C" void InitHeatHazeBuffer__16PParticleManagerFv(void *pThis);
 extern "C" void InitExceptionDisplay__Fv();
 extern unsigned char g8x16GridAlpha[612];
 class PMat4;
-
-class PDisplayList {
-public:
-    void SetVu1Microcode(void *pMicrocode);
-    void DrawParticles(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag, int nMode);
-    void DrawRotatableParticles(struct tagVuRotatableParticle *pParticles, int nCount, float fA, float fB, bool bFlag, int nMode);
-    void DrawSplinePatch(struct tagVuSplinePatchKey *pKey, int nA, int nB, float fC, bool bFlag, int nMode);
-    void WriteToVu1Mem(unsigned int nAddr, u_long128 *pData, int nCount);
-    void SetViewMatrix(PMat4 *pMat);
-    void SetClipMatrix(PMat4 *pMat);
-    void SetScreenMatrix(PMat4 *pMat);
-    void SetVifCodes(unsigned int nA, unsigned int nB);
-    void SetGsRegisters(u_long128 *pRegData, int nNumRegs);
-    void SetWorldMatrix(PMat4 *pMat);
-    void BeginMatrixList();
-    void EndMatrixList();
-    void EndMesh();
-    void BeginMesh(unsigned int nFlags);
-    void AddVifPacket(u_long128 *pData, int nCount, unsigned int nA, unsigned int nTag);
-    void BeginFxLoop(unsigned int nAddr);
-    void SetTexSyncPacket();
-    void SetMaterials(struct tagGsMaterial *pMat, int nIndex, bool bA, bool bB, float *pF, unsigned long *pC, unsigned long *pD);
-    void SendGsPacket(void *pData, int nSize, bool bFlag);
-    void Reset();
-    void KickVifDmaChain(bool bFlag);
-
-    char _pad000[0xA3348];
-    int m_unkA3348;                     // 0xA3348
-};
+class PDisplayList;
 
 class PGrid {
 public:
@@ -882,7 +864,7 @@ void PGfxEngine::RenderBlendedFragment(tagBlendedFragmentInfo *pInfo) {
     } else {
         pInfo->m_unk0->Render(true, pInfo->m_unkC, 0);
     }
-    m_unk154C80->EndMesh();
+    EndMesh__12PDisplayListFv(m_unk154C80);
 }
 
 // DRAFT: 0x186410 RenderBlendedFragments__10PGfxEngineFPf
@@ -1668,3 +1650,80 @@ extern "C" PGfxEngine *__dt__10PGfxEngineFv(PGfxEngine *pThis, short nFlag) {
 
 // FUNCTION: 0x188900 __dt__Q210PGfxEngine22tagBlendedFragmentInfoFv
 PGfxEngine::tagBlendedFragmentInfo::~tagBlendedFragmentInfo() {}
+
+// DRAFT: 0x00188950 __ct__10PGfxEngineFv
+// note: member-ctor form DIFF 362 words, size 0x5b4 vs 0x63c; frame 0x30 with only s0 (original 0xB0 with fp,s7..s0), constants hoisted differently in tail; local char* pMat for 0x158E30 worse (385).
+PGfxEngine::PGfxEngine() {
+    __ct__15PTextureManagerFv(this->m_unk154C90);
+    __ct__16PParticleManagerFv((char *)this + 0x154F00);
+    __ct__13PShadowBufferFv((char *)this + 0x157000);
+    sceVu0UnitMatrix(this->m_unk158E30);
+    sceVu0UnitMatrix(this->m_unk158E70);
+    __construct_array(this->m_unk159310, __ct__Q210PGfxEngine22tagBlendedFragmentInfoFv, __dt__Q210PGfxEngine22tagBlendedFragmentInfoFv, 0x100, 0x100);
+    __construct_array(this->m_unk169320, __ct__5PMat4Fv, __dt__5PMat4Fv, 0x40, 0x100);
+    sceVu0UnitMatrix(this->m_unk16D340);
+    sceVu0UnitMatrix(this->m_unk16D380);
+    sceVu0UnitMatrix(this->m_unk16D3C0);
+    __ct__5PGridFv(this->m_unk16D410);
+    this->m_unk154C80 = 0;
+    this->m_unk158DE0 = 0;
+    this->m_unk158DEC = 0;
+    this->m_unk158E00 = 0;
+    this->m_unk158E02 = 0;
+    this->m_unk158E14 = 0;
+    this->m_unk158E18 = 0;
+    this->m_unk158E0C = 0;
+    this->m_unk158E04 = 0;
+    this->m_unk158E08 = 0;
+    this->m_unk158E0A = 0;
+    this->m_unk158F00 = 0;
+    this->m_unk158F01 = 0;
+    gpGfxEngine = this;
+    this->m_unk158E1C = vu_clip_microcode_dma_packet;
+    this->m_unk158E20 = 0;
+    this->m_unk158E21 = 1;
+    this->m_unk158E22 = 0;
+    this->m_unk158E24 = 0;
+    this->m_unk158E25 = 0;
+    this->m_unk158E26 = 1;
+    this->m_unk16D406 = 0;
+    this->m_unk16D404 = 0;
+    this->m_unk16D405 = 0;
+    this->ResetVuLightingInfo();
+    this->ResetBlendedFragmentTable();
+    this->m_unk16D330[2] = 0.0f;
+    this->m_unk16D330[1] = 0.0f;
+    this->m_unk16D330[0] = 0.0f;
+    this->m_unk16D330[3] = 1.0f;
+    this->m_unk16D408 = 0;
+    this->m_unk16F444 = 0;
+    this->m_unk16F448 = 2;
+    *(long long *)(this->m_unk158B00 + 0x70) = 0x44;
+    *(long long *)(this->m_unk158B00 + 0x78) = 0x42;
+    *(long long *)(this->m_unk158B00 + 0x80) = 0x50000;
+    *(long long *)(this->m_unk158B00 + 0x88) = 0x47;
+    *(long long *)(this->m_unk158B00 + 0x90) = 0;
+    *(long long *)(this->m_unk158B00 + 0x98) = 0x1A;
+    *(long long *)(this->m_unk158B00 + 0xA0) = 0x18;
+    *(long long *)(this->m_unk158B00 + 0xA8) = 0x1B;
+    *(unsigned short *)(this->m_unk158B00 + 0x60) = 0;
+    *(unsigned short *)(this->m_unk158B00 + 0x60) = (*(unsigned short *)(this->m_unk158B00 + 0x60) & ~0x7FFF) | 4;
+    this->m_unk158DF4 = -1;
+    this->m_unk158DF8 = -1;
+    this->m_unk158DE4 = 0;
+    this->m_unk158DE8 = 0;
+    *(unsigned short *)(this->m_unk158B00 + 0x0) = 0;
+    *(unsigned short *)(this->m_unk158B00 + 0x0) = (*(unsigned short *)(this->m_unk158B00 + 0x0) & ~0x7FFF) | 5;
+    this->m_unk158B00[0x1] = (this->m_unk158B00[0x1] & ~0x80) | ((0 & 1) << 7);
+    this->m_unk158B00[0x61] = (this->m_unk158B00[0x61] & ~0x80) | 0x80;
+    this->m_unk158B00[0x67] = (this->m_unk158B00[0x67] & ~0xF0) | 0x10;
+    this->m_unk158B00[0x68] = (this->m_unk158B00[0x68] & ~0xF) | 0xE;
+    this->m_unk158B00[0x7] = (this->m_unk158B00[0x7] & ~0xF0) | 0x10;
+    this->m_unk158B00[0x8] = (this->m_unk158B00[0x8] & ~0xF) | 0xF;
+    *(long long *)(this->m_unk158B00 + 0x10) = 0;
+    *(long long *)(this->m_unk158B00 + 0x20) = 0;
+    *(long long *)(this->m_unk158B00 + 0x30) = 0;
+    *(long long *)(this->m_unk158B00 + 0x40) = 0;
+    *(long long *)(this->m_unk158B00 + 0x50) = 0;
+    return;
+}
