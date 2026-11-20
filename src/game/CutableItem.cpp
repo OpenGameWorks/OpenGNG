@@ -52,6 +52,42 @@ void CutableItem::SetEditableVars(char *pArg) {
     }
 }
 
+// DRAFT: 0x001BB1E0 OnHitEvent__11CutableItemFP15EntityBaseClassiUiUi
+// note: DIFF 76 words. Early nHit return epilogue offset, idx*36 computed after ItemTable base load, and type-1/mask return tails differ. Variants: switch on type (75, not kept), if-chain (76), positive mask chain (76), if/else tail (76), offset local (76), wrapped nHit body (76).
+int CutableItem::OnHitEvent(EntityBaseClass *pArg, int nHit, unsigned int nFlagsA, unsigned int nFlagsB) {
+    if (nHit != 0) {
+    int nIndex = m_unk1B0;
+    if (nIndex == 0 || nIndex == 0x10 || nIndex == 0x11) {
+        if (pArg->m_unk08 == 0x2D && *(int *)((char *)pArg + 0x1B0) < 9) {
+            return 0;
+        }
+    }
+    int nOffset = nIndex * 36;
+    int nType = *(int *)(ItemTable + nOffset + 0x1C);
+    if (nType == 2) {
+        unsigned int nMasked = nFlagsA & ~0x580;
+        if (nMasked == 0x220 || nMasked == 0x201 || nMasked == 0x4F || nMasked == 0x44 || nMasked == 0x42 || nMasked == 3) {
+            SetState__15EntityBaseClassFi(this, 3);
+            return 1;
+        }
+        return 0;
+    }
+    if (nType == 1) {
+        SetState__15EntityBaseClassFi(this, 3);
+        if (nFlagsA & 0x800) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+    if (nType == 0) {
+        SetState__15EntityBaseClassFi(this, 3);
+    }
+    return 1;
+    }
+    return 0;
+}
+
 // FUNCTION: 0x001BB330 OnTouchEvent__11CutableItemFP15EntityBaseClass
 void CutableItem::OnTouchEvent(EntityBaseClass *pArg) {
     int nIndex = m_unk1B0;

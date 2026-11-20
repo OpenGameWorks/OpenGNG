@@ -13,6 +13,7 @@ public:
     CutableItem();
     void SetEditableVars(char *pArg);
     void OnTouchEvent(EntityBaseClass *pArg);
+    int OnHitEvent(EntityBaseClass *pArg, int nHit, unsigned int nFlagsA, unsigned int nFlagsB);
     const char *GetClassName();
 
     void *m_unk0;                   // 0x000 vtable pointer (inherited from EntityBaseClass)
