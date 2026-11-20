@@ -12,6 +12,11 @@ extern "C" void PlaySound__15EntityBaseClassFUi(void *, unsigned int);
 extern "C" int RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(void *, void *, unsigned int);
 extern "C" void RemoveFromAttackSystem__15EntityBaseClassFv(void *);
 extern "C" void *InstanceIsValid__15EntityBaseClassFUi(unsigned int);
+extern "C" float GetFrameTime__6PMNodeFv(PMNode *);
+extern "C" float GetFrameRate__6PMNodeFv(PMNode *);
+extern "C" int CreateDamageFx__15EntityBaseClassFfUi(void *, float, unsigned int);
+extern "C" void ChangeDamageFxInterval__15EntityBaseClassFUif(void *, unsigned int, float);
+extern "C" float FastMath_Fabs__Ff(float);
 
 // Slot numbers are declaration order; Slot13 is the call at vtable offset 0x3C.
 class EntityVirtualSlots {
@@ -49,6 +54,7 @@ public:
     char _pad000[0x505C];
     EntityBaseClass *m_unk505C;
 };
+extern "C" float GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(EntityBaseClass *, float (*)[4]);
 extern "C" float DistanceXZ__7MathAPIFPA4_fPA4_f(MathAPI *, float (*)[4]);
 extern "C" void GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(EntityBaseClass *, float (*)[4]);
 extern "C" float Round180__Ff(float);
@@ -102,6 +108,7 @@ extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" char __vt__9PResource[];
 extern "C" char __vt__6PMNode[];
 extern unsigned int DamageNames[4];
+extern int mbHard__15EntityBaseClass;
 
 // DRAFT: 0x001DE0C0 LoadCorrectMesh__16ClockworkPuncherFv
 // note: 32 words differ; branch layout (outer bnez target, siege block as beq target, normal lui in b delay slot). Tried if==1 siege-first, !=1 normal-first (32), early return (32), literal fixes.
@@ -124,7 +131,7 @@ void ClockworkPuncher::ChooseNextState() {
     RemoveFromAttackSystem__15EntityBaseClassFv(this);
     char *pPlayerPt = *(char **)((char *)mPlayerAPI__13EntityManager + 0x3C);
     pPlayerPt = pPlayerPt ? pPlayerPt + 0x80 : (char *)mPlayerAPI__13EntityManager + 0x190;
-    if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pPlayerPt, (float (*)[4])_pad200) < m_unk1D4) {
+    if (Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pPlayerPt, (float (*)[4])m_unk200) < m_unk1D4) {
         fDist = Distance__7MathAPIFPA4_fPA4_f(
             (float (*)[4])(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190),
             (float (*)[4])(*(char **)((char *)mPlayerAPI__13EntityManager + 0x3C)
@@ -628,6 +635,172 @@ void ClockworkPuncher::OnEffectDelete(unsigned int nHandle) {
     if ((int)nHandle == m_unk2AC) {
         m_unk2AC = 0;
     }
+}
+
+// DRAFT: 0x001DF260 OnHitEvent__16ClockworkPuncherFP15EntityBaseClassiUiUi
+// note: DIFF 419 words, size 0x560 vs 0x6E8: this/pEntity saved in s2/s3 (original s4/s3), extra f21 spill, body ~95 insns short (m_unk2C4 and timer sections)
+int ClockworkPuncher::OnHitEvent(EntityBaseClass *pEntity, int nArg, unsigned int nFlags, unsigned int nFlags2) {
+    static int testhitback;
+    static int init;
+    static int aPauseFrames;
+    static int init2;
+    char *pPlayer;
+    char *pTgt;
+    float fDist;
+    float fRot;
+    float fRate;
+    int nRnd;
+    PMNode *pFound;
+    void *pValid;
+    int nState;
+
+    PlaySound__15EntityBaseClassFUi((void *)this, 0x5E);
+    if (m_unkF4 != 0) {
+        m_unk1FC -= nArg;
+        if (m_unk1FC > 0) {
+            return 1;
+        }
+        DeleteEffects();
+        DeleteTimers();
+        m_unk2BC = 0;
+        if (m_unk2B4 != 0) {
+            m_unk2B4->DestroyFxTriggers(false, true, false);
+        }
+        SetState__15EntityBaseClassFi(this, 9);
+        m_unk218 = nFlags;
+        return 2;
+    }
+
+    nState = m_unk20;
+    if ((int)pEntity->m_unk8 == 0x1D) {
+        DeleteEffects();
+        m_unk1FC = 0;
+        DeleteTimers();
+        m_unk2BC = 0;
+        pTgt = m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190;
+        SetState__15EntityBaseClassFi(this, 9);
+        m_unk218 = nFlags;
+        return 2;
+    }
+
+    if (nState == 2) {
+        fRate = GetFrameTime__6PMNodeFv((PMNode *)m_unk3C);
+        if (fRate < 85.0f) {
+            nState = 4;
+        }
+    }
+
+    fRot = GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f((EntityBaseClass *)this, (float (*)[4])(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190));
+    fRot = fRot + 180.0f;
+    if (fRot < -180.0f) {
+        fRot += 360.0f;
+    } else if (fRot > 180.0f) {
+        fRot -= 360.0f;
+    }
+    m_unkD8 = fRot;
+    m_unkDCf = 0.3f;
+
+    if (mbHard__15EntityBaseClass == 0) {
+        if ((nFlags & -0x5C1) == 0x2D) {
+            FaceHit();
+            DeleteEffects();
+            SetState__15EntityBaseClassFi(this, 3);
+        }
+    }
+
+    pPlayer = *(char **)((char *)mPlayerAPI__13EntityManager + 0x3C);
+    fDist = GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f((EntityBaseClass *)this, (float (*)[4])(pPlayer ? pPlayer + 0x80 : (char *)mPlayerAPI__13EntityManager + 0x190));
+    if (FastMath_Fabs__Ff(fDist) < 90.0f) {
+        m_unk274 = 1;
+    } else {
+        m_unk274 = 0;
+    }
+    if (m_unk2B4 == 0) {
+        if (m_unk3C == 0) {
+            m_unk2B4 = Find__6PMNodeFUi((PMNode *)m_unk2C0, 0);
+        }
+    }
+    m_unk1FC -= nArg;
+    if (m_unk2C4 == 0) {
+        fRate = (float)m_unk210 / 2.0f;
+        if ((float)m_unk1FC <= fRate) {
+            ChangeDamageFxInterval__15EntityBaseClassFUif(this, 20, 20.0f);
+        }
+    }
+
+    if (nFlags & 0x20) {
+        pPlayer = m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190;
+        fDist = Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pPlayer, (float (*)[4])m_unk200);
+        if (fDist < m_unk1D4) {
+            fRot = fDist;
+        }
+    }
+
+    if (m_unk2BC == 0) {
+        m_unk2BC = 1;
+        m_unk2C4 = CreateDamageFx__15EntityBaseClassFfUi(this, 90.0f, 0);
+    }
+    miRandom__7MathAPI = miRandom__7MathAPI * 0x343FD + 0x269EC3;
+    if (miRandom__7MathAPI & 1) {
+        pFound = Find__6PMNodeFUi((PMNode *)m_unk3C, 0xF9DDDD15);
+        AttachDamageEffect(pFound, 0x83000154, 0.0f, 0.0f, 0.0f);
+    } else {
+        pFound = Find__6PMNodeFUi((PMNode *)m_unk3C, 0x3EAD836C);
+        AttachDamageEffect(pFound, 0x83000154, 0.0f, 0.0f, 0.0f);
+    }
+    pFound = Find__6PMNodeFUi((PMNode *)m_unk3C, 0xFEE57AF8);
+    AttachDamageEffect(pFound, 0x83000154, 0.0f, 0.0f, 0.0f);
+
+    if (m_unk2C4 != 0) {
+        fRate = (float)m_unk210 / 4.0f;
+        if ((float)m_unk1FC <= 4.0f) {
+            ChangeDamageFxInterval__15EntityBaseClassFUif(this, 20, 20.0f);
+        }
+    }
+
+    if (m_unk1FC <= 0) {
+        DeleteEffects();
+        DeleteTimers();
+        m_unk2BC = 0;
+        if (m_unk2B4 != 0) {
+            m_unk2B4->DestroyFxTriggers(false, true, false);
+        }
+        SetState__15EntityBaseClassFi(this, 9);
+        m_unk218 = nFlags;
+        return 2;
+    }
+
+    m_unk21C = nFlags;
+    if (nFlags & 0x100) {
+        m_unk284 = GetFrameRate__6PMNodeFv((PMNode *)m_unk3C);
+        SetFrameRate__6PMNodeFfb((PMNode *)m_unk3C, 0.0f, true);
+        SetEffectsFrameRate(0.0f);
+    }
+
+    if (init2 == 0) {
+        init2 = 1;
+        aPauseFrames = 7;
+    }
+    m_unk288 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, aPauseFrames, true);
+
+    ((m_unk2B4 != 0) ? (void)0 : CdsAssert__FPciPc("ClockworkPuncher.cpp", 0x7FD, "m_pBackjoint"));
+    m_unk290 = *(float *)((char *)m_unk2B4 + 0x90);
+
+    if (nFlags & 0x20) {
+        pTgt = m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190;
+        fDist = Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pTgt, (float (*)[4])m_unk200);
+        if (fDist < m_unk1D4) {
+            fRot = fDist;
+        }
+    }
+
+    pValid = InstanceIsValid__15EntityBaseClassFUi((unsigned int)m_unk280);
+    if (pValid != 0) {
+        if (fRot <= fDist) {
+            SetState__15EntityBaseClassFi(this, 0x10);
+        }
+    }
+    return 1;
 }
 
 // FUNCTION: 0x001DF950 OnAttackEvent__16ClockworkPuncherFP15EntityBaseClassi

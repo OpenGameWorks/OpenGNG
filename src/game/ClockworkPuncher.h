@@ -27,6 +27,7 @@ public:
     void OnEffectDelete(unsigned int nHandle);
     void OnStopAttack();
     void OnAttackEvent(class EntityBaseClass *pEntity, int nEvent);
+    int OnHitEvent(class EntityBaseClass *pEntity, int nArg, unsigned int nFlags, unsigned int nFlags2);
     void DeleteEffects();
     void DeleteTimers();
     void FaceHit();
@@ -43,9 +44,14 @@ public:
     char _pad024[0x38 - 0x24];
     char *m_unk38;           // 0x038 object whose +0x11C float is set by FaceHit
     char *m_unk3C;           // 0x03C target entity pointer; +0x80 used when non-null
-    char _pad040[0xDC - 0x40];
-    int m_unkDC;             // 0x0DC
-    char _pad0E0[0xF8 - 0xE0];
+    char _pad040[0xD8 - 0x40];
+    float m_unkD8;           // 0x0D8 float, stored by OnHitEvent
+    union {
+        int m_unkDC;         // 0x0DC written as int 0 by the constructor path
+        float m_unkDCf;      // 0x0DC written as float 0.3f by OnHitEvent
+    };
+    char _pad0E0[0xF4 - 0xE0];
+    int m_unkF4;             // 0x0F4
     float m_unkF8;           // 0x0F8 set to 1.5f by the constructor
     float m_unkFC;           // 0x0FC set to 2.0f by the constructor
     char _pad100[0x163 - 0x100];
@@ -71,10 +77,12 @@ public:
     float m_unk1F8;          // 0x1F8
     // 0x1B0..0x1FB is also the 0x4C-byte block copied by SetEditableVars
     int m_unk1FC;            // 0x1FC
-    char _pad200[0x210 - 0x200];
+    char m_unk200[0x10];     // 0x200 16-byte block copied from 0x190 or the target's +0x80
     int m_unk210;            // 0x210
     unsigned int m_unk214;   // 0x214 timer handle, killed by DeleteTimers
-    char _pad218[0x224 - 0x218];
+    int m_unk218;            // 0x218 state flags, set by OnHitEvent
+    int m_unk21C;            // 0x21C
+    char _pad220[0x224 - 0x220];
     int m_unk224;            // 0x224 set to 0 by the constructor
     char _pad228[0x250 - 0x228];
     char m_unk250[0x270 - 0x250]; // 0x250 MathAPI object, passed as this to DistanceXZ
