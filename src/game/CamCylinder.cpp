@@ -5,8 +5,6 @@
 // TODO(header): foreign declarations
 extern unsigned char gEng[0x1A000];
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
-extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
-extern unsigned char __vt__11CamCylinder[0x40];
 
 class PVec3 {
 public:
@@ -67,9 +65,5 @@ void CamCylinder::Execute() {
     }
 }
 
-// DRAFT: 0x001A3C30 __ct__11CamCylinderFv
-// note: derives from EntityBaseClass, so CodeWarrior adds an implicit base-ctor call, extra vptr stores and spills this to 0x1C(sp); the original uses a non-derived class. Variants: no base call 15 words (drops base ctor), explicit base call 0 or 0U 22 words.
-CamCylinder::CamCylinder() {
-    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 5, 0);
-    *(unsigned char **)this = __vt__11CamCylinder;
-}
+// FUNCTION: 0x001A3C30 __ct__11CamCylinderFv
+CamCylinder::CamCylinder() : EntityBaseClass((LoadClass)5, 0) {}
