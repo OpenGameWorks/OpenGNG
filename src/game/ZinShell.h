@@ -2,28 +2,22 @@
 #define ZINSHELL_H
 
 #include "types.h"
+#include "EntityBaseClass.h"
 
-// ZinShell derives from EntityBaseClass at offset 0; the base is not declared here,
-// so members are named by their offset from the object start.
-
-// Object pointed to by ZinShell::m_unk3C; SetEditableVars reads only its float block at +0x80.
+// Object pointed to by EntityBaseClass::m_unk3C when ZinShell uses a source; SetEditableVars reads only its float block at +0x80.
 class ZinShellSource {
 public:
     char _pad000[0x80];
     float m_unk80[4];
 };
 
-class ZinShell {
+class ZinShell : public EntityBaseClass {
 public:
     ZinShell();
-    ~ZinShell();
+    virtual ~ZinShell();
     void SetEditableVars(char *arg0);
     void SetShellStartAndDest(float (&arg0)[4], float (&arg1)[4]);
 
-    void *m_unk0;               // 0x000 vtable pointer (inherited from EntityBaseClass)
-    char _pad004[0x3C - 0x04];
-    ZinShellSource *m_unk3C;    // 0x03C
-    char _pad040[0x190 - 0x40];
     float m_unk190[8];          // 0x190 fallback vector, used when m_unk3C is null
     int m_unk1B0;               // 0x1B0 editable-vars block, copied by memcpy (0x20 bytes)
     float m_unk1B4;             // 0x1B4

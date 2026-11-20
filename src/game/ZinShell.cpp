@@ -2,17 +2,11 @@
 #include "ZinShell.h"
 
 // TODO(header): foreign declarations
-extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int eLoadClass, unsigned int nFlags);
-extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
-extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, bool bFlagA, bool bFlagB);
 extern "C" void __dl__FPv(void *);
 extern "C" void memcpy(void *, const void *, unsigned int);
-extern unsigned char __vt__8ZinShell[];
 
 // FUNCTION: 0x001AF330 __dt__8ZinShellFv
 ZinShell::~ZinShell() {
-    m_unk0 = __vt__8ZinShell;
-    __dt__15EntityBaseClassFv(this, 0);
 }
 
 // FUNCTION: 0x001AF3A0 SetEditableVars__8ZinShellFPc
@@ -54,12 +48,9 @@ void ZinShell::SetShellStartAndDest(float (&arg0)[4], float (&arg1)[4]) {
     m_unk1E0[0] = e;
 }
 
-// DRAFT: 0x001AFE40 __ct__8ZinShellFv
-// note: 35 words differ; original keeps this in 0x1C(sp) and reloads it before each store with no s0 use, ours keeps it in s0. Tried local pointer copy and an empty dtor-bearing member in the header (DIFF 37), neither helped.
-ZinShell::ZinShell() {
-    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 2, 0);
-    m_unk0 = __vt__8ZinShell;
-    EnableSleep__15EntityBaseClassFbb(this, false, false);
+// FUNCTION: 0x001AFE40 __ct__8ZinShellFv
+ZinShell::ZinShell() : EntityBaseClass((LoadClass)2, 0) {
+    EnableSleep(false, false);
     m_unk214 = 0;
     m_unk218 = 0;
     m_unk22D = 0;
