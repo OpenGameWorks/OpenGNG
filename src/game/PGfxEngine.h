@@ -108,6 +108,7 @@ public:
     int AddBlendedFragment(PMeshFragment *pFrag, int nIdx, bool *pOut, bool bFlag);
     void DrawFragment(PMeshFragment *pFrag, bool bFlag, int nIdx, bool *pOut);
     void ErrorRefreshDisplay(bool bFlag);
+    void RefreshDisplay();
     void SetTvOffset(int nX, int nY);
     void Reset();
     int Init(short nA, short nB, short nC, short nD, short nE, short nF, int nG, int nH);
@@ -137,12 +138,13 @@ public:
     int m_unk158DF8;                    // 0x158DF8, INTC handler id for line 3, removed by the destructor
     char _pad158DFC[0x158DFE - 0x158DFC];
     short m_unk158DFE;                 // 0x158DFE, display x passed to sceGsSetDefDispEnv
-    char _pad158E00[0x158E02 - 0x158E00];
+    short m_unk158E00;                  // 0x158E00, GS register value source (RefreshDisplay)
     short m_unk158E02;                 // 0x158E02
     unsigned int m_unk158E04;           // 0x158E04
     short m_unk158E08;                  // 0x158E08, display width used by SetTvOffset
     short m_unk158E0A;                  // 0x158E0A, display height used by SetTvOffset
-    char _pad158E0C[0x158E14 - 0x158E0C];
+    int m_unk158E0C;                    // 0x158E0C, Count sampled by RefreshDisplay before DmaWaitForCompletion
+    int m_unk158E10;                    // 0x158E10, Count sampled by RefreshDisplay after sceGsSyncPath
     unsigned int m_unk158E14;           // 0x158E14, Count sampled by Vif1InterruptHandler on the 0x1000 DMA tag
     unsigned int m_unk158E18;           // 0x158E18, Count sampled by Vif1InterruptHandler on the 0x2000 DMA tag
     void *m_unk158E1C;                  // 0x158E1C
@@ -185,6 +187,10 @@ public:
     int m_unk16D40C;                    // 0x16D40C, cleared by ResetBlendedFragmentTable
     char m_unk16D410[0x202C];           // 0x16D410, PGrid
     float m_unk16F43C;                  // 0x16F43C
+    char _pad16F440[4];
+    unsigned char m_unk16F444;          // 0x16F444, dump pending flag (RefreshDisplay)
+    char _pad16F445[3];
+    int m_unk16F448;                    // 0x16F448, frames to wait before dumping frame buffers
 };
 
 #endif

@@ -64,6 +64,10 @@ extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern int gCDSVBlankCount[1];
 extern "C" void Kick__16PTextureDmaChainFb(void *pThis, bool bFlag);
+void DmaWaitForCompletion(int nArg, bool bFlag);
+void GsDumpFrameBuffersAsBmp(int nFrame, int nFlag);
+#include "Debug.h"
+extern Debug gDebug;
 extern float GAME_FPS;
 extern float gUnitMatrix[16];
 extern char shared_vertices_start[];
@@ -131,6 +135,7 @@ class PTextureManager {
 public:
     void SetTexture(int nIndex, PDisplayList *pDisplayList, struct tagGsTextureEnvironment **ppEnv, bool &bFlag);
     void PrepareDynamicClutPacket(struct tagGsClut256 *pClut, struct tagGsTextureEnvironment *pEnv, bool bFlag, PDisplayList *pDisplayList);
+    void ResetDynamicBuffers();
 };
 
 #include "PGfxEngine.h"
@@ -1415,6 +1420,66 @@ void PGfxEngine::SetTvOffset(int nX, int nY) {
     nHeight = (m_unk158E0A + 0x1F) / 32;
     nProd = (nWidth * nHeight) & 0x1FF;
     m_unk158BE8 = (m_unk158BE8 & 0xFFFFFE00) | nProd;
+}
+
+// DRAFT: 0x00187C10 RefreshDisplay__10PGfxEngineFv
+// note: DIFF 184 words, size 0x31c vs 0x314; first diff at 0x20 (this->m_unk154C80 load folded to lui/ori/addu lw 0 instead of lui at/addu/lw 0x4C80(at)); also GsRegs stores order, Count reg and display-target select differ. Header _pad000 split tried, no change.
+void PGfxEngine::RefreshDisplay() {
+    int nCount;
+    long long aGsRegs[6];
+
+    RenderBlendedFragments(m_unk16D330);
+    m_unk154C80->SetVifCodes(0x07002000, 0x93000000);
+    gDebug.RenderPerformanceMeters();
+    aGsRegs[0] = 0x44;
+    aGsRegs[1] = 0x42;
+    aGsRegs[3] = 0x47;
+    aGsRegs[4] = 1;
+    aGsRegs[5] = 0x1A;
+    aGsRegs[2] = ((long long)m_unk158E00 << 0x11) | 0x10000;
+    m_unk154C80->SetGsRegisters((u_long128 *)aGsRegs, 3);
+    asm {
+        mfc0 nCount, $9
+    }
+    m_unk158E0C = nCount;
+    DmaWaitForCompletion(1, false);
+    sceGsSyncPath(0, 0);
+    if (m_unk16F444 == 0) {
+        gDebug.FrameEnd();
+    }
+    asm {
+        mfc0 nCount, $9
+    }
+    m_unk158E10 = nCount;
+    m_unk158DE0 += 1;
+    m_unk158DEC = sceGsSyncV(0) == 0;
+    int nWait = m_unk16F448;
+    if (nWait > 0) {
+        m_unk16F448 = nWait - 1;
+    } else if (m_unk16F444 != 0) {
+        GsDumpFrameBuffersAsBmp((m_unk158DE0 - 1) & 1, (m_unk158DEC == 0) & 0xFF);
+        m_unk16F444 = 0;
+        m_unk16F448 = 0;
+    }
+    sceGsSetHalfOffset((m_unk158DE0 & 1) ? (void *)m_unk158D00 : (void *)m_unk158C10, 0x800, 0x800, m_unk158DEC);
+    FlushCache(0);
+    m_unk158DF0 = GsSwapDBuff((sceGsDBuff *)m_unk158BB0, m_unk158DE0);
+    sceGsSyncPath(0, 0);
+    asm {
+        mtc0 $0, $9
+    }
+    Kick__16PTextureDmaChainFb((void *)((char *)m_unk154C80 + 0xA3380), false);
+    m_unk154C80->KickVifDmaChain(false);
+    PDisplayList *pNext = (PDisplayList *)this;
+    if (m_unk154C80 == pNext) {
+        pNext = (PDisplayList *)((char *)this + 0xAA640);
+    }
+    m_unk154C80 = pNext;
+    m_unk154C80->Reset();
+    ((PTextureManager *)m_unk154C90)->ResetDynamicBuffers();
+    m_unk154C80->SetVifCodes(0x07001000, 0x80000000);
+    m_unk154C80->SetVifCodes(0x13000000, 0);
+    m_unk154C80->SetVifCodes(0, 0x80000000);
 }
 
 // FUNCTION: 0x00187F30 ErrorRefreshDisplay__10PGfxEngineFb
