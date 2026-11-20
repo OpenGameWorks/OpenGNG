@@ -146,7 +146,8 @@ public:
     void EnableAnim(bool arg0, bool arg1);
     void SetAnimLoopCount(int arg0, bool arg1);
 
-    char _pad004[0x8];
+    char _pad004[0x4];
+    unsigned int m_unk8;        // 0x008 node key, compared with 0xCF9EDC06 by InitHud
     int m_unkC;                 // 0x00C
     char _pad010[0x4];
     int m_unk14;                // 0x014 element count of the walk list
@@ -408,6 +409,8 @@ extern GameHud *mpPlayerData__7GameHud;
 // TODO(header): IconTable is a 0x20-byte-stride table indexed by icon type; AbilityTable is shared with Player.cpp.
 extern char IconTable[0x1100];
 extern signed char AbilityTable[];
+// TODO(header): ComboLevel is an 8-byte-stride table of ints (0x50 bytes in the original); the int at +0 is the threshold.
+extern char ComboLevel[0x50];
 
 // DRAFT: 0x0013FCC0 Update__7HudGrimFi
 // note: DIFF 116; the +4 folds into lw 4(v0) where the original uses addiu before addu and lw 0(v0); prologue and register allocation also differ.
@@ -995,6 +998,74 @@ void HudCombo::ComboFinish() {
     void *temp_a0 = m_unk38;
     if (temp_a0 != 0) {
         *(int *)((char *)temp_a0 + 0x2C) = 0x3F800000;
+    }
+}
+
+// DRAFT: 0x141AB0 ComboNumber__8HudComboFv
+// note: DIFF 125; frame 0x80 vs 0x90, pNew kept in s2 where original spills it to 0x8C(sp); tried int v, pNew from __nw, node stored after block.
+void HudCombo::ComboNumber() {
+    if (m_unk3C != 0) {
+        ((PArray *)((char *)m_unk38 + 0x14))->Remove(m_unk3C);
+        if (m_unk3C != 0) {
+            ((PMNode *)m_unk3C)->Slot00(1);
+        }
+        m_unk3C = 0;
+    }
+    if (m_unk40 != 0) {
+        ((PArray *)((char *)m_unk38 + 0x14))->Remove(m_unk40);
+        if (m_unk40 != 0) {
+            ((PMNode *)m_unk40)->Slot00(1);
+        }
+        m_unk40 = 0;
+    }
+    ((PVirtObj *)m_unk38)->Slot05(0);
+    float vec[4];
+    vec[0] = m_unk50;
+    vec[1] = m_unk54;
+    vec[2] = 0.0f;
+    vec[3] = 1.0f;
+    ((m_unkC < 100) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x7B1, "miValue < 100"));
+    int v = m_unkC;
+    for (int i = 0; i < 2; i++) {
+        int digit = v % 10;
+        if (digit != 0 || i == 0) {
+            void *node = __nw__FUi(0x100);
+            if (node != 0) {
+                *(unsigned char **)node = __vt__9PResource;
+                *(int *)((char *)node + 4) = 0;
+                *(unsigned char **)node = __vt__6PMNode;
+                __ct__6PArrayFv((char *)node + 0x14);
+                sceVu0UnitMatrix((char *)node + 0x40);
+                __ct__6PArrayFv((char *)node + 0xD8);
+                InitMembers__6PMNodeFv((PMNode *)node);
+            }
+            PMNode *pNew = (PMNode *)node;
+            ((pNew != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x7B7, "pNode"));
+            CopyMNode__6PMNodeFR6PMNodeb(pNew, (PMNode *)m_unk10[digit], true);
+            vec[0] -= *(float *)(*(char **)((char *)pNew + 0x10) + 0x20);
+            *(u_long128 *)((char *)pNew + 0x80) = *(u_long128 *)vec;
+            *(unsigned char *)((char *)pNew + 0x3E) |= 8;
+            vec[0] -= *(float *)(*(char **)((char *)pNew + 0x10) + 0x20);
+            ((PArray *)((char *)m_unk38 + 0x14))->Add(pNew);
+            *(PMNode **)((char *)this + 0x3C + i * 4) = pNew;
+        }
+        v = v / 10;
+    }
+    *(int *)((char *)m_unk48 + 0x2C) = 0x3E99999A;
+    *(int *)((char *)m_unk38 + 0x2C) = 0x3E99999A;
+    int count = 0;
+    do {
+        if (*(int *)((char *)mpPlayerData__7GameHud + 0x50) < *(int *)(ComboLevel + count * 8)) {
+            break;
+        }
+        count++;
+    } while (count < 5);
+    PArray *arr = (PArray *)((char *)m_unk48 + 0x14);
+    for (int i = 0; i < 5; i++) {
+        PMNode *el = (i < (int)arr->m_unk0) ? (PMNode *)arr->m_unk8[i] : 0;
+        if (el != 0) {
+            *(int *)((char *)el + 0xC) = (i == count);
+        }
     }
 }
 
@@ -1791,6 +1862,81 @@ void Interface::ResetGameHud() {
     ((HudResetElement *)((char *)this + 0x270))->Reset();
     ((HudResetElement *)((char *)this + 0x290))->Reset();
     ((HudResetElement *)((char *)this + 0x2E8))->Reset();
+}
+
+static unsigned int HudTable[22] = {
+    0xC1DF2B9F, 0x3F53E426, 0xC1B2A993, 0xBFD0FC50,
+    0xC18EE76D, 0x4013F2E5, 0xC151020C, 0x4013F2E5,
+    0xC104353F, 0x4013F2E5, 0xC05060AA, 0x4013F2E5,
+    0x3FC5A512, 0x4013F2E5, 0x410AD3C3, 0x3FFE2B6B,
+    0x41578106, 0x3F042C3D, 0x418C2C3D, 0x3FEBC01A,
+    0x41AD680A, 0x3F042C3D,
+};
+
+class HudInit {
+public:
+    virtual void Slot0();
+    virtual void Slot1();
+    virtual void Slot2(void *arg0, void *arg1);
+    virtual void Slot3();
+    virtual void Reset();
+};
+
+// DRAFT: 0x001443A0 InitHud__9InterfaceFv
+// note: DIFF 115; key compare is a 64-bit ori/dsll/ori constant with lwu in the original, ours is 32-bit lui/ori; ULL, unsigned long and cast forms gave 144-146.
+void Interface::InitHud() {
+    static unsigned int Numbers[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    PMNode *pNode;
+    PMNode *pNew;
+    int i;
+    char *table;
+
+    ((m_unk1C4 != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x35B, "mpInterface"));
+    ((mpPlayerData__7GameHud != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x35C, "GameHud::mpPlayerData"));
+    if (((PMNode *)m_unk1C4)->m_unk8 != 0xCF9EDC06) {
+        pNode = (((PMNode *)m_unk1C4)->m_unk14 < 2) ? 0 : ((PMNode *)m_unk1C4)->m_unk1C[1];
+        pNew = pNode->Find(0xCF9EDC06);
+        if (pNew) {
+            ((PArray *)((char *)pNode + 0x14))->Remove(pNew);
+        }
+        if (m_unk1C4) {
+            ((PMNode *)m_unk1C4)->Slot00(1);
+        }
+        m_unk1C4 = pNew;
+        ((PMNode *)m_unk1C4)->SetAllFrustrumTest((eBoxIntersect)1);
+        m_unk1C8 = ((PMNode *)m_unk1C4)->Find(0xE7811976);
+        if (m_unk1C8) {
+            for (i = 0; i < 10; i++) {
+                mpNumbers__7GameHud[i] = ((PMNode *)m_unk1C8)->Find(Numbers[i]);
+            }
+            ((PArray *)((char *)m_unk1C4 + 0x14))->Remove(m_unk1C8);
+        }
+        table = (char *)HudTable;
+        ((HudInit *)((char *)this + 0x1CC))->Slot2(m_unk1C4, table);
+        table += 8;
+        ((HudInit *)((char *)this + 0x1DC))->Slot2(m_unk1C4, table);
+        table += 8;
+        ((HudInit *)((char *)this + 0x1EC))->Slot2(m_unk1C4, table);
+        table += 8;
+        ((HudInit *)((char *)this + 0x1FC))->Slot2(m_unk1C4, table);
+        table += 8;
+        ((HudInit *)((char *)this + 0x20C))->Slot2(m_unk1C4, table);
+        table += 8;
+        ((HudInit *)((char *)this + 0x21C))->Slot2(m_unk1C4, table);
+        table += 8;
+        ((HudInit *)((char *)this + 0x22C))->Slot2(m_unk1C4, table);
+        table += 8;
+        ((HudInit *)((char *)this + 0x250))->Slot2(m_unk1C4, table);
+        table += 8;
+        ((HudInit *)((char *)this + 0x270))->Slot2(m_unk1C4, table);
+        table += 8;
+        ((HudCombo *)((char *)this + 0x290))->InitCombo((PMeshNode *)m_unk1C4, (HudData *)table, (PMNode *)m_unk1C8);
+        table += 8;
+        ((HudInit *)((char *)this + 0x2E8))->Slot2(m_unk1C4, table);
+        ((HudHint *)((char *)this + 0x32C))->InitNode((PMeshNode *)m_unk1C4);
+        ((PMNode *)m_unk1C4)->Slot04(0.0f, 0.0f, 0, 0, false);
+    }
+    ResetGameHud();
 }
 
 // FUNCTION: 0x144690 Init__7GameHudFP9PMeshNodeP7HudData

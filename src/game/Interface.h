@@ -76,10 +76,11 @@ public:
     short m_unkC;               // 0x00C HUD value looked up from the player table
     unsigned char m_unkE;       // 0x00E index into the player table
     unsigned char m_unkF;       // 0x00F state, 0..3
-    char _pad010[0x28];
+    PMNode *m_unk10[10];        // 0x010 ring of 10 nodes indexed by digit, built by ComboNumber
     void *m_unk38;              // 0x038
-    char _pad03C[0x8];
-    void *m_unk44;              // 0x044 polymorphic element, slot 5 called by UpdateStatus
+    void **m_unk3C;             // 0x03C
+    void **m_unk40;             // 0x040
+    void *m_unk44;             // 0x044 polymorphic element, slot 5 called by UpdateStatus
     void *m_unk48;              // 0x048
     void *m_unk4C;              // 0x04C polymorphic element, slot 5 called by UpdateStatus
     float m_unk50;              // 0x050 copied from the table entry at 0x80 by InitCombo
@@ -154,6 +155,7 @@ public:
     int IsTreasureOK();
     void DisplayLevelName(int arg0, int arg1);
     void Init();
+    void InitHud();
     void Destroy();
     PMNode *Load(const char *arg0);
     void InitMatrices();
