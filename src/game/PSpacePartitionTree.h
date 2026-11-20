@@ -17,6 +17,8 @@ public:
     int Load(PPakFile *pFile, PArray *pArr1, PArray *pArr2, ePsx2FileVersion nVersion);
     void CullToFrustrum(PFrustrum *pFrustrum, float *pOut);
     void ResetShaderGroups();
+    void RenderMesh(PMesh *pMesh, bool bFlag);
+    void RenderShaderGroups(bool bFlag);
 
     PSpacePartitionNode *m_unk0;            // 0x000 root node, owned
     PSpacePartitionNode *m_unk4;            // 0x004 child node set by Load
