@@ -209,13 +209,12 @@ void PProjectileRipples::Render() {
 }
 
 // DRAFT: 0x00217B90 Animate__18PProjectileRipplesFf
-// note: VU0 lqc2/vmulx/vadd/sqc2 run replaced by sceVu0 calls, so the vector bytes differ; scalar gates, loop and ring writes follow the asm
+// note: 153 words differ; frame 0xB0 vs 0x80 with s4/s5 saved (original keeps this in s3); tried rot-ref removal (185->153), diff moved into loop (178), sub/tmp merged (181), angle uninitialized (157), f3 loaded before out (157), while loop (153), for-scoped i (153)
 void PProjectileRipples::Animate(float arg0) {
     float scale = arg0;
     float angle = 0.0f;
-    float &rot = *(float *)&m_unk128;
     float sub[4];
-    float mtx[4][4];
+    float tmp[4];
     int i;
 
     if (m_unk15 == 0) {
@@ -235,10 +234,11 @@ void PProjectileRipples::Animate(float arg0) {
     }
     m_unk138 = 0;
     if (m_unk19 != 0) {
-        rot = rot + 3.0f * scale;
+        float rot = *(float *)&m_unk128 + 3.0f * scale;
         if (!(rot < 360.0f)) {
             rot = rot - 360.0f;
         }
+        *(float *)&m_unk128 = rot;
         angle = rot;
     }
     sceVu0SubVector(sub, m_unkF0, m_unkE0);
@@ -254,18 +254,39 @@ void PProjectileRipples::Animate(float arg0) {
         if (ring->m_unk50 != 0) {
             PProjectileRing *out = (PProjectileRing *)((char *)m_unk134 + m_unk138 * 0x60);
             float f3 = ring->m_unk40;
+            {
+                int bits = *(int *)&f3;
+                float *pE0 = m_unkE0;
+                float *pSub = sub;
+                float *pTmp = tmp;
+                asm {
+                    lqc2 vf1, 0x0(pSub)
+                    lqc2 vf2, 0x0(pE0)
+                    qmtc2.i bits, vf3
+                    vmulx.xyzw vf4, vf1, vf3x
+                    vnop
+                    vnop
+                    vnop
+                    vadd.xyzw vf5, vf4, vf2
+                    vnop
+                    vnop
+                    vnop
+                    sqc2 vf5, 0x0(pTmp)
+                }
+            }
             float f1 = f3 + ring->m_unk44 * scale;
             float x = m_unk100 + diff * f3;
             ring->m_unk40 = f1;
             if (!(f1 < 1.0f)) {
                 ring->m_unk50 = 0;
                 x = 0.0f;
+                tmp[3] = 0.0f;
                 m_unk124 -= 1;
             }
-            sceVu0UnitMatrix(mtx);
+            sceVu0UnitMatrix((float (*)[4])out);
             out->m_unk00[0] = x;
             out->m_unk10[1] = x;
-            sceVu0CopyVector(&out->m_unk40, mtx[0]);
+            *(u_long128 *)&out->m_unk40 = *(u_long128 *)tmp;
             sceVu0MulMatrix((float (*)[4])out, (float (*)[4])ring, (float (*)[4])out);
             if (m_unk19 != 0) {
                 float a = angle - 180.0f;
