@@ -9,6 +9,14 @@
 void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void *__nwa__FUi(unsigned int nSize);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__22PMeshNodeAnimDataTableFv(void *pThis);
+extern "C" int Load__22PMeshNodeAnimDataTableFP8PPakFile16ePsx2FileVersion(void *pThis, PPakFile *pFile, ePsx2FileVersion eVersion);
+extern "C" int printf(const char *pFmt, ...);
+class PMeshNodeAnimDataTable {
+public:
+    virtual ~PMeshNodeAnimDataTable();
+};
 
 // FUNCTION: 0x00152D40 LookupResourceIndex__16PResourceManagerFPUiii
 int PResourceManager::LookupResourceIndex(unsigned int *pIds, int nCount, int nId) {
@@ -178,6 +186,64 @@ int PResourceManager::LoadShadowVolumeTable(PPakFile *pFile, tagResourceData *pD
     return 1;
 }
 
+// FUNCTION: 0x00153E20 LoadAnimResTable__16PResourceManagerFP8PPakFile16ePsx2FileVersionPQ216PResourceManager15tagResourceDataUi
+int PResourceManager::LoadAnimResTable(PPakFile *pFile, ePsx2FileVersion eVersion, tagResourceData *pData, unsigned int uId) {
+    unsigned int nCount;
+    if (pFile == 0) {
+        CdsAssert("PResourceManager.cpp", 0x1BE, "poFile");
+    }
+    if (pData == 0) {
+        CdsAssert("PResourceManager.cpp", 0x1BF, "pTheResData");
+    }
+    if (((PCDFile *)pFile)->Read(&nCount, 4) != 4) {
+        return 0;
+    }
+    pData->m_unkC = nCount;
+    if (nCount == 0) {
+        pData->m_unk14 = 0;
+        pData->m_unk10 = 0;
+        return 1;
+    }
+    if (uId >= 0x20009) {
+        pData->m_unk14 = (unsigned int *)__nwa__FUi(nCount * 4);
+        if (pData->m_unk14 == 0) {
+            return 0;
+        }
+        if (((PCDFile *)pFile)->Read(pData->m_unk14, nCount * 4) != (int)(nCount * 4)) {
+            return 0;
+        }
+    }
+    pData->m_unk10 = (void **)__nwa__FUi(nCount * 4);
+    if (pData->m_unk10 == 0) {
+        return 0;
+    }
+    for (unsigned int i = 0; i < nCount; i++) {
+        unsigned int nRecord = 0;
+        if (((PCDFile *)pFile)->Read(&nRecord, 4) != 4) {
+            return 0;
+        }
+        if (nRecord == 0xA) {
+            void *p = __nw__FUi(0x30);
+            if (p != 0) {
+                p = __ct__22PMeshNodeAnimDataTableFv(p);
+            }
+            if (p == 0) {
+                return 0;
+            }
+            if (!Load__22PMeshNodeAnimDataTableFP8PPakFile16ePsx2FileVersion(p, pFile, eVersion)) {
+                printf("\n**** Error loading MEA resource! Index = %d **** \n", i);
+                delete (PMeshNodeAnimDataTable *)p;
+                return 0;
+            }
+            pData->m_unk10[i] = p;
+        } else {
+            CdsAssert("PResourceManager.cpp", 0x225, "0");
+            return 0;
+        }
+    }
+    return 1;
+}
+
 // FUNCTION: 0x00154390 LoadTextureResTable__16PResourceManagerFP8PPakFileP6PArrayPQ216PResourceManager15tagResourceDataUi
 int PResourceManager::LoadTextureResTable(PPakFile *pFile, PArray *pArray, tagResourceData *pData, unsigned int uId) {
     unsigned int nCount;
@@ -225,6 +291,72 @@ int PResourceManager::LoadTextureResTable(PPakFile *pFile, PArray *pArray, tagRe
             return 0;
         }
         nIndex = -1;
+    }
+    return 1;
+}
+
+// note: 39 words differ. The first is the return-0 branch at 0x0A8 (2 words longer in ours, from the shared epilogue layout); the loop tail is laid out differently. Tried: local nIdx, swapped compare, ternary temp, while loop, zero-then-if store (fx_v2..fx_v6 in scratch).
+// DRAFT: 0x001545B0 LoadFxResTable__16PResourceManagerFP8PPakFileP6PArrayPQ216PResourceManager15tagResourceDataUi
+int PResourceManager::LoadFxResTable(PPakFile *pFile, PArray *pArray, tagResourceData *pData, unsigned int uId) {
+    unsigned int nCount;
+    unsigned int i;
+    unsigned int nIdx;
+    unsigned int nRes;
+    tagFxData *pFx;
+    if (pFile == 0) {
+        CdsAssert("PResourceManager.cpp", 0x9C, "poFile");
+    }
+    if (pArray == 0) {
+        CdsAssert("PResourceManager.cpp", 0x9D, "poTextureHandles");
+    }
+    if (pData == 0) {
+        CdsAssert("PResourceManager.cpp", 0x9E, "pTheResData");
+    }
+    if (((PCDFile *)pFile)->Read(&nCount, 4) != 4) {
+        return 0;
+    }
+    pData->m_unk18 = nCount;
+    if (pData->m_unk18 == 0) {
+        pData->m_unk1C = 0;
+        pData->m_unk20 = 0;
+        return 1;
+    }
+    if (uId >= 0x20009) {
+        pData->m_unk20 = (unsigned int *)__nwa__FUi(nCount * 4);
+        if (pData->m_unk20 == 0) {
+            return 0;
+        }
+        if (((PCDFile *)pFile)->Read(pData->m_unk20, nCount * 4) != (int)(nCount * 4)) {
+            return 0;
+        }
+    }
+    pData->m_unk1C = (tagFxData *)__nwa__FUi(nCount * 0x3C);
+    if (pData->m_unk1C == 0) {
+        return 0;
+    }
+    i = 0;
+    while (i < nCount) {
+        pFx = &pData->m_unk1C[i];
+        if (((PCDFile *)pFile)->Read(pFx, 0x38) != 0x38) {
+            return 0;
+        }
+        if (pFx->m_unk24 == 0) {
+            return 0;
+        }
+        pFx->m_unk38 = __nwa__FUi(pFx->m_unk24);
+        if (pFx->m_unk38 == 0) {
+            CdsAssert("PResourceManager.cpp", 0xD6, "apFxData->pvFxParams");
+        }
+        if (((PCDFile *)pFile)->Read(pFx->m_unk38, pFx->m_unk24) != (int)pFx->m_unk24) {
+            return 0;
+        }
+        nIdx = pFx->m_unk20;
+        nRes = 0;
+        if (nIdx < pArray->m_unk0) {
+            nRes = (unsigned int)pArray->m_unk8[nIdx];
+        }
+        pFx->m_unk20 = nRes;
+        i++;
     }
     return 1;
 }

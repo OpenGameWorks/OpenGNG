@@ -13,15 +13,23 @@ enum eResourceTypes { eResourceTypes_Placeholder = 0 };
 
 class PResourceManager {
 public:
+    struct tagFxData {
+        char _pad000[0x20];
+        unsigned int m_unk20;   // index into the PArray, then the resolved entry
+        unsigned int m_unk24;   // byte count read into m_unk38
+        char _pad028[0x10];
+        void *m_unk38;
+    };
+
     struct tagResourceData {
         int m_unk0;
         char _pad004[0x4];
         unsigned int *m_unk8;
         int m_unkC;
-        char _pad010[0x4];
+        void **m_unk10;
         unsigned int *m_unk14;
         int m_unk18;
-        char _pad01C[0x4];
+        tagFxData *m_unk1C;
         unsigned int *m_unk20;
         int m_unk24;
         void **m_unk28;
@@ -46,7 +54,9 @@ public:
     void Unload(tagResourceData *pData);
     int LoadShadowVolumeTable(PPakFile *pFile, tagResourceData *pData, unsigned int uId);
     int LoadInstanceMeshTable(PPakFile *pFile, tagResourceData *pData, PArray *pArray, ePsx2FileVersion eVersion, unsigned int uId);
+    int LoadAnimResTable(PPakFile *pFile, ePsx2FileVersion eVersion, tagResourceData *pData, unsigned int uId);
     int LoadTextureResTable(PPakFile *pFile, PArray *pArray, tagResourceData *pData, unsigned int uId);
+    int LoadFxResTable(PPakFile *pFile, PArray *pArray, tagResourceData *pData, unsigned int uId);
     int GetNumResourcesOfType(eResourceTypes eType, bool bLocal);
 
 private:
