@@ -130,6 +130,7 @@ public:
     int GetDialogPlayingStatus();
     void FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned int nFrames);
     void AmbientFadeToFree(AmbientChannelState *pState);
+    void FadeAmbientChannel(AmbientChannelState *pState, unsigned int nChan);
     int PauseAllAmbientSounds();
     void ResumeAllAmbientSounds();
     int StopAllSounds();
@@ -158,6 +159,8 @@ public:
     void SetMainMusicRelVolume(unsigned int nVolume);
     int PlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3, unsigned int p4);
     int PlaySoundTrigletUbiquitous(unsigned int p0, unsigned int p1, const GameSoundTrigletPawn *pPawn);
+    int PlaySoundTriglet(unsigned int p0, unsigned int p1, const GameSoundTrigletPawn *pPawn);
+    int PlayMultipleAtOnce(unsigned int nSound);
     int PlaySoundPMNode(unsigned int p0, unsigned int p1, const PMNode *pNode);
     int StopAllRegularSounds();
     void StopStreamsAndRequestEEControl();
@@ -188,6 +191,9 @@ public:
     void SoundEditEnter();
     unsigned int FindFadingAmbientChannel();
     void WaitOnVSync();
+    int TriggerSystemSound(unsigned int p0, unsigned int p1, PMNode *pNode);
+    int EnableTrigletByInstanceID(unsigned int nInstanceID, bool bEnable);
+    void StopSoundBySoundRef(unsigned int nSoundRef);
     void SetMusicPitchBend(bool bBend);
     void PSoundReInitMusic();
     void StopMusic();
@@ -272,7 +278,8 @@ public:
     char _pad5450[0x5460 - 0x5450];
     char m_unk5460[0x2580]; // 0x5460, PSoundReInitSoundRooms clears it
     int m_unk79E0[6];       // 0x79E0
-    char _pad79F8[0x1808C - 0x79F8];
+    char *m_unk79F8;        // 0x79F8, triglet table base (0x150-byte records)
+    char _pad79FC[0x1808C - 0x79FC];
     char m_unk1808C;        // 0x1808C, AddChanToMultiplePauses/Stops write here at this + 0x1808C + channel
 };
 

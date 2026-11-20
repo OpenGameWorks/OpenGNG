@@ -7,6 +7,7 @@ extern "C" void SOUND_StopAllSounds();
 extern "C" void SOUND_SetGlobalRelVols(int, int, int, int, int, int, int, int);
 extern int fst_ReverbRecProposed[5];
 extern int gPSndDbg[52];
+extern int fst_StartMultiple;
 extern "C" int sceWrite(int, char *, int);
 extern "C" int strlen(char *);
 extern int miRandom__7MathAPI;
@@ -36,13 +37,20 @@ extern int gCDSVBlankCount;
 extern int fst_lastVSyncWaitCount;
 extern "C" void SOUND_SetOverallMusicPitch(int, int);
 extern unsigned char SOUND_SPUKeyStatus[0x40];
+extern "C" int sceCdSync(int mode);
+extern "C" void LoadingHangCheckInit__9FileUtilsFv();
+extern "C" void LoadingDisplay__9InterfaceFUii(void *pThis, unsigned int nArg0, int nArg1);
+extern unsigned char gInterface[2656];
 extern "C" int SOUND_MakeSoundStreamRef();
 extern "C" unsigned int SOUND_PlayDialogRelVol(unsigned int, unsigned int, unsigned int, short, unsigned int);
 extern "C" void SOUND_FadeMusicStream(unsigned int, unsigned int, int, unsigned int);
 class PTranslateATable {
 public:
     static int FindASubTableRandomItem(unsigned int *pOut, unsigned int nIdx, int (*pfnBank)(unsigned int), const unsigned int *pTable);
+    static void TranslateUIntToUInt(unsigned int *pOut, unsigned int nIdx, const unsigned int *pTable);
 };
+extern "C" void *GetLevelFile__10MaximoMainFi(void *pThis, int nIdx);
+extern "C" int PlaySound__6PMNodeFUi(PMNode *pThis, unsigned int nSound);
 int SoundInBankStatus(unsigned int nBank);
 extern unsigned int gSndSetOfIDsTable[16];
 extern "C" void SOUND_SetPauseCategories(unsigned int);
@@ -165,6 +173,23 @@ void PSound::WaitOnVSync() {
     fst_lastVSyncWaitCount = nSpins;
 }
 
+// FUNCTION: 0x001A42A0 TriggerSystemSound__6PSoundFUiUiP6PMNode
+int PSound::TriggerSystemSound(unsigned int p0, unsigned int p1, PMNode *pNode) {
+    unsigned int nSound = 0;
+    int nRet = 0;
+    if (pNode == 0) {
+        CdsAssert("PSound.cpp", 0x23F5, "i_pNode");
+    }
+    unsigned int nTable = *(unsigned int *)((char *)GetLevelFile__10MaximoMainFi(gEng, -1) + 0x64);
+    if (nTable != 0) {
+        PTranslateATable::TranslateUIntToUInt(&nSound, p0, (const unsigned int *)nTable);
+    }
+    if (nSound != 0) {
+        nRet = PlaySound__6PMNodeFUi(pNode, nSound);
+    }
+    return nRet;
+}
+
 // FUNCTION: 0x001A4340 SetMainMusicSpecialVolume__6PSoundFQ26PSound20EnumMusicSpecialVols
 void PSound::SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol) {
     int nVol = 0x3E8;
@@ -245,6 +270,26 @@ void PSound::PauseByCategories(unsigned int nCategory) {
     SOUND_SetPauseCategories(nCategory);
 }
 
+// FUNCTION: 0x001A4E20 EnableTrigletByInstanceID__6PSoundFUib
+int PSound::EnableTrigletByInstanceID(unsigned int nInstanceID, bool bEnable) {
+    for (unsigned int i = 0, nOff = 0; i < (unsigned int)m_unk79E0[0]; nOff += 0x150, i++) {
+        char *pTrig = m_unk79F8 + nOff;
+        if (((unsigned char *)pTrig)[0x131] != 0 && nInstanceID == *(unsigned int *)(pTrig + 0x128)) {
+            pTrig[0x132] = bEnable;
+            pTrig[0x130] = ((unsigned char *)pTrig)[0x132];
+            if (!bEnable) {
+                unsigned int nSnd = *(unsigned int *)(pTrig + 0x124);
+                if (nSnd != 0) {
+                    StopSoundBySoundRef(nSnd);
+                    *(unsigned int *)(pTrig + 0x12C) = 0;
+                }
+            }
+            return 0;
+        }
+    }
+    return -1;
+}
+
 // FUNCTION: 0x001A5590 SetMusicPitchBend__6PSoundFb
 void PSound::SetMusicPitchBend(bool bBend) {
     if (bBend) {
@@ -282,12 +327,38 @@ void PSound::AmbientFadeToFree(AmbientChannelState *pState) {
     return pState->ReInit();
 }
 
+// FUNCTION: 0x001A5C10 FadeAmbientChannel__6PSoundFPQ26PSound19AmbientChannelStateUi
+void PSound::FadeAmbientChannel(AmbientChannelState *pState, unsigned int nChan) {
+    if (pState != 0) {
+        if (pState->m_unk00 != 0x3FFE) {
+            short nSaved = pState->m_unk06;
+            pState->ReInit();
+            pState->m_unk00 = 0x3FFE;
+            m_unk0EC += 1;
+            AddChanToMultipleStops(nSaved);
+            return;
+        }
+        CdsAssert("PSound.cpp", 0x1CB0, "0");
+    }
+}
+
 // FUNCTION: 0x001A71D0 PlaySoundTrigletUbiquitous__6PSoundFUiUiPC20GameSoundTrigletPawn
 int PSound::PlaySoundTrigletUbiquitous(unsigned int p0, unsigned int p1, const GameSoundTrigletPawn *pPawn) {
     if (pPawn != 0) {
         return PlaySoundWPitch(p0, p1, (unsigned int)pPawn, 0x240, 0);
     }
     return 0;
+}
+
+// FUNCTION: 0x001A7200 PlaySoundTriglet__6PSoundFUiUiPC20GameSoundTrigletPawn
+int PSound::PlaySoundTriglet(unsigned int p0, unsigned int p1, const GameSoundTrigletPawn *pPawn) {
+    if (pPawn == 0) {
+        return 0;
+    }
+    if (gPSndDbg[25] != 0 && fst_StartMultiple == (int)p0) {
+        PlayMultipleAtOnce(gPSndDbg[0]);
+    }
+    return PlaySoundWPitch(p0, p1, (unsigned int)pPawn, 0x40, 0);
 }
 
 // FUNCTION: 0x001A7290 PlaySoundPMNode__6PSoundFUiUiPC6PMNode
@@ -725,6 +796,24 @@ int PSound::GetEEControlStatus() {
 void PSound::StopStreamsAndRequestEEControl() {
     SOUND_StopAllStreams();
     SetEEControlOfIOP(2);
+}
+
+// FUNCTION: 0x001A9B90 ReturnControlOfIOPToMjln__6PSoundFv
+void PSound::ReturnControlOfIOPToMjln() {
+    LoadingHangCheckInit__9FileUtilsFv();
+    while (1) {
+        if (sceCdSync(0x11) == 0) {
+            break;
+        }
+        LoadingDisplay__9InterfaceFUii(gInterface, 0, 0);
+    }
+    LoadingHangCheckInit__9FileUtilsFv();
+    SetEEControlOfIOP(1);
+    m_unkD1 = 1;
+    do {
+        LoadingDisplay__9InterfaceFUii(gInterface, 0, 0);
+        GetEEControlStatus();
+    } while (gSOUND_EEControl != 0);
 }
 
 // FUNCTION: 0x001A9C40 PSoundShutdown__6PSoundFv
