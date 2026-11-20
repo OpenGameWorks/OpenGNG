@@ -150,14 +150,22 @@ public:
     void SoundEditLeave();
     void SoundEditEnter();
     unsigned int FindFadingAmbientChannel();
+    void WaitOnVSync();
+    void SetMusicPitchBend(bool bBend);
+    void PSoundReInitMusic();
+    void StopMusic();
+    int *UsageFind(unsigned int nID);
+    void DebugRestartValues();
 
     int m_unk00;            // 0x000, GetEEControlStatus tests it
-    char _pad004[0x01C - 0x004];
-    unsigned int m_unk1C;   // 0x01C, PlayMusic stores its argument
-    char _pad020[0x024 - 0x020];
+    char _pad004[0x010 - 0x004];
+    unsigned int m_unk10;   // 0x010, DebugRestartValues range check
+    char _pad014[0x01C - 0x014];
+    unsigned int m_unk1C;   // 0x01C, PlayMusic stores it, PSoundReInitMusic clears it
+    int m_unk20;            // 0x020, PSoundReInitMusic clears it
     unsigned int m_unk024;  // 0x024
     unsigned int m_unk28;   // 0x028, PlayMusic passes it to PlayMusicOnStream
-    char _pad02C[0x030 - 0x02C];
+    int m_unk2C;            // 0x02C, PSoundReInitMusic clears it
     int m_unk30;            // 0x030, RelVolumes arg 8
     int m_unk34;            // 0x034, RelVolumes arg 1
     int m_unk38;            // 0x038, RelVolumes arg 2
@@ -171,10 +179,15 @@ public:
     int m_unkB4;            // 0x0B4, SendStops clears it
     char _pad0B8[0x0C8 - 0x0B8];
     int m_unkC8;            // 0x0C8, SoundEditEnter sets 1, SoundEditLeave clears it
-    char _padCC[0x0CF - 0x0CC];
+    char _padCC[0x0CD - 0x0CC];
+    char m_unkCD;           // 0x0CD, PSoundReInitMusic clears it
+    char m_unkCE;           // 0x0CE, PSoundReInitMusic clears it
     char m_unkCF;           // 0x0CF, PSoundStopDialog clears it
     bool m_unkD0;           // 0x0D0, ErrorRecovery reads it before PSoundRestart
-    char _pad0D1[0x0EC - 0x0D1];
+    char _pad0D1[0x0DC - 0x0D1];
+    int m_unkDC;            // 0x0DC, PSoundReInitMusic clears it
+    int m_unkE0;            // 0x0E0, PSoundReInitMusic sets 0x3E8
+    char _pad0E4[0x0EC - 0x0E4];
     int m_unk0EC;           // 0x0EC
     int m_unk0F0;           // 0x0F0
     AmbientEntry *m_unkF4;  // 0x0F4, head of the ambient entry list (AddAEToFreeList passes &m_unkF4)
@@ -191,7 +204,8 @@ public:
     char m_unk2EB4[0x2580]; // 0x2EB4, 400 SpotInfo records of 0x18 bytes, GetSpotInfo scans them
     char _pad5434[0x5438 - 0x5434];
     unsigned int m_unk5438; // 0x5438, SetProposedReverbParams arg 0
-    char _pad543C[0x5444 - 0x543C];
+    int m_unk543C;          // 0x543C, SetMusicPitchBend bit 0
+    char _pad5440[0x5444 - 0x5440];
     int m_unk5444;          // 0x5444, PSoundReInitSoundRooms sets -1
     char _pad5448[0x544C - 0x5448];
     int m_unk544C;          // 0x544C, PSoundReInitSoundRooms clears it

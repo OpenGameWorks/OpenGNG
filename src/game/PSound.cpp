@@ -25,6 +25,10 @@ extern int fst_dialogSpecialVol;
 extern int gSOUND_EEControl;
 extern int gSOUND_EEControlReqCallCnt;
 extern int gSOUND_uEECallCntReturned;
+extern "C" void FlushCache(int nMode);
+extern int gCDSVBlankCount;
+extern int fst_lastVSyncWaitCount;
+extern "C" void SOUND_SetOverallMusicPitch(int, int);
 
 // FUNCTION: 0x001A3C70 AddAEToFreeList__6PSoundFPQ26PSound12AmbientEntry
 void PSound::AddAEToFreeList(AmbientEntry *pEntry) {
@@ -95,6 +99,21 @@ unsigned int PSound::FindFadingAmbientChannel() {
     return -1U;
 }
 
+// FUNCTION: 0x001A41A0 WaitOnVSync__6PSoundFv
+void PSound::WaitOnVSync() {
+    int nVBlank = gCDSVBlankCount;
+    int nSpins = 0;
+    while (nVBlank == gCDSVBlankCount) {
+        nSpins++;
+        FlushCache(0);
+        asm {
+            sync
+            sync.p
+        }
+    }
+    fst_lastVSyncWaitCount = nSpins;
+}
+
 // FUNCTION: 0x001A4340 SetMainMusicSpecialVolume__6PSoundFQ26PSound20EnumMusicSpecialVols
 void PSound::SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol) {
     int nVol = 0x3E8;
@@ -133,6 +152,18 @@ void PSound::SendStops() {
         SOUND_StopMultipleSounds(m_unkB0, m_unkB4);
         m_unkB0 = 0;
         m_unkB4 = 0;
+    }
+}
+
+// FUNCTION: 0x001A5590 SetMusicPitchBend__6PSoundFb
+void PSound::SetMusicPitchBend(bool bBend) {
+    if (bBend) {
+        if (gPSndDbg[10] != 0) {
+            m_unk543C |= 1;
+        }
+    } else {
+        m_unk543C &= ~1;
+        SOUND_SetOverallMusicPitch(0x2710, 0);
     }
 }
 
@@ -472,6 +503,21 @@ void PSound::PSoundStopDialog() {
     m_unk2E4C = m_unk2E48;
 }
 
+// FUNCTION: 0x001AA190 PSoundReInitMusic__6PSoundFv
+void PSound::PSoundReInitMusic() {
+    StopMusic();
+    m_unk28 = 1;
+    m_unk2C = 0;
+    m_unk40 = 0x3E8;
+    m_unk1C = 0;
+    m_unk20 = 0;
+    m_unk024 = 0;
+    m_unkCD = 0;
+    m_unkDC = 0;
+    m_unkE0 = 0x3E8;
+    m_unkCE = 0;
+}
+
 // FUNCTION: 0x001AA490 __dt__6PSoundFv
 PSound::~PSound() {
 }
@@ -561,6 +607,24 @@ void PSound::UsageInit() {
     }
 }
 
+// FUNCTION: 0x001AAE50 UsageFind__6PSoundFUi
+int *PSound::UsageFind(unsigned int nID) {
+    int *p = (int *)fst_Usage;
+    int *end = (int *)(fst_Usage + 24000);
+    if (p < end) {
+        do {
+            if (p[0] == -1) {
+                return 0;
+            }
+            if (nID == (unsigned int)p[0]) {
+                return p;
+            }
+            p += 5;
+        } while (p < end);
+    }
+    return 0;
+}
+
 // FUNCTION: 0x001AB330 DebugClearPlayedInGame__6PSoundFv
 void PSound::DebugClearPlayedInGame() {
     int *p = (int *)fst_Usage;
@@ -587,4 +651,17 @@ int PSound::DebugPlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int 
     nRet = PlaySoundWPitch(p0, p1, 0, 0x810, p2);
     fst_bCalledByDebug = 0;
     return nRet;
+}
+
+// DRAFT: 0x001AB430 DebugRestartValues__6PSoundFv
+// note: DIFF 5 words; original reloads lui $at,0x24 before each lbu of gPSndDbg+0x30, ours keeps one base in a0. Tried indexed byte (5), cast+offset (5), local byte temp (9).
+void PSound::DebugRestartValues() {
+    unsigned int nID = m_unk10;
+    if (nID >= 0x64 && nID < 0x72) {
+        SpotInfo *pSpot = GetSpotInfo(0x1C);
+        if (pSpot != 0) {
+            pSpot->m_unk0E = ((unsigned char *)gPSndDbg)[0x30];
+            pSpot->m_unk0F = ((unsigned char *)gPSndDbg)[0x30];
+        }
+    }
 }
