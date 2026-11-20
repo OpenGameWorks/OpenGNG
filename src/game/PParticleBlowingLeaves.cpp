@@ -1,18 +1,24 @@
 #include "types.h"
 #include "PParticleBlowingLeaves.h"
+#include "PGfxEngine.h"
+#include "PDisplayList.h"
 
 // TODO(header): foreign declarations
+extern char gGfxEng[1504384];
 extern "C" void *__ct__15PParticleSystemFv(void *);
 extern "C" void *__dt__15PParticleSystemFv(void *, short);
 extern "C" void __dla__FPv(void *);
 extern "C" void __dl__FPv(void *);
 extern "C" void *memset(void *, int, unsigned int);
+extern "C" void *memcpy(void *, const void *, unsigned int);
+extern "C" int rand(void);
 extern unsigned char __vt__22PParticleBlowingLeaves[];
 extern "C" void *__nwa__FUi(unsigned int);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void QwordCopy__FP1P1Ui(u_long128 *pDst, u_long128 *pSrc, unsigned int nQwords);
 extern "C" void sceVu0ApplyMatrix(float *, float (*)[4], float *);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
+extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
 void FastMath_RotateMatrix(float (*)[4][4], float (*)[4][4], float (*)[4], float (*)[4][4]);
 
 // FUNCTION: 0x001FD130 GenerateLeafMeshData__22PParticleBlowingLeavesFv
@@ -89,6 +95,122 @@ void PParticleBlowingLeaves::InitLeafRotations() {
         *(float *)(pLeaf + 0x118) = f;
         *(float *)(pLeaf + 0x11C) = 1.0f;
     } while (i < 0x14);
+}
+
+// FUNCTION: 0x001FD820 SetCameraPosRot__22PParticleBlowingLeavesFPA4_fPA4_f
+void PParticleBlowingLeaves::SetCameraPosRot(float (*arg0)[4], float (*arg1)[4]) {
+    sceVu0AddVector(m_unk9E0, m_unk9D0, (float *)arg0);
+}
+
+// DRAFT: 0x001FD850 Render__22PParticleBlowingLeavesFv
+// note: 158 differing lines; this in s6 (orig s0), c.eq.s operand order and bc1t target at 0x2C-0x34, clamp structure 0x58-0xD8; tried fSum addend swap (159), flipped zero compare (158), char *pSelf (158)
+void PParticleBlowingLeaves::Render() {
+    if (m_unk9B0 != 0.0f) {
+        float fSum = m_unkCC + m_unk9B0;
+        if (fSum < 1.0f) {
+            m_unkCC = fSum;
+        }
+        float fClamp = (fSum <= 0.0f) ? 0.0f : ((fSum < 1.0f) ? fSum : 1.0f);
+        if (fClamp != 0.0f) {
+            m_unkCC = fClamp;
+        }
+        if (fClamp == 1.0f) {
+            m_unk9B0 = 0.0f;
+        }
+    }
+    if (m_unk15 == 0) {
+        return;
+    }
+    if (m_unkA4 == 0) {
+        return;
+    }
+    if (m_unkCC == 0.0f) {
+        return;
+    }
+
+    int nBatches = (m_unkE4 + 0x4F) / 0x50;
+    ((PGfxEngine *)gGfxEng)->SetMaterial(m_unk10, (float *)((char *)this + 0xC0), true,
+                                         (unsigned long)m_unk30, 0x5000D);
+    ((PGfxEngine *)gGfxEng)->BeginFxInstances(m_unkA50, m_unkA54, false);
+
+    int nRemain = m_unkE4;
+    int nLeaf = 0;
+    int nOff = 0;
+    for (int nBatch = 0; nBatch < nBatches; nBatch++) {
+        int nCount = (nRemain < 0x50) ? nRemain : 0x50;
+        ((nCount * 0x60) < 0x2000) ? (void)0
+            : CdsAssert__FPciPc("PParticleBlowingLeaves.cpp", 0x105,
+                                "aiNumLeavesPerBatch * sizeof(VuFxInstance) < SPAD_TEMP_BUFFER_SIZE");
+        nRemain -= nCount;
+        for (int j = 0; j < nCount; j++) {
+            char *pDst = (char *)0x70001000 + j * 0x60;
+            char *pLeaf = (char *)this + nLeaf * 0x70;
+            *(u_long128 *)(pDst + 0x00) = *(u_long128 *)(pLeaf + 0x120);
+            *(u_long128 *)(pDst + 0x10) = *(u_long128 *)(pLeaf + 0x130);
+            *(u_long128 *)(pDst + 0x20) = *(u_long128 *)(pLeaf + 0x140);
+            *(u_long128 *)(pDst + 0x30) = *(u_long128 *)((char *)m_unkE0 + nOff);
+            *(u_long128 *)(pDst + 0x40) = *(u_long128 *)((char *)m_unkE0 + nOff + 0x20);
+            nLeaf++;
+            if (nLeaf == 0x14) {
+                nLeaf = 0;
+            }
+            nOff += 0x40;
+        }
+        PDisplayList *pList = *(PDisplayList **)((char *)gGfxEng + 0x154C80);
+        pList->DrawFxInstances((struct tagVuFxInstance *)0x70001000, nCount, true);
+    }
+}
+
+// DRAFT: 0x001FE090 Create__22PParticleBlowingLeavesFPfPfPfifb
+// note: 107 differing lines; this in s4 (orig s0), pA/pB/pC/bFlag register mapping, loop branch 0x77 vs 0x73 words, 0x10-byte size gap; tried local for __nwa result (123)
+int PParticleBlowingLeaves::Create(float *pA, float *pB, float *pC, int nNum, float fRate, bool bFlag) {
+    if (PParticleSystem::Create(nNum, false) == 0) {
+        return 0;
+    }
+    m_unkE4 = nNum;
+    m_unk0C = 0x15;
+    m_unk30 = 0x44;
+    m_unkE0 = __nwa__FUi(nNum * 0x40);
+    if (m_unkE0 == 0) {
+        CdsAssert__FPciPc("PParticleBlowingLeaves.cpp", 0x40, "mpLeaves");
+    }
+    m_unk9F4 = fRate;
+    memcpy(m_unk9D0, pA, 0x10);
+    memcpy(m_unk9E0, pA, 0x10);
+    memcpy(m_unk9C0, pB, 0x10);
+
+    float fMax = (m_unk9C0[0] > m_unk9C0[1]) ? m_unk9C0[0] : m_unk9C0[1];
+    if (fMax <= m_unk9C0[2]) {
+        m_unk9F0 = m_unk9C0[2];
+    } else if (m_unk9C0[0] <= m_unk9C0[1]) {
+        m_unk9F0 = m_unk9C0[1];
+    } else {
+        m_unk9F0 = m_unk9C0[0];
+    }
+
+    memcpy(m_unkA00, pC, 0x10);
+    ComputeWindAxes(pC);
+    InitLeafRotations();
+    m_unkA58 = (int)(0.5f + (13456.0f + 9689.0f * ((float)rand() / 2147483648.0f)));
+    m_unkD0 = m_unkA58;
+
+    int nOff = 0;
+    for (int i = 0; i < m_unkE4; i++) {
+        char *pLeaf = (char *)m_unkE0 + nOff;
+        if (pLeaf == 0) {
+            CdsAssert__FPciPc("PParticleBlowingLeaves.cpp", 0x53, "apLeaf");
+        }
+        SpawnLeaf((tagLeaf *)pLeaf);
+        nOff += 0x40;
+    }
+
+    m_unkA40 = 900.0f;
+    m_unkA44 = 900.0f;
+    m_unkA48 = 0;
+    m_unkA4C = 0;
+    m_unkA5C = bFlag;
+    m_unk9B0 = 0.0f;
+    return 1;
 }
 
 // FUNCTION: 0x001FE2F0 __dt__22PParticleBlowingLeavesFv
