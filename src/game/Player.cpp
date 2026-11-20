@@ -31,6 +31,7 @@ extern "C" void SetHolyGround__13EntityManagerFPA4_ffb(void *, float (*)[4], flo
 extern float GRIM_AIRATTACKG;
 extern float GRIM_AIRATTACKV;
 extern float GRIM_AIRATTACKY;
+extern float GRIM_JUMPG;
 class Interface {
 public:
     char _pad000[0x10];
@@ -279,6 +280,7 @@ extern "C" void memset(void *, int, unsigned int);
 extern unsigned char GameVarTbl[0x78];
 extern int CAUGHT_TIME;
 extern int LEDGE_UP_TIME;
+extern int UP_TIME;
 extern float AttachedTimer[5];
 class MathAPI {
 public:
@@ -1875,6 +1877,66 @@ void Player::CancelMove() {
     }
 }
 
+// DRAFT: 0x0015DC70 SlashMove__6PlayerFv
+// note: 81 words differ, size 0x200 vs 0x20C; original tests a0 via sltu/beqz, re-sign-extends a0 (dsll32/dsra32) before the UP_TIME compare, and the movz s1 order differs. Tried s2/s3 order, nested ifs, bool nz, combined && (all 81).
+void Player::SlashMove() {
+    static unsigned char SlashMoves[7] = {0x00, 0x00, 0x38, 0x72, 0x0E, 0x12, 0x33};
+    int s0;
+    int s1;
+    unsigned short s2;
+    int s3;
+
+    if (m_unk250 == 0) {
+        m_unk250 = 1;
+        m_unk270 = -1;
+    }
+    s0 = (int)m_unk3C[13];
+    if (s0 < 14) {
+        if (SpinCheck()) {
+            m_unk250 = 6;
+        }
+    } else if (m_unk250 == 6) {
+        FreeJoint(5);
+        m_unk1C4 = ((Physics *)m_unk38)->m_unk11C;
+        SetAction((m_unk1D0 & 0x1000) ? 0x34 : 0x33);
+        return;
+    }
+    s1 = 0;
+    if (s0 != 0) {
+        short a0 = m_unk1C0;
+        s2 = m_unk1B2;
+        s3 = 0;
+        if (a0 != 0) {
+            if (a0 < UP_TIME) {
+                if (FastMath_Fabs__Ff(Round180__Ff(m_unk1C4 - m_unk3C[37])) < 55.0f) {
+                    s3 = 1;
+                }
+            }
+        }
+        if (s2 & 0x1000) {
+            s1 = s3 ? 5 : 4;
+        } else if (s2 & 0x8000) {
+            s1 = s3 ? 3 : 2;
+        }
+        if (m_unk250 < s1) {
+            m_unk250 = s1;
+        }
+    }
+    if (s0 < 0x19) {
+        return;
+    }
+    if (m_unk250 >= 2) {
+        ComboTarget(-1.0f, 100.0f, true);
+        SetAction((int)SlashMoves[m_unk250]);
+        m_unk270 = 0;
+        return;
+    }
+    if (s0 < 0x20) {
+        return;
+    }
+    CancelAttack((s0 < 0x28) ? 0x10 : 0x30);
+}
+
 // DRAFT: 0x0015DE80 SpinCheck__6PlayerFv
 // note: DIFF 41; a1/a2 block layout tests +75 first where the original tests -74 first with beqz and daddu in the delay slot; default-first, flipped-sense and early-return variants reached 49, 50 and 52.
 int Player::SpinCheck() {
@@ -2222,6 +2284,74 @@ void Player::GrimAirAttackMove() {
         m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(0x810002E4, 0x820004D2, 0, 0, (EntityBaseClass *)this, 1.0f, false, 0, false);
         break;
     }
+}
+
+// DRAFT: 0x0015EDA0 GrimJumpMove__6PlayerFv
+// note: 102 words differ; case 0 register allocation (constant 1, base, tier) and float setup order (neg.s/swc1/sw) differ; case 1 matches. Tried split base offset (102) and tier-first declaration order (110).
+void Player::GrimJumpMove() {
+    switch (m_unk250) {
+    case 0: {
+        m_unk250 = 1;
+        char *base = (char *)m_unk25C;
+        float *ent = (float *)(base + (m_unk268 << 3) + 0x3C);
+        int bias = m_unk1BC;
+        int tier;
+        if (bias < 0x32) {
+            tier = 0;
+        } else if (bias < 0x4B) {
+            tier = 1;
+        } else if (bias < 0x64) {
+            tier = 2;
+        } else {
+            tier = 3;
+        }
+        char *tb = base + 0x18;
+        float f2 = *(float *)(tb + tier * 8);
+        float f20 = -f2 * ent[1];
+        float vec[4];
+        vec[1] = ent[0];
+        vec[3] = 1.0f;
+        vec[0] = f20 * FastMath_Sin180__Ff(m_unk1C4);
+        vec[2] = f20 * FastMath_Cos180__Ff(m_unk1C4);
+        *(u_long128 *)m_unk38 = *(u_long128 *)vec;
+        m_unk268 = 2;
+        break;
+    }
+    case 1: {
+        float *m = (float *)m_unk38;
+        float v = m[1];
+        float g;
+        if (v <= 0.0f) {
+            g = GRIM_JUMPG;
+        } else {
+            g = *(float *)((char *)m_unk25C + 0x38);
+        }
+        v = v - g * *(float *)(gEng + 0x1E8);
+        m[1] = v;
+        int tier;
+        if (m_unk1BC < 0x32) {
+            tier = 0;
+        } else if (m_unk1BC < 0x4B) {
+            tier = 1;
+        } else if (m_unk1BC < 0x64) {
+            tier = 2;
+        } else {
+            tier = 3;
+        }
+        float t0 = *(float *)((char *)m_unk25C + 0x18 + tier * 8);
+        float t2 = *(float *)((char *)m_unk25C + 0x1C + tier * 8);
+        if (m_unk1C8 <= t0) {
+            m_unk1C8 = m_unk1C8 - t2;
+        } else {
+            m_unk1C8 = m_unk1C8 + t2;
+        }
+        float *p = m_unk3C ? (float *)((char *)m_unk3C + 0x90) : (float *)((char *)this + 0x1A0);
+        ((Physics *)m_unk38)->SetVelocity(p[1], m_unk1C8);
+        break;
+    }
+    }
+    Physics *phys = (Physics *)m_unk38;
+    phys->m_unk11C = Round180__Ff(m_unk1C4);
 }
 
 // note: 36 words; the tier-zero block is inline where the original places it out of line, and the m_unk260 compares are ordered differently (original uses beq to the fp[13] block). Local fp with tier != 0 outer is the best form (36); tier == 0 outer gave 41.

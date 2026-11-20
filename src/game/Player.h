@@ -176,7 +176,8 @@ public:
     char _pad1B8[0x1BA - 0x1B8];
     unsigned short m_unk1BA; // 0x1BA nonzero keeps ReleaseCheck counting the caught state
     int m_unk1BC;          // 0x1BC compared with 0x32 and 0x64 by GetGroundAction
-    char _pad1C0[0x1C4 - 0x1C0];
+    short m_unk1C0;         // 0x1C0 signed halfword read by SlashMove
+    char _pad1C2[0x1C4 - 0x1C2];
     float m_unk1C4;         // 0x1C4 set from Physics float 0x11C by CatchIdleMove
     float m_unk1C8;         // 0x1C8 running float, updated by JogLandMove
     char _pad1CC[0x1D0 - 0x1CC];
@@ -277,6 +278,8 @@ public:
     int m_unk23D4;          // 0x23D4 set to 5 by InitAttachableJoints
     void FinishCutScene(PMeshNode *arg0, PMat4 *arg1, int arg2);
     void GrimAirAttackMove();
+    void SlashMove();
+    void GrimJumpMove();
     void GrimThrowMove();
     void SphereCheck();
     void OnTriggerCheck();
