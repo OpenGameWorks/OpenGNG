@@ -22,6 +22,7 @@ public:
     void InitFrustrum(PMat4 *pMat, float (*pVec)[4]);
     void CullMainWorld();
     int LoadEditedInstanceData(PPakFile *pFile);
+    PMeshNode *LoadMeshNodeHierarchy(PPakFile *pFile, PArray *pArr, ePsx2FileVersion nVersion);
     void AttachFxTriggersToNodes(PMeshNode *pNode, tagParticleFxTriggerData *pData, unsigned int nCount);
     int LoadFxTriggerData(PPakFile *pFile, tagParticleFxTriggerData **ppData, unsigned int &nCount);
     void UpdateAnimate(PMNode *pNode);
