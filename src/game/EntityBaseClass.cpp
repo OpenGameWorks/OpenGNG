@@ -194,7 +194,11 @@ public:
     char _pad00A[0x46];
 };
 
+namespace Vu0Legacy {
 extern "C" void sceVu0ScaleVector(float *pDst);
+}
+extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
+extern "C" float sqrtf(float x);
 extern "C" void sceVu0ApplyMatrix(float *dst, float (*m)[4], float *src);
 extern "C" void sceVu0AddVector(float *pDst, float *pSrc0, float *pSrc1);
 extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
@@ -895,10 +899,8 @@ void EntityBaseClass::RotateTo(float arg0, float arg1) {
     }
 }
 
-static void NormalizedBoxScaleRow(float *dst, float *src, float s);
-
 // DRAFT: 0x0014C850 SkeletonCollision__15EntityBaseClassFP6PMNodePA2_A4_fRA4_A4_fUc
-// note: scale step uses NormalizedBoxScaleRow (sceVu0ScaleVector is one-argument here, the original calls the three-argument func_104CA8); register and branch order not yet compared.
+// note: 110 differing lines; prologue frame is -0xF0 (sd ra 0x60) vs original -0x100 (sd ra 0x70), original keeps an int accumulator in s6 with one shared exit (ret-accumulator variant tried: 112, reverted); arg save order and local order differ.
 int EntityBaseClass::SkeletonCollision(PMNode *arg0, float (*arg1)[2][4], float (&arg2)[4][4], unsigned char arg3) {
     float local2x4[2][4];
     float local4x4[4][4];
@@ -937,12 +939,12 @@ int EntityBaseClass::SkeletonCollision(PMNode *arg0, float (*arg1)[2][4], float 
             sceVu0SubVector(f0, f0, e0);
             f0[1] = 0.0f;
             sceVu0Normalize(f0, f0);
-            NormalizedBoxScaleRow(f0, f0, (*arg1)[1][0]);
+            sceVu0ScaleVector(f0, f0, (*arg1)[1][0]);
         } else {
             sceVu0SubVector(e0, e0, f0);
             e0[1] = 0.0f;
             sceVu0Normalize(e0, e0);
-            NormalizedBoxScaleRow(e0, e0, (*box)[1][0]);
+            sceVu0ScaleVector(e0, e0, (*box)[1][0]);
         }
         sceVu0AddVector(mHitPos__15EntityBaseClass, e0, f0);
         mHitPos__15EntityBaseClass[3] = 1.0f;
@@ -1019,36 +1021,34 @@ int EntityBaseClass::MeshNodeCollision(PMNode *arg0, EntityBaseClass *arg1) {
 }
 
 // DRAFT: 0x0014CF80 NormalizedBox__FPA2_A4_fRA2_A4_fPA4_A4_fRA4_A4_f
-// note: sqc2 vf0 store and c1 0x4 (divide) are not expressible; the row scale uses a C helper instead of sceVu0ScaleVector.
-static void NormalizedBoxScaleRow(float *dst, float *src, float s) {
-    int k;
-    for (k = 0; k < 4; k++) {
-        dst[k] = src[k] * s;
+// note: 41 differing lines; sqrt result lands in f1 not f0 and zero-compare operands are reversed (c.eq.s $f1,$f0 vs $f0,$f1); tried !(d!=0), else-branch restructure (57), block temp, folded sqrt, 1.0f!=d, 0.0f==d, len temp; sqc2 in asm.
+#define NORMALIZEDBOX_ROW(I)                                    \
+    d = sceVu0InnerProduct(arg2[0][I], arg2[0][I]);             \
+    if (d != 1.0f) {                                            \
+        if (d == 0.0f) {                                        \
+            return 0;                                           \
+        }                                                       \
+        d = sqrtf(d);                                           \
+        arg1[1][I] *= d;                                        \
+        sceVu0ScaleVector(arg3[I], arg2[0][I], 1.0f / d);       \
+    } else {                                                    \
+        *(u_long128 *)arg3[I] = *(u_long128 *)arg2[0][I];       \
     }
-}
 
 int NormalizedBox(float (*arg0)[2][4], float (&arg1)[2][4], float (*arg2)[4][4], float (&arg3)[4][4]) {
     float len;
-    int i;
+    float d;
+    float *pRow0;
 
     sceVu0ApplyMatrix(arg3[3], arg2[0], (float *)arg0);
-    arg1[0][0] = 0.0f;
-    arg1[0][1] = 0.0f;
-    arg1[0][2] = 0.0f;
-    arg1[0][3] = 1.0f;
-    *(u_long128 *)arg1[1] = *(u_long128 *)arg0[1];
-    for (i = 0; i < 3; i++) {
-        len = sceVu0InnerProduct(arg2[0][i], arg2[0][i]);
-        if (len != 1.0f) {
-            if (len == 0.0f) {
-                return 0;
-            }
-            arg1[1][i] *= len;
-            NormalizedBoxScaleRow(arg3[i], arg2[0][i], 1.0f / len);
-        } else {
-            *(u_long128 *)arg3[i] = *(u_long128 *)arg2[0][i];
-        }
+    pRow0 = &arg1[0][0];
+    asm {
+        sqc2 vf0, 0x0(pRow0)
     }
+    *(u_long128 *)arg1[1] = *(u_long128 *)(*arg0)[1];
+    NORMALIZEDBOX_ROW(0)
+    NORMALIZEDBOX_ROW(1)
+    NORMALIZEDBOX_ROW(2)
     return 1;
 }
 
@@ -1057,7 +1057,7 @@ void EntityBaseClass::RadiusAdjust(float arg0, float (*arg1)[4]) {
     float v[4];
     unsigned char *p;
 
-    sceVu0ScaleVector(v);
+    Vu0Legacy::sceVu0ScaleVector(v);
     v[3] = 0.0f;
     sceVu0AddVector(v, v, (float *)(this->m_unk3C + 0x80));
     p = (unsigned char *)this->m_unk3C;
