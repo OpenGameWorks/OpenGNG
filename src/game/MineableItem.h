@@ -11,13 +11,23 @@ class MineableItem {
 public:
     int OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3);
     void SetEditableVars(char *arg0);
+    void Execute();
 
     void *m_unk0;               // 0x000 vtable pointer (inherited from EntityBaseClass)
-    char _pad004[0x103 - 0x04];
+    char _pad004[0x20 - 0x04];
+    int m_unk20;                // 0x020 state switched on by Execute
+    char _pad024[0x38 - 0x24];
+    void *m_unk38;              // 0x038 Physics object created by Execute
+    void *m_unk3C;              // 0x03C target object with a virtual Slot2
+    char _pad040[0xE9 - 0x40];
+    unsigned char m_unkE9;      // 0x0E9 flag tested by Execute
+    char _pad0EA[0x103 - 0xEA];
     unsigned char m_unk103;     // 0x103 set to 0xFF by SetEditableVars
     char _pad104[0x10C - 0x104];
     unsigned int m_unk10C;      // 0x10C flags; bit 0x02000000 set by SetEditableVars, 0x02000000 cleared on hit
-    char _pad110[0x1B0 - 0x110];
+    char _pad110[0x160 - 0x110];
+    unsigned char m_unk160;     // 0x160 flag tested by Execute
+    char _pad161[0x1B0 - 0x161];
     int m_unk1B0;               // 0x1B0 editable variable block (16 bytes copied by SetEditableVars)
     int m_unk1B4;               // 0x1B4
     int m_unk1B8;               // 0x1B8 editable time, zero disables the timer reset
