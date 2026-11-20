@@ -27,6 +27,7 @@ extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
 extern "C" float FastMath_Fabs__Ff(float fValue);
 extern "C" float sqrtf(float x);
 extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*arg0)[4], float (*arg1)[4]);
+extern "C" float atanf(float x);
 
 // Placeholder for the object at Bridge+0x3C: only the three words copied by Render are placed.
 class BridgeSource {
@@ -197,6 +198,93 @@ void Bridge::LeanOnSides() {
         tmp[2] = f3;
         *(u_long128 *)((char *)*(void **)((char *)this + off + 0x1E4) + 0x90) = *(u_long128 *)tmp;
         ((PMNode *)*(void **)((char *)this + off + 0x1E4))->m_unk3E |= 8;
+    }
+}
+
+// DRAFT: 0x001DCF40 RunPhysics__6BridgeFv
+// note: 269 words; frame 0x120 vs 0x110; loop 1 keeps s0/s1 allocation not a1/s5/s6/s7; off/roff and else-closed variants gave 281, reverted.
+void Bridge::RunPhysics() {
+    int closed = 0;
+    int i;
+    int off;
+    for (i = 0; i < m_unk330; i++) {
+        float tmp[4];
+        PMNode *node = (PMNode *)m_unk1E4[i];
+        char *rec = (char *)this + (i << 5);
+        tmp[0] = node->m_unk80[0];
+        static float aDropDist = 1.5f;
+        tmp[1] = m_unk1C0[i] + *(float *)(rec + 0x224) * aDropDist;
+        tmp[2] = node->m_unk80[2];
+        *(u_long128 *)((char *)node + 0x80) = *(u_long128 *)tmp;
+        node->m_unk3E |= 8;
+        if (*(float *)(rec + 0x228) == 0.0f) {
+            closed++;
+        } else {
+            float d = FastMath_Fabs__Ff(*(float *)((char *)this + (m_unk334 << 5) + 0x224));
+            float *m220 = (float *)(rec + 0x220);
+            float *m224 = (float *)(rec + 0x224);
+            float *m228 = (float *)(rec + 0x228);
+            if (*m220 > *m224) {
+                *m224 = *m224 + *m228 * (1.0f - d);
+            } else {
+                *m224 = *m224 - *m228 * (1.0f - d);
+            }
+            if (FastMath_Fabs__Ff(*m224 - *m220) < 1e-4f + *m228) {
+                float tmp2[4];
+                static float aTargetkill = 0.8f;
+                *m220 = *m220 * aTargetkill;
+                static float aTargetAccDieTol = 1e-5f;
+                if (FastMath_Fabs__Ff(*m220) < aTargetAccDieTol) {
+                    *m220 = 0.0f;
+                    *m224 = 0.0f;
+                    *m228 = 0.0f;
+                    tmp2[0] = node->m_unk80[0];
+                    tmp2[1] = m_unk1C0[i];
+                    tmp2[2] = node->m_unk80[2];
+                    *(u_long128 *)((char *)node + 0x80) = *(u_long128 *)tmp2;
+                    node->m_unk3E |= 8;
+                }
+                *m220 = *m220 * -1.0f;
+                *m228 = FastMath_Fabs__Ff(*m220 / m_unk348);
+            }
+        }
+    }
+    int flag = 0;
+    if (closed == m_unk330) {
+        m_unk340 = 0;
+    }
+    off = 0;
+    for (i = 0; i < m_unk330; i++, off += 4) {
+        char *p = (char *)this + off;
+        if (i == m_unk330 / 2) {
+            static float aNumFrames = 30.0f;
+            float tmp3[4];
+            PMNode *node = *(PMNode **)(p + 0x1E4);
+            tmp3[0] = node->m_unk90[0];
+            tmp3[1] = node->m_unk90[1];
+            tmp3[2] = node->m_unk90[2] - node->m_unk90[2] / aNumFrames;
+            *(u_long128 *)((char *)node + 0x90) = *(u_long128 *)tmp3;
+            node->m_unk3E |= 8;
+            flag = 1;
+        } else {
+            PMNode *node0 = *(PMNode **)(p + 0x1E4);
+            PMNode *other = flag ? *(PMNode **)(p + 0x1E0) : *(PMNode **)(p + 0x1E8);
+            float slope = -(node0->m_unk80[1] - other->m_unk80[1]) / (node0->m_unk80[2] - other->m_unk80[2]);
+            if (FastMath_Fabs__Ff(slope) <= 1.0f) {
+                float tmp4[4];
+                float ang = atanf(slope) * 57.2957763671875f;
+                if (ang < -180.0f) {
+                    ang = ang + 360.0f;
+                } else if (ang > 180.0f) {
+                    ang = ang - 360.0f;
+                }
+                tmp4[0] = ang;
+                tmp4[1] = node0->m_unk90[1];
+                tmp4[2] = node0->m_unk90[2];
+                *(u_long128 *)((char *)node0 + 0x90) = *(u_long128 *)tmp4;
+                node0->m_unk3E |= 8;
+            }
+        }
     }
 }
 
