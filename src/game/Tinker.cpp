@@ -6,7 +6,10 @@ class EntityBaseClass;
 class EntityManager;
 class PArray;
 class MathAPI;
-extern "C" float DistanceXZ__7MathAPIFPA4_fPA4_f(MathAPI *, float (*)[4]);
+extern "C" float DistanceXZ__7MathAPIFPA4_fPA4_f(float (*)[4], float (*)[4]);
+// Apparition scratch list used by GetAllActiveApparitionsInRadius (same layout as Innocent.cpp).
+struct TempApparitionArray { int m_count; int m_unk04; unsigned int *m_pData; char _pad0C[4]; };
+extern TempApparitionArray mTempArray__15EntityBaseClass;
 // The second argument is not set by the caller; the original leaves a1 untouched.
 extern "C" void *InstanceIsValid__15EntityBaseClassFUi(EntityBaseClass *pEntity);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
@@ -48,6 +51,9 @@ extern "C" float FastMath_Fabs__Ff(float f);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void CheckVariable__15EntityBaseClassFii(EntityBaseClass *pThis, int nValue, int nIndex);
 extern int mbHard__15EntityBaseClass;
+extern "C" void FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(void *pThis, EntityBaseClass *pOther);
+extern "C" void CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(void *pThis, float (*pBox)[4], int nObjType, int nWeaponType, bool bFlag);
+extern "C" void SetValue__12HudBossMeterFs(void *pThis, short nValue);
 
 // Apparition objects are reached through a virtual table; slot 12 sits at offset 0x30.
 class ApparitionVirtual {
@@ -176,14 +182,14 @@ bool Tinker::TrappedEntityRemoved() {
 // FUNCTION: 0x00209540 IsBadWaypoint__6TinkerFUi
 unsigned int Tinker::IsBadWaypoint(unsigned int arg0) {
     int off;
-    unsigned int n = m_unk2D0;
+    unsigned int n = m_unk2D0.m_unk0;
     unsigned int i;
     i = 0;
     off = 0;
     int v;
     goto test;
 body:
-    v = (i < n) ? *(int *)((char *)m_unk2D8 + off) : 0;
+    v = (i < n) ? *(int *)((char *)m_unk2D0.m_unk8 + off) : 0;
     if (v == (int)arg0) {
         return 1;
     }
@@ -226,9 +232,9 @@ int Tinker::GetClosestWaypoint(float (&pos)[4], bool bFlag) {
                 }
             }
             if (m_unk3C != 0) {
-                d = DistanceXZ__7MathAPIFPA4_fPA4_f((MathAPI *)(m_unk3C + 0x80), &p);
+                d = DistanceXZ__7MathAPIFPA4_fPA4_f((float (*)[4])(m_unk3C + 0x80), &p);
             } else {
-                d = DistanceXZ__7MathAPIFPA4_fPA4_f((MathAPI *)((char *)this + 0x190), &p);
+                d = DistanceXZ__7MathAPIFPA4_fPA4_f((float (*)[4])((char *)this + 0x190), &p);
             }
             if (d < fBest) {
                 *(u_long128 *)pos = *(u_long128 *)p;
@@ -270,11 +276,11 @@ int Tinker::GetNextPosition(float (&pos)[4]) {
             pos[0] = pWp[0];
             pos[1] = pWp[1];
             pos[2] = pWp[2];
-            MathAPI *pTarget;
+            float (*pTarget)[4];
             if (m_unk3C != 0) {
-                pTarget = (MathAPI *)(m_unk3C + 0x80);
+                pTarget = (float (*)[4])(m_unk3C + 0x80);
             } else {
-                pTarget = (MathAPI *)m_unk190;
+                pTarget = (float (*)[4])m_unk190;
             }
             return (DistanceXZ__7MathAPIFPA4_fPA4_f(pTarget, &pos) > 1.0f) ? 1 : 0;
         }
@@ -303,17 +309,68 @@ int Tinker::AwardCheck() {
 
 // FUNCTION: 0x00209930 IsStalled__6TinkerFfPA4_f
 int Tinker::IsStalled(float fDist, float (*arg1)[4]) {
-    MathAPI *pTarget;
+    float (*pTarget)[4];
     float d1;
     float d2;
     if (m_unk3C != 0) {
-        pTarget = (MathAPI *)(m_unk3C + 0x80);
+        pTarget = (float (*)[4])(m_unk3C + 0x80);
     } else {
-        pTarget = (MathAPI *)m_unk190;
+        pTarget = (float (*)[4])m_unk190;
     }
-    d1 = DistanceXZ__7MathAPIFPA4_fPA4_f((MathAPI *)m_unk250, arg1);
+    d1 = DistanceXZ__7MathAPIFPA4_fPA4_f((float (*)[4])m_unk250, arg1);
     d2 = DistanceXZ__7MathAPIFPA4_fPA4_f(pTarget, arg1);
     return ((d1 - d2) <= fDist) ? 1 : 0;
+}
+
+// FUNCTION: 0x00209C30 FindClosestEnemy__6TinkerFPA4_fQ215EntityBaseClass9LoadClassUi
+void *Tinker::FindClosestEnemy(float (*pBox)[4], EntityBaseClass::LoadClass eLoadClass, unsigned int nFlags) {
+    EntityBaseClass *pNearestApparition;
+    EntityBaseClass *pSecond;
+    float fNearest;
+    float fSecond;
+    unsigned int nHandle;
+    EntityBaseClass *pApp;
+    float fDist;
+    float (*pPos)[4];
+    int nIdx;
+
+    if (mTempArray__15EntityBaseClass.m_pData != 0) {
+        mTempArray__15EntityBaseClass.m_count = 0;
+        mTempArray__15EntityBaseClass.m_unk04 = 0;
+    }
+    GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, eLoadClass, (PArray *)&mTempArray__15EntityBaseClass, pBox, m_unk1D0[3], nFlags, true, false);
+    mTempArray__15EntityBaseClass.m_unk04 = 0;
+    fNearest = 99999.0f;
+    fSecond = 99999.0f;
+    pNearestApparition = 0;
+    pSecond = 0;
+    nHandle = (mTempArray__15EntityBaseClass.m_count != 0) ? mTempArray__15EntityBaseClass.m_pData[0] : 0;
+    while (nHandle != 0) {
+        pApp = (EntityBaseClass *)GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, nHandle);
+        if (pApp != 0 && pApp->m_unk163 != 6 && pApp->m_unk3C != 0) {
+            pPos = (pApp->m_unk3C != 0) ? (float (*)[4])(pApp->m_unk3C + 0x80) : (float (*)[4])((char *)pApp + 0x190);
+            fDist = DistanceXZ__7MathAPIFPA4_fPA4_f(pBox, pPos);
+            if (fDist < fNearest) {
+                fSecond = fNearest;
+                pSecond = pNearestApparition;
+                fNearest = fDist;
+                pNearestApparition = pApp;
+            } else if (fDist < fSecond) {
+                fSecond = fDist;
+                pSecond = pApp;
+            }
+        }
+        nIdx = mTempArray__15EntityBaseClass.m_unk04 + 1;
+        mTempArray__15EntityBaseClass.m_unk04 = nIdx;
+        nHandle = ((unsigned int)nIdx < (unsigned int)mTempArray__15EntityBaseClass.m_count) ? mTempArray__15EntityBaseClass.m_pData[mTempArray__15EntityBaseClass.m_unk04] : 0;
+    }
+    if (pSecond != 0) {
+        CDS_ASSERT(0x91B, pNearestApparition);
+        if (pNearestApparition->m_unk04 == *(int *)((char *)*(void **)((char *)mpEntMgr__15EntityBaseClass + 0x505C) + 0x1CC) || pNearestApparition->m_unk04 == m_unk2E8) {
+            pNearestApparition = pSecond;
+        }
+    }
+    return pNearestApparition;
 }
 
 // DRAFT: 0x00209EB0 EnemiesInCheckRadius__6TinkerFv
@@ -481,6 +538,54 @@ void Tinker::OnTimerEvent(unsigned int arg0) {
     }
 }
 
+// DRAFT: 0x0020A3E0 OnHitEvent__6TinkerFP15EntityBaseClassiUiUi
+// note: 96 words differ; the 0x1FE block is 27 words in the original and 23 here, so the branch offsets and the shared jal/delay-slot placement shift. Tried: flat else-if (99), switch with fall-through (103), 6 tested before 16 (98).
+int Tinker::OnHitEvent(EntityBaseClass *pOther, int arg1, unsigned int arg2, unsigned int arg3) {
+    if (arg2 == 0x1FE) {
+        if (m_unk20 != 10) {
+            if (m_unk20 == 16 || m_unk20 == 6) {
+                SetState__15EntityBaseClassFi(this, 0xD);
+            } else {
+                return 5;
+            }
+        } else {
+            SetState__15EntityBaseClassFi(this, 0x14);
+        }
+        m_unk0E8 = 3;
+        return 1;
+    }
+    int nPrevState = m_unk20;
+    if ((*(unsigned int *)((char *)pOther + 0x10C) & 1) != 0) {
+        return (*(int *)((char *)pOther + 0x8) == 3) ? 5 : 4;
+    }
+    if (nPrevState == 3 || nPrevState == 4) {
+        return 5;
+    }
+    if (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) != 0) {
+        return 5;
+    }
+    FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(this, pOther);
+    CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(this, 0, 3, 0, false);
+    m_unk1B8 -= arg1;
+    if (m_unk1B8 < 0) {
+        m_unk1B8 = 0;
+    }
+    bool bFlag = (m_unk1B0 == 0 || m_unk1B0 == 1);
+    if (bFlag) {
+        SetValue__12HudBossMeterFs(gInterface + 0x1980, (short)m_unk1B8);
+    }
+    if (m_unk1B8 > 0) {
+        m_unk29C = nPrevState;
+        SetState__15EntityBaseClassFi(this, 3);
+    } else {
+        SetState__15EntityBaseClassFi(this, 4);
+        if (bFlag) {
+            *(unsigned char *)(*(char **)((char *)mpEntMgr__15EntityBaseClass + 0x505C) + 0x26D) = 1;
+        }
+    }
+    return 1;
+}
+
 // DRAFT: 0x0020A5A0 OnTouchEvent__6TinkerFP15EntityBaseClass
 // note: 28 differing lines; the vtable call at 0x3C matches. The original branches each guard with beqz to the shared epilogue (plus a `b` after the 0x5058 check), while MW emits bnez/beqz to a different exit. Tried early-return guards (about 30), a merged || (about 30), a flat && chain (28, kept), and nested ifs (28).
 void Tinker::OnTouchEvent(EntityBaseClass *pOther) {
@@ -504,11 +609,10 @@ void Tinker::OnDestroyEvent() {
 }
 
 // DRAFT: 0x0020C160 __ct__6TinkerFv
-// note: 49 words differ; original keeps this in a 0x1C(sp) slot with frame 0x20 and no s0 save, ours uses s0 with frame 0x10. Tried: volatile pSelf (55), integer-bit float stores (49, no change), kept float literals.
+// note: 17 words differ; frame, this spill at 0x1C(sp) and member store order match, but the original runs the EntityBaseClass ctor before the implicit PArray construction and ours does the reverse (base ctor is a body call). Tried: volatile pSelf (55), integer-bit float stores (49), PArray as real member (17).
 Tinker::Tinker() {
     __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 6, 0);
     *(unsigned char **)this = __vt__6Tinker;
-    __ct__6PArrayFv((char *)this + 0x2D0);
     m_unk2F0 = 0;
     m_unk0D4 = 0;
     m_unk2C4 = -1;

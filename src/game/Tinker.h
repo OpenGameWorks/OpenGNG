@@ -1,7 +1,8 @@
 #ifndef TINKER_H
 #define TINKER_H
 
-class EntityBaseClass;
+#include "EntityBaseClass.h"
+#include "PArray.h"
 
 class Tinker {
 public:
@@ -16,6 +17,7 @@ public:
     int AwardCheck();
     void SetAsEnemyTarget(unsigned int arg0, bool arg1);
     int IsStalled(float fDist, float (*arg1)[4]);
+    void *FindClosestEnemy(float (*pBox)[4], EntityBaseClass::LoadClass eLoadClass, unsigned int nFlags);
     int EnemiesInCheckRadius();
     void ActivateAttackingEnemies();
     int ActivatedEnemiesDead();
@@ -23,6 +25,7 @@ public:
     void OnTouchEvent(EntityBaseClass *pOther);
     void OnDestroyEvent();
     void OnTimerEvent(unsigned int arg0);
+    int OnHitEvent(EntityBaseClass *pOther, int arg1, unsigned int arg2, unsigned int arg3);
 
     char _pad000[0x0C];
     int m_unk00C;                       // 0x00C
@@ -32,7 +35,9 @@ public:
     char *m_unk3C;                      // 0x03C
     char _pad040[0xD4 - 0x40];
     int m_unk0D4;                       // 0x0D4
-    char _pad0D8[0x104 - 0xD8];
+    char _pad0D8[0xE8 - 0xD8];
+    unsigned char m_unk0E8;             // 0x0E8
+    char _pad0E9[0x104 - 0xE9];
     float m_unk104;                     // 0x104
     float m_unk108;                     // 0x108
     char _pad10C[0x140 - 0x10C];
@@ -76,7 +81,8 @@ public:
     int m_unk28C;                       // 0x28C
     int m_unk290;                       // 0x290
     int m_unk294;                       // 0x294
-    char _pad298[0x2A0 - 0x298];
+    char _pad298[0x29C - 0x298];
+    int m_unk29C;                       // 0x29C
     unsigned char m_unk2A0;             // 0x2A0
     char _pad2A1[0x2A4 - 0x2A1];
     int m_unk2A4;                       // 0x2A4
@@ -89,14 +95,11 @@ public:
     int m_unk2C4;                       // 0x2C4
     unsigned int m_unk2C8;              // 0x2C8
     unsigned int m_unk2CC;              // 0x2CC
-    unsigned int m_unk2D0;              // 0x2D0
-    char _pad2D4[0x2D8 - 0x2D4];
-    int *m_unk2D8;                      // 0x2D8, pointer to waypoint array
-    char _pad2DC[0x2E0 - 0x2DC];
+    PArray m_unk2D0;                    // 0x2D0, waypoint array; m_unk2D0.m_unk8 is its storage at 0x2D8
     unsigned char m_unk2E0;             // 0x2E0
     char _pad2E1[0x2E4 - 0x2E1];
     unsigned int m_unk2E4;              // 0x2E4
-    char _pad2E8[0x2EC - 0x2E8];
+    int m_unk2E8;                       // 0x2E8
     int m_unk2EC;                       // 0x2EC
     int m_unk2F0;                       // 0x2F0
     unsigned char m_unk2F4;             // 0x2F4
