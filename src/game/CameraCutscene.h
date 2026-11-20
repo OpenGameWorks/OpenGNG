@@ -23,6 +23,7 @@ public:
     ~CameraCutManager();
 
     void *GetFirstCutCamera(unsigned int arg0);
+    void *GetNextCutCamera(unsigned int nInstance, unsigned int nValue);
     int CutCameraMovesPlayer(unsigned int arg0);
     void StartCutCamera(unsigned int arg0, bool bArg);
     int ProcessCutCameras();
@@ -41,7 +42,7 @@ public:
     char *m_unk74;              // 0x074
     char _pad078[4];
     char *m_unk7C;              // 0x07C
-    int m_unk80;                // 0x080
+    char *m_unk80;              // 0x080
     unsigned char m_unk84;      // 0x084
     unsigned char m_unk85;      // 0x085
     char _pad086[2];
