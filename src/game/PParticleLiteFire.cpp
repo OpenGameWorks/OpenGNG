@@ -1,5 +1,6 @@
 #include "types.h"
 #include "PParticleLiteFire.h"
+#include "PMat4.h"
 
 // TODO(header): foreign declarations
 extern "C" void *__ct__15PParticleSystemFv(void *);
@@ -24,6 +25,23 @@ void PParticleLiteFire::FadeAndDie(unsigned int nArg) {
     if (nArg >= 2U) {
         m_unk17 = 0;
     }
+}
+
+// FUNCTION: 0x001C9F30 ModifyPosition__17PParticleLiteFireFP5PMat4
+void PParticleLiteFire::ModifyPosition(PMat4 *pMat) {
+    pMat->MulVector(m_unk170, (float *)_pad0E0);
+    if (m_unk191) {
+        unsigned int i = 0;
+        if (m_unk160) {
+            for (i = 0; i < m_unk04; i++) {
+                ((u_long128 *)m_unk160)[i] = *(u_long128 *)m_unk170;
+            }
+            m_unk191 = 0;
+        }
+    }
+    m_unk80 = m_unk170[0];
+    m_unk84 = m_unk170[1] + 0.5f * m_unk140;
+    m_unk88 = m_unk170[2];
 }
 
 // FUNCTION: 0x001C9FE0 SetPosition__17PParticleLiteFireFPfPf

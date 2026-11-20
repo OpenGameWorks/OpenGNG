@@ -4,6 +4,8 @@
 #include "types.h"
 #include "PParticleSystem.h"
 
+class PMat4;
+
 // Lite fire emitter. The PParticleSystem base occupies the first 0xE0 bytes;
 // the members below start at 0xE0. The vtable (__vt__17PParticleLiteFire) is
 // stored by the constructor and destructor, so the class declares no virtuals.
@@ -14,8 +16,9 @@ public:
     void Enable(bool bEnable);
     void FadeAndDie(unsigned int nArg);
     void SetPosition(float *pPos, float *pUnused);
+    void ModifyPosition(PMat4 *pMat);
 
-    char _pad0E0[0x60];         // 0x0E0
+    char _pad0E0[0x60];         // 0x0E0 MulVector output written by ModifyPosition
     float m_unk140;             // 0x140 scales the y offset in SetPosition
     char _pad144[0x1C];         // 0x144
     void *m_unk160;             // 0x160 buffer filled by SetPosition, released by the destructor
