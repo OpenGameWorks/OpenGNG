@@ -162,7 +162,10 @@ def resolve(obj: Obj, code: bytearray, rels, addr: int, glob, byindex, orel, ima
         if typ == 4:
             v = (w & 0xFC000000) | ((((w & 0x3FFFFFF) << 2) + s) >> 2 & 0x3FFFFFF)
         elif typ == 5:
-            lo = next((t for t in targets[i + 1:] if t[1] == 6 and t[2] == s), None)
+            # The partner LO16 uses the register the LUI loaded as its base.
+            rt = (w >> 16) & 0x1F
+            lo = next((t for t in targets[i + 1:] if t[1] == 6 and t[2] == s
+                       and (struct.unpack_from("<I", code, t[0])[0] >> 21) & 0x1F == rt), None)
             lo_w = struct.unpack_from("<I", code, lo[0])[0] if lo else 0
             ahl = ((w & 0xFFFF) << 16) + ((lo_w & 0xFFFF) ^ 0x8000) - 0x8000
             val = s + ahl
