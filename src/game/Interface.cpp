@@ -14,6 +14,8 @@ extern "C" void CopyMNode__6PMNodeFR6PMNodeb(PMNode *pThis, PMNode *src, bool fl
 extern "C" void DestroyChildren__6PMNodeFv(PMNode *pThis);
 extern PMNode *mpNumbers__7GameHud[10];
 extern float HINT_X;
+extern "C" void __dt__11FontManagerFv(void *pThis, short nFlag);
+extern "C" void __dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" int sprintf(char *buf, const char *fmt, ...);
 class Player {
 public:
@@ -688,6 +690,59 @@ void HudSuper::UpdateBar(int arg0) {
         } while (pNode != 0);
     }
     ((PMNode *)m_unk4)->Slot04(0.0f, 0.0f, 0, 8, false);
+}
+
+// DRAFT: 0x001406B0 Reset__8HudSuperFv
+// note: first draft; the surplus/deficit gate order and the tail UpdateBar call are unverified.
+void HudSuper::Reset() {
+    PArray *pList;
+    PMNode *pLast;
+    PMNode *pCap;
+    unsigned int nTarget;
+    float fStep;
+    int nValue;
+
+    pList = (PArray *)((char *)m_unk4 + 0x14);
+    pLast = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[pList->m_unk0 - 1] : 0;
+    ((pLast != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x9CE, "pLast"));
+    pCap = pLast->Find(0x8CF87F7E);
+    ((pCap != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x9D0, "pCap"));
+    nTarget = *(unsigned int *)((char *)mpPlayerData__7GameHud + 0x38);
+    ((nTarget != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x9D3, "iMeter"));
+    if (nTarget < pList->m_unk0) {
+        ((PArray *)((char *)pLast + 0x14))->Remove(pCap);
+        while (nTarget < pList->m_unk0) {
+            delete (PDeletable *)pList->m_unk8[pList->m_unk0 - 1];
+            pList->m_unk0--;
+        }
+        pLast = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[pList->m_unk0 - 1] : 0;
+        ((PArray *)((char *)pLast + 0x14))->Add(pCap);
+    } else if (pList->m_unk0 < nTarget) {
+        fStep = pLast->m_unk80;
+        while (pList->m_unk0 < nTarget) {
+            PMNode *pNew;
+            pNew = (PMNode *)__nw__FUi(0x100);
+            if (pNew != 0) {
+                *(void **)pNew = __vt__9PResource;
+                *(int *)((char *)pNew + 4) = 0;
+                *(void **)pNew = __vt__6PMNode;
+                __ct__6PArrayFv((char *)pNew + 0x14);
+                sceVu0UnitMatrix((char *)pNew + 0x40);
+                __ct__6PArrayFv((char *)pNew + 0xD8);
+                InitMembers__6PMNodeFv(pNew);
+            }
+            ((pNew != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x9E4, "pTmp"));
+            CopyMNode__6PMNodeFR6PMNodeb(pNew, pLast, true);
+            fStep += 3.3f;
+            pNew->m_unk80 = fStep;
+            pList->Add(pNew);
+        }
+        pLast = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[pList->m_unk0 - 1] : 0;
+        ((PArray *)((char *)pLast + 0x14))->Add(pCap);
+    }
+    nValue = *(int *)((char *)mpPlayerData__7GameHud + 0x3C);
+    m_unkC = (short)nValue;
+    UpdateBar(nValue);
 }
 
 // FUNCTION: 0x1411C0 AbilityScreen__9InterfaceFv
@@ -2168,6 +2223,115 @@ void Interface::Init() {
     ((FontManager *)((char *)this + 0x80))->Init();
     ((PArray *)((char *)this + 0x404))->Allocate(8);
     InitMatrices();
+}
+
+// FUNCTION: 0x00145A10 __dt__9InterfaceFv
+Interface::~Interface() {
+    if (m_unk428 != 0) {
+        delete (PDeletable *)m_unk428;
+        m_unk428 = 0;
+    }
+    Destroy();
+    __dt__6PArrayFv((char *)this + 0x404, -1);
+    {
+        void *pElem = &m_unk2E8;
+        if (pElem != 0) {
+            m_unk2E8 = __vt__12HudInventory;
+            if (pElem != 0) {
+                m_unk2E8 = __vt__7GameHud;
+                ((PVirtObj *)pElem)->Slot01();
+            }
+        }
+    }
+    {
+        void *pElem = &m_unk290;
+        if (pElem != 0) {
+            m_unk290 = __vt__8HudCombo;
+            if (pElem != 0) {
+                m_unk290 = __vt__7GameHud;
+                ((PVirtObj *)pElem)->Slot01();
+            }
+        }
+    }
+    {
+        void *pElem = &m_unk270;
+        if (pElem != 0) {
+            m_unk270 = __vt__12HudBossMeter;
+            if (pElem != 0) {
+                m_unk270 = __vt__7GameHud;
+                ((PVirtObj *)pElem)->Slot01();
+            }
+        }
+    }
+    {
+        void *pElem = &m_unk250;
+        if (pElem != 0) {
+            m_unk250 = __vt__12HudBossMeter;
+            if (pElem != 0) {
+                m_unk250 = __vt__7GameHud;
+                ((PVirtObj *)pElem)->Slot01();
+            }
+        }
+    }
+    {
+        void *pElem = &m_unk22C;
+        if (pElem != 0) {
+            m_unk22C = __vt__7HudGrim;
+            if (pElem != 0) {
+                m_unk22C = __vt__7GameHud;
+                ((PVirtObj *)pElem)->Slot01();
+            }
+        }
+    }
+    {
+        void *pElem = &m_unk21C;
+        if (pElem != 0) {
+            m_unk21C = __vt__7GameHud;
+            ((PVirtObj *)pElem)->Slot01();
+        }
+    }
+    {
+        void *pElem = &m_unk20C;
+        if (pElem != 0) {
+            m_unk20C = __vt__7GameHud;
+            ((PVirtObj *)pElem)->Slot01();
+        }
+    }
+    {
+        void *pElem = &m_unk1FC;
+        if (pElem != 0) {
+            m_unk1FC = __vt__7GameHud;
+            ((PVirtObj *)pElem)->Slot01();
+        }
+    }
+    {
+        void *pElem = &m_unk1EC;
+        if (pElem != 0) {
+            m_unk1EC = __vt__7GameHud;
+            ((PVirtObj *)pElem)->Slot01();
+        }
+    }
+    {
+        void *pElem = &m_unk1DC;
+        if (pElem != 0) {
+            m_unk1DC = __vt__8HudSuper;
+            if (pElem != 0) {
+                m_unk1DC = __vt__7GameHud;
+                ((PVirtObj *)pElem)->Slot01();
+            }
+        }
+    }
+    {
+        void *pElem = &m_unk1CC;
+        if (pElem != 0) {
+            m_unk1CC = __vt__9HudHealth;
+            if (pElem != 0) {
+                m_unk1CC = __vt__7GameHud;
+                ((PVirtObj *)pElem)->Slot01();
+            }
+        }
+    }
+    __dt__11FontManagerFv((char *)this + 0x80, -1);
 }
 
 // DRAFT: 0x145CA0 __ct__9InterfaceFv

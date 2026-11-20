@@ -31,6 +31,7 @@ public:
     void Update(int arg0);
     void UpdateBar(int arg0);
     void UpdateMaxSuper();
+    void Reset();
 
     char _pad000[0x4];
     void *m_unk4;               // 0x004 element list walked by UpdateBar
@@ -222,6 +223,7 @@ public:
     unsigned char m_unk425;     // 0x425
     signed char m_unk426;       // 0x426
     unsigned char m_unk427;     // 0x427 nonzero enables the warning and display-refresh path
+    void *m_unk428;             // 0x428 polymorphic element deleted by the destructor (virtual slot 8, a1=1)
 };
 
 #endif
