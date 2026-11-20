@@ -101,6 +101,27 @@ extern "C" int printf(const char *pFmt, ...);
 extern "C" void __dt__22PMeshNodeAnimDataTableFv(PMeshNodeAnimDataTable *pThis, short nFlag);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
+extern "C" void *__ct__5PAnimFv(void *pThis);
+extern "C" void *__ct__10PAnimFrameFs(void *pThis, short nFrame);
+void FastMath_ComputeMatrix(float (*pMat)[4][4], float (*pA)[4], float (*pB)[4], float (*pC)[4], float (*pD)[4], float (*pE)[4], float (*pF)[4][4]);
+// PAnim virtual layout as seen through a PAnim pointer; PAnim.h stops at Animate.
+// Slot 0x38 is EnableAnim (virtual 12).
+class PAnimSlots {
+public:
+    virtual ~PAnimSlots();
+    virtual int Load(PPakFile *pFile);
+    virtual int Load(PPakFile *pFile, void *pHeader);
+    virtual float Animate(float fTime, float fUnused, float (*pMatrix)[4], float *pOut, bool bFlag);
+    virtual bool IsAnimate();
+    virtual void SetFrameTime(float fTime);
+    virtual float GetEndFrame();
+    virtual void SetEndFrame(short nFrame);
+    virtual int GetLoop();
+    virtual void SetAllAnimFlags(void *pFlags);
+    virtual void SetAnimLoopCount(int nCount);
+    virtual float GetFrameTime();
+    virtual void EnableAnim(bool bEnable);
+};
 class PResourceManager {
 public:
     int GetResource(unsigned int nId, bool bFlag);
@@ -660,6 +681,170 @@ void PCutScenePlayer::Unload(bool bFlag) {
     ((PGrimReaperCape *)m_unk100)->Enable(false, 0);
     sceVu0UnitMatrix(this);
     m_unk213C = 0;
+}
+
+// Cutscene file header read as one 0xBC-byte block; offsets follow the Load body.
+struct CutSceneHeader {
+    unsigned int magic;       // 0x00
+    unsigned int unk04;       // 0x04
+    unsigned int bgFlag;      // 0x08
+    unsigned int actorFlag;   // 0x0C
+    unsigned int nodeA;       // 0x10
+    unsigned int nodeB;       // 0x14
+    unsigned int chanCount;   // 0x18
+    unsigned int subFlag;     // 0x1C
+    short time0;              // 0x20
+    short time1;              // 0x22
+    char mtx0[0x10];          // 0x24
+    char mtx1[0x10];          // 0x34
+    char mtx2[0x10];          // 0x44
+    char mtx3[0x10];          // 0x54
+    char mtx4[0x10];          // 0x64
+    char _pad74[0x40];        // 0x74
+    unsigned int nodeC;       // 0xB4
+    unsigned int nodeD;       // 0xB8
+};
+
+// DRAFT: 0x001BD5F0 Load__15PCutScenePlayerFP8PPakFileP16PResourceManagerP9PMeshNodeii
+// note: DIFF 284. Float ternary store and prologue match; open: tail branches 6 words short (0x004C/0x00D8/0x00FC), c.eq.s operand order at 0x0128, memcpy row addresses held in s1/s2/s3/s6. Tried: local temp, volatile store, ternary (kept), `0.0f != fTime` (no change), `&aMtx[k]` (no change).
+int PCutScenePlayer::Load(PPakFile *pFile, PResourceManager *pResMgr, PMeshNode *pRoot, int nA, int nB) {
+    CutSceneHeader hdr;
+    float aMtx[5][4];
+    unsigned int aChan[4];
+    int nTag;
+    PAnimSlots *pAnim;
+    void *pObj;
+    unsigned int i;
+    float fTime;
+
+    Unload(true);
+    if (pFile == 0) {
+        return 0;
+    }
+    m_unk213D = (signed char)nB;
+    m_unk44 = (int)pResMgr;
+    m_unk5C = nA;
+    m_unk2130 = nA;
+    m_unkF4 = (nB & 0x40) ? 0.6f : 1.0f;
+    CDS_ASSERT(0x57, pRoot != 0, "pRootNode");
+    m_unk40 = (PMNode *)pRoot;
+    if (((PCDFile *)pFile)->Read(&hdr, 0xBC) != 0xBC) {
+        printf("\nError reading cutscene file %s", pFile);
+        return 0;
+    }
+    if (hdr.magic != 0xFADE0000) {
+        printf("\nInvalid cutscene file %s", pFile);
+        return 0;
+    }
+    fTime = (float)hdr.time0 / 1000.0f;
+    m_unk2134 = fTime;
+    if (fTime != 0.0f) {
+        m_unk213D |= 8;
+    }
+    m_unk2138 = (float)hdr.time1 / 1000.0f;
+    memcpy(aMtx[0], hdr.mtx0, 0x10);
+    memcpy(aMtx[1], hdr.mtx1, 0x10);
+    memcpy(aMtx[2], hdr.mtx2, 0x10);
+    memcpy(aMtx[3], hdr.mtx3, 0x10);
+    memcpy(aMtx[4], hdr.mtx4, 0x10);
+    FastMath_ComputeMatrix((float (*)[4][4])this, aMtx, aMtx + 1, aMtx + 2, aMtx + 3, aMtx + 4, 0);
+    if (LoadNodeNameTable(pFile, hdr.nodeA, (PArray *)m_unk60) == 0) {
+        return 0;
+    }
+    if (LoadNodeNameTable(pFile, hdr.nodeB, (PArray *)m_unk70) == 0) {
+        return 0;
+    }
+    if (LoadNodeNameTable(pFile, hdr.nodeC, (PArray *)m_unk80) == 0) {
+        return 0;
+    }
+    if (LoadNodeNameTable(pFile, hdr.nodeD, (PArray *)m_unk90) == 0) {
+        return 0;
+    }
+    for (i = 0; i < hdr.chanCount; i++) {
+        nTag = 0;
+        if (((PCDFile *)pFile)->Read(&nTag, 4) != 4) {
+            return 0;
+        }
+        if (nTag == 4) {
+            if (((PCDFile *)pFile)->Read(aChan, 0x10) != 0x10) {
+                return 0;
+            }
+            CDS_ASSERT(0xB7, aChan[1] < 6U, "aHeader.uNumChannels <= CHANNEL_MAX");
+            switch (i) {
+            case 0:
+                pObj = __nw__FUi(0x34);
+                if (pObj != 0) {
+                    pObj = __ct__10PAnimFrameFs(pObj, 0);
+                }
+                m_unk48 = (PCutSceneAnim *)pObj;
+                CDS_ASSERT(0xBC, m_unk48 != 0, "mpoCameraPosAnim");
+                pAnim = (PAnimSlots *)m_unk48;
+                break;
+            case 1:
+                pObj = __nw__FUi(0x20);
+                if (pObj != 0) {
+                    pObj = __ct__5PAnimFv(pObj);
+                }
+                m_unk4C = (PCutSceneAnim *)pObj;
+                CDS_ASSERT(0xC2, m_unk4C != 0, "mpoCameraLookAtAnim");
+                pAnim = (PAnimSlots *)m_unk4C;
+                break;
+            case 2:
+                pObj = __nw__FUi(0x20);
+                if (pObj != 0) {
+                    pObj = __ct__5PAnimFv(pObj);
+                }
+                m_unk50 = (PCutSceneAnim *)pObj;
+                CDS_ASSERT(0xC8, m_unk50 != 0, "mpoCameraUpTwistAnim");
+                pAnim = (PAnimSlots *)m_unk50;
+                break;
+            }
+            if (pAnim->Load(pFile, aChan) == 0) {
+                return 0;
+            }
+            pAnim->EnableAnim(true);
+        }
+    }
+    *(int *)&m_unk58 = 0;
+    if (hdr.subFlag != 0) {
+        nTag = 0;
+        if (((PCDFile *)pFile)->Read(&nTag, 4) != 4) {
+            return 0;
+        }
+        if (nTag == 4) {
+            if (((PCDFile *)pFile)->Read(aChan, 0x10) != 0x10) {
+                return 0;
+            }
+            pObj = __nw__FUi(0x20);
+            if (pObj != 0) {
+                pObj = __ct__5PAnimFv(pObj);
+            }
+            m_unk54 = (PCutSceneAnim *)pObj;
+            CDS_ASSERT(0xEB, m_unk54 != 0, "mpoSubtitleAnim");
+            pAnim = (PAnimSlots *)m_unk54;
+            if (pAnim->Load(pFile, aChan) == 0) {
+                return 0;
+            }
+            if (gInterface[0x93] == 0) {
+                ((PAnimSlots *)m_unk54)->EnableAnim(true);
+            } else {
+                if (m_unk54 != 0) {
+                    delete m_unk54;
+                }
+                m_unk54 = 0;
+            }
+        }
+    }
+    if (hdr.bgFlag != 0 && LoadBgAnims(pFile, hdr.bgFlag) == 0) {
+        return 0;
+    }
+    if (hdr.actorFlag != 0) {
+        if (LoadActors(pFile, hdr.actorFlag) == 0) {
+            return 0;
+        }
+        return 1;
+    }
+    return 1;
 }
 
 // FUNCTION: 0x001BDBD0 __dt__15PCutScenePlayerFv

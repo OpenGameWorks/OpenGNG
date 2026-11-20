@@ -6,6 +6,8 @@
 class PArray;
 class PPakFile;
 class PMNode;
+class PMeshNode;
+class PResourceManager;
 class PFrustrum;
 class PCutSceneAnim;
 class PMat4;
@@ -32,6 +34,7 @@ public:
     void UpdatePlayer();
     void Unload(bool bFlag);
     void SetBgNodesOpacity(PArray *pArray, float fOpacity);
+    int Load(PPakFile *pFile, PResourceManager *pResMgr, PMeshNode *pRoot, int nA, int nB);
     bool LoadNodeNameTable(PPakFile *pFile, unsigned int nCount, PArray *pArray);
     bool LoadBgAnims(PPakFile *pFile, unsigned int nFlag);
     bool LoadActors(PPakFile *pFile, unsigned int nFlag);
@@ -65,12 +68,13 @@ public:
     char m_unkD0[0x10];
     float m_unkE0[4];
     float m_unkF0;
-    char m_unkF4[0xC];
+    float m_unkF4;
+    char _padF8[8];
     char m_unk100[0x20E0 - 0x100];
     int m_unk20E0;
     char m_unk20E4[0x2130 - 0x20E4];
     int m_unk2130;
-    char m_unk2134[4];
+    float m_unk2134;
     float m_unk2138;
     signed char m_unk213C;
     signed char m_unk213D;
