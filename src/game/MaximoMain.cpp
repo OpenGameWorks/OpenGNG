@@ -8,6 +8,10 @@ public:
     void RemoveText(FontNode *pNode);
     void RemoveText(unsigned short nId);
     void *DisplayString(int nText, int x, int y, bool bFlag);
+    char _pad000[0x13];
+    signed char m_unk13;
+    char _pad014[0x100 - 0x14];
+    char *m_unk100;         // 0x100 subtitle table, 12 bytes per entry
 };
 extern unsigned char gInterface[2656];
 extern unsigned char gMC[16320];
@@ -23,7 +27,11 @@ extern "C" void UpdateStatus__9InterfaceFUib(void *, unsigned int, bool);
 extern "C" void SetState__15EntityBaseClassFi(void *, int);
 extern "C" void __dl__FPv(void *);
 extern "C" int Find__6PArrayFPv(void *, void *);
-extern "C" void *DisplayString__11FontManagerFPcffi9FontColor9FontAlign(void *, char *, float, float, int, int, int);
+extern "C" void *DisplayString__11FontManagerFPcffi9FontColor9FontAlign(void *, const char *, float, float, int, int, int);
+extern "C" void RemoveAll__11FontManagerFb(void *, bool);
+extern "C" void DisplayString__11FontManagerFiiib(void *, int, int, int, bool);
+extern "C" int sprintf(char *pDst, const char *pFmt, ...);
+extern PMNode *pMasteryTextIcon;
 extern unsigned char __vt__9PResource[12];
 extern "C" int GetDialogStreamReadiness__6PSoundFUi(void *, unsigned int);
 extern "C" void PrepDialog__6PSoundFUi(void *, unsigned int);
@@ -83,6 +91,8 @@ extern "C" void Reset__13EntityManagerFb(void *, bool);
 extern "C" void Destroy__9InterfaceFv(void *);
 extern "C" void Destroy__9MaxEngineFv(void *);
 extern "C" int PlayMovie__9MaxEngineFiiUi(void *, int, int, unsigned int);
+extern "C" void StopAllSounds__6PSoundFv(void *);
+extern "C" void Unload__15PCutScenePlayerFb(void *, int);
 extern float GAME_FPS;
 struct PMChildList {
     unsigned int count;     // child count
@@ -93,9 +103,10 @@ class PMNode {
 public:
     virtual void Slot0();
     virtual void Slot1();
-    virtual void Slot2();
+    virtual void Slot2(float);
     virtual void Slot3();
     virtual void Slot4(int, float, float, int, int);
+    virtual void Slot5(void *);
     PMNode *Find(unsigned int id);
     void SetAnimLoopCount(int arg0, bool arg1);
     void EnableAnim(bool arg0, bool arg1);
@@ -323,6 +334,81 @@ void MaximoMain::InitPlayDemo(int arg0) {
     ResetGameData__10MemoryCardFv(gMC);
 }
 
+// DRAFT: 0x00137C10 AttractDemo__10MaximoMainFv
+// note: 148 words differ; dispatch compare order (original tests 0,1,2,3 via beq chain, counter load out of line at 0x137D30) and beq/bne sense. Tried if-chain, else-if chain, switch(state) variants.
+int MaximoMain::AttractDemo() {
+    int state = 0;
+    int r;
+    for (;;) {
+        switch (state) {
+        case 0: {
+            int t = TitleDemo();
+            DeletePressStart();
+            state = (t != 0) ? 1 : 3;
+            continue;
+        }
+        case 1: {
+            int g = GameSelect();
+            switch (g) {
+            case 4:
+                state = 3;
+                continue;
+            case 2:
+                state = 2;
+                continue;
+            case 3:
+                return 7;
+            case 0:
+                return 2;
+            case 1:
+                m_unk19AC0 = -1;
+                return 3;
+            }
+            continue;
+        }
+        case 2:
+            Options();
+            state = 1;
+            continue;
+        case 3: {
+            int count = m_unk19B58 + 1;
+            m_unk19B58 = count;
+            if (count >= 3) {
+                m_unk19B58 = 0;
+                if (PlayMovie__9MaxEngineFiiUi(this, 0, 0x320, 0x4009) != 2) {
+                    state = 0;
+                    continue;
+                }
+                state = 1;
+            } else {
+                m_unk19AC8 = 0;
+                m_unk19ACC = 0;
+                InitPlayDemo(1);
+                m_unk19A70 = 0;
+                r = Game(1);
+                DeletePressStart();
+                InitRenderFrame__9MaxEngineFbUi(this, 0, 0);
+                StopAllSounds__6PSoundFv(gSound);
+                int i = 0;
+                int off = 0;
+                do {
+                    Unload__15PCutScenePlayerFb((char *)this + off + 0x220, 1);
+                    i++;
+                    off += 0x2140;
+                } while (i < 4);
+                Reset__13EntityManagerFb((char *)this + 0x137E0, true);
+                Destroy__9InterfaceFv(gInterface);
+                Destroy__9MaxEngineFv(this);
+                ResetGameData__10MemoryCardFv(gMC);
+                SetInputMode__3PadFQ23Pad10eInputModePQ23Pad9InputDatai(gPad, 0, 0, 0);
+                state = (r == 0) ? 0 : 1;
+            }
+            continue;
+        }
+        }
+    }
+}
+
 // FUNCTION: 0x00137EA0 DeletePressStart__10MaximoMainFv
 void MaximoMain::DeletePressStart() {
     if (m_unk19AC4 != 0) {
@@ -463,6 +549,66 @@ int MaximoMain::MapscreenOpenBonusExists() {
         i++;
     } while (i < 0x20);
     return 0;
+}
+
+// DRAFT: 0x0013C770 MapscreenPrintInfo__10MaximoMainFP11FontManageri
+// note: 77 words differ; register allocation and store order in the per-entry loop. Tried 8 variants (short vs signed char loads, tbl pointer, declaration order, entry pointer placement); best kept at 77.
+void MaximoMain::MapscreenPrintInfo(FontManager *arg0, int arg1) {
+    char buf[0x20];
+    static float aBonus;
+    static char initBonus;
+    static float aSave;
+    static char initSave;
+    int s0;
+    int sc;
+    int s1;
+    unsigned char v;
+    char *entry;
+    char *tbl;
+
+    s0 = arg1;
+    RemoveAll__11FontManagerFb(arg0, true);
+    pMasteryTextIcon->m_unk2C = 0;
+    entry = arg0->m_unk100 + (s0 + 0x270) * 12;
+    DisplayString__11FontManagerFPcffi9FontColor9FontAlign(arg0, *(char **)entry, 0.0f, -120.0f, *(signed char *)(entry + 0xA), 4, 1);
+    if (s0 == 0x13) {
+        s0 = 0x14;
+    }
+    v = 0;
+    if (s0 < 0x15) {
+        v = gMC[0x2B0 + s0 * 49];
+    }
+    sc = (signed char)v;
+    if (sc >= 0x64) {
+        pMasteryTextIcon->m_unk2C = 0x3F800000;
+        pMasteryTextIcon->Slot5(0);
+        pMasteryTextIcon->Slot2(20.0f);
+        pMasteryTextIcon->Slot4(0, 0.0f, 1.0f, 0, 0);
+    } else {
+        s1 = 0x32;
+        if (arg0->m_unk13 == 4) {
+            s1 = 0x78;
+        }
+        tbl = arg0->m_unk100;
+        entry = tbl + 0xCD8;
+        DisplayString__11FontManagerFPcffi9FontColor9FontAlign(arg0, *(char **)(tbl + 0xCD8), (float)s1, -160.0f, *(signed char *)(tbl + 0xCE2), 3, 2);
+        if (sc < 0) {
+            sc = 0;
+        }
+        sprintf(buf, "%d%s", sc, "%");
+        DisplayString__11FontManagerFPcffi9FontColor9FontAlign(arg0, buf, (float)(s1 + 0x1E), -160.0f, *(signed char *)(entry + 0xA), 3, 0);
+    }
+    DisplayString__11FontManagerFiiib(arg0, 0x293, 0, 0, false);
+    if (initBonus == 0) {
+        aBonus = -330.0f;
+        initBonus = 1;
+    }
+    if (initSave == 0) {
+        aSave = 332.0f;
+        initSave = 1;
+    }
+    DisplayString__11FontManagerFPcffi9FontColor9FontAlign(arg0, "a          ~#", aBonus, -200.0f, 1, 0, 1);
+    DisplayString__11FontManagerFPcffi9FontColor9FontAlign(arg0, "~{         ;a", aSave, -200.0f, 1, 0, 1);
 }
 
 // DRAFT: 0x0013C9F0 SetMarkerAsMastered__10MaximoMainFP6PMNodeP6PMNode

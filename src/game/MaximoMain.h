@@ -6,6 +6,7 @@
 class PMNode;
 class PArray;
 class MemorySetting;
+class FontManager;
 struct LevelFiles;
 
 class MaximoMain {
@@ -39,6 +40,10 @@ public:
     void MainGame();
     int Game(int arg0);
     int AttractDemo();
+    int TitleDemo();
+    int GameSelect();
+    void Options();
+    void MapscreenPrintInfo(FontManager *arg0, int arg1);
 
     char _pad000[0xD0];
     int m_unkD0;            // 0x0D0
@@ -66,8 +71,9 @@ public:
     int m_unk19AA4;         // 0x19AA4, dialog stream handle checked by InitCutSceneIfDialogReady
     int m_unk19AA8;         // 0x19AA8, dialog index chosen by FindFirstDialog (-1 when none)
     int m_unk19AAC;        // 0x19AAC, cleared by SetLevelClear
-    char _pad19AB0[0x19AC4 - 0x19AB0];
-    void *m_unk19AC4;       // 0x19AC4, press-start FontNode, cleared by DeletePressStart
+    char _pad19AB0[0x19AC0 - 0x19AB0];
+    int m_unk19AC0;         // 0x19AC0, set to -1 by AttractDemo
+    void *m_unk19AC4;      // 0x19AC4, press-start FontNode, cleared by DeletePressStart
     PMNode *m_unk19AC8;     // 0x19AC8, title mesh root loaded by LoadTitleMesh
     PMNode *m_unk19ACC;     // 0x19ACC, title animation node found by LoadTitleMesh
     PMNode *m_unk19AD0;     // 0x19AD0, copyright node found by LoadTitleMesh
