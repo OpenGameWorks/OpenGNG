@@ -150,7 +150,7 @@ void PMat4::MakeOrthographicMatrix(float (*arg0)[4], float arg1, float arg2, flo
     arg0[3][3] = 1.0f;
 }
 
-// FUNCTION: 0x00130E10 MakeParallelProjectionMatrix__5PMat4Ffffffffffff
+// FUNCTION: 0x00130E10 MakeParallelProjectionMatrix__5PMat4Fffffffffffff
 void PMat4::MakeParallelProjectionMatrix(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5, float arg6, float arg7, float arg8, float arg9, float arg10, float arg11) {
     float ortho[4][4];
     float proj[4][4];
@@ -160,7 +160,7 @@ void PMat4::MakeParallelProjectionMatrix(float arg0, float arg1, float arg2, flo
     sceVu0MulMatrix((float (*)[4])this, proj, ortho);
 }
 
-// FUNCTION: 0x00130EE0 MakeScreenMatrix2__5PMat4Ffffffff
+// FUNCTION: 0x00130EE0 MakeScreenMatrix2__5PMat4Fffffffff
 void PMat4::MakeScreenMatrix2(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5, float arg6, float arg7) {
     float proj[4][4];
     float persp[4][4];
