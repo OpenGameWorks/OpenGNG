@@ -629,7 +629,7 @@ void Peddler::LookAtPeddler() {
 }
 
 // DRAFT: 0x001D16A0 AnimateItems__7PeddlerFv
-// note: DIFF 24. Remaining: bDone init daddiu vs addiu, slti at vs v0 at loop top, float ternary arg order (original loads the -16.5/-14.0 pair first), tail call order. Tried: declaration order, fA local (DIFF 58), split assert (124), tail reorder.
+// note: DIFF 22 (permute.py). Remaining: bDone init daddiu vs addiu (bool bDone gives 72), slti at vs v0 at loop top, float ternary arg order (original loads the -16.5/-14.0 pair first), tail call order. Tried: declaration order, fA local (DIFF 58), split assert (124), tail reorder.
 int Peddler::AnimateItems() {
     int nSlot;
     int nStep;
@@ -639,7 +639,7 @@ int Peddler::AnimateItems() {
     nStep = 0;
     bDone = 1;
     do {
-        if (!(nSlot < 5 && m_unk218[nSlot]->m_unk4 != 0)) {
+        if (!(nSlot < 5 && m_unk218[nSlot]->m_unk4)) {
             CdsAssert("Peddler.cpp", 0x59F, "iItem < PEDDLER_MAX_ITEMS && m_pItems[iItem]->IsValid()");
         }
         bDone = bDone & m_unk218[nSlot]->Animate(
@@ -663,7 +663,7 @@ int Peddler::AnimateItems() {
 
         pState = (char *)mpEntMgr__15EntityBaseClass->m_unk505C;
         nBits = *(unsigned short *)(pState + 0x1B8);
-        if (nBits == 0) {
+        if (0 == nBits) {
             nBits = *(unsigned short *)(pState + 0x1B0) & 0xA0;
         }
         if (nBits != 0) {
@@ -672,8 +672,8 @@ int Peddler::AnimateItems() {
                 m_unk248 = (nBits & 0x80) ? 0 : 4;
                 SetState__15EntityBaseClassFi(this, 0x13);
             }
-            PlaySound__15EntityBaseClassFUi(this, 0x3A);
             bDone = 0;
+            PlaySound__15EntityBaseClassFUi(this, 0x3A);
         }
     }
     return bDone;

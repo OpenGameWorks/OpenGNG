@@ -66,7 +66,8 @@ def simple(line: str) -> bool:
     s = line.strip()
     if not s.endswith(";") or "{" in s or "}" in s or s.startswith("//"):
         return False
-    return s.split("(")[0].split()[0] not in KEYWORDS if s.split() else False
+    head = re.match(r"\w+", s)
+    return not head or head.group(0) not in KEYWORDS
 
 
 def indent(line: str) -> int:
@@ -165,7 +166,7 @@ def m_bool(lines: list[str], rng: random.Random) -> bool:
     code, so the declaration and every literal use change together.
     """
     idx = [i for i, l in enumerate(lines) if (m := DECL.match(l)) and m.group(2).strip() in ("int", "char", "unsigned char", "u8", "s32")
-           and "," not in m.group(3)]
+           and "," not in m.group(3) and re.match(r"\s*\w", m.group(3))]
     if not idx:
         return False
     i = rng.choice(idx)
