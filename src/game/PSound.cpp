@@ -7,6 +7,9 @@ extern "C" void SOUND_StopAllSounds();
 extern "C" void SOUND_SetGlobalRelVols(int, int, int, int, int, int, int, int);
 extern int fst_ReverbRecProposed[5];
 extern int gPSndDbg[52];
+extern "C" int sceWrite(int, char *, int);
+extern "C" int strlen(char *);
+extern int miRandom__7MathAPI;
 extern "C" void SOUND_StopAllRegularSounds();
 extern "C" void SOUND_StopAllMusic();
 extern "C" void SOUND_StopAllStreams();
@@ -39,6 +42,10 @@ public:
 };
 int SoundInBankStatus(unsigned int nBank);
 extern unsigned int gSndSetOfIDsTable[16];
+extern "C" void SOUND_SetPauseCategories(unsigned int);
+extern "C" void SOUND_LevelRestart();
+extern "C" void SOUND_SetMasterRegisterVolumeAbs(int);
+extern "C" void SOUND_EnableFeatures(int, int);
 
 // FUNCTION: 0x001A3C70 AddAEToFreeList__6PSoundFPQ26PSound12AmbientEntry
 void PSound::AddAEToFreeList(AmbientEntry *pEntry) {
@@ -186,6 +193,20 @@ void PSound::SendStops() {
         m_unkB0 = 0;
         m_unkB4 = 0;
     }
+}
+
+// FUNCTION: 0x001A4940 PauseByCategories__6PSoundFUi
+void PSound::PauseByCategories(unsigned int nCategory) {
+    unsigned int nOld = m_unk2E48;
+    unsigned int nAdded = nCategory & ~nOld;
+    if (nOld & ~nCategory & 0x80) {
+        ResumeAllAmbientSounds();
+    }
+    if (nAdded & 0x80) {
+        PauseAllAmbientSounds();
+    }
+    m_unk2E48 = nCategory;
+    SOUND_SetPauseCategories(nCategory);
 }
 
 // FUNCTION: 0x001A5590 SetMusicPitchBend__6PSoundFb
@@ -634,6 +655,34 @@ int PSound::TranslateIntoADSR(unsigned int nArg) {
     return fst_ADSR_Translate_Attack[(nArg >> 4) & 0xF] + 0xFF1FC0 + fst_ADSR_Translate_Release[nArg & 0xF];
 }
 
+// DRAFT: 0x001A9E10 RestartSuffix__6PSoundFv
+// note: 2 words differ: the constant 1 goes to a0 instead of v0 (addiu at 0x38, sb at 0x4C); tried char/bool/uchar member, `= true`, moving the m_unk00 store, `return m_unkD1 = 1` (DIFF 10)
+int PSound::RestartSuffix() {
+    PSoundFlushIOPCommandsWaitFinish();
+    WaitOnVSync();
+    PSoundReInitSubWSoundCalls();
+    WaitOnVSync();
+    PSoundFlushIOPCommandsWaitFinish();
+    m_unk5434 = 0;
+    m_unk5438 = 0;
+    m_unk2E7C = 0;
+    m_unkD1 = 1;
+    m_unkD4 = *(int *)(gEng + 0x19A80);
+    m_unkD8 = *(int *)(gEng + 0x137A4);
+    m_unk00 = 2;
+}
+
+// FUNCTION: 0x001A9E90 PSoundRestart__6PSoundFv
+unsigned char PSound::PSoundRestart() {
+    SOUND_LevelRestart();
+    m_unk543C = 0;
+    m_unk5440 = m_unk543C;
+    SOUND_SetMasterRegisterVolumeAbs(0x3FFF);
+    SOUND_SetGlobalRelVols(m_unk34, m_unk38, m_unk3C, m_unk40, 1000, 1000, 1000, m_unk30);
+    SOUND_EnableFeatures(m_unk543C, -1);
+    return RestartSuffix();
+}
+
 // FUNCTION: 0x001AA030 PSoundReInitSubWSoundCalls__6PSoundFv
 void PSound::PSoundReInitSubWSoundCalls() {
     PSoundReInitSub(0);
@@ -774,6 +823,25 @@ PSound::OneShotChannelState::OneShotChannelState() {
     Init();
 }
 
+// DRAFT: 0x001AACB0 PossiblyRandomPitch__Q26PSound8SpotInfoFv
+// note: 27 words differ: nLo&0xFFFF hoisted as ori 0xFFFF + and reg (orig andi), nVal kept in v0 not a2, mult/lui order, gPSndDbg lui reloc; tried unsigned short ret/local (30), masked return (28), direct per-branch assignment (29)
+int PSound::SpotInfo::PossiblyRandomPitch() {
+    unsigned int nLo = m_unk08;
+    unsigned int nHi = m_unk0A;
+    int nRet = nLo & 0xFFFF;
+    if (nLo < nHi) {
+        unsigned int nVal;
+        if (gPSndDbg[16] != 0) {
+            miRandom__7MathAPI = miRandom__7MathAPI * 0x343FD + 0x269EC3;
+            nVal = (nLo + (unsigned int)miRandom__7MathAPI % (nHi - nLo)) & 0xFFFF;
+        } else {
+            nVal = (nLo + nHi) >> 1;
+        }
+        nRet = nVal & 0xFFFF;
+    }
+    return nRet;
+}
+
 // FUNCTION: 0x001AAD30 Init__Q26PSound8SpotInfoFv
 void PSound::SpotInfo::Init() {
     m_unk10 = 0;
@@ -883,6 +951,18 @@ void PSound::DebugRestartValues() {
             pSpot->m_unk0F = ((unsigned char *)gPSndDbg)[0x30];
         }
     }
+}
+
+// FUNCTION: 0x001AB480 WriteLineToPCFile__6PSoundFiPc
+int PSound::WriteLineToPCFile(int nFd, char *pLine) {
+    if (nFd < 0 || pLine == 0) {
+        return -1;
+    }
+    int nLen = strlen(pLine);
+    if (nLen != sceWrite(nFd, pLine, nLen)) {
+        return -1;
+    }
+    return 0;
 }
 
 // FUNCTION: 0x001ACC40 DebugFindLastID__6PSoundFPUiPUi

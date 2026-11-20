@@ -82,12 +82,13 @@ public:
     class SpotInfo {
     public:
         SpotInfo();
+        int PossiblyRandomPitch();
         void Init();
 
         int m_unk00;            // 0x00, Init sets 0x3FFF
         int m_unk04;            // 0x04
-        short m_unk08;          // 0x08
-        short m_unk0A;          // 0x0A
+        unsigned short m_unk08; // 0x08
+        unsigned short m_unk0A; // 0x0A
         unsigned char m_unk0C;  // 0x0C, IsAmbientSoundByID tests bit 1
         char _pad0D[0x01];
         char m_unk0E;           // 0x0E
@@ -104,7 +105,8 @@ public:
     };
 
     void ErrorRecovery();
-    void PSoundRestart();
+    unsigned char PSoundRestart();
+    int RestartSuffix();
     void AbilityScreenEnter();
     void AbilityScreenLeave();
     void SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol);
@@ -125,6 +127,8 @@ public:
     unsigned int FindFreeAmbientChannel();
     int StartAndHoldDialog(unsigned int nArg);
     void AmbientFadeToFree(AmbientChannelState *pState);
+    void PauseAllAmbientSounds();
+    void ResumeAllAmbientSounds();
     int StopAllSounds();
     int SetStandardSecondaryMusicFileID(unsigned int id);
     void PSoundReInitTriglets();
@@ -182,6 +186,7 @@ public:
     void DebugRestartValues();
     int DebugFindLastID(unsigned int *pValue, unsigned int *pIndex);
     int DebugFindFirstID(unsigned int *pValue, unsigned int *pIndex);
+    int WriteLineToPCFile(int nFd, char *pLine);
 
     int m_unk00;            // 0x000, GetEEControlStatus tests it
     char _pad004[0x010 - 0x004];
@@ -215,7 +220,11 @@ public:
     char m_unkCE;           // 0x0CE, PSoundReInitMusic clears it
     char m_unkCF;           // 0x0CF, PSoundStopDialog clears it
     bool m_unkD0;           // 0x0D0, ErrorRecovery reads it before PSoundRestart
-    char _pad0D1[0x0DC - 0x0D1];
+    char m_unkD1;           // 0x0D1, RestartSuffix sets 1
+    char _padD2[0x0D4 - 0x0D2];
+    int m_unkD4;            // 0x0D4, RestartSuffix copies gEng+0x19A80 here
+    int m_unkD8;            // 0x0D8, RestartSuffix copies gEng+0x137A4 here
+
     int m_unkDC;            // 0x0DC, PSoundReInitMusic clears it
     int m_unkE0;            // 0x0E0, PSoundReInitMusic sets 0x3E8
     char _pad0E4[0x0EC - 0x0E4];
@@ -232,12 +241,15 @@ public:
     int m_unk2E60;          // 0x2E60, StartAndHoldDialog stores its value
     char _pad2E64[0x2E74 - 0x2E64];
     int m_unk2E74;          // 0x2E74, GetEEControlStatus stores its result
-    char _pad2E78[0x2EB4 - 0x2E78];
+    char _pad2E78[0x2E7C - 0x2E78];
+    int m_unk2E7C;          // 0x2E7C, RestartSuffix clears it
+    char _pad2E80[0x2EB4 - 0x2E80];
     char m_unk2EB4[0x2580]; // 0x2EB4, 400 SpotInfo records of 0x18 bytes, GetSpotInfo scans them
-    char _pad5434[0x5438 - 0x5434];
+    char m_unk5434;         // 0x5434, RestartSuffix clears it
+    char _pad5435[0x5438 - 0x5435];
     unsigned int m_unk5438; // 0x5438, SetProposedReverbParams arg 0
     int m_unk543C;          // 0x543C, SetMusicPitchBend bit 0
-    char _pad5440[0x5444 - 0x5440];
+    int m_unk5440;          // 0x5440, PSoundRestart copies 0x543C here
     int m_unk5444;          // 0x5444, PSoundReInitSoundRooms sets -1
     char _pad5448[0x544C - 0x5448];
     int m_unk544C;          // 0x544C, PSoundReInitSoundRooms clears it
