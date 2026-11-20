@@ -826,8 +826,7 @@ void Icon::Reset() {
     m_unk14 = 0;
 }
 
-// DRAFT: 0x001471F0 FindTrigger__13EntityManagerFUii
-// note: 8 lines; the else-arm p=0 leaves a b over the else at 0x14/0x1C (original falls through into the while test) and the increment uses a3 for the new index (original uses v1). Tried truthiness test (32), if-sense reversed (11), index reload (11), local idx without else (32), local idx with else (8, kept).
+// FUNCTION: 0x001471F0 FindTrigger__13EntityManagerFUii
 void *EntityManager::FindTrigger(unsigned int arg0, int arg1) {
     m_unk5B64 = 0;
     TriggerEntry *p = 0;
@@ -848,10 +847,7 @@ void *EntityManager::FindTrigger(unsigned int arg0, int arg1) {
         }
         int idx = m_unk5B64 + 1;
         m_unk5B64 = idx;
-        p = 0;
-        if (idx < (unsigned int)m_unk5B60) {
-            p = (TriggerEntry *)m_unk5B68[m_unk5B64];
-        }
+        p = (idx < (unsigned int)m_unk5B60) ? (TriggerEntry *)m_unk5B68[m_unk5B64] : 0;
     }
     return 0;
 }
@@ -1060,7 +1056,7 @@ void EntityManager::SetHolyGround(float (*arg0)[4], float arg1, bool arg2) {
 }
 
 // DRAFT: 0x00147760 ValidateDependencyList__13EntityManagerFv
-// note: 7 lines; loop counter and byte offset swap registers (original keeps offset in a3 and counter in a1, ours offset a1 and counter a2); tried scoped counter (9 lines), unsigned offset (9 lines), counter-first ordering (7 lines, kept); inline pointer expression (7, same count); comma-increment for loop (8, reverted).
+// note: 7 words; offset and pointer swap registers (original offset a3, pointer t0; ours offset a2, pointer a3); tried scoped counter (9), unsigned offset (9), comma-increment (8), array index (25), offset-first (9), chptr (8), while loop, pointer decl, if-wrap, dropped p (all 7, counter-first kept).
 void EntityManager::ValidateDependencyList() {
     int i = 0;
     int off = 0;
@@ -2194,7 +2190,7 @@ int EntityBaseClass::SequenceViewer(unsigned int **arg0, int arg1) {
 }
 
 // DRAFT: 0x0014A220 CameraLookingAtMe__15EntityBaseClassFv
-// note: 2 words; lui scratch is v1 (original v0). Tried reversed compare (4), if-return (3), direct m_unk20[1] (23); kept pf local + fabs local (2); inline fabs (2), if/else pointer (2), float d local (2), p before pf (2), bool temp (2). The $v1 lui for 0x420C persists in all forms.
+// note: 2 words; lui for 0x420C lands in v1, original uses v0 (0x38 lui, 0x3C mtc1); tried reversed compare (4), if-return (3), direct m_unk20[1] (23), inline fabs, if/else pointer, float local, p before pf, bool temp (all 2, pf and fabs locals kept).
 bool EntityBaseClass::CameraLookingAtMe() {
     MathAPI *pCam = (MathAPI *)EntityManager::mCameraAPI;
     float *pf = pCam->m_unk20;
