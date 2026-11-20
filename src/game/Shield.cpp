@@ -12,8 +12,6 @@ extern "C" void sceVu0SubVector(float (*dst)[4], float (*a)[4], void *b);
 extern "C" float sceVu0InnerProduct(float (*a)[4], float (*b)[4]);
 extern "C" void StopSoundBySoundRef__15EntityBaseClassFUi(void *pThis, unsigned int handle);
 extern "C" void LoadMesh__15EntityBaseClassFUibb(void *pThis, unsigned int arg, unsigned char a, unsigned char b);
-extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, unsigned char a, unsigned char b);
-extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int eLoadClass, unsigned int nFlags);
 extern "C" void DeleteEffect__9EffectAPIFUi(void *pThis, unsigned int handle);
 extern "C" void Destroy__16PParticleManagerFUi(void *pThis, unsigned int handle);
 extern "C" char mEffectAPI__13EntityManager[0x10];
@@ -235,7 +233,7 @@ void Shield::DeleteShield() {
 extern "C" void *__dt__6ShieldFv(void *pThis, short nFlag) {
     Shield *self = (Shield *)pThis;
     if (pThis != 0) {
-        self->m_unk0 = __vt__6Shield;
+        *(void **)pThis = __vt__6Shield;
         if (self->m_unk1D0 != 0) {
             StopSoundBySoundRef__15EntityBaseClassFUi(pThis, self->m_unk1D0);
             self->m_unk1D0 = 0;
@@ -275,12 +273,9 @@ extern "C" void *__dt__6ShieldFv(void *pThis, short nFlag) {
     return pThis;
 }
 
-// DRAFT: 0x001694F0 __ct__6ShieldFv
-// note: 37 words differ; original spills this to 0x1C(sp) and reloads before each store, ours keeps this in s0 (tried local self pointer, same count; embedding PArray would add a ctor call)
-Shield::Shield() {
-    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 5, 1);
-    m_unk0 = __vt__6Shield;
-    EnableSleep__15EntityBaseClassFbb(this, 0, 0);
+// FUNCTION: 0x001694F0 __ct__6ShieldFv
+Shield::Shield() : EntityBaseClass((LoadClass)5, 1) {
+    EnableSleep(false, false);
     m_unk1D9 = 0;
     m_unk1D8 = 0;
     m_unk1D4 = 0;
