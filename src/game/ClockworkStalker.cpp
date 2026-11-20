@@ -3,6 +3,26 @@
 #include "ClockworkStalker.h"
 
 // TODO(header): foreign declarations
+extern "C" void RotateTo__15EntityBaseClassFff(void *, float, float);
+extern char ClockworkStalker_DashShortSeq[60];
+extern char ClockworkStalker_DashShortLoopSeq[60];
+extern char ClockworkStalker_DashBackSeq[60];
+extern char ClockworkStalker_HitRightSeq[52];
+extern char ClockworkStalker_VerticalDeathSeq[60];
+extern char ClockworkStalker_StabDownDeathSeq[60];
+extern char ClockworkStalker_DeadSeq[60];
+extern char m_vBonusSpawnOffset[16];
+extern "C" void WriteApparitionData__15EntityBaseClassFicUi(void *, int, char, unsigned int);
+extern "C" void SpawnBonus__15EntityBaseClassFPfii(void *, float *, int, int);
+extern char ClockworkStalker_HitLeftSeq[52];
+extern char ClockworkStalker_KnockBackSeq[60];
+extern char ClockworkStalker_HitSeq[52];
+extern char ClockworkStalker_LaunchSeq[52];
+extern char ClockworkStalker_JuggleSeq[52];
+extern char ClockworkStalker_JuggleInAirSeq[52];
+extern char ClockworkStalker_KnockDownSeq[52];
+extern char ClockworkStalker_GetUpSeq[52];
+extern "C" int GetGroundPos__7MathAPIFPA4_f(void *);
 class EntityBaseClass;
 
 class TimerAPI {
@@ -46,6 +66,11 @@ extern EffectAPI mEffectAPI__13EntityManager;
 extern MathAPI *mPlayerAPI__13EntityManager;
 extern char ClockworkStalker_KnockUp1Seq[];
 extern char ClockworkStalker_KnockUp2Seq[];
+extern char ClockworkStalker_Taunt2Seq[52];
+extern char ClockworkStalker_DodgeSeq[52];
+extern char ClockworkStalker_WalkSeq[52];
+extern char ClockworkStalker_JumpOutSeq[60];
+extern char ClockworkStalker_JumpFromShellSeq[52];
 extern "C" void SetState__15EntityBaseClassFi(void *, int);
 extern "C" void PlaySequence__15EntityBaseClassFPUi(void *, unsigned int *);
 extern "C" void GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(void *, float *);
@@ -56,14 +81,73 @@ extern EntityManager *mpEntMgr__15EntityBaseClass;
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *, int, unsigned int);
 extern "C" void PlaySound__15EntityBaseClassFUi(void *, unsigned int);
 extern "C" float GetAngleBetweenVectors__7MathAPIFPfPf(float *, float *);
+extern "C" void RemoveFromAttackSystem__15EntityBaseClassFv(void *);
+extern "C" void *InstanceIsValid__15EntityBaseClassFUi(unsigned int);
+extern char ClockworkStalker_IdleSeq[52];
+extern char ClockworkStalker_ComboAttackSeq[80];
+extern char ClockworkStalker_LowSweepSeq[72];
+extern "C" int CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(void *, unsigned int, unsigned int, float (*)[4], float (*)[4], void *, float, bool, int, bool);
+extern "C" void ResetCollisions__15EntityBaseClassFv(void *);
+extern int miRandom__7MathAPI;
+// Shadow object layout used by the attack-start and case 25 states: byte at 0x0, pointer at 0xC, byte at 0x18.
+class ClockworkShadowShell {
+public:
+    unsigned char unk0;
+    char _pad001[0xC - 0x1];
+    void *unkC;
+    char _pad010[0x18 - 0x10];
+    unsigned char unk18;
+};
 extern "C" void VectorRotateY__7MathAPIFPA4_ff(float *, float);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
+extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float s);
 extern "C" float GetFrameTime__6PMNodeFv(void *);
 extern "C" void *Find__6PMNodeFUi(void *, unsigned int);
 extern "C" unsigned int CreateDamageFx__15EntityBaseClassFfUi(void *, float, unsigned int);
 extern "C" void ChangeDamageFxInterval__15EntityBaseClassFUif(void *, unsigned int, float);
+extern "C" int printf(const char *, ...);
+extern "C" void *__nw__FUi(unsigned int);
+extern "C" void *__ct__6ShadowFQ26Shadow10ShadowTypeUi(void *, int, unsigned int);
+extern "C" void *__ct__7PhysicsFv(void *);
+extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *, unsigned int, float (*)[4]);
+extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, float (*)[4]);
+extern "C" float cosf(float x);
+extern "C" float sinf(float x);
+extern float m_vDefaultSpawnVelocity[4];
+extern char lit_0026C030[];
+extern char lit_0026C0B0[];
+extern char lit_0026C108[];
+extern char lit_0026C118[];
+extern char lit_0026C130[];
+extern char lit_0026C150[];
+extern char lit_0026C160[];
+
+class ZinShell {
+public:
+    char _pad000[4];
+    unsigned int m_unk4;
+    char _pad008[0x224 - 0x008];
+    int m_unk224;
+    int m_unk228;
+    unsigned char m_unk22C;
+    unsigned char m_unk22D;
+};
+
+struct PosBlock {
+    float x;
+    float y;
+    float z;
+};
+extern "C" ZinShell *Spawn__13EntityManagerFUibi(void *, unsigned int, int, bool);
+extern "C" void EnableSleep__15EntityBaseClassFbb(void *, bool, bool);
+extern "C" void SetShellStartAndDest__8ZinShellFRA4_fRA4_f(void *, float (*)[4], float (*)[4]);
+extern "C" void TriggerBGAnim__15EntityBaseClassFUiibUi(void *, unsigned int, int, bool, unsigned int);
+extern "C" ZinShell *GetPtrToApparition__13EntityManagerFUi(void *, unsigned int);
+extern "C" float RandomFloatRange__7MathAPIFff(float, float);
+extern "C" void SetAllFade__6PMNodeFf(void *, float);
+extern "C" void FacePlayer__15EntityBaseClassFf(void *, float);
 extern char ClockworkStalker_NormalMesh[0x10];
 extern char ClockworkStalker_TransitionMesh[0x10];
 extern char ClockworkStalker_CamouflageMesh[0x10];
@@ -542,6 +626,1050 @@ void ClockworkStalker::OnStopAttack() {
         return;
     }
     SetState__15EntityBaseClassFi(this, 0xD);
+}
+
+// DRAFT: 0x001E38E0 Execute__16ClockworkStalkerFv
+// note: every switch-1 case is transcribed (none empty), switch 6 targets match the asm; DIFF 2740 words, still differs.
+void ClockworkStalker::Execute() {
+    char *temp_a0;
+    void *temp_v0_8;
+    float temp_f12;
+    ZinShell *temp_v0_9;
+    char *temp_v0_10;
+    PosBlock *var_v1;
+    float temp_f3;
+    float temp_f2;
+    float var_f0;
+    float startPos[4];
+    float destPos[4];
+    int temp_v1_3;
+    unsigned int temp_a1;
+    ZinShell *temp_v0_11;
+    PMNodeView *temp_v1_11;
+    static int astallcountcount;
+    static int aStopDashDst;
+    static int init;
+    switch (m_unk20) {
+    case -1:
+        if (m_unkE9 != 0) {
+            m_unk200[0] = m_unk1C8;
+            m_unk200[1] = m_unk1CC;
+            m_unk200[2] = m_unk1D0;
+            if (!(Distance__7MathAPIFPA4_fPA4_f((m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190, &m_unk200) <= *(float *)&m_unk1D4)) {
+                printf(lit_0026C0B0);
+                SetState__15EntityBaseClassFi(this, -2);
+                return;
+            }
+            m_unk10C &= 0xF8FFFFFF;
+            m_unk10C |= 0x071B1902;
+            if (m_unkD4 == 0) {
+                void *p = __nw__FUi(0x10);
+                if (p != 0) {
+                    p = __ct__6ShadowFQ26Shadow10ShadowTypeUi(p, 1, 0x87000008);
+                }
+                m_unkD4 = p;
+                if (m_unkD4 == 0) {
+                    CdsAssert__FPciPc(lit_0026C030, 0x14B, lit_0026C108);
+                }
+            }
+            if (m_unk38 == 0) {
+                void *p2 = __nw__FUi(0x120);
+                if (p2 != 0) {
+                    p2 = __ct__7PhysicsFv(p2);
+                }
+                m_unk38 = (char *)p2;
+                if (m_unk38 == 0) {
+                    CdsAssert__FPciPc(lit_0026C030, 0x150, lit_0026C118);
+                }
+            }
+            SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12, 0);
+            m_unk221 = 1;
+            m_unk222 = 1;
+            m_unk278 = 1;
+            m_unk234 = 0x19;
+            m_unk210 = m_unk1FC;
+            if (*(float *)&m_unk1B8 == 0.0f) {
+                if ((*(float *)&m_unk1BC == 0.0f) && (*(float *)&m_unk1C0 == 0.0f)) {
+                    char *src = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+                    m_unk1B8 = *(int *)(src + 0);
+                    m_unk1BC = *(int *)(src + 4);
+                    m_unk1C0 = *(int *)(src + 8);
+                }
+            }
+            m_unk104 = 0x40400000;
+            m_unk108 = 0x40000000;
+            if (m_unk1B4 >= 2) {
+                CdsAssert__FPciPc(lit_0026C030, 0x166, lit_0026C130);
+            }
+            if (m_unk1D8 != 0) {
+                m_unk1C4 = m_unk18C;
+                m_unk1D4 = m_unk18C;
+            }
+            if (m_unk1E0 != 2) {
+                MathAPI *pl = mPlayerAPI__13EntityManager;
+                char *a1 = (pl->m_unk3C != 0) ? pl->m_unk3C + 0x80 : (char *)pl + 0x190;
+                char *s0 = (m_unk3C != 0) ? m_unk3C + 0x90 : (char *)&m_unk1A0;
+                *(float *)(s0 + 4) = GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (float (*)[4])a1);
+            }
+            *(int *)(m_unk240 + 0x10) = m_unk1B8;
+            *(int *)(m_unk240 + 0x14) = m_unk1BC;
+            *(int *)(m_unk240 + 0x18) = m_unk1C0;
+        }
+        {
+            MathAPI *pl2 = mPlayerAPI__13EntityManager;
+            char *a1b = (pl2->m_unk3C != 0) ? pl2->m_unk3C + 0x80 : (char *)pl2 + 0x190;
+            if (Distance__7MathAPIFPA4_fPA4_f(m_unk240 + 0x10, (float (*)[4])a1b) <= *(float *)&m_unk1C4) {
+                if (m_unk1E0 != 0) {
+                    SetState__15EntityBaseClassFi(this, 0xA);
+                } else {
+                    LoadCorrectMesh(true);
+                    SetState__15EntityBaseClassFi(this, 0x19);
+                }
+            }
+        }
+        break;
+    case 10:
+        if (m_unkE9 != 0) {
+            switch (m_unk1E0) {
+            case 1:
+            case 3:
+                temp_v0_9 = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0xF, 0, 0);
+                if (temp_v0_9 == 0) {
+                    CdsAssert__FPciPc(lit_0026C030, 0x1A0, lit_0026C150);
+                }
+                m_unk228 = temp_v0_9->m_unk4;
+                EnableSleep__15EntityBaseClassFbb(this, 0, 0);
+                if (m_unk1E0 == 3) {
+                    temp_v0_9->m_unk22C = 1;
+                }
+                temp_v0_10 = m_unk3C;
+                var_v1 = (PosBlock *)&m_unk190;
+                if (temp_v0_10 != 0) {
+                    var_v1 = (PosBlock *)(temp_v0_10 + 0x80);
+                }
+                temp_f3 = *(float *)&m_unk1E4;
+                temp_f2 = var_v1->x;
+                if (temp_f3 == temp_f2 && *(float *)&m_unk1E8 == var_v1->y && *(float *)&m_unk1EC == var_v1->z) {
+                    startPos[0] = temp_f2;
+                    startPos[1] = 50.0f + var_v1->y;
+                    var_f0 = var_v1->z;
+                } else if (temp_f3 == 0.0f && *(float *)&m_unk1E8 == 0.0f && *(float *)&m_unk1EC == 0.0f) {
+                    startPos[0] = temp_f2;
+                    startPos[1] = 50.0f + var_v1->y;
+                    var_f0 = var_v1->z;
+                } else {
+                    startPos[0] = temp_f3;
+                    startPos[1] = *(float *)&m_unk1E8;
+                    var_f0 = *(float *)&m_unk1EC;
+                }
+                startPos[2] = var_f0;
+                destPos[0] = var_v1->x;
+                destPos[1] = var_v1->y;
+                destPos[2] = var_v1->z;
+                SetShellStartAndDest__8ZinShellFRA4_fRA4_f(temp_v0_9, &startPos, &destPos);
+                temp_v1_3 = m_unk1F4;
+                if (temp_v1_3 != 0) {
+                    temp_v0_9->m_unk224 = temp_v1_3;
+                    temp_v0_9->m_unk228 = m_unk4;
+                }
+                goto block_99;
+            case 2:
+                temp_a1 = m_unk1F4;
+                if (temp_a1 != 0) {
+                    TriggerBGAnim__15EntityBaseClassFUiibUi(this, temp_a1, -1, 0, 0);
+                }
+                SetState__15EntityBaseClassFi(this, 0x12);
+                return;
+            case 4:
+                LoadCorrectMesh(true);
+                SetState__15EntityBaseClassFi(this, 0x19);
+                return;
+            default:
+                CdsAssert__FPciPc(lit_0026C030, 0x1E6, lit_0026C160);
+                goto block_99;
+            }
+        } else {
+block_99:
+            if (m_unk1E0 != 1) {
+                CdsAssert__FPciPc(lit_0026C030, 0x1FD, lit_0026C160);
+            } else {
+                temp_v0_11 = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk228);
+                if (temp_v0_11 == 0 || temp_v0_11->m_unk22D != 0) {
+                    *(float *)&m_unk224 = RandomFloatRange__7MathAPIFff(0.0f, 360.0f);
+                    SetState__15EntityBaseClassFi(this, 8);
+                    EnableSleep__15EntityBaseClassFbb(this, 1, 0);
+                }
+            }
+            goto block_541;
+        }
+        break;
+    case 18: {
+        float sp70[4];
+        if (m_unkE9 != 0) {
+            GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(this, sp70);
+            sceVu0Normalize(sp70, sp70);
+            sceVu0ScaleVector(sp70, sp70, *(float *)&m_unk1F8);
+            *(u_long128 *)m_unk38 = *(u_long128 *)sp70;
+            LoadCorrectMesh(true);
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_JumpOutSeq);
+            m_unk2E4 = (unsigned int *)ClockworkStalker_JumpOutSeq;
+        }
+        var_v1 = (PosBlock *)m_unk38;
+        if (var_v1->x == 0.0f && var_v1->y == 0.0f && var_v1->z == 0.0f) {
+            SetState__15EntityBaseClassFi(this, 0x19);
+            PlaySound__15EntityBaseClassFUi(this, 0x2D7U);
+        }
+        goto block_541;
+    }
+    case 8: {
+        float sp80[4];
+        float fCos;
+        float fSin;
+        fCos = cosf(0.017453292f * *(float *)&m_unk224);
+        fSin = sinf(0.017453292f * *(float *)&m_unk224);
+        *(int *)(m_unk38 + 0x10C) = 0x3E4CCCCD;
+        sp80[0] = m_vDefaultSpawnVelocity[2] * fSin + m_vDefaultSpawnVelocity[0] * fCos;
+        sp80[2] = m_vDefaultSpawnVelocity[2] * fCos - m_vDefaultSpawnVelocity[0] * fSin;
+        sp80[1] = m_vDefaultSpawnVelocity[1];
+        *(u_long128 *)m_unk38 = *(u_long128 *)sp80;
+        LoadCorrectMesh(true);
+        PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_JumpFromShellSeq);
+        m_unk2E4 = (unsigned int *)ClockworkStalker_JumpFromShellSeq;
+        if (*(float *)m_unk38 == 0.0f && *(float *)(m_unk38 + 4) == 0.0f && *(float *)(m_unk38 + 8) == 0.0f) {
+            SetState__15EntityBaseClassFi(this, 0x19);
+        }
+        break;
+    }
+    case 13: {
+        MathAPI *player;
+        char *playerSide;
+        char *ownSide;
+        char *tgt;
+        char *tgtSide;
+        float dist;
+        int roll;
+
+        RemoveFromAttackSystem__15EntityBaseClassFv(this);
+        *(int *)(m_unk38 + 0xEC) = 0x80113FD5;
+        player = mPlayerAPI__13EntityManager;
+        playerSide = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+        if (Distance__7MathAPIFPA4_fPA4_f(playerSide, &m_unk200) < *(float *)&m_unk1D4) {
+            player = mPlayerAPI__13EntityManager;
+            playerSide = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+            ownSide = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+            dist = Distance__7MathAPIFPA4_fPA4_f(ownSide, (float (*)[4])playerSide);
+            if (m_unk2DC != 0) {
+                tgt = (char *)InstanceIsValid__15EntityBaseClassFUi((unsigned int)m_unk2DC);
+                if (tgt != 0) {
+                    if (((int (*)(void *))(*(void ***)tgt)[15])(tgt) != 0) {
+                        tgtSide = (*(char **)(tgt + 0x3C) != 0) ? *(char **)(tgt + 0x3C) + 0x80 : tgt + 0x190;
+                        ownSide = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+                        if (Distance__7MathAPIFPA4_fPA4_f(ownSide, (float (*)[4])tgtSide) < dist) {
+                            SetState__15EntityBaseClassFi(this, 5);
+                            return;
+                        }
+                        goto block_139;
+                    }
+                    goto block_139;
+                }
+                goto block_140;
+            }
+block_139:
+block_140:
+            roll = MathAPI::RandomIntRange(1, 100);
+            if (CanAttackPlayer() != 0) {
+                SetState__15EntityBaseClassFi(this, 0);
+            } else if (roll < 5) {
+                SetState__15EntityBaseClassFi(this, 0x21);
+            } else if (dist < 15.0f) {
+                if (m_unk2EC <= 0) {
+                    if (PlayerFacingUs() != 0) {
+                        SetState__15EntityBaseClassFi(this, 0x1F);
+                    } else {
+                        m_unk2EC = 1;
+                        SetState__15EntityBaseClassFi(this, 0x1A);
+                    }
+                } else {
+                    goto block_150;
+                }
+            } else {
+block_150:
+                if (!(dist <= 20.0f)) {
+                    player = mPlayerAPI__13EntityManager;
+                    playerSide = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+                    m_unk2C0 = *(float *)playerSide;
+                    ownSide = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+                    m_unk2C4 = *(float *)(ownSide + 4);
+                    m_unk264 = MathAPI::RandomIntRange(1, 2);
+                    SetState__15EntityBaseClassFi(this, 0x22);
+                } else {
+                    m_unk2EC = 0;
+                    SetState__15EntityBaseClassFi(this, 0x1A);
+                }
+            }
+            goto block_541;
+        }
+        SetState__15EntityBaseClassFi(this, 0x19);
+        goto block_541;
+    }
+    case 33:
+        if (m_unkE9 != 0) {
+            PlaySound__15EntityBaseClassFUi(this, 0x4E3DU);
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_Taunt2Seq);
+            m_unk2E4 = (unsigned int *)ClockworkStalker_Taunt2Seq;
+        }
+        FacePlayer__15EntityBaseClassFf(this, 0.15f);
+        if (*(int *)((char *)this + 0x160) == 0) {
+            SetState__15EntityBaseClassFi(this, 0xD);
+        }
+        goto block_541;
+    case 26: {
+        int blk[4];
+        int t;
+        if (m_unkE9 != 0) {
+            char *var8 = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+            *(u_long128 *)m_unk240 = *(u_long128 *)var8;
+            m_unk280 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, MathAPI::RandomIntRange(0x168, 0x258), true);
+            {
+                char *ownSide = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+                MathAPI *player = mPlayerAPI__13EntityManager;
+                char *playerSide = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+                Distance__7MathAPIFPA4_fPA4_f(playerSide, (float (*)[4])ownSide);
+            }
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_WalkSeq);
+            m_unk2E4 = (unsigned int *)ClockworkStalker_WalkSeq;
+            t = m_unk26C;
+            if (t == 3) {
+                m_unk26C = 0;
+                m_unk268 = 1;
+                blk[1] = 0xC2B60000;
+            } else if (t == 4) {
+                m_unk26C = 0;
+                m_unk268 = 2;
+                blk[1] = 0x42B60000;
+            } else if (MathAPI::RandomIntRange(1, 0x14) & 1) {
+                blk[1] = 0xC2B60000;
+                m_unk268 = 1;
+            } else {
+                blk[1] = 0x42B60000;
+                m_unk268 = 2;
+            }
+            m_unk270 = (int)Find__6PMNodeFUi(m_unk3C, 0xE1612999U);
+            blk[0] = 0;
+            blk[2] = 0;
+            *(u_long128 *)((char *)m_unk270 + 0x90) = *(u_long128 *)blk;
+            ((PMNodeView *)m_unk270)->m_unk3E |= 8;
+            m_unk2F0 = (float)MathAPI::RandomIntRange(0x5A, 0x6E);
+        }
+        PlaySoundOnFrame(0x173U, 8U);
+        PlaySoundOnFrame(0x174U, 0xEU);
+        PlaySoundOnFrame(0x173U, 0x16U);
+        PlaySoundOnFrame(0x174U, 0x1DU);
+        PlaySoundOnFrame(0x173U, 0x25U);
+        PlaySoundOnFrame(0x174U, 0x2CU);
+        {
+            MathAPI *player = mPlayerAPI__13EntityManager;
+            char *s0 = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+            m_unk290 = *(float *)s0;
+        }
+        {
+            MathAPI *player = mPlayerAPI__13EntityManager;
+            char *s1 = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+            m_unk294 = *(float *)(s1 + 4);
+        }
+        {
+            MathAPI *player = mPlayerAPI__13EntityManager;
+            char *s2 = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+            m_unk298 = *(float *)(s2 + 8);
+        }
+        {
+            char *s3 = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+            m_unk294 = *(float *)(s3 + 4);
+        }
+        CircleAround(&m_unk290, m_unk2F0);
+        if (m_unk280 == 0) {
+            m_unk270 = (int)Find__6PMNodeFUi(m_unk3C, 0xE1612999U);
+            ((PMNodeView *)m_unk270)->m_unk94 = m_unk274;
+            ((PMNodeView *)m_unk270)->m_unk3E |= 8;
+            FacePlayer__15EntityBaseClassFf(this, 0.15f);
+            SetState__15EntityBaseClassFi(this, 0xD);
+        }
+        if (init == 0) {
+            astallcountcount = 0xF;
+            init = 1;
+        }
+        if (astallcountcount < m_unk230) {
+            m_unk230 = 0;
+            if (*(int *)(m_unk38 + 0xE4) != 0) {
+                m_unk270 = (int)Find__6PMNodeFUi(m_unk3C, 0xE1612999U);
+                ((PMNodeView *)m_unk270)->m_unk94 = m_unk274;
+                ((PMNodeView *)m_unk270)->m_unk3E |= 8;
+                if (m_unk268 == 2) {
+                    m_unk26C = 3;
+                } else {
+                    m_unk26C = 4;
+                }
+                FacePlayer__15EntityBaseClassFf(this, 0.15f);
+                SetState__15EntityBaseClassFi(this, 0xD);
+            }
+        }
+        m_unk230 += 1;
+        if (((signed char)(m_unk3C[0x3F] & 7) & 4) != 0) {
+            if (CanAttackPlayer() != 0) {
+                m_unk270 = (int)Find__6PMNodeFUi(m_unk3C, 0xE1612999U);
+                ((PMNodeView *)m_unk270)->m_unk94 = m_unk274;
+                ((PMNodeView *)m_unk270)->m_unk3E |= 8;
+                SetState__15EntityBaseClassFi(this, 0);
+            }
+            {
+                char *a1 = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+                MathAPI *player = mPlayerAPI__13EntityManager;
+                char *a0 = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+                if (!(Distance__7MathAPIFPA4_fPA4_f(a0, (float (*)[4])a1) <= 20.0f)) {
+                    char *b0 = (mPlayerAPI__13EntityManager->m_unk3C != 0) ? mPlayerAPI__13EntityManager->m_unk3C + 0x80 : (char *)mPlayerAPI__13EntityManager + 0x190;
+                    if (Distance__7MathAPIFPA4_fPA4_f(b0, (float (*)[4])&m_unk200) <= *(float *)&m_unk1D4) {
+                        m_unk270 = (int)Find__6PMNodeFUi(m_unk3C, 0xE1612999U);
+                        ((PMNodeView *)m_unk270)->m_unk94 = m_unk274;
+                        ((PMNodeView *)m_unk270)->m_unk3E |= 8;
+                        {
+                            MathAPI *player2 = mPlayerAPI__13EntityManager;
+                            char *c0 = (player2->m_unk3C != 0) ? player2->m_unk3C + 0x80 : (char *)player2 + 0x190;
+                            m_unk2C0 = *(float *)c0;
+                        }
+                        {
+                            char *c1 = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+                            m_unk2C4 = (float)*(int *)(c1 + 4);
+                        }
+                        m_unk264 = MathAPI::RandomIntRange(1, 2);
+                        SetState__15EntityBaseClassFi(this, 0x22);
+                    }
+                }
+            }
+            if (m_unk2A0 == 0) {
+                m_unk2A0 = 1;
+                m_unk2AC = mTimerAPI__13EntityManager.CreateTimer(m_unk4, 0x2D, true);
+                LoadCorrectMesh(true);
+            }
+        }
+        goto block_541;
+    }
+    case 25: {
+        if (m_unkE9 != 0) {
+            RemoveFromAttackSystem__15EntityBaseClassFv(this);
+            ClockworkShadowShell *shadow = (ClockworkShadowShell *)m_unkD4;
+            if (shadow != 0) {
+                shadow->unk0 = 1;
+                if (shadow->unkC != 0) {
+                    ((ClockworkShadowShell *)shadow->unkC)->unk18 = 1;
+                }
+            }
+            EnableSleep__15EntityBaseClassFbb(this, 1, 0);
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_IdleSeq);
+            m_unk2E4 = (unsigned int *)ClockworkStalker_IdleSeq;
+            if (m_unk2DC != 0 && InstanceIsValid__15EntityBaseClassFUi(m_unk2DC) != 0) {
+                SetState__15EntityBaseClassFi(this, 5);
+                return;
+            }
+            goto block_231;
+        }
+block_231:
+        FacePlayer__15EntityBaseClassFf(this, 0.15f);
+        {
+            MathAPI *player = mPlayerAPI__13EntityManager;
+            char *side = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+            if (Distance__7MathAPIFPA4_fPA4_f(side, (float (*)[4])&m_unk200) < *(float *)&m_unk1D4) {
+                SetState__15EntityBaseClassFi(this, 0xD);
+            }
+        }
+        goto block_541;
+    }
+    case 27:
+        if (m_unkE9 != 0) {
+            m_unk270 = (int)Find__6PMNodeFUi(m_unk3C, 0xE1612999U);
+            temp_v1_11 = (PMNodeView *)m_unk270;
+            *(int *)((char *)temp_v1_11 + 0x94) = m_unk274;
+            temp_v1_11->m_unk3E |= 8;
+            PlaySound__15EntityBaseClassFUi(this, 0x16AU);
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_DodgeSeq);
+            m_unk2E4 = (unsigned int *)ClockworkStalker_DodgeSeq;
+            *(int *)(m_unk38 + 0xEC) = 0x80113FD5;
+            m_unk10C &= 0xFDFFFFFF;
+            DeleteEffects();
+            m_unk2EC += 1;
+        }
+        FacePlayer__15EntityBaseClassFf(this, 0.15f);
+        if (!(GetFrameTime__6PMNodeFv(m_unk3C) < 9.0f)) {
+            m_unk10C |= 0x02000000;
+        }
+        if (*(int *)((char *)this + 0x160) == 0) {
+            SetState__15EntityBaseClassFi(this, 0);
+        }
+        goto block_541;
+    case 0: {
+        if (m_unkE9 != 0) {
+            int temp_v1_12 = m_unk2A0;
+            if (temp_v1_12 != 2) {
+                if (temp_v1_12 == 1) {
+                    goto block_245;
+                }
+            } else {
+block_245:
+                m_unk2A0 = 3;
+                m_unk2AC = mTimerAPI__13EntityManager.CreateTimer(m_unk4, 0x2D, true);
+                LoadCorrectMesh(true);
+            }
+            MathAPI *player = mPlayerAPI__13EntityManager;
+            char *playerSide = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+            char *ownSide = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+            float dist = Distance__7MathAPIFPA4_fPA4_f(ownSide, (float (*)[4])playerSide);
+            if (!(dist <= 15.0f)) {
+                char *farSide = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+                m_unk2C0 = *(float *)farSide;
+                char *ownFar = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+                m_unk2C4 = (float)*(int *)(ownFar + 4);
+                SetState__15EntityBaseClassFi(this, 0x20);
+                return;
+            }
+            if ((dist < 7.0f) || (m_unk140 == (unsigned int *)ClockworkStalker_DodgeSeq)) {
+                if (MathAPI::RandomIntRange(1, 100) < 0x19) {
+                    PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_ComboAttackSeq);
+                    m_unk2E4 = (unsigned int *)ClockworkStalker_ComboAttackSeq;
+                    m_unk2E0 = CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(&mEffectAPI__13EntityManager, 0x010001BA, 0x0200035E, 0, 0, 0, 0.5f, false, 0, false);
+                    m_unk27C = 0;
+                    goto block_264;
+                }
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_LowSweepSeq);
+                m_unk2E4 = (unsigned int *)ClockworkStalker_LowSweepSeq;
+                m_unk2E0 = CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(&mEffectAPI__13EntityManager, 0x010000FD, 0x0200021F, 0, 0, 0, 0.5f, false, 0, false);
+            } else {
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_ComboAttackSeq);
+                m_unk2E4 = (unsigned int *)ClockworkStalker_ComboAttackSeq;
+                m_unk2E0 = CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(&mEffectAPI__13EntityManager, 0x010001BA, 0x0200035E, 0, 0, 0, 0.5f, false, 0, false);
+                m_unk27C = 0;
+block_264:
+                m_unk278 = 1;
+            }
+            FacePlayer__15EntityBaseClassFf(this, 0.15f);
+            goto block_266;
+        }
+block_266:
+        if (m_unk140 == (unsigned int *)ClockworkStalker_ComboAttackSeq) {
+            PlaySoundOnFrame(0x168U, 0x1CU);
+            PlaySoundOnFrame(0x168U, 0x23U);
+            PlaySoundOnFrame(0x168U, 0x2CU);
+            PlaySoundOnFrame(0x168U, 0x33U);
+            PlaySoundOnFrame(0x168U, 0x41U);
+            switch (m_unk27C) {
+            case 0:
+                if ((m_unk278 != 0) && !(GetFrameTime__6PMNodeFv(m_unk3C) < 35.0f)) {
+                    m_unk278 = 0;
+                    ResetCollisions__15EntityBaseClassFv(this);
+                }
+                if (!(GetFrameTime__6PMNodeFv(m_unk3C) < 38.0f)) {
+                    m_unk27C += 1;
+                    m_unk278 = 1;
+                }
+                break;
+            case 1:
+                if ((m_unk278 != 0) && !(GetFrameTime__6PMNodeFv(m_unk3C) < 44.0f)) {
+                    m_unk278 = 0;
+                    ResetCollisions__15EntityBaseClassFv(this);
+                    FacePlayer__15EntityBaseClassFf(this, 0.15f);
+                }
+                if (!(GetFrameTime__6PMNodeFv(m_unk3C) < 47.0f)) {
+                    m_unk27C += 1;
+                    m_unk278 = 1;
+                }
+                break;
+            case 2:
+                if ((m_unk278 != 0) && !(GetFrameTime__6PMNodeFv(m_unk3C) < 51.0f)) {
+                    m_unk278 = 0;
+                    ResetCollisions__15EntityBaseClassFv(this);
+                }
+                if (!(GetFrameTime__6PMNodeFv(m_unk3C) < 54.0f)) {
+                    m_unk27C += 1;
+                    m_unk278 = 1;
+                }
+                break;
+            case 3:
+                if ((m_unk278 != 0) && !(GetFrameTime__6PMNodeFv(m_unk3C) < 65.0f)) {
+                    m_unk27C += 1;
+                    m_unk278 = 0;
+                    ResetCollisions__15EntityBaseClassFv(this);
+                }
+                if (!(GetFrameTime__6PMNodeFv(m_unk3C) < 69.0f)) {
+                    m_unk27C += 1;
+                    m_unk278 = 1;
+                }
+                break;
+            }
+        } else {
+            PlaySoundOnFrame(0x168U, 0x11U);
+        }
+        if (*(int *)((char *)this + 0x160) == 0) {
+            MathAPI *player2 = mPlayerAPI__13EntityManager;
+            char *playerSide2 = (player2->m_unk3C != 0) ? player2->m_unk3C + 0x80 : (char *)player2 + 0x190;
+            char *ownSide2 = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+            if (!(Distance__7MathAPIFPA4_fPA4_f(ownSide2, (float (*)[4])playerSide2) <= 13.0f)) {
+                SetState__15EntityBaseClassFi(this, 0xD);
+            } else {
+                miRandom__7MathAPI = miRandom__7MathAPI * 0x343FD + 0x269EC3;
+                if (miRandom__7MathAPI & 1) {
+                    if (PlayerFacingUs() != 0) {
+                        if (m_unk2EC <= 0) {
+                            SetState__15EntityBaseClassFi(this, 0x1F);
+                        } else {
+                            goto block_305;
+                        }
+                    } else {
+block_305:
+                        m_unk2EC = 1;
+                        SetState__15EntityBaseClassFi(this, 0x1A);
+                    }
+                } else {
+                    SetState__15EntityBaseClassFi(this, 0xD);
+                }
+            }
+        }
+        goto block_541;
+    }
+    case 32: {
+        float spA0[4];
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_DashShortSeq);
+            m_unk2E4 = (unsigned int *)ClockworkStalker_DashShortSeq;
+            char *ownSide = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+            *(u_long128 *)m_unk240 = *(u_long128 *)ownSide;
+            MathAPI *inst = (MathAPI *)InstanceIsValid__15EntityBaseClassFUi(m_unk2DC);
+            if (inst != 0) {
+                char *instSide = (inst->m_unk3C != 0) ? inst->m_unk3C + 0x80 : (char *)inst + 0x190;
+                m_unk2C0 = *(float *)instSide;
+            }
+            *(u_long128 *)spA0 = *(u_long128 *)&m_unk2C0;
+            spA0[1] += 10.0f;
+            if (GetGroundPos__7MathAPIFPA4_f(spA0) == 0) {
+                SetState__15EntityBaseClassFi(this, 0xD);
+                return;
+            }
+            RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (float (*)[4])&m_unk2C0), 0.15f);
+            goto block_319;
+        }
+block_319:
+        PlaySoundOnFrame(0x2ACU, 0x10U);
+        PlaySoundOnFrame(0x2A5U, 0x1EU);
+        MathAPI *player = mPlayerAPI__13EntityManager;
+        char *playerSide = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+        char *ownSide2 = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+        float dist = Distance__7MathAPIFPA4_fPA4_f(ownSide2, (float (*)[4])playerSide);
+        char *ownSide3 = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+        if (Distance__7MathAPIFPA4_fPA4_f((char *)&m_unk2C0, (float (*)[4])ownSide3) < 7.0f) {
+            if (init == 0) {
+                aStopDashDst = 0x41500000;
+                init = 1;
+            }
+            MathAPI *inst2 = (MathAPI *)InstanceIsValid__15EntityBaseClassFUi(m_unk2DC);
+            if (inst2 != 0) {
+                char *ownSide4 = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+                char *instSide2 = (inst2->m_unk3C != 0) ? inst2->m_unk3C + 0x80 : (char *)inst2 + 0x190;
+                dist = Distance__7MathAPIFPA4_fPA4_f(ownSide4, (float (*)[4])instSide2);
+                if (!(dist <= 7.0f)) {
+                    *(u_long128 *)&m_unk2C0 = *(u_long128 *)instSide2;
+                    SetState__15EntityBaseClassFi(this, 0x20);
+                } else {
+                    SetState__15EntityBaseClassFi(this, 6);
+                }
+            } else if (!(dist <= 7.0f)) {
+                SetState__15EntityBaseClassFi(this, 0xD);
+            } else {
+                SetState__15EntityBaseClassFi(this, 0);
+            }
+        }
+        if (((signed char)(m_unk3C[0x3F] & 7) & 4) != 0) {
+            if (dist < 10.0f) {
+                if (!(dist <= 7.0f)) {
+                    SetState__15EntityBaseClassFi(this, 0xD);
+                } else {
+                    SetState__15EntityBaseClassFi(this, 0);
+                }
+            }
+            if (*(int *)(m_unk38 + 0xE4) != 0) {
+                FacePlayer__15EntityBaseClassFf(this, 0.15f);
+                SetState__15EntityBaseClassFi(this, 0xD);
+                return;
+            }
+            if (IsStalled(1.0f, (float (*)[4])m_unk240) != 0) {
+                FacePlayer__15EntityBaseClassFf(this, 0.15f);
+                SetState__15EntityBaseClassFi(this, 0xD);
+                return;
+            }
+            char *side = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+            *(u_long128 *)m_unk240 = *(u_long128 *)side;
+            goto block_541;
+        }
+        goto block_541;
+    }
+    case 34: {
+        float spB0[4];
+        if (m_unkE9 != 0) {
+            *(u_long128 *)spB0 = *(u_long128 *)&m_unk2C0;
+            spB0[1] += 10.0f;
+            if (GetGroundPos__7MathAPIFPA4_f(spB0) == 0) {
+                SetState__15EntityBaseClassFi(this, 0xD);
+                return;
+            }
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_DashShortLoopSeq);
+            m_unk2E4 = (unsigned int *)ClockworkStalker_DashShortLoopSeq;
+            *(int *)(m_unk240 + 0x20) = 0;
+            goto block_360;
+        }
+block_360:
+        PlaySoundOnFrame(0x2ACU, 0x10U);
+        PlaySoundOnFrame(0x2A5U, 0x1EU);
+        RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (float (*)[4])&m_unk2C0), 0.15f);
+        if (*(int *)(m_unk240 + 0x20) < m_unk264) {
+            char *ownSide = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+            if (Distance__7MathAPIFPA4_fPA4_f(ownSide, (float (*)[4])&m_unk2C0) < 5.0f) {
+                goto block_365;
+            }
+            if (*(unsigned char *)((char *)this + 0x160) == 0) {
+                MathAPI *player = mPlayerAPI__13EntityManager;
+                char *playerSide = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+                char *ownSide2 = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+                if (Distance__7MathAPIFPA4_fPA4_f(ownSide2, (float (*)[4])playerSide) < 10.0f) {
+                    SetState__15EntityBaseClassFi(this, 0xD);
+                    return;
+                }
+                *(int *)(m_unk240 + 0x20) += 1;
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_DashShortLoopSeq);
+                m_unk2E4 = (unsigned int *)ClockworkStalker_DashShortLoopSeq;
+                goto block_541;
+            }
+            goto block_541;
+        }
+block_365:
+        SetState__15EntityBaseClassFi(this, 0xD);
+        return;
+    }
+    case 31: {
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_DashBackSeq);
+            m_unk2E4 = (unsigned int *)ClockworkStalker_DashBackSeq;
+            FacePlayer__15EntityBaseClassFf(this, 0.15f);
+            char *side = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+            *(u_long128 *)m_unk240 = *(u_long128 *)side;
+        }
+        int t = m_unk2EC;
+        if (t <= 0 && *(int *)(m_unk38 + 0xE4) != 0) {
+            m_unk2EC = t + 1;
+        }
+        if (*(unsigned char *)((char *)this + 0x160) == 0) {
+            if (IsStalled(1.0f, (float (*)[4])m_unk240) != 0) {
+                m_unk2EC += 1;
+            }
+            m_unk2EC += 1;
+            if (CanAttackPlayer() != 0) {
+                SetState__15EntityBaseClassFi(this, 0);
+            } else {
+                SetState__15EntityBaseClassFi(this, 0xD);
+            }
+        }
+        goto block_541;
+    }
+    case 4: {
+        unsigned int *var_v1_6;
+        if (m_unkE9 != 0) {
+            *(int *)(m_unk38 + 0xEC) = 0x80113F55U;
+            MathAPI *player = mPlayerAPI__13EntityManager;
+            char *playerSide = (player->m_unk3C != 0) ? player->m_unk3C + 0x80 : (char *)player + 0x190;
+            char *dst = (m_unk3C != 0) ? m_unk3C + 0x90 : m_unk1A0;
+            *(float *)(dst + 4) = GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (float (*)[4])playerSide);
+            switch (m_unk21C) {
+            case 0x8F: case 0x108: case 0x48: case 0xF:
+                PlaySound__15EntityBaseClassFUi(this, 0x4E3CU);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_LaunchSeq);
+                m_unk2E4 = (unsigned int *)ClockworkStalker_LaunchSeq;
+                SetState__15EntityBaseClassFi(this, 0x14);
+                return;
+            case 0x25: case 0x0:
+                PlaySound__15EntityBaseClassFUi(this, 0x4E3CU);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_HitRightSeq);
+                var_v1_6 = (unsigned int *)ClockworkStalker_HitRightSeq;
+            block_419:
+                m_unk2E4 = var_v1_6;
+                goto block_420;
+            case 0x5: case 0x4:
+                PlaySound__15EntityBaseClassFUi(this, 0x4E3CU);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_HitLeftSeq);
+                var_v1_6 = (unsigned int *)ClockworkStalker_HitLeftSeq;
+                goto block_419;
+            case 0xC:
+                PlaySound__15EntityBaseClassFUi(this, 0x4E3CU);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_KnockBackSeq);
+                var_v1_6 = (unsigned int *)ClockworkStalker_KnockBackSeq;
+                goto block_419;
+            case 0x2D:
+                if (MathAPI::RandomIntRange(1, 0x64) < 0x15) {
+                    m_unk22C = m_unk21C;
+                    SetState__15EntityBaseClassFi(this, 0xC);
+                    return;
+                }
+                PlaySound__15EntityBaseClassFUi(this, 0x4E3CU);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_HitSeq);
+                var_v1_6 = (unsigned int *)ClockworkStalker_HitSeq;
+                goto block_419;
+            case 0x8:
+                if (MathAPI::RandomIntRange(1, 0x64) < 0x15) {
+                    m_unk22C = m_unk21C;
+                    SetState__15EntityBaseClassFi(this, 0xC);
+                    return;
+                }
+                PlaySound__15EntityBaseClassFUi(this, 0x4E3CU);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_KnockUp1Seq);
+                var_v1_6 = (unsigned int *)ClockworkStalker_KnockUp1Seq;
+                goto block_419;
+            default:
+                PlaySound__15EntityBaseClassFUi(this, 0x4E3CU);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_HitSeq);
+                var_v1_6 = (unsigned int *)ClockworkStalker_HitSeq;
+                goto block_419;
+            }
+        } else {
+        block_420:
+            if (*(unsigned char *)((char *)this + 0x160) == 0) SetState__15EntityBaseClassFi(this, 0xD);
+            goto block_541;
+        }
+        break;
+    }
+    case 20:
+        FacePlayer__15EntityBaseClassFf(this, 0.15f);
+        if (*(unsigned char *)((char *)this + 0x160) == 0) {
+            SetState__15EntityBaseClassFi(this, 0xD);
+        }
+        goto block_541;
+    case 21: {
+        unsigned int *var_v0_22;
+        if (m_unkE9 != 0) {
+            if (m_unk2D4 != 0) {
+                PlaySound__15EntityBaseClassFUi(this, 0x4E3CU);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_JuggleInAirSeq);
+                var_v0_22 = (unsigned int *)ClockworkStalker_JuggleInAirSeq;
+            } else {
+                PlaySound__15EntityBaseClassFUi(this, 0x4E3CU);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_JuggleSeq);
+                var_v0_22 = (unsigned int *)ClockworkStalker_JuggleSeq;
+            }
+            m_unk2E4 = var_v0_22;
+        }
+        FacePlayer__15EntityBaseClassFf(this, 0.15f);
+        if (*(unsigned char *)((char *)this + 0x160) == 0) {
+            SetState__15EntityBaseClassFi(this, 0x17);
+        }
+        goto block_541;
+    }
+    case 12:
+        if (m_unkE9 != 0) {
+            RemoveFromAttackSystem__15EntityBaseClassFv(this);
+            switch (m_unk22C) {
+            case 8:
+                PlaySound__15EntityBaseClassFUi(this, 0x4E3CU);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_KnockUp2Seq);
+                m_unk2E4 = (unsigned int *)ClockworkStalker_KnockUp2Seq;
+                break;
+            case 32:
+            case 45:
+                PlaySound__15EntityBaseClassFUi(this, 0x4E3CU);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_KnockDownSeq);
+                m_unk2E4 = (unsigned int *)ClockworkStalker_KnockDownSeq;
+                break;
+            default:
+                CdsAssert__FPciPc(lit_0026C030, 0x609, lit_0026C160);
+                break;
+            }
+        }
+        if (*(unsigned char *)((char *)this + 0x160) == 0) {
+            SetState__15EntityBaseClassFi(this, 0x17);
+            return;
+        }
+        goto block_541;
+    case 23:
+        if (m_unkE9 != 0) {
+            *(int *)(m_unk38 + 0xEC) = 0x80113FD5;
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_GetUpSeq);
+            m_unk2E4 = (unsigned int *)ClockworkStalker_GetUpSeq;
+        }
+        FacePlayer__15EntityBaseClassFf(this, 0.15f);
+        if (*(unsigned char *)((char *)this + 0x160) == 0) {
+            SetState__15EntityBaseClassFi(this, 0xD);
+        }
+        goto block_541;
+    case 5: {
+        if (m_unkE9 != 0) {
+            MathAPI *inst = (MathAPI *)InstanceIsValid__15EntityBaseClassFUi(m_unk2DC);
+            if (inst != 0) {
+                char *instSide = (inst->m_unk3C != 0) ? inst->m_unk3C + 0x80 : (char *)inst + 0x190;
+                m_unk2C0 = *(float *)instSide;
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_DashShortSeq);
+            }
+        }
+        PlaySoundOnFrame(0x2ACU, 0x10U);
+        PlaySoundOnFrame(0x2A5U, 0x1EU);
+        MathAPI *inst3 = (MathAPI *)InstanceIsValid__15EntityBaseClassFUi(m_unk2DC);
+        if ((inst3 != 0 && ((int (*)(MathAPI *))(*(void ***)inst3)[15])(inst3) == 0) || inst3 == 0) {
+            char *src = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+            *(u_long128 *)m_unk200 = *(u_long128 *)src;
+            m_unk2DC = 0;
+            SetState__15EntityBaseClassFi(this, 0xD);
+            return;
+        }
+        char *tgtA = (inst3->m_unk3C != 0) ? inst3->m_unk3C + 0x80 : (char *)inst3 + 0x190;
+        RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (float (*)[4])tgtA), 0.15f);
+        char *ownA = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+        if (Distance__7MathAPIFPA4_fPA4_f(ownA, (float (*)[4])tgtA) <= 7.0f) {
+            SetState__15EntityBaseClassFi(this, 6);
+            return;
+        }
+        char *ownB = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+        if (Distance__7MathAPIFPA4_fPA4_f(ownB, (float (*)[4])&m_unk2C0) < 3.0f) {
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_DashShortSeq);
+            char *tgtB = (inst3->m_unk3C != 0) ? inst3->m_unk3C + 0x80 : (char *)inst3 + 0x190;
+            m_unk2C0 = *(float *)tgtB;
+        }
+        if (m_unk3C[0x3F] & 4) {
+            if (IsStalled(1.0f, (float (*)[4])m_unk240) != 0) {
+                FacePlayer__15EntityBaseClassFf(this, 0.15f);
+                SetState__15EntityBaseClassFi(this, 0xD);
+                return;
+            }
+            char *tgtC = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+            *(u_long128 *)m_unk240 = *(u_long128 *)tgtC;
+            goto block_541;
+        }
+        goto block_541;
+    }
+    case 6: {
+        if (m_unkE9 != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_LowSweepSeq);
+            m_unk2E4 = (unsigned int *)ClockworkStalker_LowSweepSeq;
+        }
+        MathAPI *inst6 = (MathAPI *)InstanceIsValid__15EntityBaseClassFUi(m_unk2DC);
+        if (inst6 == 0) {
+            m_unk2DC = 0;
+            SetState__15EntityBaseClassFi(this, 0x19);
+            return;
+        }
+        char *tgt6 = (inst6->m_unk3C != 0) ? inst6->m_unk3C + 0x80 : (char *)inst6 + 0x190;
+        RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (float (*)[4])tgt6), 0.04f);
+        if (*(unsigned char *)((char *)this + 0x160) == 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_IdleSeq);
+            m_unk2E4 = (unsigned int *)ClockworkStalker_IdleSeq;
+            SetState__15EntityBaseClassFi(this, 7);
+        }
+        goto block_541;
+    }
+    case 7: {
+        if (m_unkE9 != 0) {
+            mTimerAPI__13EntityManager.KillTimer(m_unk2D8);
+            m_unk2D5 = 0;
+            m_unk2D8 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, 1U, false);
+        }
+        MathAPI *ent7 = (MathAPI *)InstanceIsValid__15EntityBaseClassFUi(m_unk2DC);
+        if (ent7 != 0) {
+            if (((int (*)(MathAPI *))(*(void ***)ent7)[15])(ent7) == 0) {
+                char *src7 = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+                *(u_long128 *)m_unk200 = *(u_long128 *)src7;
+                m_unk2DC = 0;
+                SetState__15EntityBaseClassFi(this, 0x19);
+                return;
+            }
+            char *tgt7 = (ent7->m_unk3C != 0) ? ent7->m_unk3C + 0x80 : (char *)ent7 + 0x190;
+            RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, (float (*)[4])tgt7), 0.04f);
+            if (m_unk2D5 != 0) {
+                SetState__15EntityBaseClassFi(this, 6);
+            }
+            char *tgt7b = (ent7->m_unk3C != 0) ? ent7->m_unk3C + 0x80 : (char *)ent7 + 0x190;
+            char *own7 = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+            if (!(Distance__7MathAPIFPA4_fPA4_f(own7, (float (*)[4])tgt7b) <= 7.0f)) {
+                SetState__15EntityBaseClassFi(this, 5);
+            }
+            goto block_541;
+        }
+        char *src7b = (m_unk3C != 0) ? m_unk3C + 0x80 : &m_unk190;
+        *(u_long128 *)m_unk200 = *(u_long128 *)src7b;
+        SetState__15EntityBaseClassFi(this, 0x19);
+        return;
+    }
+    case 9:
+    {
+        if (m_unkE9 != 0) {
+            float spC0[4];
+            *(int *)(m_unk3C + 0x18) = 0;
+            char *var_v0_27 = 0;
+            if (*(int *)(m_unk3C + 0x14) != 0) {
+                var_v0_27 = *(char **)(m_unk3C + 0x1C);
+            }
+            *(u_long128 *)spC0 = *(u_long128 *)(var_v0_27 + 0x70);
+            spC0[1] -= 5.0f;
+            m_unk10C &= 0xF8FFFFFF;
+            ClockworkShadowShell *shadow = (ClockworkShadowShell *)m_unkD4;
+            if (shadow != 0) {
+                shadow->unk0 = 0;
+                if (shadow->unkC != 0) ((ClockworkShadowShell *)shadow->unkC)->unk18 = 0;
+            }
+            KillTimers();
+            RemoveFromAttackSystem__15EntityBaseClassFv(this);
+            EnableSleep__15EntityBaseClassFbb(this, 0, 0);
+            WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0U);
+            WriteApparitionData__15EntityBaseClassFicUi(this, 0, 1, 0U);
+            switch (m_unk218) {
+            case 0x220: case 0x201: case 0x20: case 0x8:
+                PlaySound__15EntityBaseClassFUi(this, 0x169U);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_VerticalDeathSeq);
+                break;
+            case 0x2:
+                PlaySound__15EntityBaseClassFUi(this, 0x169U);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_StabDownDeathSeq);
+                break;
+            default:
+                PlaySound__15EntityBaseClassFUi(this, 0x169U);
+                PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_DeadSeq);
+                break;
+            }
+            *(u_long128 *)(m_unk3C + 0x80) = *(u_long128 *)spC0;
+            *(unsigned char *)(m_unk3C + 0x3E) |= 8;
+            SpawnBonus__15EntityBaseClassFPfii(this, (float *)m_vBonusSpawnOffset, 3, 3);
+        }
+        if (*(unsigned char *)((char *)this + 0x160) == 0) SetState__15EntityBaseClassFi(this, -2);
+        goto block_541;
+    }
+    case 24:
+    {
+        if (m_unkE9 != 0) {
+            m_unk10C &= 0xF8FFFFFF;
+            KillTimers();
+            WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0U);
+            PlaySound__15EntityBaseClassFUi(this, 0x169U);
+            PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_StabDownDeathSeq);
+            SpawnBonus__15EntityBaseClassFPfii(this, (float *)m_vBonusSpawnOffset, 3, 3);
+        }
+        if (*(unsigned char *)((char *)this + 0x160) == 0) SetState__15EntityBaseClassFi(this, -2);
+        goto block_541;
+    }
+    default:
+    block_541:
+        temp_a0 = m_unk3C;
+        if (temp_a0 != 0) {
+            temp_v0_8 = Find__6PMNodeFUi(temp_a0, 0xE7F78F41U);
+            if (temp_v0_8 != 0 && m_unk2A0 == 1) {
+                temp_f12 = *(float *)&m_unk2A4 - 0.017777778f;
+                *(float *)&m_unk2A4 = temp_f12;
+                SetAllFade__6PMNodeFf(temp_v0_8, temp_f12);
+            }
+        }
+        if (m_unk20 >= 0) {
+            CheckBlockAttack();
+        }
+        return;
+    }
 }
 
 // FUNCTION: 0x001E6370 __dt__16ClockworkStalkerFv
