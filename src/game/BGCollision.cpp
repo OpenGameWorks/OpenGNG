@@ -388,6 +388,59 @@ int BGCollision::FindIntersect(PVec3 &rFrom, PVec3 &rTo, unsigned int nFlags, fl
     return nRet;
 }
 
+// FUNCTION: 0x0016FE70 FindNextGrid__11BGCollisionFRiRiiiPA4_fPA4_fb
+void BGCollision::FindNextGrid(int &rX, int &rZ, int nDX, int nDZ, float (*pA)[4], float (*pB)[4], bool bFlag)
+{
+    float tmp[4];
+    float fX0 = m_unk0 + (float)rX * m_unk30;
+    float fZ0 = m_unk8 + (float)rZ * m_unk34;
+    float fX;
+    float fZ;
+
+    if (bFlag) {
+        fX = (pB[0][0] < 0.0f) ? fX0 : fX0 + m_unk30;
+        sceVu0ScaleVector(tmp, (float *)pB, (fX - pA[0][0]) / pB[0][0]);
+        sceVu0AddVector(tmp, (float *)pA, tmp);
+        tmp[0] = fX;
+        if (tmp[2] < fZ0 || tmp[2] > fZ0 + m_unk34) {
+            fZ = (pB[0][2] < 0.0f) ? fZ0 : fZ0 + m_unk34;
+            sceVu0ScaleVector(tmp, (float *)pB, (fZ - pA[0][2]) / pB[0][2]);
+            sceVu0AddVector(tmp, (float *)pA, tmp);
+            tmp[2] = fZ;
+        }
+    } else {
+        fZ = (pB[0][2] < 0.0f) ? fZ0 : fZ0 + m_unk34;
+        sceVu0ScaleVector(tmp, (float *)pB, (fZ - pA[0][2]) / pB[0][2]);
+        sceVu0AddVector(tmp, (float *)pA, tmp);
+        tmp[2] = fZ;
+        if (tmp[0] < fX0 || tmp[0] > fX0 + m_unk30) {
+            fX = (pB[0][0] < 0.0f) ? fX0 : fX0 + m_unk30;
+            sceVu0ScaleVector(tmp, (float *)pB, (fX - pA[0][0]) / pB[0][0]);
+            sceVu0AddVector(tmp, (float *)pA, tmp);
+            tmp[0] = fX;
+        }
+    }
+
+    if (nDX != 0) {
+        if (tmp[0] <= fX0) {
+            rX--;
+            m_unk50 -= m_unk30;
+        } else if (tmp[0] >= fX0 + m_unk30) {
+            rX++;
+            m_unk50 += m_unk30;
+        }
+    }
+    if (nDZ != 0) {
+        if (tmp[2] <= fZ0) {
+            rZ--;
+            m_unk58 -= m_unk34;
+        } else if (tmp[2] >= fZ0 + m_unk34) {
+            rZ++;
+            m_unk58 += m_unk34;
+        }
+    }
+}
+
 // FUNCTION: 0x001701E0 FindGrid__11BGCollisionFPA4_fRiRi
 int BGCollision::FindGrid(float (*pArr)[4], int &rX, int &rZ)
 {
