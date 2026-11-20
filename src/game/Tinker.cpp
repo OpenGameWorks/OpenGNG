@@ -14,7 +14,12 @@ extern EntityManager *mpEntMgr__15EntityBaseClass;
 extern "C" void *GetPtrToApparition__13EntityManagerFUi(EntityManager *pThis, unsigned int arg0);
 extern "C" int GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(EntityManager *pThis, int eLoadClass, PArray *pArray, float (*pBox)[4], float fRadius, int nFlags, bool bFlagA, bool bFlagB);
 extern "C" void WriteApparitionData__15EntityBaseClassFicUi(void *pThis, int nState, char cParam, unsigned int uParam);
-extern unsigned char gInterface[];
+extern unsigned char gInterface[0xA60];
+extern unsigned char gEng[0x19B90];
+extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, bool bFlagA, bool bFlagB);
+extern "C" void StartCutCamera__6CameraFUib(void *pThis, unsigned int arg0, bool bFlag);
+extern "C" void Kill__6PlayerFv(void *pThis);
+extern "C" void SetMaxValue__12HudBossMeterFsi(void *pThis, short nValue, int nFlag);
 extern unsigned char __vt__6Tinker[0x10];
 extern "C" void __dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
@@ -22,6 +27,12 @@ extern "C" void __dl__FPv(void *pMem);
 extern unsigned char Tinker_AttackSeq[0x10];
 extern unsigned char Tinker_Attack2Seq[0x10];
 extern unsigned char Manda_AttackSeq[0x10];
+extern unsigned char Baron_WalkSeq[0x10];
+extern unsigned char Baron_RunSeq[0x10];
+extern unsigned char Tinker_RunSeq[0x10];
+extern unsigned char Tinker_WalkSeq[0x10];
+extern unsigned char Manda_RunSeq[0x10];
+extern unsigned char BGuard_RunSeq[0x10];
 extern "C" void PlaySoundOnFrame__15EntityBaseClassFUiUi(void *pThis, unsigned int nSound, unsigned int nFrame);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 struct tagWaypointGroup { char _pad000[4]; unsigned int m_unk4; };
@@ -29,6 +40,12 @@ extern "C" float *GetWaypoint__15WaypointManagerFP16tagWaypointGroupUiRUc(void *
 extern "C" int ReadApparitionData__15EntityBaseClassFiUi(void *pThis, int nMode, unsigned int nId);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int eLoadClass, unsigned int nFlags);
 extern "C" void __ct__6PArrayFv(void *pThis);
+extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
+extern "C" float GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(EntityBaseClass *pEntity, float (*pPos)[4]);
+extern "C" float FastMath_Fabs__Ff(float f);
+extern "C" void memcpy(void *, const void *, unsigned int);
+extern "C" void CheckVariable__15EntityBaseClassFii(EntityBaseClass *pThis, int nValue, int nIndex);
+extern int mbHard__15EntityBaseClass;
 
 // Apparition objects are reached through a virtual table; slot 12 sits at offset 0x30.
 class ApparitionVirtual {
@@ -72,6 +89,44 @@ void Tinker::AttackSound() {
         PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x2A4, 0xB);
     } else if ((void *)Manda_AttackSeq != 0) {
         PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0xD9, 0xE);
+    }
+}
+
+// FUNCTION: 0x00208E90 FootstepSound__6TinkerFv
+void Tinker::FootstepSound() {
+    int nType = m_unk1B0;
+    int nSeq = (int)m_unk140;
+    switch (nType) {
+    case 1:
+        if (nSeq == (int)Baron_WalkSeq || nSeq == (int)Baron_RunSeq) {
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E23, 0x12);
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E23, 0x21);
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E23, 0x30);
+        }
+        break;
+    case 0:
+        if (nSeq == (int)Tinker_RunSeq) {
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E22, 5);
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E22, 0xE);
+            return;
+        }
+        if (nSeq == (int)Tinker_WalkSeq) {
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E22, 0xA);
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E22, 0x19);
+        }
+        break;
+    case 2:
+        if (nSeq == (int)Manda_RunSeq) {
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E24, 0xA);
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E24, 0x14);
+        }
+        break;
+    case 3:
+        if (nSeq == (int)BGuard_RunSeq) {
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E24, 0xA);
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E24, 0x14);
+        }
+        break;
     }
 }
 
@@ -134,6 +189,62 @@ body:
     i++;
 test:
     if (i < n) goto body;
+    return 0;
+}
+
+// DRAFT: 0x002095A0 GetClosestWaypoint__6TinkerFRA4_fb
+// note: 30 words differ: if/else arm order for m_unk3C, bc1t/bc1f on the angle bool, bLast/nBest order (reorder tried, 49 words), epilogue return materialisation. Variants tried: early-return restructure, if/else DistanceXZ, stored bool bNear, bLast reorder.
+int Tinker::GetClosestWaypoint(float (&pos)[4], bool bFlag) {
+    int nBest;
+    unsigned char bLast;
+    float fBest;
+    float *wp;
+    unsigned int i;
+    unsigned char bWpFlag;
+    float p[4];
+    float d;
+
+    if (m_unk2A8 != 0) {
+        nBest = -1;
+        bLast = 0;
+        fBest = 99999.0f;
+        for (i = 0; i < m_unk2C8; i++) {
+            wp = GetWaypoint__15WaypointManagerFP16tagWaypointGroupUiRUc((char *)mpEntMgr__15EntityBaseClass + 0x30, (tagWaypointGroup *)m_unk2A8, i, bWpFlag);
+            if (i == m_unk2C4 || IsBadWaypoint(i)) {
+                continue;
+            }
+            p[0] = wp[0];
+            p[1] = wp[1];
+            p[2] = wp[2];
+            if (bFlag) {
+                unsigned char bNear;
+                bNear = FastMath_Fabs__Ff(GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f((EntityBaseClass *)this, &p)) <= 90.0f;
+                if (!bNear) {
+                    continue;
+                }
+            }
+            if (m_unk3C != 0) {
+                d = DistanceXZ__7MathAPIFPA4_fPA4_f((MathAPI *)(m_unk3C + 0x80), &p);
+            } else {
+                d = DistanceXZ__7MathAPIFPA4_fPA4_f((MathAPI *)((char *)this + 0x190), &p);
+            }
+            if (d < fBest) {
+                *(u_long128 *)pos = *(u_long128 *)p;
+                fBest = d;
+                nBest = i;
+                bLast = 0;
+                if (bWpFlag != 0) {
+                    bLast = (i + 1 < m_unk2C8);
+                }
+            }
+        }
+        if (nBest >= 0) {
+            Add__6PArrayFPv((char *)this + 0x2D0, (void *)m_unk2C4);
+            m_unk2C4 = nBest;
+            m_unk2E0 = bLast;
+            return 1;
+        }
+    }
     return 0;
 }
 
@@ -295,6 +406,82 @@ public:
     virtual void Slot12();
     virtual unsigned char Slot13();
 };
+
+// DRAFT: 0x0020A0F0 SetEditableVars__6TinkerFPc
+// note: DIFF 46 words; assert test is beqz on a local pointer (orig sltu/xori/bnez, 2 insns longer); literal folded when used directly; per-element ternary block otherwise matches.
+void Tinker::SetEditableVars(char *arg0) {
+    memcpy(&m_unk1B0, arg0, 0x84);
+    m_unk1B8 *= 0x32;
+    if (mbHard__15EntityBaseClass == 0) {
+        int t = m_unk1B8;
+        if (t != 0) {
+            m_unk1B8 = t + 0x32;
+        }
+    }
+    m_unk288 = m_unk1B8;
+    CheckVariable__15EntityBaseClassFii((EntityBaseClass *)this, m_unk1B0, 4);
+    CheckVariable__15EntityBaseClassFii((EntityBaseClass *)this, m_unk1B4, 3);
+    m_unk2AC[0] = m_unk1E0[0];
+    m_unk2AC[1] = m_unk1E0[1];
+    m_unk2AC[2] = m_unk1E0[2];
+    m_unk2AC[3] = m_unk1E0[3];
+    if (m_unk210 < 0) {
+        m_unk210 = 0;
+    }
+    if (m_unk1C0 == 0.0f && m_unk1C4 == 0.0f && m_unk1C8 == 0.0f) {
+        char *pMsg = "eif 0, 0, 0 error.  see keith or ted";
+        if (pMsg != 0) {
+            CdsAssert__FPciPc("Tinker.cpp", 0x82E, "!\"eif 0, 0, 0 error.  see keith or ted\"");
+        }
+        float *p = (m_unk3C != 0) ? (float *)(m_unk3C + 0x80) : m_unk190;
+        m_unk240 = p[0];
+        p = (m_unk3C != 0) ? (float *)(m_unk3C + 0x80) : m_unk190;
+        m_unk244 = p[1];
+        p = (m_unk3C != 0) ? (float *)(m_unk3C + 0x80) : m_unk190;
+        m_unk248 = p[2];
+    }
+    m_unk240 = m_unk1C0;
+    m_unk244 = m_unk1C4;
+    m_unk248 = m_unk1C8;
+}
+
+class HudBossVirtual {
+public:
+    virtual void Slot0();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void Slot3();
+    virtual void Slot4();
+};
+
+// FUNCTION: 0x0020A2A0 OnTimerEvent__6TinkerFUi
+void Tinker::OnTimerEvent(unsigned int arg0) {
+    if (arg0 == m_unk2EC) {
+        EnableSleep__15EntityBaseClassFbb(this, false, false);
+        StartCutCamera__6CameraFUib(gEng + 0x19760, m_unk218, false);
+        m_unk17A = 0;
+    } else if (arg0 == m_unk278) {
+        m_unk2F4 = 1;
+        m_unk278 = 0;
+    } else if (arg0 == m_unk2A4) {
+        m_unk2A0 = 1;
+    } else if (arg0 == m_unk284) {
+        m_unk284 = 0;
+    } else if (arg0 == m_unk28C) {
+        m_unk28C = 0;
+        int nBoss = m_unk1B8;
+        if (nBoss != 0) {
+            int nState = (m_unk1B0 == 0) ? 2 : 1;
+            ((HudBossVirtual *)(gInterface + 0x270))->Slot4();
+            SetMaxValue__12HudBossMeterFsi(gInterface + 0x270, (short)nBoss, nState);
+        }
+    } else if (arg0 == m_unk290) {
+        m_unk290 = 0;
+        Kill__6PlayerFv(*(void **)((char *)mpEntMgr__15EntityBaseClass + 0x505C));
+    } else if (arg0 == m_unk294) {
+        m_unk294 = 0;
+    }
+}
 
 // DRAFT: 0x0020A5A0 OnTouchEvent__6TinkerFP15EntityBaseClass
 // note: 28 differing lines; the vtable call at 0x3C matches. The original branches each guard with beqz to the shared epilogue (plus a `b` after the 0x5058 check), while MW emits bnez/beqz to a different exit. Tried early-return guards (about 30), a merged || (about 30), a flat && chain (28, kept), and nested ifs (28).
