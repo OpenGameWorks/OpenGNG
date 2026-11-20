@@ -40,7 +40,7 @@ public:
         int m_unk3C;
         void **m_unk40;
         unsigned int *m_unk44;
-        char _pad048[0x1F];
+        char szFileName[0x1F];
         unsigned char m_unk67;
     };
 
@@ -53,6 +53,7 @@ public:
     PMNode *GetResourceFromIndex(tagResourceData *pData, int nIndex, eResourceTypes eType, unsigned int uFlags, bool bFlag);
     unsigned int GetResType(unsigned int uTheID);
     void Unload(tagResourceData *pData);
+    bool Load(const char *pszResDataFile, bool bLocal, tagResourceData *pTheResData);
     int LoadShadowVolumeTable(PPakFile *pFile, tagResourceData *pData, unsigned int uId);
     int LoadInstanceMeshTable(PPakFile *pFile, tagResourceData *pData, PArray *pArray, ePsx2FileVersion eVersion, unsigned int uId);
     int LoadAnimResTable(PPakFile *pFile, ePsx2FileVersion eVersion, tagResourceData *pData, unsigned int uId);

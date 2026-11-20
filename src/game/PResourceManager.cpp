@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #include "PResourceManager.h"
 #include "PCDFile.h"
+#include "PPakFile.h"
 #include "PShadowVolume.h"
 #include "PStaticInstanceMesh.h"
 #include "PArray.h"
@@ -36,6 +37,11 @@ extern "C" void *__ct__9PSkeletonFR9PSkeleton(void *pThis, void *pSrc);
 extern "C" void *__ct__13PShadowVolumeFP13PShadowVolume(void *pThis, void *pSrc);
 extern int guGlobalShaderIDOffset;
 extern int guNumShadersInCurModel;
+extern PPakFile gPFile;
+extern "C" int LoadDynamicTextures__15PTextureManagerFP8PPakFile13eTextureGroupP6PArray(void *pThis, PPakFile *pFile, int eGroup, PArray *pArray);
+extern "C" int strcasecmp(const char *pA, const char *pB);
+extern "C" unsigned int strlen(const char *pStr);
+extern "C" char *strcpy(char *pDst, const char *pSrc);
 class PMeshNodeAnimDataTable {
 public:
     virtual ~PMeshNodeAnimDataTable();
@@ -331,6 +337,148 @@ void PResourceManager::Unload(tagResourceData *pData) {
         pData->m_unk44 = 0;
     }
     memset(pData, 0, 0x68);
+}
+
+// DRAFT: 0x001533E0 Load__16PResourceManagerFPCcbPQ216PResourceManager15tagResourceData
+// note: DIFF 405 words; original keeps pszResDataFile in s6 and frame is 0xC0 vs ours 0xB0 (one saved reg short). Tried: assert operands on this->m_unk68, nLoop declared first, signed nLoop; no change.
+bool PResourceManager::Load(const char *pszResDataFile, bool bLocal, tagResourceData *pTheResData)
+{
+    PArray aTables;
+    unsigned int uHeader[7];
+    unsigned int uId;
+    unsigned int uSize;
+    unsigned int nLoop;
+    PPakFile *pFile;
+    ePsx2FileVersion eVersion;
+    int nGroup;
+
+    nGroup = 0x67;
+    if (pszResDataFile == 0) {
+        CdsAssert("PResourceManager.cpp", 0x2D8, "pszResDataFile");
+    }
+    if (pTheResData == 0) {
+        CdsAssert("PResourceManager.cpp", 0x2D9, "pTheResData");
+    }
+    if (strcasecmp(pszResDataFile, pTheResData->szFileName) == 0) {
+        return true;
+    }
+    Unload(pTheResData);
+    pTheResData->m_unk67 = bLocal;
+    if (pTheResData->m_unk67 != 0) {
+        nGroup = 0x68;
+        MemMgr.m_unk18 = 2;
+    }
+    pFile = gPFile.GetData(pszResDataFile);
+    pFile->IsValidFileType(5);
+    if (LoadDynamicTextures__15PTextureManagerFP8PPakFile13eTextureGroupP6PArray(gGfxEng + 0x154C90, pFile, nGroup, &aTables) == 0) {
+        printf("\n**** Error loading resource texture file **** \n");
+        ((PCDFile *)pFile)->Close();
+        CdsAssert("PResourceManager.cpp", 0x302, "0");
+        return false;
+    }
+    pFile->IsValidFileType(6);
+    if (((PCDFile *)pFile)->Read(uHeader, 0x1C) != 0x1C) {
+        ((PCDFile *)pFile)->Close();
+        CdsAssert("PResourceManager.cpp", 0x311, "0");
+        return false;
+    }
+    if (uHeader[0] != 0xC0DEFEED) {
+        CdsAssert("PResourceManager.cpp", 0x318, "0");
+        return false;
+    }
+    if (uHeader[1] < 0x20003) {
+        printf("\n*** Resource file version is old! Please reconvert using the latest exporter. ***\n");
+        CdsAssert("PResourceManager.cpp", 0x321, "0");
+        return false;
+    }
+    eVersion = (ePsx2FileVersion)0x20000;
+    if (uHeader[1] < 0x20011) {
+        eVersion = (ePsx2FileVersion)0x10002;
+    }
+    if (uHeader[1] < 0x20005) {
+        uHeader[2] = 3;
+    }
+    for (nLoop = 0; nLoop < uHeader[2]; nLoop++) {
+        uId = 0;
+        if (((PCDFile *)pFile)->Read(&uId, 4U) != 4) {
+            CdsAssert("PResourceManager.cpp", 0x33D, "0");
+            return false;
+        }
+        switch (uId) {
+        case 1:
+            if (m_unk68.m_unk4 != 0) {
+                CdsAssert("PResourceManager.cpp", 0x344, "mLocalResources.pMeshResTable == NULL");
+            }
+            if (m_unk68.m_unk0 != 0) {
+                CdsAssert("PResourceManager.cpp", 0x345, "mLocalResources.uNumMeshes == 0");
+            }
+            if (LoadMeshResTable(pFile, &aTables, eVersion, pTheResData, uId) == 0) {
+                CdsAssert("PResourceManager.cpp", 0x348, "0");
+                return false;
+            }
+            break;
+        case 2:
+            if (m_unk68.m_unk10 != 0) {
+                CdsAssert("PResourceManager.cpp", 0x34E, "mLocalResources.pAnimResTable == NULL");
+            }
+            if (m_unk68.m_unkC != 0) {
+                CdsAssert("PResourceManager.cpp", 0x34F, "mLocalResources.uNumAnims == 0");
+            }
+            if (LoadAnimResTable(pFile, eVersion, pTheResData, uId) == 0) {
+                CdsAssert("PResourceManager.cpp", 0x352, "0");
+                return false;
+            }
+            break;
+        case 4:
+            if (m_unk68.m_unk28 != 0) {
+                CdsAssert("PResourceManager.cpp", 0x358, "mLocalResources.pTextureResTable == NULL");
+            }
+            if (m_unk68.m_unk24 != 0) {
+                CdsAssert("PResourceManager.cpp", 0x359, "mLocalResources.uNumTextures == 0");
+            }
+            if (LoadTextureResTable(pFile, &aTables, pTheResData, uId) == 0) {
+                CdsAssert("PResourceManager.cpp", 0x35C, "0");
+                return false;
+            }
+            break;
+        case 3:
+            if (LoadFxResTable(pFile, &aTables, pTheResData, uId) == 0) {
+                CdsAssert("PResourceManager.cpp", 0x365, "0");
+                return false;
+            }
+            break;
+        case 7:
+            if (LoadShadowVolumeTable(pFile, pTheResData, uId) == 0) {
+                CdsAssert("PResourceManager.cpp", 0x36F, "0");
+                return false;
+            }
+            break;
+        case 6:
+            if (LoadInstanceMeshTable(pFile, pTheResData, &aTables, eVersion, uId) == 0) {
+                CdsAssert("PResourceManager.cpp", 0x377, "0");
+                return false;
+            }
+            break;
+        default:
+            if (((PCDFile *)pFile)->Read(&uSize, 4U) != 4) {
+                CdsAssert("PResourceManager.cpp", 0x382, "0");
+                return false;
+            }
+            if (uSize != 0) {
+                CdsAssert("PResourceManager.cpp", 0x385, "auTableSize == 0");
+            }
+            break;
+        }
+    }
+    ((PCDFile *)pFile)->Close();
+    if (strlen(pszResDataFile) >= 0x1F) {
+        CdsAssert("PResourceManager.cpp", 0x38E, "strlen(pszResDataFile) < sizeof(pTheResData->szFileName)");
+    }
+    strcpy(pTheResData->szFileName, pszResDataFile);
+    if (pTheResData->m_unk67 != 0) {
+        MemMgr.m_unk18 = 0;
+    }
+    return true;
 }
 
 // FUNCTION: 0x00153A40 LoadInstanceMeshTable__16PResourceManagerFP8PPakFilePQ216PResourceManager15tagResourceDataP6PArray16ePsx2FileVersionUi
