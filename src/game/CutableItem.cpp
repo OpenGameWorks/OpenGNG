@@ -114,6 +114,11 @@ void CutableItem::OnTouchEvent(EntityBaseClass *pArg) {
     }
 }
 
+// DRAFT: 0x001BB420 Execute__11CutableItemFv
+// note: stub body, not yet recovered from asm.
+void CutableItem::Execute() {
+}
+
 // FUNCTION: 0x001BBB10 GetClassName__11CutableItemFv
 const char *CutableItem::GetClassName() {
     int nIndex = m_unk1B0;
