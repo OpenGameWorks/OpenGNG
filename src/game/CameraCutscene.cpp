@@ -147,7 +147,7 @@ void CameraCutManager::HideText() {
         CdsAssert("CameraCutscene.cpp", 0x48C, "apCamera");
     }
     if (*(int *)(pCam + 0x40) != 0) {
-        FontManager *pFont = (FontManager *)(gInterface + 0x1790);
+        FontManager *pFont = (FontManager *)(gInterface + 0x80);
         if (pFont == 0) {
             CdsAssert("CameraCutscene.cpp", 0x493, "apoFontManager");
         }
@@ -161,7 +161,7 @@ void CameraCutManager::ShowText() {
         CdsAssert("CameraCutscene.cpp", 0x470, "m_pCurrentCamera");
     }
     if (*(int *)(m_pCurrentCamera + 0x40) != 0) {
-        FontManager *pFont = (FontManager *)(gInterface + 0x1790);
+        FontManager *pFont = (FontManager *)(gInterface + 0x80);
         if (pFont == 0) {
             CdsAssert("CameraCutscene.cpp", 0x477, "apoFontManager");
         }
@@ -207,8 +207,8 @@ void CameraCutManager::StopCutCamera(bool bRestore) {
     m_unk85 = 0;
     HideText();
     mbGlobalSleep__15EntityBaseClass = m_unkCC;
-    *(unsigned short *)(gInterface + 0x1B24) = 0;
-    *(unsigned int *)(gInterface + 0x18D0) |= 0xE;
+    *(unsigned short *)(gInterface + 0x414) = 0;
+    *(unsigned int *)(gInterface + 0x1C0) |= 0xE;
 }
 
 // FUNCTION: 0x0017ADC0 StartCutCamera__16CameraCutManagerFUib
@@ -229,12 +229,12 @@ void CameraCutManager::StartCutCamera(unsigned int arg0, bool bArg) {
         if (CutCameraMovesPlayer(arg0) != 0) {
             m_unkCA = 1;
         }
-        CallAllOnStopAttack__19EntityAttackManagerFv((void *)(gEng + 0x3250));
-        ReleaseHeadCamera__6PlayerFv(*(void **)(gEng + 0x82AC));
+        CallAllOnStopAttack__19EntityAttackManagerFv((void *)(gEng + 0x137E0));
+        ReleaseHeadCamera__6PlayerFv(*(void **)(gEng + 0x1883C));
         m_unkCC = mbGlobalSleep__15EntityBaseClass;
         mbGlobalSleep__15EntityBaseClass = 0;
-        *(short *)(gInterface + 0x1B24) = 0x1E;
-        *(int *)(gInterface + 0x18D0) &= ~0xE;
+        *(short *)(gInterface + 0x414) = 0x1E;
+        *(int *)(gInterface + 0x1C0) &= ~0xE;
     }
 }
 
