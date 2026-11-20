@@ -7,10 +7,11 @@ class PChannel {
 public:
     ~PChannel();
     void *AnimateBox(float fTime, unsigned char &ucMask);
+    void EvaluateAnim(float fTime, float *pOut, int nCount, float fDefault);
 
 private:
     int m_unk0;                      // 0x00
-    char _pad04[2];                  // 0x04
+    unsigned short m_unk4;           // 0x04, animation kind (switch selector)
     unsigned short m_unk6;           // 0x06, record count
     unsigned short m_unk8;           // 0x08
     unsigned short m_unkA;           // 0x0A
