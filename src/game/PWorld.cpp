@@ -566,20 +566,14 @@ void PWorld::Destroy() {
 }
 
 // DRAFT: 0x19BE70 UpdateTimer__6PWorldFv
-// note: 51 lines differ: mfc0 sel bit (0x4010C800 vs 0x4011C801), fCounter in f2 vs f4, srl/andi order and or/mtc1 dest reg a0 vs v1 in the negative path, add.s dest, m_1E0/m_1E4 load order. Tried operand swap of or (53), fStep before fRate (54).
+// note: 40 words differ: fCounter in f3 vs f4 and the negative-path or/mtc1 dest v1 vs a0, the 1000.0f and 60.0f constant loads and m_1E0/m_1E4 loads in different order, tail of fResult reordered. Tried: mfc0 with sel operand (not accepted by asm), .word 0x4011C801 for the sel bit (42 to 41), fCounter by ternary (40, kept), decl/stmt order permutations (42 to 56), or operand swap (43), fStep before fRate (53).
 void PWorld::UpdateTimer() {
     int nCounter;
     asm {
-        mfc0 nCounter, $25
+        .word 0x4011C801
     }
     scePcStart(0x8003403E, 0, 0);
-    float fCounter;
-    if (nCounter >= 0) {
-        fCounter = (float)nCounter;
-    } else {
-        float fHalf = (float)(int)(((unsigned int)nCounter >> 1) | (nCounter & 1));
-        fCounter = fHalf + fHalf;
-    }
+    float fCounter = (nCounter >= 0) ? (float)nCounter : (float)(int)(((unsigned int)nCounter >> 1) | (nCounter & 1)) + (float)(int)(((unsigned int)nCounter >> 1) | (nCounter & 1));
     float fRate = m_1E4;
     float fStep = (fCounter * m_1E0) / 1000.0f;
     float fResult;
