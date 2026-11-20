@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+class EntityBaseClass;
+
 // ClockworkStalker derives from EntityBaseClass; the base is not declared here,
 // so every member is named by its offset from the object start.
 class ClockworkStalker {
@@ -25,6 +27,7 @@ public:
     void OnWakeEvent();
     void OnStopAttack();
     void FaceHit();
+    int OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3);
 
     char _pad000[4];
     unsigned int m_unk4;            // 0x004 timer argument
@@ -71,7 +74,8 @@ public:
     float m_unk200[4];              // 0x200 position passed to Distance
     int m_unk210;                   // 0x210
     int m_unk214;                   // 0x214 timer id slot
-    char _pad218[0x220 - 0x218];
+    unsigned int m_unk218;          // 0x218 hit damage/state, written by OnHitEvent from arg3
+    unsigned int m_unk21C;          // 0x21C written by OnHitEvent from arg3
     unsigned char m_unk220;         // 0x220 cleared by the constructor
     unsigned char m_unk221;         // 0x221 attack-ready flag
     unsigned char m_unk222;         // 0x222 timer-fired flag
@@ -96,7 +100,7 @@ public:
     unsigned char m_unk2B0;         // 0x2B0
     char _pad2B1[0x2D0 - 0x2B1];
     int m_unk2D0;                   // 0x2D0 timer id slot
-    char _pad2D4[0x2D5 - 0x2D4];
+    unsigned char m_unk2D4;         // 0x2D4 set from the 0x200 bit of OnHitEvent's arg3
     unsigned char m_unk2D5;         // 0x2D5 timer-fired flag
     char _pad2D6[0x2D8 - 0x2D6];
     int m_unk2D8;                   // 0x2D8 timer id slot

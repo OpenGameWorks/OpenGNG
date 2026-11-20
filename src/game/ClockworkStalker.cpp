@@ -62,16 +62,21 @@ extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" float GetFrameTime__6PMNodeFv(void *);
 extern "C" void *Find__6PMNodeFUi(void *, unsigned int);
+extern "C" unsigned int CreateDamageFx__15EntityBaseClassFfUi(void *, float, unsigned int);
+extern "C" void ChangeDamageFxInterval__15EntityBaseClassFUif(void *, unsigned int, float);
 extern char ClockworkStalker_NormalMesh[0x10];
 extern char ClockworkStalker_TransitionMesh[0x10];
 extern char ClockworkStalker_CamouflageMesh[0x10];
 
-// Local view of PMNode with the virtual slots used here (dtor 0x08, Render 0x0C, SetFrameTime 0x10).
+// Local view of PMNode with the virtual slots used here (dtor 0x08, Render 0x0C, SetFrameTime 0x10,
+// CreateObjectDisplayList 0x14, Animate 0x18).
 class PMNodeView {
 public:
     virtual ~PMNodeView();
     virtual void Render(void *pLights, int a, int b);
     virtual void SetFrameTime(float fTime);
+    virtual void CreateObjectDisplayList();
+    virtual void Animate(float, float, void *, int, bool);
     char _pad004[0x38 - 0x04];
     float m_unk38;
     char _pad03C[0x3E - 0x3C];
@@ -434,6 +439,95 @@ void ClockworkStalker::OnWakeEvent() {
     if (m_unk2E4 != 0) {
         PlaySequence__15EntityBaseClassFPUi(this, m_unk2E4);
     }
+}
+
+// DRAFT: 0x001E3510 OnHitEvent__16ClockworkStalkerFP15EntityBaseClassiUiUi
+// note: DIFF 8: node stays in v0 (original reloads 0x270 into a0 after the store), (float)m_unk274 emits cvt.s.w (original lwc1), 3 branch targets off by one; reload via m_unk270 gave 160, *(float*)&m_unk274 gave 158
+int ClockworkStalker::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3) {
+    int state;
+    unsigned int temp;
+    unsigned char t;
+    PMNodeView *node;
+    char *src;
+
+    DeleteEffects();
+    if (m_unkF4 != 0) {
+        m_unk1FC -= arg1;
+        if (m_unk1FC > 0) {
+            return 1;
+        }
+        m_unk218 = arg2;
+        SetState__15EntityBaseClassFi(this, 9);
+        return 2;
+    }
+    t =*((unsigned char *)arg0 + 0x10C);
+    if (t != 1 && t != 0x10) {
+        return 5;
+    }
+    if (m_unk2A0 == 2 && !(arg2 & 0x100)) {
+        m_unk2A0 = 3;
+        m_unk2AC = mTimerAPI__13EntityManager.CreateTimer(m_unk4, 0x2D, true);
+        LoadCorrectMesh(true);
+    }
+    state = m_unk20;
+    node = (PMNodeView *)Find__6PMNodeFUi(m_unk3C, 0xE1612999U);
+    m_unk270 = (int)node;
+    node->m_unk94 = (float)m_unk274;
+    node->m_unk3E = node->m_unk3E | 8;
+    if ((unsigned int)(state - 5) < 2U || state == 7) {
+        if (m_unk3C != 0) {
+            src = m_unk3C + 0x80;
+        } else {
+            src = &m_unk190;
+        }
+        *(u_long128 *)m_unk200 = *(u_long128 *)src;
+    }
+    if (state == 0x14) {
+        if (GetFrameTime__6PMNodeFv(m_unk3C) < 30.0f) {
+            m_unk2D4 = !(arg2 & 0x200) ? 0 : 1;
+            m_unk21C = arg2;
+            m_unk1FC -= arg1;
+            if (m_unk1FC <= 0) {
+                m_unk218 = arg2;
+                SetState__15EntityBaseClassFi(this, 9);
+                return 2;
+            }
+            SetState__15EntityBaseClassFi(this, 0x15);
+            return 1;
+        }
+        goto block_22;
+    }
+block_22:
+    if (state == 0x15 && GetFrameTime__6PMNodeFv(m_unk3C) < 20.0f) {
+        m_unk2D4 = !(arg2 & 0x200) ? 0 : 1;
+        m_unk21C = arg2;
+        m_unk1FC -= arg1;
+        if (m_unk1FC <= 0) {
+            m_unk218 = arg2;
+            SetState__15EntityBaseClassFi(this, 9);
+            return 2;
+        }
+        SetState__15EntityBaseClassFi(this, 0x15);
+        return 1;
+    }
+    m_unk1FC -= arg1;
+    if (m_unk2E8 == 0 && (float)m_unk1FC <= (float)m_unk210 / 2.0f) {
+        m_unk2E8 = CreateDamageFx__15EntityBaseClassFfUi(this, 90.0f, 0U);
+    }
+    temp = m_unk2E8;
+    if (temp != 0 && (float)m_unk1FC <= (float)m_unk210 / 4.0f) {
+        ChangeDamageFxInterval__15EntityBaseClassFUif(this, temp, 20.0f);
+    }
+    if (m_unk1FC <= 0) {
+        ((PMNodeView *)m_unk3C)->Animate(0.0f, 0.0f, 0, 0, false);
+        m_unk218 = arg2;
+        SetState__15EntityBaseClassFi(this, 9);
+        return 2;
+    }
+    m_unk21C = arg2;
+    FaceHit();
+    SetState__15EntityBaseClassFi(this, 4);
+    return 1;
 }
 
 // FUNCTION: 0x001E3880 OnStopAttack__16ClockworkStalkerFv
