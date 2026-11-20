@@ -12,8 +12,8 @@ public:
         int m_unk0C;                            // 0x00C, 1.0f
         int m_unk10;                            // 0x010
         int m_unk14;                            // 0x014
-        int m_unk18;                            // 0x018
-        int m_unk1C;                            // 0x01C
+        float m_unk18;                          // 0x018
+        float m_unk1C;                          // 0x01C
         int m_unk20;                            // 0x020, 128.0f
         int m_unk24;                            // 0x024, 128.0f
         int m_unk28;                            // 0x028, 128.0f
@@ -59,7 +59,7 @@ public:
     void *m_unk28;                              // 0x028
     int m_unk2C;                                // 0x02C
     int m_nMode;                                // 0x030
-    int m_unk34;                                // 0x034
+    float m_unk34;                              // 0x034
     int m_unk38;                                // 0x038
     int m_unk3C;                               // 0x03C
     unsigned char m_ucUnk40;                    // 0x040

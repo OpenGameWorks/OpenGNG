@@ -15,6 +15,7 @@ extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, char *pExpr);
 extern "C" int rand(void);
 float FastMath_Sin180__Ff(float fAngle);
+float FastMath_Cos180__Ff(float fAngle);
 
 // DRAFT: 0x00214BA0 AnimateFadingTiles__10PSlideShowFf
 // note: 67 words differ (was 74); prologue constant/seed scheduling and a0-a3 register allocation differ from the original; tried for-loop shape, hoisted poly base, seed store first, reordered locals, column counter outside, inverted fade test.
@@ -55,6 +56,91 @@ void PSlideShow::AnimateFadingTiles(float fTime)
             nCol++;
         }
         nRow++;
+    }
+}
+
+#define POLY_F(p, off) (*(float *)((char *)(p) + (off)))
+#define POLY_I(p, off) (*(int *)((char *)(p) + (off)))
+
+// DRAFT: 0x00214D70 AnimateVanishingTiles__10PSlideShowFf
+// note: 332 words differ; frame is 0x110 (ours 0xA0), extra fp spill, loop/local register allocation and operand order differ; 2 variants tried (add operand order, original order), both 332
+void PSlideShow::AnimateVanishingTiles(float fTime)
+{
+    m_unk38 = m_unk3C;
+    m_unk34 = 0.001953125f + m_unk34;
+    int nTotal = m_unk14 * m_unk18;
+    char *pPolyBase = (char *)m_unk24 + 0x10;
+    int nFaded = 0;
+    for (int nRow = 0; nRow < m_unk14; nRow++) {
+        for (int nCol = 0; nCol < m_unk18; nCol++) {
+            int nIdx = nCol + nRow * m_unk18;
+            tagTile *pTile = (tagTile *)((char *)m_unkC + nIdx * 0x30);
+            tagGsPoly *pPoly = (tagGsPoly *)(pPolyBase + nIdx * 0x90);
+            m_unk38 = m_unk38 * 0x343FD + 0x269EC3;
+            float fDraw1 = 0.000030517578f * (float)((m_unk38 >> 16) & 0x7FFF);
+            m_unk38 = m_unk38 * 0x343FD + 0x269EC3;
+            float fDraw2 = 0.000030517578f * (float)((m_unk38 >> 16) & 0x7FFF);
+            m_unk38 = m_unk38 * 0x343FD + 0x269EC3;
+            float fDraw3 = 0.000030517578f * (float)((m_unk38 >> 16) & 0x7FFF);
+            float fY = pTile->m_fUnk2C;
+            if (!(fY <= 0.0f)) {
+                float fA = 1.5f + 1.0f * fDraw3;
+                float fNew18 = pTile->m_unk18 + (-3.0f + 6.0f * fDraw2);
+                pTile->m_unk18 = fNew18;
+                if (!(fNew18 <= 180.0f)) {
+                    pTile->m_unk18 = fNew18 - 360.0f;
+                } else if (fNew18 < -180.0f) {
+                    pTile->m_unk18 = fNew18 + 360.0f;
+                }
+                float fNew1C = pTile->m_unk1C + (-3.0f + 6.0f * fDraw1);
+                pTile->m_unk1C = fNew1C;
+                if (!(fNew1C <= 180.0f)) {
+                    pTile->m_unk1C = fNew1C - 360.0f;
+                } else if (fNew1C < -180.0f) {
+                    pTile->m_unk1C = fNew1C + 360.0f;
+                }
+                float fNewY = pTile->m_fUnk2C - fA;
+                pTile->m_fUnk2C = fNewY;
+                if (!(0.0f <= fNewY)) {
+                    fNewY = 0.0f;
+                }
+                pTile->m_fUnk2C = fNewY;
+                pPoly->m_unkC = (int)fNewY;
+                POLY_F(pPoly, 0x10) = (float)nCol * (1.0f / (float)m_unk18);
+                POLY_F(pPoly, 0x14) = (float)nRow * (1.0f / (float)m_unk14);
+                POLY_I(pPoly, 0x18) = 0x3F800000;
+                POLY_F(pPoly, 0x30) = POLY_F(pPoly, 0x10);
+                POLY_F(pPoly, 0x34) = POLY_F(pPoly, 0x14) + (1.0f / (float)m_unk14);
+                POLY_I(pPoly, 0x38) = 0x3F800000;
+                POLY_F(pPoly, 0x50) = POLY_F(pPoly, 0x10) + (1.0f / (float)m_unk18);
+                POLY_F(pPoly, 0x54) = POLY_F(pPoly, 0x14);
+                POLY_I(pPoly, 0x58) = 0x3F800000;
+                POLY_F(pPoly, 0x70) = POLY_F(pPoly, 0x50);
+                POLY_F(pPoly, 0x74) = POLY_F(pPoly, 0x34);
+                POLY_I(pPoly, 0x78) = 0x3F800000;
+                float fSin = FastMath_Sin180__Ff(pTile->m_unk18);
+                float fCos = FastMath_Cos180__Ff(pTile->m_unk1C);
+                POLY_F(pPoly, 0x10) = POLY_F(pPoly, 0x10) + m_unk34 * fCos;
+                POLY_F(pPoly, 0x14) = POLY_F(pPoly, 0x14) + fSin * (m_unk34 * fSin);
+                POLY_F(pPoly, 0x30) = POLY_F(pPoly, 0x30) + m_unk34 * fCos;
+                POLY_F(pPoly, 0x34) = POLY_F(pPoly, 0x34) + fCos * (m_unk34 * fSin);
+                POLY_F(pPoly, 0x50) = POLY_F(pPoly, 0x50) + fSin * (m_unk34 * fCos);
+                POLY_F(pPoly, 0x54) = POLY_F(pPoly, 0x54) + m_unk34 * fSin;
+                POLY_F(pPoly, 0x70) = POLY_F(pPoly, 0x70) + m_unk34 * fCos;
+                POLY_F(pPoly, 0x74) = POLY_F(pPoly, 0x74) + fSin * (fCos * (m_unk34 * fSin));
+            } else {
+                nFaded++;
+                pPoly->m_unkC = 0;
+                if (nFaded >= nTotal) {
+                    m_unk3C = (int)(0.5f + (12345.0f + (41976.0f * ((float)rand() / 2.1474836e9f))));
+                    ResetTiles();
+                    m_ucUnk41 = 0;
+                    m_unk04 = m_nNextImage;
+                    m_nNextImage = 0;
+                    return;
+                }
+            }
+        }
     }
 }
 
