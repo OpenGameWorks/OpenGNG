@@ -4,6 +4,9 @@
 #include "PMat4.h"
 
 // TODO(header): foreign declarations
+extern "C" long long fptodp(float arg0);
+extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, int nCount, int nSize);
+extern "C" int _dpfgt(long long a, long long b);
 extern "C" void *__dt__15PParticleSystemFv(void *, short);
 extern "C" void __dla__FPv(void *);
 extern "C" void __dl__FPv(void *);
@@ -163,6 +166,132 @@ void PParticleTracers::Render() {
             BeginFxLines__10PGfxEngineFv(gGfxEng);
             DrawFxLines__10PGfxEngineFP11tagVuFxLineiffb(gGfxEng, (void *)m_unk08, m_unk04, 0.0f, 128.0f, m_unk1A);
             EndFxLines__10PGfxEngineFv(gGfxEng);
+        }
+    }
+}
+
+// DRAFT: 0x00203A10 Animate__16PParticleTracersFf
+// note: DIFF 326 words; frame 0xB0 vs 0x90, this in s6 vs s5, 9 saved GPRs vs 7 (fp, s7 extra), VU0 blocks and pO[3] lerp order unresolved.
+void PParticleTracers::Animate(float fA) {
+    unsigned int i;
+    int nDone = 0;
+    float *pT;
+    float *pO;
+    float t;
+    float fMul;
+    void *apFxInstances;
+    void *apLines;
+
+    if (!m_unk15) return;
+    if (m_unk16) return;
+    m_unkD0 = m_unk150;
+    if (m_unk178 != 0) {
+        apFxInstances = AllocParticles__12PDisplayListFii(*(void **)gGfxEng, m_unk04, 6);
+        CDS_ASSERT(0x72, apFxInstances);
+        m_unk08 = apFxInstances;
+    } else {
+        apLines = AllocParticles__12PDisplayListFii(*(void **)gGfxEng, m_unk04, 2);
+        CDS_ASSERT(0x79, apLines);
+        m_unk08 = apLines;
+    }
+    for (i = 0; i < m_unk04; i++) {
+        pT = (float *)((char *)m_unk174 + (i << 5));
+        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+        pT[3] = pT[3] + fA * (0.25f + 0.75f * ((float)((m_unkD0 >> 16) & 0x7FFF) * 0.000030517578125f));
+        if (!(pT[3] < m_unk170)) {
+            pT[3] = m_unk170;
+            if (m_unk17 == 0 && m_unk18 != 0) {
+                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                pT[0] = (float)((m_unkD0 >> 16) & 0x7FFF);
+                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                pT[1] = (float)((m_unkD0 >> 16) & 0x7FFF);
+                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                pT[2] = (float)((m_unkD0 >> 16) & 0x7FFF);
+                sceVu0ScaleVectorXYZ(pT, pT, 0.000030517578125f);
+                float *pA = m_unk100;
+                float *pB = m_unk160;
+                asm {
+                    lqc2 vf1, 0x0(pT)
+                    lqc2 vf2, 0x0(pA)
+                    lqc2 vf3, 0x0(pB)
+                    vsub.xyz vf4, vf2, vf2
+                    vsub.xyz vf4, vf4, vf2
+                    vsub.xyz vf5, vf2, vf4
+                    vmul.xyz vf6, vf5, vf1
+                    vadd.xyz vf7, vf6, vf4
+                    vadd.xyz vf1, vf7, vf3
+                    sqc2 vf1, 0x0(pT)
+                }
+                *(u_long128 *)(pT + 4) = *(u_long128 *)m_unkF0;
+                pT[3] = 0.0f;
+            } else {
+                nDone++;
+                if (nDone >= m_unk120) {
+                    m_unk16 = m_unk17;
+                    m_unk15 = 0;
+                    return;
+                }
+            }
+        }
+        t = pT[3] / m_unk170;
+        if (m_unk178 != 0) {
+            pO = (float *)((char *)apFxInstances + i * 96);
+            *(u_long128 *)pO = *(u_long128 *)m_unk180;
+            *(u_long128 *)(pO + 4) = *(u_long128 *)((char *)this + 0x194);
+            *(u_long128 *)(pO + 8) = *(u_long128 *)((char *)this + 0x1A8);
+            fMul = m_unk124 * t;
+            asm {
+                lqc2 vf1, 0x10(pT)
+                lqc2 vf2, 0x0(pT)
+                lqc2 vf5, 0x30(pO)
+                mfc1 $t0, $f0
+                qmtc2.i $t0, vf3
+                vmulx.xyz vf4, vf1, vf3x
+                vnop
+                vnop
+                vnop
+                vadd.xyz vf5, vf4, vf2
+                vnop
+                vnop
+                vnop
+                sqc2 vf5, 0x30(pO)
+            }
+            pO[15] = 1.0f;
+            pO[16] = 1.0f;
+            pO[17] = 1.0f;
+            pO[18] = 1.0f;
+            if (_dpfgt(fptodp(t), 0x3FE999999999999ALL) != 0) {
+                pO[19] = m_unk134 + (t - 0.8f) / (1.0f - 0.8f) * (m_unk138 - m_unk134);
+            } else {
+                pO[19] = m_unk134;
+            }
+        } else {
+            pO = (float *)((char *)apLines + (i << 5));
+            *(u_long128 *)(pO + 4) = *(u_long128 *)(pT + 4);
+            fMul = m_unk124 * t;
+            asm {
+                lqc2 vf1, 0x10(pT)
+                lqc2 vf2, 0x0(pT)
+                lqc2 vf5, 0x0(pO)
+                mfc1 $t0, $f0
+                qmtc2.i $t0, vf3
+                vmulx.xyz vf4, vf1, vf3x
+                vnop
+                vnop
+                vnop
+                vadd.xyz vf5, vf4, vf2
+                vnop
+                vnop
+                vnop
+                sqc2 vf5, 0x0(pO)
+            }
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            pO[3] = m_unk130 + (m_unk12C - m_unk130) * ((float)((m_unkD0 >> 16) & 0x7FFF) * 0.000030517578125f);
+            if (_dpfgt(fptodp(t), 0x3FE999999999999ALL) != 0) {
+                pO[7] = m_unk134 + (t - 0.8f) / (1.0f - 0.8f) * (m_unk138 - m_unk134);
+            } else {
+                pO[7] = m_unk134;
+            }
         }
     }
 }

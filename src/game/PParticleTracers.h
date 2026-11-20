@@ -26,6 +26,7 @@ public:
     void Render();
     void ComputeTracerAxes();
     void InitTracers();
+    void Animate(float fA);
 
     float m_unkE0[4];           // 0x0E0 source vector read by ModifyPosition
     float m_unkF0[4];           // 0x0F0 vector, direction written by SetPosition
@@ -34,7 +35,10 @@ public:
     int m_unk120;               // 0x120 tracer count, loop bound of InitTracers
     float m_unk124;             // 0x124 squared length from InnerProduct
     float m_unk128;             // 0x128 fraction read by Create
-    char _pad12C[0x10];         // 0x12C
+    float m_unk12C;             // 0x12C
+    float m_unk130;             // 0x130
+    float m_unk134;             // 0x134 lerp weight used by Animate
+    float m_unk138;             // 0x138 lerp weight used by Animate
     unsigned int m_unk13C;      // 0x13C resource id read by Create
     char _pad140[0x10];         // 0x140
     int m_unk150;               // 0x150 random value set by Start
