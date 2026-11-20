@@ -155,7 +155,7 @@ public:
     int m_unk150;               // 0x150 mesh id loaded by LoadMesh
     int m_unk154;               // 0x154 animation argument
     int m_unk158;               // 0x158 sound reference
-    char _pad15C[0x2];          // 0x15C..0x15D
+    unsigned short m_unk15C;    // 0x15C
     unsigned short m_unk15E;    // 0x15E flag halfword
     unsigned char m_unk160;     // 0x160 sequence active flag
     unsigned char m_unk161;     // 0x161 BG anim list flag

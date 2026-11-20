@@ -16,6 +16,7 @@ public:
     void StopAmbientSoundsByOriginatorRef(unsigned int arg0, unsigned int arg1);
     void StopSoundsByOriginatorRef(unsigned int arg0, unsigned int arg1, unsigned int arg2);
     int PlaySoundWPitch(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4);
+    int IsAmbientSoundByID(unsigned int arg0);
     char _pad000[0x10];
 };
 extern PSound gSound;
@@ -127,6 +128,7 @@ public:
     void RunPhysics(EntityBaseClass *arg0, float arg1, int arg2, BGCollision *arg3);
     void AddBGAnimNode(PMeshNode *arg0);
     void SetVelocity(float arg0, float arg1);
+    void SetPhysicsType(unsigned int arg0, float (*arg1)[4]);
 };
 
 class PMNode {
@@ -183,6 +185,7 @@ extern LoadEntry mLoadTable__15EntityBaseClass[6];
 class PResourceManager {
 public:
     int GetResource(unsigned int arg0, bool arg1);
+    int GetResType(unsigned int arg0);
     char _pad000[0x10];
 };
 extern PResourceManager *mpResMgr__15EntityBaseClass;
@@ -302,6 +305,16 @@ public:
     void Create(tagParticleSparksParams *arg0, float arg1, float arg2, float arg3);
 };
 #define CDS_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert__FPciPc("EntityBaseClass.cpp", line, msg))
+// TODO(header): foreign declarations
+// Vtable view for the sequence default case: slot 0x18 is virtual #4 (slot 0x08 is the destructor).
+class SeqSlotView {
+public:
+    virtual ~SeqSlotView();
+    virtual void SeqSlot1();
+    virtual void SeqSlot2();
+    virtual void SeqSlot3();
+    virtual char *SeqSlot4();
+};
 
 // Render-path views: the light manager, the PGfxEngine methods it calls, the ambient table, Shadow and the m_unk3C draw object.
 class PMat4;
@@ -1996,6 +2009,193 @@ char EntityBaseClass::ReadApparitionData(int iOffset, unsigned int uIndex) {
         return 0;
     }
     return pSlot[off];
+}
+
+// DRAFT: 0x0014DCE0 ProcessSequence__15EntityBaseClassFv
+// note: 320 words differ; m3C kept in v1 not s1, andi 7 lacks dsll32/dsra32, branch targets 0x24-0x40 differ. Tried !=1 reorder (322), signed char flags (329), pMesh local (323).
+void EntityBaseClass::ProcessSequence() {
+    bool bLoop;
+    int *p;
+    int id;
+    int arg;
+    int s3;
+    int v;
+    short sA;
+    short sB;
+    unsigned int uC;
+    unsigned int flags;
+    struct {
+        unsigned short a[6];
+        float f;
+    } anim;
+
+    bLoop = true;
+    if (m_unk13C != 0) {
+        if (m_unk148 == 1) {
+            CDS_ASSERT(0x2CE, m_unk3C != 0, "pMeshNode");
+            if (m_unk3C[0x3F] & 7) {
+                return;
+            }
+            m_unk148 = 0;
+            if (m_unk158 != 0) {
+                StopSoundBySoundRef(m_unk158);
+                m_unk158 = 0;
+            }
+        } else if (m_unk148 != 0) {
+            CdsAssert__FPciPc("EntityBaseClass.cpp", 0x2E7, "0");
+        }
+        do {
+            p = (int *)m_unk13C;
+            m_unk13C = (int)(p + 1);
+            id = *p;
+            switch (id) {
+            case 1:
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                arg = *p;
+                if (arg != 0) {
+                    CDS_ASSERT(0x2FB, mpResMgr__15EntityBaseClass->GetResType(arg) == 1, "Invalid mesh file passed to LoadMesh");
+                }
+                LoadMesh(arg, false, true);
+                break;
+            case 2:
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                arg = *p;
+                if (arg != 0) {
+                    CDS_ASSERT(0x30A, mpResMgr__15EntityBaseClass->GetResType(arg) == 2, "Invalid animation file passed to LoadAnim");
+                }
+                LoadAnim(arg, true);
+                if (m_unk38 != 0) {
+                    flags = *(unsigned short *)((char *)m_unk38 + 0x106);
+                    m_unk38->SetPhysicsType(flags & ~4, 0);
+                }
+                break;
+            case 3:
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                anim.a[0] = *(unsigned short *)p;
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                anim.a[1] = *(unsigned short *)p;
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                anim.a[2] = *(unsigned short *)p;
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                anim.a[3] = *(unsigned short *)p;
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                anim.a[4] = *(unsigned short *)p;
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                anim.a[5] = *(unsigned short *)p;
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                anim.f = (float)*p / 256.0f;
+                SetAnimData((AnimData *)&anim);
+                m_unk148 = 1;
+                bLoop = false;
+                m_unk14C++;
+                break;
+            case 4:
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                sA = *(short *)p;
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                sB = *(short *)p;
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                uC = *(unsigned int *)p;
+                FadeMesh(sA, sB, uC);
+                m_unk162 = 1;
+                break;
+            case 5:
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                v = *p;
+                if (m_unk38 != 0) {
+                    flags = *(unsigned short *)((char *)m_unk38 + 0x106);
+                    if (v != 0) {
+                        flags = flags | 4;
+                    } else {
+                        flags = flags & ~4;
+                    }
+                    m_unk38->SetPhysicsType(flags, 0);
+                }
+                break;
+            case 6:
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                m_unk163 = (unsigned char)*p;
+                if (m_unk163 == 2) {
+                    ResetCollisions();
+                }
+                break;
+            case 7:
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                m_unk15C = *(unsigned short *)p;
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                m_unk15E = *(unsigned short *)p;
+                break;
+            case 8:
+                AddToBGAnimList();
+                break;
+            case 9:
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                arg = *p;
+                s3 = gSound.IsAmbientSoundByID(arg);
+                if (s3 != 0) {
+                    if (m_unk158 != 0) {
+                        StopSoundBySoundRef(m_unk158);
+                        m_unk158 = 0;
+                    }
+                }
+                v = PlaySound(arg);
+                if (s3 != 0) {
+                    m_unk158 = v;
+                }
+                break;
+            case 0xA:
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                v = *p;
+                if (m_unk38 != 0) {
+                    *(int *)((char *)m_unk38 + 0xEC) = v;
+                }
+                break;
+            case 0xB:
+                p = (int *)m_unk13C;
+                m_unk13C = (int)(p + 1);
+                m_unk103 = (unsigned char)*p;
+                break;
+            case 0xFF:
+                m_unk13C = 0;
+                break;
+            default:
+                printf("invalid sequence command %d in %s\n", id, ((SeqSlotView *)this)->SeqSlot4());
+                CdsAssert__FPciPc("EntityBaseClass.cpp", 0x378, "0");
+                break;
+            }
+        } while (bLoop && m_unk13C != 0);
+    }
+    if (m_unk162 == 0) {
+        if (m_unk13C == 0) {
+            m_unk160 = 0;
+        }
+        return;
+    }
+    if (m_unk178 != 0) {
+        return;
+    }
+    if (m_unk13C == 0) {
+        m_unk160 = 0;
+    }
+    m_unk162 = 0;
 }
 
 // DRAFT: 0x0014E250 PlaySequence__15EntityBaseClassFPUi
