@@ -73,7 +73,6 @@ PParticleLiteFire::~PParticleLiteFire() {
         __dla__FPv(m_unk160);
         m_unk160 = 0;
     }
-    __dt__15PParticleSystemFv(this, 0);
 }
 
 // FUNCTION: 0x001CAE80 __ct__17PParticleLiteFireFv

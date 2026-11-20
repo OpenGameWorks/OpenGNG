@@ -249,7 +249,6 @@ PParticleSparks::~PParticleSparks() {
         __dla__FPv(m_unk140);
         m_unk140 = 0;
     }
-    __dt__15PParticleSystemFv(this, 0);
 }
 
 // FUNCTION: 0x001F8940 __ct__15PParticleSparksFv

@@ -337,11 +337,10 @@ extern "C" void *__dt__16PFallingShellsFxFv(void *pThis, short nFlag) {
     return pThis;
 }
 
-// DRAFT: 0x0020D7F0 __ct__16PFallingShellsFxFv
-// note: DIFF 19; original keeps this in s0 without spill to 0x1C(sp); memset from 0x14C variant left the count unchanged.
+// FUNCTION: 0x0020D7F0 __ct__16PFallingShellsFxFv
 PFallingShellsFx::PFallingShellsFx() {
     *(void **)this = __vt__16PFallingShellsFx;
     m_unk148 = 0;
-    memset((char *)this + 0x14C, 0, 0x1C00);
-    *(int *)((char *)this + 0x1D4C) = 0;
+    m_unk1D50 = 0;
+    memset((char *)this + 0x150, 0, 0x1C00);
 }

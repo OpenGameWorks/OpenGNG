@@ -315,8 +315,7 @@ extern "C" void *__dt__9PFrozenFxFv(void *pThis, short nFlag) {
     return pThis;
 }
 
-// DRAFT: 0x001FABA0 __ct__9PFrozenFxFv
-// note: original spills this to 0x1C(sp) and reloads it before each store; ours keeps it in s0 (DIFF 25 words, size 0x48 vs 0x70).
+// FUNCTION: 0x001FABA0 __ct__9PFrozenFxFv
 PFrozenFx::PFrozenFx() {
     *(void **)this = __vt__9PFrozenFx;
     m_unk1E0 = 0;

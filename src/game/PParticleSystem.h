@@ -9,6 +9,9 @@ class PFrustrum;
 class PParticleSystem {
 public:
     PParticleSystem();
+    // Declared so derived constructors spill `this` to the stack and derived
+    // destructors call it implicitly, as the original code does.
+    ~PParticleSystem();
     void UpdateLoopDelay(float fDelta);
     void UpdateLoopCounter();
     void ComputeBoundingBox();

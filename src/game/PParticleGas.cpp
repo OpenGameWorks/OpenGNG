@@ -183,11 +183,9 @@ PParticleGas::~PParticleGas() {
         __dla__FPv(m_unk150);
         m_unk150 = 0;
     }
-    __dt__15PParticleSystemFv(this, 0);
 }
 
-// DRAFT: 0x001ED6D0 __ct__12PParticleGasFv
-// note: vtable, memset of 0x70 bytes at 0xE0, then zeroing of 0x150..0x168 match in order; original keeps this in a 0x1C(sp) spill slot with no s0 save, ours saves s0 (25 words differ). Embedded init member (inline memset ctor) gave 26 words.
+// FUNCTION: 0x001ED6D0 __ct__12PParticleGasFv
 PParticleGas::PParticleGas() {
     *(unsigned char **)this = __vt__12PParticleGas;
     memset((char *)this + 0xE0, 0, 0x70);

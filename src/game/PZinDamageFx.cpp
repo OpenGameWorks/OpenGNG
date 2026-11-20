@@ -142,7 +142,6 @@ PZinDamageFx::~PZinDamageFx() {
         m_unkE4 = 0;
     }
     m_unkE0 = 0;
-    __dt__15PParticleSystemFv(this, 0);
 }
 
 // FUNCTION: 0x00202D90 __ct__12PZinDamageFxFv

@@ -391,8 +391,7 @@ extern "C" void *__dt__21PParticleEnergyStreamFv(void *pThis, short nFlag) {
     return pThis;
 }
 
-// DRAFT: 0x001F65C0 __ct__21PParticleEnergyStreamFv
-// note: DIFF 15; original spills this to 0x1C(sp) and returns it in v0, ours keeps this in s0. Tried explicit base call (DIFF 16), memset on m_unkE0 (DIFF 15), -Cpp_exceptions on (DIFF 15).
+// FUNCTION: 0x001F65C0 __ct__21PParticleEnergyStreamFv
 PParticleEnergyStream::PParticleEnergyStream() {
     *(void **)this = __vt__21PParticleEnergyStream;
     memset((char *)this + 0xE0, 0, 0x90);

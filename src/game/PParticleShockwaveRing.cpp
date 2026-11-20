@@ -126,8 +126,7 @@ extern "C" void *__dt__22PParticleShockwaveRingFv(void *pThis, short nFlag) {
     return pThis;
 }
 
-// DRAFT: 0x001F9D90 __ct__22PParticleShockwaveRingFv
-// note: 19 words differ; base ctor call and this spill match; original reloads this from 0x1C(sp) before each use and keeps no s0, ours saves s0 across memset; tried extern C void* form (explicit base call, 19 words), member form (19 words), extern C form without base call (20 words, wrong: original does call base at 0x0C)
+// FUNCTION: 0x001F9D90 __ct__22PParticleShockwaveRingFv
 PParticleShockwaveRing::PParticleShockwaveRing() {
     *(void **)this = (void *)__vt__22PParticleShockwaveRing;
     m_unk1E0 = 0.0f;

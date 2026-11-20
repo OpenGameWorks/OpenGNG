@@ -139,7 +139,6 @@ PParticleFire::~PParticleFire() {
         __dla__FPv(m_unkE4);
         m_unkE4 = 0;
     }
-    __dt__15PParticleSystemFv(this, 0);
 }
 
 // FUNCTION: 0x001B7590 __ct__13PParticleFireFv
