@@ -3,6 +3,7 @@
 
 class PMat4;
 class PMNode;
+struct tagGsClut256;
 struct tagVuFxLine;
 struct tagVuLightingInfo;
 // TODO(header): eBoxIntersect belongs to PMNode.h. Placeholder until that header is included; only the name matters for mangling.
@@ -35,7 +36,9 @@ public:
     void BeginFxRender();
     void BeginDebugRender();
     void UpdateLights(struct tagVuLightingInfo *pInfo);
+    void UpdateLights(PMat4 *pDirMat, PMat4 *pColorMat, float (*pAmbient)[4]);
     void UpdateLights();
+    void ResetVuLightingInfo();
     void CopyVuLightingInfo(struct tagVuLightingInfo *pDst, struct tagVuLightingInfo *pSrc);
     void BeginSplinePatch();
     void SetScreenMatrix(PMat4 *pMat);
@@ -52,6 +55,8 @@ public:
     void SetDirLightColor(int nIndex, float fR, float fG, float fB);
     void SetMaterial(int nIndex, float *pVec, bool bFlag, unsigned long nA, unsigned long nB);
     void SetMaterial(int nIndex, float *pVec, unsigned long nA, unsigned long nB, unsigned int *pC, unsigned int *pD, float (*pMat)[4][4]);
+    void SetMaterial(float *pVec, bool bFlag, unsigned long nA, unsigned long nB);
+    void SetCurFrameBufferAs8BitTexture(struct tagGsClut256 *pClut);
     void SetPrevFrameBufferAsTexture();
     void SetTexture(int nIndex);
     void GetLightingInfo(PMat4 *pA, PMat4 *pB, float (*pOut)[4]);
@@ -63,12 +68,15 @@ public:
     char _pad000[0x154C80];
     struct PDisplayList *m_unk154C80;   // 0x154C80
     char _pad154C84[0x154C90 - 0x154C84];
-    char m_unk154C90[0x158DF0 - 0x154C90]; // 0x154C90, PTextureManager (SetTexture)
+    char m_unk154C90[0x158B00 - 0x154C90]; // 0x154C90, PTextureManager (SetTexture)
+    char m_unk158B00[0x158DF0 - 0x158B00]; // 0x158B00, material block (SetMaterial copies from +0x60..+0xA0)
     int m_unk158DF0;                    // 0x158DF0, non-zero skips the frame-buffer size term in SetPrevFrameBufferAsTexture
     char _pad158DF4[0x158E02 - 0x158DF4];
     short m_unk158E02;                 // 0x158E02
     unsigned int m_unk158E04;           // 0x158E04
-    char _pad158E08[0x158E1C - 0x158E08];
+    char _pad158E08[0x158E14 - 0x158E08];
+    unsigned int m_unk158E14;           // 0x158E14, Count sampled by Vif1InterruptHandler on the 0x1000 DMA tag
+    unsigned int m_unk158E18;           // 0x158E18, Count sampled by Vif1InterruptHandler on the 0x2000 DMA tag
     void *m_unk158E1C;                  // 0x158E1C
     char _pad158E20[1];
     unsigned char m_unk158E21;          // 0x158E21
@@ -82,7 +90,7 @@ public:
     int m_unk158E60[4];                 // 0x158E60
     tagDirLightColor m_unk158E70[4];    // 0x158E70, per-light colour (4 lights of 0x10 bytes)
     float m_unk158EB0[4];               // 0x158EB0
-    char _pad158EC0[0x158F00 - 0x158EC0];
+    unsigned int m_unk158EC0[16];       // 0x158EC0, four (0, 0, 0, 1.0f) vectors written by ResetVuLightingInfo
     unsigned char m_unk158F00;          // 0x158F00, material flag, saved and restored around SetMaterial
     char _pad158F01[0x158F04 - 0x158F01];
     char m_unk158F04[0x159310 - 0x158F04]; // 0x158F04, cleared by ResetBlendedFragmentTable

@@ -17,8 +17,11 @@ extern char dbg_display_init[];
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern int gCDSVBlankCount[1];
+extern "C" void Kick__16PTextureDmaChainFb(void *pThis, bool bFlag);
 extern float GAME_FPS;
 extern float gUnitMatrix[16];
+extern char shared_vertices_start[];
+extern "C" void sceVu0CopyVector(float *dst, float *src);
 class PMat4;
 
 class PDisplayList {
@@ -34,6 +37,8 @@ public:
     void SetWorldMatrix(PMat4 *pMat);
     void BeginMesh(unsigned int nFlags);
     void SetTexSyncPacket();
+    void SetMaterials(struct tagGsMaterial *pMat, int nIndex, bool bA, bool bB, float *pF, unsigned long *pC, unsigned long *pD);
+    void SendGsPacket(void *pData, int nSize, bool bFlag);
 
     char _pad000[0xA3348];
     int m_unkA3348;                     // 0xA3348
@@ -49,12 +54,19 @@ public:
     void NextBatch();
 };
 
+struct tagGsClut256;
+struct tagGsTextureEnvironment;
+
 class PTextureManager {
 public:
     void SetTexture(int nIndex, PDisplayList *pDisplayList, struct tagGsTextureEnvironment **ppEnv, bool &bFlag);
+    void PrepareDynamicClutPacket(struct tagGsClut256 *pClut, struct tagGsTextureEnvironment *pEnv, bool bFlag, PDisplayList *pDisplayList);
 };
 
 #include "PGfxEngine.h"
+
+// TODO(header): foreign declarations (global engine pointer, gp-relative)
+extern PGfxEngine *gpGfxEngine;
 
 // TODO(header): foreign declarations (GS helpers and globals, placed after the class header for eGsContext)
 struct tagGsTextureEnvironment;
@@ -131,6 +143,51 @@ int VBlankEndInterruptHandler(int nIrq) {
     iFlushCache(0);
     asm {
         .word 0x0000000F
+        ei
+    }
+    return 0;
+}
+
+// DRAFT: 0x184880 Vif1InterruptHandler__Fi
+// note: compiler hoists lui v1,0x1000 base across blocks (original reloads lui at per access); 0x3C00 volatile re-read needed; tried all-volatile, 3C30 plain, 3C10 volatile: all 52 words
+int Vif1InterruptHandler(int nIrq) {
+    if (!(*(unsigned int *)0x10003C00 & 0x800)) {
+        *(unsigned int *)0x10003C10 = 8;
+        asm {
+            sync
+            ei
+        }
+        return 0;
+    }
+    if (*(volatile unsigned int *)0x10003C00 & 0x40) {
+        unsigned int nTag = *(unsigned int *)0x10003C30;
+        unsigned int nCount;
+        *(unsigned int *)0x10003C30 = 0;
+        asm {
+            sync
+            sync.p
+        }
+        if (nTag == 0x1000) {
+            asm {
+                mfc0 nCount, $9
+            }
+            gpGfxEngine->m_unk158E14 = nCount;
+        } else if (nTag == 0x2000) {
+            asm {
+                mfc0 nCount, $9
+            }
+            gpGfxEngine->m_unk158E18 = nCount;
+        }
+    } else {
+        char *pBase = (char *)gpGfxEngine;
+        if ((char *)gpGfxEngine->m_unk154C80 == pBase) {
+            pBase += 0xAA640;
+        }
+        Kick__16PTextureDmaChainFb(pBase + 0xA3380, true);
+    }
+    *(unsigned int *)0x10003C10 = 8;
+    asm {
+        sync
         ei
     }
     return 0;
@@ -278,6 +335,46 @@ void PGfxEngine::GetLightingInfo(PMat4 *pA, PMat4 *pB, float (*pOut)[4]) {
     memcpy(pA, m_unk158E30, 0x40);
     memcpy(pB, m_unk158E70, 0x40);
     *(u_long128 *)pOut = *(u_long128 *)m_unk158EB0;
+}
+
+// FUNCTION: 0x185AD0 ResetVuLightingInfo__10PGfxEngineFv
+void PGfxEngine::ResetVuLightingInfo() {
+    m_unk158EC0[2] = 0;
+    m_unk158EC0[1] = 0;
+    m_unk158EC0[0] = 0;
+    m_unk158EC0[3] = 0x3F800000;
+    m_unk158EC0[10] = 0;
+    m_unk158EC0[9] = 0;
+    m_unk158EC0[8] = 0;
+    m_unk158EC0[11] = 0x3F800000;
+    m_unk158EC0[6] = 0;
+    m_unk158EC0[5] = 0;
+    m_unk158EC0[4] = 0;
+    m_unk158EC0[7] = 0x3F800000;
+    m_unk158EC0[14] = 0;
+    m_unk158EC0[13] = 0;
+    m_unk158EC0[12] = 0;
+    m_unk158EC0[15] = 0x3F800000;
+    memset((char *)this + 0x158E30, 0, 0x40);
+    memset((char *)this + 0x158E70, 0, 0x40);
+    SetFullAmbientLight();
+}
+
+// FUNCTION: 0x185BF0 UpdateLights__10PGfxEngineFP5PMat4P5PMat4PA4_f
+void PGfxEngine::UpdateLights(PMat4 *pDirMat, PMat4 *pColorMat, float (*pAmbient)[4]) {
+    if (pDirMat == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x684, "pLightDirMat");
+    }
+    if (pColorMat == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x685, "pLightColorMat");
+    }
+    if (pAmbient == 0) {
+        CdsAssert__FPciPc("PGfxEngine.cpp", 0x686, "pAmbientLight");
+    }
+    memcpy(m_unk158E30, pDirMat, 0x40);
+    memcpy(m_unk158E70, pColorMat, 0x40);
+    *(u_long128 *)m_unk158EB0 = *(u_long128 *)pAmbient;
+    m_unk154C80->WriteToVu1Mem(0x35E, (u_long128 *)m_unk158E30, 9);
 }
 
 // FUNCTION: 0x185CF0 UpdateLights__10PGfxEngineFv
@@ -448,6 +545,50 @@ void PGfxEngine::SetMaterial(int nIndex, float *pVec, bool bFlag, unsigned long 
     m_unk158F00 = bFlag;
     SetMaterial(nUse, pVec, nA, nB, 0, 0, 0);
     m_unk158F00 = cSaved;
+}
+
+// DRAFT: 0x1870B0 SetMaterial__10PGfxEngineFPfbUlUl
+// note: 32 words differ; the ternary/if shift term joins at the wrong point and the bool argument for SetMaterials gets an sltu and a single load of m_unk158E24 where the original reloads the raw byte. Tried ternary, explicit if, pointer-index copy, and (char*)this offsets.
+void PGfxEngine::SetMaterial(float *pVec, bool bFlag, unsigned long nA, unsigned long nB) {
+    u_long128 aMat[10];
+    u_long128 *pQ = &aMat[1];
+
+    pQ[0] = *(u_long128 *)(m_unk158B00 + 0x60);
+    pQ[1] = *(u_long128 *)(m_unk158B00 + 0x70);
+    pQ[2] = *(u_long128 *)(m_unk158B00 + 0x80);
+    pQ[3] = *(u_long128 *)(m_unk158B00 + 0x90);
+    pQ[4] = *(u_long128 *)(m_unk158B00 + 0xA0);
+    *(unsigned long *)((char *)aMat + 0x20) = nA;
+    *(unsigned long *)((char *)aMat + 0x30) = nB;
+    *(unsigned long *)((char *)aMat + 0x50) = (((unsigned long)(unsigned char)bFlag) << 6) | 0x18;
+    *(char **)((char *)aMat + 0x4) = m_unk158B00;
+    *(unsigned int *)((char *)aMat + 0x90) = 0;
+    *(u_long128 *)((char *)aMat + 0x70) = 0;
+    *(u_long128 *)((char *)aMat + 0x80) = 0;
+    unsigned int nShift = 0;
+    if (m_unk158E24) {
+        nShift = (unsigned int)(shared_vertices_start + 0x2C10) >> 3;
+    }
+    *(unsigned int *)((char *)aMat + 0x74) = nShift;
+    sceVu0CopyVector((float *)((char *)aMat + 0x60), pVec);
+    m_unk154C80->SetMaterials((struct tagGsMaterial *)aMat, 1, false, m_unk158E24, 0, 0, 0);
+}
+
+// FUNCTION: 0x1871C0 SetCurFrameBufferAs8BitTexture__10PGfxEngineFP12tagGsClut256
+void PGfxEngine::SetCurFrameBufferAs8BitTexture(struct tagGsClut256 *pClut) {
+    u_long128 aTexEnv[6];
+    unsigned int nWidth;
+    unsigned long long nTag;
+
+    GsInitTexEnv((tagGsTextureEnvironment *)&aTexEnv[0], 0xA, 8, 0x1B, false, (eGsContext)0);
+    nWidth = GsGetBufferWidth(SCREEN_WIDTH, 0);
+    *(unsigned long long *)&aTexEnv[2] = 0;
+    nTag = 0x20000006ULL;
+    *(unsigned long long *)&aTexEnv[3] = ((unsigned long long)nWidth << 14) | ((nTag << 32) | 0x29B00000ULL);
+    GsSetTexBaseAddr((tagGsTextureEnvironment *)&aTexEnv[0], m_unk158DF0);
+    ((PTextureManager *)m_unk154C90)->PrepareDynamicClutPacket(pClut, (tagGsTextureEnvironment *)&aTexEnv[0], false, m_unk154C80);
+    m_unk154C80->SendGsPacket(pClut, 0x460, true);
+    m_unk154C80->SetGsRegisters(&aTexEnv[1], 5);
 }
 
 // FUNCTION: 0x1872C0 SetPrevFrameBufferAsTexture__10PGfxEngineFv
