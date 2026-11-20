@@ -40,6 +40,7 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 ## Environment
 
 - `fncmp.py` compiles through the `tools/ccd.py` spool, so it runs inside the sandbox; a compile under load takes up to a minute.
+- A foreground command moves to the background after 120 s, so a command checks at most two FUNCTION tags; background commands, sleeps and monitors are not used.
 - `wc`, `cat`, `xargs` and `grep` with no file list wait on stdin; pass `< /dev/null`.
 - Output is read through `head`, `tail` or `grep`, never whole files; context stays under 100k tokens.
 - No commits, no `ninja`, and no edits under `tools/`, `config/` or `include/`. Tool bugs and permission denials go into the report, unworked-around.
