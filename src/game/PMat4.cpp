@@ -10,10 +10,59 @@ extern "C" void sceVu0TransMatrix(PMat4 *m0, PMat4 *m1, float *trans);
 extern "C" void sceVu0CopyMatrix(float (*)[4], float (*)[4]);
 extern int SCREEN_WIDTH;
 extern int SCREEN_HEIGHT;
+extern "C" float tanf(float x);
 float Round180(float arg0);
 void FastMath_MatRotateZ(float (*arg0)[4], float (*arg1)[4], float arg2);
 void FastMath_MatRotateY(float (*arg0)[4], float (*arg1)[4], float arg2);
 void FastMath_MatRotateX(float (*arg0)[4], float (*arg1)[4], float arg2);
+
+// DRAFT: 0x00130690 MakeProjectionMatrix__5PMat4FPA4_fffiiii
+// note: 3 words differ: the three mul.s by -1.0f put the constant in the first operand (original has the variable first); swapping the source operands and a local neg variable did not change it.
+void PMat4::MakeProjectionMatrix(float (*arg0)[4], float arg1, float arg2, int arg3, int arg4, int arg5, int arg6) {
+    float f3 = (float)(-arg3 / 2) + arg1;
+    float f4 = (((float)(arg3 / 2) + arg1) - f3) / 2.0f;
+    float f5 = (float)(-arg4 / 2) + arg2;
+    float f2 = (((float)(arg4 / 2) + arg2) - f5) / 2.0f;
+    float f6 = (float)arg6;
+    float f1 = ((float)arg5 - f6) / 2.0f;
+    arg0[0][0] = f4;
+    arg0[1][0] = 0.0f;
+    arg0[2][0] = 0.0f;
+    arg0[3][0] = f3 - f4 * -1.0f;
+    arg0[0][1] = 0.0f;
+    arg0[1][1] = f2;
+    arg0[2][1] = 0.0f;
+    arg0[3][1] = f5 - f2 * -1.0f;
+    arg0[0][2] = 0.0f;
+    arg0[1][2] = 0.0f;
+    arg0[2][2] = f1;
+    arg0[3][2] = f6 - f1 * -1.0f;
+    arg0[0][3] = 0.0f;
+    arg0[1][3] = 0.0f;
+    arg0[2][3] = 0.0f;
+    arg0[3][3] = 1.0f;
+}
+
+// FUNCTION: 0x001307D0 MakePerspectiveMatrix__5PMat4Fffff
+void PMat4::MakePerspectiveMatrix(float arg0, float arg1, float arg2, float arg3) {
+    float cot = 1.0f / tanf(0.017453292f * (arg0 / 2.0f));
+    m_unk00[0][0] = cot / arg1;
+    m_unk00[0][1] = 0.0f;
+    m_unk00[0][2] = 0.0f;
+    m_unk00[0][3] = 0.0f;
+    m_unk00[1][0] = 0.0f;
+    m_unk00[1][1] = cot;
+    m_unk00[1][2] = 0.0f;
+    m_unk00[1][3] = 0.0f;
+    m_unk00[2][0] = 0.0f;
+    m_unk00[2][1] = 0.0f;
+    m_unk00[2][2] = (arg3 + arg2) / (arg3 - arg2);
+    m_unk00[2][3] = 1.0f;
+    m_unk00[3][0] = 0.0f;
+    m_unk00[3][1] = 0.0f;
+    m_unk00[3][2] = -(2.0f * arg3 * arg2) / (arg3 - arg2);
+    m_unk00[3][3] = 0.0f;
+}
 
 // FUNCTION: 0x00130C70 MakeMayaProjectionMatrix__5PMat4Fffffff
 void PMat4::MakeMayaProjectionMatrix(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5) {
@@ -70,6 +119,27 @@ void PMat4::MakeScreenMatrix2(float arg0, float arg1, float arg2, float arg3, fl
     ((PMat4 *)&persp[0][0])->MakePerspectiveMatrix(arg0, arg1, arg6, arg7);
     MakeProjectionMatrix(proj, arg2, arg3, SCREEN_WIDTH, SCREEN_HEIGHT, (int)arg4, (int)arg5);
     sceVu0MulMatrix((float (*)[4])this, proj, persp);
+}
+
+// FUNCTION: 0x00130FC0 MakeScreenMatrix__5PMat4Ffffffffff
+void PMat4::MakeScreenMatrix(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5, float arg6, float arg7, float arg8) {
+    float tmp[4][4];
+
+    sceVu0UnitMatrix((float *)this);
+    m_unk00[0][0] = arg0;
+    m_unk00[1][1] = arg0;
+    m_unk00[2][2] = 0.0f;
+    m_unk00[3][3] = 0.0f;
+    m_unk00[3][2] = 1.0f;
+    m_unk00[2][3] = 1.0f;
+    sceVu0UnitMatrix(&tmp[0][0]);
+    tmp[0][0] = arg1;
+    tmp[1][1] = arg2;
+    tmp[3][0] = arg3;
+    tmp[3][1] = arg4;
+    tmp[2][2] = (arg8 * arg7 * (-arg5 + arg6)) / (-arg7 + arg8);
+    tmp[3][2] = (-arg6 * arg7 + arg5 * arg8) / (-arg7 + arg8);
+    sceVu0MulMatrix((float (*)[4])this, tmp, (float (*)[4])this);
 }
 
 // DRAFT: 0x001310F0 InverseByRT__5PMat4FPfPf

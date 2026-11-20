@@ -22,6 +22,7 @@ public:
     void MakeOrthographicMatrix(float (*arg0)[4], float arg1, float arg2, float arg3, float arg4, float arg5, float arg6);
     void MakeParallelProjectionMatrix(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5, float arg6, float arg7, float arg8, float arg9, float arg10, float arg11);
     void MakeScreenMatrix2(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5, float arg6, float arg7);
+    void MakeScreenMatrix(float arg0, float arg1, float arg2, float arg3, float arg4, float arg5, float arg6, float arg7, float arg8);
     void InverseByRT(float *arg0, float *arg1);
     void MulVector(float *arg0, float *arg1);
 
