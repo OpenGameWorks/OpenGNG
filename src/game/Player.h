@@ -61,6 +61,7 @@ public:
     void GrimRunMove();
     void ComboTarget(float arg0, float arg1, bool arg2);
     void HammerDSlashMove();
+    void DSlashMove();
     void HammerSliceMove();
     void HammerSlashMove();
     void SwimMove();
@@ -137,6 +138,7 @@ public:
     signed char GetAbility();
     void GetAttachableJointOffsets(int arg0, float (*arg1)[4]);
     int GetAttachableJoint(int arg0);
+    void GetAttachableJoint(int *arg0);
     void FinishCutCamera(float (*arg0)[4]);
     void DuckLaunchMove();
     void MBlow2Move();
@@ -223,7 +225,7 @@ public:
     unsigned char m_unk26C; // 0x26C byte set by SetHeadCamera
     char _pad26D[0x270 - 0x26D];
     int m_unk270;           // 0x270 spin state, read and written by SpinCheck
-    char _pad274[0x278 - 0x274];
+    int m_unk274;           // 0x274 timer, set from TAP_TIMER by DSlashMove
     int m_unk278;           // 0x278 spin state, read and written by SpinCheck
     int m_unk27C;           // 0x27C index into the attack list walked by MultipleAttack
     char _pad280[0x284 - 0x280];

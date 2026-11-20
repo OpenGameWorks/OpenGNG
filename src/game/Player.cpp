@@ -299,6 +299,8 @@ extern unsigned char GameVarTbl[0x78];
 extern int CAUGHT_TIME;
 extern int LEDGE_UP_TIME;
 extern int UP_TIME;
+extern int TAP_COUNT;
+extern int TAP_TIMER;
 extern float AttachedTimer[5];
 class MathAPI {
 public:
@@ -476,6 +478,70 @@ void Player::GetAttachableJointOffsets(int arg0, float (*arg1)[4]) {
     uVal = (unsigned char)m_pFreeJoints[arg0]._pad05[0];
     fVec[3] = (float)uVal;
     *(u_long128 *)arg1 = *(u_long128 *)fVec;
+}
+
+// DRAFT: 0x00159360 GetAttachableJoint__6PlayerFPi
+// note: DIFF 150 words; size 0x218 vs 0x264, frame 0x60 vs 0x70 (original keeps this in s5 and has a RandomIntRange(0,100) coin-flip branch and AttachableJoints lookups missing here); while-form scored 152.
+void Player::GetAttachableJoint(int *arg0) {
+    int idx;
+    bool wrapped;
+    int limit;
+    class FreeJoint *pJ;
+    unsigned char *pFlag;
+    int a1;
+
+    wrapped = false;
+    limit = MathAPI::RandomIntRange(1, 4);
+    idx = limit;
+    for (;;) {
+        if (wrapped || m_unk23D4 == 0) {
+            m_unk23D0 = 1;
+            *arg0 = -1;
+            return;
+        }
+        pJ = &m_pFreeJoints[idx];
+        if (pJ->m_unk04 != 0 && m_unk3C != 0) {
+            pFlag = &pJ->_pad05[0];
+            *pFlag = 1;
+            if (idx == 4) {
+                a1 = m_AttachableJoints[idx].m_unk00;
+                *pFlag = 0;
+                pJ->_pad05[1] = 0;
+            } else if (MathAPI::RandomIntRange(0, 100) & 1) {
+                a1 = m_AttachableJoints[idx].m_unk00;
+                pJ->_pad05[1] = 0;
+            } else {
+                a1 = m_AttachableJoints[idx].m_unk04;
+                pJ->_pad05[1] = 1;
+                if (idx == 0 || idx == 1) {
+                    *pFlag = 0;
+                }
+            }
+            pJ->m_unk00 = (int)((PMNode *)m_unk3C)->Find(a1);
+            pJ->m_unk04 = 0;
+            if (pJ->m_unk00 == 0) {
+                CdsAssert__FPciPc("Player.cpp", 0x2200, "m_pFreeJoints[i].pJoint");
+            }
+            m_unk23D4 -= 1;
+            if (m_unk23D4 < 0) {
+                CdsAssert__FPciPc("Player.cpp", 0x2204, "m_iNumFreeJoints >= 0");
+            }
+            m_unk23D1 = (unsigned int)m_unk23D4 < 4U;
+            m_unk2FC = AttachedTimer[5 - m_unk23D4];
+            if (m_unk23D4 == 4) {
+                m_unk2F8 = 0x3F800000;
+            }
+            *arg0 = idx;
+            return;
+        }
+        idx += 1;
+        if (idx == limit) {
+            wrapped = true;
+        }
+        if (idx == 5) {
+            idx = 0;
+        }
+    }
 }
 
 // FUNCTION: 0x001595D0 GetAttachableJoint__6PlayerFi
@@ -1772,6 +1838,72 @@ void Player::Over3Move() {
         }
     }
     MultipleAttack(&Over3Attacks[0]);
+}
+
+// DRAFT: 0x0015D140 DSlashMove__6PlayerFv
+// note: DIFF 111 words; size 0x244 vs 0x258; lhu/andi register swap (flags s0, spin s4 in original), TAP_COUNT/TAP_TIMER reloc form differs; tried reorders of decls and v1/CancelAttack (120, 133)
+void Player::DSlashMove() {
+    static unsigned char DSlashMoves[8] = {0x00, 0x75, 0x72, 0x70, 0x0E, 0x11, 0x35, 0x12};
+    int spin;
+    unsigned short flags = m_unk1B2;
+    spin = flags & 0x8000;
+    int v1;
+    if (spin != 0) {
+        m_unk270 += 1;
+    }
+    PMNode *pNode = (PMNode *)m_unk3C;
+    int frame = (int)pNode->m_unk34;
+    if (frame >= 0x1D) {
+        v1 = frame < 0x14;
+        if (CancelAttack(0x30) != 0) {
+            return;
+        }
+    } else {
+        int s2;
+        int s3;
+        if (frame >= 0xC && (flags & 0x9000)) {
+            s2 = 0;
+            s3 = 0;
+            if (m_unk1C0 != 0 && (short)m_unk1C0 < UP_TIME) {
+                if (FastMath_Fabs__Ff(Round180__Ff(m_unk1C4 - pNode->m_unk94)) < 55.0f) {
+                    s3 = 1;
+                }
+            }
+            if (flags & 0x1000) {
+                s2 = 7;
+                if (s3 == 0) {
+                    s2 = 4;
+                    if (m_unk1BC >= 0x65 && (m_unk1D0 & 0x300) != 0) {
+                        s2 = (m_unk1D0 & 0x200) ? 6 : 5;
+                    }
+                }
+            } else if (spin != 0) {
+                if (m_unk270 >= TAP_COUNT) {
+                    s2 = 3;
+                } else if (s3 != 0) {
+                    s2 = 2;
+                } else if (m_unk1BC >= 0x65) {
+                    s2 = 1;
+                }
+            }
+            if (m_unk250 < s2) {
+                m_unk250 = s2;
+            }
+        }
+        v1 = frame < 0x14;
+    }
+    if (v1 == 0) {
+        if (m_unk250 != 0) {
+            if (m_unk250 != 6 && m_unk250 != 5) {
+            } else if (MightyBlowCheck(m_unk1D0) == 0) {
+                m_unk250 = 4;
+            }
+            ComboTarget(-1.0f, 100.0f, 1);
+            SetAction(DSlashMoves[m_unk250]);
+            m_unk274 = TAP_TIMER;
+            m_unk270 = TAP_TIMER;
+        }
+    }
 }
 
 // FUNCTION: 0x0015D3A0 HSpinMove__6PlayerFv
