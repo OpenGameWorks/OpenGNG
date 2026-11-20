@@ -11,6 +11,8 @@ extern "C" void *__dt__6PArrayFv(void *pThis, short nFlags);
 extern "C" void *__dt__16PParticleRipplesFv(void *pThis, short nFlags);
 extern "C" void *__dt__12PFlashScreenFv(void *pThis, short nFlags);
 extern "C" void __dl__FPv(void *p);
+extern "C" void *__nwa__FUi(unsigned int nSize);
+void QwordCopy(u_long128 *pDst, u_long128 *pSrc, unsigned int nQwords);
 struct tagParticleMovingFogParams;
 class PParticleMovingFog {
 public:
@@ -76,6 +78,8 @@ extern "C" void Init__16PParticleRipplesFibb(void *pThis, int nCount, bool bA, b
 extern "C" int sceCdReadClock(void *pClock);
 extern "C" void srand(unsigned int nSeed);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
+float FastMath_Sin180__Ff(float fAngle);
+float FastMath_Cos180__Ff(float fAngle);
 extern "C" void *__ct__6PArrayFv(void *pThis);
 extern "C" void Allocate__6PArrayFUi(void *pThis, unsigned int nCount);
 extern "C" void *__ct__12PFlashScreenFv(void *pThis);
@@ -289,6 +293,82 @@ void PParticleManager::RenderAuraParticles() {
         DrawParticles__10PGfxEngineFP13tagVuParticleiffb(gGfxEng, (char *)this + 0x9C0, 0x28, 1.0f, 1.0f, true);
         EndParticles__10PGfxEngineFv(gGfxEng);
     }
+}
+
+// DRAFT: 0x001B78A0 InitRingMeshPacket__16PParticleManagerFRiibffii
+// note: DIFF 93; if-branch 8 bytes short (beqz target 0x21 vs 0x1F), -0.2f built before the nA*16 pointer math, join layout differs; tried sum-of-calls and precomputed pointer locals (95).
+void *PParticleManager::InitRingMeshPacket(int &nOut, int nCount, bool bFlag, float fA, float fB, int nC, int nD) {
+    float aA[50][4];
+    float aB[50][4];
+    float aC[50][4];
+    int nA;
+    int nTotal;
+    int *pPacket;
+
+    if (bFlag) {
+        nA = CreateRingTriStrip(nCount, fA, fB, 0.0f, 0.2f, nC, nD, aA, aB, aC);
+        nTotal = nA + CreateRingTriStrip(nCount, fA, fB, 0.0f, -0.2f, nC, nD, aA + nA, aB + nA, aC + nA);
+    } else {
+        nA = CreateRingTriStrip(nCount, fA, fB, 0.0f, 0.3f, nC, nD, aA, aB, aC);
+        nTotal = nA;
+    }
+    if (nTotal >= 50) {
+        CdsAssert("PParticleManager.cpp", 0x654, "iNumVerts < fx_i_instance_max_vertices");
+    }
+    *(int *)&aA[nA][3] |= 0x8000;
+    *(int *)&aA[nA + 1][3] |= 0x8000;
+    pPacket = (int *)__nwa__FUi(0x970);
+    if (pPacket == 0) {
+        CdsAssert("PParticleManager.cpp", 0x65C, "apPacket");
+    }
+    pPacket[0] = nTotal;
+    pPacket[1] = 0;
+    pPacket[2] = 0;
+    pPacket[3] = 0;
+    QwordCopy((u_long128 *)((char *)pPacket + 0x10), (u_long128 *)aB, 0x32);
+    QwordCopy((u_long128 *)((char *)pPacket + 0x330), (u_long128 *)aC, 0x32);
+    QwordCopy((u_long128 *)((char *)pPacket + 0x650), (u_long128 *)aA, 0x32);
+    nOut = 0x970;
+    return pPacket;
+}
+
+// DRAFT: 0x001B7A90 CreateRingTriStrip__16PParticleManagerFiffffiiPA4_fPA4_fPA4_f
+// note: DIFF 48; loop body order differs (pA stores before the fA/fB division, beqz target one word off), jal relocations; tried angle-first decl, nVerts before fStep, 0 < nVerts, inline ratio.
+int PParticleManager::CreateRingTriStrip(int nCount, float fA, float fB, float fC, float fD, int nE, int nF, float (*pA)[4], float (*pB)[4], float (*pC)[4]) {
+    float fAngle;
+    int nVerts = nCount * 2 + 2;
+    float fStep = 360.0f / (float)nCount;
+    fAngle = 0.0f;
+    int nIdx = 0;
+    if (0 < nVerts) {
+        do {
+            float fSin = FastMath_Sin180__Ff(fAngle - 180.0f);
+            float fCos = FastMath_Cos180__Ff(fAngle - 180.0f);
+            pA[nIdx][0] = fA * fCos;
+            pA[nIdx][2] = fA * fSin;
+            pA[nIdx][1] = fD;
+            *(int *)&pA[nIdx][3] = 0x3F800000;
+            pB[nIdx][0] = 0.5f + fCos * (0.5f * (fA / fB));
+            pB[nIdx][1] = 0.5f + fSin * (0.5f * (fA / fB));
+            *(int *)&pC[nIdx][0] = 0x80;
+            *(int *)&pC[nIdx][1] = 0x80;
+            *(int *)&pC[nIdx][2] = 0x80;
+            *(int *)&pC[nIdx][3] = nE;
+            *(int *)&pC[nIdx + 1][0] = 0x80;
+            *(int *)&pC[nIdx + 1][1] = 0x80;
+            *(int *)&pC[nIdx + 1][2] = 0x80;
+            *(int *)&pC[nIdx + 1][3] = nF;
+            pA[nIdx + 1][0] = fB * fCos;
+            pA[nIdx + 1][2] = fB * fSin;
+            pA[nIdx + 1][1] = fC;
+            *(int *)&pA[nIdx + 1][3] = 0x3F800000;
+            pB[nIdx + 1][0] = 0.5f + 0.5f * fCos;
+            pB[nIdx + 1][1] = 0.5f + 0.5f * fSin;
+            fAngle += fStep;
+            nIdx += 2;
+        } while (nIdx < nVerts);
+    }
+    return nVerts;
 }
 
 // FUNCTION: 0x001B7EC0 InitShockwaveRings__16PParticleManagerFv
@@ -920,6 +1000,68 @@ void PParticleManager::RemoveAllFogObjects() {
         m_unk20 = 0;
         m_unk24 = 0;
     }
+}
+
+// FUNCTION: 0x001BA800 RemoveAllParticleSystems__16PParticleManagerFv
+void PParticleManager::RemoveAllParticleSystems() {
+    PParticleSystem *pSystem;
+    unsigned int nIdx;
+    m_unk4 = 0;
+    if (m_unk0 != 0) {
+        pSystem = (PParticleSystem *)m_unk8[0];
+    } else {
+        pSystem = 0;
+    }
+    if (pSystem != 0) {
+        do {
+            if (pSystem != 0) {
+                pSystem->Slot00(1);
+            }
+            nIdx = m_unk4 + 1;
+            m_unk4 = nIdx;
+            pSystem = (nIdx < m_unk0) ? (PParticleSystem *)m_unk8[m_unk4] : 0;
+        } while (pSystem != 0);
+    }
+    m_unk14 = 0;
+    void *pEntry = 0;
+    if (m_unk10 != 0) {
+        pEntry = *m_unk18;
+    }
+    if (pEntry != 0) {
+        do {
+            if (pEntry != 0) {
+                ((PParticleSystem *)pEntry)->Slot00(1);
+            }
+            unsigned int nSlot = m_unk14 + 1;
+            m_unk14 = nSlot;
+            pEntry = (nSlot < m_unk10) ? m_unk18[m_unk14] : 0;
+        } while (pEntry != 0);
+    }
+    if (m_unk8 != 0) {
+        m_unk0 = 0;
+        m_unk4 = 0;
+    }
+    if (m_unk18 != 0) {
+        m_unk10 = 0;
+        m_unk14 = 0;
+    }
+    if (m_unk9B4 != 0) {
+        if (m_unk9B4 != 0) {
+            m_unk9B4->Slot00(1);
+        }
+        m_unk9B4 = 0;
+    }
+    memset(m_unk9C0, 0, 0x500);
+    m_unkEC0 = 0;
+    if (m_unk2070 != 0) {
+        m_unk2068 = 0;
+        m_unk206C = 0;
+    }
+    if (m_unk2080 != 0) {
+        m_unk2078 = 0;
+        m_unk207C = 0;
+    }
+    m_unk20FC = 0;
 }
 
 // FUNCTION: 0x001BA690 RemoveAllParticleSystems__16PParticleManagerF8ePSLayer
