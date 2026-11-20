@@ -16,8 +16,16 @@ extern "C" void *__dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" int Find__6PArrayFPv(void *pThis, void *pItem);
 extern "C" char __vt__9PResource[];
 extern "C" int Create__18PObjectDisplayListFP6PMNodePb(PObjectDisplayList *, PMNode *, bool *);
-class PAnimFrame;
+// TODO(header): PAnimFrame is the 0x34-byte frame object held at PMNode+0x24; only its vtable slots 0x0C and 0x10 are named here.
+class PAnimFrame {
+public:
+    virtual ~PAnimFrame();
+    virtual void Slot01();
+    virtual int LoadHeader(void *pFile, void *pHeader);
+};
 extern "C" PAnimFrame *__ct__10PAnimFrameFP5PAnim(PAnimFrame *, PAnim *);
+extern "C" PAnimFrame *__ct__10PAnimFrameFs(PAnimFrame *, short);
+extern "C" PAnim *__ct__5PAnimFv(PAnim *);
 class PMat4;
 class PDisplayList {
 public:
@@ -86,7 +94,7 @@ public:
     virtual void Slot07();
     virtual void Slot08();
     virtual void Slot09();
-    virtual void Slot10();
+    virtual void Slot10(AnimData *pAnim);
     virtual void Slot11(int nCount);
     virtual float Slot12();
     virtual void Slot13();
@@ -94,7 +102,8 @@ public:
     virtual void Slot15();
     virtual void Slot16();
     virtual float GetFrameRate();
-    char _pad04[6];
+    int m_unk04;            // 0x04 state; 0x3E8 and 1 are excluded from CheckAnimated
+    char _pad08[2];
     unsigned char m_unk0A;  // 0x0A nonzero keeps the object alive in RemoveNullAnimation
 };
 
@@ -448,6 +457,38 @@ void PMNode::SetFrameTime(float fTime) {
     }
 }
 
+// DRAFT: 0x00193790 CheckAnimated__6PMNodeFv
+// note: DIFF 50 words; original keeps this in s0 with no frame locals and one shared epilogue (b end, li v0,1), ours uses a 0x30 frame and s1; tried nRet exit (50), early returns (53), nState local (53), reversed float compare (50/53).
+int PMNode::CheckAnimated() {
+    PMNode *pChild;
+    PFrameSource *pObj;
+    int nRet;
+    nRet = 0;
+    pObj = (PFrameSource *)m_unk24;
+    if (pObj != 0 && pObj->m_unk04 != 0x3E8 && pObj->m_unk04 != 1 && 0.0f != pObj->Slot12()) {
+        nRet = 1;
+    } else {
+        m_unk18 = 0;
+        pChild = 0;
+        if (m_unk14 != 0) {
+            pChild = m_unk1C[0];
+        }
+        if (pChild != 0) {
+            do {
+                unsigned int uNext;
+                if (pChild->CheckAnimated() != 0) {
+                    nRet = 1;
+                    break;
+                }
+                uNext = m_unk18 + 1;
+                m_unk18 = uNext;
+                pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+            } while (pChild != 0);
+        }
+    }
+    return nRet;
+}
+
 // DRAFT: 0x00193890 GetFrameTime__6PMNodeFv
 // note: 10 lines differ: compare operand order at 0x14 and 0x60 (x != 0.0f kept; 0.0f != x compiles identically), branch offsets and epilogue/mtc1 placement at 0xB4-0xC8; join nop after the loop (0x193944) missing as in FindBone.
 float PMNode::GetFrameTime() {
@@ -507,7 +548,7 @@ void PMNode::SetAllAnimFlags(AnimData *pAnim) {
     PMNode *pChild;
     void *pObj = m_unk24;
     if (pObj != 0) {
-        ((PFrameSource *)pObj)->Slot10();
+        ((PFrameSource *)pObj)->Slot10(pAnim);
         float fTime = ((PFrameSource *)m_unk24)->Slot12();
         *(float *)&m_unk34 = fTime;
         m_unk38 = fTime;
@@ -683,6 +724,34 @@ void PMNode::EnableOneRenderPassOnly(int nPass) {
         do {
             unsigned int uNext;
             pChild->SetRenderPassStatus(m_unkD4, *(bool *)&m_unkD5, *(bool *)&m_unkD6, *(bool *)&m_unkD7);
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+}
+
+// FUNCTION: 0x00194740 SetRenderPassStatus__6PMNodeFbbbb
+void PMNode::SetRenderPassStatus(bool bA, bool bB, bool bC, bool bD) {
+    PMNode *pChild;
+    m_unkD4 = bA;
+    m_unkD5 = bB;
+    m_unkD6 = bC;
+    m_unkD7 = bD;
+    if (bA && bB && bC && bD) {
+        m_unk3E &= 0x7F;
+    } else {
+        m_unk3E |= 0x80;
+    }
+    m_unk18 = 0;
+    pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            unsigned int uNext;
+            pChild->SetRenderPassStatus(bA, bB, bC, bD);
             uNext = m_unk18 + 1;
             m_unk18 = uNext;
             pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
@@ -948,6 +1017,59 @@ void PMNode::RecurseSetFade(float fFade) {
     }
 }
 
+// FUNCTION: 0x001956A0 RecurseSetAnimFlagsByID__6PMNodeFUiP8AnimData
+int PMNode::RecurseSetAnimFlagsByID(unsigned int uID, AnimData *pAnim) {
+    PMNode *pChild;
+    unsigned int idx;
+    void *pObj = m_unk24;
+    if (pObj != 0 && uID == ((PFrameSource *)pObj)->m_unk04) {
+        ((PFrameSource *)pObj)->Slot10(pAnim);
+        m_unk3F |= 1;
+    }
+    m_unk18 = 0;
+    pChild = (m_unk14 != 0) ? *m_unk1C : 0;
+    if (pChild != 0) {
+        do {
+            if (pChild->RecurseSetAnimFlagsByID(uID, pAnim) != 0) {
+                m_unk3F |= 2;
+            }
+            idx = m_unk18 + 1;
+            m_unk18 = idx;
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+    return m_unk3F;
+}
+
+// DRAFT: 0x00195A40 EnableAnim__6PMNodeFbb
+// note: DIFF 35 words; original stores m_unk3F in the delay slot of the first bB branch (store before the nop-delay second test), ours folds the store into the second branch. Tried split gating (54), bB-less inner test (53), unconditional store (52), if/else first-child load (35).
+void PMNode::EnableAnim(bool bA, bool bB) {
+    PMNode *pChild;
+    unsigned int idx;
+    void *pObj = m_unk24;
+    if (pObj != 0) {
+        ((PFrameSource *)pObj)->Slot13();
+    }
+    if (bB) {
+        m_unk3F = bA;
+        if (bB && m_unk04 == 1) {
+            m_unk18 = 0;
+            pChild = (m_unk14 != 0) ? *m_unk1C : 0;
+            if (pChild != 0) {
+                do {
+                    pChild->EnableAnim(bA, true);
+                    if (m_unk3F == 0 && (pChild->m_unk3F & 7) != 0) {
+                        m_unk3F = 2;
+                    }
+                    idx = m_unk18 + 1;
+                    m_unk18 = idx;
+                    pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
+                } while (pChild != 0);
+            }
+        }
+    }
+}
+
 // FUNCTION: 0x00195B50 AttachAnim__6PMNodeFP5PAnimb
 void PMNode::AttachAnim(PAnim *pAnim, bool bFlag) {
     PAnimFrame *pFrame;
@@ -969,6 +1091,44 @@ void PMNode::AttachAnim(PAnim *pAnim, bool bFlag) {
         m_unk24 = pAnim;
         m_unk3E &= 0xFD;
     }
+}
+
+struct PAnimHeader {
+    unsigned int uA;
+    unsigned int uNumChannels;
+    unsigned int uC;
+    unsigned short uFlags;
+    unsigned short uG;
+};
+
+// FUNCTION: 0x00195C20 LoadAnim__6PMNodeFP8PPakFile
+int PMNode::LoadAnim(PPakFile *pFile) {
+    PAnimHeader hdr;
+    PAnimFrame *pObj;
+    DestroyAnim();
+    if (((PCDFile *)pFile)->Read(&hdr, 0x10) != 0x10) {
+        return 0;
+    }
+    if (hdr.uNumChannels > 5) {
+        CdsAssert__FPciPc("PMNode.cpp", 0xFA, "aHeader.uNumChannels <= CHANNEL_MAX");
+    }
+    if (hdr.uFlags == 0 && hdr.uA > 1) {
+        pObj = (PAnimFrame *)__nw__FUi(0x34);
+        if (pObj != 0) {
+            pObj = __ct__10PAnimFrameFs(pObj, 0);
+        }
+        m_unk24 = pObj;
+    } else {
+        pObj = (PAnimFrame *)__nw__FUi(0x20);
+        if (pObj != 0) {
+            pObj = (PAnimFrame *)__ct__5PAnimFv((PAnim *)pObj);
+        }
+        m_unk24 = pObj;
+    }
+    if (m_unk24 == 0) {
+        CdsAssert__FPciPc("PMNode.cpp", 0x102, "mpAnim");
+    }
+    return ((PAnimFrame *)m_unk24)->LoadHeader(pFile, &hdr);
 }
 
 // FUNCTION: 0x00195D30 DestroyAnim__6PMNodeFv

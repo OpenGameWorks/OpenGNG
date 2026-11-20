@@ -57,6 +57,10 @@ public:
     void EnableOneRenderPassOnly(int nPass);
     void SetRenderPassStatus(bool bA, bool bB, bool bC, bool bD);
     unsigned char RecurseSetSTAnimOptions(bool bFlag);
+    int LoadAnim(PPakFile *pFile);
+    int CheckAnimated();
+    int RecurseSetAnimFlagsByID(unsigned int uID, AnimData *pAnim);
+    void EnableAnim(bool bA, bool bB);
 
     int m_unk04;           // 0x004 state; 2 skips frustum test
     int m_unk08;            // 0x008 zeroed by InitMembers
@@ -75,7 +79,7 @@ public:
     unsigned char m_unk3C;  // 0x03C
     unsigned char m_unk3D;  // 0x03D
     unsigned char m_unk3E;  // 0x03E flags: 0x01 owns mesh, 0x08 scale set
-    unsigned char m_unk3F;  // 0x03F
+    signed char m_unk3F;    // 0x03F flags: 0x01 set by RecurseSetAnimFlagsByID, 0x02 child matched; read with lb
     float m_unk40[4][4];    // 0x040 matrix; row 3 (0x070) is a vector
     char _pad080[0x20];
     float m_unkA0[4];       // 0x0A0
