@@ -16,6 +16,7 @@ public:
     void InitBlurPacket(tagGsScreenBlurPacket *pPacket, int nWidth, int nHeight, char cA, char cB, char cC, char cD);
     void WobbleSTGrids(tagGsScreenBlurPacket *pPacket, float fAngle);
     void Animate(float fDelta);
+    void Render();
 
 private:
     char _pad00[0x10];
