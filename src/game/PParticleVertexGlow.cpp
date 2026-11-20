@@ -16,6 +16,25 @@ extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *pThis, int nTexture, fl
 extern "C" void Render__7PFxMeshFv(void *pThis);
 extern "C" bool Init__7PFxMeshFP6PMNodeP6PMNode(void *pThis, PMNode *poGlowObj, PMNode *poAnimObj);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
+extern "C" void sceVu0AddVector(void *pDst, void *pA, void *pB);
+extern "C" void sceVu0SubVector(void *pDst, void *pA, void *pB);
+extern "C" void sceVu0ScaleVector(void *pDst, void *pSrc, float fScale);
+
+// FUNCTION: 0x001BE770 Start__19PParticleVertexGlowFv
+void PParticleVertexGlow::Start() {
+    m_unk15 = 1;
+    m_unk374 = 0;
+    m_unk37C = 0;
+}
+
+// FUNCTION: 0x001BE7A0 FadeAndDie__19PParticleVertexGlowFUi
+void PParticleVertexGlow::FadeAndDie(unsigned int nUnused) {
+    m_unk17 = 1;
+    m_unk16 = 1;
+    m_unk15 = 0;
+    m_unk358 = 0;
+    m_unkAC = 0;
+}
 
 // FUNCTION: 0x001BE7C0 FrustrumTest__19PParticleVertexGlowFP9PFrustrumPfff
 void PParticleVertexGlow::FrustrumTest(PFrustrum *pFrustrum, float *pVec, float fNear, float fFar) {
@@ -43,18 +62,69 @@ void PParticleVertexGlow::Render() {
     }
 }
 
+// DRAFT: 0x001BE900 Animate__19PParticleVertexGlowFf
+// note: guard branches and timer-1 clamp order differ (DIFF 149); tried nested guards, merged && guard, early returns, if/else clamp, ternary clamp, empty-if m_unk14 form (166), else-return (149).
+void PParticleVertexGlow::Animate(float fDelta) {
+    if (m_unkA4 == 0) return;
+    if (m_unk15 == 0) return;
+    if (m_unk14 != 0) {
+        {
+            float fTime = m_unk37C + m_unk380 * fDelta;
+            float fMax = m_unk114;
+            float fMin = (fTime < fMax) ? fTime : fMax;
+            if (fMin <= 0.0f) {
+                m_unk37C = 0.0f;
+            } else {
+                m_unk37C = (fTime < fMax) ? fTime : fMax;
+            }
+            if (m_unk37C >= m_unk114 || m_unk37C <= 0.0f) {
+                m_unk380 = -m_unk380;
+            }
+            float fRatio = m_unk37C / m_unk114;
+            if (fRatio <= 0.5f) {
+                sceVu0SubVector(&m_unk360, m_unkF0, m_unkE0);
+                sceVu0ScaleVector(&m_unk360, &m_unk360, 2.0f * fRatio);
+                sceVu0AddVector(&m_unk360, &m_unk360, m_unkE0);
+            } else {
+                sceVu0SubVector(&m_unk360, m_unk100, m_unkF0);
+                sceVu0ScaleVector(&m_unk360, &m_unk360, 2.0f * (fRatio - 0.5f));
+                sceVu0AddVector(&m_unk360, &m_unk360, m_unkF0);
+            }
+            float fTime2 = m_unk374 + m_unk378 * fDelta;
+            float fMax2 = m_unk124;
+            float fMin2 = (fTime2 < fMax2) ? fTime2 : fMax2;
+            if (fMin2 <= 0.0f) {
+                m_unk374 = 0.0f;
+            } else {
+                m_unk374 = (fTime2 < fMax2) ? fTime2 : fMax2;
+            }
+            if (m_unk374 >= m_unk124 || m_unk374 <= 0.0f) {
+                m_unk378 = -m_unk378;
+            }
+            float fRatio2 = m_unk374 / m_unk124;
+            if (fRatio2 <= 0.5f) {
+                m_unk370 = m_unk118 + 2.0f * (fRatio2 * (m_unk11C - m_unk118));
+            } else {
+                m_unk370 = m_unk11C + 2.0f * ((fRatio2 - 0.5f) * (m_unk120 - m_unk11C));
+            }
+        }
+    } else {
+        return;
+    }
+}
+
 // FUNCTION: 0x001BEBF0 Create__19PParticleVertexGlowFP27tagParticleVertexGlowParamsP6PMNodeP6PMNode
 bool PParticleVertexGlow::Create(tagParticleVertexGlowParams *pParams, PMNode *poGlowObj, PMNode *poAnimObj) {
     if (pParams == 0) CdsAssert__FPciPc("PParticleVertexGlow.cpp", 0x1C, "pParams");
     if (poGlowObj == 0) CdsAssert__FPciPc("PParticleVertexGlow.cpp", 0x1D, "poGlowObj");
     if (poAnimObj == 0) CdsAssert__FPciPc("PParticleVertexGlow.cpp", 0x1E, "poAnimObj");
-    memcpy(_pad0E0, pParams, 0x260);
+    memcpy(&m_unkE0, pParams, 0x260);
     bool bResult = Init__7PFxMeshFP6PMNodeP6PMNode(&m_unk340, poGlowObj, poAnimObj);
     m_unk358 = poAnimObj;
     m_unk374 = 0;
-    m_unk378 = 0x3F800000;
+    m_unk378 = 1.0f;
     m_unk37C = 0;
-    m_unk380 = 0x3F800000;
+    m_unk380 = 1.0f;
     m_unk15 = 0;
     m_unk14 = 1;
     *(int *)((char *)this + 0xC) = 3;
