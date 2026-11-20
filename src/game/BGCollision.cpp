@@ -11,6 +11,7 @@ extern "C" float sqrtf(float);
 extern "C" void sceVu0ScaleVectorXYZ(float *, float *, float);
 extern "C" void sceVu0AddVector(float *, float *, float *);
 extern "C" void sceVu0ScaleVector(float *, float *, float);
+extern "C" void sceVu0Normalize(float *, float *);
 float FastMath_Fabs(float f);
 float Fabs(float f);
 struct STCollisionPoly;
@@ -41,9 +42,138 @@ int BGCollision::CheckCeiling(float (*pVec)[4])
     return CheckIntersectAnim(pVec, &vUp_1253, 0, 0x40) != 0;
 }
 
+#define CDS_ASSERT_TXT(line, cond, txt) ((cond) ? (void)0 : CdsAssert__FPciPc("BGCollision.cpp", line, txt))
+#define BGS_H(p, off) (*(unsigned short *)((char *)(p) + (off)))
+#define BGS_B(p, off) (*(unsigned char *)((char *)(p) + (off)))
 #define BGS_F(p, off) (*(float *)((char *)(p) + (off)))
 #define BGS_U(p, off) (*(unsigned int *)((char *)(p) + (off)))
 #define BGS_P(p, off) (*(void **)((char *)(p) + (off)))
+
+// DRAFT: 0x0016C8D0 BGIntersect__11BGCollisionFR5PVec3fUi
+// note: DIFF 308 words; frame 0x180 vs original 0x170, grid-loop slots (rX/rZ) 0x10 high, sph/normalize path and node-loop shape differ; local reorder and inner-list rewrite did not change the count.
+int BGCollision::BGIntersect(PVec3 &rPos, float fRadius, unsigned int nFlags)
+{
+    int nX;
+    int nZ;
+    float r;
+    float sph[2][4];
+    float nrm[4];
+    float nrm2[4];
+    float out[4];
+    float e0[4];
+    float e1[4];
+    float mat[4][4];
+    float box[2][4];
+    char *pNode;
+    char *pCell;
+
+    if (m_unk40 != 0) {
+        FindGrid((float (*)[4])&rPos, nX, nZ);
+        if (!((unsigned int)nX < m_unk38 && (unsigned int)nZ < m_unk3C)) {
+            return 0;
+        }
+        pCell = (char *)((int *)m_unk40)[nZ * m_unk38 + nX];
+        if (pCell == 0) {
+            return 0;
+        }
+        unsigned int nCount = BGS_U(pCell, 8);
+        void **pItem = (void **)(pCell + 0xC);
+        for (; nCount != 0; nCount--, pItem++) {
+            STCollisionPoly *pPoly = (STCollisionPoly *)*pItem;
+            if ((BGS_U(pPoly, 0xC) & nFlags) == 0) {
+                continue;
+            }
+            *(u_long128 *)sph[0] = *(u_long128 *)&rPos;
+            *(u_long128 *)sph[1] = *(u_long128 *)&rPos;
+            r = SphereIntersect(pPoly, sph, fRadius * fRadius);
+            if (r > 0.0f) {
+                *(u_long128 *)nrm = *(u_long128 *)((char *)pPoly + 0x10);
+                sceVu0Normalize(nrm2, nrm);
+                sceVu0ScaleVector(out, nrm2, r);
+                return 1;
+            }
+            sceVu0ScaleVector((float *)((char *)pPoly + 0x10), (float *)((char *)pPoly + 0x10), -1.0f);
+            r = SphereIntersect(pPoly, sph, fRadius * fRadius);
+            sceVu0ScaleVector((float *)((char *)pPoly + 0x10), (float *)((char *)pPoly + 0x10), -1.0f);
+            if (r > 0.0f) {
+                *(u_long128 *)nrm = *(u_long128 *)((char *)pPoly + 0x10);
+                sceVu0Normalize(nrm2, nrm);
+                sceVu0ScaleVector(out, nrm2, r);
+                return 1;
+            }
+        }
+    }
+
+    m_unk70.m_unk4 = 0;
+    pNode = (m_unk70.m_unk0 != 0) ? (char *)m_unk70.m_unk8[0] : 0;
+    for (; pNode != 0; m_unk70.m_unk4++, pNode = (m_unk70.m_unk4 < m_unk70.m_unk0) ? (char *)m_unk70.m_unk8[m_unk70.m_unk4] : 0) {
+        if (BGS_F(pNode, 0x2C) < 0.5f) {
+            continue;
+        }
+        if (BGS_B(pNode, 0x3E) & 0x20) {
+            continue;
+        }
+        CDS_ASSERT_TXT(0xC43, BGS_P(pNode, 0x104) != 0, "node->m_unk104 != 0");
+        if ((nFlags & 0x40000000) && BGS_H(pNode, 0x100) != 0) {
+            continue;
+        }
+        if (BGS_B(pNode, 0x3E) & 4) {
+            InversMatrix(&mat, (float (*)[4][4])((char *)pNode + 0x40));
+        } else {
+            sceVu0InversMatrix((float *)mat, (float *)((char *)pNode + 0x40));
+        }
+        sceVu0ApplyMatrix(e0, (float *)mat, (float *)&rPos);
+        sceVu0ApplyMatrix(e1, (float *)mat, (float *)&rPos);
+        {
+            float *pA = e0;
+            float *pB = e1;
+            asm {
+                lqc2 vf26, 0x0(pA)
+                lqc2 vf27, 0x0(pB)
+                vsub.xyzw vf27, vf27, vf26
+            }
+        }
+        *(u_long128 *)box[0] = *(u_long128 *)((char *)pNode + 0x110);
+        *(u_long128 *)box[1] = *(u_long128 *)((char *)pNode + 0x120);
+        box[1][0] = box[1][0] + fRadius;
+        box[1][1] = box[1][1] + fRadius;
+        box[1][2] = box[1][2] + fRadius;
+        if (!BoxLineCheck(&box)) {
+            continue;
+        }
+        {
+            unsigned int nItems = BGS_U(BGS_P(pNode, 0x104), 8);
+            void **pItem = (void **)((char *)BGS_P(pNode, 0x104) + 0xC);
+            for (; nItems != 0; nItems--, pItem++) {
+                STCollisionPoly *pPoly = (STCollisionPoly *)*pItem;
+                if ((BGS_U(pPoly, 0xC) & nFlags) == 0) {
+                    continue;
+                }
+                *(u_long128 *)sph[0] = *(u_long128 *)e0;
+                *(u_long128 *)sph[1] = *(u_long128 *)e1;
+                r = SphereIntersect(pPoly, sph, fRadius * fRadius);
+                if (r > 0.0f) {
+                    *(u_long128 *)nrm = *(u_long128 *)((char *)pPoly + 0x10);
+                    nrm[3] = 0.0f;
+                    sceVu0ApplyMatrix(nrm, (float *)((char *)pNode + 0x40), nrm);
+                    sceVu0ScaleVector(out, nrm, r);
+                    return 1;
+                }
+                sceVu0ScaleVector((float *)((char *)pPoly + 0x10), (float *)((char *)pPoly + 0x10), -1.0f);
+                r = SphereIntersect(pPoly, sph, fRadius * fRadius);
+                sceVu0ScaleVector((float *)((char *)pPoly + 0x10), (float *)((char *)pPoly + 0x10), -1.0f);
+                if (r > 0.0f) {
+                    *(u_long128 *)nrm = *(u_long128 *)((char *)pPoly + 0x10);
+                    nrm[3] = 0.0f;
+                    sceVu0ApplyMatrix(nrm, (float *)((char *)pNode + 0x40), nrm);
+                    sceVu0ScaleVector(out, nrm, r);
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
+}
 
 // DRAFT: 0x0016D2D0 BGDetectionAnim__11BGCollisionFPA2_A4_fP5PMat4P11SurfaceInfoiP9PMeshNode
 // note: size 0x4cc vs 0x4ac, 300 words: prologue spills this/pMat (original keeps s5/fp), pCell in s0 not s3, sceVu0 call order differs; asm blocks ruled out (no-asm copy still differs in prologue).

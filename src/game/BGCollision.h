@@ -33,6 +33,7 @@ public:
     int AreaCheckSub(float (*pA)[2][4], float (*pB)[4][4], float (*pC)[2][4], float (*pD)[4][4], int nFlag, int nBit);
     int ReadCollisionData(char *pName, PMeshNode *pMesh);
     int GridCheck(float (*pArr)[2][4], PMat4 *pMat, STCollisionNode **ppOut, float *pOut);
+    int BGIntersect(PVec3 &rPos, float fRadius, unsigned int nFlags);
 
     float m_unk0;           // 0x000 grid origin X
     char _pad04[0x4];
