@@ -44,6 +44,7 @@ public:
     void AnimateFallingTiles(float fTime);
     void AnimateFadingTiles(float fTime);
     void AnimateVanishingTiles(float fTime);
+    void ResetTiles();
 
     char _pad000[0x4];
     int m_unk04;                                // 0x004
@@ -59,8 +60,8 @@ public:
     int m_unk2C;                                // 0x02C
     int m_nMode;                                // 0x030
     int m_unk34;                                // 0x034
-    char _pad038[0x4];
-    int m_unk3C;                                // 0x03C
+    int m_unk38;                                // 0x038
+    int m_unk3C;                               // 0x03C
     unsigned char m_ucUnk40;                    // 0x040
     unsigned char m_ucUnk41;                    // 0x041
     unsigned char m_ucUnk42;                    // 0x042

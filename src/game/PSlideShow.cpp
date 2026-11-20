@@ -14,6 +14,87 @@ extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, char *pExpr);
 extern "C" int rand(void);
 
+// DRAFT: 0x00214BA0 AnimateFadingTiles__10PSlideShowFf
+// note: 67 words differ (was 74); prologue constant/seed scheduling and a0-a3 register allocation differ from the original; tried for-loop shape, hoisted poly base, seed store first, reordered locals, column counter outside, inverted fade test.
+void PSlideShow::AnimateFadingTiles(float fTime)
+{
+    m_unk38 = m_unk3C;
+    int nTotal = m_unk14 * m_unk18;
+    char *pPolyBase = (char *)m_unk24 + 0x10;
+    int nFaded = 0;
+    int nRow = 0;
+    for (nRow = 0; nRow < m_unk14; nRow++) {
+        for (int nCol = 0; nCol < m_unk18; nCol++) {
+            int nIdx = nCol + nRow * m_unk18;
+            tagTile *pTile = (tagTile *)((char *)m_unkC + nIdx * 0x30);
+            tagGsPoly *pPoly = (tagGsPoly *)(pPolyBase + nIdx * 0x90);
+            m_unk38 = m_unk38 * 0x343FD + 0x269EC3;
+            float fY = pTile->m_fUnk2C;
+            if (!(fY <= 0.0f)) {
+                fY = fY - (2.0f + 1.0f * (0.000030517578f * (float)((m_unk38 >> 16) & 0x7FFF)));
+                pTile->m_fUnk2C = fY;
+                if (!(fY >= 0.0f)) {
+                    fY = 0.0f;
+                }
+                pTile->m_fUnk2C = fY;
+                pPoly->m_unkC = (int)fY;
+            } else {
+                nFaded++;
+                pPoly->m_unkC = 0;
+                if (nFaded >= nTotal) {
+                    m_unk3C = (int)(0.5f + (12345.0f + (41976.0f * ((float)rand() / 2.1474836e9f))));
+                    ResetTiles();
+                    m_ucUnk41 = 0;
+                    m_unk04 = m_nNextImage;
+                    m_nNextImage = 0;
+                    return;
+                }
+            }
+            nCol++;
+        }
+        nRow++;
+    }
+}
+
+// DRAFT: 0x00215710 ResetTiles__10PSlideShowFv
+// note: VU0 block (adda.s/madd.s/pcpyld on scratchpad 0x70001000) replaced by plain float math; the 128-bit tile store is omitted and the tile position formulas are approximate; register allocation differs.
+void PSlideShow::ResetTiles()
+{
+    *(float *)0x70001000 = 16.0f;
+    *(float *)0x70001004 = 8.0f;
+    *(float *)0x70001008 = 0.0f;
+    *(float *)0x7000100C = 1.0f;
+    *(float *)0x70001010 = 16.0f;
+    *(float *)0x70001014 = -8.0f;
+    *(float *)0x70001018 = 0.0f;
+    *(float *)0x7000101C = 1.0f;
+
+    char *pPolyBase = (char *)m_unk24 + 0x10;
+    for (int nRow = 0; nRow < m_unk14; nRow++) {
+        for (int nCol = 0; nCol < m_unk18; nCol++) {
+            int nIdx = nCol + nRow * m_unk18;
+            tagTile *pTile = (tagTile *)((char *)m_unkC + nIdx * 0x30);
+            tagGsPoly *pPoly = (tagGsPoly *)(pPolyBase + nIdx * 0x90);
+            pTile->m_fUnk2C = 128.0f;
+            pTile->m_fX = (float)(m_unk1C / 2) + 16.0f * (float)nCol;
+            pTile->m_fY = (float)(m_unk20 / 2) - 8.0f * (float)nRow;
+            SetGsPolyPos(pPoly, pTile, (float *)0x70001000, (float *)0x70001010);
+
+            float fU = (float)nCol * (1.0f / (float)m_unk18);
+            float fV = (float)nRow * (1.0f / (float)m_unk14);
+            float *pf = (float *)pPoly;
+            pf[4] = fU;
+            pf[5] = fV;
+            pf[12] = pf[4];
+            pf[13] = fV + (1.0f / (float)m_unk14);
+            pf[20] = fU + (1.0f / (float)m_unk18);
+            pf[21] = pf[5];
+            pf[28] = pf[20];
+            pf[29] = pf[13];
+        }
+    }
+}
+
 // DRAFT: 0x00215990 ApplyTileOnGsPoly__10PSlideShowFPQ210PSlideShow9tagGsPolyPQ210PSlideShow7tagTile
 // note: asm transcription of the original, not C; needs a C body (scratchpad 0x70001000 vector stores).
 asm void PSlideShow::ApplyTileOnGsPoly(tagGsPoly *pPoly, tagTile *pTile)
