@@ -208,8 +208,7 @@ void PParticleSparks::Animate(float fDelta) {
     }
 }
 
-// DRAFT: 0x001F86B0 Create__15PParticleSparksFP23tagParticleSparksParamsfff
-// note: DIFF 10 words; return !(m_unk140 == 0) matches the original xor/sltiu/xori, but a bool-to-int andi 0xFF follows (extra word, size 0x214 vs 0x210) and the 0x64 branch lands one word later. Tried ternary, bool return, unsigned > 0, int cast.
+// FUNCTION: 0x001F86B0 Create__15PParticleSparksFP23tagParticleSparksParamsfff
 int PParticleSparks::Create(tagParticleSparksParams *pParams, float fA, float fB, float fC) {
     if (pParams == 0) CdsAssert__FPciPc("PParticleSparks.cpp", 0x26, "pParams");
     if (!PParticleSystem::Create(pParams->m_unk38, false)) {
@@ -237,7 +236,10 @@ int PParticleSparks::Create(tagParticleSparksParams *pParams, float fA, float fB
     sceVu0ScaleVectorXYZ((float *)&m_unkC0, (float *)((char *)this + 0x100), 1.0f / 255.0f);
     m_unkCC = 1.0f;
     m_unk140 = __nwa__FUi(m_unk04 << 5);
-    return !(m_unk140 == 0);
+    if (m_unk140 == 0) {
+        return 0;
+    }
+    return 1;
 }
 
 // FUNCTION: 0x001F88C0 __dt__15PParticleSparksFv
