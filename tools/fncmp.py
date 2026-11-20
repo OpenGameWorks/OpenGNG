@@ -10,8 +10,9 @@ section symbol (`.rodata`, `.sdata`, literal pools) are reported as `DATA`
 and accepted only when the original also relocates there against a local
 `@N` literal or section; the full build confirms them. A function-local
 static is named `name$N` with a translation-unit-wide counter N, which only a
-complete unit reproduces; `name$N` therefore matches the original's `name$M`,
-and the build accepts it only when the static's bytes equal the original's.
+complete unit reproduces; `name$N` therefore matches the original's `name$M`.
+A file-local data target (a static, a string literal) must also hold the
+original's bytes, the same test `link.py` applies before placing the function.
 Without -q a side-by-side listing marks differing words with `!`.
 """
 
@@ -29,6 +30,7 @@ from elftools.elf.relocation import RelocationSection
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import disasm  # noqa: E402
+import link  # noqa: E402
 import srcmeta  # noqa: E402
 
 ROOT = disasm.ROOT
@@ -84,6 +86,29 @@ def object_function(obj: Path, name: str):
     return code, rels
 
 
+def local_data_diffs(obj: Path, name: str, addr: int) -> dict[int, str]:
+    """Offsets whose file-local data target differs from the original's bytes, with a reason."""
+    o = link.Obj(obj)
+    got = o.function(name)
+    if got is None:
+        return {}
+    _, rels = got
+    image = disasm.image()[disasm.MAIN_OFF:disasm.MAIN_OFF + 0x1C4200]
+    glob, byindex = link.symbol_table()
+    orel = link.original_relocs()
+    out = {}
+    for off, typ, sym in rels:
+        r = orel.get(addr + off)
+        if r is None or r[0] != typ or sym["st_info"]["type"] == "STT_SECTION":
+            continue
+        if not (sym["st_info"]["bind"] == "STB_LOCAL" or sym.name.startswith("@")):
+            continue
+        oaddr, osize, oname = byindex[r[1]]
+        if not link.local_matches(o, sym, oaddr, osize, addr, glob, byindex, orel, image):
+            out[off] = f"local {sym.name} data differs from original {oname}"
+    return out
+
+
 def compare(src: Path, key: str, obj: Path | None, quiet: bool) -> int:
     addr, size, name = disasm.lookup(key)
     if obj is None:
@@ -94,6 +119,7 @@ def compare(src: Path, key: str, obj: Path | None, quiet: bool) -> int:
         temp = False
     try:
         got = object_function(obj, name)
+        bad_locals = local_data_diffs(obj, name, addr) if got else {}
     finally:
         if temp:
             obj.unlink(missing_ok=True)
@@ -120,7 +146,10 @@ def compare(src: Path, key: str, obj: Path | None, quiet: bool) -> int:
         if not ok and want is not None and have is not None and r:
             m = MASK.get(r[0], 0xFFFFFFFF)
             ok = (want & m) == (have & m)
-        if r or o:
+        if i * 4 in bad_locals:
+            ok = False
+            notes.append(f"{i * 4:#06x}: {bad_locals[i * 4]}")
+        elif r or o:
             if bool(r) != bool(o) or r[0] != o[0]:
                 ok = False
                 notes.append(f"{i * 4:#06x}: reloc {r} vs original {o}")
