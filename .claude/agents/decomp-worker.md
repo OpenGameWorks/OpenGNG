@@ -39,6 +39,7 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 ## Finishing
 
 - MATCH: the tag becomes `// FUNCTION: 0xADDR MANGLED`, the `// note:` line is removed, and the file's other FUNCTION addresses still pass `fncmp.py -q`.
+- A changed DRAFT body can shift the compiler's scheduling of the next function in the file; the FUNCTION tag directly after each edited DRAFT is rechecked, and an edit that breaks it is reverted.
 - No match: the draft keeps its tag and a one-line note with the differing-line count, what differs, and the variants tried. The file compiles.
 - `.venv/bin/python tools/claimed.py < /dev/null` prints nothing.
 - One row per address appended to `build/results/<job-id>.tsv`: `0xADDR<TAB>MATCH|DRAFT|SKIP<TAB>differing-lines<TAB>file<TAB>note`.

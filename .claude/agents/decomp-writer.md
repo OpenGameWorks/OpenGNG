@@ -58,6 +58,7 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4,p`) that `to
 ## Finishing
 
 - `.venv/bin/python tools/fncmp.py -q src/game/<File>.cpp 0xADDR < /dev/null` exits 0 for every FUNCTION tag in your file, including ones present before you started.
+- A new DRAFT body can shift the compiler's scheduling of the next function in the file; the FUNCTION tag directly after each new DRAFT is rechecked, and a DRAFT that breaks it moves to `src/scratch/<job-id>/` and leaves the source, reported as DRAFT.
 - `.venv/bin/python tools/claimed.py < /dev/null` prints nothing.
 - One row per job address appended to `build/results/<job-id>.tsv`: `0xADDR<TAB>MATCH|DRAFT|SKIP<TAB>differing-lines<TAB>src/game/<File>.cpp<TAB>note`.
 
