@@ -2,6 +2,7 @@
 #define PMNODE_H
 
 #include "types.h"
+#include "PMesh.h"
 
 struct tagParticleFxTrigger;
 class PObjectDisplayList;
@@ -55,6 +56,7 @@ public:
     void RemoveNullAnimation();
     void UpdateCameraFade(bool bFlag);
     int LoadFxTriggers(PPakFile *pFile);
+    int LoadMesh(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion);
     void RecurseEnableBone(PArray *pArr, bool bFlag);
     void EnableOneRenderPassOnly(int nPass);
     void SetRenderPassStatus(bool bA, bool bB, bool bC, bool bD);
@@ -63,10 +65,13 @@ public:
     int CheckAnimated();
     int RecurseSetAnimFlagsByID(unsigned int uID, AnimData *pAnim);
     int RecurseApplyAnimFlagsByID(unsigned int uID, bool bA, int nB);
+    int RecurseApplyAnimLoopByID(unsigned int uID, short sA, int nB, bool bC);
     void EnableAnim(bool bA, bool bB);
     int RecurseSetLoopRateByID(unsigned int uID, int nCount, float fRate);
     int RecurseResetAnimByID(unsigned int uID);
     void ProcessFxTriggers(float fTime, PMat4 *pMat, bool bA, bool bB);
+    void SetFxColorMultiplier(float *pColor, bool bFlag);
+    void EnableFx(bool bA, bool bB);
     void DebugDrawBox(int nMode);
 
     int m_unk04;           // 0x004 state; 2 skips frustum test

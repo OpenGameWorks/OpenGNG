@@ -4,11 +4,25 @@
 
 // TODO(header): foreign declarations
 extern "C" void sceVu0ApplyMatrix(float *, float (*)[4], float *);
+extern "C" void sceVu0CopyVector(float *dst, float *src);
 extern "C" void __dt__5PMeshFv(void *, short);
 extern "C" void SetSTAnimOptions__5PMeshFb(void *, bool);
 extern "C" void *__nw__FUi(unsigned int);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
+// TODO(header): tagParticleFxTrigger layout as ClockworkReaper.cpp names it; only the word at 0x20 (the PParticleSystem pointer) is used here.
+struct tagParticleFxTrigger {
+    unsigned int m_unk00;
+    unsigned int m_unk04;
+    unsigned int m_unk08;
+    unsigned int m_unk0C;
+    unsigned int m_unk10;
+    unsigned int m_unk14;
+    unsigned int m_unk18;
+    unsigned int m_unk1C;
+    unsigned int m_unk20;
+    unsigned int m_unk24;
+};
 extern "C" PObjectDisplayList *__ct__18PObjectDisplayListFv(PObjectDisplayList *);
 extern "C" void __dt__18PObjectDisplayListFv(PObjectDisplayList *, short);
 extern "C" void *__dt__6PArrayFv(void *pThis, short nFlag);
@@ -45,7 +59,20 @@ public:
     void EndDebugRender();
 };
 // TODO(header): PParticleManager and PParticleSystem belong to the particle headers; only IsValid is called here.
-class PParticleSystem;
+// Virtual slots only: the destructor is slot 0 (0x08), Enable is slot 9 (0x2C). Slots 1..8 are placeholders that keep Enable at its offset.
+class PParticleSystem {
+public:
+    virtual ~PParticleSystem();
+    virtual void Slot1();
+    virtual void Slot2();
+    virtual void Slot3();
+    virtual void Slot4();
+    virtual void Slot5();
+    virtual void Slot6();
+    virtual void Slot7();
+    virtual void Slot8();
+    virtual void Enable(bool bFlag);
+};
 class PParticleManager {
 public:
     int IsValid(PParticleSystem *pSystem);
@@ -56,6 +83,7 @@ public:
     int IsAmbientSoundByID(unsigned int nID);
     int IsObjectPlayingAmbientByID(unsigned int p0, unsigned int p1, unsigned int p2);
     int PlaySoundPMNode(unsigned int p0, unsigned int p1, const PMNode *pNode);
+    void StopAmbientSoundsByOriginatorRef(unsigned int p0, unsigned int p1);
     char _pad000[0x10];
 };
 extern PSound gSound;
@@ -166,6 +194,33 @@ public:
     virtual float Slot12();
     virtual void Slot13(bool bArg);
 };
+
+// Object held at PMNode+0x24 for the animation loop path. Vtable slots 0x1C, 0x24, 0x30, 0x38 and 0x3C match PAnim (tools/vtable.py PAnim); 0x08 holds the destructor.
+class PAnimView {
+public:
+    virtual ~PAnimView();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual void Slot04();
+    virtual void Slot05();
+    virtual void SetFrameTime(float fTime);
+    virtual void Slot07();
+    virtual void SetEndFrame(short sFrame);
+    virtual void Slot09();
+    virtual void Slot10();
+    virtual void SetAnimLoopCount(int nCount);
+    virtual void Slot12();
+    virtual void EnableAnim(bool bFlag);
+    virtual void SetLoopFrame(short sFrame);
+    int m_unk04;            // 0x04 anim id compared with uID
+    short m_unk08;          // 0x08 end frame; loop path runs only when positive
+};
+
+// FUNCTION: 0x001917E0 StopAmbientSoundsByObject__6PMNodeFv
+void PMNode::StopAmbientSoundsByObject() {
+    m_unkF4 = 0;
+    gSound.StopAmbientSoundsByOriginatorRef(m_unkE8, 0x20U);
+}
 
 // FUNCTION: 0x00191830 PlaySound__6PMNodeFUi
 int PMNode::PlaySound(unsigned int arg0) {
@@ -293,6 +348,40 @@ int PMNode::CreateObjectDisplayList() {
     return 1;
 }
 
+// DRAFT: 0x001926C0 SetFxColorMultiplier__6PMNodeFPfb
+// note: 75 words differ; the original keeps a 0x70 frame with 6 saved regs and recomputes idx*4 in the body, ours hoists sll idx,4 into s3 (0x80 frame). Tried: for/while, if/else vs ternary, struct tagParticleFxTrigger with m_unk20, pTrig in loop.
+void PMNode::SetFxColorMultiplier(float *pColor, bool bFlag) {
+    PParticleManager *pMgr = (PParticleManager *)&gGfxEng;
+    if (pMgr == 0) {
+        CdsAssert__FPciPc("PMNode.cpp", 0x7EE, "apParticleMgr");
+    }
+    tagParticleFxTrigger *pTrig;
+    for (int idx = (int)m_unkD8 - 1; idx >= 0; idx--) {
+        pTrig = ((unsigned int)idx < m_unkD8) ? m_unkE0[idx] : 0;
+        if (pMgr->IsValid((PParticleSystem *)pTrig->m_unk20) != 0) {
+            *(char *)(pTrig->m_unk20 + 0x1C) = 0;
+            sceVu0CopyVector((float *)(pTrig->m_unk20 + 0xC0), pColor);
+        }
+    }
+    if (bFlag) {
+        m_unk18 = 0;
+        PMNode *pChild = 0;
+        if (m_unk14 != 0) {
+            pChild = m_unk1C[0];
+        }
+        if (pChild != 0) {
+            do {
+                pChild->SetFxColorMultiplier(pColor, bFlag);
+                m_unk18++;
+                pChild = 0;
+                if (m_unk18 < m_unk14) {
+                    pChild = m_unk1C[m_unk18];
+                }
+            } while (pChild != 0);
+        }
+    }
+}
+
 // FUNCTION: 0x00192820 AttachFx__6PMNodeFUiffffb
 void *PMNode::AttachFx(unsigned int uID, float fA, float fB, float fC, float fD, bool bFlag) {
     char *pBlk;
@@ -319,6 +408,48 @@ void *PMNode::AttachFx(unsigned int uID, float fA, float fB, float fC, float fD,
         return pBlk;
     }
     return 0;
+}
+
+// DRAFT: 0x00192940 EnableFx__6PMNodeFbb
+// note: 55 words differ; original keeps gGfxEng address in s0 for assert and IsValid call and cnt in s1, ours reloads it and uses s0 for cnt. Tried local pMgr (74), outer m_unkD8 guard (56), gGfxEng cast in IsValid (79).
+void PMNode::EnableFx(bool bA, bool bB) {
+    if ((PParticleManager *)&gGfxEng == 0) {
+        CdsAssert__FPciPc("PMNode.cpp", 0x796, "apParticleMgr");
+    }
+    unsigned int cnt = m_unkD8;
+    if (cnt != 0) {
+        unsigned int idx = 0;
+        do {
+            tagParticleFxTrigger *pTrig = 0;
+            if (idx < cnt) {
+                pTrig = m_unkE0[idx];
+            }
+            if (pTrig != 0) {
+                PParticleSystem *pSys = (PParticleSystem *)pTrig->m_unk20;
+                if (pSys != 0 && ((PParticleManager *)&gGfxEng)->IsValid(pSys) != 0) {
+                    pSys->Enable(bA);
+                }
+            }
+            idx++;
+        } while (idx < cnt);
+    }
+    if (bB) {
+        m_unk18 = 0;
+        PMNode *pChild = 0;
+        if (m_unk14 != 0) {
+            pChild = m_unk1C[0];
+        }
+        if (pChild != 0) {
+            do {
+                pChild->EnableFx(bA, bB);
+                m_unk18++;
+                pChild = 0;
+                if (m_unk18 < m_unk14) {
+                    pChild = m_unk1C[m_unk18];
+                }
+            } while (pChild != 0);
+        }
+    }
 }
 
 // DRAFT: 0x00192CC0 CopyFxTriggers__6PMNodeFR6PMNode
@@ -1054,6 +1185,35 @@ void PMNode::ScaleSet(float a, float b, float c, float d) {
     m_unk3E |= 8;
 }
 
+// FUNCTION: 0x00194C50 LoadMesh__6PMNodeFP8PPakFileP6PArray16ePsx2FileVersion
+int PMNode::LoadMesh(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
+    unsigned int hdr[4];
+    if (((PCDFile *)pFile)->Read(hdr, 0x10) != 0x10) {
+        return 0;
+    }
+    if (hdr[0] != 0) {
+        if (m_unk10 != 0) {
+            CdsAssert__FPciPc("PMNode.cpp", 0x283, "mpMesh == NULL");
+        }
+        m_unk10 = new PMesh();
+        if (m_unk10 == 0) {
+            CdsAssert__FPciPc("PMNode.cpp", 0x287, "mpMesh");
+        }
+        m_unk3E |= 1;
+        if (((PMesh *)m_unk10)->Load(pFile, pArr, hdr[0], hdr[1], eVersion, true) == 0) {
+            DestroyMesh();
+            return 0;
+        }
+        if (((PMesh *)m_unk10)->m_unkC != 0) {
+            m_unk3E |= 0x10;
+        }
+        m_unk28 = (char *)m_unk10 + 0x10;
+        m_unk3C = ((PMesh *)m_unk10)->m_unkE;
+        return 1;
+    }
+    return 0;
+}
+
 // DRAFT: 0x00195180 DestroyChildren__6PMNodeFv
 // note: original keeps an inner pChild != 0 guard before the slot-8 call (CW drops it here) and calls through t9 with a nop after jalr; tried cast, local fn pointer, for-break loop; all leave the same diff.
 void PMNode::DestroyChildren() {
@@ -1216,6 +1376,37 @@ int PMNode::RecurseSetAnimFlagsByID(unsigned int uID, AnimData *pAnim) {
     if (pChild != 0) {
         do {
             if (pChild->RecurseSetAnimFlagsByID(uID, pAnim) != 0) {
+                m_unk3F |= 2;
+            }
+            idx = m_unk18 + 1;
+            m_unk18 = idx;
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
+    return m_unk3F;
+}
+
+// FUNCTION: 0x001957A0 RecurseApplyAnimLoopByID__6PMNodeFUisib
+int PMNode::RecurseApplyAnimLoopByID(unsigned int uID, short sA, int nB, bool bC) {
+    PMNode *pChild;
+    unsigned int idx;
+    short sCount;
+    if (m_unk24 != 0 && uID == ((PAnimView *)m_unk24)->m_unk04) {
+        m_unk3F |= 1;
+        sCount = ((PAnimView *)m_unk24)->m_unk08;
+        if (sCount > 0) {
+            ((PAnimView *)m_unk24)->SetEndFrame(sCount);
+            ((PAnimView *)m_unk24)->EnableAnim(bC);
+            ((PAnimView *)m_unk24)->SetAnimLoopCount(nB);
+            ((PAnimView *)m_unk24)->SetFrameTime(0.0f);
+            ((PAnimView *)m_unk24)->SetLoopFrame(sA);
+        }
+    }
+    m_unk18 = 0;
+    pChild = (m_unk14 != 0) ? *m_unk1C : 0;
+    if (pChild != 0) {
+        do {
+            if (pChild->RecurseApplyAnimLoopByID(uID, sA, nB, bC) != 0) {
                 m_unk3F |= 2;
             }
             idx = m_unk18 + 1;
