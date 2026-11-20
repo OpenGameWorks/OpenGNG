@@ -10,7 +10,7 @@
 class PTextureDmaChain {
 public:
     PTextureDmaChain();
-    void NextBatch();
+    int NextBatch();
     void Kick(bool bFlag);
     void *AllocEntries(int nCount);
     void Reset();

@@ -6,6 +6,7 @@ extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void FlushCache(int nMode);
 extern "C" void iFlushCache(int nMode);
 extern "C" void __dl__FPv(void *pMem);
+extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
 // DRAFT: 0x00189080 Kick__16PTextureDmaChainFb
 // note: 6 words differ. Original hoists the index shift and 0x7088 base into beqz delay slot; ours folds 0x7088 into the lw offset. Tried hoisted nIdx local and pTable pointer variants, no gain.
@@ -30,6 +31,28 @@ void PTextureDmaChain::Kick(bool bFlag) {
         asm { sync.p }
         m_unk7288 = m_unk7288 + 1;
     }
+}
+
+// DRAFT: 0x00189150 NextBatch__16PTextureDmaChainFv
+// note: 40 words differ. Prologue, both asserts and return match; body register allocation differs (0x7088 folded into the store, value and dst scheduled in other order). Six variants tried: dst-first, nIdx/nVal locals, hoisted pTable, pointer-arithmetic store, separate tag local.
+int PTextureDmaChain::NextBatch() {
+    if ((m_unk7080 + 2) >= 0x700) {
+        CdsAssert__FPciPc("PTextureDmaChain.cpp", 0x44, "(miNumEntries + 2) < TEX_DMA_CHAIN_SIZE");
+    }
+    int *pTable = m_unk7088;
+    unsigned int nIdx = m_unk7080;
+    unsigned int nTag = (unsigned int)&m_unk7290;
+    long long nVal = ((long long)nTag << 32) | 1;
+    *(long long *)((unsigned int)(m_unk40 + (nIdx << 4)) | 0x20000000) = nVal;
+    m_unk7080 = m_unk7080 + 1;
+    m_unk7084 = 0;
+    m_unk728C = m_unk728C + 1;
+    *(pTable + m_unk728C) = m_unk7080;
+    if (m_unk728C >= 0x80) {
+        CdsAssert__FPciPc("PTextureDmaChain.cpp", 0x50, "miNumBatches < MAX_TEX_PER_FRAME");
+    }
+    asm { sync }
+    return 1;
 }
 
 // DRAFT: 0x00189230 AllocEntries__16PTextureDmaChainFi
