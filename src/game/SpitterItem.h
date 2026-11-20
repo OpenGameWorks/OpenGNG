@@ -32,12 +32,15 @@ public:
     Physics *m_unk38;               // 0x038 heap-allocated Physics object (0x120 bytes)
     SpitterItemGap _pad03C;
     int m_unk10C;                   // 0x10C word; OnHitEvent clears bits 24..26 of it
-    char _pad110[0x1B8 - 0x110];
+    char _pad110[0x1B4 - 0x110];
+    int m_unk1B4;                   // 0x1B4 set to 0xB4 by SpitterItemBounceOff
     int m_unk1B8;                   // 0x1B8 compared against 2 by OnHitEvent
-    char _pad1BC[0x1E0 - 0x1BC];
+    int m_unk1BC;                   // 0x1BC set to 1 by SpitterItemBounceOff
+    char _pad1C0[0x1E0 - 0x1C0];
     int m_unk1E0;                   // 0x1E0 set to -1 by the constructor
     unsigned int m_unk1E4;          // 0x1E4 waypoint index, advanced by GetNextPosition
-    char _pad1E8[0x204 - 0x1E8];
+    char _pad1E8[0x200 - 0x1E8];
+    float m_unk200;                 // 0x200 bounce speed scale, read by SpitterItemBounceOff
     struct tagWaypointGroup *m_unk204; // 0x204 waypoint group
 };
 
