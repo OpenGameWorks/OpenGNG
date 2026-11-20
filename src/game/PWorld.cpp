@@ -1,9 +1,16 @@
 // FLAGS: -str readonly
 #include "PWorld.h"
+#include "PArray.h"
+
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PWorld.cpp", line, #cond))
 
 // TODO(header): foreign declarations
 class PLightManager;
 class PMat4;
+class PPakFile;
+struct tagProceduralTextureData {
+    int _pad[0x10];
+};
 
 class PSpacePartitionTree {
 public:
@@ -49,6 +56,7 @@ public:
 class PCDFile {
 public:
     int Read(void *pBuf, unsigned int nSize);
+    int Close();
 };
 
 struct tagParticleFxTrigger;
@@ -189,6 +197,25 @@ extern "C" int Load__19PStaticInstanceMeshFP8PPakFileP6PArray16ePsx2FileVersion(
 extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, char *pExpr);
 extern "C" void AddMasterParticleInstance__16PParticleManagerFP15PParticleSystem(void *pThis, void *pSystem);
+extern char gPFile[0x10080];
+extern int mstuLoadVersion__6PWorld;
+extern "C" PPakFile *GetData__8PPakFileFPCc(void *pThis, const char *pFileName);
+extern "C" int IsValidFileType__8PPakFileFi(void *pThis, int nType);
+extern "C" int LoadStaticTextures__15PTextureManagerFP8PPakFile13eTextureGroupP6PArray(void *pThis, PPakFile *pFile, eTextureGroup eGroup, PArray *pArr);
+extern "C" int LoadDynamicTextures__15PTextureManagerFP8PPakFile13eTextureGroupP6PArray(void *pThis, PPakFile *pFile, eTextureGroup eGroup, PArray *pArr);
+extern "C" int Init__13PWaterTextureFP24tagProceduralTextureDataP6PArray(void *pThis, tagProceduralTextureData *pData, PArray *pArr);
+extern "C" int Init__11PGasTextureFP24tagProceduralTextureDataP6PArray(void *pThis, tagProceduralTextureData *pData, PArray *pArr);
+extern "C" int Init__12PFireTextureFP24tagProceduralTextureDataP6PArray(void *pThis, tagProceduralTextureData *pData, PArray *pArr);
+extern "C" int Init__11PFogTextureFP24tagProceduralTextureDataP6PArray(void *pThis, tagProceduralTextureData *pData, PArray *pArr);
+extern "C" int Load__13PLightManagerFP8PPakFile(void *pThis, PPakFile *pFile);
+extern "C" void *__ct__19PSpacePartitionTreeFv(void *pThis);
+extern "C" int Load__19PSpacePartitionTreeFP8PPakFileP6PArrayP6PArray16ePsx2FileVersion(void *pThis, PPakFile *pFile, PArray *pArr, PArray *pArr2, ePsx2FileVersion nVersion);
+extern "C" int LoadFogObjects__16PParticleManagerFP8PPakFile16ePsx2FileVersion(void *pThis, PPakFile *pFile, ePsx2FileVersion nVersion);
+extern "C" void RecurseSetSTAnimOptions__6PMNodeFb(void *pThis, bool bFlag);
+extern "C" void RecurseSetSTAnimOptions__19PSpacePartitionNodeFb(void *pThis, bool bFlag);
+extern "C" void ProcessFxTriggers__6PMNodeFfP5PMat4bb(void *pThis, float fStep, PMat4 *pMat, bool bA, bool bB);
+extern "C" void Init__11PZBufferFogFv(void *pThis);
+extern "C" char *strcpy(char *pDst, const char *pSrc);
 
 // FUNCTION: 0x19A680 CullMainWorld__6PWorldFv
 void PWorld::CullMainWorld() {
@@ -563,6 +590,185 @@ void PWorld::Destroy() {
     (*(void (**)(void *))(*(char **)gInterface + 0xC))(gInterface);
     RemoveAllParticleSystems__16PParticleManagerF8ePSLayer((char *)&gGfxEng + 0x154F00, 2);
     RemoveAllParticleSystems__16PParticleManagerF8ePSLayer((char *)&gGfxEng + 0x154F00, 3);
+}
+
+// DRAFT: 0x19B580 Load__6PWorldFPCcb13eTextureGroup
+// note: 236 words; prologue order differs (sq s0 before PArray ctor call at 0xA0, zero stores at 0xF0-0xF8). Tried local orders nHeader/spA0/spB0 (242, 236, 242).
+PMNode *PWorld::Load(const char *pFileName, bool bFlag, eTextureGroup eGroup) {
+    PMeshNode *var_s0;
+    PSpacePartitionTree *var_v0;
+    PSpacePartitionTree *temp_a0;
+    PSpacePartitionTree *temp_a0_2;
+    PMeshNode *temp_a0_3;
+    PMeshNode *temp_a0_5;
+    PSpacePartitionTree *temp_v0_2;
+    void *temp_a0_4;
+    void *temp_s5;
+    tagParticleFxTriggerData *spF4;
+    unsigned int spF8;
+    int spF0;
+    int spFC;
+    int nHeader[4];
+    PArray spA0;
+    tagProceduralTextureData spB0;
+    PPakFile *temp_v0;
+
+    var_s0 = 0;
+    spF4 = 0;
+    spF8 = 0;
+    if (pFileName == 0) {
+        CdsAssert__FPciPc("PWorld.cpp", 0xEC, "pszWorldFile");
+    }
+    temp_v0 = GetData__8PPakFileFPCc(&gPFile, pFileName);
+    if (temp_v0 == 0) {
+        CdsAssert__FPciPc("PWorld.cpp", 0xF1, "aMemFile");
+    }
+    IsValidFileType__8PPakFileFi(temp_v0, 1);
+    if (bFlag != 0) {
+        Destroy();
+        if (LoadStaticTextures__15PTextureManagerFP8PPakFile13eTextureGroupP6PArray((char *)&gGfxEng + 0x154C90, temp_v0, eGroup, &spA0) == 0) {
+            CDS_ASSERT(0xF8, !"Error loading texture file!");
+        } else {
+            goto block_12;
+        }
+    } else if (LoadDynamicTextures__15PTextureManagerFP8PPakFile13eTextureGroupP6PArray((char *)&gGfxEng + 0x154C90, temp_v0, eGroup, &spA0) == 0) {
+        CDS_ASSERT(0xFF, !"Error loading texture file!");
+    } else {
+block_12:
+        IsValidFileType__8PPakFileFi(temp_v0, 2);
+        if (((PCDFile *)temp_v0)->Read(nHeader, 0x10U) != 0x10) {
+            CDS_ASSERT(0x10E, !"Error reading world file header!");
+        } else if (nHeader[0] != 0x01020304) {
+            CDS_ASSERT(0x115, !"World file corrupt. Magic number mismatch!");
+        } else {
+            mstuLoadVersion__6PWorld = nHeader[1];
+            if (nHeader[2] & 0x100) {
+                spFC = 0;
+                if (((PCDFile *)temp_v0)->Read(&spFC, 4U) != 4) {
+                    CDS_ASSERT(0x122, !"Error loading procedural texture data from world file!");
+                } else if (spFC == 1) {
+                    if (((PCDFile *)temp_v0)->Read(&spB0, 0x40U) != 0x40) {
+                        CDS_ASSERT(0x12D, !"Error loading procedural texture data from world file!");
+                    } else if (bFlag != 0) {
+                        if (Init__13PWaterTextureFP24tagProceduralTextureDataP6PArray((char *)this + 0x9FC0, &spB0, &spA0) == 0) {
+                            CDS_ASSERT(0x137, !"Error loading procedural texture data from world file!");
+                        } else if (Init__11PGasTextureFP24tagProceduralTextureDataP6PArray((char *)this + 0x12690, &spB0, &spA0) == 0) {
+                            CDS_ASSERT(0x13E, !"Error loading procedural texture data from world file!");
+                        } else if (Init__12PFireTextureFP24tagProceduralTextureDataP6PArray((char *)this + 0x12C10, &spB0, &spA0) == 0) {
+                            CDS_ASSERT(0x145, !"Error loading procedural texture data from world file!");
+                        } else if (Init__11PFogTextureFP24tagProceduralTextureDataP6PArray((char *)this + 0x13210, &spB0, &spA0) == 0) {
+                            CDS_ASSERT(0x14C, !"Error loading procedural texture data from world file!");
+                        } else {
+                            *(int *)((char *)&gGfxEng + 0x156F60) = *(int *)((char *)this + 0x13210);
+                            goto block_40;
+                        }
+                    } else {
+                        goto block_40;
+                    }
+                } else {
+                    goto block_40;
+                }
+            } else {
+block_40:
+                if ((nHeader[2] & 0x20) && (LoadFxTriggerData(temp_v0, &spF4, spF8) == 0)) {
+                    CDS_ASSERT(0x163, !"Error fx trigger data from world file!");
+                } else if ((nHeader[2] & 0x80) && (LoadStaticInstanceMeshes(temp_v0, &spA0, (ePsx2FileVersion)nHeader[1]) == 0)) {
+                    CDS_ASSERT(0x16C, !"Error loading static instance data from world file!");
+                } else {
+                    temp_s5 = (char *)&gGfxEng + 0x154F00;
+                    if (nHeader[2] & 0x40) {
+                        if (temp_s5 == 0) {
+                            CdsAssert__FPciPc("PWorld.cpp", 0x174, "apParticleMgr");
+                        }
+                        if (LoadFogObjects__16PParticleManagerFP8PPakFile16ePsx2FileVersion(temp_s5, temp_v0, (ePsx2FileVersion)nHeader[1]) == 0) {
+                            CDS_ASSERT(0x177, !"Error loading fog data from world file!");
+                        } else {
+                            goto block_54;
+                        }
+                    } else {
+block_54:
+                        if (nHeader[2] & 8) {
+                            if (Load__13PLightManagerFP8PPakFile((char *)this + 0x1F0, temp_v0) == 0) {
+                                CDS_ASSERT(0x180, !"Error loading light data from world file!");
+                            } else {
+                                goto block_59;
+                            }
+                        } else {
+block_59:
+                            if (LoadEditedInstanceData(temp_v0) == 0) {
+                                CDS_ASSERT(0x187, !"Error loading appartion data from world file!");
+                            } else if (nHeader[2] & 1) {
+                                temp_a0 = m_pSpacePartitionTree;
+                                if (temp_a0 != 0) {
+                                    __dt__19PSpacePartitionTreeFv(temp_a0, 1);
+                                }
+                                var_v0 = (PSpacePartitionTree *)__nw__FUi(0x128A0U);
+                                if (var_v0 != 0) {
+                                    var_v0 = (PSpacePartitionTree *)__ct__19PSpacePartitionTreeFv(var_v0);
+                                }
+                                m_pSpacePartitionTree = var_v0;
+                                temp_a0_2 = m_pSpacePartitionTree;
+                                if (temp_a0_2 == 0) {
+                                    CDS_ASSERT(0x195, !"Error allocating SP Tree object while loading world file!");
+                                } else if (Load__19PSpacePartitionTreeFP8PPakFileP6PArrayP6PArray16ePsx2FileVersion(temp_a0_2, temp_v0, &spA0, (PArray *)&m_9FB0, (ePsx2FileVersion)nHeader[1]) == 0) {
+                                    CDS_ASSERT(0x19B, !"Error loading SP Tree data from world file!");
+                                    Destroy();
+                                } else {
+                                    goto block_75;
+                                }
+                            } else {
+block_75:
+                                spF0 = 0;
+                                if (((PCDFile *)temp_v0)->Read(&spF0, 4U) != 4) {
+                                    CDS_ASSERT(0x1A8, !"Error loading world file!");
+                                } else if (spF0 != 3) {
+                                    if (spF0 != 1) {
+                                        CDS_ASSERT(0x1B4, !"Error loading dynamic objects from world file!");
+                                        Destroy();
+                                    } else {
+                                        var_s0 = LoadMeshNodeHierarchy(temp_v0, &spA0, (ePsx2FileVersion)nHeader[1]);
+                                        if (var_s0 == 0) {
+                                            CDS_ASSERT(0x1C1, !"Error loading dynamic objects from world file!");
+                                            Destroy();
+                                        } else {
+                                            if (bFlag != 0) {
+                                                m_pMeshNode = (PMeshNode *)var_s0;
+                                                strcpy((char *)&m_8728, pFileName);
+                                            }
+                                            temp_a0_3 = m_pMeshNode;
+                                            if (temp_a0_3 != 0) {
+                                                RecurseSetSTAnimOptions__6PMNodeFb(temp_a0_3, 0);
+                                            }
+                                            temp_v0_2 = m_pSpacePartitionTree;
+                                            if (temp_v0_2 != 0) {
+                                                temp_a0_4 = *(void **)temp_v0_2;
+                                                if (temp_a0_4 != 0) {
+                                                    RecurseSetSTAnimOptions__19PSpacePartitionNodeFb(temp_a0_4, 0);
+                                                }
+                                            }
+                                            if (spF4 != 0) {
+                                                AttachFxTriggersToNodes(m_pMeshNode, spF4, spF8);
+                                            }
+                                            temp_a0_5 = m_pMeshNode;
+                                            if (temp_a0_5 != 0) {
+                                                ProcessFxTriggers__6PMNodeFfP5PMat4bb(temp_a0_5, -2.0f, 0, 1, 0);
+                                                Init__11PZBufferFogFv((char *)this + 0x8750);
+                                            }
+                                            if (spF4 != 0) {
+                                                __dla__FPv(spF4);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ((PCDFile *)temp_v0)->Close();
+    return (PMNode *)var_s0;
 }
 
 // DRAFT: 0x19BE70 UpdateTimer__6PWorldFv
