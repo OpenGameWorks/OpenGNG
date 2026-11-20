@@ -1,8 +1,13 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "PMNode.h"
+#include "PLightManager.h"
 
 // TODO(header): foreign declarations
+extern "C" int Render__18PObjectDisplayListF13eBoxIntersect(PObjectDisplayList *, eBoxIntersect);
+extern "C" void vu1BeginMesh__F13eBoxIntersect(eBoxIntersect);
+extern "C" void vu1EndMesh__Fv(void);
+extern "C" void vu1SetWorldMatrix__FP5PMat4(PMat4 *);
 extern "C" void sceVu0ApplyMatrix(float *, float (*)[4], float *);
 extern "C" void sceVu0CopyVector(float *dst, float *src);
 extern "C" void sceVu0SubVector(float *, float *, float *);
@@ -13,6 +18,9 @@ extern "C" void *__nw__FUi(unsigned int);
 extern "C" void __dl__FPv(void *);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
+extern "C" void sceVu0UnitMatrix(float (*)[4]);
+extern "C" void AddVectorXYZ__FPfPf(float *, float *);
+extern "C" void FastMath_ComputeMatrix__FPA4_A4_fPA4_fPA4_fPA4_fPA4_fPA4_fPA4_A4_f(float (*)[4][4], float *, float *, float *, float *, float *, float (*)[4][4]);
 // TODO(header): tagParticleFxTrigger layout as ClockworkReaper.cpp names it; only the word at 0x20 (the PParticleSystem pointer) is used here.
 struct tagParticleFxTrigger {
     unsigned int m_unk00;
@@ -133,7 +141,9 @@ public:
 class PAnim {
 public:
     PChannel *FindChannel(eAnimType eType);
-    char _pad000[0xA];
+    float Animate(float fTime, float fUnused, float (*pMatrix)[4], float *pOut, bool bFlag);
+    char _pad000[0x8];
+    short m_unk8;
     unsigned char m_unkA;
 };
 
@@ -376,6 +386,51 @@ int PMNode::CreateObjectDisplayList() {
         return 0;
     }
     return 1;
+}
+
+// DRAFT: 0x00191BD0 Render__6PMNodeFP13PLightManagerii
+// note: DIFF 106. Early beqz a1 targets +0x75 in orig (shared return-0 block), +0xA in ours; m_unk3F lb/andi test and nArg2==0x80 check order differ; 0x178 reloc is vu1EndMesh__Fv, orig DebugDrawBox__6PMNodeFi. Tried: separate early returns (112), flat returns (112), nested body (106), local pMesh (139), pre-increment loop tail (106, neutral).
+int PMNode::Render(PLightManager *pLM, int nArg1, int nArg2) {
+    int nResult = 0;
+    if (m_unk0C != 0) {
+        nArg1 = (int)((float)nArg1 * m_unk2C);
+        if (nArg1 != 0) {
+            if (m_pObjDisplayList != 0 && nArg1 == 0x80 && !(m_unk3F & 0x10) && nArg2 == 0) {
+                nResult += Render__18PObjectDisplayListF13eBoxIntersect(m_pObjDisplayList, (eBoxIntersect)m_unk0C);
+                return nResult;
+            }
+            if (m_unk10 != 0) {
+                if (pLM != 0) {
+                    pLM->ComputeLights((PMesh *)m_unk10, (PMat4 *)m_unk40, true, true, true, 0, 1.0f);
+                }
+                vu1SetWorldMatrix__FP5PMat4((PMat4 *)m_unk40);
+                vu1BeginMesh__F13eBoxIntersect((eBoxIntersect)m_unk0C);
+                if (m_unk3E & 0x80) {
+                    nResult += ((PMesh *)m_unk10)->Render(nArg1, (bool *)&m_unkD4, false);
+                } else {
+                    nResult += ((PMesh *)m_unk10)->Render(nArg1, 0, false);
+                }
+                if (nArg2 != 0) {
+                    DebugDrawBox(nArg2);
+                }
+                vu1EndMesh__Fv();
+            } else if (nArg2 == 3) {
+                vu1BeginMesh__F13eBoxIntersect((eBoxIntersect)m_unk0C);
+                vu1SetWorldMatrix__FP5PMat4((PMat4 *)m_unk40);
+                DebugDrawBox(nArg2);
+                vu1EndMesh__Fv();
+            }
+            m_unk18 = 0;
+            PMNode *pChild = (m_unk14 != 0) ? m_unk1C[0] : 0;
+            while (pChild != 0) {
+                nResult += pChild->Render(pLM, nArg1, nArg2);
+                m_unk18++;
+                pChild = (m_unk18 < m_unk14) ? m_unk1C[m_unk18] : 0;
+            }
+            return nResult;
+        }
+    }
+    return 0;
 }
 
 // DRAFT: 0x00192520 DestroyFxTriggersBySpawnFrame__6PMNodeFfb
@@ -1007,6 +1062,62 @@ int PMNode::GetWorldMeshCenter(float *pOut) {
         return 0;
     }
     *(u_long128 *)pOut = *(u_long128 *)m_unk40[3];
+    return 0;
+}
+
+// FUNCTION: 0x00193B70 CalculateMatrix__6PMNodeFfP6PMNodePA4_A4_f
+int PMNode::CalculateMatrix(float fA, PMNode *pNode, float (*pOut)[4][4]) {
+    float sp60[4];
+    float sp70[4];
+    float sp80[4];
+    float sp90[4];
+    float spA0[4][4];
+    unsigned char bAnim;
+    float *pA3;
+    PMNode *pChild;
+
+    sceVu0UnitMatrix(spA0);
+    if (m_unk24 != 0 && ((PAnim *)m_unk24)->m_unk8 != 0) {
+        ((PAnim *)m_unk24)->Animate(fA, 0.0f, (float (*)[4])sp60, sp90, false);
+        bAnim = ((PAnim *)m_unk24)->m_unkA;
+        if (bAnim & 1) {
+            if (m_unk04 == 3) {
+                if (!(m_unk3D & 1)) {
+                    sp60[0] = 0.0f;
+                    sp60[2] = 0.0f;
+                }
+                if (!(m_unk3D & 2)) {
+                    sp60[1] = 0.0f;
+                }
+            } else {
+                AddVectorXYZ__FPfPf(sp60, m_unk80);
+            }
+        } else {
+            *(u_long128 *)sp60 = *(u_long128 *)m_unk80;
+        }
+        if (!(bAnim & 2)) {
+            *(u_long128 *)sp70 = *(u_long128 *)m_unk90;
+        } else {
+            AddVectorXYZ__FPfPf(sp70, m_unk90);
+        }
+        pA3 = (bAnim & 4) ? sp80 : m_unkA0;
+        FastMath_ComputeMatrix__FPA4_A4_fPA4_fPA4_fPA4_fPA4_fPA4_fPA4_A4_f(pOut, sp60, sp70, pA3, m_unkB0, m_unkC0, pOut);
+    } else {
+        FastMath_ComputeMatrix__FPA4_A4_fPA4_fPA4_fPA4_fPA4_fPA4_fPA4_A4_f(pOut, m_unk80, m_unk90, m_unkA0, m_unkB0, m_unkC0, pOut);
+    }
+    if (this == pNode) {
+        return 1;
+    }
+    m_unk18 = 0;
+    pChild = (m_unk14 != 0) ? m_unk1C[0] : 0;
+    while (pChild != 0) {
+        if (pChild->Find(pNode)) {
+            if (pChild->CalculateMatrix(fA, pNode, pOut)) {
+                return 1;
+            }
+        }
+        pChild = (++m_unk18 < m_unk14) ? m_unk1C[m_unk18] : 0;
+    }
     return 0;
 }
 

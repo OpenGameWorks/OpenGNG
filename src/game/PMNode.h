@@ -12,12 +12,14 @@ class PAnimFrame;
 class AnimData;
 class PPakFile;
 class PMat4;
+class PLightManager;
 // TODO(header): eBoxIntersect belongs to the owner header of the box-test enum. Placeholder until that header defines it; only the name matters for mangling.
 enum eBoxIntersect { eBoxIntersect_Placeholder = 0 };
 
 class PMNode {
 public:
     virtual ~PMNode();
+    virtual int Render(PLightManager *pLM, int nArg1, int nArg2);
     int PlaySound(unsigned int arg0);
     int AddFxTrigger(tagParticleFxTrigger *pTrigger, bool bFlag);
     void AddFxTriggers(PArray *pArr, bool bFlag);
@@ -27,6 +29,7 @@ public:
     void SetFrameRate(float fRate, bool bFlag);
     int GetDeltaMove(PAnimFrame *pFrame, float (*pOut)[4]);
     int GetWorldMeshCenter(float *pOut);
+    int CalculateMatrix(float fA, PMNode *pNode, float (*pOut)[4][4]);
     void DisableAllHitBox();
     void AnimateBox(float fTime);
     int Find(PMNode *pNode);
@@ -97,9 +100,11 @@ public:
     unsigned char m_unk3E;  // 0x03E flags: 0x01 owns mesh, 0x08 scale set
     signed char m_unk3F;    // 0x03F flags: 0x01 set by RecurseSetAnimFlagsByID, 0x02 child matched; read with lb
     float m_unk40[4][4];    // 0x040 matrix; row 3 (0x070) is a vector
-    char _pad080[0x20];
+    float m_unk80[4];       // 0x080 CalculateMatrix copy target
+    float m_unk90[4];       // 0x090 CalculateMatrix vector
     float m_unkA0[4];       // 0x0A0
-    char _pad0B0[0x20];
+    float m_unkB0[4];       // 0x0B0 CalculateMatrix matrix
+    float m_unkC0[4];       // 0x0C0 CalculateMatrix matrix
     int m_unkD0;            // 0x0D0 signed; negative means no display entry
     bool m_unkD4;           // 0x0D4 out flag from PObjectDisplayList::Create
     unsigned char m_unkD5;  // 0x0D5
