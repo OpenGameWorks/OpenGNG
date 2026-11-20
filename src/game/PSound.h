@@ -227,7 +227,7 @@ public:
     int RestartAndLoadInterfaceTypeBank(unsigned int nArg);
     int RestartAndLoadPrimarySoundBank(unsigned int nArg);
     void ReturnControlOfIOPToMjln();
-    void OneFrameHasElapsed_R(float *pElapsed, float fFrame, int &rA, int &rB);
+    int OneFrameHasElapsed_R(float *pElapsed, float fFrame, int &rA, int &rB);
     int LoadPrimarySoundBank(unsigned int nArg);
     int SetLevelParameters(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3);
     void PSoundFlushIOPCommandsWaitFinish();
@@ -335,8 +335,9 @@ public:
     char _pad2E78[0x2E7C - 0x2E78];
     int m_unk2E7C;          // 0x2E7C, RestartSuffix clears it
     int m_unk2E80;          // 0x2E80, PSound constructor stores 0x100
-    char _pad2E84[0x2EA0 - 0x2E84];
-    float m_unk2EA0;        // 0x2EA0, RestartAndLoadPrimarySoundBank passes its address to OneFrameHasElapsed_R
+    char _pad2E84[0x2E90 - 0x2E84];
+    char m_unk2E90[0x10];   // 0x2E90, OneFrameHasElapsed_R stores 16 bytes here
+    float m_unk2EA0;       // 0x2EA0, RestartAndLoadPrimarySoundBank passes its address to OneFrameHasElapsed_R
     char _pad2EA4[0x2EB0 - 0x2EA4];
     float m_unk2EB0;        // 0x2EB0, RestartAndLoadPrimarySoundBank passes it as the float argument
     char m_unk2EB4[0x2580]; // 0x2EB4, 400 SpotInfo records of 0x18 bytes, GetSpotInfo scans them

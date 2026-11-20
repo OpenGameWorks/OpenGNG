@@ -28,6 +28,21 @@ extern "C" void SOUND_StopAllStreams();
 extern signed char fst_bCalledByDebug;
 extern "C" void FlushIOPCommand(int, int, int);
 extern "C" void SOUND_CopyIOPBuffer();
+extern "C" void ProcessTriglets__6PSoundFv(PSound *);
+extern "C" void ProcessSFXChannels__6PSoundFv(PSound *);
+extern "C" void ProcessAmbientChannels__6PSoundFv(PSound *);
+extern "C" void PlayEffect__6PSoundFUiUi(PSound *, unsigned int, unsigned int);
+extern "C" void SOUND_GetStatusPatient();
+extern "C" void SOUND_ResumeMultipleSounds(unsigned int, unsigned int);
+extern "C" void SOUND_PauseMultipleSounds(unsigned int, unsigned int);
+extern "C" void SOUND_SimulateCDError(int);
+extern "C" unsigned int SOUND_DataDestEEDirect(unsigned int, short, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
+extern "C" void FrameMaintenacePartA__7FileSysFv(void);
+extern "C" void FrameMaintenacePartB__7FileSysFv(void);
+extern unsigned char fst_bCheckFileTransfer;
+extern int fst_bUseSimulatedCDErrors;
+extern unsigned int fst_DataToEEBuffer[10240];
+extern u_long128 gZeroVectorW1;
 extern char gEng[105360];
 extern "C" unsigned int EngGenerateUniqueID__9MaxEngineFv(void *pThis);
 extern unsigned char MODE_PAL;
@@ -857,6 +872,78 @@ void PSound::ErrorRecovery() {
     EnableProcessTriglets(bSaved);
 }
 
+// DRAFT: 0x001A5960 OneFrameHasElapsed_R__6PSoundFPffRiRi
+// note: DIFF 8 words after 8 variants (from 129); best variant kept, cause of the remaining 8 words not isolated
+int PSound::OneFrameHasElapsed_R(float *pElapsed, float fFrame, int &rA, int &rB) {
+    m_unk68 = *(int *)(gEng + 0x1883C);
+    m_unk6C = *(int *)(gEng + 0x19B74);
+    if (m_unk68 != 0) {
+        int t = *(int *)(m_unk68 + 0x3C);
+        *(u_long128 *)&m_unk2E90 = *(u_long128 *)(t ? t + 0x80 : m_unk68 + 0x190);
+    } else {
+        *(u_long128 *)&m_unk2E90 = gZeroVectorW1;
+    }
+    if (m_unk00 == 0) {
+        return 0;
+    }
+    *(u_long128 *)&m_unk2EA0 = *(u_long128 *)pElapsed;
+    m_unk2EB0 = fFrame;
+    if (!*(unsigned char *)&m_unkD1) {
+        return 0;
+    }
+    m_unk2E7C++;
+    SOUND_GetStatusPatient();
+    if (m_unk543C != m_unk5440) {
+        SOUND_EnableFeatures(m_unk543C, -1);
+        m_unk5440 = m_unk543C;
+    }
+    ProcessMusic();
+    ProcessTriglets__6PSoundFv(this);
+    ProcessSFXChannels__6PSoundFv(this);
+    ProcessAmbientChannels__6PSoundFv(this);
+    if (m_unkC0[0] || m_unkC0[1]) {
+        SOUND_ResumeMultipleSounds(m_unkC0[0], m_unkC0[1]);
+        m_unkC0[0] = 0;
+        m_unkC0[1] = 0;
+    }
+    if (m_unkB8[0] || m_unkB8[1]) {
+        SOUND_PauseMultipleSounds(m_unkB8[0], m_unkB8[1]);
+        m_unkB8[0] = 0;
+        m_unkB8[1] = 0;
+    }
+    SendStops();
+    static int incrementingRoomType;
+    static char init;
+    if (!init) {
+        incrementingRoomType = 1;
+        init = 1;
+    }
+    SetReverbByPosition((float *)&m_unk2E90);
+    if (fst_bCheckFileTransfer) {
+        SOUND_MakeSoundStreamRef();
+        if (m_unk2E7C == 0xC8) {
+            memset(fst_DataToEEBuffer, 0, 0xA000);
+            fst_DataToEEBuffer[0] = 0x12345678;
+            int a2 = SOUND_MakeSoundStreamRef();
+            SOUND_DataDestEEDirect(2, 0xC0, a2, 0, 0x800, (unsigned int)fst_DataToEEBuffer, 0x800);
+        }
+    }
+    if (fst_bUseSimulatedCDErrors && (unsigned int)m_unk2E7C % 0x4B0 == 0) {
+        SOUND_SimulateCDError(*(int *)(gEng + 0x137A4));
+    }
+    FrameMaintenacePartA__7FileSysFv();
+    PSoundFlushIOPCommandsWaitFinish();
+    FrameMaintenacePartB__7FileSysFv();
+    int a1 = m_unk18080;
+    if (a1) {
+        PlayEffect__6PSoundFUiUi(this, a1, m_unk18084);
+        m_unk18080 = 0;
+    }
+    rA = SOUND_IOP_CD_STATUS;
+    rB = SOUND_CD_TRAY_OPEN;
+    return 1;
+}
+
 // FUNCTION: 0x001A5BF0 AmbientFadeToFree__6PSoundFPQ26PSound19AmbientChannelState
 void PSound::AmbientFadeToFree(AmbientChannelState *pState) {
     m_unk0EC -= 1;
@@ -1451,6 +1538,106 @@ int PSound::StartAESoftwareFadeout(AmbientEntry *pEntry, unsigned int nArg) {
         FadeMsecFloatPrep__14PFadeMsecFloatFffUiUi(pEntry->m_unk20, 1.0f, 0.0f, m_unk6C, fst_ADSR_Msecs_Release[nIdx]);
         pEntry->m_unk44 = 1;
     }
+    return nRet;
+}
+
+// DRAFT: 0x001A8D30 StopAmbientEntry__6PSoundFPQ26PSound12AmbientEntryUi
+// note: DIFF 85 words; this/pEntry/nFlag in s2/s1/s0 vs original s1/s0/s6, so the walk and 0x1808C index differ; if-form asserts kept (ternary form 141, reordered locals 117)
+int PSound::StopAmbientEntry(PSound::AmbientEntry *pEntry, unsigned int nFlag) {
+    PSound::AmbientChannelState *pState;
+    char *pAcs;
+    PSound::AmbientEntry *pHead;
+    PSound::AmbientEntry *pCur;
+    PSound::AmbientEntry *pNextHead;
+    short nVol;
+    int bFound;
+    int bNeedCh;
+    int nRet;
+    unsigned int nUnset;
+
+    if (pEntry == 0) {
+        CdsAssert("PSound.cpp", 0x10D0, "0");
+        return -1;
+    }
+    pAcs = (char *)pEntry->m_unk4C;
+    if (pAcs == 0) {
+        CdsAssert("PSound.cpp", 0x10DF, "pACSMain");
+    }
+    if (pAcs == 0) {
+        return -1;
+    }
+    pHead = *(PSound::AmbientEntry **)(pAcs + 8);
+    if (pHead == 0) {
+        CdsAssert("PSound.cpp", 0x10E8, "pAEHead");
+    }
+    VerifyAmbientEntryList(pHead);
+    if (pAcs == 0 || pHead == 0) {
+        return -1;
+    }
+    nVol = pEntry->m_unk18;
+    pNextHead = pHead->m_unk50;
+    bFound = 0;
+    pState = 0;
+    CheckAllChannelsMatch();
+    pCur = pHead;
+    if (pCur != 0) {
+        while (1) {
+            if (pCur == pEntry) {
+                bFound = 1;
+                break;
+            }
+            pCur = pCur->m_unk50;
+            if (pCur == 0) {
+                break;
+            }
+        }
+    }
+    if (bFound != 0) {
+        if (nVol >= 0) {
+            pCur = pEntry->m_unk50;
+            bNeedCh = 1;
+            if (pCur != 0) {
+                while (1) {
+                    if (pCur->m_unk18 < 0) {
+                        pCur->m_unk18 = nVol;
+                        bNeedCh = 0;
+                        pCur->m_unk14 |= 8;
+                        break;
+                    }
+                    pCur = pCur->m_unk50;
+                    if (pCur == 0) {
+                        break;
+                    }
+                }
+            }
+            if (bNeedCh != 0) {
+                DelinkChannelState(&pState, pEntry);
+                if (pEntry->m_unk14 & 0x4000) {
+                    if (pState != 0) {
+                        pState->ReInit();
+                        *(&m_unk1808C + nVol) = 0;
+                    }
+                    m_unk0F0 += 1;
+                } else {
+                    FadeAmbientChannel(pState, nFlag);
+                }
+            }
+        }
+        DelinkAmbientEntry(pEntry);
+        AddAEToFreeList(pEntry);
+        if (pEntry == pHead && pEntry->m_unk4C != 0) {
+            *(PSound::AmbientEntry **)((char *)pEntry->m_unk4C + 8) = pNextHead;
+        }
+        nRet = 0;
+        if (pEntry->m_unk4C != 0) {
+            VerifyAmbientEntryList(*(PSound::AmbientEntry **)((char *)pEntry->m_unk4C + 8));
+            nRet = 0;
+        }
+    } else {
+        nRet = 1;
+        ApparitionIsValid__15EntityBaseClassFUi((void *)pEntry->m_unk1C, nUnset);
+    }
+    CheckAllChannelsMatch();
     return nRet;
 }
 
