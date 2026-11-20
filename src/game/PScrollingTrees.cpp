@@ -58,8 +58,7 @@ int PScrollingTrees::Render() {
     return nTotal;
 }
 
-// DRAFT: 0x1FAE50 Animate__15PScrollingTreesFf
-// note: loop 2 base: original addiu v1+0x80 with 0x38 displacement, ours folds to v1+0xB8; 2 words.
+// FUNCTION: 0x1FAE50 Animate__15PScrollingTreesFf
 void PScrollingTrees::Animate(float fTime) {
     float fStep = m_unk30 * fTime;
     for (int i = 0; i < 3; i++) {
@@ -76,11 +75,10 @@ void PScrollingTrees::Animate(float fTime) {
         }
     }
     for (int k = 0; k < 8; k++) {
-        float *pT = (float *)((char *)this + 0xB8 + k * 0xC0);
-        float fVal = *pT + fStep;
-        *pT = fVal;
+        PScrollingTreeNode *pN2 = (PScrollingTreeNode *)((char *)this + 0x80 + k * 0xC0);
+        float fVal = pN2->m_unk38 + fStep;
+        pN2->m_unk38 = fVal;
         if (!(fVal < 170.0f)) {
-            PScrollingTreeNode *pN2 = (PScrollingTreeNode *)((char *)pT - 0x38);
             pN2->m_unk38 = -350.0f + (fVal - 170.0f);
         }
     }
