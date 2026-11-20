@@ -23,7 +23,8 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4,p`) that `to
 4. Class members are named by offset (`m_unk1E0`) unless a string or call reveals their meaning; gaps are `char _padXXX[n]`. Globals keep their real symbol names from the asm (`extern unsigned char MODE_PAL;`). Literals are written plainly (`1000.0f`, `"PWorld.cpp"`).
 5. `// FUNCTION: 0xADDR MANGLED` goes on the line above the definition; then `.venv/bin/python tools/fncmp.py src/game/<File>.cpp 0xADDR < /dev/null | grep '^!' | head -30` lists the differing lines.
 6. Name the difference before editing: register allocation, instruction order, a missing or extra move, branch form, the type of a load (`lb`/`lbu`, `lw`/`lwc1`), argument order, or the return register. Change one thing, rerun `fncmp.py -q`, and keep a variant only when the differing-line count drops. Stop after 8 attempts without progress.
-7. A function that does not match keeps its compiling code, retagged `// DRAFT: 0xADDR MANGLED`, with a one-line `// note:` of what still differs and the variants tried. A source that does not compile breaks the build, so it is fixed or the function removed before you finish.
+7. A match is C++ that the compiler turns into the original bytes. An `asm` function body or inline `asm` copied from `disasm.py` reproduces the original without recovering its source, so it never counts as a FUNCTION.
+8. A function that does not match keeps its compiling code, retagged `// DRAFT: 0xADDR MANGLED`, with a one-line `// note:` of what still differs and the variants tried. A source that does not compile breaks the build, so it is fixed or the function removed before you finish.
 
 ## CodeWarrior Idioms
 

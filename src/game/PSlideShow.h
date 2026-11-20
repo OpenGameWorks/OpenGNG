@@ -6,8 +6,18 @@
 class PSlideShow {
 public:
     struct tagTile {
-        char _pad000[0x2C];
-        float m_fUnk2C;                         // 0x02C
+        float m_fX;                             // 0x000
+        float m_fY;                             // 0x004
+        int m_unk08;                            // 0x008
+        int m_unk0C;                            // 0x00C, 1.0f
+        int m_unk10;                            // 0x010
+        int m_unk14;                            // 0x014
+        int m_unk18;                            // 0x018
+        int m_unk1C;                            // 0x01C
+        int m_unk20;                            // 0x020, 128.0f
+        int m_unk24;                            // 0x024, 128.0f
+        int m_unk28;                            // 0x028, 128.0f
+        float m_fUnk2C;                         // 0x02C, 128.0f
     };
 
     struct tagGsPoly {
@@ -22,9 +32,15 @@ public:
 
     PSlideShow();
     ~PSlideShow();
+    void ApplyTileOnGsPoly(tagGsPoly *pPoly, tagTile *pTile);
     void SetGsPolyPos(tagGsPoly *pPoly, tagTile *pTile, float *pA, float *pB);
+    void InitTiles(tagTile *pTile);
+    int Create(int nWidth, int nHeight);
+    void *CreateImagePacket(int &nOffset, tagTile *pTile);
     void Animate(float fTime);
     void SetNextImage(int nImage);
+    void SetFirstImage(int nImage);
+    void Render();
     void AnimateFallingTiles(float fTime);
     void AnimateFadingTiles(float fTime);
     void AnimateVanishingTiles(float fTime);
@@ -43,7 +59,8 @@ public:
     int m_unk2C;                                // 0x02C
     int m_nMode;                                // 0x030
     int m_unk34;                                // 0x034
-    char _pad038[0x8];
+    char _pad038[0x4];
+    int m_unk3C;                                // 0x03C
     unsigned char m_ucUnk40;                    // 0x040
     unsigned char m_ucUnk41;                    // 0x041
     unsigned char m_ucUnk42;                    // 0x042
