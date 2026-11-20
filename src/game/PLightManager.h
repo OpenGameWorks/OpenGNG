@@ -6,6 +6,11 @@
 
 // Light table owner, embedded in PWorld at offset 0x1F0. Size 0x30:
 // PArray base at 0x00, PList block at 0x10 (list head at 0x14), 16-byte field at 0x20.
+class PLight;
+class PMesh;
+class PMat4;
+struct tagComputedLightCache;
+
 class PLightManager {
 public:
     PLightManager();
@@ -14,11 +19,16 @@ public:
     void SetLightColor(unsigned int nId, float *pColor);
     void DestroyAllStaticLights();
     void DestroyAllDynamicLights();
+    void RemoveDynamicLight(PLight *pLight);
+    PLight *CreateDirectionLight(float *pPos, float *pDir);
+    void ComputeLights(float *pOut, bool bA, bool bB, bool bC, tagComputedLightCache *pCache, float (*pMatrix)[4], float fScale);
+    void ComputeLights(PMesh *pMesh, PMat4 *pMat, bool bA, bool bB, bool bC, tagComputedLightCache *pCache, float fScale);
 
     PArray m_unk0;          // 0x00 light array, storage allocated by the ctor
     char m_unk10[4];        // 0x10 PList (layout not recovered)
     void *m_unk14;          // 0x14 PList head, singly linked light nodes
-    char m_unk18[8];        // 0x18 rest of PList block
+    char m_unk18[4];        // 0x18 rest of PList block
+    void *m_unk1C;          // 0x1C cursor into the dynamic light list
     u_long128 m_unk20;      // 0x20 cleared by ctor
 };
 
