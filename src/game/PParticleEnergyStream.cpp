@@ -9,6 +9,9 @@ extern "C" void __dl__FPv(void *);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void sceVu0CopyVector(void *pDst, float *pSrc);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
+extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
+extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" float sqrtf(float x);
@@ -28,6 +31,47 @@ extern "C" void DrawSplineParticles__12PDisplayListFP14tagVuSplineKeyiifbi(void 
 extern "C" void ComputeVuSplineKeys__21PParticleEnergyStreamFP13tagVuParticleiP14tagVuSplineKeyi(void *, void *, int, void *, int);
 extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *, int, float *, bool, unsigned long, unsigned long);
 extern "C" void SetWorldMatrix__10PGfxEngineFP5PMat4(void *, void *);
+
+// FUNCTION: 0x001F5510 ComputeVuSplineKeys__21PParticleEnergyStreamFP13tagVuParticleiP14tagVuSplineKeyi
+void PParticleEnergyStream::ComputeVuSplineKeys(tagVuParticle *pParticles, int nUnused, tagVuSplineKey *pKeys, int nCount) {
+    float vecA[4];
+    float vecB[4];
+    float vecC[4];
+    float fScale = (1.0f - m_unk130) / 2.0f;
+    int nIdx = 1;
+    if (1 < nCount - 1) {
+        int nSrc = 0;
+        int nDst = 0x40;
+        do {
+            sceVu0CopyVector((char *)pKeys + nDst, (float *)((char *)pParticles + nSrc));
+            sceVu0CopyVector((char *)pKeys + nDst + 0x10, (float *)((char *)pParticles + nSrc + 0x10));
+            nIdx += 1;
+            nSrc += 0x20;
+            nDst += 0x40;
+        } while (nIdx < nCount - 1);
+    }
+    memcpy(pKeys, (char *)pKeys + 0x40, 0x40);
+    memcpy((char *)pKeys + ((nCount - 1) << 6), (char *)pKeys + ((nCount - 2) << 6), 0x40);
+    int nK = 0;
+    if (0 < nCount - 3) {
+        int nOff = 0;
+        do {
+            char *pNext = (char *)pKeys + ((nK + 1) << 6);
+            char *pCur = (char *)pKeys + nOff;
+            sceVu0SubVector(vecC, (float *)pNext, (float *)pCur);
+            char *pNext2 = (char *)pKeys + ((nK + 2) << 6);
+            sceVu0SubVector(vecA, (float *)pNext2, (float *)pNext);
+            sceVu0AddVector(vecA, vecC, vecA);
+            sceVu0ScaleVector((float *)(pCur + 0x20), vecA, fScale);
+            sceVu0SubVector(vecC, (float *)pNext2, (float *)pNext);
+            sceVu0SubVector(vecB, (float *)((char *)pKeys + ((nK + 3) << 6)), (float *)pNext2);
+            sceVu0AddVector(vecB, vecC, vecB);
+            sceVu0ScaleVector((float *)(pCur + 0x30), vecB, fScale);
+            nK += 1;
+            nOff += 0x40;
+        } while (nK < nCount - 3);
+    }
+}
 
 // FUNCTION: 0x001F56F0 SetPosition__21PParticleEnergyStreamFPfPf
 void PParticleEnergyStream::SetPosition(float *pFrom, float *pTo) {
