@@ -19,6 +19,10 @@ extern "C" float FastMath_Cos180__Ff(float);
 extern "C" void CdsAssert__FPciPc(const char *, int, const char *);
 extern "C" void *__nwa__FUi(unsigned int);
 extern "C" void QwordCopy__FP1P1Ui(u_long128 *, u_long128 *, unsigned int);
+extern "C" void *memset(void *, int, unsigned int);
+extern "C" void sceVu0UnitMatrix(void *);
+extern "C" void sceVu0CopyVector(float *, float *);
+extern "C" int rand(void);
 
 // DRAFT: 0x001F8980 InitRingMeshPacket__17PMidasShieldRingsFRiib
 // note: frame, call order and arguments match; 86 words differ in local layout and register scheduling; tried direct array indexing and single-expression total
@@ -163,6 +167,49 @@ void PMidasShieldRings::Render() {
     DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(*(void **)gDisplayListPtr, m_unk1FC, m_unk200, false);
 done:
     return;
+}
+
+// FUNCTION: 0x001F9440 Create__17PMidasShieldRingsFfffPfPfPffffiibb
+void PMidasShieldRings::Create(float fA, float fB, float fC, float *pA, float *pB, float *pC, float fD, float fE, float fF, int nA, int nB, bool bA, bool bB) {
+    if (m_unk1F4 != 0) {
+        __dla__FPv(m_unk1F4);
+        m_unk1F4 = 0;
+        m_unk1F8 = 0;
+    }
+    m_unk1F4 = InitRingMeshPacket(m_unk1F8, nB, bA);
+    if (m_unk1F4 == 0) {
+        CdsAssert__FPciPc("PMidasShieldRings.cpp", 0x46, "mpRingMeshPacket");
+    }
+    memset((char *)this + 0x14C, 0, 0xA0);
+    m_unk1EC = 0;
+    m_unk1F0 = 0;
+    m_unk1FC = 0;
+    m_unk15 = 1;
+    m_unk18 = 1;
+    m_unk14 = 1;
+    sceVu0UnitMatrix(m_unk40);
+    m_unkC = 0x12;
+    m_unk19 = bB;
+    m_unk144 = nA;
+    m_unk148 = 0;
+    m_unk140 = fF;
+    m_unk204 = 1;
+    sceVu0CopyVector(m_unkE0, pA);
+    sceVu0CopyVector(m_unkF0, pB);
+    sceVu0CopyVector(m_unk100, pC);
+    m_unk110 = fA;
+    m_unk114 = fD;
+    m_unk118 = 0;
+    m_unk11C = 0;
+    m_unk120 = fB;
+    m_unk124 = 0.5f * (fE + fD);
+    m_unk128 = 0;
+    m_unk12C = 0;
+    m_unk130 = fC;
+    m_unk134 = fE;
+    m_unk138 = 0;
+    m_unk13C = 0;
+    m_unkD0 = (int)(0.5f + (26731.0f + (-12208.0f * ((float)rand() / 2147483648.0f))));
 }
 
 // DRAFT: 0x001F9670 Create__17PMidasShieldRingsFb
