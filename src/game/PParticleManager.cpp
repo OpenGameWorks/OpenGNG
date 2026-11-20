@@ -300,7 +300,7 @@ void PParticleManager::InitHeatHazeBuffer() {
 }
 
 // DRAFT: 0x001B76B0 UpdateHeatHazeBuffer__16PParticleManagerFv
-// note: DIFF 6 words in GS block: 0x18/0x1B load into swapped v0/v1, sp+0x50 base and 1 load order; tried entry reorders, direct aGs[2] stores (worse, 18)
+// note: DIFF 6 words in GS block: 0x18/0x1B load into swapped v0/v1, sp+0x50 base and 1 load order; tried direct aGs[1]/aGs[2] stores (19), pEnt declared before aGs (6), unsigned long long fields (6), flat long long aGs[6] (6), single pEnt walked with ++ (many diffs)
 void PParticleManager::UpdateHeatHazeBuffer() {
     bool bFlag = false;
     int nTex = AllocRenderedTexture__15PTextureManagerFiiRbb(gGfxEng + 0x154C90, m_unk670, 0x2000, bFlag, false);
@@ -627,7 +627,7 @@ void PParticleManager::DestroyGroundDustFx() {
 }
 
 // DRAFT: 0x001B85B0 InitGroundDustFx__16PParticleManagerFv
-// note: DIFF 5: this/off registers swapped (ours s1=off s0=this, original s1=this s0=off); tried pSelf copy, counter-first order
+// note: DIFF 5: this/off registers swapped (ours s1=off s0=this, original s1=this s0=off); tried pSelf copy, counter-first order (7), unsigned int counter (6), off assigned after counter (7), for/while forms (5-7)
 void PParticleManager::InitGroundDustFx() {
     int off = 0;
     int i = 0;
@@ -649,26 +649,17 @@ void PParticleManager::InitGroundDustFx() {
     } while (i < 12);
 }
 
-// DRAFT: 0x001B8690 EnableFxByType__16PParticleManagerF7ePSTypeb
-// note: DIFF 6: exit beqz target +0x17 vs +0x18, index temp a0 vs a1, loop-bottom bnez and nop placement; tried loop-tail reload, m_unk4++, nIdx forms, swapped declarations, for-loop.
+// FUNCTION: 0x001B8690 EnableFxByType__16PParticleManagerF7ePSTypeb
 void PParticleManager::EnableFxByType(ePSType eType, bool bFlag) {
-    unsigned int nIdx;
     PParticleSystem *pFx;
     m_unk4 = 0;
-    if (m_unk0 != 0) {
-        pFx = (PParticleSystem *)m_unk8[0];
-    } else {
-        pFx = 0;
-    }
+    pFx = (m_unk0 != 0) ? (PParticleSystem *)m_unk8[0] : 0;
     while (pFx != 0) {
         if ((int)eType == *(int *)((char *)pFx + 0xC)) {
             pFx->Slot09(bFlag);
         }
-        nIdx = ++m_unk4;
-        pFx = 0;
-        if (nIdx < m_unk0) {
-            pFx = (PParticleSystem *)m_unk8[m_unk4];
-        }
+        unsigned int nIdx = ++m_unk4;
+        pFx = (nIdx < m_unk0) ? (PParticleSystem *)m_unk8[m_unk4] : 0;
     }
 }
 
@@ -750,19 +741,13 @@ PFrozenFx *PParticleManager::CreateFrozenFx(PMNode *pNode, float fA, float fB) {
     return 0;
 }
 
-// DRAFT: 0x001B8A00 FreeAuraParticle__16PParticleManagerFP13tagVuParticle
-// note: the zero path stores $zero directly (sw) where the original does daddu v1,zero,zero then sw v1; branch offset of the b differs by one word.
+// FUNCTION: 0x001B8A00 FreeAuraParticle__16PParticleManagerFP13tagVuParticle
 void PParticleManager::FreeAuraParticle(tagVuParticle *pParticle) {
     if (pParticle != 0) {
         pParticle->m_unkC = 0;
         pParticle->m_unk1C = 0;
         int n = m_unkEC0 - 1;
-        if (n > 0) {
-            m_unkEC0 = n;
-            return;
-        }
-        n = 0;
-        m_unkEC0 = n;
+        m_unkEC0 = (n > 0) ? n : 0;
     }
 }
 
