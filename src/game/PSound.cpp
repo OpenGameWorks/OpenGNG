@@ -273,6 +273,26 @@ void PSound::ResumeAmbientEntry(AmbientEntry *pEntry) {
     }
 }
 
+// DRAFT: 0x001A87E0 AddChanToMultipleResumes__6PSoundFUi
+// note: 17 words differ; pointer register allocation (original keeps &m_unkC0[idx] in a2, ours spills it to t0). Tried indexed form, shift-in-branch, if/else split, 1u literal, m_unkC0 + nIdx pointer (all 17 or worse).
+int PSound::AddChanToMultipleResumes(unsigned int nChan) {
+    int nRet = 0;
+    unsigned int nIdx = 0;
+    unsigned int nShift = nChan;
+    if (nChan >= 0x18) {
+        nShift -= 0x18;
+        nIdx = 1;
+    }
+    unsigned int nBit = 1u << nShift;
+    unsigned int *pWord = &m_unkC0[nIdx];
+    if (*pWord & nBit) {
+        nRet = -1;
+    }
+    *pWord |= nBit;
+    *((char *)this + 0x1808C + nChan) = 0;
+    return nRet;
+}
+
 // DRAFT: 0x001A8660 PauseAmbientEntry__6PSoundFPQ26PSound12AmbientEntryUi
 // note: 2 words differ: original keeps the flag compare in at (sltiu at / bnez at, store after inline return 0), ours compares into v0; tried if/else, result variable, nested return, inverted and local-load forms
 int PSound::PauseAmbientEntry(AmbientEntry *pEntry, unsigned int nFlag) {
@@ -519,6 +539,18 @@ void PSound::StopStreamsAndRequestEEControl() {
     SetEEControlOfIOP(2);
 }
 
+// FUNCTION: 0x001A9CD0 RestartAndLoadInterfaceTypeBank__6PSoundFUi
+int PSound::RestartAndLoadInterfaceTypeBank(unsigned int nArg) {
+    int nRet = 0;
+    if (RestartAndLoadPrimarySoundBank(nArg) != 0) {
+        nRet = -1;
+    }
+    if (SetLevelParameters(0, 0x384, 0x384, 0x64) != 0) {
+        nRet = -1;
+    }
+    return nRet;
+}
+
 // FUNCTION: 0x001A9DC0 TranslateIntoADSR__6PSoundFUi
 int PSound::TranslateIntoADSR(unsigned int nArg) {
     return fst_ADSR_Translate_Attack[(nArg >> 4) & 0xF] + 0xFF1FC0 + fst_ADSR_Translate_Release[nArg & 0xF];
@@ -616,6 +648,28 @@ void PSound::AmbientChannelState::Init() {
 // FUNCTION: 0x001AA7F0 __ct__Q26PSound19AmbientChannelStateFv
 PSound::AmbientChannelState::AmbientChannelState() {
     Init();
+}
+
+// FUNCTION: 0x001AABB0 Init__Q26PSound12AmbientEntryFv
+void PSound::AmbientEntry::Init() {
+    m_unk10 = 0x3FFF;
+    m_unk14 = 0x400;
+    m_unk16 = 0;
+    m_unk18 = -1;
+    m_unk1A = 0;
+    m_unk1C = 0;
+    m_unk3C = 0;
+    m_unk40 = 0;
+    m_unk44 = 0;
+    m_unk48 = 0;
+    m_unk4C = 0;
+    m_unk50 = 0;
+    m_unk54 = 0;
+    m_unk5C = 0x7F7FFFFF;
+    m_unk60 = 0;
+    m_unk64 = 0;
+    m_unk68 = 0;
+    m_unk6C = 0;
 }
 
 // FUNCTION: 0x001AAC10 __ct__Q26PSound12AmbientEntryFv
@@ -732,4 +786,48 @@ void PSound::DebugRestartValues() {
             pSpot->m_unk0F = ((unsigned char *)gPSndDbg)[0x30];
         }
     }
+}
+
+// FUNCTION: 0x001ACC40 DebugFindLastID__6PSoundFPUiPUi
+int PSound::DebugFindLastID(unsigned int *pValue, unsigned int *pIndex) {
+    unsigned int i;
+    unsigned int nIdx = (unsigned int)-1;
+    unsigned int nMax = 0;
+    unsigned int *pRec = (unsigned int *)m_unk2EB4;
+    for (i = 0; i < m_unk14; i++, pRec += 6) {
+        unsigned int nID = *pRec;
+        if (nMax < nID) {
+            nMax = nID;
+            nIdx = i;
+        }
+    }
+    int nRet = -1;
+    if (nIdx < m_unk14) {
+        *pIndex = nIdx;
+        nRet = 0;
+        *pValue = nMax;
+    }
+    return nRet;
+}
+
+// FUNCTION: 0x001ACCA0 DebugFindFirstID__6PSoundFPUiPUi
+int PSound::DebugFindFirstID(unsigned int *pValue, unsigned int *pIndex) {
+    unsigned int i;
+    unsigned int nIdx = (unsigned int)-1;
+    unsigned int nMin = (unsigned int)-1;
+    unsigned int *pRec = (unsigned int *)m_unk2EB4;
+    for (i = 0; i < m_unk14; i++, pRec += 6) {
+        unsigned int nID = *pRec;
+        if (nID < nMin) {
+            nMin = nID;
+            nIdx = i;
+        }
+    }
+    int nRet = -1;
+    if (nIdx < m_unk14) {
+        *pIndex = nIdx;
+        nRet = 0;
+        *pValue = nMin;
+    }
+    return nRet;
 }

@@ -55,16 +55,27 @@ public:
         void Init();
 
         char _pad00[0x10];
-        unsigned int m_unk10;   // 0x10, Resume skips entries at or above 0x3FFD
-        char _pad14[0x02];
+        unsigned int m_unk10;   // 0x10, Resume skips entries at or above 0x3FFD, Init sets 0x3FFF
+        short m_unk14;          // 0x14, Init sets 0x400
         unsigned short m_unk16; // 0x16, bit 0 is cleared on Resume
-        char _pad18[0x20 - 0x18];
-        char m_unk20[0x44 - 0x20];  // 0x20, PFadeMsecFloat built by the ctor
+        short m_unk18;          // 0x18, Init sets -1
+        short m_unk1A;          // 0x1A
+        int m_unk1C;            // 0x1C
+        char m_unk20[0x3C - 0x20];  // 0x20, PFadeMsecFloat built by the ctor
+        int m_unk3C;            // 0x3C
+        int m_unk40;            // 0x40
         unsigned int m_unk44;   // 0x44, FindAmbientEntry and IsAmbientSoundBySoundRef compare it
-        char m_unk48[0x50 - 0x48];
+        int m_unk48;            // 0x48
+        int m_unk4C;            // 0x4C
         AmbientEntry *m_unk50;  // 0x50
         AmbientEntry *m_unk54;  // 0x54
-        char _pad58[0x70 - 0x58];   // 0x58, entries of the ambient table are 0x70 apart
+        char _pad58[0x5C - 0x58];
+        int m_unk5C;            // 0x5C, Init sets 0x7F7FFFFF
+        int m_unk60;            // 0x60
+        int m_unk64;            // 0x64
+        int m_unk68;            // 0x68
+        char m_unk6C;           // 0x6C
+        char _pad6D[0x70 - 0x6D];   // entries of the ambient table are 0x70 apart
     };
 
     class SpotInfo {
@@ -147,6 +158,10 @@ public:
     void Resume();
     void Pause();
     void ResumeAmbientEntry(AmbientEntry *pEntry);
+    int AddChanToMultipleResumes(unsigned int nChan);
+    int RestartAndLoadInterfaceTypeBank(unsigned int nArg);
+    int RestartAndLoadPrimarySoundBank(unsigned int nArg);
+    int SetLevelParameters(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3);
     void PSoundFlushIOPCommandsWaitFinish();
     void KillByCategories(unsigned int nCategory);
     void PauseByCategories(unsigned int nCategory);
@@ -161,11 +176,14 @@ public:
     void StopMusic();
     int *UsageFind(unsigned int nID);
     void DebugRestartValues();
+    int DebugFindLastID(unsigned int *pValue, unsigned int *pIndex);
+    int DebugFindFirstID(unsigned int *pValue, unsigned int *pIndex);
 
     int m_unk00;            // 0x000, GetEEControlStatus tests it
     char _pad004[0x010 - 0x004];
     unsigned int m_unk10;   // 0x010, DebugRestartValues range check
-    char _pad014[0x01C - 0x014];
+    unsigned int m_unk14;   // 0x014, record count for DebugFindLastID/DebugFindFirstID
+    char _pad018[0x01C - 0x018];
     unsigned int m_unk1C;   // 0x01C, PlayMusic stores it, PSoundReInitMusic clears it
     int m_unk20;            // 0x020, PSoundReInitMusic clears it
     unsigned int m_unk024;  // 0x024
@@ -185,8 +203,9 @@ public:
     char _pad060[0x0B0 - 0x060];
     int m_unkB0;            // 0x0B0, SendStops clears it
     int m_unkB4;            // 0x0B4, SendStops clears it
-    char _pad0B8[0x0C8 - 0x0B8];
-    int m_unkC8;            // 0x0C8, SoundEditEnter sets 1, SoundEditLeave clears it
+    char _pad0B8[0x0C0 - 0x0B8];
+    unsigned int m_unkC0[2];// 0x0C0, AddChanToMultipleResumes bit masks (index 1 for channels 0x18 and up)
+    int m_unkC8;           // 0x0C8, SoundEditEnter sets 1, SoundEditLeave clears it
     char _padCC[0x0CD - 0x0CC];
     char m_unkCD;           // 0x0CD, PSoundReInitMusic clears it
     char m_unkCE;           // 0x0CE, PSoundReInitMusic clears it
