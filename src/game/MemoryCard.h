@@ -44,10 +44,13 @@ public:
     void DisplayMCText(int nArg);
     int SelectSlot(unsigned int nArg);
     void InitLoadGame();
+    void DisplaySlot(bool bFlag);
     void InitSaveGame(Player::PlayerData *pData, int nVal, bool bFlag);
     void DeleteScreen();
     void InitScreen();
     int ProcessCommand();
+    int Init();
+    int SaveGame();
 
     char _pad000[0x1C8];
     int m_unk1C8;                   // 0x1C8 must equal 0xB for SelectSlot to act

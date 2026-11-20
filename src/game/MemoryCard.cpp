@@ -4,10 +4,11 @@
 // TODO(header): foreign declarations
 extern unsigned char gInterface[2656];
 extern "C" void RemoveText__11FontManagerFUs(void *pThis, unsigned short nId);
+extern "C" void RemoveText__11FontManagerFP8FontNode(void *pThis, FontNode *pNode);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" int CheckPlayerData__6PlayerFPQ26Player10PlayerData(void *pThis);
 extern "C" int DisplayString__11FontManagerFiiib(void *pThis, int nX, int nY, int nZ, bool bFlag);
-extern "C" void DisplayString__11FontManagerFPcffi9FontColor9FontAlign(void *pThis, char *pStr, float fX, float fY, int nZ, int nColor, int nAlign);
+extern "C" FontNode *DisplayString__11FontManagerFPcffi9FontColor9FontAlign(void *pThis, char *pStr, float fX, float fY, int nZ, int nColor, int nAlign);
 extern char gEng[105360];
 extern "C" void *GetResource__16PResourceManagerFUib(void *pThis, unsigned int nId, bool bFlag);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
@@ -36,6 +37,23 @@ extern "C" void PlaySoundNonPositional__6PSoundFUi(void *pThis, unsigned int nSn
 extern "C" void SetColor__8FontNodeF9FontColor(void *pThis, int nColor);
 extern "C" void SetAnimLoopCount__6PMNodeFib(void *pThis, int nCount, bool bFlag);
 extern char DefaultLoopAnim[0x10];
+extern "C" int sceMcInit();
+extern "C" int sceMcUnformat(int nPort, int nSlot);
+extern "C" int sceMcSync(int nMode, int *pResult, int *pCount);
+extern "C" void InitRenderFrame__9MaxEngineFbUi(void *pThis, bool bFlag, unsigned int nVal);
+extern "C" void Render__9InterfaceFi(void *pThis, int nArg);
+extern int iDebugMC;
+extern char BootMC[16];
+extern char SaveMC[16];
+extern float GAME_FPS;
+extern "C" int sprintf(char *pDst, const char *pFmt, ...);
+struct SlotPosition {
+    float fX;
+    float fY;
+};
+extern SlotPosition SlotPos[6];
+
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("MemoryCard.cpp", line, #cond))
 
 // Virtual interface at 0x3F6C; slot 0x18 is virtual index 4, slot 0x08 is the destructor.
 class MemoryCardView {
@@ -218,7 +236,7 @@ void MemoryCard::ResetFileStatus() {
 // FUNCTION: 0x00150490 DisplayMCText__10MemoryCardFi
 void MemoryCard::DisplayMCText(int nArg) {
     RemoveMCText();
-    void *pFont = gInterface + 0x1790;
+    void *pFont = gInterface + 0x80;
     *(int *)((char *)this + 0x204) = *(int *)pFont;
     m_unk200 = DisplayString__11FontManagerFiiib(pFont, nArg, 0, 0, 0);
 }
@@ -305,8 +323,50 @@ void MemoryCard::InitLoadGame() {
     m_unk1F4 = 0;
     IssueCommand(LoadGameMC);
     InitScreen();
-    char *pInfo = *(char **)(gInterface + 0x1890);
-    DisplayString__11FontManagerFPcffi9FontColor9FontAlign(gInterface + 0x1790, *(char **)(pInfo + 0x78), 0.0f, 175.0f, *(signed char *)(pInfo + 0x82), 4, 1);
+    char *pInfo = *(char **)(gInterface + 0x180);
+    DisplayString__11FontManagerFPcffi9FontColor9FontAlign(gInterface + 0x80, *(char **)(pInfo + 0x78), 0.0f, 175.0f, *(signed char *)(pInfo + 0x82), 4, 1);
+}
+
+// DRAFT: 0x00151E90 SaveGame__10MemoryCardFv
+// note: 143 words; original frame 0xA0 saves s0-s5 and f20, ours 0x70 saves s0-s2 with this in s1 (orig s2). Tried goto nine (146->143), buf hoist and nSlot/pFont order (no change).
+int MemoryCard::SaveGame() {
+    m_unk3F6C->Slot4(0, 0, 0, 0.0f, 1.0f);
+    int nRet = ProcessCommand();
+    if (nRet == 9) goto nine;
+    if (nRet == 0xC) goto countdown_tick;
+    if (nRet == 8) goto countdown_init;
+    if (nRet != 0xB) return -1;
+    DisplayMCText(0x3D);
+    {
+        unsigned char *pFont = gInterface + 0x80;
+        int nSlot = m_unk210;
+        if (m_unk3F88[nSlot][0] != 0) RemoveText__11FontManagerFP8FontNode(pFont, m_unk3F88[nSlot][0]);
+        if (m_unk3F88[nSlot][1] != 0) RemoveText__11FontManagerFP8FontNode(pFont, m_unk3F88[nSlot][1]);
+        char *pStr = (*(int *)((char *)this + 0x6F0 + nSlot * 0x4B4) == 0) ? (char *)"No Data" : (char *)"Saved";
+        float fY = SlotPos[nSlot].fY;
+        m_unk3F88[nSlot][0] = DisplayString__11FontManagerFPcffi9FontColor9FontAlign(pFont, pStr, SlotPos[nSlot].fX, fY, 3, 4, 0);
+        char buf[32];
+        sprintf(buf, "%d%s", *(unsigned char *)((char *)this + 0x6ED + nSlot * 0x4B4), "%");
+        m_unk3F88[nSlot][1] = DisplayString__11FontManagerFPcffi9FontColor9FontAlign(pFont, buf, SlotPos[nSlot].fX, fY - 25.0f, 3, 4, 0);
+    }
+countdown_init:
+    m_unk1DC = 0;
+    m_unk1E0 = 0x3C;
+countdown_tick:
+    m_unk1E0 = m_unk1E0 - 1;
+    if (m_unk1E0 > 0) return -1;
+    DeleteScreen();
+    EnableAllText__11FontManagerFb(gInterface + 0x80, true);
+    return 0xB;
+nine:
+    PlaySoundNonPositional__6PSoundFUi(gSound, 0x41);
+    if (m_unk1F8 == 0) goto countdown_init;
+    m_unk1E0 = 0x2F;
+    DisplaySlot(true);
+    m_unk1EC = -0x14;
+    *(int *)((char *)this + 0x1F0) = 1;
+    DisplayMCText(0x52);
+    return -1;
 }
 
 // FUNCTION: 0x001520F0 InitSaveGame__10MemoryCardFPQ26Player10PlayerDataib
@@ -320,7 +380,7 @@ void MemoryCard::InitSaveGame(Player::PlayerData *pData, int nVal, bool bFlag) {
     if (pData != 0) {
         memcpy(m_unk234, pData, 0x7C);
     }
-    unsigned char *pFont = gInterface + 0x1790;
+    unsigned char *pFont = gInterface + 0x80;
     EnableAllText__11FontManagerFb(pFont, 0);
     InitScreen();
     char *pInfo = *(char **)(pFont + 0x100);
@@ -330,23 +390,23 @@ void MemoryCard::InitSaveGame(Player::PlayerData *pData, int nVal, bool bFlag) {
 // FUNCTION: 0x00152490 DeleteScreen__10MemoryCardFv
 void MemoryCard::DeleteScreen() {
     RemoveMCText();
-    DeleteMeshLayer__9InterfaceFP6PMNode(gInterface + 0x1710, *(void **)((char *)this + 0x3F6C));
-    RemoveAll__11FontManagerFb(gInterface + 0x1790, true);
-    *(int *)(gInterface + 0x18D0) = *(int *)((char *)this + 0x3F68);
+    DeleteMeshLayer__9InterfaceFP6PMNode(gInterface, *(void **)((char *)this + 0x3F6C));
+    RemoveAll__11FontManagerFb(gInterface + 0x80, true);
+    *(int *)(gInterface + 0x1C0) = *(int *)((char *)this + 0x3F68);
 }
 
 // FUNCTION: 0x001524E0 InitScreen__10MemoryCardFv
 void MemoryCard::InitScreen() {
-    char *pEng = gEng;
+    char *pEng = gEng + 0x188A4;
     m_unk3F6C = (MemoryCardView *)GetResource__16PResourceManagerFUib(pEng, 0x810003E5, 0);
     if (m_unk3F6C == 0) {
         CdsAssert__FPciPc("MemoryCard.cpp", 0x15A, "mpSaveNode");
     }
     void *pNode = GetResource__16PResourceManagerFUib(pEng, 0x820006AE, 0);
     ((PMNodeView *)m_unk3F6C)->Slot20(pNode);
-    AddMeshLayer__9InterfaceFP6PMNode(gInterface + 0x1710, m_unk3F6C);
-    m_unk3F68 = *(int *)(gInterface + 0x18D0);
-    *(int *)(gInterface + 0x18D0) = 0xC9;
+    AddMeshLayer__9InterfaceFP6PMNode(gInterface, m_unk3F6C);
+    m_unk3F68 = *(int *)(gInterface + 0x1C0);
+    *(int *)(gInterface + 0x1C0) = 0xC9;
     for (int i = 0; i < 6; i++) {
         m_unk3F70[i] = (PMNode *)Find__6PMNodeFUi(m_unk3F6C, SlotNames[i]);
         m_unk3F88[i][0] = 0;
@@ -354,15 +414,91 @@ void MemoryCard::InitScreen() {
     }
     void *pFind = Find__6PMNodeFUi(m_unk3F6C, 0xBBCD34F9);
     if (pFind != 0) {
-        ScaleSet__6PMNodeFffff(pFind, BoxSize[*(signed char *)(gInterface + 0x17A3)], 1.0f, 1.0f, 1.0f);
+        ScaleSet__6PMNodeFffff(pFind, BoxSize[*(signed char *)(gInterface + 0x93)], 1.0f, 1.0f, 1.0f);
     }
     ((PMNodeView *)m_unk3F6C)->Animate(0.0f, 1.0f, 0, 0, false);
+}
+
+// DRAFT: 0x00152670 Init__10MemoryCardFv
+// note: 94 words; the dispatch on the ProcessCommand result and nop placement after the loop differ from the original.
+int MemoryCard::Init() {
+    int nRet;
+    int nRes;
+
+    if (sceMcInit() != 0) {
+        CDS_ASSERT(0xFA, !"sceMcInit() error\n");
+    }
+    *(unsigned char *)(gInterface + 0x424) = 0;
+    *(int *)&_pad214[0] = -1;
+    ResetMCData();
+    m_unk210 = 0;
+    m_unk1F4 = 0;
+    IssueCommand(BootMC);
+    nRet = 0;
+    for (;;) {
+        InitRenderFrame__9MaxEngineFbUi(gEng, false, 0);
+        int nCmd = ProcessCommand();
+        if (nCmd == 5) {
+            goto join;
+        }
+        if (nCmd == 0xB) {
+            goto set;
+        }
+        if (nCmd == -1) {
+            goto render;
+        }
+        break;
+    set:
+        if (m_unk1F5 == 0) {
+            SetSetting(&m_unk6D8);
+        }
+    join:
+        if (m_unk1F5 != 0 || CheckFiles() != 0) {
+            nRet = 1;
+            break;
+        }
+        m_unk1F5 = 1;
+        m_unk1F6 = (char)(int)(2.0f * GAME_FPS);
+        DisplayMCText(0x1A);
+        m_unk1E0 = 10;
+    render:
+        Render__9InterfaceFi(gInterface, 0);
+    }
+    RemoveMCText();
+    Render__9InterfaceFi(gInterface, 0);
+    if (iDebugMC == 2) {
+        ResetMCData();
+        IssueCommand(SaveMC);
+        nRet = 0;
+        for (;;) {
+            InitRenderFrame__9MaxEngineFbUi(gEng, false, 0);
+            int nCmd = ProcessCommand();
+            if (nCmd == 0xB) {
+                nRet = 1;
+                break;
+            }
+            if (nCmd == -1) {
+                Render__9InterfaceFi(gInterface, 0);
+                continue;
+            }
+            break;
+        }
+        RemoveMCText();
+        Render__9InterfaceFi(gInterface, 0);
+        return nRet;
+    }
+    if (iDebugMC == 1) {
+        sceMcUnformat(0, 0);
+        sceMcSync(0, &nRes, &m_unk1C8);
+    }
+    *(unsigned char *)(gInterface + 0x424) = 1;
+    return nRet;
 }
 
 // FUNCTION: 0x001528F0 RemoveMCText__10MemoryCardFv
 void MemoryCard::RemoveMCText() {
     if (m_unk200 != 0) {
-        RemoveText__11FontManagerFUs(gInterface + 0x1790, 10);
+        RemoveText__11FontManagerFUs(gInterface + 0x80, 10);
         m_unk200 = 0;
     }
 }
