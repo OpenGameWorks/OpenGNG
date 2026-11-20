@@ -16,6 +16,10 @@ public:
     char _pad000[0x10];
 };
 extern PSound gSound;
+extern "C" float cosf(float x);
+extern "C" float sinf(float x);
+extern "C" void sceVu0CopyVector(float *dst, float *src);
+extern float m_fYAngle__15EntityBaseClass;
 
 class PMNode;
 
@@ -70,6 +74,7 @@ public:
     static float Distance(float (*arg0)[4], float (*arg1)[4]);
     static float GetAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]);
     static float RandomFloatRange(float arg0, float arg1);
+    static void GetForwardVector(EntityBaseClass *arg0, float (&arg1)[4]);
 };
 
 extern EntityBaseClass *mPlayerAPI__13EntityManager;
@@ -173,6 +178,7 @@ class TriggerSystemWakeKillRec;
 class EntityManager {
 public:
     void *FindTrigger(unsigned int arg0, int arg1);
+    void *Spawn(unsigned int arg0, bool arg1, int arg2);
     void *GetPtrToApparition(unsigned int arg0);
     void RemoveFromRenderList(EntityBaseClass *arg0);
 };
@@ -216,6 +222,8 @@ extern "C" unsigned char PlayingCutCamera__6CameraFv(void *pCam);
 extern "C" void GetForwardVector__6CameraFRA4_f(void *pCam, float *pOut);
 extern float mfSleepDistance__15EntityBaseClass;
 extern float BEHIND_WAKE;
+extern float BEHIND_SLEEP;
+extern unsigned char mbGlobalSleep__15EntityBaseClass;
 extern "C" float atan2f(float y, float x);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
@@ -298,7 +306,7 @@ public:
     virtual void Slot24();
     virtual void Slot25();
     virtual void Slot26();
-    virtual void Slot27();
+    virtual void OnSleepEvent();
     virtual void OnWakeEvent();
 };
 
@@ -714,6 +722,90 @@ int EntityBaseClass::WantsToWake() {
     return f20 < range ? 1 : 0;
 }
 
+// DRAFT: 0x0014B5E0 CheckSleep__15EntityBaseClassFb
+// note: DIFF 125 words; the mula.s/madd.s dot product of sp+0x80/sp+0x90 has no C form, and the if-body is 3 instructions short; cam/mpEntMgr load order also differs.
+int EntityBaseClass::CheckSleep(bool arg0) {
+    float sp70[4];
+    float sp80[4];
+    float sp90[4];
+    float f20;
+    float range;
+    char *cam;
+    char *objPos;
+    EntityBaseClass *obj;
+    int s0;
+
+    s0 = 0;
+    if (mbGlobalSleep__15EntityBaseClass) {
+        cam = (char *)&gEng + 0x19760;
+        obj = mpEntMgr__15EntityBaseClass->m_unk505C;
+        objPos = obj->m_unk3C ? obj->m_unk3C + 0x80 : (char *)obj + 0x190;
+        if (PlayingCutCamera__6CameraFv(cam)) {
+            sceVu0SubVector(sp70, (float *)cam,
+                            (float *)(this->m_unk3C ? this->m_unk3C + 0x80 : (char *)this + 0x190));
+        } else {
+            sceVu0SubVector(sp70, (float *)objPos,
+                            (float *)(this->m_unk3C ? this->m_unk3C + 0x80 : (char *)this + 0x190));
+        }
+        f20 = sceVu0InnerProduct(sp70, sp70);
+        GetForwardVector__6CameraFRA4_f(cam, sp90);
+        sceVu0SubVector(sp80, (float *)(this->m_unk3C ? this->m_unk3C + 0x80 : (char *)this + 0x190),
+                        (float *)cam);
+        range = mfSleepDistance__15EntityBaseClass;
+        if (sp90[0] * sp80[0] + sp90[2] * sp80[2] < 0.0f) {
+            range = BEHIND_SLEEP;
+        }
+        if (f20 > range) {
+            s0 = 1;
+        }
+    }
+
+    if (!(s0 || arg0)) {
+        return 0;
+    }
+
+    SetFreeze(0.0f);
+    if (this->m_unk18 == 0 || *(unsigned char *)((char *)this + 0x1D) != 0) {
+        ((EntityBaseClassVirtuals *)this)->OnSleepEvent();
+        SetState(-3);
+        return 1;
+    }
+    if (CheckDie(true)) {
+        return 1;
+    }
+    if (this->m_unk1F) {
+        this->m_unk2C = this->m_unk20;
+        this->m_unk20 = -1;
+        if (this->m_unk3C) {
+            *(u_long128 *)((char *)this + 0x190) = *(u_long128 *)(this->m_unk3C + 0x80);
+            *(float *)((char *)this + 0x1A4) = *(float *)(this->m_unk3C + 0x94);
+        }
+    }
+    *(unsigned char *)((char *)this + 0x1E) = 0;
+    *(unsigned char *)((char *)this + 0x1C) = 1;
+    ((EntityBaseClassVirtuals *)this)->OnSleepEvent();
+    this->m_unk13C = 0;
+    FreeActiveLoad();
+    this->m_unk140 = 0;
+    LoadMesh(0, false, true);
+    if (this->m_unkD4) {
+        *this->m_unkD4 = 0;
+        {
+            char *p = *(char **)(this->m_unkD4 + 0xC);
+            if (p) {
+                p[0x18] = 0;
+            }
+        }
+    }
+    if (this->m_unk1F) {
+        PauseAmbientSoundsByObject();
+    } else {
+        StopAmbientSoundsByObject();
+    }
+    RemoveFromAttackSystem();
+    return 0;
+}
+
 // FUNCTION: 0x0014B880 UpdateSulphurFx__15EntityBaseClassFf
 void EntityBaseClass::UpdateSulphurFx(float arg0) {
     float pos[4];
@@ -810,6 +902,62 @@ void EntityBaseClass::CreateSplash(float arg0, bool arg1, bool arg2) {
     if (arg2) {
         ((PParticleManager *)gfx)->CreateEweedReaction(pos);
     }
+}
+
+// DRAFT: 0x0014BD40 SpawnPickups__15EntityBaseClassFiiPA4_fb
+// note: DIFF 173 words; original uses mula.s/madd.s/msub.s for the velocity and a 0xA0 frame, draft emits mul.s/add.s and 0xB0. Variants tried: inlined src local (180), no change in order.
+EntityBaseClass *EntityBaseClass::SpawnPickups(int arg0, int arg1, float (*arg2)[4], bool arg3) {
+    float local80[4];
+    float vel[4];
+    float step;
+    EntityBaseClass *spawned = 0;
+    int i;
+    char *src;
+
+    if (arg1 != 0) {
+        if (arg2 == 0) {
+            MathAPI::GetForwardVector(this, local80);
+            local80[1] = 0.4f;
+            local80[0] *= 0.1f;
+            local80[2] *= 0.1f;
+        } else {
+            *(u_long128 *)local80 = *(u_long128 *)arg2;
+        }
+        step = 360.0f / (float)arg1;
+        for (i = 0; i < arg1; i++) {
+            spawned = (EntityBaseClass *)((EntityManager *)mpEntMgr__15EntityBaseClass)->Spawn(8, false, 0);
+            if (spawned != 0) {
+                if (arg0 == 0) {
+                    PlaySound(0x95);
+                }
+                *(int *)((char *)spawned + 0x1B0) = arg0;
+                src = (m_unk3C != 0) ? (m_unk3C + 0x80) : ((char *)this + 0x190);
+                if (spawned->m_unk3C != 0) {
+                    *(u_long128 *)(spawned->m_unk3C + 0x80) = *(u_long128 *)src;
+                    *(unsigned char *)(spawned->m_unk3C + 0x3E) |= 8;
+                } else {
+                    *(u_long128 *)((char *)spawned + 0x190) = *(u_long128 *)src;
+                }
+                vel[0] = local80[2] * sinf(0.017453292f * m_fYAngle__15EntityBaseClass) +
+                         local80[0] * cosf(0.017453292f * m_fYAngle__15EntityBaseClass);
+                vel[2] = local80[2] * cosf(0.017453292f * m_fYAngle__15EntityBaseClass) -
+                         local80[0] * sinf(0.017453292f * m_fYAngle__15EntityBaseClass);
+                if (arg3) {
+                    vel[1] = local80[1] + MathAPI::RandomFloatRange(0.0f, 0.3f);
+                } else {
+                    vel[1] = local80[1];
+                }
+                sceVu0CopyVector((float *)((char *)spawned + 0x1D0), vel);
+                if (arg3) {
+                    m_fYAngle__15EntityBaseClass += MathAPI::RandomFloatRange(-180.0f, 180.0f) + step;
+                } else {
+                    m_fYAngle__15EntityBaseClass += step;
+                }
+                m_fYAngle__15EntityBaseClass = Round180(m_fYAngle__15EntityBaseClass);
+            }
+        }
+    }
+    return spawned;
 }
 
 // FUNCTION: 0x0014BFA0 FacePlayer__15EntityBaseClassFf

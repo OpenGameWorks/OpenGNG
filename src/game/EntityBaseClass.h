@@ -28,6 +28,7 @@ public:
     void EnableSleep(bool bA, bool bB);
     void ProcessPhysics(float arg0, int arg1);
     int CheckDie(bool arg0);
+    int CheckSleep(bool arg0);
     int Render(PLightManager *arg0);
     void DestroyDamageFx(unsigned int arg0);
     int ProcessHitBack();
@@ -68,6 +69,7 @@ public:
     int PlaySoundOnFrame(unsigned int arg0, unsigned int arg1);
     void CreateHitMarkFx(float (*arg0)[4], eHitObjectType arg1, eHitWeaponType arg2, bool arg3);
     void CreateSplash(float arg0, bool arg1, bool arg2);
+    EntityBaseClass *SpawnPickups(int arg0, int arg1, float (*arg2)[4], bool arg3);
     void OnInnocentAttack(EntityBaseClass *arg0, int arg1);
     PZinDamageFx *CreateDamageFx(float arg0, unsigned int arg1);
     void ShakeScreen(int arg0, int arg1, int arg2, int arg3, float arg4, int arg5);
