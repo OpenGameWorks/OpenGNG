@@ -33,6 +33,23 @@ extern "C" void *__ct__10PAnimFrameFs(void *pThis, short nFlag);
 extern unsigned char __vt__9PResource[0x40];
 extern unsigned char __vt__6PMNode[0x40];
 extern unsigned char __vt__9PMeshNode[0x40];
+extern char gGfxEng[1504384];
+extern "C" int Render__18PObjectDisplayListF13eBoxIntersect(void *pThis, int nBox);
+extern "C" void BeginMatrixList__12PDisplayListFv(void *pThis);
+extern "C" void EndMatrixList__12PDisplayListFv(void *pThis);
+extern "C" void AddBoneMatrixToDisplayList__6PMNodeFb(void *pThis, bool bFlag);
+extern "C" void BeginSharedMesh__10PGfxEngineF13eBoxIntersectP6PMNode(void *pThis, int nBox, void *pNode);
+extern "C" int Render__5PMeshFiPbb(void *pThis, int nScale, bool *pFlag, bool bFlag);
+extern "C" void ComputeLights__13PLightManagerFP5PMeshP5PMat4bbbP21tagComputedLightCachef(void *pThis, void *pMesh, void *pMat, bool bA, bool bB, bool bC, void *pCache, float fScale);
+extern "C" void vu1SetWorldMatrix__FP5PMat4(void *pMat);
+extern "C" void vu1BeginMesh__F13eBoxIntersect(int nBox);
+extern "C" void vu1EndMesh__Fv(void);
+extern "C" void DebugDrawBox__6PMNodeFi(void *pThis, int nMode);
+extern "C" int LoadBone__6PMNodeFP8PPakFileP6PArray16ePsx2FileVersion(void *pThis, PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion);
+extern "C" int LoadFxTriggers__6PMNodeFP8PPakFile(void *pThis, PPakFile *pFile);
+extern "C" int LoadMesh__6PMNodeFP8PPakFileP6PArray16ePsx2FileVersion(void *pThis, PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion);
+extern "C" int Read__7PCDFileFPvUi(void *pThis, void *pBuf, unsigned int nSize);
+extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
 
 class AnimData;
 
@@ -311,6 +328,88 @@ void PSkeleton::BuildDispList() {
     }
 }
 
+// DRAFT: 0x00197C70 Render__9PSkeletonFP13PLightManagerii
+// note: compiles; still differs in prologue and branch layout
+int PSkeleton::Render(PLightManager *pLights, int nFlag, int nMode) {
+    void *pNode;
+    int nRet = 0;
+    if (m_unk0C != 0) {
+        int nScale = (int)((float)nFlag * m_unk2C);
+        if (nScale != 0) {
+            nRet = 0;
+            if (nScale == 0x80 && nMode != 1 && *(unsigned char *)((char *)gGfxEng + 0x158E21) == 0 && m_unkF8 != 0) {
+                nRet += Render__18PObjectDisplayListF13eBoxIntersect(m_unkF8, m_unk0C);
+            } else {
+                if (m_unk10 != 0) {
+                    BeginMatrixList__12PDisplayListFv(*(void **)((char *)gGfxEng + 0x154C80));
+                    m_unk154 = 0;
+                    if (*(unsigned int *)m_unk150 != 0) {
+                        pNode = m_unk158[0];
+                    } else {
+                        pNode = 0;
+                    }
+                    while (pNode != 0) {
+                        AddBoneMatrixToDisplayList__6PMNodeFb(pNode, false);
+                        m_unk154++;
+                        if (m_unk154 < *(unsigned int *)m_unk150) {
+                            pNode = m_unk158[m_unk154];
+                        } else {
+                            pNode = 0;
+                        }
+                    }
+                    EndMatrixList__12PDisplayListFv(*(void **)((char *)gGfxEng + 0x154C80));
+                    m_unk18 = 0;
+                    if (m_unk14 != 0) {
+                        BeginSharedMesh__10PGfxEngineF13eBoxIntersectP6PMNode(gGfxEng, m_unk0C, m_unk1C[0]);
+                    } else {
+                        BeginSharedMesh__10PGfxEngineF13eBoxIntersectP6PMNode(gGfxEng, m_unk0C, 0);
+                    }
+                    if (m_unk3E & 0x80) {
+                        nRet += Render__5PMeshFiPbb(m_unk10, nScale, &m_unkD4, 0);
+                    } else {
+                        nRet += Render__5PMeshFiPbb(m_unk10, nScale, 0, 0);
+                    }
+                    *(unsigned char *)((char *)gGfxEng + 0x158E24) = 0;
+                    *(unsigned int *)((char *)gGfxEng + 0x16D400) = 0;
+                }
+                m_unk154 = 0;
+                if (*(unsigned int *)m_unk150 != 0) {
+                    pNode = m_unk158[0];
+                } else {
+                    pNode = 0;
+                }
+                while (pNode != 0) {
+                    void *pMesh = *(void **)((char *)pNode + 0x10);
+                    if (pMesh != 0) {
+                        void *pMat = (char *)pNode + 0x40;
+                        if (pLights != 0) {
+                            ComputeLights__13PLightManagerFP5PMeshP5PMat4bbbP21tagComputedLightCachef(pLights, pMesh, pMat, true, true, true, 0, 1.0f);
+                        }
+                        vu1SetWorldMatrix__FP5PMat4(pMat);
+                    }
+                    vu1BeginMesh__F13eBoxIntersect(m_unk0C);
+                    if (m_unk3E & 0x80) {
+                        nRet += Render__5PMeshFiPbb(pMesh, nScale, (bool *)((char *)pNode + 0xD4), 0);
+                    } else {
+                        nRet += Render__5PMeshFiPbb(pMesh, nScale, 0, 0);
+                    }
+                    if (nMode == 1) {
+                        DebugDrawBox__6PMNodeFi(pNode, nMode);
+                    }
+                    vu1EndMesh__Fv();
+                    m_unk154++;
+                    if (m_unk154 < *(unsigned int *)m_unk150) {
+                        pNode = m_unk158[m_unk154];
+                    } else {
+                        pNode = 0;
+                    }
+                }
+            }
+        }
+    }
+    return nRet;
+}
+
 // FUNCTION: 0x00197F70 SetAllAnimFlags__9PSkeletonFP8AnimData
 void PSkeleton::SetAllAnimFlags(AnimData *pAnim) {
     m_unk18 = 0;
@@ -359,6 +458,71 @@ int PSkeleton::Animate(float fTime, float fDelta, PMat4 *pMat, int nFlag, bool b
     }
     m_unk2C = *(float *)((unsigned char *)pChild + 0x2C);
     return nRet;
+}
+
+// DRAFT: 0x00198130 Load__9PSkeletonFP8PPakFileP6PArray16ePsx2FileVersion
+// note: draft v1, control flow decoded from asm; fncmp differences not yet inspected
+int PSkeleton::Load(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
+    unsigned char hdr16[0x10];
+    int n;
+    void *node;
+    if (pFile == 0) {
+        CdsAssert__FPciPc("PSkeleton.cpp", 0x4D, "poFile");
+    }
+    if (pArr == 0) {
+        CdsAssert__FPciPc("PSkeleton.cpp", 0x4E, "poTextureHandles");
+    }
+    if (Read__7PCDFileFPvUi(pFile, hdr16, 0x10) != 0x10) {
+        return 0;
+    }
+    if ((int)eVersion >= 0x10001) {
+        if (LoadFxTriggers__6PMNodeFP8PPakFile((void *)this, pFile) == 0) {
+            return 0;
+        }
+    }
+    n = 0;
+    if (Read__7PCDFileFPvUi(pFile, &n, 4) != 4) {
+        return 0;
+    }
+    if (n != 8) {
+        return 0;
+    }
+    if ((node = __nw__FUi(0x100)) != 0) {
+        *(void **)node = (void *)__vt__9PResource;
+        *((unsigned int *)node + 1) = 0;
+        *(void **)node = (void *)__vt__6PMNode;
+        __ct__6PArrayFv((char *)node + 0x14);
+        sceVu0UnitMatrix((char *)node + 0x40);
+        __ct__6PArrayFv((char *)node + 0xD8);
+        InitMembers__6PMNodeFv(node);
+    }
+    if (node == 0) {
+        CdsAssert__FPciPc("PSkeleton.cpp", 0x70, "pRootBone");
+    }
+    if (LoadBone__6PMNodeFP8PPakFileP6PArray16ePsx2FileVersion(node, pFile, pArr, eVersion) == 0) {
+        return 0;
+    }
+    Add__6PArrayFPv((void *)&m_unk14, node);
+    BuildDispList();
+    if (hdr16[0] != 0) {
+        if (LoadMesh__6PMNodeFP8PPakFileP6PArray16ePsx2FileVersion(node, pFile, pArr, eVersion) == 0) {
+            return 0;
+        }
+        ((unsigned char *)m_unk10)[0xE] = 0;
+        if (m_unk10 != 0) {
+            SetSharedBonePtr((PMesh *)m_unk10);
+        }
+    }
+    n = 0;
+    if (Read__7PCDFileFPvUi(pFile, &n, 4) != 4) {
+        return 0;
+    }
+    if (n != 7) {
+        return 0;
+    }
+    ((void (*)(void *, float, float, void *, int, bool))((*(void ***)node)[6]))(node, 0.0f, 0.0f, 0, 0, 0);
+    UpdateBoundBox();
+    return 1;
 }
 
 // FUNCTION: 0x001983D0 __dt__9PSkeletonFv

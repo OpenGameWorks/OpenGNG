@@ -2,13 +2,15 @@
 #define PSKELETON_H
 
 #include "types.h"
+#include "PMesh.h"
 
 class PArray;
-class PMesh;
 class PObjectDisplayList;
 class AnimData;
 class PMat4;
 class PMeshNodeAnimDataTable;
+class PLightManager;
+class PPakFile;
 
 class PSkeleton {
 public:
@@ -28,11 +30,14 @@ public:
     void SetAllAnimFlags(AnimData *pAnim);
     int Animate(float fTime, float fDelta, PMat4 *pMat, int nFlag, bool bFlag);
     void InitMembers();
+    int Render(PLightManager *pLights, int nFlag, int nMode);
+    int Load(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion);
 
     // 0x000 vtable pointer is implicit (virtual functions).
     unsigned int m_unk4;                // 0x004 cleared by InitMembers
-    char _pad008[0x10 - 0x8];
-    void *m_unk10;                      // 0x010 PMesh *, passed to PObjectDisplayList::Create
+    char _pad008[0x0C - 0x08];
+    int m_unk0C;                        // 0x00C eBoxIntersect, read by Render
+    void *m_unk10;                     // 0x010 PMesh *, passed to PObjectDisplayList::Create
     unsigned int m_unk14;               // 0x014 child count
     unsigned int m_unk18;               // 0x018 child index
     void **m_unk1C;                     // 0x01C child array
