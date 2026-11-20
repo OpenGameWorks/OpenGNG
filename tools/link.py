@@ -9,7 +9,8 @@ Relocations are resolved against the symbol addresses of the unit layout,
 which equal config/symbols.tsv because every unit keeps its original size.
 A relocation to an MW literal (`@N`) or a file-local static resolves to the
 target the original names at that offset, and only after the object's
-literal bytes are checked equal to the original's.
+literal bytes are checked equal to the original's. An undefined extern whose
+name equals the original's local target at that offset resolves to that target.
 
 Usage: link.py OUT.bin [OBJ:SRC ...]
 Writes OUT.bin and build/link.tsv (addr name status source detail).
@@ -97,10 +98,14 @@ def resolve(obj: Obj, code: bytearray, rels, addr: int, glob, byindex, orel, ima
             if mine is None or theirs is None or mine != theirs or (sym["st_size"] and sym["st_size"] != osize):
                 return f"local {sym.name} differs from original {oname}"
             s = oaddr
-        else:
-            if sym.name not in glob:
-                return f"undefined {sym.name}"
+        elif sym.name in glob:
             s = glob[sym.name]
+        elif sym["st_shndx"] == "SHN_UNDEF" and sym.name == oname:
+            # An extern for a file-local static the source does not define yet: the
+            # original relocation at this offset names the same symbol, so it proves the target.
+            s = oaddr
+        else:
+            return f"undefined {sym.name}"
         targets.append((off, typ, s))
     # REL addends live in place; a HI16 pairs with the next LO16 of the same target.
     for i, (off, typ, s) in enumerate(targets):
