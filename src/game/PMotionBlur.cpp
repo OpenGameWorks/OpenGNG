@@ -14,6 +14,24 @@ extern "C" void __dl__FPv(void *pMem);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
+extern char gGfxEng[1504384];
+extern u_long128 lit_00249D40;
+extern "C" void BeginFxRender__10PGfxEngineFv(void *pThis);
+extern "C" void BeginMesh__10PGfxEngineF13eBoxIntersect(void *pThis, int eBox);
+extern "C" void BeginVertexGlow__10PGfxEngineFv(void *pThis);
+extern "C" void EndVertexGlow__10PGfxEngineFv(void *pThis);
+extern "C" void EndFxRender__10PGfxEngineFv(void *pThis);
+extern "C" void EndMesh__12PDisplayListFv(void *pThis);
+extern "C" void FadeFullScreenMotionBlur__10PGfxEngineFci(void *pThis, char cTarget, int nFrames);
+extern "C" void SetAmbientLight__10PGfxEngineFPf(void *pThis, float *pVec);
+extern "C" void SetGlowSizeAndColor__10PGfxEngineFffPf(void *pThis, float fA, float fB, float *pColor);
+extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *pThis, int nIndex, float *pVec, bool bFlag, unsigned long nA, unsigned long nB);
+extern "C" void SetWorldMatrix__10PGfxEngineFP5PMat4(void *pThis, void *pMat);
+extern "C" void SetZBufferUpdate__10PGfxEngineFb10eGsContext(void *pThis, bool bEnable, int eCtx);
+extern "C" void UpdateLights__10PGfxEngineFv(void *pThis);
+extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float *pScale);
+extern "C" int RenderAllPolys__5PMeshFv(void *pThis);
+extern "C" int Render__5PMeshFiPbb(void *pThis, int nArg, bool *pbOut, bool bFlag);
 
 // Child-list view of PMNode fields m_unk14 (count), m_unk18 (index), m_unk1C (children).
 struct PMNodeChildList {
@@ -105,6 +123,83 @@ void PMotionBlur::Reset() {
     m_unk84 = 0;
     m_unkA0 = 0;
     m_unkA5 = 0;
+}
+
+// DRAFT: 0x001C8DB0 Render__11PMotionBlurFv
+// note: 228 words differ (size 0x3C4 vs 0x404): early-return epilogue 16 insns short, assert delay slot (nop vs lui a0), ramp arm order and register use, loop i/j in fp/s7/s6 not matched. Tried: fTime init above m_unkA4 test (238->228), if-form assert (same), m_unk8C operand order (same).
+void PMotionBlur::Render() {
+    PMotionBlurEntry *pEntry;
+    float fTime;
+    float fMid;
+    float vBlend[4];
+    float vScale[4];
+    int i;
+    int nAge;
+    int j;
+    int nCount;
+
+    fTime = 0.0f;
+    if (m_unkA4 == 0) {
+        FadeFullScreenMotionBlur__10PGfxEngineFci(gGfxEng, 0, 0);
+        return;
+    }
+    ((m_unk90.m_unk0) ? (void)0 : CdsAssert__FPciPc("PMotionBlur.cpp", 0x91, "moBlurNodes.GetCount()"));
+    pEntry = (m_unk90.m_unk0 != 0) ? (PMotionBlurEntry *)m_unk90.m_unk8[0] : 0;
+    if (pEntry != 0) {
+        fTime = ((PMNode *)pEntry->m_pSource)->GetFrameTime();
+    }
+    if (fTime < m_unk6C || !(fTime <= m_unk70)) {
+        FadeFullScreenMotionBlur__10PGfxEngineFci(gGfxEng, 0, 10);
+    } else if (m_unkA5 != 0) {
+        FadeFullScreenMotionBlur__10PGfxEngineFci(gGfxEng, m_unk68, 0);
+        m_unkA5 = 0;
+    }
+    if (fTime >= m_unk0 && fTime <= m_unk4) {
+        fMid = 0.5f * (m_unk0 + m_unk4);
+        if (fTime < fMid) {
+            fTime = m_unk8C * ((fTime - m_unk0) / (fMid - m_unk0));
+        } else {
+            fTime = m_unk8C - m_unk8C * ((fTime - fMid) / (m_unk4 - fMid));
+        }
+    }
+    for (i = 0; i < m_unk8; i++) {
+        nAge = m_unkA0 - ((int *)m_pad0C)[i];
+        if (nAge < 0) {
+            nAge += m_unk88;
+        }
+        if (m_unk60) {
+            *(u_long128 *)vScale = lit_00249D40;
+            vScale[3] = fTime / 128.0f;
+            sceVu0ScaleVector(vBlend, (float *)((char *)this + i * 16 + 0x20), vScale);
+            SetZBufferUpdate__10PGfxEngineFb10eGsContext(gGfxEng, 0, 0);
+            BeginFxRender__10PGfxEngineFv(gGfxEng);
+            SetGlowSizeAndColor__10PGfxEngineFffPf(gGfxEng, 0.6f, 0.6f, vBlend);
+            SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, m_unk64, vScale, 1, 0x48, 0x50000);
+        } else {
+            SetAmbientLight__10PGfxEngineFPf(gGfxEng, (float *)((char *)this + i * 16 + 0x20));
+            UpdateLights__10PGfxEngineFv(gGfxEng);
+        }
+        nCount = m_unk90.m_unk0;
+        for (j = 0; j < nCount; j++) {
+            pEntry = (j < m_unk90.m_unk0) ? (PMotionBlurEntry *)m_unk90.m_unk8[j] : 0;
+            if (pEntry != 0) {
+                SetWorldMatrix__10PGfxEngineFP5PMat4(gGfxEng, (char *)pEntry->m_pMatrices + (nAge << 6));
+                if (m_unk60) {
+                    BeginVertexGlow__10PGfxEngineFv(gGfxEng);
+                    RenderAllPolys__5PMeshFv((void *)pEntry->m_unk4);
+                    EndVertexGlow__10PGfxEngineFv(gGfxEng);
+                } else {
+                    BeginMesh__10PGfxEngineF13eBoxIntersect(gGfxEng, 2);
+                    Render__5PMeshFiPbb((void *)pEntry->m_unk4, (int)fTime, 0, 0);
+                    EndMesh__12PDisplayListFv(*(void **)(gGfxEng + 0x154C80));
+                }
+            }
+        }
+        if (m_unk60) {
+            SetZBufferUpdate__10PGfxEngineFb10eGsContext(gGfxEng, 1, 0);
+        }
+        EndFxRender__10PGfxEngineFv(gGfxEng);
+    }
 }
 
 // FUNCTION: 0x001C91C0 Update__11PMotionBlurFv

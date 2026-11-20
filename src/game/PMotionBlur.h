@@ -34,10 +34,20 @@ public:
     bool Create(PMNode *poSourceObj, PMNode *poBlurObj, int nCount);
     void CreateBlurNodes(PMNode *poSourceObj, PMNode *poBlurObj);
     void SetData(tagMotionBlurParams *pParams);
+    void Render();
 
-    char m_pad0[0x60];          // 0x00 cleared by Reset (memset 0x80)
+    float m_unk0;               // 0x00 ramp start, cleared by Reset (memset 0x80)
+    float m_unk4;               // 0x04 ramp end
+    int m_unk8;                 // 0x08
+    char m_pad0C[0x54];         // 0x0C
     unsigned char m_unk60;      // 0x60
-    char m_pad61[0x1F];         // 0x61
+    char m_pad61[3];            // 0x61
+    int m_unk64;                // 0x64 material index
+    signed char m_unk68;        // 0x68
+    char m_pad69[3];            // 0x69
+    float m_unk6C;              // 0x6C
+    float m_unk70;              // 0x70
+    char m_pad74[0x0C];         // 0x74
     PMNode *m_unk80;            // 0x80
     PMNode *m_unk84;            // 0x84
     int m_unk88;                // 0x88
