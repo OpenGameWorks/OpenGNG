@@ -26,6 +26,15 @@ extern "C" void sceVu0ApplyMatrix(float *dst, float *mat, float *src);
 extern "C" void sceVu0AddVector(float *dst, float *a, float *b);
 extern char mBGCollision__15EntityBaseClass[0x20];
 extern "C" float FastMath_Fabs__Ff(float f);
+extern "C" void ReleaseHeadCamera__6PlayerFv(void *pThis);
+extern "C" void UpdatePos__6CameraF5PVec35PVec3(void *pThis, float *pA, float *pB);
+extern "C" void CreateViewMatrix__6CameraFR5PMat45PVec35PVec3(void *pThis, float *pMatrix, float *pA, float *pB);
+extern "C" void SetViewMatrix__6CameraF5PMat4(void *pThis, float *pMatrix);
+extern "C" void InitFrustrum__6PWorldFP5PMat4PA4_f(void *pThis, float *pMatrix, float (*pArr)[4]);
+extern char gEng[105360];
+extern "C" void RotateX__5PMat4Ff(float *pMat, float angle);
+extern "C" void RotateY__5PMat4Ff(float *pMat, float angle);
+extern "C" void RotateZ__5PMat4Ff(float *pMat, float angle);
 
 class PVec3 {
 public:
@@ -193,6 +202,38 @@ int CameraFollow::CanDoHeadcam() {
     return 1;
 }
 
+// DRAFT: 0x00175190 CalcNewCameraViewpointPos__12CameraFollowFv
+// note: 65 differing lines (was 97); size 0x174 vs 0x188, frame 0x80 matches but save slots, loop head, and PVec3 copy order differ, plus sceVu0CopyVector reloc at 0x14C; tried: separate int off for loop offset, explicit off += 0x10
+int CameraFollow::CalcNewCameraViewpointPos() {
+    float sp40[4];
+    float sp50[4];
+    float sp60[4];
+    float sp70[4];
+    int i;
+    int off;
+
+    CalcNewCameraOffsets();
+    off = 0;
+    for (i = 0; i < 8; i++) {
+        sceVu0CopyVector(m_unk10, (float *)(_pad230 + off));
+        if (((BGCollision *)mBGCollision__15EntityBaseClass)->FindIntersect(*(PVec3 *)m_unk20, *(PVec3 *)m_unk10, 2, 0) == 0 &&
+            ((BGCollision *)mBGCollision__15EntityBaseClass)->FindIntersect(*(PVec3 *)m_unk40, *(PVec3 *)m_unk10, 2, 0) == 0) {
+            __mi__5PVec3FR5PVec3(sp60, m_unk40, m_unk20);
+            *(u_long128 *)sp40 = *(u_long128 *)sp60;
+            __mi__5PVec3FR5PVec3(sp70, m_unk10, m_unk20);
+            *(u_long128 *)sp50 = *(u_long128 *)sp70;
+            float dot = sp40[0] * sp50[0] + sp40[2] * sp50[2];
+            float angle = FastMath_Fabs__Ff(57.295776f * acosf(dot / (sqrtf(sp40[0] * sp40[0] + sp40[2] * sp40[2]) * sqrtf(sp50[0] * sp50[0] + sp50[2] * sp50[2]))));
+            if (angle < 180.0f && !(angle < 30.0f)) {
+                sceVu0CopyVector((float *)_pad2B0, m_unk10);
+                return 1;
+            }
+        }
+        off += 0x10;
+    }
+    return 0;
+}
+
 // DRAFT: 0x00175540 CamCollideSphere__12CameraFollowF5PVec3f
 // note: 33 words differ in all copy variants (direct, pointer-cast, pointer-local, 128-bit temp); original takes d's address via addiu v0,sp,0x50 then lq, and reuses a0=sp+0x40 for the store and GetLength arg
 void CameraFollow::CamCollideSphere(PVec3 arg0, float arg1) {
@@ -358,6 +399,11 @@ int CameraFollow::PlayerMovedSinceLastSwing() {
     return 1;
 }
 
+// FUNCTION: 0x001771D0 PlayerExitingLevel__12CameraFollowFv
+int CameraFollow::PlayerExitingLevel() {
+    return *(int *)((char *)m_unk114 + 0x20) == 2;
+}
+
 // FUNCTION: 0x00177820 StorePlayerPos__12CameraFollowFv
 void CameraFollow::StorePlayerPos() {
     int idx;
@@ -373,6 +419,110 @@ void CameraFollow::StorePlayerPos() {
         } while (idx >= 0);
         sceVu0CopyVector(m_unk61A0[0], m_unk180);
     }
+}
+
+// FUNCTION: 0x001778C0 SetFollowCameraParams__12CameraFollowFff
+void CameraFollow::SetFollowCameraParams(float arg0, float arg1) {
+    m_unk174 = arg1;
+    m_unk178 = arg0;
+    m_unk17C = 100.0f;
+}
+
+// DRAFT: 0x001778E0 SetHeadCam__12CameraFollowFb
+// note: 50 words differ; CanDoHeadcam test is an inverted branch (beqz to the return-0 tail in the original, bnez skip in ours); the _pad060 variant cut 103 to 50 words.
+int CameraFollow::SetHeadCam(bool arg0) {
+    if (arg0) {
+        if (m_unk118 == 1) {
+            return 1;
+        }
+        if (!CanDoHeadcam()) {
+            return 0;
+        }
+        sceVu0CopyVector(m_unkF0, m_unk20);
+        sceVu0CopyVector(m_unk100, m_unk40);
+        m_unk1F8 = 1;
+        m_unk11C = m_unk118;
+        m_unk118 = 1;
+        return 1;
+    }
+    if (m_unk118 != 1) {
+        return 1;
+    }
+    sceVu0CopyVector(m_unk20, m_unkF0);
+    sceVu0CopyVector(m_unk40, m_unk100);
+    m_unk11C = m_unk118;
+    m_unk118 = 0;
+    ReleaseHeadCamera__6PlayerFv(m_unk114);
+
+    float tmp20[4];
+    float tmp30[4];
+    float tmp40[4];
+    float tmp50[4];
+    float tmpMat[4][4];
+
+    tmp20[0] = m_unk20[0];
+    tmp20[1] = m_unk20[1];
+    tmp20[2] = m_unk20[2];
+    tmp20[3] = m_unk20[3];
+    tmp30[0] = m_unk40[0];
+    tmp30[1] = m_unk40[1];
+    tmp30[2] = m_unk40[2];
+    tmp30[3] = m_unk40[3];
+    UpdatePos__6CameraF5PVec35PVec3(m_pCamera, tmp20, tmp30);
+
+    tmp40[0] = m_unk20[0];
+    tmp40[1] = m_unk20[1];
+    tmp40[2] = m_unk20[2];
+    tmp40[3] = m_unk20[3];
+    tmp50[0] = m_unk40[0];
+    tmp50[1] = m_unk40[1];
+    tmp50[2] = m_unk40[2];
+    tmp50[3] = m_unk40[3];
+    CreateViewMatrix__6CameraFR5PMat45PVec35PVec3(m_pCamera, (float *)_pad060, tmp40, tmp50);
+    sceVu0CopyMatrix(tmpMat, (float (*)[4])_pad060);
+    SetViewMatrix__6CameraF5PMat4(m_pCamera, (float *)tmpMat);
+    InitFrustrum__6PWorldFP5PMat4PA4_f(gEng, (float *)_pad060, (float (*)[4])m_unk20);
+    return 1;
+}
+
+// DRAFT: 0x00177A80 Init__12CameraFollowFb
+// note: 95 words; u_long128 save placement, register assignment, gEng lui/addiu and frame size 0x180 vs 0x17c differ
+void CameraFollow::Init(bool arg0) {
+    u_long128 tmp20[1];
+    u_long128 tmp40[1];
+    if (arg0) {
+        tmp20[0] = *(u_long128 *)m_unk20;
+        tmp40[0] = *(u_long128 *)m_unk40;
+    }
+    Reset();
+    char *pMgr = gEng + 0x137E0;
+    if (pMgr == 0) {
+        CdsAssert__FPciPc("CameraFollow.cpp", 0x8D, "pEntityMgr");
+    }
+    m_unk114 = *(void **)(pMgr + 0x505C);
+    if (m_unk114 == 0) {
+        CdsAssert__FPciPc("CameraFollow.cpp", 0x8F, "m_pPlayer");
+    }
+    char *pSub = *(char **)((char *)m_unk114 + 0x3C);
+    m_unk180 = (float *)(pSub ? pSub + 0x80 : (char *)m_unk114 + 0x190);
+    pSub = *(char **)((char *)m_unk114 + 0x3C);
+    m_unk184 = (float *)(pSub ? pSub + 0x90 : (char *)m_unk114 + 0x1A0);
+    sceVu0UnitMatrix(&m_unkA0);
+    if (m_unk184[0] != 0.0f) {
+        RotateX__5PMat4Ff(&m_unkA0, m_unk184[0]);
+    }
+    if (m_unk184[1] != 0.0f) {
+        RotateY__5PMat4Ff(&m_unkA0, m_unk184[1]);
+    }
+    if (m_unk184[2] != 0.0f) {
+        RotateZ__5PMat4Ff(&m_unkA0, m_unk184[2]);
+    }
+    ForceReset(true);
+    if (arg0) {
+        *(u_long128 *)m_unk20 = tmp20[0];
+        *(u_long128 *)m_unk40 = tmp40[0];
+    }
+    ResetTrackingVars();
 }
 
 // FUNCTION: 0x00177C00 __dt__12CameraFollowFv

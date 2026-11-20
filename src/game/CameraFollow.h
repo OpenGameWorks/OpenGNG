@@ -44,6 +44,7 @@ public:
     void SetSourceAndTarget(PVec3 arg0, PVec3 arg1);
     void Init(bool arg0);
     void ForceReset(bool arg0);
+    void Reset();
     int MoveCameraToNewViewpoint();
     void KeepUpWithPlayer();
     void ProcessRightAnalogue();
@@ -51,6 +52,8 @@ public:
     int PlayerIsIdle();
     void FollowPlayer();
     int CanDoHeadcam();
+    void CalcNewCameraOffsets();
+    int CalcNewCameraViewpointPos();
     void IdleFreezeCheck();
     void ResetTrackingVars();
     void StorePlayerPos();
@@ -60,6 +63,9 @@ public:
     float GetAngleBetweenCamAndPlayer(float &arg0);
     int ProcessCamBox();
     int PlayerMovedSinceLastSwing();
+    int PlayerExitingLevel();
+    void SetFollowCameraParams(float arg0, float arg1);
+    int SetHeadCam(bool arg0);
 
     Camera *m_pCamera;      // 0x000
     char _pad004[0x10 - 0x004];
@@ -67,7 +73,8 @@ public:
     float m_unk20[4];       // 0x020
     char _pad030[0x40 - 0x30];
     float m_unk40[4];       // 0x040
-    char _pad050[0x0A0 - 0x050];
+    char _pad050[0x060 - 0x050];
+    char _pad060[0x0A0 - 0x060];   // 0x60: PMat4 (64 bytes)
     float m_unkA0;          // 0x0A0
     char _padA4[0x0A8 - 0x0A4];
     float m_unkA8;          // 0x0A8
@@ -80,7 +87,13 @@ public:
     float m_unk0E4;         // 0x0E4
     int m_unk0E8;           // 0x0E8
     float m_unk0EC;         // 0x0EC
-    char _pad0F0[0x124 - 0x0F0];
+    float m_unkF0[4];       // 0x0F0
+    float m_unk100[4];      // 0x100
+    char _pad110[0x114 - 0x110];
+    void *m_unk114;         // 0x114
+    int m_unk118;           // 0x118
+    int m_unk11C;           // 0x11C
+    char _pad120[0x124 - 0x120];
     float m_unk124;         // 0x124
     char _pad128[0x140 - 0x128];
     float m_unk140;         // 0x140
@@ -91,10 +104,10 @@ public:
     float m_unk16C;         // 0x16C
     float m_unk170;         // 0x170
     float m_unk174;         // 0x174
-    char _pad178[0x17C - 0x178];
+    float m_unk178;         // 0x178
     float m_unk17C;         // 0x17C
     float *m_unk180;        // 0x180
-    int m_unk184;           // 0x184
+    float *m_unk184;        // 0x184
     char _pad188[0x1A0 - 0x188];
     float m_unk1A0;         // 0x1A0
     char _pad1A4[0x1B8 - 0x1A4];
@@ -103,7 +116,9 @@ public:
     char _pad1BA[0x1C0 - 0x1BA];
     float m_unk1C0[4];      // 0x1C0
     float m_unk1D0[4];      // 0x1D0
-    char _pad1E0[0x210 - 0x1E0];
+    char _pad1E0[0x1F8 - 0x1E0];
+    signed char m_unk1F8;   // 0x1F8
+    char _pad1F9[0x210 - 0x1F9];
     int m_unk210;           // 0x210
     float m_unk214;         // 0x214
     char _pad218[0x224 - 0x218];
