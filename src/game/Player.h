@@ -5,6 +5,7 @@
 
 class Shield;
 class PlingEffect;
+class FontNode;
 
 class Player {
 public:
@@ -34,9 +35,14 @@ public:
     int CancelAttack(unsigned int arg0);
     void CancelMove();
     void GrimSlash2Move();
+    void GrimAirSlashMove();
+    void GrimIdleMove();
+    void ComboTarget(float arg0, float arg1, bool arg2);
     void HammerDSlashMove();
+    void HammerSliceMove();
     void ResetPling();
     void ResetShield();
+    void SetFlyingShield(Shield *arg0);
     void SetShield(bool arg0);
     void SetShockwave(int arg0);
     void UpdatePlayerFx();
@@ -71,7 +77,9 @@ public:
     char _pad024[0x38 - 0x24];
     int *m_unk38;           // 0x038 pointer, m_unk38[1] is written by AirSliceMove, m_unk38[0x42] (0x108) is read by Ready2Clear
     float *m_unk3C;         // 0x03C pointer, float at 0x34 is read by GrimSlash2Move, OutputDebug
-    char _pad040[0x15C - 0x40];
+    char _pad040[0x103 - 0x40];
+    unsigned char m_unk103; // 0x103 set to 0xFE by ForceDie
+    char _pad104[0x15C - 0x104];
     unsigned short m_unk15C; // 0x15C read by OutputDebug
     unsigned short m_unk15E; // 0x15E read by OutputDebug
     char _pad160[0x1B0 - 0x160];
@@ -83,7 +91,8 @@ public:
     float m_unk1C4;         // 0x1C4 set from Physics float 0x11C by CatchIdleMove
     char _pad1C8[0x1D0 - 0x1C8];
     int m_unk1D0;           // 0x1D0
-    char _pad1D4[0x1DC - 0x1D4];
+    char _pad1D4[0x1D8 - 0x1D4];
+    int m_unk1D8;           // 0x1D8 cleared by ForceDie
     int m_unk1DC;           // 0x1DC index into MaximoArmor, read by BackToMaximo
     char _pad1E0[0x1FC - 0x1E0];
     int m_unk1FC;           // 0x1FC compared with 2 by MightyBlowCheck
@@ -105,7 +114,8 @@ public:
     char _pad258[0x260 - 0x258];
     int m_unk260;           // 0x260
     int m_unk264;           // 0x264
-    char _pad268[0x26C - 0x268];
+    signed char m_unk268;   // 0x268 cleared by GrimIdleMove
+    char _pad269[0x26C - 0x269];
     signed char m_unk26C;   // 0x26C byte set by SetHeadCamera
     char _pad26D[0x284 - 0x26D];
     int m_unk284;           // 0x284 object address with a vtable, Slot04 called by RenderCutScene; +0x40 is a PMat4 read by UpdatePlayerFx
@@ -116,7 +126,9 @@ public:
     int m_unk2A8;           // 0x2A8 effect id stored by Over3Move from CreateOneshot
     char _pad2AC[0x2F8 - 0x2AC];
     int m_unk2F8;           // 0x2F8 cleared by InitAttachableJoints
-    char _pad2FC[0x324 - 0x2FC];
+    char _pad2FC[0x31C - 0x2FC];
+    FontNode *m_unk31C;     // 0x31C font node, passed to FontManager::RemoveText and cleared by ForceDie
+    char _pad320[0x324 - 0x320];
     int m_unk324;           // 0x324
     int m_unk328;           // 0x328 apparition id passed to GetPtrToApparition by OpenChestMove
     PlingEffect *m_unk32C;  // 0x32C pling effect object, Slot00(1) called by ResetPling

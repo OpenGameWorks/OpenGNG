@@ -17,6 +17,11 @@ public:
     void PlaySound(unsigned int arg0);
 };
 extern signed char MaximoArmor[8];
+class FontManager {
+public:
+    void RemoveText(FontNode *pNode);
+};
+extern float GRIM_G;
 class CutSceneObject {
 public:
     virtual void Slot00();
@@ -324,6 +329,21 @@ void Player::ResetShield() {
     }
 }
 
+// note: 2 words differ: SetShield argument is lowered to movn/sltu instead of the original's daddu zero-preload and movz a1,v0,s0. Tried arg0 ? 0 : 1 (33 words), (arg0 == 0) ? true : false (movn, no gain), and the empty-then layout (33 words).
+// DRAFT: 0x0015C0E0 SetFlyingShield__6PlayerFP6Shield
+void Player::SetFlyingShield(Shield *arg0) {
+    SetShield((arg0 == 0) ? 1 : 0);
+    if (arg0 == 0 && m_unk2A4 != 0) {
+        ((EntityBaseClass *)this)->PlaySound(0x1C);
+        if (m_unk260 != 0x22 && m_unk260 != 0) {
+            m_unk2A4 = arg0;
+            return;
+        }
+        SetAction(0x23);
+    }
+    m_unk2A4 = arg0;
+}
+
 // note: 2 words differ: the zero-set for the return-0 arm lands in the bne delay slot and the nop moves to the b delay slot. Tried ret=0 and return 0 in the != 1 arm (both 2 lines), and the == 1 layout (about 20 lines).
 // DRAFT: 0x0015C490 IsMidasActive__6PlayerFv
 void *Player::IsMidasActive() {
@@ -367,6 +387,14 @@ void Player::Over3Move() {
     MultipleAttack(&Over3Attacks[0]);
 }
 
+// FUNCTION: 0x0015D9F0 HammerSliceMove__6PlayerFv
+void Player::HammerSliceMove() {
+    if (((int)m_unk3C[13] < 0x32 || CancelAttack(0x30) == 0) && m_unk250 == 0 && (int)m_unk3C[13] >= 0x1C) {
+        m_unk250 = 1;
+        SetShockwave(10);
+    }
+}
+
 // FUNCTION: 0x0015DA80 HammerDSlashMove__6PlayerFv
 void Player::HammerDSlashMove() {
     if (m_unk250 == 0 && (int)m_unk3C[13] > 0x14) {
@@ -407,6 +435,42 @@ void Player::GrimSlash2Move() {
     if ((int)m_unk3C[13] >= 0x32) {
         CancelAttack(0x30);
     }
+}
+
+// DRAFT: 0x0015EAC0 GrimAirSlashMove__6PlayerFv
+// note: 6 words differ: first temp<7 compare uses v1 not at, and ComboTarget float literal loads are in reverse order (f12 before f13); early-return form and nested form tried, same count.
+void Player::GrimAirSlashMove() {
+    int temp = (int)m_unk3C[13];
+    if (temp >= 7) {
+        if (m_unk1B2 & 0x8000) {
+            m_unk250 = 1;
+        }
+        if (temp >= 0xC && m_unk250 != 0) {
+            ComboTarget(-1.0f, 100.0f, true);
+            SetAction(0x26);
+        }
+    }
+}
+
+// FUNCTION: 0x0015EB60 GrimIdleMove__6PlayerFv
+void Player::GrimIdleMove() {
+    if (m_unk1BC >= 0x32) {
+        SetAction(1);
+        return;
+    }
+    int *p = m_unk38;
+    float f = ((float *)p)[0x3E] - 0.5f;
+    float v = 0.0f;
+    if (f < 0.0f) {
+        v = GRIM_G;
+    } else if (!(f <= 1.5f)) {
+        v = -GRIM_G;
+    } else {
+        m_unk268 = 0;
+    }
+    ((float *)p)[1] = v;
+    p[0] = 0;
+    p[2] = 0;
 }
 
 // note: 2 words differ: the move of this into a0 lands in the beq delay slot instead of the jal delay slot. Tried nested ifs, early return, reordered operands and swapped != form (3 lines).
@@ -479,6 +543,21 @@ int Player::GetGroundAction() {
         r2 = 1;
     }
     return r2;
+}
+
+// FUNCTION: 0x00162E50 ForceDie__6PlayerFi
+void Player::ForceDie(int arg0) {
+    if (m_unk229 == 4) {
+        SetMaximo(MaximoArmor[m_unk1DC], false);
+    }
+    SetAction(arg0);
+    m_unk1D0 &= -2;
+    m_unk103 = 0xFE;
+    m_unk1D8 = 0;
+    if (m_unk31C != 0) {
+        ((FontManager *)((char *)&gInterface + 0x1790))->RemoveText(m_unk31C);
+        m_unk31C = 0;
+    }
 }
 
 // FUNCTION: 0x00163930 BackToMaximo__6PlayerFv
