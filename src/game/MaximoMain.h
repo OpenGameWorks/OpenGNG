@@ -7,21 +7,18 @@ class PMNode;
 class PArray;
 struct LevelFiles;
 
-struct CutSlot {
-    int m_flag;             // 0x00, nonzero when the slot holds a cut scene
-    char _pad004[0x2140 - 4];
-};
-
 class MaximoMain {
 public:
     MaximoMain();
     void InitGameTimes();
+    void Controls();
     void UpdateGameTimes();
     void LoadTitleMesh();
     int LoadGame();
     void InitPlayDemo(int arg0);
     void InitStaticDemo();
     void DeletePressStart();
+    void PressStart(int arg0);
     void QuitGame();
     int MapscreenOpenBonusExists();
     int PlayMarkerSound(int arg0);
@@ -43,7 +40,11 @@ public:
     int m_unkD4;            // 0x0D4
     int m_unkD8;            // 0x0D8, 0x42180000 (38.0f) after InitStaticDemo
     char _pad0DC[0x260 - 0xDC];
-    CutSlot m_cuts[4];      // 0x00260, cut scene slots; 0x08724 (cut scene index) lies inside m_cuts[3]
+    char _pad00260[0x8720 - 0x260]; // 0x00260, cut scene slots of CutSlot size 0x2140 (four slots)
+    signed char m_unk8720;  // 0x08720, set to 1 by InitCutScene
+    char _pad08721[3];
+    int m_unk8724;          // 0x08724, cut scene index, checked against 4 by InitCutScene
+    char _pad08728[0x8760 - 0x8728];
     char _pad08760[0x1883C - 0x8760];
     void *m_unk1883C;       // 0x1883C, EntityBaseClass pointer driven by SetLevelClear
     char _pad18840[0x19784 - 0x18840];
@@ -65,7 +66,8 @@ public:
     PMNode *m_unk19AC8;     // 0x19AC8, title mesh root loaded by LoadTitleMesh
     PMNode *m_unk19ACC;     // 0x19ACC, title animation node found by LoadTitleMesh
     PMNode *m_unk19AD0;     // 0x19AD0, copyright node found by LoadTitleMesh
-    char _pad19AD4[0x19B44 - 0x19AD4];
+    int m_unk19AD4;         // 0x19AD4, press-start state counter (0 to 30 pulse)
+    char _pad19AD8[0x19B44 - 0x19AD8];
     int m_unk19B44;         // 0x19B44, cleared by the constructor
     int m_unk19B48;         // 0x19B48, cleared by the constructor
     int m_unk19B4C;         // 0x19B4C, cleared by the constructor

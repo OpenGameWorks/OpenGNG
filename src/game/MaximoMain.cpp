@@ -6,6 +6,7 @@ class FontNode;
 class FontManager {
 public:
     void RemoveText(FontNode *pNode);
+    void RemoveText(unsigned short nId);
     void *DisplayString(int nText, int x, int y, bool bFlag);
 };
 extern unsigned char gInterface[2656];
@@ -13,11 +14,16 @@ extern unsigned char gMC[16320];
 extern unsigned char LevelTable[2688];
 extern unsigned char gSound[98496];
 extern "C" void FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(void *, float, float, bool, int);
+extern "C" void AddMeshLayer__9InterfaceFP6PMNode(void *, PMNode *);
+extern "C" void DeleteMeshLayer__9InterfaceFP6PMNode(void *, PMNode *);
+extern "C" PMNode *GetResource__16PResourceManagerFUib(void *, unsigned int, bool);
 extern "C" void FadeOutAllMusic__6PSoundFUi(void *, unsigned int);
 extern "C" int PlaySoundUbiquitous__6PSoundFUi(void *, unsigned int);
 extern "C" void UpdateStatus__9InterfaceFUib(void *, unsigned int, bool);
 extern "C" void SetState__15EntityBaseClassFi(void *, int);
 extern "C" void __dl__FPv(void *);
+extern "C" int Find__6PArrayFPv(void *, void *);
+extern "C" void *DisplayString__11FontManagerFPcffi9FontColor9FontAlign(void *, char *, float, float, int, int, int);
 extern unsigned char __vt__9PResource[12];
 extern "C" int GetDialogStreamReadiness__6PSoundFUi(void *, unsigned int);
 extern "C" void PrepDialog__6PSoundFUi(void *, unsigned int);
@@ -60,6 +66,10 @@ extern "C" void InitMembers__9PMeshNodeFv(void *pThis);
 extern "C" void CopyMNode__6PMNodeFR6PMNodeb(void *pThis, void *pSrc, bool bFlag);
 extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
 extern "C" void Allocate__6PArrayFUi(void *pThis, unsigned int nCount);
+extern "C" void ResetAnimations__15PCutScenePlayerFv(void *pThis);
+extern "C" void SetBgNodesOpacity__15PCutScenePlayerFP6PArrayf(void *pThis, void *pArray, float fOpacity);
+extern "C" void CutSceneEnter__6PSoundFPUiUiUiUi(void *pThis, unsigned int *pOut, unsigned int nA, unsigned int nB, unsigned int nC);
+extern char gGfxEng[1504384];
 struct PMChildList {
     unsigned int count;     // child count
     unsigned int m_unk4;
@@ -119,6 +129,52 @@ void MaximoMain::InitGameTimes() {
     m_unk19B78 = 0;
     m_unk19B7C = 0;
     m_unk19B80 = 0;
+}
+
+// DRAFT: 0x001357C0 Controls__10MaximoMainFv
+// note: 4 words differ: case 3 FadeScreen(255.0f, 17.0f) loads 17.0f into f13 before 255.0f into f12 in the original; tried reordering nState++ (11 words), local float for 17.0f (4 words), literal form kept.
+void MaximoMain::Controls() {
+    int nState = 0;
+    PMNode *pNode = GetResource__16PResourceManagerFUib((char *)this + 0x188A4, 0x8100003DU, false);
+    if (pNode == 0) {
+        CdsAssert__FPciPc("MaximoMain.cpp", 0x1734, "pMeshNode");
+    }
+    AddMeshLayer__9InterfaceFP6PMNode(gInterface, pNode);
+    ((FontManager *)(gInterface + 0x80))->DisplayString(0x25C, 0, 0, false);
+    for (;;) {
+        int nPad = *(unsigned short *)(gPad + 0x110);
+        InitRenderFrame__9MaxEngineFbUi(this, false, 0);
+        switch (nState) {
+        case 0:
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface,0.0f, 17.0f, true, 0);
+            nState++;
+            break;
+        case 1:
+            if (gInterface[0x425] == 0) {
+                nState++;
+            }
+            break;
+        case 2:
+            if (nPad & 0x1000) {
+                PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+                nState++;
+            }
+            break;
+        case 3:
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface,255.0f, 17.0f, true, 0);
+            nState++;
+            break;
+        case 4:
+            if (gInterface[0x425] == 0) {
+                ((FontManager *)(gInterface + 0x80))->RemoveText((unsigned short)6);
+                DeleteMeshLayer__9InterfaceFP6PMNode(gInterface, pNode);
+                return;
+            }
+            break;
+        }
+        pNode->Slot4(0, 0.0f, 1.0f, 0, 0);
+        Render__9InterfaceFi(gInterface, 0);
+    }
 }
 
 // DRAFT: 0x00137430 LoadGame__10MaximoMainFv
@@ -215,6 +271,38 @@ void MaximoMain::DeletePressStart() {
         ((FontManager *)(gInterface + 0x80))->RemoveText((FontNode *)m_unk19AC4);
         m_unk19AC4 = 0;
     }
+}
+
+// DRAFT: 0x00137EF0 PressStart__10MaximoMainFi
+// note: 58 words differ: state-machine register picks (at vs v1 for the nMode test, a0 vs a2 for the state load, f0/f1 order in the ramps), nested branch shape; kept pFont local, text load via pFont+0x100, nMode before nFlag (129 -> 101 -> 67 -> 58); ternary assert and state-first reorder (62) tried
+void MaximoMain::PressStart(int arg0) {
+    unsigned char *pFont = gInterface + 0x80;
+    unsigned int nMode = *(unsigned int *)pFont;
+    int nFlag = *(int *)(gInterface + 0x1B8);
+    if (nMode >= 2 && nFlag == 0) return;
+    if (m_unk19AC4 != 0) {
+        if (Find__6PArrayFPv(pFont, m_unk19AC4) < 0) m_unk19AC4 = 0;
+    }
+    if (m_unk19AC4 == 0) {
+        if (nMode != 0 && nFlag == 0) return;
+        m_unk19AD4 = 0;
+        char *pText = **(char ***)(pFont + 0x100);
+        m_unk19AC4 = DisplayString__11FontManagerFPcffi9FontColor9FontAlign(pFont, pText, 0.0f, (float)arg0, 0, 4, 1);
+        if (m_unk19AC4 == 0) CdsAssert__FPciPc("MaximoMain.cpp", 0x122E, "mpPress");
+        *(int *)((char *)m_unk19AC4 + 8) = 0;
+    }
+    float fAlpha = *(float *)((char *)m_unk19AC4 + 8);
+    int nState = m_unk19AD4;
+    if (nState == 30) {
+        fAlpha = fAlpha - 0.1f;
+        if (fAlpha <= 0.0f) { fAlpha = 0.0f; m_unk19AD4 = 0; }
+    } else if (nState == 0) {
+        fAlpha = fAlpha + 0.1f;
+        if (!(fAlpha < 1.0f)) { fAlpha = 1.0f; m_unk19AD4 = nState + 1; }
+    } else {
+        m_unk19AD4 = nState + 1;
+    }
+    *(float *)((char *)m_unk19AC4 + 8) = fAlpha;
 }
 
 // DRAFT: 0x00139AB0 SetMarker__10MaximoMainFP6PMNodeiP6PMNode
@@ -451,6 +539,43 @@ int MaximoMain::InitCutSceneIfDialogReady() {
         return 0;
     }
     return 1;
+}
+
+// DRAFT: 0x0013D990 InitCutScene__10MaximoMainFv
+// note: 100 words differ; the original reads m_unk8724 through (char *)this+0x8724 into v1 and reloads it for the index test, and its clamp branches differ.
+void MaximoMain::InitCutScene() {
+    char *pLevel = (char *)LevelTable + (m_unk19A78 << 7);
+    int nIndex;
+    char *pEntry;
+    char *pSlot;
+    int nW;
+    int nH;
+
+    m_unk19A70 = 5;
+    nIndex = m_unk8724;
+    pEntry = pLevel + nIndex * 16 + 0x14;
+    if (nIndex < 4) {
+        m_unk8724 = nIndex;
+        pSlot = (char *)this + nIndex * 0x2140 + 0x220;
+        ResetAnimations__15PCutScenePlayerFv(pSlot);
+        m_unk8720 = 1;
+        SetBgNodesOpacity__15PCutScenePlayerFP6PArrayf(pSlot, pSlot + 0x60, 0.0f);
+        SetBgNodesOpacity__15PCutScenePlayerFP6PArrayf(pSlot, pSlot + 0x90, 1.0f);
+    }
+    *(short *)(gInterface + 0x414) = 30;
+    *(int *)(gInterface + 0x1C0) &= ~0xE;
+    CutSceneEnter__6PSoundFPUiUiUiUi(gSound, (unsigned int *)((char *)this + 0x19B50), m_unk19AA4,
+                                     *(unsigned int *)(pEntry + 8), (unsigned int)(int)(signed char)pEntry[0xD]);
+    nW = *(short *)(pLevel + 0x6A);
+    if (nW < 0x97) {
+        nW = 0x96;
+    }
+    nH = *(short *)(pLevel + 0x6C);
+    if (nH < 0x8D) {
+        nH = 0x8C;
+    }
+    *(float *)(gGfxEng + 0x6A0) = (float)nW * (float)nW;
+    *(float *)(gGfxEng + 0x6A4) = (float)nH * (float)nH;
 }
 
 // DRAFT: 0x0013DB50 StartCutScene__10MaximoMainFi
