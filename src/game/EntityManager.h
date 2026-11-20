@@ -16,6 +16,7 @@ struct BGAnimNode {
 
 class EntityManager {
 public:
+    EntityManager();
     ~EntityManager();
 
     enum ItemCounterType {
@@ -77,6 +78,7 @@ public:
     void Process();
     void ProcessTrigger();
     void RestoreHolyGround();
+    void SetHolyGround(float (*arg0)[4], float arg1, bool arg2);
     void ProcessIcons();
     void Init();
 
@@ -89,7 +91,10 @@ public:
     unsigned int m_unk5054;     // 0x5054 bound for dependency flag indices
     int m_unk5058;              // 0x5058 physics pass argument, not yet named
     void *m_unk505C;            // 0x505C player entity, stored by Spawn for arg0 == 3
-    char _pad5060[0x5078 - 0x5060];
+    char _pad5060[0xC];         // 0x5060 16-byte copy from the SetHolyGround argument
+    float m_unk506C;            // 0x506C holy ground value, stored by SetHolyGround
+    unsigned char m_unk5070;    // 0x5070 holy ground flag, stored by SetHolyGround
+    char _pad5071[0x5078 - 0x5071];
     unsigned int m_unk5078;     // 0x5078 PArray count of apparitions put to sleep
     int m_unk507C;              // 0x507C PArray index
     void **m_unk5080;           // 0x5080 PArray entries, removed by Destroy
@@ -111,7 +116,11 @@ public:
     int m_unk519C;             // 0x519C dependency count (max 0x40)
     DependencyEntry m_unk51A0[0x40];    // 0x51A0 dependency list
     char _pad53A0[0x53A1 - 0x53A0];
-    char m_unk53A1[0x5B24 - 0x53A1];    // 0x53A1 per-entry flag bytes, indexed by value*4
+    char m_unk53A1[0x59A0 - 0x53A1];    // 0x53A1 per-entry flag bytes, indexed by value*4
+    char m_unk59A0[0x5B20 - 0x59A0];    // 0x59A0 packed copy of the flag bytes, one per entry
+    unsigned char m_unk5B20;    // 0x5B20 player byte copied from player+0x1F0
+    unsigned char m_unk5B21;    // 0x5B21 player byte copied from player+0x1F4
+    char _pad5B22[0x5B24 - 0x5B22];
     TallyEntry m_unk5B24[5];    // 0x5B24 tally counters, indexed by type (0..4)
     char _pad5B4C[0x5B50 - 0x5B4C];
     int m_unk5B50;              // 0x5B50 PArray count of sword BG animations

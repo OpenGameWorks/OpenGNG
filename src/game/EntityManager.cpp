@@ -41,8 +41,10 @@ public:
     void RecurseApplyAnimFlagsByID(unsigned int arg0, bool arg1, int arg2);
     void BuildAnimList(PArray *arg0, unsigned int arg1);
     void ProcessFxTriggers(float arg0, PMat4 *arg1, bool arg2, bool arg3);
+    float GetFrameTime();
 
-    char _pad004[0x28 - 0x4];
+    char _pad004[0x24 - 0x4];
+    int *m_unk24;               // 0x24 record whose [1] is the type id tested by SetHolyGround
     float (*m_unk28)[2][4];     // 0x28
     float m_unk2C;              // 0x2C
     char _pad030[0x3C - 0x30];
@@ -55,6 +57,25 @@ public:
 };
 
 extern "C" void DeleteMeshLayer__9InterfaceFP6PMNode(void *pThis, PMNode *pNode);
+extern "C" void Unload__15PCutScenePlayerFb(void *pThis, bool bFlag);
+extern "C" void __dl__FPv(void *pMem);
+extern "C" void __ct__19EntityAttackManagerFv(void *pThis);
+extern "C" void __ct__15WaypointManagerFv(void *pThis);
+extern "C" void __ct__6PArrayFv(void *pThis);
+extern "C" void __ct__10PHashTableFv(void *pThis);
+extern "C" void __ct__16PResourceManagerFv(void *pThis);
+extern "C" void __ct__5PListFv(void *pThis);
+extern "C" int Create__10PHashTableFUi(void *pThis, unsigned int nSize);
+extern "C" void *__nw__FUi(unsigned int nSize);
+extern "C" void *__ct__14OverlayManagerFUi(void *pThis, unsigned int nFlag);
+extern "C" void InitLoadSystem__15EntityBaseClassFv();
+struct TriggerNode {
+    char _pad00[4];
+    unsigned short m_unk04;     // 0x04 flag index, bound by m_unk5054
+    short m_unk06;              // 0x06 cutscene key, negative when unused
+    char _pad08;
+    signed char m_unk09;        // 0x09 active flag
+};
 extern unsigned char gInterface[2656];
 
 class PWorld {
@@ -757,6 +778,66 @@ void EntityManager::ProcessIcons() {
     }
 }
 
+// DRAFT: 0x00147500 SetHolyGround__13EntityManagerFPA4_ffb
+// note: DIFF 102; missing loop-tail nop near 0x548 not forced by any source form. Tried do-while, while (n--), for with dst++ first, unsigned counter (all 102).
+void EntityManager::SetHolyGround(float (*arg0)[4], float arg1, bool arg2) {
+    int i;
+    TriggerNode *pTrigger;
+    PMNode *pNode;
+    int key;
+    int flag;
+
+    m_unk5070 = arg2;
+    *(u_long128 *)_pad5060 = *(u_long128 *)arg0;
+    m_unk506C = arg1;
+    ValidateDependencyList();
+    {
+        char *dst = m_unk59A0;
+        char *src = m_unk53A1;
+        int n;
+        for (n = 0x180; n != 0; n--) {
+            *dst = *src;
+            src += 4;
+            dst++;
+        }
+    }
+    m_unk5B20 = ((signed char *)m_unk505C)[0x1F0];
+    m_unk5B21 = ((signed char *)m_unk505C)[0x1F4];
+    m_unk5B64 = 0;
+    pTrigger = m_unk5B60 ? (TriggerNode *)m_unk5B68[0] : 0;
+    while (pTrigger != 0) {
+        if (pTrigger->m_unk09 != 0) {
+            key = pTrigger->m_unk06;
+            flag = 0;
+            if (key >= 0 && (gEng[key * 0x2140 + 0x235D] & 0x4)) {
+                Unload__15PCutScenePlayerFb(gEng + key * 0x2140 + 0x220, false);
+                flag = 1;
+            } else if (pTrigger->m_unk04 < m_unk5054 && m_unk53A1[pTrigger->m_unk04 * 4] < -1) {
+                flag = 1;
+            }
+            if (flag) {
+                ((PArray *)&m_unk5B60)->RemoveCurrent();
+                __dl__FPv(pTrigger);
+            }
+        }
+        m_unk5B64++;
+        pTrigger = (m_unk5B64 < m_unk5B60) ? (TriggerNode *)m_unk5B68[m_unk5B64] : 0;
+    }
+    m_unk5B74 = 0;
+    pNode = m_unk5B70 ? (PMNode *)m_unk5B78[0] : 0;
+    while (pNode != 0) {
+        if ((pNode->m_unk24 ? pNode->m_unk24[1] : 0) == 0x1FF || (pNode->m_unk24 ? pNode->m_unk24[1] : 0) == 0x202) {
+            if (pNode->GetFrameTime() != 0.0f) {
+                ((PArray *)&m_unk5B70)->RemoveCurrent();
+            }
+        }
+        m_unk5B74++;
+        pNode = (m_unk5B74 < m_unk5B70) ? (PMNode *)m_unk5B78[m_unk5B74] : 0;
+    }
+    UpdateSwordBGAnim();
+    ModifyEifPosition();
+}
+
 // DRAFT: 0x00147760 ValidateDependencyList__13EntityManagerFv
 // note: 7 lines; loop counter and byte offset swap registers (original keeps offset in a3 and counter in a1, ours offset a1 and counter a2); tried scoped counter (9 lines), unsigned offset (9 lines), counter-first ordering (7 lines, kept).
 void EntityManager::ValidateDependencyList() {
@@ -1354,6 +1435,60 @@ EntityManager::~EntityManager() {
     if (this != 0) {
         ((PList *)this)->~PList();
     }
+}
+
+// DRAFT: 0x00149CE0 __ct__13EntityManagerFv
+// note: DIFF 140; members not embedded as real classes, so this is spilled and reloaded at 0x1C(sp) with a 0x20 frame; original keeps this in s5 with a 0xB0 frame and caches member addresses in s7/fp/s6/s0. Tried: first draft only.
+EntityManager::EntityManager() {
+    __ct__19EntityAttackManagerFv(this);
+    __ct__15WaypointManagerFv((char *)this + 0x30);
+    __ct__6PArrayFv((char *)this + 0x5078);
+    __ct__10PHashTableFv((char *)this + 0x5088);
+    __ct__10PHashTableFv((char *)this + 0x5094);
+    __ct__6PArrayFv((char *)this + 0x50A0);
+    __ct__6PArrayFv((char *)this + 0x50B0);
+    __ct__16PResourceManagerFv((char *)this + 0x50C4);
+    __ct__6PArrayFv((char *)this + 0x5B50);
+    __ct__6PArrayFv((char *)this + 0x5B60);
+    __ct__6PArrayFv((char *)this + 0x5B70);
+    __ct__5PListFv((char *)this + 0x5B80);
+    __ct__5PListFv((char *)this + 0x5F50);
+    __ct__6PArrayFv((char *)this + 0x5F64);
+    m_unk5050 = 1;
+    if (Create__10PHashTableFUi((char *)this + 0x5088, 0x11) == 0) {
+        char *pMsg = "Hash table creation failed";
+        if (pMsg != 0) {
+            CdsAssert("EntityManager.cpp", 0x34, "!\"Hash table creation failed\"");
+        }
+    }
+    if (Create__10PHashTableFUi((char *)this + 0x5094, 0x11) == 0) {
+        char *pMsg = "Hash table creation failed";
+        if (pMsg != 0) {
+            CdsAssert("EntityManager.cpp", 0x3A, "!\"Hash table creation failed\"");
+        }
+    }
+    ((PArray *)((char *)this + 0x5078))->Allocate(0x180);
+    ((PArray *)((char *)this + 0x50A0))->Allocate(0x20);
+    ((PArray *)((char *)this + 0x50B0))->Allocate(0x180);
+    ((PArray *)((char *)this + 0x5B60))->Allocate(0x20);
+    ((PArray *)((char *)this + 0x5B70))->Allocate(0x20);
+    ((PArray *)((char *)this + 0x5B50))->Allocate(0x20);
+    ((PArray *)((char *)this + 0x5F64))->Allocate(0x180);
+    void *pOverlay = __nw__FUi(0x28);
+    if (pOverlay != 0) {
+        pOverlay = __ct__14OverlayManagerFUi(pOverlay, 1);
+    }
+    m_unk50C0 = pOverlay;
+    if (m_unk50C0 == 0) {
+        CdsAssert("EntityManager.cpp", 0x48, "WorldOverlays");
+    }
+    InitLoadSystem__15EntityBaseClassFv();
+    m_unk505C = 0;
+    m_unk5194 = 0;
+    m_unk5B20 = 0;
+    m_unk5B21 = 0;
+    *(int *)((char *)this + 0x5F60) = 1;
+    printf("Entity Manager v%d\n", 1);
 }
 
 // DRAFT: 0x00149F60 SequenceViewer__15EntityBaseClassFPPUii
