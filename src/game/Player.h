@@ -8,6 +8,7 @@ class PlingEffect;
 class FontNode;
 class PMNode;
 class PMeshNode;
+class EntityBaseClass;
 
 class Player {
 public:
@@ -54,6 +55,9 @@ public:
     void ResetEye(bool arg0);
     void Kill();
     void SetDeath();
+    void DieMove();
+    void UpwardStrikeMove();
+    int SpinCheck();
     int GetGroundAction();
     int SetAction(int arg0);
     void SetMaximo(char arg0, bool arg1);
@@ -79,6 +83,7 @@ public:
     void LoadPlayerData(PlayerData *arg0);
     int GetComboLevel();
     int MultipleAttack(unsigned short *arg0);
+    void FootStepSound(unsigned short *arg0);
     void SetPlayerAttack(unsigned short arg0, unsigned short arg1);
     void NotifyTreasure(float (*arg0)[4], float arg1);
     PMNode *IsPlayerOnNode(PMeshNode *arg0, bool arg1);
@@ -87,6 +92,7 @@ public:
     void MBlow2Move();
     void SpinSlashMove();
     void SliceMove();
+    int GuardCheck(EntityBaseClass *arg0);
 
     char _pad000[0x20];
     int m_unk20;            // 0x020
@@ -103,7 +109,9 @@ public:
     char _pad1A0[0x1B0 - 0x1A0];
     unsigned short m_unk1B0; // 0x1B0 bit 0x200 is tested by IsMidasActive
     unsigned short m_unk1B2; // 0x1B2 bit 0x4000 is tested by CatchIdleMove
-    char _pad1B4[0x1BA - 0x1B4];
+    signed char m_unk1B4;   // 0x1B4 compared against -74 and 75 by SpinCheck
+    signed char m_unk1B5;   // 0x1B5 compared against -74 and 75 by SpinCheck
+    char _pad1B6[0x1BA - 0x1B6];
     unsigned short m_unk1BA; // 0x1BA nonzero keeps ReleaseCheck counting the caught state
     int m_unk1BC;          // 0x1BC compared with 0x32 and 0x64 by GetGroundAction
     char _pad1C0[0x1C4 - 0x1C0];
@@ -138,7 +146,10 @@ public:
     signed char m_unk268;   // 0x268 cleared by GrimIdleMove
     char _pad269[0x26C - 0x269];
     signed char m_unk26C;   // 0x26C byte set by SetHeadCamera
-    char _pad26D[0x27C - 0x26D];
+    char _pad26D[0x270 - 0x26D];
+    int m_unk270;           // 0x270 spin state, read and written by SpinCheck
+    char _pad274[0x278 - 0x274];
+    int m_unk278;           // 0x278 spin state, read and written by SpinCheck
     int m_unk27C;           // 0x27C index into the attack list walked by MultipleAttack
     char _pad280[0x284 - 0x280];
     int m_unk284;           // 0x284 object address with a vtable, Slot04 called by RenderCutScene; +0x40 is a PMat4 read by UpdatePlayerFx

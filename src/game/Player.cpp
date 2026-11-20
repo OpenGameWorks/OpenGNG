@@ -7,6 +7,10 @@ class Interface {
 public:
     char _pad000[0x10];
     void AddAbility(int arg0);
+    char _pad010[0x415];
+    unsigned char m_unk425;
+    enum eFadeColor { eFadeColor_Value0 = 0, eFadeColor_Value1 = 1, eFadeColor_Value2 = 2 };
+    void FadeScreen(float arg0, float arg1, bool arg2, eFadeColor arg3);
 };
 extern Interface gInterface;
 extern signed char AbilityTable[];
@@ -27,6 +31,7 @@ public:
     void ResetCollisions();
 };
 extern signed char MaximoArmor[8];
+extern unsigned int FootSound[8];
 class FontManager {
 public:
     void RemoveText(FontNode *pNode);
@@ -49,6 +54,15 @@ public:
 class PlingEffect {
 public:
     virtual void Slot00(int arg0);
+};
+// Virtual slots 0..3 are the destructor, Load, Load and Animate; slot 4 (0x18) is IsAnimate.
+class PAnimFrame {
+public:
+    virtual void Slot00();
+    virtual void Slot04();
+    virtual void Slot08();
+    virtual void Slot0C();
+    virtual int IsAnimate();
 };
 class PMat4;
 class PMNode {
@@ -87,6 +101,7 @@ class PSound {
 public:
     char _pad000[0x18080];
     void PlaySoundApparition(unsigned int arg0, unsigned int arg1);
+    void FadeOutAllMusic(unsigned int arg0);
 };
 extern PSound gSound;
 class EffectAPI {
@@ -110,6 +125,8 @@ extern float AttachedTimer[5];
 extern "C" void *GetPtrToApparition__13EntityManagerFUi(void *, unsigned int);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
+extern "C" float atan2f(float fY, float fX);
+extern "C" float Round180__Ff(float fAngle);
 class Pad {
 public:
     enum VibType { VIB_0 = 0, VIB_1 = 1 };
@@ -435,6 +452,36 @@ void Player::SetDeath() {
     }
 }
 
+// note: 27 words differ: the bool lives in a1 instead of v1 and the original's andi v1,v1,0xFF truncation is missing. Tried unsigned char flag (27), implicit int-to-bool assignment (27), int flag with if/else (42), and bool with pAnim == 0 || !IsAnimate (44).
+// DRAFT: 0x0015BE80 DieMove__6PlayerFv
+void Player::DieMove() {
+    switch (m_unk250) {
+    case 0: {
+        PAnimFrame *pAnim = *(PAnimFrame **)((char *)m_unk3C + 0x24);
+        bool animating = false;
+        if (pAnim != 0) {
+            animating = pAnim->IsAnimate() != 0;
+        }
+        if (!animating) {
+            m_unk250 = 1;
+            gSound.FadeOutAllMusic(0x1F4);
+            if (m_unk1F8 > 0) {
+                gInterface.FadeScreen(255.0f, 8.5f, true, (Interface::eFadeColor)0);
+            } else {
+                SetDeath();
+                m_unk250 = 2;
+            }
+        }
+        break;
+    }
+    case 1:
+        if (gInterface.m_unk425 == 0) {
+            SetDeath();
+        }
+        break;
+    }
+}
+
 // FUNCTION: 0x0015C090 ResetShield__6PlayerFv
 void Player::ResetShield() {
     if (m_unk2A4 != 0) {
@@ -612,6 +659,27 @@ void Player::Over3Move() {
     MultipleAttack(&Over3Attacks[0]);
 }
 
+// FUNCTION: 0x0015D4C0 UpwardStrikeMove__6PlayerFv
+void Player::UpwardStrikeMove() {
+    static unsigned int UpperFx[3][2] = {{0x8100006A, 0x820000BC}, {0x810001ED, 0x8200039A}, {0x8100020C, 0x82000367}};
+    static unsigned short UpwardStrikeAttack[7] = {0x0F, 0x14, 0x10, 0x14, 0x11, 0x15, 0xFFFF};
+    switch (m_unk250) {
+    case 0: {
+        m_unk250 = 1;
+        int idx = (m_unk1FC == 1) ? 1 : 0;
+        unsigned int *row = &UpperFx[idx][0];
+        m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(row[0], row[1], 0, 0, (EntityBaseClass *)this, m_unk24C, false, 0, false);
+        break;
+    }
+    case 1:
+        if ((int)m_unk3C[13] >= 0x2D && CancelAttack(0x30) != 0) {
+            return;
+        }
+        break;
+    }
+    MultipleAttack(&UpwardStrikeAttack[0]);
+}
+
 // FUNCTION: 0x0015D5A0 MultipleAttack__6PlayerFPUs
 int Player::MultipleAttack(unsigned short *arg0) {
     unsigned short *pEntry = arg0 + m_unk27C;
@@ -646,6 +714,33 @@ void Player::CancelMove() {
     if ((int)m_unk3C[13] >= ((unsigned char *)m_unk254)[4]) {
         CancelAttack(0x30);
     }
+}
+
+// DRAFT: 0x0015DE80 SpinCheck__6PlayerFv
+// note: DIFF 41; a1/a2 block layout tests +75 first where the original tests -74 first with beqz and daddu in the delay slot; default-first, flipped-sense and early-return variants reached 49, 50 and 52.
+int Player::SpinCheck() {
+    static signed char SpinIO[3][3] = {{7, 0, 1}, {6, -1, 2}, {5, 4, 3}};
+    int a1;
+    int a2;
+    int v;
+    if (m_unk1BC >= 0x4B) {
+        a1 = (m_unk1B4 < -74) ? 0 : ((m_unk1B4 < 75) ? 1 : 2);
+        a2 = (m_unk1B5 < -74) ? 2 : ((m_unk1B5 < 75) ? 1 : 0);
+        signed char *row = &SpinIO[a2][0];
+        v = *(row + a1);
+        if (v >= 0) {
+            if (m_unk270 < 0) {
+                m_unk270 = v;
+                m_unk278 = (v - 2) & 7;
+            } else if (v == ((m_unk270 - 1) & 7)) {
+                if (m_unk278 == v) {
+                    return 1;
+                }
+                m_unk270 = v;
+            }
+        }
+    }
+    return 0;
 }
 
 // FUNCTION: 0x0015DF60 CancelAttack__6PlayerFUi
@@ -759,6 +854,26 @@ void Player::GrimIdleMove() {
     p[2] = 0;
 }
 
+// DRAFT: 0x0015F5E0 FootStepSound__6PlayerFPUs
+// note: 6 words differ: addu index temp goes to a0 not a1, lhu/cvt order and mfc1 register swapped, slt sense inverted. Tried negated compare (31), index local (29), else-if sound chain (6, kept).
+void Player::FootStepSound(unsigned short *arg0) {
+    if ((signed char)(((signed char *)m_unk3C)[0x3F] & 4)) {
+        m_unk27C = 0;
+    }
+    if (arg0[m_unk27C] <= (int)m_unk3C[13]) {
+        unsigned int sound;
+        if (m_unk38[0x42] & 0x200) {
+            sound = 0x4E25;
+        } else if (m_unk229 == 2) {
+            sound = 0x4E20;
+        } else {
+            sound = FootSound[((unsigned int)m_unk38[0x3A] >> 11) & 7];
+        }
+        ((EntityBaseClass *)this)->PlaySound(sound);
+        m_unk27C += 1;
+    }
+}
+
 // note: 2 words differ: the move of this into a0 lands in the beq delay slot instead of the jal delay slot. Tried nested ifs, early return, reordered operands and swapped != form (3 lines).
 // FUNCTION: 0x0015F6C0 RollMove__6PlayerFv
 void Player::RollMove() {
@@ -848,6 +963,37 @@ extern "C" void *__dt__10PAnimFrameFv(void *pThis, short nFlag) {
         }
     }
     return pThis;
+}
+
+// DRAFT: 0x00161F20 GuardCheck__6PlayerFP15EntityBaseClass
+// note: DIFF 11; differs at the early mbHard return branch (b +0x2C vs +0x2A), the bc1f/bc1t sense on the 0xC2B4 compare, and the v0 materialisation (addiu/daddu with b vs v1+xori). Tried: arg0 pointer join (44->13), return-form sense flip (11, kept), flipped inner compare (11), int ret variable (17, reverted), !mbHard (11, reverted).
+int Player::GuardCheck(EntityBaseClass *arg0) {
+    float vec[4];
+    float *a1;
+    float *a2;
+
+    if (mbHard__15EntityBaseClass == 0) {
+        return 1;
+    }
+    a2 = m_unk190;
+    if (m_unk3C != 0) {
+        a2 = m_unk3C + 0x20;
+    }
+    float *p = *(float **)((char *)arg0 + 0x3C);
+    a1 = (float *)arg0;
+    if (p != 0) {
+        a1 = p + 0x20;
+    } else {
+        a1 = (float *)((char *)a1 + 0x190);
+    }
+    sceVu0SubVector(vec, a1, a2);
+    float fAngle = Round180__Ff(57.295776f * atan2f(-vec[0], -vec[2]) - m_unk1C4);
+    if (fAngle < 90.0f) {
+        if (!(fAngle <= -90.0f)) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 // note: branch shape and 0x27 path match; the original keeps m_unk1BC in v0 and flags in v1, ours uses v1 for m_unk1BC. Tried flags local (fixes lhu slot), early-return tail (worse), nested 0x200 check (same), direct field reads (same).
