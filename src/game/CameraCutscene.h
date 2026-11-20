@@ -15,6 +15,11 @@ public:
     void StopCutCamera(bool bRestore);
     void GetTargetPositionFromInstance(unsigned int nInstance, PVec3 &arg1);
     void SetSourceTarget(PVec3 arg0, PVec3 arg1);
+    void AddCutSceneCamera(void *pCam, unsigned int nArg);
+    void SetupCutCamera_Pan(unsigned int arg0, unsigned int arg1, float fA, float fB, PVec3 v4, PVec3 v5, PVec3 v6, PVec3 v7, unsigned int arg8, unsigned int arg9, unsigned int arg10, unsigned int arg11, bool b12, PVec3 v13, bool b14, unsigned int arg15);
+    void SetupCutCamera_MoveTo(unsigned int arg0, unsigned int arg1, float fA, float fB, unsigned int arg4, PVec3 v5, PVec3 v6, PVec3 v7, unsigned int arg8, unsigned int arg9, unsigned int arg10, unsigned int arg11, bool b12, PVec3 v13, bool b14, unsigned int arg15);
+    void SetupCutCamera_Fixed(unsigned int arg0, unsigned int arg1, float fA, float fB, unsigned int arg4, PVec3 v5, PVec3 v6, unsigned int arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, bool b11, PVec3 v12, bool b13, unsigned int arg14);
+    void CleanUpCutCameras();
     ~CameraCutManager();
 
     void *GetFirstCutCamera(unsigned int arg0);

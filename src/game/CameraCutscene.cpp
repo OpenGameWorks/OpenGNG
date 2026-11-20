@@ -5,6 +5,8 @@ extern "C" void sceVu0CopyVector(float *dst, float *src);
 extern "C" void *InstanceIsValid__15EntityBaseClassFUi(unsigned int);
 extern "C" void __dt__5PListFv(void *pThis, short nFlag);
 extern "C" void __ct__5PListFv(void *pThis);
+extern "C" void RemoveAll__5PListFv(void *pThis);
+extern "C" void RemoveCurrent__5PListFv(void *pThis);
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void __dl__FPv(void *p);
 extern unsigned char mbGlobalSleep__15EntityBaseClass;
@@ -18,6 +20,9 @@ extern "C" void CreateViewMatrix__6CameraFR5PMat45PVec35PVec3(void *pThis, float
 extern "C" void SetViewMatrix__6CameraF5PMat4(void *pThis, float *pMatrix);
 void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern int InnocentDialogID[0x100];
+extern "C" void *__nw__FUi(unsigned int);
+// MemMgr is 908 bytes; the field at offset 0x18 is saved and cleared around the allocation.
+extern char MemMgr[908];
 
 class FontManager {
 public:
@@ -46,8 +51,29 @@ public:
 
 class CutSceneCamera_Generic {
 public:
-    char _pad000[0x10];
+    float m_unk0;
+    float m_unk4;
+    unsigned char m_unk8;
+    char _pad009[3];
+    unsigned int m_unkC;
     int m_unk10;
+    unsigned int m_unk14;
+    unsigned int m_unk18;
+    unsigned int m_unk1C;
+    unsigned int m_unk20;
+    unsigned int m_unk24;
+    unsigned char m_unk28;
+    unsigned char m_unk29;
+    char _pad02A[6];
+    float m_unk30[4];
+    unsigned int m_unk40;
+    char _pad044[0xC];
+    unsigned int m_unk50;
+    char _pad054[0xC];
+    float m_unk60[4];
+    float m_unk70[4];
+    float m_unk80[4];
+    float m_unk90[4];
 };
 
 // DRAFT: 0x0017A9A0 CutCameraMovesPlayer__16CameraCutManagerFUi
@@ -288,6 +314,166 @@ void CameraCutManager::GetTargetPositionFromInstance(unsigned int nInstance, PVe
 void CameraCutManager::SetSourceTarget(PVec3 arg0, PVec3 arg1) {
     sceVu0CopyVector(m_unk50, arg0.m_v);
     sceVu0CopyVector(m_unk60, arg1.m_v);
+}
+
+// FUNCTION: 0x0017BDD0 SetupCutCamera_Pan__16CameraCutManagerFUiUiff5PVec35PVec35PVec35PVec3UiUiUiUib5PVec3bUi
+void CameraCutManager::SetupCutCamera_Pan(unsigned int arg0, unsigned int arg1, float fA, float fB, PVec3 v4, PVec3 v5, PVec3 v6, PVec3 v7, unsigned int arg8, unsigned int arg9, unsigned int arg10, unsigned int arg11, bool b12, PVec3 v13, bool b14, unsigned int arg15) {
+    CutSceneCamera_Generic *pCutCamera;
+    int saved = *(int *)(MemMgr + 0x18);
+    *(int *)(MemMgr + 0x18) = 0;
+    pCutCamera = (CutSceneCamera_Generic *)__nw__FUi(0x100);
+    if (pCutCamera == 0) {
+        CdsAssert("CameraCutscene.cpp", 0x143, "pCutCamera");
+    }
+    sceVu0CopyVector(pCutCamera->m_unk60, v4.m_v);
+    sceVu0CopyVector(pCutCamera->m_unk70, v5.m_v);
+    sceVu0CopyVector(pCutCamera->m_unk80, v6.m_v);
+    sceVu0CopyVector(pCutCamera->m_unk90, v7.m_v);
+    pCutCamera->m_unk0 = fB;
+    pCutCamera->m_unk8 = 0;
+    pCutCamera->m_unk10 = 3;
+    pCutCamera->m_unk14 = arg0;
+    pCutCamera->m_unk4 = 60.0f * fA;
+    pCutCamera->m_unk28 = b14;
+    pCutCamera->m_unk18 = arg8;
+    pCutCamera->m_unk1C = arg9;
+    pCutCamera->m_unk20 = arg10;
+    pCutCamera->m_unk24 = arg11;
+    pCutCamera->m_unk40 = arg15;
+    pCutCamera->m_unk50 = arg1;
+    pCutCamera->m_unk29 = b12;
+    sceVu0CopyVector(pCutCamera->m_unk30, v13.m_v);
+    AddCutSceneCamera(pCutCamera, arg0);
+    *(int *)(MemMgr + 0x18) = saved;
+}
+
+// FUNCTION: 0x0017BF60 SetupCutCamera_MoveTo__16CameraCutManagerFUiUiffUi5PVec35PVec35PVec3UiUiUiUib5PVec3bUi
+void CameraCutManager::SetupCutCamera_MoveTo(unsigned int arg0, unsigned int arg1, float fA, float fB, unsigned int arg4, PVec3 v5, PVec3 v6, PVec3 v7, unsigned int arg8, unsigned int arg9, unsigned int arg10, unsigned int arg11, bool b12, PVec3 v13, bool b14, unsigned int arg15) {
+    CutSceneCamera_Generic *pCutCamera;
+    int saved = *(int *)(MemMgr + 0x18);
+    *(int *)(MemMgr + 0x18) = 0;
+    pCutCamera = (CutSceneCamera_Generic *)__nw__FUi(0xB0);
+    if (pCutCamera == 0) {
+        CdsAssert("CameraCutscene.cpp", 0x10D, "pCutCamera");
+    }
+    pCutCamera->m_unk4 = fA;
+    sceVu0CopyVector(pCutCamera->m_unk60, v5.m_v);
+    sceVu0CopyVector(pCutCamera->m_unk70, v6.m_v);
+    sceVu0CopyVector(pCutCamera->m_unk80, v7.m_v);
+    pCutCamera->m_unk10 = 2;
+    pCutCamera->m_unk8 = 0;
+    pCutCamera->m_unkC = arg4;
+    pCutCamera->m_unk0 = fB;
+    pCutCamera->m_unk14 = arg0;
+    pCutCamera->m_unk4 = 60.0f * fA;
+    pCutCamera->m_unk28 = b14;
+    pCutCamera->m_unk18 = arg8;
+    pCutCamera->m_unk1C = arg9;
+    pCutCamera->m_unk20 = arg10;
+    pCutCamera->m_unk24 = arg11;
+    pCutCamera->m_unk40 = arg15;
+    pCutCamera->m_unk50 = arg1;
+    pCutCamera->m_unk29 = b12;
+    sceVu0CopyVector(pCutCamera->m_unk30, v13.m_v);
+    AddCutSceneCamera(pCutCamera, arg0);
+    *(int *)(MemMgr + 0x18) = saved;
+}
+
+// FUNCTION: 0x0017C0F0 SetupCutCamera_Fixed__16CameraCutManagerFUiUiffUi5PVec35PVec3UiUiUiUib5PVec3bUi
+void CameraCutManager::SetupCutCamera_Fixed(unsigned int arg0, unsigned int arg1, float fA, float fB, unsigned int arg4, PVec3 v5, PVec3 v6, unsigned int arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, bool b11, PVec3 v12, bool b13, unsigned int arg14) {
+    CutSceneCamera_Generic *pCutCamera;
+    int saved = *(int *)(MemMgr + 0x18);
+    *(int *)(MemMgr + 0x18) = 0;
+    pCutCamera = (CutSceneCamera_Generic *)__nw__FUi(0x80);
+    if (pCutCamera == 0) {
+        CdsAssert("CameraCutscene.cpp", 0xD8, "pCutCamera");
+    }
+    pCutCamera->m_unk0 = fB;
+    pCutCamera->m_unk4 = fA;
+    sceVu0CopyVector(pCutCamera->m_unk60, v5.m_v);
+    sceVu0CopyVector(pCutCamera->m_unk70, v6.m_v);
+    pCutCamera->m_unk10 = 1;
+    pCutCamera->m_unk8 = 0;
+    pCutCamera->m_unkC = arg4;
+    pCutCamera->m_unk14 = arg0;
+    pCutCamera->m_unk4 = 60.0f * fA;
+    pCutCamera->m_unk28 = b13;
+    pCutCamera->m_unk18 = arg7;
+    pCutCamera->m_unk1C = arg8;
+    pCutCamera->m_unk20 = arg9;
+    pCutCamera->m_unk24 = arg10;
+    pCutCamera->m_unk40 = arg14;
+    pCutCamera->m_unk50 = arg1;
+    pCutCamera->m_unk29 = b11;
+    sceVu0CopyVector(pCutCamera->m_unk30, v12.m_v);
+    AddCutSceneCamera(pCutCamera, arg0);
+    *(int *)(MemMgr + 0x18) = saved;
+}
+
+// DRAFT: 0x0017C260 CleanUpCutCameras__16CameraCutManagerFv
+// note: DIFF 70 words; entry exit 6 insns short, inner-loop nops at 0x60/0x64 and join nop at 0xC4 missing, RemoveAll arg hoisted into beqz delay. Tried: outer top-tested (81), inner top-tested (73), flat cursor else (70).
+void CameraCutManager::CleanUpCutCameras() {
+    char *pNode;
+    char *pItem;
+    char *pNext;
+    if (*(int *)m_unk70 != 0) {
+        m_unk7C = m_unk74;
+        pNode = 0;
+        if (m_unk74 != 0) {
+            pNode = *(char **)m_unk74;
+        }
+        if (pNode != 0) {
+            do {
+                *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
+                pItem = 0;
+                if (*(char **)(pNode + 8) != 0) {
+                    pItem = *(char **)(*(char **)(pNode + 8));
+                }
+                if (pItem != 0) {
+                    do {
+                        FreeUpCameraStructure((CutSceneCamera_Generic *)pItem);
+                        if (*(char **)(pNode + 0x10) == 0) {
+                            *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
+                            pItem = 0;
+                            if (*(char **)(pNode + 8) != 0) {
+                                pItem = *(char **)(*(char **)(pNode + 8));
+                            }
+                        } else {
+                            pNext = *(char **)(*(char **)(pNode + 0x10) + 4);
+                            if (pNext != 0) {
+                                *(char **)(pNode + 0x10) = pNext;
+                                pItem = *(char **)(*(char **)(pNode + 0x10));
+                            } else {
+                                pItem = 0;
+                            }
+                        }
+                    } while (pItem != 0);
+                }
+                RemoveAll__5PListFv(pNode + 4);
+                if (pNode != 0) {
+                    __dt__5PListFv(pNode + 4, -1);
+                    __dl__FPv(pNode);
+                }
+                RemoveCurrent__5PListFv(m_unk70);
+                if (m_unk7C != 0) {
+                    pNext = *(char **)(m_unk7C + 4);
+                    if (pNext != 0) {
+                        m_unk7C = pNext;
+                        pNode = *(char **)m_unk7C;
+                    } else {
+                        pNode = 0;
+                    }
+                } else {
+                    m_unk7C = m_unk74;
+                    pNode = 0;
+                    if (m_unk74 != 0) {
+                        pNode = *(char **)m_unk74;
+                    }
+                }
+            } while (pNode != 0);
+        }
+    }
+    m_unk85 = 0;
 }
 
 // FUNCTION: 0x0017C3D0 FreeUpCameraStructure__16CameraCutManagerFP22CutSceneCamera_Generic
