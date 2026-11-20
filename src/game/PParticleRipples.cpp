@@ -27,6 +27,11 @@ extern unsigned char gDisplayListPtr[0x10];
 extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *, int, float *, bool, unsigned long, unsigned long);
 extern "C" void BeginFxInstances__10PGfxEngineFPvib(void *, void *, int, bool);
 extern "C" void DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(void *, void *, int, bool);
+float FastMath_Sin180(float fAngle);
+float FastMath_Cos180(float fAngle);
+float FastMath_IntSin180(int nAngle);
+float FastMath_IntCos180(int nAngle);
+extern "C" void *AllocParticles__12PDisplayListFii(void *, int, int);
 
 // DRAFT: 0x001ED740 InitRingMeshPacket__16PParticleRipplesFRiib
 // note: DIFF 90 words; saved-register swap of this/nOut and float-load order unresolved. Tried: nOut-early variant (96), float-typed m_unk898..m_unk8A4 (94 to 90).
@@ -63,6 +68,41 @@ void *PParticleRipples::InitRingMeshPacket(int &nOut, int nArg1, bool bArg2) {
     QwordCopy((u_long128 *)((char *)pPacket + 0x650), (u_long128 *)aTop, 0x32);
     nOut = 0x970;
     return pPacket;
+}
+
+// FUNCTION: 0x001ED8E0 CreateRingTriStrip__16PParticleRipplesFiffiiPA4_fPA4_fPA4_f
+int PParticleRipples::CreateRingTriStrip(int nArg0, float fArg1, float fArg2, int nArg3, int nArg4,
+                                         float (*pTop)[4], float (*pMid)[4], float (*pBot)[4]) {
+    int nCount = nArg0 * 2 + 2;
+    float fStep = 360.0f / (float)nArg0;
+    float fAngle = 0.0f;
+    for (int i = 0; i < nCount; i += 2) {
+        float fSin = FastMath_Sin180(fAngle - 180.0f);
+        float fCos = FastMath_Cos180(fAngle - 180.0f);
+        pTop[i][0] = fArg1 * fCos;
+        pTop[i][1] = 0.0f;
+        pTop[i][2] = fArg1 * fSin;
+        pTop[i][3] = 1.0f;
+        float fHalf = 0.5f * (fArg1 / fArg2);
+        pMid[i][0] = 0.5f + fCos * fHalf;
+        pMid[i][1] = 0.5f + fSin * fHalf;
+        ((int *)pBot[i])[0] = 0x80;
+        ((int *)pBot[i])[1] = 0x80;
+        ((int *)pBot[i])[2] = 0x80;
+        ((int *)pBot[i])[3] = nArg3;
+        ((int *)pBot[i + 1])[0] = 0x80;
+        ((int *)pBot[i + 1])[1] = 0x80;
+        ((int *)pBot[i + 1])[2] = 0x80;
+        ((int *)pBot[i + 1])[3] = nArg4;
+        pTop[i + 1][0] = fArg2 * fCos;
+        pTop[i + 1][1] = 0.0f;
+        pTop[i + 1][2] = fArg2 * fSin;
+        pTop[i + 1][3] = 1.0f;
+        pMid[i + 1][0] = 0.5f + 0.5f * fCos;
+        pMid[i + 1][1] = 0.5f + 0.5f * fSin;
+        fAngle += fStep;
+    }
+    return nCount;
 }
 
 // FUNCTION: 0x001EDAB0 FindFreeRipple__16PParticleRipplesFv
@@ -106,6 +146,81 @@ void PParticleRipples::Render() {
         DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(*(void **)gDisplayListPtr, (void *)m_unk8A8, m_unk8AC, false);
     } else {
         return;
+    }
+}
+
+// FUNCTION: 0x001EDC20 Animate__16PParticleRipplesFf
+void PParticleRipples::Animate(float fArg) {
+    float fAngle;
+
+    if (m_unk015 == 0) {
+        return;
+    }
+    if (m_unk868 > 0.0f && m_unk018 != 0) {
+        m_unk86C -= fArg;
+        if (m_unk86C <= 0.0f) {
+            m_unk86C = m_unk868;
+            float fRateA = 0.01f;
+            float fRateB = 0.015f;
+            Create((float *)(m_unk040 + 0x30), (float *)m_unk870, m_unk880, m_unk884, m_unk888, m_unk88C,
+                   fRateA, fRateB);
+        }
+    }
+    if (m_unk860 == 0) {
+        m_unk016 = m_unk017;
+        m_unk8B1 = 0;
+        return;
+    }
+    m_unk8A8 = (char *)AllocParticles__12PDisplayListFii(*(void **)&gGfxEng, m_unk860, 6);
+    if (m_unk8A8 == 0) {
+        CdsAssert__FPciPc("PParticleRipples.cpp", 0xA4, "mpFxInstances");
+    }
+    m_unk8AC = 0;
+    if (m_unk8B0 != 0) {
+        m_unk864 += 4.0f * fArg;
+        if (m_unk864 >= 360.0f) {
+            m_unk864 -= 360.0f;
+        }
+        fAngle = m_unk864;
+    }
+    for (int i = 0; i < 30; i++) {
+        char *pSlot = (char *)this + i * 0x40 + 0xE0;
+        if (m_unk8B0 != 0) {
+            fAngle += 25.0f;
+            if (fAngle >= 360.0f) {
+                fAngle -= 360.0f;
+            }
+        }
+        if (*(unsigned char *)(pSlot + 0x3C) != 0) {
+            char *pOut = m_unk8A8 + m_unk8AC * 0x60;
+            *(float *)(pSlot + 0x20) += *(float *)(pSlot + 0x2C) * fArg;
+            *(float *)(pSlot + 0x1C) += *(float *)(pSlot + 0x30) * fArg;
+            float fLife = *(float *)(pSlot + 0x34) - fArg;
+            if (0.0f <= fLife) {
+            } else {
+                fLife = 0.0f;
+            }
+            *(float *)(pSlot + 0x34) = fLife;
+            if (fLife <= 0.0f) {
+                *(unsigned char *)(pSlot + 0x3C) = 0;
+                *(float *)(pSlot + 0x20) = 0.0f;
+                *(float *)(pSlot + 0x1C) = 0.0f;
+                m_unk860 -= 1;
+            }
+            sceVu0UnitMatrix(pOut);
+            *(float *)pOut = *(float *)(pSlot + 0x20);
+            *(float *)(pOut + 0x28) = *(float *)(pSlot + 0x20);
+            *(u_long128 *)(pOut + 0x30) = *(u_long128 *)pSlot;
+            *(u_long128 *)(pOut + 0x40) = *(u_long128 *)(pSlot + 0x10);
+            if (m_unk8B0 != 0) {
+                int nAng = (int)(fAngle - 180.0f);
+                float fSin = FastMath_IntSin180(nAng);
+                float fCos = FastMath_IntCos180(nAng);
+                *(float *)(pOut + 0x50) = 0.001f * fCos;
+                *(float *)(pOut + 0x54) = *(float *)(pSlot + 0x38) * fSin;
+            }
+            m_unk8AC += 1;
+        }
     }
 }
 

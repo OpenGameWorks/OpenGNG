@@ -13,6 +13,7 @@ public:
     int FindFreeRipple();
     void FadeAndDie(unsigned int uArg);
     void Render();
+    void Animate(float fArg);
     void AutoEmit(float fArg0, float *pArr, float fArg2, float fArg3, float fArg4, float fArg5);
     void Create(float *pArr, float fArg1, float fArg2, float fArg3);
     int Create(float *pArr0, float *pArr1, float fArg2, float fArg3, float fArg4,
@@ -28,15 +29,16 @@ public:
     int m_unk010;
     unsigned char m_unk014;
     unsigned char m_unk015;
-    char _pad016[2];
+    unsigned char m_unk016;
+    unsigned char m_unk017;
     unsigned char m_unk018;
     char _pad019[0x27];
     char m_unk040[0xA0];
     char m_unk0E0[0x780];
     int m_unk860;
-    int m_unk864;
+    float m_unk864;
     float m_unk868;
-    int m_unk86C;
+    float m_unk86C;
     unsigned char m_unk870[0x10];
     float m_unk880;
     float m_unk884;
@@ -48,7 +50,7 @@ public:
     float m_unk89C;
     float m_unk8A0;
     float m_unk8A4;
-    int m_unk8A8;
+    char *m_unk8A8;
     int m_unk8AC;
     unsigned char m_unk8B0;
     unsigned char m_unk8B1;
