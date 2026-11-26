@@ -1198,7 +1198,7 @@ void HudCombo::Update(int arg0) {
 }
 
 // DRAFT: 0x00141960 UpdateStatus__8HudComboFb
-// note: 54 words differ; original hoists the state constant 2 to entry, loads the mpPlayerData pointer and adds 4 before the index, and compares 2,1,3,0; ours folds +4 into lh offset. Tried: case orders 2,3,1,0 (69) and 2,1,3,0 (64); short-indexed global load (56).
+// note: 54 words differ; original hoists the state constant 2 to entry, loads the mpPlayerData pointer and adds 4 before the index, and compares 2,1,3,0; ours folds +4 into lh offset. Tried: case orders 2,3,1,0 (69) and 2,1,3,0 (64); short-indexed global load (56); case blocks in source order 1,3,2,0 (64); if-chain testing 1,3,2,0 (61); +4 folded after index (54, asm identical). Entry constant in the original is 1 in a2, not 2.
 void HudCombo::UpdateStatus(bool flag) {
     m_unkC = *(short *)((char *)mpPlayerData__7GameHud + 4 + (m_unkE * 4));
     switch (m_unkF) {
@@ -1529,7 +1529,7 @@ void PAnimFrame::SetFrameRate(float value) {
 }
 
 // DRAFT: 0x142620 Reset__7GameHudFv
-// note: 30 words differ; lbu/bltz match, but the original loads the mpPlayerData pointer before andi and folds +4 into addiu before the index add; ours folds +4 into the lh offset and reloads the global after andi. Tried: int local for m_unkE, char* base + 4, int table view, explicit offset variable.
+// note: 31 words differ; lbu/bltz match, but the original loads the mpPlayerData pointer before andi and folds +4 into addiu before the index add; ours folds +4 into the lh offset and reloads the global after andi. Tried: int local for m_unkE, char* base + 4, int table view, explicit offset variable, unsigned off = (unsigned char)idx (31, no change).
 void GameHud::Reset() {
     int idx = m_unkE;
     if (idx >= 0) {
@@ -2679,7 +2679,7 @@ void Interface::ProcessScreenFade() {
 }
 
 // DRAFT: 0x001451B0 DisplayFadeRectangle__9InterfaceFv
-// note: 42 words; gs store order and branch shape differ, gGfxEng+0x154C80 load scheduled earlier; size 0xf8 vs 0xe8. Tried gs initializer (56), (int) alpha cast (54), per-use table index (54).
+// note: 42 words; gs store order and branch shape differ, gGfxEng+0x154C80 load scheduled earlier; size 0xf8 vs 0xe8. Tried gs initializer (56), (int) alpha cast (54), per-use table index (54), gs[3]-first and gs[5]-before-gs[4] store orders (42, asm unchanged; MWCC keeps gs[2] first and addresses it through a1).
 void Interface::DisplayFadeRectangle() {
     static char vFadeRGB[2][3] = {{0, 0, 0}, {-128, -128, -128}};
     unsigned long long gs[6];
