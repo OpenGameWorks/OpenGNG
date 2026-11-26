@@ -15,7 +15,7 @@ public:
     CEifFile();
     ~CEifFile();
     void Cleanup();
-    void Close(bool bFlag);
+    int Close(bool bFlag);
     CEifInstanceGroup *GetInstanceGroup(int nIndex);
     int Load(const char *pszFilename);
     int GetNumInstanceGroups();

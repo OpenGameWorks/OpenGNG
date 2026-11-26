@@ -141,6 +141,11 @@ CEifInstanceGroup *CEifFile::GetInstanceGroup(int nIndex)
     return m_unk0[nIndex];
 }
 
+// FUNCTION: 0x00173260 Close__8CEifFileFb
+int CEifFile::Close(bool) {
+    return 0;
+}
+
 // FUNCTION: 0x00173270 __dt__8CEifFileFv
 CEifFile::~CEifFile() {
     Cleanup();

@@ -220,6 +220,11 @@ tag_ControlData::~tag_ControlData() {
 tag_CurveData::~tag_CurveData() {
 }
 
+// FUNCTION: 0x00173D10 ResetAfterReposition__12CameraFollowFv
+void CameraFollow::ResetAfterReposition() {
+    Init(false);
+}
+
 // DRAFT: 0x00173D20 ForceReset__12CameraFollowFb
 // note: 28 lines; original copies by-value PVec3 temps to sp+0x20/0x30/0x40 with lwc1/swc1 pairs in a different order. Tried: empty copy ctor (43), no copy ctor (breaks 4 matches), copy ctor with body plus explicit locals (28), direct args (34).
 void CameraFollow::ForceReset(bool arg0) {

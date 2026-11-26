@@ -44,6 +44,8 @@ public:
     void SetAllAnimFlags(AnimData *);
     int IsAnimate();
     int GetEndFrame();
+    float GetFrameTime();
+    float GetFrameRate();
     int m_unk4;                      // 0x04
     short m_unk8;                    // 0x08
     unsigned char m_unkA;            // 0x0A

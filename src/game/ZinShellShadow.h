@@ -13,6 +13,7 @@ public:
     void SetEditableVars(char *pSrc);
     void Execute();
 
+    void Terminate();
     char _pad190[0x20];
     char m_unk1B0[0x1];        // 0x1B0 editable-vars block; SetEditableVars memcpys 0x1 bytes here
     char _pad1B1[0x3];         // 0x1B1..0x1B3

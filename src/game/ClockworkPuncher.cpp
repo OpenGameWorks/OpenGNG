@@ -529,6 +529,11 @@ int ClockworkPuncher::CanAttackPlayer() {
     return 0;
 }
 
+// FUNCTION: 0x001DEDF0 SetBoundBoxW__16ClockworkPuncherFf
+void ClockworkPuncher::SetBoundBoxW(float value) {
+    *(float *)((char *)m_unk3C + 0x12C) = value;
+}
+
 // FUNCTION: 0x001DEE00 SetRiseAndAttack__16ClockworkPuncherFPA4_fff
 void ClockworkPuncher::SetRiseAndAttack(float (*arg0)[4], float arg1, float arg2) {
     m_unk1B8[0] = arg0[0][0];

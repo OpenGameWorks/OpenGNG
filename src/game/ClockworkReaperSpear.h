@@ -16,6 +16,7 @@ public:
     void Execute();
     const char *GetClassName();
 
+    void OnTimerEvent(unsigned int);
     unsigned char *m_unk0;  // 0x000 vtable pointer
     unsigned int m_unk4;    // 0x004
     char _pad008[0x20 - 0x08];

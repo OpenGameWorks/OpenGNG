@@ -44,6 +44,8 @@ public:
     void SetInnocentInstanceID(unsigned int);
 
     void SetSpawnedFromLift();
+    void OnWakeEvent();
+    void OnSleepEvent();
     char _pad000[0x4];
     int m_unk4;             // 0x004 compared with the player's 0x1CC by CheckBlockAttack
     int m_unk8;             // 0x008 compared with 0x6C and 0x1D by OnHitEvent

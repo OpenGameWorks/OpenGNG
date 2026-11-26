@@ -37,6 +37,8 @@ public:
     int NeedsToBeWoken();
     int GetWokenVarPos();
 
+    bool IsAlive();
+    int GetTallyType();
     float m_unk190[4];                  // 0x190
     float m_unk1A0[4];                  // 0x1A0
     int m_unk1B0;                       // 0x1B0

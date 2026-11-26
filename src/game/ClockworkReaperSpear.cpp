@@ -113,6 +113,11 @@ void ClockworkReaperSpear::OrientSpear() {
     }
 }
 
+// FUNCTION: 0x001F0890 OnTimerEvent__20ClockworkReaperSpearFUi
+void ClockworkReaperSpear::OnTimerEvent(unsigned int) {
+    SetState__15EntityBaseClassFi(this, -2);
+}
+
 // DRAFT: 0x001F08A0 OnTouchEvent__20ClockworkReaperSpearFP15EntityBaseClass
 // note: 36 words differ in block placement; the original tests 0x48 first with an out-of-line block, ours inverts the type-3 test and the 0x24 beqz target differs.
 void ClockworkReaperSpear::OnTouchEvent(EntityBaseClass *arg0) {

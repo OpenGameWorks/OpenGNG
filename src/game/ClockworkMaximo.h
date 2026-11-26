@@ -66,6 +66,8 @@ public:
     int GetWokenVarPos();
     void SetInnocentInstanceID(unsigned int);
 
+    bool IsAlive();
+    int GetAttackTimeOut();
     void *m_unk0;                  // 0x000 vtable pointer
     unsigned int m_unk4;            // 0x004 timer argument for CreateTimer
     char _pad008[0x0C - 0x08];

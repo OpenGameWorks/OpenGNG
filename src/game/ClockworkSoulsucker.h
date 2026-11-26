@@ -47,6 +47,7 @@ public:
     void SetInnocentInstanceID(unsigned int);
     void SetEditableVars(char *);
 
+    void EndGrab();
     void *m_unk0;           // 0x000 vtable pointer
     unsigned int m_unk4;    // 0x004 owner id, compared with m_SuckerRef
     char _pad008[0x20 - 0x08];

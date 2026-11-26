@@ -63,6 +63,11 @@ void CEifInstance::GetStartPosition(float &fX, float &fY, float &fZ)
     fZ = m_unk114;
 }
 
+// FUNCTION: 0x00172B10 GetInstanceName__12CEifInstanceFv
+char *CEifInstance::GetInstanceName() {
+    return (char *)this + 0x80;
+}
+
 // FUNCTION: 0x00172B20 GetEntityID__12CEifInstanceFv
 int CEifInstance::GetEntityID() {
     return *(int *)((char *)this + 0x104);

@@ -289,6 +289,11 @@ void ClockworkSoulsucker::AttachSmokeEffect() {
     }
 }
 
+// FUNCTION: 0x00204560 EndGrab__19ClockworkSoulsuckerFv
+void ClockworkSoulsucker::EndGrab() {
+    SetState__15EntityBaseClassFi(this, 0x19);
+}
+
 // FUNCTION: 0x00204570 AttachDamageEffect__19ClockworkSoulsuckerFP6PMNodeUifff
 void ClockworkSoulsucker::AttachDamageEffect(PMNode *pNode, unsigned int nId, float fA, float fB, float fC) {
     struct FxTriggerBlock {

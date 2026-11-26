@@ -16,6 +16,11 @@ const char *ZinShellShadow::GetClassName() {
     return "Zin Shell Shadow";
 }
 
+// FUNCTION: 0x001B00B0 Terminate__14ZinShellShadowFv
+void ZinShellShadow::Terminate() {
+    SetState(-2);
+}
+
 // FUNCTION: 0x001B00C0 SetEditableVars__14ZinShellShadowFPc
 void ZinShellShadow::SetEditableVars(char *pSrc) {
     memcpy(m_unk1B0, pSrc, 0x1);

@@ -45,6 +45,7 @@ public:
     int GetWokenVarPos();
     void SetInnocentInstanceID(unsigned int);
 
+    void SetBoundBoxW(float);
     void *m_unk0;            // 0x000 vtable pointer
     int m_unk4;             // 0x004 compared with the player's +0x1CC link by CheckBlockAttack
     char _pad008[0x20 - 0x08];

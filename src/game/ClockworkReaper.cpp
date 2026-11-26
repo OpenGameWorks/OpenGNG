@@ -722,6 +722,16 @@ void ClockworkReaper::CheckOnWakeTasks() {
     *(int *)((char *)a0 + 0x94) = 0x4039999A;
 }
 
+// FUNCTION: 0x001C07E0 OnWakeEvent__15ClockworkReaperFv
+void ClockworkReaper::OnWakeEvent() {
+    m_unk2C4 = 1;
+}
+
+// FUNCTION: 0x001C07F0 OnSleepEvent__15ClockworkReaperFv
+void ClockworkReaper::OnSleepEvent() {
+    m_unk2E0 = 0;
+}
+
 // FUNCTION: 0x001C0800 DeleteEffects__15ClockworkReaperFv
 void ClockworkReaper::DeleteEffects() {
     if (m_unk2EC != 0) {

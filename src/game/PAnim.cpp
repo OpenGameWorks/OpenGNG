@@ -16,9 +16,19 @@ public:
     int m_unk0;
 };
 
+// FUNCTION: 0x0018C800 GetFrameTime__5PAnimFv
+float PAnim::GetFrameTime() {
+    return 0.0f;
+}
+
 // FUNCTION: 0x0018C810 IsPAnimFrame__5PAnimFv
 int PAnim::IsPAnimFrame() {
     return 0;
+}
+
+// FUNCTION: 0x0018C820 GetFrameRate__5PAnimFv
+float PAnim::GetFrameRate() {
+    return 0.0f;
 }
 
 // FUNCTION: 0x0018C830 SetFrameRate__5PAnimFf

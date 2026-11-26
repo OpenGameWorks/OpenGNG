@@ -833,6 +833,11 @@ public:
     virtual unsigned char Slot13();
 };
 
+// FUNCTION: 0x0020A0E0 IsAlive__6TinkerFv
+bool Tinker::IsAlive() {
+    return m_unk1B8 > 0;
+}
+
 // FUNCTION: 0x0020A0F0 SetEditableVars__6TinkerFPc
 void Tinker::SetEditableVars(char *arg0) {
     memcpy(&m_unk1B0, arg0, 0x84);
@@ -1649,6 +1654,11 @@ void Tinker::OnDestroyEvent() {
     if (m_unk1B0 == 0) {
         WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0);
     }
+}
+
+// FUNCTION: 0x0020C150 GetTallyType__6TinkerFv
+int Tinker::GetTallyType() {
+    return m_unk22C ? 3 : 0;
 }
 
 // FUNCTION: 0x0020C160 __ct__6TinkerFv

@@ -221,6 +221,11 @@ void ClockworkMaximo::SetInnocentInstanceID(unsigned int value) {
     m_unk24C = (int)value;
 }
 
+// FUNCTION: 0x00210510 IsAlive__15ClockworkMaximoFv
+bool ClockworkMaximo::IsAlive() {
+    return m_unk240 > 0;
+}
+
 // FUNCTION: 0x00210520 StopMoving__15ClockworkMaximoFv
 bool ClockworkMaximo::StopMoving() {
     bool moving = IsMoving();
@@ -433,6 +438,11 @@ bool ClockworkMaximo::FacingTarget(EntityBaseClass *arg0) {
         return true;
     }
     return false;
+}
+
+// FUNCTION: 0x00210E70 GetAttackTimeOut__15ClockworkMaximoFv
+int ClockworkMaximo::GetAttackTimeOut() {
+    return MathAPI::RandomIntRange(0, 1);
 }
 
 // DRAFT: 0x00210E80 FaceHit__15ClockworkMaximoFP15EntityBaseClass

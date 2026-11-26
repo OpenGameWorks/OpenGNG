@@ -25,6 +25,10 @@ extern "C" void FlushCache(int nMode);
 extern "C" int TranProcess__21IOPTransactionManagerFP8IOP_TranUi(IOPTransactionManager *pThis, IOP_Tran *pTran, unsigned int nTranID);
 extern "C" void IOP_TranReset__8IOP_TranFv(IOP_Tran *pThis);
 
+// FUNCTION: 0x001DAAB0 FrameMaintenacePartB__8PIOPFileFv
+void PIOPFile::FrameMaintenacePartB() {
+}
+
 // FUNCTION: 0x001DAAC0 FrameMaintenacePartA__8PIOPFileFv
 void PIOPFile::FrameMaintenacePartA() {
     unsigned int i;

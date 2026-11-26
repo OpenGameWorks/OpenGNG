@@ -484,6 +484,12 @@ void ClockworkFlyer::InitStallData() {
     m_unk260 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, 8, true);
 }
 
+// FUNCTION: 0x001E9880 PitchLevelOut__14ClockworkFlyerFv
+void ClockworkFlyer::PitchLevelOut() {
+    m_unk280 = 0;
+    FlyerPitchChange();
+}
+
 // FUNCTION: 0x001E9890 FlyerPitchChange__14ClockworkFlyerFv
 int ClockworkFlyer::FlyerPitchChange() {
     static float aTolerance;
