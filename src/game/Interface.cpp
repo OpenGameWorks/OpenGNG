@@ -1127,8 +1127,7 @@ void HudBossMeter::Reset() {
     m_unk17 = 1;
 }
 
-// DRAFT: 0x141710 Init__12HudBossMeterFP9PMeshNodeP7HudData
-// note: DIFF 28 words; branch layout and shared sb $zero,0x16 delay slot differ. Tried ==/!= polarity (33, 28), pre-branch m_unk16 store (44).
+// FUNCTION: 0x00141710 Init__12HudBossMeterFP9PMeshNodeP7HudData
 void HudBossMeter::Init(PMeshNode *meshNode, HudData *hud) {
     m_unk4 = ((PMNode *)meshNode)->Find(hud->m_unk0);
     m_unkF = hud->m_unk5;
