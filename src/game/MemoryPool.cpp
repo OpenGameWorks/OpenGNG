@@ -124,8 +124,7 @@ bool MemoryPool::NextBlockCorrupted(Block *block) {
     return (block + GetLength(block))->m_unk0 != 0xA0A0A0A0;
 }
 
-// DRAFT: 0x0012B4A0 Allocate__10MemoryPoolFUii
-// note: 2 words differ: original puts m_unk100<<4 in t0 (sll t0,v0,4; sltu at,t0,s3), ours shifts in place in v0. The '> 1' spelling fixed the >=2 compare (at, not v0). Tried for the shift: unsigned m_unk100 in header, (unsigned) cast, *16, block-local lim, int local cap, size > (x<<4) swap; all keep v0.
+// FUNCTION: 0x0012B4A0 Allocate__10MemoryPoolFUii
 void *MemoryPool::Allocate(unsigned int size, int arg1) {
     m_unk118++;
     m_unk11C = 0;
@@ -134,7 +133,7 @@ void *MemoryPool::Allocate(unsigned int size, int arg1) {
         CdsAssert__FPciPc("MemoryPool.cpp", 0x15F, (char *)this);
     }
     if ((m_unk100 << 4) < size) {
-        sprintf((char *)this, "MemoryPool %d ( Allocate Failed : Can't allocate <%d> bytes. Max for this pool is <%d> bytes )\n", arg1, size);
+        sprintf((char *)this, "MemoryPool %d ( Allocate Failed : Can't allocate <%d> bytes. Max for this pool is <%d> bytes )\n", arg1, size, m_unk100 << 4);
         CdsAssert__FPciPc("MemoryPool.cpp", 0x165, (char *)this);
     }
     unsigned int blocks = (size + 0x1F) >> 4;
