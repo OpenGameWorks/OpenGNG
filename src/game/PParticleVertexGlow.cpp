@@ -55,17 +55,15 @@ void PParticleVertexGlow::FrustrumTest(PFrustrum *pFrustrum, float *pVec, float 
     }
 }
 
-// DRAFT: 0x001BE870 Render__19PParticleVertexGlowFv
-// note: body instructions match; original branches bnez m_unk14 to an out-of-line body then b to the epilogue, ours uses beqz to the exit. Tried early returns, nested guards, else-return, empty else, m_unk14 outermost (DIFF 25, 28).
+// FUNCTION: 0x001BE870 Render__19PParticleVertexGlowFv
 void PParticleVertexGlow::Render() {
-    if (m_unkA4 != 0 && m_unk15 != 0) {
-        if (m_unk14 != 0) {
-            float fSize = m_unk370;
-            SetGlowSizeAndColor__10PGfxEngineFffPf(gGfxEng, fSize, fSize, &m_unk360);
-            SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, m_unk10, &m_unkC0, true, m_unk30, 0x50000);
-            Render__7PFxMeshFv(&m_unk340);
-        }
+    if (!m_unkA4 || !m_unk15 || !m_unk14) {
+        return;
     }
+    float fSize = m_unk370;
+    SetGlowSizeAndColor__10PGfxEngineFffPf(gGfxEng, fSize, fSize, &m_unk360);
+    SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, m_unk10, &m_unkC0, true, m_unk30, 0x50000);
+    Render__7PFxMeshFv(&m_unk340);
 }
 
 // DRAFT: 0x001BE900 Animate__19PParticleVertexGlowFf

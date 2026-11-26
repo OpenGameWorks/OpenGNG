@@ -205,20 +205,18 @@ void PParticleRain::SetCameraPosRot(float (*arg0)[4], float (*arg1)[4]) {
     }
 }
 
-// DRAFT: 0x001CCAD0 Render__13PParticleRainFv
-// note: guard branches are beqz/beqz nested here, original uses bnez over nop;b; gGfxEng reloc addend differs; nested and && forms gave the same count.
+// FUNCTION: 0x001CCAD0 Render__13PParticleRainFv
 void PParticleRain::Render() {
-    if (m_unk15 != 0) {
-        if (m_unk14 != 0) {
-        SetWorldMatrix__10PGfxEngineFP5PMat4(gGfxEng, (char *)this + 0x40);
-        SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, 0, (float *)((char *)this + 0xC0), true, m_unk30, 0x50000);
-        BeginFxLines__10PGfxEngineFv(gGfxEng);
-        RenderQuadrant(m_unk240);
-        RenderQuadrant(m_unk244);
-        EndFxLines__10PGfxEngineFv(gGfxEng);
-        m_unk270.Render();
-        }
+    if (!m_unk15 || !m_unk14) {
+        return;
     }
+    SetWorldMatrix__10PGfxEngineFP5PMat4(gGfxEng, (char *)this + 0x40);
+    SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, 0, (float *)((char *)this + 0xC0), true, m_unk30, 0x50000);
+    BeginFxLines__10PGfxEngineFv(gGfxEng);
+    RenderQuadrant(m_unk240);
+    RenderQuadrant(m_unk244);
+    EndFxLines__10PGfxEngineFv(gGfxEng);
+    m_unk270.Render();
 }
 
 // FUNCTION: 0x001CD360 __dt__13PParticleRainFv
