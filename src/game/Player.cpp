@@ -4207,9 +4207,8 @@ int Player::GameVarAdd(unsigned int arg0, int arg1, int arg2) {
 }
 
 // DRAFT: 0x001662B0 GameVarSub__6PlayerFUii
-// note: 192 diff words; value/slot registers swapped (orig s3=arg1, s4=&m_unk1D4[id]), switch and tail ordered; tried decl order, byte-offset slot ptr, value copy
+// note: 190 diff words; original computes the GameVarTbl entry pointer before the slot load and keeps arg1 in s3, slot (this+0x1D4 unfolded) in s4. Tried decl order, byte-offset/indexed slot spellings, value copy, pTbl local.
 int Player::GameVarSub(unsigned int arg0, int arg1) {
-    int nValue = arg1;
     int nRem;
     int *pSlot;
     int nVal;
@@ -4219,17 +4218,19 @@ int Player::GameVarSub(unsigned int arg0, int arg1) {
     float *pB;
     float *pTemp;
     FontNode *pFont;
+    unsigned char *pTbl;
 
     ((arg0 < 0x14) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x3FB, "iVar < GameVarMax"));
-    ((nValue >= 0) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x3FC, "iValue >= 0"));
+    ((arg1 >= 0) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x3FC, "iValue >= 0"));
 
-    pSlot = (int *)((char *)this + 0x1D4 + arg0 * 4);
+    pTbl = GameVarTbl + arg0 * 6;
+    pSlot = ((int *)((char *)this + 0x1D0) + 1) + arg0;
     nVal = *pSlot;
     if (nVal <= 0) {
         return nVal;
     }
-    nRem = nVal - nValue;
-    if (GameVarTbl[arg0 * 6 + 4] != 0) {
+    nRem = nVal - arg1;
+    if (pTbl[4] != 0) {
         if (!(m_unk1D0 & 1)) {
             return nVal;
         }
@@ -4242,7 +4243,7 @@ int Player::GameVarSub(unsigned int arg0, int arg1) {
         if (m_unk20 != 0) {
             return nVal;
         }
-        nAdd = nValue >> 2;
+        nAdd = arg1 >> 2;
         if (m_unk218 == 2) {
             nAdd += nAdd >> 1;
         }
