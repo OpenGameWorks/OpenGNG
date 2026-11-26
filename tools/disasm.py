@@ -110,15 +110,20 @@ def ident(name: str, addr: int) -> str:
     return f"lit_{addr:08X}" if name.startswith("@") or not name else name
 
 
-def literal(addr: int) -> str:
-    """A pool literal as a C string when it is NUL-terminated text, else as word and float."""
+def literal(addr: int, words: int = 1) -> str:
+    """A pool literal as a C string when it is NUL-terminated text, else as word and float.
+
+    WORDS > 1 prints that many consecutive words: an address-taken literal is an
+    aggregate (a quadword colour copied with lq), and its first word alone misleads."""
     off = addr - MAIN_VA + MAIN_OFF
     raw = image()[off:off + 256].split(b"\0", 1)[0] if off < len(image()) else b""
     if len(raw) >= 2 and all(32 <= c < 127 or c in (9, 10) for c in raw):
         return '"' + raw.decode().replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
-    w = word(addr)
-    f = struct.unpack("<f", struct.pack("<I", w))[0]
-    return f"0x{w:08X} = {f!r}f"
+    out = []
+    for k in range(words):
+        w = word(addr + 4 * k)
+        out.append(f"0x{w:08X} = {struct.unpack('<f', struct.pack('<I', w))[0]!r}f")
+    return out[0] if words == 1 else "{" + ", ".join(out) + "}"
 
 
 def target(a: int, typ: int, idx: int, rel: dict[int, tuple[int, int]], end: int) -> tuple[str, int]:
@@ -181,7 +186,7 @@ def render_m2c(name: str, addr: int, size: int) -> list[str]:
             if val in tables and typ in (5, 6):
                 imm = f"{imm[:3]}(jtbl_{val:08X})"
             elif sn.startswith("@") and typ in (6, 7):
-                lits[imm] = literal(val)
+                lits[imm] = literal(val, 4 if i.getOpcodeName() == "addiu" else 1)
         elif i.isBranch():
             imm = f".L{i.getBranchVramGeneric():08X}"
         text = i.disassemble(immOverride=imm) if imm else i.disassemble()

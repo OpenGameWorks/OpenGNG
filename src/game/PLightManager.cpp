@@ -2,12 +2,7 @@
 #include "PLightManager.h"
 
 // TODO(header): foreign declarations
-extern "C" void __ct__5PListFv(void *pThis);
-extern "C" void __dt__5PListFv(void *pThis, short nFlag);
 extern "C" void __dt__6PLightFv(void *pThis, short nFlag);
-extern "C" void RemoveAll__5PListFv(void *pThis);
-extern "C" void Remove__5PListFPv(void *pThis, void *pItem);
-extern "C" void Add__5PListFPv(void *pThis, void *pItem);
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void *__ct__6PLightFv(void *pThis);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
@@ -51,7 +46,7 @@ static bool LightCompareBrightness(void *pA, void *pB) {
 }
 
 // DRAFT: 0x0018E8B0 FindBrightestLightsOfType__13PLightManagerFPfbb10eLightTypeiPP6PLight
-// note: 182 words differ, size 0x3AC vs 0x3B8. Block A array store folds sp+0xA0 (original: addiu v0,sp,0xA0 then addu); block B cursor order and post-loop sort placement differ. Tried: index via nIndex local, pointer-based aLights store (pDst), both kept at 182.
+// note: 176 words differ, size 0x3B4 vs 0x3B8. Block A store folds sp+0xA0 (original: addiu v0,sp,0xA0 then addu) and its join has an extra nop, so block B branches sit 2 words early; block A loop tail nop differs. Tried: nIndex local and pDst store (182 before the PList member), split store with i++ and char-pointer store (176).
 int PLightManager::FindBrightestLightsOfType(float *pOut, bool bA, bool bB, eLightType nType, int nCount, PLight **pBrightestLights) {
     PLight *aLights[32];
     int i = 0;
@@ -81,29 +76,13 @@ int PLightManager::FindBrightestLightsOfType(float *pOut, bool bA, bool bB, eLig
         }
     }
     if (bB) {
-        if (*(int *)m_unk10 != 0) {
-            m_unk1C = m_unk14;
-            pLight = (m_unk14 != 0) ? *(void **)m_unk14 : 0;
-            if (pLight != 0) {
-                do {
-                    if (*((unsigned char *)pLight + 0x48) != 0 && *(int *)((char *)pLight + 0x44) == nType) {
-                        if (i >= 32) break;
-                        aLights[i++] = (PLight *)pLight;
-                        GetBrightness__6PLightFPf(pLight, pOut);
-                    }
-                    if (m_unk1C == 0) {
-                        m_unk1C = m_unk14;
-                        pLight = (m_unk14 != 0) ? *(void **)m_unk14 : 0;
-                    } else {
-                        void *pNext = *(void **)((char *)m_unk1C + 4);
-                        if (pNext != 0) {
-                            m_unk1C = pNext;
-                            pLight = *(void **)pNext;
-                        } else {
-                            pLight = 0;
-                        }
-                    }
-                } while (pLight != 0);
+        if (m_unk10.m_unk0 != 0) {
+            for (pLight = m_unk10.GetFirst(); pLight != 0; pLight = m_unk10.GetNext()) {
+                if (*((unsigned char *)pLight + 0x48) != 0 && *(int *)((char *)pLight + 0x44) == nType) {
+                    if (i >= 32) break;
+                    aLights[i++] = (PLight *)pLight;
+                    GetBrightness__6PLightFPf(pLight, pOut);
+                }
             }
         }
     }
@@ -125,7 +104,7 @@ int PLightManager::FindBrightestLightsOfType(float *pOut, bool bA, bool bB, eLig
 
 // FUNCTION: 0x0018EC70 GetLightObject__13PLightManagerFUi
 void *PLightManager::GetLightObject(unsigned int nId) {
-    if (FindLightNodeIn((PLightNode *)m_unk14, nId) != 0) {
+    if (FindLightNodeIn((PLightNode *)m_unk10.m_unk4, nId) != 0) {
         return (void *)nId;
     }
     return 0;
@@ -166,7 +145,7 @@ PLight *PLightManager::CreateDirectionLight(float *pPos, float *pDir) {
     if (pLight == 0) {
         CdsAssert__FPciPc("PLightManager.h", 0x67, "pLight");
     }
-    Add__5PListFPv(m_unk10, pLight);
+    m_unk10.Add(pLight);
     return pLight;
 }
 
@@ -188,31 +167,31 @@ void PLightManager::DestroyAllStaticLights() {
 
 // FUNCTION: 0x0018EEA0 DestroyAllDynamicLights__13PLightManagerFv
 void PLightManager::DestroyAllDynamicLights() {
-    m_unk1C = m_unk14;
-    void *pLight = (m_unk14 != 0) ? (void *)((PLightNode *)m_unk14)->m_unk0 : 0;
+    m_unk10.m_unkC = m_unk10.m_unk4;
+    void *pLight = (m_unk10.m_unk4 != 0) ? (void *)((PLightNode *)m_unk10.m_unk4)->m_unk0 : 0;
     while (pLight != 0) {
         __dt__6PLightFv(pLight, 1);
-        if (m_unk1C == 0) {
-            m_unk1C = m_unk14;
-            pLight = (m_unk14 != 0) ? (void *)((PLightNode *)m_unk14)->m_unk0 : 0;
+        if (m_unk10.m_unkC == 0) {
+            m_unk10.m_unkC = m_unk10.m_unk4;
+            pLight = (m_unk10.m_unk4 != 0) ? (void *)((PLightNode *)m_unk10.m_unk4)->m_unk0 : 0;
         } else {
-            PLightNode *pNext = ((PLightNode *)m_unk1C)->m_unk4;
+            PLightNode *pNext = ((PLightNode *)m_unk10.m_unkC)->m_unk4;
             if (pNext != 0) {
-                m_unk1C = pNext;
-                pLight = (void *)((PLightNode *)m_unk1C)->m_unk0;
+                m_unk10.m_unkC = (PListNode *)pNext;
+                pLight = (void *)((PLightNode *)m_unk10.m_unkC)->m_unk0;
             } else {
                 pLight = 0;
             }
         }
     }
-    RemoveAll__5PListFv(m_unk10);
+    m_unk10.RemoveAll();
 }
 
 // FUNCTION: 0x0018EF60 RemoveDynamicLight__13PLightManagerFP6PLight
 void PLightManager::RemoveDynamicLight(PLight *pLight) {
-    if (FindLightNodeIn((PLightNode *)m_unk14, (unsigned int)pLight) != 0) {
+    if (FindLightNodeIn((PLightNode *)m_unk10.m_unk4, (unsigned int)pLight) != 0) {
         __dt__6PLightFv(pLight, 1);
-        Remove__5PListFPv(m_unk10, pLight);
+        m_unk10.Remove(pLight);
     }
 }
 
@@ -324,12 +303,10 @@ bool PLightManager::Load(PPakFile *pFile) {
 PLightManager::~PLightManager() {
     DestroyAllStaticLights();
     DestroyAllDynamicLights();
-    __dt__5PListFv(m_unk10, -1);
 }
 
 // FUNCTION: 0x0018F540 __ct__13PLightManagerFv
 PLightManager::PLightManager() {
-    __ct__5PListFv(m_unk10);
     m_unk20 = 0;
     m_unk0.Allocate(0x20U);
 }

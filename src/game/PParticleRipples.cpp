@@ -136,10 +136,10 @@ void PParticleRipples::Render() {
     }
     if (m_unk8B1 != 0) {
         if (m_unk8B0 != 0) {
-            float aMat[4] = {1.1f, 1.1f, 1.1f, 1.1f};
+            float aMat[4] = {1.1f, 1.1f, 1.1f, 1.0f};
             SetMaterial__10PGfxEngineFiPfbUlUl(&gGfxEng, m_unk010, aMat, true, 0x44, 0x50000);
         } else {
-            float aMat[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+            float aMat[4] = {1.0f, 1.0f, 1.0f, 0.8f};
             SetMaterial__10PGfxEngineFiPfbUlUl(&gGfxEng, m_unk010, aMat, true, 0x48, 0x50000);
         }
         BeginFxInstances__10PGfxEngineFPvib(&gGfxEng, m_unk890, m_unk894, m_unk8B0);

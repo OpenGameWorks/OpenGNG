@@ -39,8 +39,6 @@ struct RenderPassWordTable {
     unsigned int v[18];
 };
 
-extern RenderPassU64Table lit_002456A0;
-extern RenderPassWordTable lit_003065E0;
 
 struct RenderPassHeader {
     int m_unk0;             // 0x00 index into PArray storage (signed)
@@ -52,11 +50,11 @@ struct RenderPassHeader {
 };
 
 // DRAFT: 0x001963B0 Load__11PRenderPassFP8PPakFileP6PArray
-// note: reloc immediates expected; header copy block register alloc (beq delay slot, v1 hoist) and tail scheduling differ; tried direct table indexing (118), success-first if (136), pointer locals (145).
+// note: 114 words from 0x1D0; tables are now initializers ({0,0x44,0x48,0x80000000A1,0x46} rodata, zeroed word table in .bss). Original keeps unfolded bases sp+0x94/0x9C (hdr fields) and sp+0xD0/0x100 (tables) in registers; pointer locals and direct indexing both fold them.
 int PRenderPass::Load(PPakFile *pFile, PArray *pArr) {
     RenderPassHeader hdr;
-    RenderPassU64Table tbl64 = lit_002456A0;
-    RenderPassWordTable tbl = lit_003065E0;
+    RenderPassU64Table tbl64 = {{0, 0x44, 0x48, 0x80000000A1LL, 0x46}};
+    RenderPassWordTable tbl = {{0}};
 
     tbl.v[1] = (unsigned int)st1_anim_start >> 3;
     tbl.v[2] = (unsigned int)st1_copy_anim_start >> 3;

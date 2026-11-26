@@ -219,7 +219,7 @@ void Bridge::LeanOnSides() {
 }
 
 // DRAFT: 0x001DCF40 RunPhysics__6BridgeFv
-// note: 269 words; frame 0x120 vs 0x110; loop 1 keeps s0/s1 allocation not a1/s5/s6/s7; off/roff and else-closed variants gave 281, reverted.
+// note: 269 words; frame 0x120 vs 0x110; no PList cursor walk (index loop over m_unk1E4 with record stride 32); loop 1 keeps s0/s1 allocation not a1/s5/s6/s7; off/roff and else-closed variants gave 281, reverted.
 void Bridge::RunPhysics() {
     int closed = 0;
     int i;

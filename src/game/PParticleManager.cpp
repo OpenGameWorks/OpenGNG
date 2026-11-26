@@ -42,7 +42,6 @@ extern "C" void SetWorldMatrix__10PGfxEngineFP5PMat4(void *, float *);
 extern "C" void BeginParticles__10PGfxEngineF13eBoxIntersect(void *, int);
 extern "C" void DrawParticles__10PGfxEngineFP13tagVuParticleiffb(void *, void *, int, float, float, bool);
 extern "C" void EndParticles__10PGfxEngineFv(void *);
-extern u_long128 lit_002487F0;
 extern char gGfxEng[1504384];
 extern float gUnitMatrix[16];
 extern int SCREEN_WIDTH;
@@ -69,7 +68,6 @@ extern "C" void SetVifCodes__12PDisplayListFUiUi(void *pThis, unsigned int a1, u
 extern "C" void SendGsPacket__12PDisplayListFPvib(void *pThis, void *pData, int nSize, bool bFlag);
 extern "C" void SetGsRegisters__12PDisplayListFP1i(void *pThis, u_long128 *pRegs, int nCount);
 class PFrozenFx;
-extern u_long128 lit_002487E0;
 extern "C" PFrozenFx *__ct__9PFrozenFxFv(PFrozenFx *pThis);
 extern "C" int Create__9PFrozenFxFP6PMNodePffff(PFrozenFx *pThis, PMNode *pNode, float *pVec, float fA, float fB, float fC);
 extern "C" PParticleFog *__ct__12PParticleFogFv(PParticleFog *pThis);
@@ -329,12 +327,11 @@ void PParticleManager::UpdateHeatHazeBuffer() {
     SetGsRegisters__12PDisplayListFP1i(*(void **)(gGfxEng + 0x154C80), (u_long128 *)aGs, 3);
 }
 
-// DRAFT: 0x001B77F0 RenderAuraParticles__16PParticleManagerFv
-// note: 37 words differ; literal 0x2487F0 loaded via lui/lq off $at (orig lui/addiu/lq via v0), early-return beqz one insn short; tried local pointer and if-block forms.
+// FUNCTION: 0x001B77F0 RenderAuraParticles__16PParticleManagerFv
 void PParticleManager::RenderAuraParticles() {
     if (m_unkEC0 != 0) {
-        u_long128 sp20 = lit_002487F0;
-        SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, m_unkEC4, (float *)&sp20, true, 0x48, 0x50000);
+        float vec[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+        SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, m_unkEC4, vec, true, 0x48, 0x50000);
         SetWorldMatrix__10PGfxEngineFP5PMat4(gGfxEng, gUnitMatrix);
         BeginParticles__10PGfxEngineF13eBoxIntersect(gGfxEng, 1);
         DrawParticles__10PGfxEngineFP13tagVuParticleiffb(gGfxEng, (char *)this + 0x9C0, 0x28, 1.0f, 1.0f, true);
@@ -714,31 +711,25 @@ int PParticleManager::CreateGroundDust(float *pPos, float fScale) {
     return 0;
 }
 
-// DRAFT: 0x001B88F0 CreateFrozenFx__16PParticleManagerFP6PMNodeff
-// note: DIFF 57, size 0x100 vs 0x10c; diverges from about 0x50 at assert string addressing and 0.3f literal order against the aVec lq copy.
+// FUNCTION: 0x001B88F0 CreateFrozenFx__16PParticleManagerFP6PMNodeff
 PFrozenFx *PParticleManager::CreateFrozenFx(PMNode *pNode, float fA, float fB) {
-    PFrozenFx *pFx;
-    PFrozenFx *pNew;
-    u_long128 aVec;
-
-    if ((pNew = (PFrozenFx *)__nw__FUi(0x210)) != 0) {
-        pFx = __ct__9PFrozenFxFv(pNew);
-    } else {
-        pFx = pNew;
+    PFrozenFx *pFx = (PFrozenFx *)__nw__FUi(0x210);
+    if (pFx != 0) {
+        pFx = __ct__9PFrozenFxFv(pFx);
     }
     if (pFx == 0) {
         CdsAssert("PParticleManager.cpp", 0x4CB, "apFx");
     }
-    aVec = lit_002487E0;
-    if (Create__9PFrozenFxFP6PMNodePffff(pFx, pNode, (float *)&aVec, 0.3f, fA, fB) != 0) {
-        Add((PParticleSystem *)pFx);
-        pFx->Slot06();
-        return pFx;
+    float aVec[4] = {0.8f, 0.9f, 1.3f, 0.45f};
+    if (Create__9PFrozenFxFP6PMNodePffff(pFx, pNode, aVec, 0.3f, fA, fB) == 0) {
+        if (pFx != 0) {
+            pFx->Slot00(1);
+        }
+        return 0;
     }
-    if (pFx != 0) {
-        pFx->Slot00(1);
-    }
-    return 0;
+    Add((PParticleSystem *)pFx);
+    pFx->Slot06();
+    return pFx;
 }
 
 // FUNCTION: 0x001B8A00 FreeAuraParticle__16PParticleManagerFP13tagVuParticle
