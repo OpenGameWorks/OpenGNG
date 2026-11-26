@@ -694,6 +694,12 @@ void SOUND_TransferSFX(short arg0, short arg1, unsigned int arg2, unsigned int a
     SetIOPCommand(6, 6);
 }
 
+#pragma cplusplus on
+// FUNCTION: 0x001AECE0 JP__FPv
+void JP(void *) {
+}
+#pragma cplusplus reset
+
 // DRAFT: 0x001AECF0 SOUND_InitIOP
 // note: about 20 differing lines: bgez delay slot filled with countdown init (orig fills with lui a0 of printf block), shifts countdown and tail by 3 instructions; do-while and for-loop countdown both tried, same count.
 int SOUND_InitIOP(void) {
