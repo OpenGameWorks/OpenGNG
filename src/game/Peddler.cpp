@@ -434,12 +434,12 @@ void PeddlerItems::EnableDisplay(bool bEnable) {
 }
 
 // DRAFT: 0x001D0D20 Reset__12PeddlerItemsFf
-// note: 27 diff lines; the original defers the -R negation until after the m_unk0 block-2 store and keeps R in f12, ours negates right after the call and reorders the m_unk4 block. Tried: cached m_unk4 pointer (38), cached pItem for block 1 (32), pItem for block 2 (57), fRot local for R and -R (27).
+// note: 26 diff words, size 0xE4 vs 0xE8; the original copies R with mov.s f12,f0 before neg.s f0,f12, ours emits neg.s f0,f0 (one instruction short). Tried: cached m_unk4 pointer (38), cached pItem for block 1 (32), pItem for block 2 (57), fRot local for R and -R (27), fNeg before the store (26), -fRot inline at the store (26).
 void PeddlerItems::Reset(float fAngle) {
     float afVec[4];
     PMNode *pRotate = m_unk4;
 
-    *(u_long128 *)(pRotate->_pad080) = *(u_long128 *)&gUnitMatrix[0];
+    *(u_long128 *)(pRotate->_pad080) = *(u_long128 *)&gUnitMatrix[12];
     pRotate->m_unk3E |= 8;
     afVec[0] = 0.0f;
     afVec[1] = 7.0f;
@@ -451,11 +451,13 @@ void PeddlerItems::Reset(float fAngle) {
     afVec[1] = 0.0f;
     float fRot = Round180__Ff(fAngle);
     afVec[2] = fRot;
-    *(u_long128 *)(m_unk0->_pad080 + 0x10) = *(u_long128 *)afVec;
-    m_unk0->m_unk3E |= 8;
+    PMNode *pN = m_unk0;
+    *(u_long128 *)(pN->_pad080 + 0x10) = *(u_long128 *)afVec;
+    pN->m_unk3E |= 8;
     afVec[2] = -fRot;
-    *(u_long128 *)(m_unk4->_pad080 + 0x10) = *(u_long128 *)afVec;
-    m_unk4->m_unk3E |= 8;
+    PMNode *pM = m_unk4;
+    *(u_long128 *)(pM->_pad080 + 0x10) = *(u_long128 *)afVec;
+    pM->m_unk3E |= 8;
     m_unk4->ScaleSet(0.0f, 0.0f, 0.0f, 1.0f);
     m_unk4->m_unk2C = 0.0f;
 }
@@ -655,11 +657,11 @@ void Peddler::LookAtPeddler() {
     afVec[1] += 2.25f;
     sceVu0AddVector(afPos, afPos, afVec);
     SetCameraLookAtParams__9CameraAPIFP15EntityBaseClassPfPf(&mCameraAPI__13EntityManager, this, afPos, afVec);
-    gInterface[0x1997] = 0;
+    gInterface[0x287] = 0;
 }
 
 // DRAFT: 0x001D16A0 AnimateItems__7PeddlerFv
-// note: DIFF 22 (permute.py). Remaining: bDone init daddiu vs addiu (bool bDone gives 72), slti at vs v0 at loop top, float ternary arg order (original loads the -16.5/-14.0 pair first), tail call order. Tried: declaration order, fA local (DIFF 58), split assert (124), tail reorder.
+// note: DIFF 22 words. Remaining: bDone init daddiu vs addiu (bool bDone gives 72), slti at vs v0 at loop top and in the assert test, float ternary arg order (original loads the -14.0 pair first), tail call order. Tried: declaration order, fA local (DIFF 58), hoisted float local for the first ternary (22), split assert (124), tail reorder. Fixed: gInterface[0x1997] to gInterface[0x287] (true offset; 0x1997 is the low half).
 int Peddler::AnimateItems() {
     int nSlot;
     int nStep;
@@ -735,7 +737,7 @@ int Peddler::HideItems() {
 }
 
 // DRAFT: 0x001D1950 ExitPeddlerView__7PeddlerFv
-// note: DIFF 24 words with the plain 0.85f literal (was 56 with the bit pattern); remaining differences are register allocation (this in s3, orig s0) and frame size. Tried 3 declaration orders.
+// note: DIFF 24 words with the plain 0.85f literal and gInterface[0x287]; remaining: register allocation (orig this in s3, i in s0, nOff in s1, ppSlot in s2; ours this in s0) and loop rotation (orig bottom test reloads *(this+nOff+0x218), ours tests the ppSlot local). Tried: 3 declaration orders, reloaded slot in the while condition (39), gInterface[0x1997] (25).
 void Peddler::ExitPeddlerView() {
     int i;
     unsigned int nOff;
@@ -764,7 +766,7 @@ void Peddler::ExitPeddlerView() {
         i++;
         ppSlot = (PeddlerItems **)((char *)this + nOff + 0x218);
     }
-    gInterface[0x1997] = 1;
+    gInterface[0x287] = 1;
 }
 
 // DRAFT: 0x001D1A80 InitItems__7PeddlerFv
