@@ -14,6 +14,7 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4,p`) that `to
 - Declarations of other classes, functions and globals go near the top of your .cpp under `// TODO(header): foreign declarations`, never into another file. Include `"types.h"`, your own header, and shared read-only class headers such as `"PArray.h"`; those stay unedited.
 - An existing .cpp keeps its contents; your functions go in address order among them.
 - Scratch experiments go in `src/scratch/<job-id>/`.
+- A copy outside `src/game` is scored with `fncmp.py -q --as src/game/<File>.cpp COPY 0xADDR`. mwccps2 register scheduling depends on the source and object path lengths, and `--as` compiles the copy with the lengths ninja uses for the real file; without it a copy can report MATCH for code the link rejects.
 
 ## Procedure, per address
 
