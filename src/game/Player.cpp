@@ -4,6 +4,13 @@
 #include "PArray.h"
 
 // TODO(header): foreign declarations
+extern "C" void EnableFx__6PMNodeFbb(void *pNode, int a, int b);
+extern "C" int LoadAnim__15EntityBaseClassFUib(void *pThis, unsigned int nId, bool bFlag);
+extern "C" void SetAnimData__15EntityBaseClassFP8AnimData(void *pThis, void *pAnim);
+extern "C" void SetData__16MotionBlurEffectFPv(void *pFx, void *pData);
+extern "C" void SetAnimation__15PGrimReaperCapeFUi(void *pCape, unsigned int nAnim);
+extern unsigned char HammerActions[];
+extern unsigned char gMaximoMotionBlurTable[];
 extern "C" void Add__6PArrayFPv(void *pArray, void *pItem);
 extern "C" void BuildDispList__9PSkeletonFv(void *pSkeleton);
 extern "C" void EnableOneRenderPassOnly__6PMNodeFi(void *pNode, int nPass);
@@ -3526,6 +3533,187 @@ int Player::EndAction() {
         return 1;
     }
     return 0;
+}
+
+// DRAFT: 0x0015FB40 SetAction__6PlayerFi
+// note: 343 words differ: frame 0xC0 saving fp vs original 0xA0 with s0-s7, and every branch order differs; StatusTable$1966 lookup replaced by 0 (file-local symbol unnamed in C).
+int Player::SetAction(int arg0) {
+    unsigned char *pTbl;
+    unsigned char *pAct;
+    unsigned int nFlags;
+    unsigned int nS2;
+    unsigned int nSound;
+    unsigned int nS5;
+    int nAnim;
+    float fScale;
+    unsigned int nTmp;
+    struct {
+        short s0;
+        short s1;
+        short s2;
+        short s3;
+        short s4;
+        short s5;
+        float f;
+    } tmp;
+
+    pTbl = *(unsigned char **)((char *)this + 0x25C);
+    if (arg0 >= *(int *)(pTbl + 4)) {
+        return 0;
+    }
+    pAct = *(unsigned char **)pTbl + arg0 * 0x1C;
+    if (*(unsigned int *)pAct == 0) {
+        return 0;
+    }
+    nFlags = *(unsigned int *)(pAct + 8);
+    if (!(*(int *)((char *)this + 0x1D0) & 1) && !(nFlags & 8)) {
+        return 0;
+    }
+    *(signed char *)((char *)this + 0x269) = 0;
+        *(unsigned char *)((char *)this + 0x163) = 0;
+    nTmp = *(unsigned int *)((char *)this + 0x2B4);
+    if (nTmp != 0) {
+        ((EntityBaseClass *)this)->StopSoundBySoundRef(nTmp);
+        *(unsigned int *)((char *)this + 0x2B4) = 0;
+    }
+    if (*(void **)((char *)this + 0x288) != 0 && *(int *)((char *)this + 0x260) == 0x3E) {
+        EnableFx__6PMNodeFbb(*(void **)((char *)this + 0x288), 1, 1);
+    }
+    nS5 = *(unsigned short *)(pAct + 0xE);
+    if (arg0 < 0x3F && (*(int *)((char *)this + 0x1D0) & 2) && *(signed char *)((char *)this + 0x229) < 4) {
+        pAct = *(unsigned char **)pTbl + (HammerActions[arg0] * 0x1C);
+        if (*(unsigned short *)(pAct + 0xE) != 0) {
+            nS5 = *(unsigned short *)(pAct + 0xE);
+        }
+        nFlags = *(unsigned int *)(pAct + 8);
+    }
+    nS2 = nFlags & 0x400;
+    *(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) = (nS2 == 0) ? 0 : 8;
+    if (nS2 != 0) {
+        *(unsigned char *)((char *)this + 0x336) = 0;
+    }
+    *(signed char *)((char *)this + 0xE8) &= ~8;
+    *(int *)((char *)this + 0x304) = 0;
+    nAnim = LoadAnim__15EntityBaseClassFUib(this, *(unsigned int *)pAct, 1) & 0xFF;
+    if (nAnim != 0) {
+        *(unsigned int *)((char *)this + 0x264) = nFlags;
+        *(signed char *)((char *)this + 0x103) = !(nFlags & 0x100) ? 0x20 : 0xFD;
+        *(int *)((char *)this + 0x260) = arg0;
+        *(unsigned char **)((char *)this + 0x254) = pAct;
+        tmp.s0 = 0;
+        tmp.s1 = -1;
+        if (pAct[5] == 0) {
+            tmp.s3 = -1;
+            tmp.s2 = 0;
+        } else {
+            tmp.s3 = pAct[5];
+            tmp.s2 = *(short *)(pAct + 4);
+        }
+        tmp.s4 = *(short *)(pAct + 6);
+        if (nFlags & 0x8000) {
+            FreeJoint(1);
+        }
+        fScale = (nFlags & 0x40) ? 1.0f : 0.5f;
+        if (pAct[0xC] >= 0x2A) {
+            CdsAssert__FPciPc("Player.cpp", 0x10EB, "pAct->iAttackID < sizeof(AttackTable) / sizeof(AttackData)");
+        }
+        nTmp = 0x8019FF55;
+        *(unsigned char **)((char *)this + 0x258) = (unsigned char *)AttackTable + (pAct[0xC] * 0xC);
+        if (nFlags & 1) {
+            *(signed char *)((char *)this + 0x23D2) = 1;
+            *(unsigned char *)((char *)this + 0x336) = 1;
+            if (*(int *)((char *)this + 0x1FC) != 0) {
+                if (*(unsigned short *)(*(unsigned char **)((char *)this + 0x258) + 6) != 0) {
+                    nS5 = *(unsigned short *)(*(unsigned char **)((char *)this + 0x258) + 6);
+                }
+            }
+            ((EntityBaseClass *)this)->ResetCollisions();
+            if (pAct[7] == 2) {
+                nTmp = 0x8019FFD5;
+            }
+            {
+                unsigned char *pAtk = *(unsigned char **)((char *)this + 0x258);
+                unsigned short nId = *(unsigned short *)(pAtk + 0);
+                unsigned short nA2 = *(unsigned short *)(pAtk + 2);
+                if (pAtk[8] != 0) {
+                    switch (*(int *)((char *)this + 0x1FC)) {
+                    case 1:
+                        nA2 = (nA2 | 0x80) & 0xFFFF;
+                        nId = (nId + 0x19) & 0xFFFF;
+                        break;
+                    case 2:
+                        nA2 = (nA2 | 0x40) & 0xFFFF;
+                        nId = (nId + 0x19) & 0xFFFF;
+                        break;
+                    case 3:
+                        nId = (nId + 0x19) & 0xFFFF;
+                        nA2 = (nA2 | ((pAtk[8] == 1) ? 0x140 : 0x40)) & 0xFFFF;
+                        break;
+                    }
+                }
+                SetPlayerAttack(nId, nA2);
+            }
+            if (*(signed char *)((char *)this + 0x23D1) != 0) {
+                fScale *= SLOW_RATE;
+            }
+        } else {
+            *(int *)((char *)this + 0x1CC) = 0;
+            if (*(unsigned char *)((char *)this + 0x336) != 0 && nS2 == 0) {
+                *(unsigned char *)((char *)this + 0x336) = 0;
+                *(int *)((char *)this + 0x314) = 0;
+                *(int *)((char *)this + 0x220) = 0;
+                *(int *)((char *)this + 0x21C) = 0;
+                ComboFinish__8HudComboFv((char *)&gInterface + 0x290);
+            }
+        }
+        *(unsigned int *)(*(char **)((char *)this + 0x38) + 0xEC) = nTmp;
+        if (nS5 != 0) {
+            ((EntityBaseClass *)this)->PlaySound(nS5);
+        }
+        tmp.s5 = (short)pAct[7];
+        if (*(unsigned char *)((char *)this + 0x26B) != 0 && tmp.s5 == 2) {
+            tmp.s5 = 6;
+        }
+        tmp.f = fScale;
+        *(float *)((char *)this + 0x24C) = fScale;
+        SetAnimData__15EntityBaseClassFP8AnimData(this, (void *)&tmp);
+        *(int *)((char *)this + 0x250) = 0;
+        *(int *)((char *)this + 0x27C) = 0;
+        *(float *)(*(char **)((char *)this + 0x38) + 0x11C) = Round180__Ff(*(float *)((char *)this + 0x1C4));
+        if (nFlags & 0x2000) {
+            SetPhysicsType__7PhysicsFUiPA4_f(*(void **)((char *)this + 0x38), 0x1030, 0);
+        } else {
+            *(float *)(*(char **)((char *)this + 0x38) + 0x110) = *(float *)(*(char **)((char *)this + 0x25C) + 0x38);
+            SetPhysicsType__7PhysicsFUiPA4_f(*(void **)((char *)this + 0x38), 0x1032, 0);
+        }
+        if (nFlags & 0x200) {
+            *(u_long128 *)*(char **)((char *)this + 0x38) = *(u_long128 *)&gUnitMatrix[12];
+            *(int *)((char *)this + 0x1C8) = 0;
+        }
+        nTmp = *(unsigned int *)((char *)this + 0x2A8);
+        if (nTmp != 0) {
+            mEffectAPI__13EntityManager.DeleteEffect(nTmp);
+            *(unsigned int *)((char *)this + 0x2A8) = 0;
+        }
+        if (!(nFlags & 2)) {
+            nTmp = *(unsigned int *)((char *)this + 0x2AC);
+            if (nTmp != 0) {
+                mEffectAPI__13EntityManager.DeleteEffect(nTmp);
+                *(unsigned int *)((char *)this + 0x2AC) = 0;
+            }
+        }
+        if (*(void **)((char *)this + 0x2BC) != 0) {
+            if (pAct[0xD] != 0) {
+                SetData__16MotionBlurEffectFPv(*(void **)((char *)this + 0x2BC), (char *)&gMaximoMotionBlurTable + ((pAct[0xD] & 0xFF) << 7));
+            } else {
+                SetData__16MotionBlurEffectFPv(*(void **)((char *)this + 0x2BC), 0);
+            }
+        }
+        if (*(unsigned char *)((char *)this + 0x229) == 4) {
+            SetAnimation__15PGrimReaperCapeFUi((char *)this + 0x390, *(unsigned int *)pAct);
+        }
+    }
+    return nAnim;
 }
 
 // note: 16 words differ: original keeps the constant 1 in v0 for the 0x9F path and loads 2/0 into v0 for the others; compiled code uses a2. Tried if/else chain (16 lines), int idx = 1 (about 14, branch layout differs).
