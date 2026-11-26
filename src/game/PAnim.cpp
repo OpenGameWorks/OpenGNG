@@ -64,7 +64,7 @@ void PAnim::SetFrameTime(float) {
 }
 
 // DRAFT: 0x0018C8B0 FindChannel__5PAnimF9eAnimType
-// note: DIFF 7; original shares one epilogue for null and match returns, ours duplicates the return tail. Tried: else-branch (14), single-exit break (20), pointer-walk loop (20).
+// note: DIFF 7; original shares one epilogue for null and match returns, ours duplicates the return tail. Tried: else-branch (11), single-exit break (16), pointer-walk loop (20).
 PChannel *PAnim::FindChannel(eAnimType eType)
 {
     int i;
@@ -132,7 +132,7 @@ int PAnim::Load(PPakFile *pFile)
 }
 
 // DRAFT: 0x0018CB20 Load__5PAnimFP8PPakFileP26tagMeshNodeAnimationHeader
-// note: DIFF 12; remaining: lh vs lhu on m_unk0 at 0x4C, loop-exit b offset at 0xA4, return-tail andi/sltu order at 0x180-0x19C. Tried: count test inversion (83 to 16), unsigned loop bound (15), !(tag!=5) tail (14), assert > 5 (12), tag==5 tail (13).
+// note: DIFF 12; remaining: lh vs lhu on m_unk0 at 0x4C, loop-exit b offset at 0xA4, return-tail andi/sltu order at 0x180-0x19C. Tried: count test inversion (83 to 16), unsigned loop bound (15), !(tag!=5) tail (14), assert > 5 (12), tag==5 tail (13). m_unk8 = (int)m_unk0 - 1 (12, still lh); unsigned short local (12, still lh).
 int PAnim::Load(PPakFile *pFile, tagMeshNodeAnimationHeader *pHeader)
 {
     int i;
