@@ -365,6 +365,8 @@ extern "C" float sinf(float x);
 extern "C" float cosf(float x);
 extern "C" float atan2f(float fY, float fX);
 extern "C" float Round180__Ff(float fAngle);
+extern "C" int GameVarSub__6PlayerFUii(void *pThis, unsigned int nId, int nValue);
+extern "C" void InitShield__6ShieldFP15EntityBaseClassfPA4_fPA4_fUiPbi(void *pThis, void *pOwner, float fArg1, float (*pArg2)[4], float (*pArg3)[4], unsigned int nArg4, bool *pArg5, int nArg6);
 extern "C" float FastMath_Sin180__Ff(float fAngle);
 extern "C" float FastMath_Cos180__Ff(float fAngle);
 extern float SLOW_JUMP;
@@ -1856,6 +1858,71 @@ void Player::SetFlyingShield(Shield *arg0) {
         SetAction(0x23);
     }
     m_unk2A4 = arg0;
+}
+
+// DRAFT: 0x0015C170 ShieldThrowMove__6PlayerFv
+// note: 190 differing lines; frame 0x70 vs 0x80 (original keeps a Physics pointer in s2), case-0 register swap, f20 select layout, mpEntMgr gp load, CdsAssert arm order, sqrtf (sqrt.s) and the extra 4 instructions in the tail; tried sp50/sp60 order, Physics local, int* local for case 0, if/else f20
+void Player::ShieldThrowMove() {
+    bool sp7C;
+    float sp60[4];
+    float sp50[4];
+    float f20;
+    unsigned int s0;
+    float fDot;
+    void *r;
+    u_long128 *pVec;
+
+    switch (m_unk250) {
+    case 0:
+        if (m_unk260 == 0x24) {
+            m_unk38[1] = 0x3727C5AC;
+            m_unk38[0x44] = 0;
+        }
+        m_unk2B4 = ((EntityBaseClass *)this)->PlaySound(0x38);
+        m_unk250 += 1;
+        /* fallthrough */
+    case 1:
+    case 32:
+        if ((int)m_unk3C[13] >= (int)((unsigned char *)m_unk254)[4]) {
+            m_unk23D2 = 1;
+            *(float *)((char *)m_unk38 + 0x110) = *(float *)((char *)m_unk25C + 0x38);
+            m_unk2A4 = (Shield *)Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 5, false, 0);
+            if (m_unk2A4 == 0) CdsAssert__FPciPc("Player.cpp", 0x1992, "mpShield");
+            f20 = (m_unk1D0 & 0x10) ? 41.0f : 20.5f;
+            s0 = m_unk1D0 & 0x30;
+            m_unk250 = -1;
+            GameVarSub__6PlayerFUii(this, 0xE, m_unk214);
+            *(u_long128 *)sp60 = *(u_long128 *)((char *)m_unk28C + 0x70);
+            r = ComboTarget(0.5f, f20 * f20, false);
+            if (r != 0) {
+                if (((int *)r)[0xF] != 0) {
+                    pVec = (u_long128 *)(((int *)r)[0xF] + 0x80);
+                } else {
+                    pVec = (u_long128 *)((char *)r + 0x190);
+                }
+                *(u_long128 *)sp50 = *pVec;
+                sp50[1] += 2.0f;
+                sceVu0SubVector(sp50, sp50, sp60);
+                fDot = sceVu0InnerProduct(sp50, sp50);
+                sceVu0ScaleVector(sp50, sp50, 0.7f / sqrtf(fDot));
+                ((Physics *)m_unk38)->m_unk11C = Round180__Ff(m_unk1C4);
+            } else {
+                float a = 0.017453292f * ((Physics *)m_unk38)->m_unk11C;
+                sp50[2] = 0.7f * -cosf(a);
+                sp50[1] = 0;
+                sp50[0] = 0.7f * -sinf(a);
+            }
+            sp50[3] = 1.0f;
+            GetShieldPass(&sp7C);
+            InitShield__6ShieldFP15EntityBaseClassfPA4_fPA4_fUiPbi(m_unk2A4, this, (f20 - 5.0f) / 0.7f, (float (*)[4])sp60, (float (*)[4])sp50, s0, &sp7C, m_unk210);
+            sp60[0] = m_unk3C[0x20];
+            sp60[2] = m_unk3C[0x22];
+            *(u_long128 *)((char *)*(void **)((char *)m_unk2A4 + 0x38) + 0xA0) = *(u_long128 *)sp60;
+        }
+        /* fallthrough */
+    case -1:
+        return;
+    }
 }
 
 // note: 2 words differ: the zero-set for the return-0 arm lands in the bne delay slot and the nop moves to the b delay slot. Tried ret=0 and return 0 in the != 1 arm (both 2 lines), and the == 1 layout (about 20 lines).

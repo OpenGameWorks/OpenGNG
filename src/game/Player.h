@@ -88,6 +88,7 @@ public:
     void SetMaximo(char arg0, bool arg1);
     void EnablePlayerShadow(bool arg0);
     void GetShieldPass(bool *arg0);
+    void ShieldThrowMove();
     void LandingMove();
     void JogLandMove();
     void JumpMove();
@@ -293,7 +294,8 @@ public:
     void *m_unk23CC;        // 0x23CC shadow object, cleared or set by EnablePlayerShadow
     signed char m_unk23D0;  // 0x23D0 cleared by InitAttachableJoints
     signed char m_unk23D1;  // 0x23D1 cleared by InitAttachableJoints
-    char _pad23D2[2];
+    signed char m_unk23D2;  // 0x23D2 set to 1 by ShieldThrowMove
+    char _pad23D3[1];
     int m_unk23D4;          // 0x23D4 set to 5 by InitAttachableJoints
     void FinishCutScene(PMeshNode *arg0, PMat4 *arg1, int arg2);
     void GrimAirAttackMove();

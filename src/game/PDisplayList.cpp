@@ -3,6 +3,12 @@
 #include "PDisplayList.h"
 #include "GsUtils.h"
 
+// TEST register (eestruct.h sceGsTest); written after sceGsSetDefClear to enable the alpha test.
+typedef struct {
+    unsigned long ATE:1; unsigned long ATST:3; unsigned long AREF:8; unsigned long AFAIL:2;
+    unsigned long DATE:1; unsigned long DATM:1; unsigned long ZTE:1; unsigned long ZTST:2; unsigned long pad19:45;
+} sceGsTest;
+
 // TODO(header): foreign declarations
 extern "C" void __ct__16PTextureDmaChainFv(void *pThis);
 extern "C" void __dt__16PTextureDmaChainFv(void *pThis, short nFlag);
@@ -14,7 +20,7 @@ void DisplayExceptionMessage(char *pMsg, bool bFatal, bool bReboot);
 void QwordCopy(u_long128 *pDst, u_long128 *pSrc, unsigned int nQwords);
 extern "C" void FlushCache(int nMode);
 void DmaWaitForCompletion(int nChannel, bool bWait);
-extern "C" void sceGsSetDefClear(void *pPacket, int nW, short nCX, short nCY, short nX, short nY, int nZero0, int nZero1, int nZero2, int nZero3, unsigned int nFlags);
+extern "C" int sceGsSetDefClear(void *cp, short ztest, short x, short y, short w, short h, unsigned char r, unsigned char g, unsigned char b, unsigned char a, unsigned int z);
 extern char shared_vertices_start[];
 extern char gHermiteMat[0x40];
 extern char guFxPipelineVuConstants[0x280];
@@ -213,53 +219,51 @@ void PDisplayList::BeginMatrixList() {
     m_unkA3350 = 0;
 }
 
-// DRAFT: 0x180B90 ClearFrameBuffer__12PDisplayListFssssccccUi
-// note: DIFF 105; ours hoists the 0x10000007 header lui into the bnez delay slot and duplicates it (original delay slot holds the assert string lui, header uses v0); also v0/v1 swapped. Tried (unsigned char) arg casts: no change.
+// FUNCTION: 0x180B90 ClearFrameBuffer__12PDisplayListFssssccccUi
 void PDisplayList::ClearFrameBuffer(short nX, short nY, short nW, short nH, char nR, char nG, char nB, char nA, unsigned int nFlags) {
-    int nPacket = AllocEntries(8);
-    if (nPacket == 0) {
+    u_long128 *pPacket = (u_long128 *)AllocEntries(8);
+    if (pPacket == 0) {
         CdsAssert("PDisplayList.cpp",0x820, "0");
     }
-    *(long long *)nPacket = 0x10000007LL;
-    ((unsigned int *)nPacket)[2] = 0x11000000;
-    ((unsigned int *)nPacket)[3] = 0x50000007;
-    short nCX = nX - nW / 2;
-    short nCY = nY - nH / 2;
-    sceGsSetDefClear((void *)(nPacket + 0x20), 1, nCX, nCY, nW, nH, (unsigned char)nR, (unsigned char)nG, (unsigned char)nB, (unsigned char)nA, nFlags);
-    *(unsigned char *)(nPacket + 0x20) = (*(unsigned char *)(nPacket + 0x20) & 0xFE) | 1;
-    *(unsigned char *)(nPacket + 0x20) = (*(unsigned char *)(nPacket + 0x20) & 0xF1) | ((0 & 7) * 2);
-    *(unsigned char *)(nPacket + 0x21) = (*(unsigned char *)(nPacket + 0x21) & 0xCF) | 0x10;
-    *(u_long128 *)(nPacket + 0x10) = 0;
-    *(unsigned short *)(nPacket + 0x10) = (*(unsigned short *)(nPacket + 0x10) & 0x8000) | 6;
-    *(unsigned char *)(nPacket + 0x11) = (*(unsigned char *)(nPacket + 0x11) & 0x7F) | 0x80;
-    *(unsigned char *)(nPacket + 0x17) = (*(unsigned char *)(nPacket + 0x17) & 0x0F) | 0x10;
-    *(unsigned char *)(nPacket + 0x18) = (*(unsigned char *)(nPacket + 0x18) & 0xF0) | 0x0E;
+    *(long long *)pPacket = 0x10000007LL;
+    ((unsigned int *)pPacket)[2] = 0x11000000;
+    ((unsigned int *)pPacket)[3] = 0x50000007;
+    sceGsSetDefClear(pPacket + 2, 1, nX - nW / 2, nY - nH / 2, nW, nH, nR, nG, nB, nA, nFlags);
+    sceGsTest *pTest = (sceGsTest *)(pPacket + 2);
+    pTest->ATE = 1;
+    pTest->ATST = 0;
+    pTest->AFAIL = 1;
+    GifTag *pTag = (GifTag *)(pPacket + 1);
+    *(u_long128 *)pTag = 0;
+    pTag->NLOOP = 6;
+    pTag->EOP = 1;
+    pTag->NREG = 1;
+    pTag->REGS0 = 0xE;
     asm {
         sync
     }
 }
 
-// DRAFT: 0x180D90 ClearZBuffer__12PDisplayListFsssUi
-// note: s-register map is rotated (ours s4<-nW, s3<-nX, s2<-nY; original s4<-nX, s3<-nY, s2<-nW); tried locals before/after AllocEntries, int locals; 92 words in all
-void PDisplayList::ClearZBuffer(short nX, short nY, short nW, unsigned int nFlags) {
-    int nPacket = AllocEntries(8);
-    if (nPacket == 0) {
+// FUNCTION: 0x180D90 ClearZBuffer__12PDisplayListFsssUi
+void PDisplayList::ClearZBuffer(short nW, short nH, short nZTest, unsigned int nZ) {
+    u_long128 *pPacket = (u_long128 *)AllocEntries(8);
+    if (pPacket == 0) {
         CdsAssert("PDisplayList.cpp",0x7FB, "0");
     }
-    *(long long *)nPacket = 0x10000007LL;
-    ((unsigned int *)nPacket)[2] = 0x11000000;
-    ((unsigned int *)nPacket)[3] = 0x50000007;
-    short nCX = 0x800 - nX / 2;
-    short nCY = 0x800 - nY / 2;
-    sceGsSetDefClear((void *)(nPacket + 0x20), nW, nCX, nCY, nX, nY, 0, 0, 0, 0, nFlags);
-    *(unsigned char *)(nPacket + 0x20) = (*(unsigned char *)(nPacket + 0x20) & 0xFE) | 1;
-    *(unsigned char *)(nPacket + 0x20) = (*(unsigned char *)(nPacket + 0x20) & 0xF1) | 0;
-    *(unsigned char *)(nPacket + 0x21) = (*(unsigned char *)(nPacket + 0x21) & 0xCF) | 0x20;
-    *(u_long128 *)(nPacket + 0x10) = 0;
-    *(unsigned short *)(nPacket + 0x10) = (*(unsigned short *)(nPacket + 0x10) & 0x8000) | 6;
-    *(unsigned char *)(nPacket + 0x11) = (*(unsigned char *)(nPacket + 0x11) & 0x7F) | 0x80;
-    *(unsigned char *)(nPacket + 0x17) = (*(unsigned char *)(nPacket + 0x17) & 0x0F) | 0x10;
-    *(unsigned char *)(nPacket + 0x18) = (*(unsigned char *)(nPacket + 0x18) & 0xF0) | 0x0E;
+    *(long long *)pPacket = 0x10000007LL;
+    ((unsigned int *)pPacket)[2] = 0x11000000;
+    ((unsigned int *)pPacket)[3] = 0x50000007;
+    sceGsSetDefClear(pPacket + 2, nZTest, 0x800 - nW / 2, 0x800 - nH / 2, nW, nH, 0, 0, 0, 0, nZ);
+    sceGsTest *pTest = (sceGsTest *)(pPacket + 2);
+    pTest->ATE = 1;
+    pTest->ATST = 0;
+    pTest->AFAIL = 2;
+    GifTag *pTag = (GifTag *)(pPacket + 1);
+    *(u_long128 *)pTag = 0;
+    pTag->NLOOP = 6;
+    pTag->EOP = 1;
+    pTag->NREG = 1;
+    pTag->REGS0 = 0xE;
     asm {
         sync
     }
