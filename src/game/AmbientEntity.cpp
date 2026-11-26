@@ -19,5 +19,12 @@ void AmbientEntity::SetEditableVars(char *pSrc) {
     memcpy(m_unk1B0, pSrc, 0x4);
 }
 
+// FUNCTION: 0x001BF250 OnTimerEvent__13AmbientEntityFUi
+void AmbientEntity::OnTimerEvent(unsigned int nTimer) {
+    if (nTimer == m_unk1F0) {
+        SetState(1);
+    }
+}
+
 // FUNCTION: 0x001BF750 __ct__13AmbientEntityFv
 AmbientEntity::AmbientEntity() : EntityBaseClass((LoadClass)5, 0) { EnableSleep(false, false); }

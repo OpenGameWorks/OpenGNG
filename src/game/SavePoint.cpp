@@ -19,5 +19,12 @@ void SavePoint::SetEditableVars(char *pSrc) {
     memcpy(m_unk1B8, pSrc, 0x8);
 }
 
+// FUNCTION: 0x0020E690 OnTimerEvent__9SavePointFUi
+void SavePoint::OnTimerEvent(unsigned int nTimer) {
+    if (nTimer == m_unk1B0) {
+        m_unk1B4 = 1;
+    }
+}
+
 // FUNCTION: 0x0020E7C0 __ct__9SavePointFv
 SavePoint::SavePoint() : EntityBaseClass((LoadClass)5, 0) { EnableSleep(false, false); }
