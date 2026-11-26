@@ -102,47 +102,15 @@ public:
     float m_unkF8;
 };
 
-// DRAFT: 0x0017A9A0 CutCameraMovesPlayer__16CameraCutManagerFUi
-// note: entry layout matches via ternary entry; loop body uses a2 for the node where the original uses v1 (register allocation). Variants: pNext hoisting, inner-block decls, lbu flag, local reorder, if-else entry, cast ternary.
+// FUNCTION: 0x0017A9A0 CutCameraMovesPlayer__16CameraCutManagerFUi
 int CameraCutManager::CutCameraMovesPlayer(unsigned int arg0) {
-    char *pNode;
-    char *pElem;
-    char *pNext;
-    m_unk7C = m_unk74;
-    pNode = m_unk74 != 0 ? *(char **)m_unk74 : (char *)0;
-    while (pNode != 0) {
-        if (*(unsigned int *)pNode == arg0) {
-            *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
-            pElem = (*(char **)(pNode + 8) != 0) ? *(char **)(*(char **)(pNode + 8)) : 0;
-            while (pElem != 0) {
-                if (*(unsigned char *)(pElem + 0x29) != 0) {
+    for (CutCameraGroup *pGroup = (CutCameraGroup *)m_unk70.GetFirst(); pGroup != 0; pGroup = (CutCameraGroup *)m_unk70.GetNext()) {
+        if (pGroup->m_unk0 == arg0) {
+            for (CutSceneCamera_Generic *pCam = (CutSceneCamera_Generic *)pGroup->m_unk4.GetFirst(); pCam != 0; pCam = (CutSceneCamera_Generic *)pGroup->m_unk4.GetNext()) {
+                if (pCam->m_unk29 != 0) {
                     return 1;
                 }
-                if (*(char **)(pNode + 0x10) == 0) {
-                    *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
-                    pElem = (*(char **)(pNode + 8) != 0) ? *(char **)(*(char **)(pNode + 8)) : 0;
-                } else {
-                    pNext = *(char **)(*(char **)(pNode + 0x10) + 4);
-                    if (pNext != 0) {
-                        *(char **)(pNode + 0x10) = pNext;
-                        pElem = *(char **)(*(char **)(pNode + 0x10));
-                    } else {
-                        pElem = 0;
-                    }
-                }
             }
-        }
-        if (m_unk7C != 0) {
-            pNext = *(char **)(m_unk7C + 4);
-            if (pNext != 0) {
-                m_unk7C = pNext;
-                pNode = *(char **)m_unk7C;
-            } else {
-                pNode = 0;
-            }
-        } else {
-            m_unk7C = m_unk74;
-            pNode = (m_unk74 != 0) ? *(char **)m_unk74 : 0;
         }
     }
     return 0;
@@ -254,67 +222,30 @@ void CameraCutManager::StartCutCamera(unsigned int arg0, bool bArg) {
     }
 }
 
-// DRAFT: 0x0017AEC0 GetNextCutCamera__16CameraCutManagerFUiUi
-// note: 52 differing lines; outer walk and join store match, element loop differs in register choice (pChild in v1, original v0), loop-bottom branch targets, and cursor advance layout. Tried m_unk80 cached in local node, separate pCur for cursor advance (66, worse), walk-arm restructure (62 to 52 kept).
+// FUNCTION: 0x0017AEC0 GetNextCutCamera__16CameraCutManagerFUiUi
 void *CameraCutManager::GetNextCutCamera(unsigned int nInstance, unsigned int nValue) {
     unsigned int nMin;
-    char *pBest;
-    char *pNext;
-    char *pChild;
-    unsigned int nDiff;
+    CutSceneCamera_Generic *pBest;
 
     m_unk80 = 0;
     pBest = 0;
     nMin = 0x270F;
-    if (*(int *)m_unk70 != 0) {
-        m_unk7C = m_unk74;
-        m_unk80 = m_unk74 != 0 ? *(char **)m_unk74 : 0;
-        while (m_unk80 != 0) {
-            if (*(unsigned int *)m_unk80 == m_unk8C) {
+    if (m_unk70.m_unk0 != 0) {
+        for (m_unk80 = (CutCameraGroup *)m_unk70.GetFirst(); m_unk80 != 0; m_unk80 = (CutCameraGroup *)m_unk70.GetNext()) {
+            if (m_unk80->m_unk0 == m_unk8C) {
                 break;
             }
-            if (m_unk7C == 0) {
-                m_unk7C = m_unk74;
-                pChild = m_unk74 != 0 ? *(char **)m_unk74 : 0;
-            } else {
-                pNext = *(char **)(m_unk7C + 4);
-                if (pNext != 0) {
-                    m_unk7C = pNext;
-                    pChild = *(char **)m_unk7C;
-                } else {
-                    pChild = 0;
-                }
-            }
-            m_unk80 = pChild;
         }
     }
     if (m_unk80 == 0) {
         CdsAssert("CameraCutscene.cpp", 0x385, "m_pRootOfCutSceneList");
     }
     while (m_unk80 != 0) {
-        if (*(unsigned int *)m_unk80 == nInstance) {
-            pNext = m_unk80;
-            *(char **)(pNext + 0x10) = *(char **)(pNext + 8);
-            pChild = *(char **)(pNext + 8) != 0 ? *(char **)*(char **)(pNext + 8) : 0;
-            while (pChild != 0) {
-                if (nValue < *(unsigned int *)(pChild + 0x50)) {
-                    nDiff = *(unsigned int *)(pChild + 0x50) - nValue;
-                    if (nDiff < nMin) {
-                        nMin = nDiff;
-                        pBest = pChild;
-                    }
-                }
-                if (*(char **)(m_unk80 + 0x10) != 0) {
-                    pNext = *(char **)(*(char **)(m_unk80 + 0x10) + 4);
-                    if (pNext != 0) {
-                        *(char **)(m_unk80 + 0x10) = pNext;
-                        pChild = *(char **)pNext;
-                    } else {
-                        pChild = 0;
-                    }
-                } else {
-                    *(char **)(m_unk80 + 0x10) = *(char **)(m_unk80 + 8);
-                    pChild = *(char **)(m_unk80 + 8) != 0 ? *(char **)*(char **)(m_unk80 + 8) : 0;
+        if (m_unk80->m_unk0 == nInstance) {
+            for (CutSceneCamera_Generic *pCam = (CutSceneCamera_Generic *)m_unk80->m_unk4.GetFirst(); pCam != 0; pCam = (CutSceneCamera_Generic *)m_unk80->m_unk4.GetNext()) {
+                if (nValue < pCam->m_unk50 && pCam->m_unk50 - nValue < nMin) {
+                    nMin = pCam->m_unk50 - nValue;
+                    pBest = pCam;
                 }
             }
             return pBest;
@@ -323,57 +254,19 @@ void *CameraCutManager::GetNextCutCamera(unsigned int nInstance, unsigned int nV
     return 0;
 }
 
-// DRAFT: 0x0017B0E0 GetFirstCutCamera__16CameraCutManagerFUi
-// note: 66 differing lines; the element sits in $a0 where the original uses $v1, and the outer loop and exit layout differ. Tried do-while guard, while loop, nValue at function scope, direct returns on the match path, shared exit label; none dropped below 66.
+// FUNCTION: 0x0017B0E0 GetFirstCutCamera__16CameraCutManagerFUi
 void *CameraCutManager::GetFirstCutCamera(unsigned int arg0) {
-    char *pNode;
-    char *pElem;
-    char *pNext;
-    char *pBest;
-    unsigned int nMin;
-    unsigned int nValue;
-
-    m_unk7C = m_unk74;
-    nMin = 0x270F;
-    pNode = m_unk74 != 0 ? *(char **)m_unk74 : (char *)0;
-    while (pNode != 0) {
-        if (*(unsigned int *)pNode == arg0) {
-            *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
-            pElem = *(char **)(pNode + 8) != 0 ? *(char **)(*(char **)(pNode + 8)) : (char *)0;
-            if (pElem != 0) {
-                do {
-                    nValue = *(unsigned int *)(pElem + 0x50);
-                    if (nValue < nMin) {
-                        nMin = nValue;
-                        pBest = pElem;
-                    }
-                    if (*(char **)(pNode + 0x10) != 0) {
-                        pNext = *(char **)(*(char **)(pNode + 0x10) + 4);
-                        if (pNext != 0) {
-                            *(char **)(pNode + 0x10) = pNext;
-                            pElem = *(char **)pNext;
-                        } else {
-                            pElem = (char *)0;
-                        }
-                    } else {
-                        *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
-                        pElem = *(char **)(pNode + 8) != 0 ? *(char **)(*(char **)(pNode + 8)) : (char *)0;
-                    }
-                } while (pElem != 0);
+    unsigned int nMin = 0x270F;
+    CutSceneCamera_Generic *pBest;
+    for (CutCameraGroup *pGroup = (CutCameraGroup *)m_unk70.GetFirst(); pGroup != 0; pGroup = (CutCameraGroup *)m_unk70.GetNext()) {
+        if (pGroup->m_unk0 == arg0) {
+            for (CutSceneCamera_Generic *pCam = (CutSceneCamera_Generic *)pGroup->m_unk4.GetFirst(); pCam != 0; pCam = (CutSceneCamera_Generic *)pGroup->m_unk4.GetNext()) {
+                if (pCam->m_unk50 < nMin) {
+                    nMin = pCam->m_unk50;
+                    pBest = pCam;
+                }
             }
             return pBest;
-        }
-        if (m_unk7C == 0) {
-            m_unk7C = m_unk74;
-            pNode = m_unk74 != 0 ? *(char **)m_unk74 : (char *)0;
-        } else {
-            pNext = *(char **)(m_unk7C + 4);
-            if (pNext != 0) {
-                m_unk7C = pNext;
-                pNode = *(char **)m_unk7C;
-            } else {
-                pNode = (char *)0;
-            }
         }
     }
     return 0;
@@ -791,55 +684,16 @@ void CameraCutManager::SetupCutCamera_Fixed(unsigned int arg0, unsigned int arg1
     *(int *)(MemMgr + 0x18) = saved;
 }
 
-// DRAFT: 0x0017C260 CleanUpCutCameras__16CameraCutManagerFv
-// note: DIFF 70 words; entry exit 6 insns short, inner-loop nops at 0x60/0x64 and join nop at 0xC4 missing, RemoveAll arg hoisted into beqz delay. Tried: outer top-tested (81), inner top-tested (73), flat cursor else (70).
+// FUNCTION: 0x0017C260 CleanUpCutCameras__16CameraCutManagerFv
 void CameraCutManager::CleanUpCutCameras() {
-    char *pNode;
-    char *pItem;
-    char *pNext;
-    if (*(int *)m_unk70 != 0) {
-        m_unk7C = m_unk74;
-        pNode = (m_unk74 != 0) ? *(char **)m_unk74 : 0;
-        if (pNode != 0) {
-            do {
-                *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
-                pItem = (*(char **)(pNode + 8) != 0) ? *(char **)(*(char **)(pNode + 8)) : 0;
-                if (pItem != 0) {
-                    do {
-                        FreeUpCameraStructure((CutSceneCamera_Generic *)pItem);
-                        if (*(char **)(pNode + 0x10) == 0) {
-                            *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
-                            pItem = (*(char **)(pNode + 8) != 0) ? *(char **)(*(char **)(pNode + 8)) : 0;
-                        } else {
-                            pNext = *(char **)(*(char **)(pNode + 0x10) + 4);
-                            if (pNext != 0) {
-                                *(char **)(pNode + 0x10) = pNext;
-                                pItem = *(char **)(*(char **)(pNode + 0x10));
-                            } else {
-                                pItem = 0;
-                            }
-                        }
-                    } while (pItem != 0);
-                }
-                RemoveAll__5PListFv(pNode + 4);
-                if (pNode != 0) {
-                    __dt__5PListFv(pNode + 4, -1);
-                    __dl__FPv(pNode);
-                }
-                RemoveCurrent__5PListFv(m_unk70);
-                if (m_unk7C != 0) {
-                    pNext = *(char **)(m_unk7C + 4);
-                    if (pNext != 0) {
-                        m_unk7C = pNext;
-                        pNode = *(char **)m_unk7C;
-                    } else {
-                        pNode = 0;
-                    }
-                } else {
-                    m_unk7C = m_unk74;
-                    pNode = (m_unk74 != 0) ? *(char **)m_unk74 : 0;
-                }
-            } while (pNode != 0);
+    if (m_unk70.m_unk0 != 0) {
+        for (CutCameraGroup *pGroup = (CutCameraGroup *)m_unk70.GetFirst(); pGroup != 0; pGroup = (CutCameraGroup *)m_unk70.GetNext()) {
+            for (CutSceneCamera_Generic *pCam = (CutSceneCamera_Generic *)pGroup->m_unk4.GetFirst(); pCam != 0; pCam = (CutSceneCamera_Generic *)pGroup->m_unk4.GetNext()) {
+                FreeUpCameraStructure(pCam);
+            }
+            pGroup->m_unk4.RemoveAll();
+            delete pGroup;
+            m_unk70.RemoveCurrent();
         }
     }
     m_unk85 = 0;
@@ -871,56 +725,38 @@ void CameraCutManager::FreeUpCameraStructure(CutSceneCamera_Generic *arg0) {
 
 // FUNCTION: 0x0017C470 AddCutSceneCamera__16CameraCutManagerFPvUi
 void CameraCutManager::AddCutSceneCamera(void *pCam, unsigned int nArg) {
-    char *pNode;
-    char *pNext;
+    CutCameraGroup *pNode;
 
-    if (*(int *)m_unk70 == 0) {
-        if ((pNode = (char *)__nw__FUi(0x14)) != 0) {
-            __ct__5PListFv(pNode + 4);
-        }
-        m_unk80 = pNode;
+    if (m_unk70.m_unk0 == 0) {
+        m_unk80 = new CutCameraGroup;
         if (m_unk80 == 0) {
             CdsAssert("CameraCutscene.cpp", 0x48, "m_pRootOfCutSceneList");
         }
-        Add__5PListFPv(m_unk80 + 4, pCam);
-        *(unsigned int *)m_unk80 = nArg;
-        Add__5PListFPv(m_unk70, m_unk80);
+        m_unk80->m_unk4.Add(pCam);
+        m_unk80->m_unk0 = nArg;
+        m_unk70.Add(m_unk80);
         return;
     }
-    m_unk7C = m_unk74;
-    pNode = m_unk74 != 0 ? *(char **)m_unk74 : 0;
+    pNode = (CutCameraGroup *)m_unk70.GetFirst();
     m_unk84 = 0;
     while (pNode != 0) {
-        if (*(unsigned int *)pNode == nArg) {
+        if (pNode->m_unk0 == nArg) {
             m_unk84 = 1;
             break;
         }
-        if (m_unk7C == 0) {
-            m_unk7C = m_unk74;
-            pNode = m_unk74 != 0 ? *(char **)m_unk74 : 0;
-        } else {
-            pNext = *(char **)(m_unk7C + 4);
-            if (pNext != 0) {
-                m_unk7C = pNext;
-                pNode = *(char **)m_unk7C;
-            } else {
-                pNode = 0;
-            }
-        }
+        pNode = (CutCameraGroup *)m_unk70.GetNext();
     }
     if (m_unk84 != 0) {
-        Add__5PListFPv(pNode + 4, pCam);
+        pNode->m_unk4.Add(pCam);
         return;
     }
-    if ((pNode = (char *)__nw__FUi(0x14)) != 0) {
-        __ct__5PListFv(pNode + 4);
-    }
+    pNode = new CutCameraGroup;
     if (pNode == 0) {
         CdsAssert("CameraCutscene.cpp", 0x6F, "m_pRootOfCutSceneList");
     }
-    Add__5PListFPv(pNode + 4, pCam);
-    *(unsigned int *)pNode = nArg;
-    Add__5PListFPv(m_unk70, pNode);
+    pNode->m_unk4.Add(pCam);
+    pNode->m_unk0 = nArg;
+    m_unk70.Add(pNode);
 }
 
 // FUNCTION: 0x0017C630 Update__16CameraCutManagerFv
@@ -937,8 +773,8 @@ int CameraCutManager::Update() {
         *(PVec3 *)c = *(PVec3 *)m_unk50;
         *(PVec3 *)d = *(PVec3 *)m_unk60;
         float mat[16];
-        CreateViewMatrix__6CameraFR5PMat45PVec35PVec3(m_unk0, m_unk10, c, d);
-        sceVu0CopyMatrix((float (*)[4])mat, (float (*)[4])m_unk10);
+        CreateViewMatrix__6CameraFR5PMat45PVec35PVec3(m_unk0, m_unk10.m_v, c, d);
+        sceVu0CopyMatrix((float (*)[4])mat, (float (*)[4])m_unk10.m_v);
         SetViewMatrix__6CameraF5PMat4(m_unk0, mat);
         return 1;
     }
@@ -947,14 +783,10 @@ int CameraCutManager::Update() {
 
 // FUNCTION: 0x0017C740 __dt__16CameraCutManagerFv
 CameraCutManager::~CameraCutManager() {
-    __dt__5PListFv((void *)m_unk70, -1);
 }
 
-// DRAFT: 0x0017C7A0 __ct__16CameraCutManagerFP6Camera
-// note: 39 differing words; original keeps this in s1 across the calls (frame 0x30, saves s1 at 0x10, ra at 0x20), draft reloads this from the stack. Local self copy and the plain form both give 39.
+// FUNCTION: 0x0017C7A0 __ct__16CameraCutManagerFP6Camera
 CameraCutManager::CameraCutManager(Camera *arg0) {
-    sceVu0UnitMatrix((float *)((char *)this + 0x10));
-    __ct__5PListFv((void *)m_unk70);
     m_unk0 = arg0;
     m_unk80 = 0;
     m_unk84 = 0;

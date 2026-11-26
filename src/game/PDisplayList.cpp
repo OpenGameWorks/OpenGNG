@@ -117,9 +117,8 @@ void PDisplayList::BeginShadowVolume(PMat4 *pMat, float *pA, float *pB, float *p
 }
 
 // DRAFT: 0x1807A0 DrawLines__12PDisplayListFP9tagVuLinei
-// note: DIFF 108; original frame 0x90 with s0-s7 saved, ours needs fp (0xA0); tried data pointer before alloc, batch count via ternary, index increment before tail; register map and loop-bottom layout still differ
+// note: 106 differing lines (was 108). Ternary batch count and loop pointer write-back with nCount as the running count. Still differs: the register map (nCount, nIdx and pPacket assignments) and the loop-bottom layout. Tried: data pointer inlined (109), for loop (106), scaled index (109).
 void PDisplayList::DrawLines(struct tagVuLine *pLines, int nCount) {
-    int nLeft = nCount;
     int nBatch;
     int nRem;
     int nIdx;
@@ -144,24 +143,26 @@ void PDisplayList::DrawLines(struct tagVuLine *pLines, int nCount) {
     }
     nIdx = 0;
     while (nIdx < nBatch) {
-        int nNum = (nLeft < 0x10) ? nLeft : 0x10;
+        int nNum = (nCount < 0x10) ? nCount : 0x10;
         u_long128 *pData = (u_long128 *)((char *)pLines + (nIdx << 10));
-        nLeft -= nNum;
-        int nPacket = AllocEntries(nNum * 4 + 3);
-        if (nPacket == 0) {
+        nCount -= nNum;
+        u_long128 *pPacket = (u_long128 *)AllocEntries(nNum * 4 + 3);
+        if (pPacket == 0) {
             CdsAssert("PDisplayList.cpp", 0x89D, "0");
         }
         int nQw = nNum * 4 + 1;
-        *(long long *)nPacket = (long long)(nQw | 0x10000000);
-        ((unsigned int *)nPacket)[2] = 0;
-        ((unsigned int *)nPacket)[3] = (nQw << 16) | 0x6C008000;
-        ((int *)nPacket)[4] = nNum;
-        QwordCopy((u_long128 *)(nPacket + 0x20), pData, nQw - 1);
+        *(long long *)pPacket = (long long)nQw | 0x10000000;
+        ((unsigned int *)pPacket)[2] = 0;
+        ((unsigned int *)pPacket)[3] = (nQw << 16) | 0x6C008000;
+        pPacket++;
+        *(int *)pPacket = nNum;
+        pPacket++;
+        QwordCopy(pPacket, pData, nQw - 1);
+        pPacket += nQw - 1;
         nIdx += 1;
-        int nEnd = nPacket + 0x20 + (nQw - 1) * 0x10;
-        *(long long *)nEnd = 0x10000000LL;
-        ((unsigned int *)nEnd)[2] = 0;
-        ((unsigned int *)nEnd)[3] = 0x17000000;
+        *(long long *)pPacket = 0x10000000LL;
+        ((unsigned int *)pPacket)[2] = 0;
+        ((unsigned int *)pPacket)[3] = 0x17000000;
     }
     asm {
         sync
@@ -772,7 +773,7 @@ void PDisplayList::DrawStaticInstances(struct tagVuStaticInstance *pInstances, i
 }
 
 // DRAFT: 0x182100 DrawFogParticles__12PDisplayListFPA4_fifffPf
-// note: 102 differing words; frame 0xC0 vs 0xB0 with pColor spilled and extra locals live across the call (tried 5 variants, best kept)
+// note: 101 differing words (was 102); frame 0xC0 vs 0xB0 with pColor spilled, pChunk and nIndex live across AllocEntries. Tried: nCount/pChunk order (102), for-loop shape (102), nIndex declared before nLoops (101, kept).
 void PDisplayList::DrawFogParticles(float (*pVerts)[4], int nCount, float fA, float fB, float fC, float *pColor) {
     if (pVerts == 0) {
         CdsAssert("PDisplayList.cpp", 0x4A7, "pParticles");
@@ -780,15 +781,15 @@ void PDisplayList::DrawFogParticles(float (*pVerts)[4], int nCount, float fA, fl
     if (nCount == 0) {
         CdsAssert("PDisplayList.cpp", 0x4A8, "iNumParticles");
     }
+    int nIndex = 0;
     int nLoops = nCount / 61;
     if (nCount % 61 != 0) {
         nLoops += 1;
     }
-    int nIndex = 0;
     while (nIndex < nLoops) {
         int nChunk = (nCount < 61) ? nCount : 61;
-        float (*pChunk)[4] = pVerts + nIndex * 61;
         nCount -= nChunk;
+        float (*pChunk)[4] = pVerts + nIndex * 61;
         if (nChunk < 5) {
             break;
         }
@@ -1118,14 +1119,11 @@ void PDisplayList::SetVertexData(float (*pVerts)[4], int nCount, int nFlags) {
 }
 
 // DRAFT: 0x1834F0 DrawRawVertices__12PDisplayListFPA4_fPA4_fPA4_fPA4_fi
-// note: 109 differing lines. Local register allocation differs (nCount s3 vs s1, nOffset s0 vs s2, nBatch s1 vs s3), the dead div/mfhi by 0x1E is absent, and the loop test uses $v0 not $at. Tried: nBatch declared before nOffset (still 109).
+// note: 67 differing words (was 110; nBatch as a ternary). Register map differs (original nCount s1, nBatch s3, nOffset s2, nPacket s0; ours s3, s2, s0, s1), the original enters the loop by a branch to its bottom test, and its prologue has a dead div/mfhi by 0x1E. Tried: nBatch declared before nOffset, nCount -= after AllocEntries (69), guarded do-while (67), dead nCount % 0x1E (eliminated by the compiler), nPacket declared before nBatch (67).
 void PDisplayList::DrawRawVertices(float (*p0)[4], float (*p1)[4], float (*p2)[4], float (*p3)[4], int nCount) {
     int nOffset = 0;
     while (nCount >= 3) {
-        int nBatch = nCount;
-        if (nBatch >= 0x1E) {
-            nBatch = 0x1E;
-        }
+        int nBatch = (nCount < 0x1E) ? nCount : 0x1E;
         nCount -= nBatch;
         int nPacket = AllocEntries(2);
         if (nPacket == 0) {

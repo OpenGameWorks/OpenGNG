@@ -2,11 +2,19 @@
 #define CAMERACUTSCENE_H
 
 #include "types.h"
+#include "PList.h"
+#include "CameraDebug.h"
 
 // TODO(header): foreign declarations
 class Camera;
 class PVec3;
 class CutSceneCamera_Generic;
+
+// One instance's cut cameras: the instance ID followed by its camera list (0x14 bytes).
+struct CutCameraGroup {
+    unsigned int m_unk0;        // 0x00 instance ID
+    PList m_unk4;               // 0x04 CutSceneCamera_Generic items
+};
 
 class CameraCutManager {
 public:
@@ -43,14 +51,11 @@ public:
 
     Camera *m_unk0;             // 0x000
     char _pad004[0x0C];
-    float m_unk10[16];          // 0x010 (4x4 matrix)
+    CameraDebugMat m_unk10;     // 0x010 identity-initialised matrix
     float m_unk50[4];           // 0x050
     float m_unk60[4];           // 0x060
-    char m_unk70[4];            // 0x070 (PList head, extent assumed)
-    char *m_unk74;              // 0x074
-    char _pad078[4];
-    char *m_unk7C;              // 0x07C
-    char *m_unk80;              // 0x080
+    PList m_unk70;              // 0x070 cut-camera groups (CutCameraGroup items)
+    CutCameraGroup *m_unk80;    // 0x080 group selected by GetNextCutCamera
     unsigned char m_unk84;      // 0x084
     unsigned char m_unk85;      // 0x085
     char _pad086[2];

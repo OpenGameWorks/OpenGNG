@@ -127,7 +127,7 @@ void ESubTimer::GenerateString(char *pOut, unsigned int nArg, unsigned int nArg2
 }
 
 // DRAFT: 0x00169930 ZeroTimer__9ESubTimerFv
-// note: 8 differing words; the original has one extra nop before the block-loop bnez and one after it before sb 0x44 (needs -O4,p?). Tried unguarded for (12 words), top-tested while (14), guarded do-while (8, kept).
+// note: 8 differing words; the second loop's tail is `slti; nop; bnez; nop; nop` in the original (ours has no nop before bnez and one nop after it), and the skip branch targets a nop before sb 0x44. Tried unguarded for (12), top-tested while (14), guarded do-while (8, kept), store before increment (8), for-loop form (8), direct offset store (8).
 void ESubTimer::ZeroTimer() {
     m_unk000 = 0;
     m_unk004 = 0;
@@ -164,7 +164,7 @@ void ESubTimer::ZeroTimer() {
 }
 
 // DRAFT: 0x00169890 StopTimer__9ESubTimerFv
-// note: 8 differing words; compare block loads m_unk008/m_unk004 into swapped a1/v1 (tried <, >, explicit sum, nElapsed local, nMax local loaded before the compare).
+// note: 8 differing words; the compare loads m_unk008 into a1 first and m_unk004 into v1, while ours loads m_unk004 first, so the two compares differ in operand registers. Tried <, > (8), explicit sum temp (8), hoisted declarations (8), nElapsed local, nMax local loaded before the compare.
 void ESubTimer::StopTimer() {
     if (m_unk044 != 0) {
         unsigned int nDummy;
@@ -282,7 +282,7 @@ int ETiming::GenerateStringWSuffixAndCat(char *pDest, unsigned int nId) {
 }
 
 // DRAFT: 0x00169E30 ZeroAllOneFrameVals__7ETimingFv
-// note: 6 differing words; original has 2 extra nops (one before the loop bnez, one after its delay slot), so the join sits at +0x38. Tried prefix ++ (6), unsigned compare (6), pTimer = pTimer + 1 (6), end pointer declared first (12), store before increment (9); top-tested, counted, byte-step worse.
+// note: 6 differing words; original has 2 extra nops (one before the loop bnez, one after its delay slot), so the join sits at +0x38. Tried prefix ++ (6), unsigned compare (6), pTimer = pTimer + 1 (6), end pointer declared first (12), store before increment (9), top-tested, counted, byte-step worse; four more pointer and increment-order variants (v6 to v9) also stayed at 6.
 void ETiming::ZeroAllOneFrameVals() {
     ESubTimer *pTimer = m_aTimers;
     ESubTimer *pEnd = (ESubTimer *)((char *)this + 0x634);
