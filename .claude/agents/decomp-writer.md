@@ -81,6 +81,8 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4,p`) that `to
 - When a call's argument loads come in a different order or through the incoming `a0` instead of the saved `this` register, write that member argument as `*(unsigned int *)((char *)this + 0x328)` (`Player::OpenChestMove`, `Player::UnlockGateMove`, `Peddler::ActivateAttackingEnemies`).
 - A bool argument built as `a1 = 0; movz a1, one, p` is `f(p ? false : true)`; `!p` and `p == 0` give `sltu`/`movn` (`Player::SetFlyingShield`).
 - A test `beq x,1 -> body; nop; b exit` with `daddu v0,0` in the `b` slot is `switch (x) { case 1: ... } return 0;` (`Player::IsMidasActive`, `EffectAPI::EnableParticleFx`).
+- A search loop whose match arm is `bne` to advance, then `b` over a `nop` to a shared exit, with `p = 0` after the loop, is an inlined helper: write a `static inline` finder with `return node;` inside a `for` loop and `return 0;` after it, and call it from the function (`FindLightNodeIn` in `src/game/PLightManager.cpp`).
+- A member function whose body never reads `a0` and whose callers leave `a0` unset is a `static` member (mangling is the same); declare it `static` in the class instead of calling an `extern "C"` alias without `this` (`PIOPFile::FrameMaintenacePartA`, `FileSys`).
 - `GetClassName` returns the original literal, which can differ from the class name ("Zin Shell Explosion"); read it with `disasm.literal(ADDR)`.
 - `src/game/PWorld.cpp` holds the first match and serves as a model.
 

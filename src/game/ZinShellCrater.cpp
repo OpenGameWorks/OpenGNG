@@ -8,7 +8,7 @@ extern unsigned int ZinShellCrater_InitSeq[0xD];
 extern unsigned int ZinShellCrater_FadeSeq[0x5];
 extern char mTimerAPI__13EntityManager[0x28];
 extern "C" int CreateTimer__8TimerAPIFUiUib(void *pThis, unsigned int nId, unsigned int nTime, bool bPal);
-extern "C" void GetGroundPos__7MathAPIFPA4_f(void *pThis);
+extern "C" void GetGroundPos__7MathAPIFPA4_f(float (*pPos)[4]); // static MathAPI::GetGroundPos
 
 // FUNCTION: 0x001C8910 __dt__14ZinShellCraterFv
 ZinShellCrater::~ZinShellCrater() {
@@ -33,11 +33,11 @@ void ZinShellCrater::Execute() {
     case 0:
         if (*((unsigned char *)this + 0xE9)) {
             CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk04, 6, false);
-            void *pMath = (void *)m_unk190;
+            void *pPos = (void *)m_unk190;
             if (m_unk3C != 0) {
-                pMath = m_unk3C + 0x80;
+                pPos = m_unk3C + 0x80;
             }
-            GetGroundPos__7MathAPIFPA4_f(pMath);
+            GetGroundPos__7MathAPIFPA4_f((float (*)[4])pPos);
             PlaySequence(ZinShellCrater_InitSeq);
             return;
         }
