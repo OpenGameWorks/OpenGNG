@@ -61,7 +61,7 @@ void PParticleRain::RenderQuadrant(unsigned int nIndex) {
 }
 
 // DRAFT: 0x001CC160 AnimateQuadrant__13PParticleRainFUi
-// note: 141 words differ, prologue register choice (original keeps nOff in t0 and computes pVel early, ours keeps nOff in v1); pBase, pVel-first and loop-entry forms tried; the loop's pre-test beqz differs.
+// note: 141 words differ; original keeps nOff in t0, reads count via this+nOff+0x148 and pVel first; tried for/while, pVel-first, count via this+nOff+0x148, array vs pointer pPos: all 141-142 (src/scratch/PParticleRain-aq).
 void PParticleRain::AnimateQuadrant(unsigned int nIndex) {
     unsigned int nOff = nIndex * 0x50;
     char *pBase = (char *)this + 0x140;
