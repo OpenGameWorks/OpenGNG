@@ -46,7 +46,7 @@ public:
     void SetSword();
     int GameVarSet(unsigned int arg0, int arg1);
     int GameVarSub(unsigned int arg0, int arg1);
-    void GameVarAdd(unsigned int arg0, int arg1, int arg2);
+    int GameVarAdd(unsigned int arg0, int arg1, int arg2);
     int MightyBlowCheck(unsigned int arg0);
     void AirSliceMove();
     void AirOverheadMove();

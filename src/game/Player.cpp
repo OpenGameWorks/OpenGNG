@@ -4076,6 +4076,136 @@ int Player::MightyBlowCheck(unsigned int arg0) {
     return 0;
 }
 
+// DRAFT: 0x00165E60 GameVarAdd__6PlayerFUiii
+// note: arg0/arg1 swapped vs original (arg0 s0 not s3, nVal shares arg1 reg), frame 0x70 vs 0x60 (extra s5 save); tried locals order, short/int nCap, bool bAt (best), slot spelling, switch order (already matches chain)
+int Player::GameVarAdd(unsigned int arg0, int arg1, int arg2) {
+    unsigned char *pTbl;
+    int *pSlot;
+    int nVal;
+    short nCap;
+    int nStep;
+    int nTmp;
+    int nArg;
+    int nCost;
+    bool bAt;
+
+    ((arg0 < 0x14) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x45E, "iVar < GameVarMax"));
+    ((arg1 >= 0) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x45F, "iValue >= 0"));
+
+    pTbl = GameVarTbl + arg0 * 6;
+    if (pTbl[4] != 0 && !(m_unk1D0 & 1)) {
+        return 0;
+    }
+    if (pTbl[5] != 0 && m_unk229 >= 4) {
+        return 0;
+    }
+    nCap = *(short *)(pTbl + 2);
+    pSlot = (int *)((char *)this + 0x1D4) + arg0;
+    nVal = arg1 + *pSlot;
+    if (nCap < nVal) {
+        nVal = nCap;
+    }
+    switch (arg0) {
+    case 1:
+        nStep = m_unk1DC * 0xC8;
+        bAt = nStep < nVal;
+        if (nStep < m_unk1D8) {
+            nStep += 0xC8;
+            bAt = nStep < nVal;
+        }
+        if (bAt) {
+            nVal = nStep;
+        }
+        if (arg2 < 2 && SetPowerupMotion(0x32) != 0 && arg2 != 0) {
+            m_unk335 |= 2;
+        }
+    default:
+    block_64:
+        *pSlot = nVal;
+        ((Interface *)((char *)&gInterface + 0x1710))->UpdateStatus(arg0, false);
+        return 1;
+    case 2:
+        nTmp = m_unk1D4;
+        if (nTmp < nVal) {
+            nVal = nTmp;
+            if (nTmp * 0xC8 < m_unk1D8) {
+                nVal = nTmp + 1;
+            }
+        }
+        if (m_unk229 != 4) {
+            if (MaximoArmor[nVal] != m_unk229) {
+                SetMaximo(MaximoArmor[nVal], false);
+                bAt = arg2 < 2;
+                if (m_unk33B != 0) {
+                    ShowPlayer(false);
+                }
+                if (bAt != 0 && SetPowerupMotion(0x31) != 0 && arg2 != 0) {
+                    m_unk335 |= 2;
+                }
+            }
+        }
+        ((EntityBaseClass *)this)->PlaySound(8U);
+        m_unk1DC = nVal;
+        GameVarAdd(1, 0x190, arg2);
+        goto block_64;
+    case 14:
+        nTmp = m_unk208 * 0x280;
+        if (nTmp < nVal) {
+            nVal = nTmp;
+        }
+        goto block_64;
+    case 4:
+        nArg = 0xA;
+        if (m_unk218 == 2) {
+            nArg = 0xF;
+        }
+        GameVarAdd(0xE, nArg, 0);
+        GameVarAdd(0xB, 1, 0);
+        nCost = *(int *)((char *)this + 0x1EC);
+        if (nVal >= nCost && m_unk1F8 < 0x63) {
+            GameVarAdd(9, 1, 0);
+            nVal -= nCost;
+            if (nCost < 0x96) {
+                *(int *)((char *)this + 0x1EC) += 0x14;
+            }
+        }
+        goto block_64;
+    case 7:
+    case 8:
+        *pSlot = nVal;
+        switch (arg2) {
+        case 1:
+            SetAction(0x3C);
+            m_unk335 |= 2;
+            break;
+        default:
+            if (SetPowerupMotion(0x3C) == 0) {
+            case 2:
+                UpdateKey();
+                ((EntityBaseClass *)this)->PlaySound(0x1A);
+            }
+            break;
+        }
+        goto block_64;
+    case 18:
+        m_unk314 = 0x42A00000;
+        m_unk220 += *(unsigned char *)((char *)m_unk258 + 0xA);
+        if (m_unk220 >= 0x64) {
+            m_unk220 = 0x63;
+        }
+        goto block_64;
+    case 11:
+        if (m_unk229 == 4) {
+            return 1;
+        }
+        nTmp = m_unk204;
+        if (nTmp < nVal) {
+            nVal = nTmp;
+        }
+        goto block_64;
+    }
+}
+
 // DRAFT: 0x001662B0 GameVarSub__6PlayerFUii
 // note: 192 diff words; value/slot registers swapped (orig s3=arg1, s4=&m_unk1D4[id]), switch and tail ordered; tried decl order, byte-offset slot ptr, value copy
 int Player::GameVarSub(unsigned int arg0, int arg1) {
