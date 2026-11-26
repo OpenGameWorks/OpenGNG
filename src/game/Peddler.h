@@ -34,6 +34,7 @@ public:
     int GetWokenVarPos();
     int GetTallyType();
 
+    const char *GetClassName();
     char _pad190[0x1C4 - 0x190];    // 0x190..0x1C3: EntityBaseClass ends at 0x190
     int m_unk1C4;                   // 0x1C4 CheckVariable argument
     char _pad1C8[0x1CC - 0x1C8];

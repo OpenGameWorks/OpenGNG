@@ -481,6 +481,10 @@ int PGfxEngine::RenderParticleSystems(ePSLayer eLayer, PZBufferFog *pFog) {
     return nRet;
 }
 
+// FUNCTION: 0x001851A0 EndFxLines__10PGfxEngineFv
+void PGfxEngine::EndFxLines() {
+}
+
 // FUNCTION: 0x1851B0 DrawFxLines__10PGfxEngineFP11tagVuFxLineiffb
 void PGfxEngine::DrawFxLines(struct tagVuFxLine *pLines, int nCount, float fA, float fB, bool bFlag) {
     m_unk154C80->DrawParticles((struct tagVuParticle *)pLines, nCount, fB, fA, bFlag, 0x23);
@@ -509,6 +513,10 @@ void PGfxEngine::SetBlurHazeSourcePoint(float *pPos, float fW) {
     m_unk154C80->WriteToVu1Mem(0x3C7, (u_long128 *)aPos, 1);
 }
 
+// FUNCTION: 0x00185250 EndHeatHaze__10PGfxEngineFv
+void PGfxEngine::EndHeatHaze() {
+}
+
 // FUNCTION: 0x185260 DrawHeatHaze__10PGfxEngineFP13tagVuParticleiffb
 void PGfxEngine::DrawHeatHaze(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag) {
     m_unk154C80->DrawParticles(pParticles, nCount, fA, fB, bFlag, 0x14);
@@ -517,6 +525,10 @@ void PGfxEngine::DrawHeatHaze(struct tagVuParticle *pParticles, int nCount, floa
 // FUNCTION: 0x185280 BeginHeatHaze__10PGfxEngineFv
 void PGfxEngine::BeginHeatHaze() {
     m_unk154C80->BeginFxLoop(((unsigned int)(fx_heathaze_fan_clip_init + 0x1788)) >> 3);
+}
+
+// FUNCTION: 0x001852A0 EndVertexGlow__10PGfxEngineFv
+void PGfxEngine::EndVertexGlow() {
 }
 
 // FUNCTION: 0x1852B0 BeginVertexGlow__10PGfxEngineFv
@@ -540,6 +552,10 @@ void PGfxEngine::SetGlowSizeAndColor(float fA, float fB, float *pColor) {
     m_unk154C80->WriteToVu1Mem(0x3C3, (u_long128 *)aData, 2);
 }
 
+// FUNCTION: 0x00185350 EndFogParticles__10PGfxEngineFv
+void PGfxEngine::EndFogParticles() {
+}
+
 // FUNCTION: 0x185370 BeginFogParticles__10PGfxEngineF13eBoxIntersect
 void PGfxEngine::BeginFogParticles(eBoxIntersect eBox) {
     m_unk154C80->BeginFxLoop(((unsigned int)(fx_fog_particle_clip_init + 0x1030)) >> 3);
@@ -555,6 +571,10 @@ void PGfxEngine::DrawRotatableParticles(struct tagVuRotatableParticle *pParticle
     m_unk154C80->DrawRotatableParticles(pParticles, nCount, fA, fB, bFlag, 0x1E);
 }
 
+// FUNCTION: 0x001853D0 EndParticles__10PGfxEngineFv
+void PGfxEngine::EndParticles() {
+}
+
 // FUNCTION: 0x1853E0 DrawParticles__10PGfxEngineFP13tagVuParticleiffb
 void PGfxEngine::DrawParticles(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag) {
     m_unk154C80->DrawParticles(pParticles, nCount, fA, fB, bFlag, 0x28);
@@ -563,6 +583,10 @@ void PGfxEngine::DrawParticles(struct tagVuParticle *pParticles, int nCount, flo
 // FUNCTION: 0x185400 BeginParticles__10PGfxEngineF13eBoxIntersect
 void PGfxEngine::BeginParticles(eBoxIntersect eBox) {
     m_unk154C80->BeginFxLoop(((unsigned int)(fx_particle_clip_init + 0x418)) >> 3);
+}
+
+// FUNCTION: 0x00185420 EndSprites__10PGfxEngineFv
+void PGfxEngine::EndSprites() {
 }
 
 // FUNCTION: 0x185440 BeginSprites__10PGfxEngineFv
@@ -585,6 +609,10 @@ void PGfxEngine::BeginFxRender() {
         m_unk158E1C = pFx;
         m_unk154C80->SetVu1Microcode(m_unk158E1C);
     }
+}
+
+// FUNCTION: 0x00185530 EndDebugRender__10PGfxEngineFv
+void PGfxEngine::EndDebugRender() {
 }
 
 // DRAFT: 0x185540 DrawBox__10PGfxEngineFPA2_A4_ffff

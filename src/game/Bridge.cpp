@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "Bridge.h"
 #include "EntityBaseClass.h"
@@ -69,6 +70,11 @@ public:
     float m_unk74;
     float m_unk78;
 };
+
+// FUNCTION: 0x001DC750 GetClassName__6BridgeFv
+const char *Bridge::GetClassName() {
+    return "Bridge";
+}
 
 // DRAFT: 0x001DC760 IsEntityOnNode__6BridgeFP15EntityBaseClassP9PMeshNode
 // note: size 0x50 vs 0x58; original tests Find's result with bnez into a return-s0 block and shares one return-0 b. Tried ternary (16 words), early returns (13), result variable (22); nested if is best (12).

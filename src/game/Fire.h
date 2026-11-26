@@ -17,6 +17,7 @@ public:
     void Execute();
     void SetEditableVars(char *);
 
+    const char *GetClassName();
     void *m_unk0;               // 0x000 vtable pointer (inherited from EntityBaseClass)
     unsigned int m_unk4;        // 0x004 timer id source
     char _pad008[0x20 - 0x08];

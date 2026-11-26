@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "Peddler.h"
 
@@ -198,6 +199,11 @@ extern "C" void OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi(void *pT
 // FUNCTION: 0x001D04F0 GetHealth__7PeddlerFv
 int Peddler::GetHealth() {
     return m_unk1CC;
+}
+
+// FUNCTION: 0x001D0500 GetClassName__7PeddlerFv
+const char *Peddler::GetClassName() {
+    return "Peddler";
 }
 
 // FUNCTION: 0x001D0510 NeedsToBeWoken__7PeddlerFv

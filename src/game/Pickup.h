@@ -28,6 +28,7 @@ public:
     int NeedsToBeWoken();
     int GetWokenVarPos();
 
+    const char *GetClassName();
     void *m_unk0;                   // 0x000 vtable pointer (inherited from EntityBaseClass)
     char _pad004[0x18 - 0x04];
     unsigned char m_unk18;          // 0x018 read by the ctor

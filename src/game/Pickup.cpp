@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "Pickup.h"
 #include "EntityBaseClass.h"
@@ -42,6 +43,11 @@ extern "C" unsigned char mEffectAPI__13EntityManager[0x10];
 Pickup::~Pickup() {
     this->m_unk0 = __vt__6Pickup;
     __dt__15EntityBaseClassFv(this, 0);
+}
+
+// FUNCTION: 0x0019CFA0 GetClassName__6PickupFv
+const char *Pickup::GetClassName() {
+    return "Pickup";
 }
 
 // FUNCTION: 0x0019CFB0 GetTallyType__6PickupFv

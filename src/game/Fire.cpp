@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "types.h"
 #include "Fire.h"
 #include "TimerAPI.h"
@@ -27,6 +28,11 @@ extern "C" void ResetCollisions__15EntityBaseClassFv(void *pThis);
 Fire::~Fire() {
     m_unk0 = __vt__4Fire;
     __dt__15EntityBaseClassFv(this, 0);
+}
+
+// FUNCTION: 0x001B3FD0 GetClassName__4FireFv
+const char *Fire::GetClassName() {
+    return "Fire";
 }
 
 // FUNCTION: 0x001B3FE0 SetEditableVars__4FireFPc

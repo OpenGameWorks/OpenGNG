@@ -122,6 +122,13 @@ public:
     void ResetDisplay(short nA, short nB, short nC, short nD, short nE, short nF, int nG, int nH);
 
 #ifdef PGFXENGINE_EMBED_DISPLAYLIST
+    void EndFxLines();
+    void EndHeatHaze();
+    void EndVertexGlow();
+    void EndFogParticles();
+    void EndParticles();
+    void EndSprites();
+    void EndDebugRender();
     PDisplayList m_unk0;                // 0x000, constructed by PGfxEngine::PGfxEngine
     char _pad0A3384[0xAA640 - 0xA3384];
     PDisplayList m_unkAA640;            // 0xAA640, second display list

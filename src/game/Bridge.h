@@ -31,6 +31,7 @@ public:
     void OnTouchEvent(EntityBaseClass *);
     void SetEditableVars(char *);
 
+    const char *GetClassName();
     void *m_unk0;               // 0x000 vtable pointer (inherited from EntityBaseClass)
     int m_unk4;                 // 0x004
     char _pad008[0x1B - 0x08];
