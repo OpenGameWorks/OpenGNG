@@ -81,6 +81,7 @@ public:
     void Update(int arg0);
     void InitCombo(PMeshNode *arg0, HudData *arg1, PMNode *arg2);
 
+    void Delete();
     char _pad000[0x4];
     PMNode *m_unk4;             // 0x004 node whose frustum test and frame rate are set
     int m_unk8;                 // 0x008 float bits, 0x40000000 is 2.0f
@@ -136,6 +137,7 @@ public:
     void UpdateStatus(bool arg0);
     void Update(int arg0);
 
+    void Delete();
     void *m_unk0;               // 0x000 vtable pointer (__vt__7GameHud)
     void *m_unk4;               // 0x004
     float m_unk8;               // 0x008 set to 2.0f or 80.0f by UpdateStatus

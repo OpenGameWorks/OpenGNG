@@ -27,6 +27,12 @@ void PParticleVertexGlow::Start() {
     m_unk37C = 0;
 }
 
+// FUNCTION: 0x001BE790 Stop__19PParticleVertexGlowFv
+void PParticleVertexGlow::Stop() {
+    *(unsigned char *)((char *)this + 0x18) = 0;
+    *(unsigned char *)((char *)this + 0x15) = 0;
+}
+
 // FUNCTION: 0x001BE7A0 FadeAndDie__19PParticleVertexGlowFUi
 void PParticleVertexGlow::FadeAndDie(unsigned int nUnused) {
     m_unk17 = 1;

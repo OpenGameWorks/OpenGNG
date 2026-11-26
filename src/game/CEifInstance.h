@@ -19,6 +19,7 @@ public:
     int GetNumEditVars();
     int GetEntityID();
 
+    void SetStartPosition(float, float, float);
     char _pad000[0x104];                    // 0x000 header block read as one 0x104-byte record
     char _pad104[0x8];                      // 0x104
     float m_unk10C;                         // 0x10C start position X

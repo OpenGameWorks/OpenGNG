@@ -24,6 +24,7 @@ public:
     float GetFrameRate();
     int IsPAnimFrame();
 
+    void SetEndFrame(short);
     short m_unk20;                   // 0x20
     short m_unk22;                   // 0x22
     short m_unk24;                   // 0x24

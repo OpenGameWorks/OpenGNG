@@ -1296,6 +1296,13 @@ void HudCombo::ComboNumber() {
 static unsigned int ComboNumber_1169[10] = {0x6B0BE84A, 0x6AAE41FC, 0x6840BB26, 0x69E51290, 0x6D9D4E92,
                                             0x6C38E724, 0x6ED61DFE, 0x6F73B448, 0x6626A5FA, 0x67830C4C};
 
+// FUNCTION: 0x00141DE0 Delete__8HudComboFv
+void HudCombo::Delete() {
+    m_unk4 = 0;
+    m_unk48 = 0;
+    m_unk38 = 0;
+}
+
 // DRAFT: 0x141DF0 InitCombo__8HudComboFP9PMeshNodeP7HudDataP6PMNode
 // note: 74 words. Differs from 0x130 on: Find/Remove/Add argument order and m_unk4 load before Find; frame 0x60 vs 0x70 with the node kept in s1 (ours spills to 0x6C); CdsAssert and CopyMNode argument order. Tried: vtable +0x970/+0xE00 (75), void **slots loop (134), scoped slotBase loop (134), direct *(void **) temp_v1 load (74, reverted).
 void HudCombo::InitCombo(PMeshNode *arg0, HudData *arg1, PMNode *arg2) {
@@ -2350,6 +2357,12 @@ void GameHud::Init(PMeshNode *meshNode, HudData *hud) {
     m_unk4 = ((PMNode *)meshNode)->Find(hud->m_unk0);
     m_unkF = hud->m_unk5;
     m_unkE = hud->m_unk4;
+}
+
+// FUNCTION: 0x001446E0 Delete__7GameHudFv
+void GameHud::Delete() {
+    m_unk4 = 0;
+    m_unkF = 0;
 }
 
 // DRAFT: 0x001446F0 StaticDemo__9InterfaceFPCcUiUiiUs

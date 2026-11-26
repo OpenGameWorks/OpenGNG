@@ -16,6 +16,13 @@ extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("CEifInstance.cpp", line, #cond))
 
+// FUNCTION: 0x00172A20 SetStartPosition__12CEifInstanceFfff
+void CEifInstance::SetStartPosition(float fA, float fB, float fC) {
+    m_unk10C = fA;
+    m_unk110 = fB;
+    m_unk114 = fC;
+}
+
 // FUNCTION: 0x00172A30 GetInstanceID__12CEifInstanceFv
 int CEifInstance::GetInstanceID() {
     return *(int *)((char *)this + 0x108);

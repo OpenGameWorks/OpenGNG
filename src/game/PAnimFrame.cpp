@@ -19,6 +19,12 @@ void PAnimFrame::SetFrameTime(float value) {
     m_unk2C = value;
 }
 
+// FUNCTION: 0x0018CE30 SetEndFrame__10PAnimFrameFs
+void PAnimFrame::SetEndFrame(short value) {
+    m_unk28 = value;
+    m_unk24 = value;
+}
+
 // FUNCTION: 0x0018CE40 GetFrameTime__10PAnimFrameFv
 float PAnimFrame::GetFrameTime() {
     return m_unk2C;

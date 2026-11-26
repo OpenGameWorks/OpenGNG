@@ -19,6 +19,7 @@ public:
     int Create(tagParticleFireParams *pParams, float fX, float fY, float fZ);
     void Animate(float fDt);
 
+    void Stop();
     void *m_unkE0;              // 0x0E0 buffer released by the destructor
     void *m_unkE4;              // 0x0E4 buffer of 0x10-byte entries filled by ModifyPosition and SetPosition
     char _padE8[0x08];          // 0x0E8

@@ -20,6 +20,7 @@ public:
     void AnimateRotatableParticles(float fDt);
     void Animate(float fDt);
 
+    void Stop();
     char _pad0E0[0x40];         // 0x0E0 MulVector output written by ModifyPosition; vector slots to 0x120
     float m_unk120;             // 0x120
     float m_unk124;             // 0x124

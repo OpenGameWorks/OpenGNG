@@ -187,6 +187,12 @@ void PParticleLiteFire::Enable(bool bEnable) {
     m_unk191 = (m_unk191 | !bEnable) != 0;
 }
 
+// FUNCTION: 0x001C9EA0 Stop__17PParticleLiteFireFv
+void PParticleLiteFire::Stop() {
+    *(unsigned char *)((char *)this + 0x18) = 0;
+    m_unk191 = 1;
+}
+
 // FUNCTION: 0x001C9EB0 FadeAndDie__17PParticleLiteFireFUi
 void PParticleLiteFire::FadeAndDie(unsigned int nArg) {
     PParticleSystem::FadeAndDie(nArg);

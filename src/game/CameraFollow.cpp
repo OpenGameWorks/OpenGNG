@@ -199,6 +199,12 @@ void CameraSpline::GetPosition(unsigned int arg0, PVec3 &arg1) {
     sceVu0CopyVector(arg1.m_v, m_curves[arg0].m_v);
 }
 
+// FUNCTION: 0x00173BC0 Reset__12CameraSplineFv
+void CameraSpline::Reset() {
+    *(int *)((char *)this + 0x0) = 0;
+    m_unk8 = 0;
+}
+
 // FUNCTION: 0x00173BD0 __ct__12CameraSplineFv
 CameraSpline::CameraSpline() {
     m_iNumCtrlPoints = 0;
@@ -240,6 +246,13 @@ void CameraFollow::ForceReset(bool arg0) {
 void Camera::SetSourceTarget(PVec3 arg0, PVec3 arg1) {
     sceVu0CopyVector(m_src, arg0.m_v);
     sceVu0CopyVector(m_tgt, arg1.m_v);
+}
+
+// FUNCTION: 0x00173EB0 ModifyBossCamera__12CameraFollowFfff
+void CameraFollow::ModifyBossCamera(float fA, float fB, float fC) {
+    m_unk6320 = fA;
+    m_unk6358 = fC;
+    m_unk635C = fB;
 }
 
 // FUNCTION: 0x00173ED0 SetBossArenaValues__12CameraFollowFPA4_fffbbffb
@@ -552,6 +565,12 @@ int CameraFollow::ProcessCamBox() {
         break;
     }
     return 1;
+}
+
+// FUNCTION: 0x00174C50 SetCamBoxValue_FollowHeight__12CameraFollowFf
+void CameraFollow::SetCamBoxValue_FollowHeight(float value) {
+    m_unk210 = 1;
+    m_unk214 = value;
 }
 
 // DRAFT: 0x00174C60 ProcessHeadCam__12CameraFollowFv

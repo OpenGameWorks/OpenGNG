@@ -761,6 +761,12 @@ void ClockworkReaper::SetSpawnedFromEntity(float *arg0, float *arg1, int arg2) {
     }
 }
 
+// FUNCTION: 0x001C08F0 SetSpawnedFromLift__15ClockworkReaperFv
+void ClockworkReaper::SetSpawnedFromLift() {
+    *(unsigned char *)((char *)this + 0x2FC) = 1;
+    *(unsigned char *)((char *)this + 0x2FD) = 0;
+}
+
 // FUNCTION: 0x001C0900 SetDefaultVars__15ClockworkReaperFv
 void ClockworkReaper::SetDefaultVars() {
     m_unk1B0 = 0;

@@ -609,6 +609,12 @@ PZinDamageFx *EntityBaseClass::CreateDamageFx(float arg0, unsigned int arg1) {
     return pFx;
 }
 
+// FUNCTION: 0x0014AB20 Start__15PParticleSystemFv
+void PParticleSystem::Start() {
+    *(unsigned char *)((char *)this + 0x15) = 1;
+    *(unsigned char *)((char *)this + 0x18) = 1;
+}
+
 // DRAFT: 0x0014AB30 CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb
 // note: else-arm table index one word short (b +0xA vs +0xB), table base reg v0 vs v1, temp reg swapped; 109 words over 8 variants (guHitMarkFxID[arg2][arg1], byte offset, row cast, flat &[arg2][0])
 void EntityBaseClass::CreateHitMarkFx(float (*arg0)[4], eHitObjectType arg1, eHitWeaponType arg2, bool arg3) {
@@ -1136,6 +1142,12 @@ void EntityBaseClass::FacePlayer(float arg0) {
     }
     angle = MathAPI::GetAngleYToPoint(this, a1);
     this->RotateTo(angle, arg0);
+}
+
+// FUNCTION: 0x0014C000 EnableSleep__15EntityBaseClassFbb
+void EntityBaseClass::EnableSleep(bool bA, bool bB) {
+    *(unsigned char *)((char *)this + 0x1B) = bA;
+    *(unsigned char *)((char *)this + 0x1D) = bB;
 }
 
 // DRAFT: 0x0014C010 ProcessMeshFade__15EntityBaseClassFv

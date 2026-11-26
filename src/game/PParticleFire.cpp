@@ -96,6 +96,12 @@ void PParticleFire::Enable(bool bEnable) {
     m_unk198 = (m_unk198 | !bEnable) != 0;
 }
 
+// FUNCTION: 0x001B6430 Stop__13PParticleFireFv
+void PParticleFire::Stop() {
+    *(unsigned char *)((char *)this + 0x18) = 0;
+    m_unk198 = 1;
+}
+
 // FUNCTION: 0x001B6440 ModifyPosition__13PParticleFireFP5PMat4
 void PParticleFire::ModifyPosition(PMat4 *pMat) {
     pMat->MulVector(m_unk180, m_unkF0);

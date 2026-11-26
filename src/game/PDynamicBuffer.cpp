@@ -158,6 +158,12 @@ int PDynamicBuffer::WriteGhostData(unsigned int nQuadwords) {
     return nRet;
 }
 
+// FUNCTION: 0x001D5DE0 Close__14PDynamicBufferFv
+void PDynamicBuffer::Close() {
+    *(int *)((char *)this + 0x4) = 0;
+    *(int *)((char *)this + 0x8) = 0;
+}
+
 // FUNCTION: 0x001D5DF0 Open__14PDynamicBufferFv
 int PDynamicBuffer::Open() {
     // sltu $zero,size then xori 1 is an unsigned `> 0` test negated into a bool.

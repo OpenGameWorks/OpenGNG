@@ -28,6 +28,7 @@ public:
     void Animate(float fDelta);
     bool Create(tagParticleVertexGlowParams *pParams, PMNode *poGlowObj, PMNode *poAnimObj);
 
+    void Stop();
     float m_unkE0[4];           // 0x0E0 vector scratch used by Animate
     float m_unkF0[4];           // 0x0F0 vector scratch used by Animate
     float m_unk100[4];          // 0x100 vector scratch used by Animate
