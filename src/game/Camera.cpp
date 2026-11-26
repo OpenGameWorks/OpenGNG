@@ -286,7 +286,7 @@ void Camera::SetupCutCamera_MoveTo(unsigned int arg0, unsigned int arg1, float a
 // DRAFT: 0x00178810 SetupCutCamera_Fixed__6CameraFUiUiffUi5PVec35PVec3UiUiUiUib5PVec3bUi
 // note: 49 differing words; original checks m_unkC0 before copying the PVec3 args to stack temps (copies inside the if), ours hoists the copies above the check; also register choice for t0/t1 differs. Tried: early return, local pointer check.
 void Camera::SetupCutCamera_Fixed(unsigned int arg0, unsigned int arg1, float arg2, float arg3, unsigned int arg4, PVec3 arg5, PVec3 arg6, unsigned int arg7, unsigned int arg8, unsigned int arg9, unsigned int arg10, bool arg11, PVec3 arg12, bool arg13, unsigned int arg14) {
-    if (m_unkC0 != 0) {
+    if (m_unkC0) {
         ((CameraCutManager *)m_unkC0)->SetupCutCamera_Fixed(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
     }
 }
@@ -940,10 +940,10 @@ void Camera::ResetFollowCamera() {
 }
 
 // DRAFT: 0x0017A7B0 Init__6CameraFv
-// note: DIFF 36; zero loop differs (original keeps byte-offset a1 with 8-wide unroll); tried index, pointer, do-while, while, unrolled, end-pointer forms (36-48).
+// note: DIFF 35; zero loop is an 8-wide unrolled this+0xD4 pointer loop (orig indexes from this+a1); tried index, pointer, do-while, while, end-pointer, base-offset forms (35-48).
 void Camera::Init() {
     int i;
-    int *p;
+    char *pBase;
 
     m_unkB4 = 0;
     m_unkB1 = 1;
@@ -959,12 +959,24 @@ void Camera::Init() {
     m_unk124 = 0;
     m_unk2C0 = 0;
     m_unk179 = 0;
-    p = m_unkD4;
+    pBase = (char *)this + 0xD4;
     i = 0;
     do {
-        *p++ = 0;
-        i++;
-    } while (i < 20);
+        *(int *)(pBase + 0x00) = 0;
+        *(int *)(pBase + 0x04) = 0;
+        *(int *)(pBase + 0x08) = 0;
+        *(int *)(pBase + 0x0C) = 0;
+        *(int *)(pBase + 0x10) = 0;
+        *(int *)(pBase + 0x14) = 0;
+        *(int *)(pBase + 0x18) = 0;
+        *(int *)(pBase + 0x1C) = 0;
+        pBase += 0x20;
+        i += 8;
+    } while (i < 16);
+    *(int *)(pBase + 0x00) = 0;
+    *(int *)(pBase + 0x04) = 0;
+    *(int *)(pBase + 0x08) = 0;
+    *(int *)(pBase + 0x0C) = 0;
     m_unk17C[0] = (int)g_Stabdown_ShakeTable;
     m_unk17C[1] = (int)g_Stabdown_ShakeTable_FixedCam;
     m_unk17C[2] = (int)g_Stabdown2_ShakeTable;
