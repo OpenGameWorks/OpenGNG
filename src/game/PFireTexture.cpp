@@ -95,13 +95,14 @@ PFireTexture::~PFireTexture()
     __dt__16PParticleTextureFv(m_unk10, -1);
 }
 
-// DRAFT: 0x001EF4E0 __ct__12PFireTextureFv
-// note: original spills this to 0x1C(sp) and reloads it per store (member with dtor); char[0x560] embedding keeps this in s0. A dtor-bearing member would add an implicit dtor call to the matched dtor.
-PFireTexture::PFireTexture()
+// FUNCTION: 0x001EF4E0 __ct__12PFireTextureFv
+// note: `this` lives only in a stack slot (spilled at entry, reloaded per access), reproduced by a volatile pThis.
+extern "C" PFireTexture *__ct__12PFireTextureFv(PFireTexture *volatile pThis)
 {
-    __ct__16PParticleTextureFv(m_unk10);
-    sceVu0UnitMatrix(m_unk570);
-    sceVu0UnitMatrix(m_unk5B0);
-    m_unk0 = 0;
-    m_unk5F0 = 0;
+    __ct__16PParticleTextureFv(pThis->m_unk10);
+    sceVu0UnitMatrix(pThis->m_unk570);
+    sceVu0UnitMatrix(pThis->m_unk5B0);
+    pThis->m_unk0 = 0;
+    pThis->m_unk5F0 = 0;
+    return pThis;
 }
