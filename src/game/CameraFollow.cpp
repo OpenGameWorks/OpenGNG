@@ -6,6 +6,8 @@
 extern "C" void sceVu0CopyVector(float *dst, float *src);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" int abs(int);
+// abs is called out of line here, not expanded as an intrinsic.
+#pragma inline_intrinsics off
 extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
 extern "C" void sceVu0Normalize(float *dst, float *src);
 extern "C" float GetLength__5PVec3Fv(float *this_vec);
@@ -615,7 +617,6 @@ void CameraFollow::ProcessHeadCam() {
 // DRAFT: 0x00174F20 CanDoHeadcam__12CameraFollowFv
 // note: 33 lines; abs calls and 0.01f literal (gp pool vs lui/ori/mtc1) and branch shape differ; block-scope int abs(int) decl stops abs inlining; goto-shaped exit gave 34.
 int CameraFollow::CanDoHeadcam() {
-    int abs(int);
     if (m_unk62F0 != 0) { return 0; }
     if (abs(m_unk1B8) >= 0x33) { return 0; }
     if (abs(m_unk1B9) >= 0x33) { return 0; }
@@ -830,7 +831,6 @@ float CameraFollow::GetAngleBetweenCamAndPlayer(float &arg0) {
 // DRAFT: 0x00175830 PlayerIsIdle__12CameraFollowFv
 // note: 23 lines with block-scope int abs(int) decl (27 without); remaining diff is the 0.01f literal (gp pool lwc1 vs lui/ori/mtc1) and branch layout around the abs calls; abs(signed char) and dont_inline did not stop abs inlining.
 int CameraFollow::PlayerIsIdle() {
-    int abs(int);
     if (abs(m_unk1B8) >= 0x33) {
         return 0;
     }
@@ -1333,10 +1333,8 @@ void CameraFollow::GetPlayerDetails() {
     m_unk6250 = *(float *)(*(char **)((char *)m_unk114 + 0x38) + 0xC8);
 }
 
-// DRAFT: 0x00176ED0 ProcessPlayerIO__12CameraFollowFv
-// note: 2 words differ, both `jal abs`: our call relocates to abs__Fi (block-scope int abs(int) gets C++ linkage) vs original C abs; extern "C" block decl is a compile error, dropping the decl inlines abs (DIFF 110), dont_inline pragma still inlines.
+// FUNCTION: 0x00176ED0 ProcessPlayerIO__12CameraFollowFv
 void CameraFollow::ProcessPlayerIO() {
-    int abs(int);
     int var_s1;
     int var_a0;
 
