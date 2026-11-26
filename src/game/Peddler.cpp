@@ -251,7 +251,7 @@ void Peddler::OutputDebug() {
 }
 
 // DRAFT: 0x001D0730 ActivateAttackingEnemies__7PeddlerFv
-// note: 16 diff lines; loop tail and epilogue shifted (original tail ordering around the nop at 0x9C differs). Tried: index loop, do-while, declaration reorder, EntityInstance virtual class (t9 call fixed), slot-offset placeholders (0x30/0x44 fixed), tail reorder (19 to 16).
+// note: 2 diff words, call setup loads a2 (m_unk04) before a0 (mpEntMgr); orig loads a0 first. Tried: nOff+=4 before ppSlot++ in tail (4 to 2, kept), local EntityManager* for mpEntMgr, nTo temp for m_unk04, nFrom temp for m_unk4, (EntityManager*)/(unsigned) casts; all keep a2 first.
 void Peddler::ActivateAttackingEnemies() {
     EntityBaseClass **ppSlot;
     int i;
@@ -276,8 +276,8 @@ void Peddler::ActivateAttackingEnemies() {
             }
         }
         i++;
-        ppSlot++;
         nOff += 4;
+        ppSlot++;
     } while (i < 3);
     m_unk2A6 = 1;
 }
@@ -312,12 +312,13 @@ static inline float FloatBits(unsigned int uBits) {
     return conv.f;
 }
 
-// DRAFT: 0x001D08A0 IsAlive__7PeddlerFv
-// note: 2 diff lines, the load targets v1 (orig v0). Tried: bAlive first, split decl, ?: form, early-return form, local copy of m_unk1CC; all keep v1 or reorder branch.
+// FUNCTION: 0x001D08A0 IsAlive__7PeddlerFv
 int Peddler::IsAlive() {
-    int bAlive = 1;
+    int bAlive;
     if (m_unk1CC <= 0) {
         bAlive = 0;
+    } else {
+        bAlive = 1;
     }
     return bAlive;
 }
