@@ -139,6 +139,8 @@ extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 extern "C" long long fptodp(float arg0);
 extern "C" void *memcpy(void *, const void *, unsigned int);
 void CdsAssert(char *, int, char *);
+// The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("ClockworkReaper.cpp", line, #cond))
 
 class Debug {
 public:
@@ -273,14 +275,15 @@ int ClockworkReaper::AnimationViewer(int arg0) {
     return 0x20;
 }
 
-// DRAFT: 0x001BF910 GetRenderPassIndex__15ClockworkReaperFv
-// note: 14 differing lines; switch with case 0 and nested if/else tried, branch shape and lw order still differ.
+// FUNCTION: 0x001BF910 GetRenderPassIndex__15ClockworkReaperFv
 int ClockworkReaper::GetRenderPassIndex() {
-    if (m_unk1B0 == 2) {
-        return 2;
-    }
-    if (m_unk1B0 == 1) {
+    switch (m_unk1B0) {
+    case 0:
+        return 0;
+    case 1:
         return 1;
+    case 2:
+        return 2;
     }
     return 0;
 }
@@ -391,8 +394,7 @@ void ClockworkReaper::FaceHit() {
     }
 }
 
-// DRAFT: 0x001BFCA0 Stalled__15ClockworkReaperFf
-// note: 13 differing words, all in the return tail (extra b and dead daddu before epilogue); tried result-var, inverted >=, ternary, explicit else: 26, 15, 13, 13.
+// FUNCTION: 0x001BFCA0 Stalled__15ClockworkReaperFf
 int ClockworkReaper::Stalled(float arg0) {
     char *src;
     float dist;
@@ -424,7 +426,6 @@ int ClockworkReaper::Stalled(float arg0) {
         if (angle < 15.0f) {
             return 1;
         }
-        return 0;
     }
     return 0;
 }
@@ -836,14 +837,18 @@ void ClockworkReaper::SetupHealth() {
     m_unk210 = m_unk208;
 }
 
-// DRAFT: 0x001C0A70 SetEditableVars__15ClockworkReaperFPc
-// note: 23 differing lines; the original keeps a lui/addiu address-vs-0 test on the message literal (sltu/xori/bnez), ours folds it away; local msg pointer variant gave 25 lines.
+// FUNCTION: 0x001C0A70 SetEditableVars__15ClockworkReaperFPc
 void ClockworkReaper::SetEditableVars(char *arg0) {
     memcpy(&m_unk1B0, arg0, 0x58);
     SetupHealth();
-    int key = m_unk1FC;
-    if (key != 8 && key != 7 && key != 0 && "Invalid m_iSpawnsKey in Reaper\n") {
-        CdsAssert("ClockworkReaper.cpp", 0xAFA, "!\"Invalid m_iSpawnsKey in Reaper\\n\"");
+    switch (m_unk1FC) {
+    case 0:
+    case 7:
+    case 8:
+        break;
+    default:
+        CDS_ASSERT(0xAFA, !"Invalid m_iSpawnsKey in Reaper\n");
+        break;
     }
 }
 
