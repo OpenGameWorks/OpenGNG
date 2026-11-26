@@ -266,8 +266,7 @@ int EffectNode::GetType() {
     return 0;
 }
 
-// DRAFT: 0x155D70 __ct__11PlingEffectFP15EntityBaseClassPA4_fUiUib
-// note: 2 differing words: mtc1 zero goes to f0 (original f1), and the m_unk20[0] lwc1 goes to f1 (original f0), so c.eq.s operands are swapped. Tried: 0.0f!=x, !(x==0), 0.0f==x form, int 0 compare, float local, ptr local, zero local (3 words), bool intermediate, x>0||x<0 (19 lines); all others 2 words.
+// FUNCTION: 0x155D70 __ct__11PlingEffectFP15EntityBaseClassPA4_fUiUib
 PlingEffect::PlingEffect(EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4) {
     m_unkC = arg4;
     m_unk10 = arg0;
@@ -287,8 +286,9 @@ PlingEffect::PlingEffect(EntityBaseClass *arg0, float (*arg1)[4], unsigned int a
         ((PMNode *)m_unk4)->EnableAnim(true, true);
     }
     *(u_long128 *)m_unk20 = *(u_long128 *)arg1;
-    m_unk2C = 0;
-    if (m_unk20[0] != 0.0f) {
+    float fZero = 0.0f;
+    *(float *)&m_unk2C = fZero;
+    if (m_unk20[0] != fZero) {
         PMNode *pNode = (PMNode *)m_unk4;
         *(u_long128 *)&pNode->m_unk80 = *(u_long128 *)m_unk20;
         pNode->m_unk3E |= 8;
