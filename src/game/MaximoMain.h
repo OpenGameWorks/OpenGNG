@@ -50,7 +50,7 @@ public:
     int AttractDemo();
     int TitleDemo();
     int GameSelect();
-    void Options();
+    int Options();
     void GameOptions();
     void GameOver();
     void MapscreenPrintInfo(FontManager *arg0, int arg1);

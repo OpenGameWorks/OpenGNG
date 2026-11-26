@@ -12,10 +12,14 @@ public:
     const char *GetClassName();
     void SetEditableVars(char *pSrc);
     void Execute();
+    int OnHitEvent(EntityBaseClass *pArg, int nHit, unsigned int nFlagsA, unsigned int nFlagsB);
 
     char _pad190[0x20];
-    char m_unk1B0[0x8];        // 0x1B0 editable-vars block; SetEditableVars memcpys 0x8 bytes here
+    int m_unk1B0;              // 0x1B0 editable-vars block (8 bytes); SetEditableVars memcpys here
+    int m_unk1B4;
     unsigned char m_unk1B8;     // 0x1B8 cleared by the ctor
+    char _pad1B9[0x3];
+    int m_unk1BC;               // 0x1BC sound ref, set by PlaySound in Execute
 };
 
 #endif

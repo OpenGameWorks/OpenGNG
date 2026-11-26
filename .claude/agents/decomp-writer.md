@@ -83,6 +83,8 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4,p`) that `to
 - A test `beq x,1 -> body; nop; b exit` with `daddu v0,0` in the `b` slot is `switch (x) { case 1: ... } return 0;` (`Player::IsMidasActive`, `EffectAPI::EnableParticleFx`).
 - A search loop whose match arm is `bne` to advance, then `b` over a `nop` to a shared exit, with `p = 0` after the loop, is an inlined helper: write a `static inline` finder with `return node;` inside a `for` loop and `return 0;` after it, and call it from the function (`FindLightNodeIn` in `src/game/PLightManager.cpp`).
 - A member function whose body never reads `a0` and whose callers leave `a0` unset is a `static` member (mangling is the same); declare it `static` in the class instead of calling an `extern "C"` alias without `this` (`PIOPFile::FrameMaintenacePartA`, `FileSys`).
+- A compare-chain `switch` tests its case labels in reverse source order: a chain 4, 3, 0xD, 2, 1, 0 comes from `case 0: case 1: case 2: case 0xD: case 3: case 4:` (`ClockworkMaximo::InBlockableState`, `Player::IsHanging`). A trailing `andi v0,0xFF` on a `bool`/`unsigned char` return comes from an `int ret` set in the arms.
+- A pointer search whose match arm is `b exit` with `daddu v0, p` in the delay slot and `v0 = 0` set before the loop is `T *pFound = 0; for (...) { if (match) { pFound = p; break; } } return pFound;` (`PSound::GetSpotInfo`).
 - `GetClassName` returns the original literal, which can differ from the class name ("Zin Shell Explosion"); read it with `disasm.literal(ADDR)`.
 - `src/game/PWorld.cpp` holds the first match and serves as a model.
 

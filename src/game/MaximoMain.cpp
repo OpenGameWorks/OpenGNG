@@ -459,6 +459,9 @@ struct MemorySettingBytes {
     unsigned char m_unk3;
     signed char m_unk4;
     signed char m_unk5;
+    short m_unk6;
+    short m_unk8;
+    char _pad0A[2];
 };
 
 // DRAFT: 0x00135FB0 RefreshOptionsValue__10MaximoMainFP13MemorySettingb
@@ -492,6 +495,252 @@ void MaximoMain::RefreshOptionsValue(MemorySetting *arg0, bool arg1) {
             SetColor__8FontNodeF9FontColor(m_unk19B04, 7);
             SetColor__8FontNodeF9FontColor(m_unk19B08, 4);
         }
+    }
+}
+
+// TODO(header): foreign declarations for Options
+extern "C" void GetSetting__10MemoryCardFP13MemorySetting(void *, void *);
+extern "C" void SetSetting__10MemoryCardFP13MemorySetting(void *, void *);
+extern "C" void ResetSetting__10MemoryCardFv(void *);
+extern "C" void SetVibrate__3PadFQ23Pad7VibTypeUc(void *, int, unsigned char);
+extern "C" void StopSoundBySoundRef__6PSoundFUi(void *, unsigned int);
+
+#define OPT_ROW(i) (((OptionsRow *)((char *)this + 0x19ADC))[i])
+struct OptionsRow {
+    FontNode *m_unk0;
+    FontNode *m_unk4;
+    FontNode *m_unk8;
+};
+
+// DRAFT: 0x001361F0 Options__10MaximoMainFv
+// note: DIFF 529 words; stack layout differs (original frame 0xE0 with nAdjust 0xA0, nCool 0xB0, set 0xC8, ours 0xF0 with set spilled to other slots), nSound spilled instead of held in fp, pMesh in fp not s7, state switch/case-5 shape not yet aligned. Tried: local declaration order (3 variants), set struct size 0xA/0x10.
+int MaximoMain::Options() {
+    int nState;
+    PMNode *pMesh;
+    int nAdjust;
+    int nCool;
+    int nSound;
+    MemorySettingBytes set;
+    int nA;
+    int nB;
+    FontManager *pFont = (FontManager *)(gInterface + 0x80);
+
+    m_unk19B44 = 0;
+    nAdjust = 0;
+    GetSetting__10MemoryCardFP13MemorySetting(gMC, &set);
+    nSound = 0;
+    nCool = 0;
+    nState = 0;
+    for (;;) {
+        InitRenderFrame__9MaxEngineFbUi(this, false, 0);
+        switch (nState) {
+        case 0: {
+            TVList *pList;
+            int i;
+            int n;
+            pMesh = GetResource__16PResourceManagerFUib((char *)this + 0x188A4, 0x81000037U, false);
+            if (pMesh == 0) {
+                CdsAssert__FPciPc("MaximoMain.cpp", 0x14FB, "pMeshNode");
+            }
+            pList = (TVList *)((char *)pMesh + 0x14);
+            m_unk19B3C = (PMNode *)((pList->m_unk0 >= 2) ? pList->m_unk8[1] : 0);
+            m_unk19B40 = (PMNode *)((pList->m_unk0 != 0) ? pList->m_unk8[0] : 0);
+            ScaleSet__6PMNodeFffff(m_unk19B3C, (float)set.m_unk4 / 100.0f, 1.0f, 1.0f, 1.0f);
+            ScaleSet__6PMNodeFffff(m_unk19B40, (float)set.m_unk5 / 100.0f, 1.0f, 1.0f, 1.0f);
+            if (!(m_unk19B3C && m_unk19B40)) {
+                CdsAssert__FPciPc("MaximoMain.cpp", 0x1504, "mpMusicSlider && mpEffectSlider");
+            }
+            AddMeshLayer__9InterfaceFP6PMNode(gInterface, pMesh);
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 17.0f, true, 0);
+            n = 0;
+            for (i = 0; i < 8; i++) {
+                FontNode *p = (FontNode *)pFont->DisplayString(0x249 + n, 0, 0, false);
+                n++;
+                OPT_ROW(i).m_unk0 = p;
+                p->m_unk8 = 0x3F19999A;
+                if (i == 3 || i == 0) {
+                    p = (FontNode *)pFont->DisplayString(0x249 + n, 0, 0, false);
+                    n++;
+                    OPT_ROW(i).m_unk4 = p;
+                    p->m_unk8 = 0x3F19999A;
+                    p = (FontNode *)pFont->DisplayString(0x249 + n, 0, 0, false);
+                    n++;
+                    OPT_ROW(i).m_unk8 = p;
+                    p->m_unk8 = 0x3F19999A;
+                }
+            }
+            RefreshOptionsValue((MemorySetting *)&set, true);
+            pFont->DisplayString(0x249 + n, 0, 0, false);
+            nState++;
+            OPT_ROW(m_unk19B44).m_unk0->m_unk8 = 0x3F800000;
+            break;
+        }
+        case 1:
+            if (gInterface[0x425] == 0) {
+                nState++;
+            }
+            break;
+        case 2: {
+            int nPush = ReadPush__3PadFv(gPad) & 0xFFFF;
+            int nHeld = ReadNew__3PadFv(gPad) & 0xFFFF;
+            if (nPush & 0x1000) {
+                nState++;
+                m_unk19B44 = 0;
+                nAdjust = 0;
+                if (nSound != 0) {
+                    StopSoundBySoundRef__6PSoundFUi(gSound, nSound);
+                    nSound = 0;
+                }
+            } else if (nPush & 0x50) {
+                OPT_ROW(m_unk19B44).m_unk0->m_unk8 = 0x3F19999A;
+                if (nSound != 0) {
+                    StopSoundBySoundRef__6PSoundFUi(gSound, nSound);
+                    nSound = 0;
+                }
+                if (nPush & 0x40) {
+                    m_unk19B44++;
+                    if (m_unk19B44 >= 8) {
+                        m_unk19B44 = 0;
+                    }
+                } else {
+                    m_unk19B44--;
+                    if (m_unk19B44 < 0) {
+                        m_unk19B44 = 7;
+                    }
+                }
+                OPT_ROW(m_unk19B44).m_unk0->m_unk8 = 0x3F800000;
+                if (m_unk19B44 == 2) {
+                    nSound = PlaySoundUbiquitous__6PSoundFUi(gSound, 0x1C7);
+                }
+                PlaySoundUbiquitous__6PSoundFUi(gSound, 0x40);
+            }
+            switch (m_unk19B44) {
+            case 0:
+                if (nPush & 0xA0) {
+                    set.m_unk3 = (set.m_unk3 == 0);
+                    RefreshOptionsValue((MemorySetting *)&set, false);
+                    PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+                }
+                break;
+            case 1: {
+                int v = set.m_unk4;
+                if (nHeld & 0xA0) {
+                    if ((nHeld & 0x80) && v > 0) {
+                        v--;
+                    } else if ((nHeld & 0x20) && v < 100) {
+                        v++;
+                    }
+                    if (v != set.m_unk4) {
+                        set.m_unk4 = v;
+                        RefreshOptionsValue((MemorySetting *)&set, false);
+                    }
+                }
+                break;
+            }
+            case 2: {
+                int v = set.m_unk5;
+                if (nHeld & 0xA0) {
+                    if ((nHeld & 0x80) && v > 0) {
+                        v--;
+                    } else if ((nHeld & 0x20) && v < 100) {
+                        v++;
+                    }
+                    if (v != set.m_unk5) {
+                        set.m_unk5 = v;
+                        RefreshOptionsValue((MemorySetting *)&set, false);
+                        if (nCool == 0) {
+                            nCool = 0xF;
+                            PlaySoundUbiquitous__6PSoundFUi(gSound, 0x1C5);
+                        }
+                        if (nCool != 0) {
+                            nCool--;
+                        }
+                    } else {
+                        nCool = 0;
+                    }
+                }
+                break;
+            }
+            case 3:
+                if (nPush & 0xA0) {
+                    set.m_unk1 = (set.m_unk1 == 0);
+                    RefreshOptionsValue((MemorySetting *)&set, false);
+                    if (set.m_unk1 != 0) {
+                        SetVibrate__3PadFQ23Pad7VibTypeUc(gPad, 2, (unsigned char)(0.5f * GAME_FPS));
+                    }
+                    PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+                }
+                break;
+            case 4:
+                if (nPush & 0x4000) {
+                    nState++;
+                    nAdjust = 1;
+                }
+                break;
+            case 5:
+                if (nPush & 0x4000) {
+                    nState++;
+                    nAdjust = 2;
+                }
+                break;
+            case 6:
+                if (nPush & 0x4000) {
+                    nState++;
+                    nAdjust = 3;
+                }
+                break;
+            case 7:
+                if (nPush & 0x4000) {
+                    PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+                    ResetSetting__10MemoryCardFv(gMC);
+                    GetSetting__10MemoryCardFP13MemorySetting(gMC, &set);
+                    RefreshOptionsValue((MemorySetting *)&set, true);
+                }
+                break;
+            default:
+                ((0) ? (void)0 : CdsAssert__FPciPc("MaximoMain.cpp", 0x15CD, "This is not an option yet"));
+                break;
+            }
+            break;
+        }
+        case 3:
+            PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 17.0f, true, 0);
+            nState++;
+            break;
+        case 4:
+            if (gInterface[0x425] == 0) {
+                DeleteMeshLayer__9InterfaceFP6PMNode(gInterface, pMesh);
+                pFont->RemoveText((unsigned short)6);
+                SetSetting__10MemoryCardFP13MemorySetting(gMC, &set);
+                if (nAdjust == 0) {
+                    return 0;
+                }
+                nState++;
+            }
+            break;
+        case 5:
+            switch (nAdjust) {
+            case 1:
+                nA = set.m_unk6;
+                nB = set.m_unk8;
+                if (ScreenAdjust(nA, nB)) {
+                    set.m_unk6 = nA;
+                    set.m_unk8 = nB;
+                }
+                break;
+            case 2:
+                TVAdjust();
+                break;
+            case 3:
+                Controls();
+                break;
+            }
+            nState = 0;
+            continue;
+        }
+        pMesh->Slot4(0, 0.0f, 1.0f, 0, 0);
+        Render__9InterfaceFi(gInterface, 0);
     }
 }
 
