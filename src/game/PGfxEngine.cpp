@@ -340,15 +340,12 @@ void PGfxEngine::BeginSplinePatch() {
     m_unk154C80->BeginMesh((unsigned int)(clip_unlit_spline_patch_init + 0x1880) >> 3);
 }
 
-// DRAFT: 0x00184A40 BeginHeatHazeInstances__10PGfxEngineFP13tagVuParticleiffb
-// note: frame 0x50 vs 0x60; fA/fB kept in f20/f21 instead of spilled to 0x48/0x4C; tried struct reorder, float locals, address-taken locals; still 80 words
+// FUNCTION: 0x00184A40 BeginHeatHazeInstances__10PGfxEngineFP13tagVuParticleiffb
 void PGfxEngine::BeginHeatHazeInstances(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag) {
-    float fLocalA = fA;
-    float fLocalB = fB;
     struct {
         int n;
-        float b;
-        float a;
+        int b;
+        int a;
         int z;
     } sBuf;
 
@@ -361,13 +358,13 @@ void PGfxEngine::BeginHeatHazeInstances(struct tagVuParticle *pParticles, int nC
     if (m_unk158E1C != vu_fx_microcode_dma_packet) {
         CdsAssert__FPciPc("PGfxEngine.cpp", 0x883, "mpvCurVu1CodeBank == FX_MICROCODE_PACKET");
     }
-    if (nCount >= 0x15) {
+    if (nCount > 0x14) {
         CdsAssert__FPciPc("PGfxEngine.cpp", 0x884, "iNumParticles <= fx_i_heathaze_instance_max_vertices");
     }
     sBuf.n = nCount;
     sBuf.z = 0;
-    sBuf.a = fLocalA;
-    sBuf.b = fLocalB;
+    sBuf.a = *(int *)&fA;
+    sBuf.b = *(int *)&fB;
     m_unk154C80->WriteToVu1Mem(0x328, (u_long128 *)&sBuf, 1);
     m_unk154C80->AddVifPacket((u_long128 *)pParticles, nCount * 2, 0, ((unsigned int)(nCount << 17)) | 0x6C000329);
     m_unk154C80->BeginFxLoop(((unsigned int)(fx_instance_heathaze_init + 0x35D0)) >> 3);
@@ -819,14 +816,14 @@ void PGfxEngine::SetAmbientLight(float *pVec) {
 }
 
 // DRAFT: 0x185F60 SetDirLight__10PGfxEngineFiPfPf
-// note: 38 diff lines; original keeps this+0x158E30 as lui 0x15/ori base per array and orders index*4 and scale-call pointer differently; tried plain array index, explicit (char*) and (int) casts, unsigned consts, float/int member split, local offset var
+// note: 38 diff lines; original builds this+0x158E30 with lui/ori before the index add and schedules the 0x3F80 constant between stores. Tried: plain array index, (char*)/(int) casts, unsigned consts, float/int split, local offset var, shared nOff (40), index-first sum (38), this+idx*16+0x158E70 for the scale call (38, kept).
 void PGfxEngine::SetDirLight(int nIndex, float *pDir, float *pScale) {
     if ((nIndex < 4) && (nIndex >= 0)) {
         *(float *)((int)this + 0x158E30 + nIndex * 4) = -pDir[0];
         *(float *)((int)this + 0x158E40 + nIndex * 4) = -pDir[1];
         *(float *)((int)this + 0x158E50 + nIndex * 4) = -pDir[2];
         *(int *)((int)this + 0x158E60 + nIndex * 4) = 0x3F800000;
-        sceVu0ScaleVector((float *)&m_unk158E70[nIndex], pScale, 128.0f);
+        sceVu0ScaleVector((float *)((int)this + nIndex * 16 + 0x158E70), pScale, 128.0f);
     }
 }
 
@@ -911,12 +908,12 @@ void PGfxEngine::RenderBlendedFragment(tagBlendedFragmentInfo *pInfo) {
 }
 
 // DRAFT: 0x186410 RenderBlendedFragments__10PGfxEngineFPf
-// note: 45 words differ; loop 1 loads F1 before m_unk0 (original loads m_unk0 first), a1 setup order differs. Tried: pFrag hoist (102-103 words), +0xC word-index form, nested if.
+// note: 44 words differ; loop 1 loads F1 before m_unk0 (original loads m_unk0 first, then addiu 0xC and lw 4 for the flag word), a1 setup order differs. Tried: pFrag hoist (102-103 words), +0xC word-index form (44), nested if, nSavedF0 above the m_unk158F00 store (44, kept).
 void PGfxEngine::RenderBlendedFragments(float *pVec) {
     sceVu0CopyVector(m_unk16D330, pVec);
     if (m_unk169310 != 0) {
-        m_unk158F00 = 1;
         unsigned char nSavedF0 = m_unk158E22;
+        m_unk158F00 = 1;
         ShellSort((bool (*)(void *, void *))ZCompareFragments, (void **)m_unk158F04, m_unk169310);
         for (int i = 0; i < m_unk169310; i++) {
             tagBlendedFragmentInfo *pInfo = (tagBlendedFragmentInfo *)(m_unk159310 + (((int *)m_unk158F04)[i] << 8));
