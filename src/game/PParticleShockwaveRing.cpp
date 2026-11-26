@@ -17,7 +17,6 @@ extern "C" void *__dt__15PParticleSystemFv(void *, short);
 extern "C" void __dl__FPv(void *);
 extern unsigned char __vt__22PParticleShockwaveRing[0x40];
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
-extern u_long128 lit_0024DDB0;
 
 // FUNCTION: 0x001F9850 Start__22PParticleShockwaveRingFv
 void PParticleShockwaveRing::Start() {
@@ -27,13 +26,14 @@ void PParticleShockwaveRing::Start() {
 }
 
 // DRAFT: 0x001F9890 Animate__22PParticleShockwaveRingFf
-// note: 113 words differ; guard branch layout (original beqz to body + b to exit) and body shift; size 0x1f4 vs 0x1fc; tried &&, nested, else-return guards and sin/cos tail (dead sin call, cos reused)
+// note: 13 words differ, all in `m_unk1E0 += m_unk1E4 * fDelta`: the original loads m_unk1E4 into f2 and m_unk1E0 into f1 and schedules the mul without a nop; ours swaps the registers. Tried +=, operand orders, fStep/fCur/fRate locals, an fT local for the compare.
 void PParticleShockwaveRing::Animate(float fDelta) {
     u_long128 vTmp30;
     u_long128 vTmp40;
 
-    if (m_unk15 != 0) {
-    if (m_unk16 == 0) {
+    if (!m_unk15 || m_unk16) {
+        return;
+    }
     m_unk1E8 = m_unk1E8 + 3.0f * fDelta;
     if (m_unk1E8 >= 360.0f) {
         m_unk1E8 = m_unk1E8 - 360.0f;
@@ -49,10 +49,7 @@ void PParticleShockwaveRing::Animate(float fDelta) {
     if (m_unk1E0 >= 1.0f) {
         m_unk15 = 0;
         m_unk16 = m_unk17;
-        ((float *)&vTmp40)[0] = 0.0f;
-        ((float *)&vTmp40)[1] = 1.0f;
-        ((float *)&vTmp40)[2] = 0.0f;
-        ((float *)&vTmp40)[3] = 0.0f;
+        vTmp40 = (u_long128)0x3F80000000000000ULL;
         ((unsigned int *)&vTmp30)[3] = 0;
     }
     sceVu0UnitMatrix(m_unkE0);
@@ -64,20 +61,15 @@ void PParticleShockwaveRing::Animate(float fDelta) {
     *(u_long128 *)&m_unk120 = vTmp30;
     {
         float fAngle = m_unk1E8 - 180.0f;
-        FastMath_Sin180(fAngle);
+        float fSin = FastMath_Sin180(fAngle);
         float fCos = FastMath_Cos180(fAngle);
         m_unk130 = m_unk1C4 * fCos;
-        m_unk134 = m_unk1C8 * fCos;
-    }
-    } else {
-        return;
-    }
+        m_unk134 = m_unk1C8 * fSin;
     }
 }
 
-// DRAFT: 0x001F9A90 Create__22PParticleShockwaveRingFP30tagParticleShockwaveRingParamsfff
-// note: 32 words differ; frame 0x60 and s2 base (addiu s2,s1,0x140) missing, 16-byte constant loaded via lui/addiu in original but unresolved lui $at on ours; tried readonly flag, direct m_unkD0 reads, pVec removal, raw-address constant (34 words, worse), pointer-variable constant (34 words, worse)
-void PParticleShockwaveRing::Create(tagParticleShockwaveRingParams *pParams, float fA, float fB, float fC) {
+// FUNCTION: 0x001F9A90 Create__22PParticleShockwaveRingFP30tagParticleShockwaveRingParamsfff
+int PParticleShockwaveRing::Create(tagParticleShockwaveRingParams *pParams, float fA, float fB, float fC) {
     if (pParams == 0) {
         CdsAssert__FPciPc("PParticleShockwaveRing.cpp", 0x1B, "pParams");
     }
@@ -102,7 +94,7 @@ void PParticleShockwaveRing::Create(tagParticleShockwaveRingParams *pParams, flo
     }
 
     {
-        u_long128 vScale = lit_0024DDB0;
+        float vScale[4] = {0.0078125f, 0.0078125f, 0.0078125f, 0.0078125f};
         sceVu0MulVector((float *)&m_unk150, (float *)&m_unk150, (float *)&vScale);
         sceVu0MulVector((float *)&m_unk160, (float *)&m_unk160, (float *)&vScale);
         sceVu0MulVector((float *)&m_unk170, (float *)&m_unk170, (float *)&vScale);
@@ -112,6 +104,7 @@ void PParticleShockwaveRing::Create(tagParticleShockwaveRingParams *pParams, flo
     m_unk1E4 = 1.0f / *(float *)((char *)pParams + 0x80);
     m_unk1E8 = 0.0f;
     m_unk0C = 0x13;
+    return 1;
 }
 
 // FUNCTION: 0x001F9D30 __dt__22PParticleShockwaveRingFv

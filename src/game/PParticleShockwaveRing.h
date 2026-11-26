@@ -21,7 +21,7 @@ public:
     void FrustrumTest(PFrustrum *pFrustrum, float *pVec, float fNear, float fFar);
     void Start();
 
-    void Create(tagParticleShockwaveRingParams *pParams, float fA, float fB, float fC);
+    int Create(tagParticleShockwaveRingParams *pParams, float fA, float fB, float fC);
 
     float m_unkE0[4][4];        // 0x0E0 rotation matrix (sceVu0UnitMatrix target)
     u_long128 m_unk120;         // 0x120 quadword written by Animate

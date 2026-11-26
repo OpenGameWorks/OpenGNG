@@ -8,50 +8,51 @@ extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, bool bA, bool bB)
 extern "C" void __dl__FPv(void *);
 extern unsigned char __vt__13BlowingLeaves[];
 extern char gGfxEng[1504384];
-extern u_long128 lit_0024E340;
 extern "C" void Destroy__16PParticleManagerFUi(void *pThis, unsigned int hSystem);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" unsigned int CreateBlowingLeaves__16PParticleManagerFPfPfPfifb(void *pThis, float *pA, float *pB, float *pC, int nA, float fB, bool bC);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 
-// DRAFT: 0x001FCE80 Execute__13BlowingLeavesFv
-// note: DIFF 94: this in s0 (original s1, so mgr takes s1 instead of s0); -2 block inline with bne (original beq out-of-line at 0x1FCFD4). Tried early-return if-chain (94), switch (94), -2/-1/0 else-if chain (97), -2/0/-1 else-if chain (94).
+// FUNCTION: 0x001FCE80 Execute__13BlowingLeavesFv
 void BlowingLeaves::Execute() {
-    if (m_unk20 == -2) {
-        void *mgr = gGfxEng;
-        if (mgr == 0) {
-            CdsAssert__FPciPc("BlowingLeaves.cpp", 0x42, "apParticleMgr");
-        }
-        Destroy__16PParticleManagerFUi(mgr, m_unk1F0);
-        m_unk1F0 = 0;
-    } else if (m_unk20 == 0) {
-    } else if (m_unk20 == -1) {
-        void *mgr = gGfxEng;
+    switch (m_unk20) {
+    case -1: {
+        void *mgr = (char *)gGfxEng + 0x154F00;
         if (mgr == 0) {
             CdsAssert__FPciPc("BlowingLeaves.cpp", 0x25, "apParticleMgr");
         }
-        float vecA[4];
+        float vecA[4] = {0.0f, 5.0f, 0.0f, 1.0f};
         float vecB[3];
         float vecC[3];
-        float clamped = m_unk1B4;
-        float lim = 100.0f;
-        *(u_long128 *)vecA = *(u_long128 *)&lit_0024E340;
         vecB[0] = m_unk1CC[0];
         vecB[1] = m_unk1CC[1];
         vecB[2] = m_unk1CC[2];
         vecC[0] = m_unk1DC[0];
         vecC[1] = m_unk1DC[1];
         vecC[2] = m_unk1DC[2];
-        if (clamped < 100.0f) {
-            lim = clamped;
+        float fRate = m_unk1B4;
+        float lim = (fRate < 100.0f) ? fRate : 100.0f;
+        if (lim > 0.0f) {
+            fRate = (fRate < 100.0f) ? fRate : 100.0f;
+        } else {
+            fRate = 0.0f;
         }
-        if (lim <= 0.0f) {
-            clamped = 0.0f;
-        } else if (m_unk1B4 >= 100.0f) {
-            clamped = 100.0f;
-        }
-        m_unk1F0 = CreateBlowingLeaves__16PParticleManagerFPfPfPfifb(mgr, vecA, vecB, vecC, m_unk1B0, clamped / 100.0f, m_unk1B8 != 0);
+        fRate /= 100.0f;
+        m_unk1F0 = CreateBlowingLeaves__16PParticleManagerFPfPfPfifb(mgr, vecA, vecB, vecC, m_unk1B0, fRate, m_unk1B8 != 0);
         SetState__15EntityBaseClassFi(this, 0);
+        break;
+    }
+    case 0:
+        break;
+    case -2: {
+        void *mgr = (char *)gGfxEng + 0x154F00;
+        if (mgr == 0) {
+            CdsAssert__FPciPc("BlowingLeaves.cpp", 0x42, "apParticleMgr");
+        }
+        Destroy__16PParticleManagerFUi(mgr, m_unk1F0);
+        m_unk1F0 = 0;
+        break;
+    }
     }
 }
 
