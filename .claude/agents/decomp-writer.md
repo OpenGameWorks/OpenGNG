@@ -71,6 +71,8 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4,p`) that `to
 - A 128-bit constant built in a register (`lui; dsll32; pcpyld v0,v0,$zero; sq`) is a 64-bit constant cast to `u_long128`: `q = (u_long128)0x3F80000000000000ULL;`.
 - A guard that compiles to `beqz a -> exit; beqz b -> body; b exit` is `if (!a || b) return;`.
 - `bltz v; srl; mtc1; cvt.s.w` then `andi 1; or; mtc1; cvt.s.w; add.s` is CodeWarrior's inline unsigned-to-float conversion: write `(float)v` with `v` unsigned. A hand-written `(v >> 1) | (v & 1)` branch picks other registers (`RequestCloserThanAttacking` in `src/game/EntityAttackManager.cpp`).
+- The float-to-unsigned conversion (`c.le.s` against 2147483648.0f, `sub.s`, `cvt.w.s`, `or 0x80000000`) is compiler output too: write `(unsigned int)f` (`PSTAnim::Load`).
+- A 64-bit colour packed from floats with `cvt.w.s; mfc1; andi 0xFF; dsll N; or` and no `dsll32`/`dsra32` pair is `((unsigned long long)(unsigned char)(int)f) << N` per channel (`PFlashScreen::Render`); `(int)f & 0xFF` sign-extends and adds the shift pair.
 - A two-way return whose taken arm is `b` over a `nop` delay slot to `ld ra`, where `if/else` fills the slot with `ld ra`, is a one-case `switch (x) { case 1: return ...; } return 1;` (`TriggerSystem::ConditionCheck`).
 - `slti $at, x, N` then `bnez $at` is `x > N-1`; `x >= N` compiles to `slti` into an ordinary register (`TriggerSystem::ResetTrigger`).
 - `src/game/PWorld.cpp` holds the first match and serves as a model.

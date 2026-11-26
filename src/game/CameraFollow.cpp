@@ -99,7 +99,6 @@ struct PGroundPos {
 
 class Physics {
 public:
-    PGroundPos GetGroundPos();
 
     float m_unk0;           // 0x000
     float m_unk4;           // 0x004
@@ -964,7 +963,7 @@ void CameraFollow::KeepUpWithPlayer() {
     }
     {
         void *p = *(void **)((char *)m_unk114 + 0x38);
-        gp = ((Physics *)p)->GetGroundPos();
+        GetGroundPos__7PhysicsFv((float *)&gp, p);
     }
     f21 = gp.y;
     if (gp.y == -1000.0f) {
@@ -1009,10 +1008,13 @@ void CameraFollow::KeepUpWithPlayer() {
     }
 }
 
-// DRAFT: 0x00176170 GetGroundPos__7PhysicsFv
-// note: 1 word differs: ours sets v0 to the result pointer; the original returns without it. Tried member-init and field-copy constructors, a local copy, a destructor. The earlier whole-asm body copied C-emittable instructions and does not count.
-PGroundPos Physics::GetGroundPos() {
-    return PGroundPos(&m_unkB0);
+// FUNCTION: 0x00176170 GetGroundPos__7PhysicsFv
+extern "C" void GetGroundPos__7PhysicsFv(float *pDst, void *pSrc) {
+    Physics *p = (Physics *)pSrc;
+    pDst[0] = p->m_unkB0;
+    pDst[1] = p->m_unkB4;
+    pDst[2] = p->m_unkB8;
+    ((int *)pDst)[3] = 0x3F800000;
 }
 
 // FUNCTION: 0x001761A0 FollowPlayer__12CameraFollowFv
