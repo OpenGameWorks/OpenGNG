@@ -2147,11 +2147,10 @@ extern "C" void *__dt__9PResourceFv(void *pThis, short nFlag) {
     return pThis;
 }
 
-// DRAFT: 0x0013CBD0 GetMapScreenPath__10MaximoMainFP6PMNodeiR6PArrayb
-// note: 16 words differ, all the s1/s2 swap (original PArray in s2, bool in s1); a bool local copy, reordered locals, and a PArray pointer local all leave 16. pRec addend kept separate so lw stays at offset 0. All 720 local-declaration orders tried: best still 16.
+// FUNCTION: 0x0013CBD0 GetMapScreenPath__10MaximoMainFP6PMNodeiR6PArrayb
 void MaximoMain::GetMapScreenPath(PMNode *arg0, int arg1, PArray &arg2, bool arg3) {
-    unsigned int i;
-    int idx;
+    int i;
+    int j;
     PMNode *node;
     PMChildList *list;
     PMNode *child;
@@ -2162,15 +2161,15 @@ void MaximoMain::GetMapScreenPath(PMNode *arg0, int arg1, PArray &arg2, bool arg
         list = &node->m_unk14;
         Allocate__6PArrayFUi(&arg2, list->count);
         if (!arg3) {
-            for (i = 0; i < list->count; i++) {
-                child = (i < list->count) ? list->children[i] : 0;
+            for (i = 0; (unsigned int)i < list->count; i++) {
+                child = ((unsigned int)i < list->count) ? list->children[i] : 0;
                 if (child != 0) {
                     Add__6PArrayFPv(&arg2, child);
                 }
             }
         } else {
-            for (idx = (int)list->count - 2; idx >= 0; idx--) {
-                child = ((unsigned int)idx < list->count) ? list->children[idx] : 0;
+            for (j = (int)list->count - 2; j >= 0; j--) {
+                child = ((unsigned int)j < list->count) ? list->children[j] : 0;
                 if (child != 0) {
                     Add__6PArrayFPv(&arg2, child);
                 }
