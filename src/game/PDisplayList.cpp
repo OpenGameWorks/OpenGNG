@@ -38,13 +38,13 @@ void PDisplayList::DeAllocEntries(int nCount) {
     m_unkA3340 -= nCount;
 }
 
-// DRAFT: 0x180420 AllocEntries__12PDisplayListFi
-// note: 9 words differ with -sdatathreshold 0; original reloads m_unkA3340 for the += (mwcc reuses the compare-time value in v0); tried assign form (28 words), shift form (9), swapped compare (10)
+// FUNCTION: 0x180420 AllocEntries__12PDisplayListFi
 int PDisplayList::AllocEntries(int nCount) {
     int nResult = 0;
     if (m_unkA3340 + nCount < 0x8000) {
-        nResult = (int)((char *)this + m_unkA3340 * 16 + 0x40) | 0x20000000;
+        u_long128 *p = (u_long128 *)((char *)this + m_unkA3340 * 16 + 0x40);
         m_unkA3340 += nCount;
+        nResult = (int)p | 0x20000000;
     } else {
         printf("\n*** Display List Full!! ***\n");
         ExceptionCleanup();

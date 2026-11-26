@@ -49,23 +49,45 @@ void PMovieOverlayEngine::BeginSprites() {
     m_unk4->BeginFxLoop(((unsigned int)(fx_sprite_noclip_init + 0x150)) >> 3);
 }
 
+// The packet is a local at sp+0x20: GIF tag at +0x10, four A+D quads at +0x20, colour copy at +0x60.
+struct MovieMaterialPacket {
+    unsigned int nHead;                     // 0x00
+    tagGsTextureEnvironment *pTexEnv;       // 0x04
+    unsigned long long nPad08;              // 0x08
+    unsigned char aTag[16];                 // 0x10 GIF tag
+    struct {
+        unsigned long long nData;           // lo doubleword
+        unsigned long long nReg;            // hi doubleword, GS register address
+    } aQ[4];                                // 0x20
+    float aColor[4];                        // 0x60
+    u_long128 qZero70;                      // 0x70
+    u_long128 qZero80;                      // 0x80
+    unsigned int nZero90;                   // 0x90
+};
+
 // DRAFT: 0x0020DA90 SetMaterial__19PMovieOverlayEngineFiPfbUlUl
-// note: frame is 0xC0 vs original 0x60; the GS packet layout (quadword stores, byte edits) is a guess and does not match.
+// note: 39 words differ; frame 0xC0 matches. Remaining: GIF tag RMW ordering (original reads tag bytes after the sh and writes them last), the flag word (ours uses dsll32/dsra32 on the sd value), and quad store order. Tried: 64-bit casts on the flag (46), tag byte locals (74), tag-first store order (72)
 void PMovieOverlayEngine::SetMaterial(int nIndex, float *pColor, bool bFlag, unsigned long nA, unsigned long nB) {
-    unsigned char aMat[0x40];
-    unsigned long long *pQ = (unsigned long long *)aMat;
-    pQ[0] = 0x42;
-    pQ[1] = 0x47;
-    pQ[2] = 0x1A;
-    pQ[3] = 0;
-    pQ[4] = 0x1B;
-    pQ[5] = ((nIndex != 0) * 0x10) | 8 | ((bFlag & 0xFF) << 6);
-    *(unsigned long long *)&aMat[0x30] = 0;
-    aMat[0x31] = (aMat[0x31] & ~0x80) | 0x80;
-    aMat[0x37] = (aMat[0x37] & ~0xF0) | 0x10;
-    aMat[0x38] = (aMat[0x38] & ~0xF) | 0xE;
-    m_unk0->GetTexEnv(nIndex);
-    m_unk4->SetMaterials((tagGsMaterial *)aMat, 1, false, false, 0, 0, 0);
+    MovieMaterialPacket p;
+    p.aQ[0].nReg = 0x42;
+    p.aQ[0].nData = nA;
+    p.aQ[1].nReg = 0x47;
+    p.aQ[1].nData = nB;
+    p.aQ[2].nReg = 0x1A;
+    p.aQ[2].nData = 0;
+    p.aQ[3].nReg = 0x1B;
+    p.aQ[3].nData = ((nIndex != 0) * 0x10) | 8 | ((bFlag & 0xFF) << 6);
+    *(u_long128 *)p.aTag = 0;
+    *(unsigned short *)p.aTag = (*(unsigned short *)p.aTag & 0x8000) | 4;
+    *(u_long128 *)&p.qZero70 = 0;
+    *(u_long128 *)&p.qZero80 = 0;
+    p.nZero90 = 0;
+    p.aTag[1] = (p.aTag[1] & ~0x80) | 0x80;
+    p.aTag[7] = (p.aTag[7] & ~0xF0) | 0x10;
+    p.aTag[8] = (p.aTag[8] & ~0xF) | 0xE;
+    *(u_long128 *)p.aColor = *(u_long128 *)pColor;
+    p.pTexEnv = m_unk0->GetTexEnv(nIndex);
+    m_unk4->SetMaterials((tagGsMaterial *)&p, 1, false, false, 0, 0, 0);
 }
 
 // FUNCTION: 0x0020DBE0 InitTextures__19PMovieOverlayEngineFPii
@@ -75,7 +97,7 @@ int PMovieOverlayEngine::InitTextures(int *pData, int nCount) {
 }
 
 // DRAFT: 0x0020DC10 Init__19PMovieOverlayEngineFsss
-// note: 48 words differ; the original keeps constant 1 in a1 shared with the KickVifDmaChain call, ours reloads it; m_unk24 flag ordering not yet matched; unsigned char temp for m_unk24 made no difference.
+// note: 48 words differ; ours loads m_unk24 with lb (original lbu) and folds the |1 to ori (original keeps a bool 1 in a register); lui a2 precedes lui a0 for the assert literals (original reverses); tried a bool local for the flag and for KickVifDmaChain (48), unsigned char temp (no change).
 int PMovieOverlayEngine::Init(short a, short b, short c) {
     sceGsSetDefDrawEnv((void *)&m_unk10, a, b, c, 1, 0x30);
     m_unk24 = (m_unk24 & ~1) | 1;
