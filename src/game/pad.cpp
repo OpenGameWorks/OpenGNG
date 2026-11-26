@@ -8,7 +8,7 @@ extern "C" void sceDbcInit();
 extern "C" void sceDbcEnd();
 extern "C" void scePad2DeleteSocket(int);
 extern "C" int scePad2CreateSocket(int *, void *);
-extern "C" void sceVibSetActParam(int, int, void *, int);
+extern "C" void sceVibSetActParam(int, int, void *, int, void *);
 extern "C" int sceOpen(const char *, int);
 extern "C" int sceWrite(int, void *, int);
 extern "C" int sceClose(int);
@@ -104,8 +104,7 @@ void Pad::SetInputMode(eInputMode mode, InputData *pData, int size) {
     m_unk174 = mode;
 }
 
-// DRAFT: 0x0012CE90 EnableVibrate__3PadFb
-// note: 18 words differ; MW keeps this in a3 where the original uses t0 (copy is then a delay-slot addiu t0,t0,0x16C), original size 0x5C vs ours 0x58. Tried nested-if and local self pointer.
+// FUNCTION: 0x0012CE90 EnableVibrate__3PadFb
 void Pad::EnableVibrate(bool enable) {
     m_unk16F = enable;
     if (!enable) {
@@ -114,50 +113,45 @@ void Pad::EnableVibrate(bool enable) {
         if (m_unk16E != 0) {
             if (m_unk148 != 0) {
                 m_unk16E = 0;
-                sceVibSetActParam(m_unk100, 1, m_unk140, m_unk148);
+                sceVibSetActParam(m_unk100, 1, m_unk140, m_unk148, &m_unk16C);
             }
         }
     }
 }
 
-// DRAFT: 0x0012CEF0 PauseVibrate__3PadFb
-// note: 21 words differ; original keeps a dead pause ? VibrateTable : this+0x16C pointer in t0 with a frame, MW drops the dead value and reads through a1 without the a2 copy. Tried a local pointer and an empty arm.
+// FUNCTION: 0x0012CEF0 PauseVibrate__3PadFb
 void Pad::PauseVibrate(bool pause) {
-    if (m_unk16F != 0 && m_unk16E != 0) {
-        int size = m_unk148;
-        if (size != 0) {
-            sceVibSetActParam(m_unk100, 1, m_unk140, size);
-        }
+    unsigned char *p;
+    if (!m_unk16F || !m_unk16E || !m_unk148) {
+        return;
     }
+    p = pause ? VibrateTable : &m_unk16C;
+    sceVibSetActParam(m_unk100, 1, m_unk140, m_unk148, p);
 }
 
-// DRAFT: 0x0012CF60 SetVibrate__3PadFQ23Pad7VibTypeUc
-// note: 64 words differ, size 0x114 vs 0x140; original tests the 174 branch with a shared epilogue at 0x12D088 and compares switch cases 3,2,1 with the table pointer computed first. Tried a ternary for 16D (65), an if-chain selector (66), and the bool form kept (64).
+// FUNCTION: 0x0012CF60 SetVibrate__3PadFQ23Pad7VibTypeUc
 void Pad::SetVibrate(VibType type, unsigned char value) {
-    if (m_unk16F != 0) {
-        if (m_unk148 != 0) {
-            if (m_unk174 == 0) {
-                if ((int)type >= 16) {
-                    CdsAssert__FPciPc("pad.cpp", 0x14C, "eType < VibMax");
-                }
-                m_unk16E = (type != 0) ? value : 0;
-                unsigned char *p = VibrateTable + type * 2;
-                switch (m_unk140[0] & 3) {
-                case 3:
-                    m_unk16C = (unsigned char)(((signed char)p[1] << 1) | (signed char)p[0]);
-                    m_unk16D = ((signed char)p[1] < 0);
-                    break;
-                case 2:
-                    m_unk16C = p[1];
-                    break;
-                case 1:
-                    m_unk16C = p[0];
-                    break;
-                }
-                sceVibSetActParam(m_unk100, 1, m_unk140, m_unk148);
-            }
-        }
+    if (!m_unk16F || !m_unk148 || m_unk174 != 0) {
+        return;
     }
+    if ((int)type >= 16) {
+        CdsAssert__FPciPc("pad.cpp", 0x14C, "eType < VibMax");
+    }
+    m_unk16E = (type != 0) ? value : 0;
+    unsigned char *p = VibrateTable + type * 2;
+    switch (m_unk140[0] & 3) {
+    case 1:
+        m_unk16C = p[0];
+        break;
+    case 2:
+        m_unk16C = p[1];
+        break;
+    case 3:
+        m_unk16C = (unsigned char)(((signed char)p[1] << 1) | (signed char)p[0]);
+        m_unk16D = ((signed char)p[1] < 0) ? 1 : 0;
+        break;
+    }
+    sceVibSetActParam(m_unk100, 1, m_unk140, m_unk148, &m_unk16C);
 }
 
 // DRAFT: 0x0012D0A0 RemapButton__3PadFUs
@@ -271,7 +265,7 @@ void Pad::UpdatePad() {
         if (m_unk16E == 0) {
             m_unk16C = 0;
             m_unk16D = 0;
-            sceVibSetActParam(m_unk100, 1, m_unk140, m_unk148);
+            sceVibSetActParam(m_unk100, 1, m_unk140, m_unk148, &m_unk16C);
         } else if (m_unk16E < 10) {
             if (m_unk140[0] & 2) {
                 ((unsigned char *)this + 0x16A)[m_unk140[0] & 3] -= 5;
