@@ -132,8 +132,7 @@ void PMat4::MakeMayaProjectionMatrix(float arg0, float arg1, float arg2, float a
 PMat4::~PMat4() {
 }
 
-// DRAFT: 0x00130D80 MakeOrthographicMatrix__5PMat4FPA4_fffffff
-// note: 9 words differ; store of [2][2] scheduled before the sw $zero,0x2C and the neg.s placement on the last division differ. Tried neg on [3][2] numerator (10 words), operand orders (11 to 9).
+// FUNCTION: 0x00130D80 MakeOrthographicMatrix__5PMat4FPA4_fffffff
 void PMat4::MakeOrthographicMatrix(float (*arg0)[4], float arg1, float arg2, float arg3, float arg4, float arg5, float arg6) {
     arg0[0][0] = 2.0f / (arg2 - arg1);
     arg0[0][1] = 0.0f;
@@ -149,7 +148,7 @@ void PMat4::MakeOrthographicMatrix(float (*arg0)[4], float arg1, float arg2, flo
     arg0[2][3] = 0.0f;
     arg0[3][0] = -(arg2 + arg1) / (arg2 - arg1);
     arg0[3][1] = -(arg3 + arg4) / (arg3 - arg4);
-    arg0[3][2] = -(arg6 + arg5) / (arg6 - arg5);
+    arg0[3][2] = -(-(arg6 + arg5) / (arg6 - arg5));
     arg0[3][3] = 1.0f;
 }
 
@@ -232,14 +231,13 @@ void PMat4::Inverse(PMat4 *arg0) {
     sceVu0InversMatrix((float (*)[4])arg0, (float (*)[4])this);
 }
 
-// DRAFT: 0x00131210 Inverse__5PMat4Fv
-// note: mangled name has no parameter, but the asm reads a1 as the inverse source; this uses this as the source.
-int PMat4::Inverse() {
+// FUNCTION: 0x00131210 Inverse__5PMat4Fv
+extern "C" int Inverse__5PMat4Fv(PMat4 *pThis, float *pSrc) {
     float tmp[4][4];
 
     sceVu0UnitMatrix(&tmp[0][0]);
-    sceVu0InversMatrix(tmp, (float (*)[4])this);
-    sceVu0CopyMatrix((float (*)[4])this, tmp);
+    sceVu0InversMatrix(tmp, (float (*)[4])pSrc);
+    sceVu0CopyMatrix((float (*)[4])pThis, tmp);
     return 0;
 }
 
@@ -283,22 +281,21 @@ int PMat4::Mul(PMat4 *arg0) {
     return 0;
 }
 
-// DRAFT: 0x001313E0 Mul__5PMat4F5PMat4
-// note: asm reads a1 and a2 as the two multiply operands; the by-value mangled name can express only this and one operand.
-int PMat4::Mul(PMat4 arg0) {
+// FUNCTION: 0x001313E0 Mul__5PMat4F5PMat4
+extern "C" int Mul__5PMat4F5PMat4(PMat4 *pThis, float *pA, float *pB) {
     float tmp[4][4];
 
     sceVu0UnitMatrix(&tmp[0][0]);
-    sceVu0MulMatrix(tmp, (float (*)[4])this, (float (*)[4])&arg0);
-    sceVu0CopyMatrix((float (*)[4])this, tmp);
+    sceVu0MulMatrix(tmp, (float (*)[4])pA, (float (*)[4])pB);
+    sceVu0CopyMatrix((float (*)[4])pThis, tmp);
     return 0;
 }
 
-// DRAFT: 0x00131440 LoadCol__5PMat4Fiffff
-// note: 13 words differ; original folds this+nCol*16 once and orders the four stores with per-element address chains. Tried m_unk00[nCol][k], char* base with constant offsets, and per-store offsets; all 13 words.
+// FUNCTION: 0x00131440 LoadCol__5PMat4Fiffff
 void PMat4::LoadCol(int nCol, float arg1, float arg2, float arg3, float arg4) {
-    m_unk00[nCol][0] = arg1;
-    m_unk00[nCol][1] = arg2;
-    m_unk00[nCol][2] = arg3;
-    m_unk00[nCol][3] = arg4;
+    unsigned int nOff = (unsigned int)nCol << 4;
+    *(float *)((unsigned int)this + nOff) = arg1;
+    *(float *)((unsigned int)this + 4 + nOff) = arg2;
+    *(float *)((unsigned int)this + 8 + nOff) = arg3;
+    *(float *)((unsigned int)this + 12 + nOff) = arg4;
 }

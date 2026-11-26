@@ -34,12 +34,13 @@ extern "C" float sqrtf(float);
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PParticleSplineTrail.cpp", line, #cond))
 
 // DRAFT: 0x001F0E20 Start__20PParticleSplineTrailFv
-// note: 8 words differ; the loop matches except the offset and constant registers swap (orig offset a3, const a1). Declaration order variants did not change it.
+// note: 7 words differ after the comma-form loop init (for (i = 0, nOffset = 0; ...)); the nOffset and nVal registers still swap (orig offset a3, const a1). Tried: nOffset-before-nVal, unsigned nVal, unsigned nOffset, nOffset/i/nVal order, split nVal assignment.
 void PParticleSplineTrail::Start() {
     m_unk160 = 1.0f;
     int nVal = 0xC9742400;
-    int nOffset = 0;
-    for (unsigned int i = 0; i < m_unk04; i++) {
+    int nOffset;
+    unsigned int i;
+    for (i = 0, nOffset = 0; i < m_unk04; i++) {
         *(int *)((char *)m_unk08 + nOffset) = nVal;
         *(int *)((char *)m_unk08 + nOffset + 8) = nVal;
         nOffset += 0x20;
@@ -48,8 +49,7 @@ void PParticleSplineTrail::Start() {
     m_unk18 = 1;
 }
 
-// DRAFT: 0x001F0E80 ComputeVuSplineKeys__20PParticleSplineTrailFP13tagVuParticleiP14tagVuSplineKeyi
-// note: 10 words differ after 8 attempts (second-loop temp slots and register assignment). Tried: if (0 < nCount-3) (79->39), pSrc/pDst decl swap (39->33), vB0/vC0/vD0 reorder (33->24), if (1 < nCount-1) (24->15), pNext before pCur (15->10), if (nCount >= 3) (101, reverted).
+// FUNCTION: 0x001F0E80 ComputeVuSplineKeys__20PParticleSplineTrailFP13tagVuParticleiP14tagVuSplineKeyi
 void PParticleSplineTrail::ComputeVuSplineKeys(struct tagVuParticle *pParticles, int nUnused, struct tagVuSplineKey *pKeys, int nCount) {
     float fHalf = (1.0f - m_unk124) / 2.0f;
     int nIdx = m_unk140;
@@ -77,16 +77,16 @@ void PParticleSplineTrail::ComputeVuSplineKeys(struct tagVuParticle *pParticles,
         do {
             char *pNext = (char *)pKeys + ((nI + 1) << 6);
             char *pCur = (char *)pKeys + nOff;
-            char *pNext2 = (char *)pKeys + ((nI + 2) << 6);
-            char *pNext3 = (char *)pKeys + ((nI + 3) << 6);
             float vB0[4];
             float vC0[4];
             float vD0[4];
             sceVu0SubVector(vD0, pNext, pCur);
+            char *pNext2 = (char *)pKeys + ((nI + 2) << 6);
             sceVu0SubVector(vB0, pNext2, pNext);
             sceVu0AddVector(vB0, vD0, vB0);
             sceVu0ScaleVector(pCur + 0x20, vB0, fHalf);
             sceVu0SubVector(vD0, pNext2, pNext);
+            char *pNext3 = (char *)pKeys + ((nI + 3) << 6);
             sceVu0SubVector(vC0, pNext3, pNext2);
             sceVu0AddVector(vC0, vD0, vC0);
             sceVu0ScaleVector(pCur + 0x30, vC0, fHalf);

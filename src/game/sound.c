@@ -435,14 +435,13 @@ void SOUND_SetSPUWriteAddress(unsigned int arg0) {
     SetIOPCommand(0x0E, 2);
 }
 
-// DRAFT: 0x001AE3C0 SOUND_AllocateStreamBuffer
-// note: 6 differing lines; compiler folds the low-half mask so the original's ori $v0,0xFFFF + and is missing. Tried arg1 & 0xFFFFU, (short)(arg1 & 0xFFFF), (unsigned short) cast, unsigned long arg1 (header conflict), unsigned int lo local with &=, mask local, (int)arg1 & 0xFFFF, arg1 & 65535; all 6.
+// FUNCTION: 0x001AE3C0 SOUND_AllocateStreamBuffer
 void SOUND_AllocateStreamBuffer(short arg0, unsigned int arg1, unsigned int arg2) {
     IOPCommandData[0] = arg0;
-    IOPCommandData[4] = (short)arg2;
-    IOPCommandData[3] = (short)(arg2 >> 16);
-    IOPCommandData[1] = (short)(arg1 >> 16);
-    IOPCommandData[2] = arg1 & 0xFFFFU;
+    IOPCommandData[4] = arg2;
+    IOPCommandData[1] = arg1 >> 16;
+    IOPCommandData[2] = arg1 & 0xFFFF;
+    IOPCommandData[3] = (arg2 >> 16) & 0xFFFF;
     SetIOPCommand(0xD, 5);
 }
 
