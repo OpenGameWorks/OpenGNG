@@ -24,7 +24,7 @@ void BlowingLeavesTrigger::SetEditableVars(char *pSrc) {
 }
 
 // DRAFT: 0x00208B40 Execute__20BlowingLeavesTriggerFv
-// note: frame 0x40 with this in s1 (original 0x30, this in s0); switch order -1,0,1,-2 is not yet the original test order
+// note: 114 words differ; frame 0x40 with this copied to s1 and a second saved register (original frame 0x30, this in s0 only, v at 0x20). Switch -1,0,1,-2 has the original test order with break exits (120 -> 114); the saved-register allocation is the remaining gap.
 void BlowingLeavesTrigger::Execute() {
     float v[4];
     v[0] = m_unk1B8[0];
@@ -34,7 +34,7 @@ void BlowingLeavesTrigger::Execute() {
     switch (m_unk20) {
     case -1:
         SetState(0);
-        return;
+        break;
     case 0: {
         char *pPlayer;
         char *pAlt;
@@ -54,7 +54,7 @@ void BlowingLeavesTrigger::Execute() {
             return;
         }
         m_unk1C8 = 0;
-        return;
+        break;
     }
     case 1: {
         char *pSys = 0;
@@ -78,7 +78,7 @@ void BlowingLeavesTrigger::Execute() {
             m_unk1C8 = 1;
             SetState(0);
         }
-        return;
+        break;
     }
     case -2:
         break;

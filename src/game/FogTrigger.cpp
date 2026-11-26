@@ -39,7 +39,7 @@ void FogTrigger::SetEditableVars(char *pSrc) {
 }
 
 // DRAFT: 0x001CEF90 Execute__10FogTriggerFv
-// note: 96 words differ; original tests -2 first, reuses one mPlayerAPI load for both 0x3C and +0x190, and has different case 1 store/reload and lbu 0x200 tail layout. Tried case orders 1,0,-1 (99), -1,0,1 (96), if-chain (100), explicit case -2 at top (101) and bottom (101).
+// note: 7 words differ; second case 0 block (0x0A8-0x0B8) puts pAlt in $v1 and pPlayer in $v0 where the original does the reverse (same swap as RainTrigger), and the "m_unk204" literal address (0x00F8, 0x0108) is unrelocated. Switch -1,0,1,-2 with break exits matched the dispatch (96 -> 86 with pAlt-first, then 7 with break exits).
 void FogTrigger::Execute()
 {
     float fColor[3];
@@ -51,12 +51,12 @@ void FogTrigger::Execute()
     case -1:
         memcpy(m_unk1F0, m_unk1D4, 0xC);
         SetState__15EntityBaseClassFi(this, 0);
-        return;
+        break;
     case 0:
         if (m_unk200 == 0) {
             pPlayer = mPlayerAPI__13EntityManager;
-            pTarget = pPlayer + 0x190;
             pAlt = *(char **)(pPlayer + 0x3C);
+            pTarget = pPlayer + 0x190;
             if (pAlt != 0) {
                 pTarget = pAlt + 0x80;
             }
@@ -65,15 +65,15 @@ void FogTrigger::Execute()
             }
         }
         pPlayer = mPlayerAPI__13EntityManager;
-        pTarget = pPlayer + 0x190;
         pAlt = *(char **)(pPlayer + 0x3C);
+        pTarget = pPlayer + 0x190;
         if (pAlt != 0) {
             pTarget = pAlt + 0x80;
         }
         if (!(Distance__7MathAPIFPA4_fPA4_f((float (*)[4])m_unk1F0, (float (*)[4])pTarget) <= m_unk1E0)) {
             m_unk200 = 0;
         }
-        return;
+        break;
     case 1:
         m_unk204 = (PZBufferFog *)(gEng + 0x8750);
         if (m_unk204 == 0) {
@@ -86,7 +86,9 @@ void FogTrigger::Execute()
         SetDensity__11PZBufferFogFfbf(m_unk204, m_unk1B0, m_unk1B4 != 0, m_unk1B8);
         m_unk200 = 1;
         SetState__15EntityBaseClassFi(this, 0);
-        return;
+        break;
+    case -2:
+        break;
     }
 }
 

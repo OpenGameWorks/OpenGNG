@@ -39,7 +39,7 @@ void RainTrigger::SetEditableVars(char *pSrc) {
 }
 
 // DRAFT: 0x001CD720 Execute__11RainTriggerFv
-// note: 70 words differ; original tests -2, then 1 with lui $s1,gGfxEng in the delay slot and case 1 placed out of line, and reuses mPlayerAPI across case 0 operands. Tried if-chain with load in case 1 (70), load after -2 test (83), load hoisted above switch (86), switch with -2 first (86).
+// note: 5 words differ, all in the second case 0 block (0x0A8-0x0B8): original keeps pPlayer in $v1 and pAlt in $v0, ours swaps them. Switch -1,0,1,-2 with gGfxEng+0x154F00 and pPlayer-first operand order (68 -> 6 -> 5). Tried pAlt-first second block (5), attempt-2 ordering in first block (6).
 void RainTrigger::Execute()
 {
     char *pPlayer;
@@ -48,25 +48,15 @@ void RainTrigger::Execute()
     char *pSelf;
     void *mgr;
 
-    if (m_unk20 == -2) {
-        return;
-    }
-    if (m_unk20 == 1) {
-        mgr = gGfxEng;
-        if (mgr == 0) {
-            CdsAssert__FPciPc("RainTrigger.cpp", 0x2D, "apParticleMgr");
-        }
-        SetRainDensity__16PParticleManagerFfb(mgr, m_unk1B0, m_unk1B4 != 0);
-        SetLightningDensity__16PParticleManagerFf(mgr, m_unk1B8);
-        m_unk1CC = 1;
+    switch (m_unk20) {
+    case -1:
         SetState__15EntityBaseClassFi(this, 0);
-        return;
-    }
-    if (m_unk20 == 0) {
+        break;
+    case 0: {
         if (m_unk1CC == 0) {
             pPlayer = mPlayerAPI__13EntityManager;
-            pTarget = pPlayer + 0x190;
             pAlt = *(char **)(pPlayer + 0x3C);
+            pTarget = pPlayer + 0x190;
             if (pAlt != 0) {
                 pTarget = pAlt + 0x80;
             }
@@ -80,8 +70,8 @@ void RainTrigger::Execute()
             }
         }
         pPlayer = mPlayerAPI__13EntityManager;
-        pTarget = pPlayer + 0x190;
         pAlt = *(char **)(pPlayer + 0x3C);
+        pTarget = pPlayer + 0x190;
         if (pAlt != 0) {
             pTarget = pAlt + 0x80;
         }
@@ -93,11 +83,21 @@ void RainTrigger::Execute()
         if (!(Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pSelf, (float (*)[4])pTarget) <= m_unk1C8)) {
             m_unk1CC = 0;
         }
-        return;
+        break;
     }
-    if (m_unk20 == -1) {
+    case 1: {
+        mgr = gGfxEng + 0x154F00;
+        if (mgr == 0) {
+            CdsAssert__FPciPc("RainTrigger.cpp", 0x2D, "apParticleMgr");
+        }
+        SetRainDensity__16PParticleManagerFfb(mgr, m_unk1B0, m_unk1B4 != 0);
+        SetLightningDensity__16PParticleManagerFf(mgr, m_unk1B8);
+        m_unk1CC = 1;
         SetState__15EntityBaseClassFi(this, 0);
-        return;
+        break;
+    }
+    case -2:
+        break;
     }
 }
 

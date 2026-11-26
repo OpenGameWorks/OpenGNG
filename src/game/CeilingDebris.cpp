@@ -28,40 +28,43 @@ void CeilingDebris::SetEditableVars(char *pSrc) {
 }
 
 // DRAFT: 0x0020F840 Execute__13CeilingDebrisFv
-// note: 43 words differ; branch layout (-2 and -1 tests, shared epilogue placement, inline -1 body) and 0-block order still differ. Tried: -1 block as primary if, early-return forms, else-return form (best), removing top -2 test (64).
+// note: 16 words differ; the default-arm assert (CDS_ASSERT, 0x41) tests the switch value with sltu/xori in the original but loads the message address in ours. Tried: switch with cases -1,0,-2 (54), <= -1 for slti/bnez (34), nested switch on m_unk1B0 (16, kept), direct CdsAssert with a variable cond (31).
 void CeilingDebris::Execute() {
-    if (m_unk20 == -2) {
-        return;
-    }
-    if (m_unk20 != 0) {
-        if (m_unk20 == -1) {
-            void *pInst = InstanceIsValid__15EntityBaseClassFUi(m_unk1B4, -2);
-            if (m_unk1B4 == 0) {
-                SetState__15EntityBaseClassFi(this, -2);
-                return;
-            }
-            if (pInst == 0) {
-                return;
-            }
-            if (*(int *)((char *)pInst + 0x20) < 0) {
-                return;
-            }
-            SetState__15EntityBaseClassFi(this, 0);
-        } else {
+    switch (m_unk20) {
+    case -1: {
+        void *pInst = InstanceIsValid__15EntityBaseClassFUi(m_unk1B4, -2);
+        if (m_unk1B4 == 0) {
+            SetState__15EntityBaseClassFi(this, -2);
             return;
         }
-    } else {
+        if (pInst == 0) {
+            return;
+        }
+        if (*(int *)((char *)pInst + 0x20) <= -1) {
+            return;
+        }
+        SetState__15EntityBaseClassFi(this, 0);
+        break;
+    }
+    case 0:
         if (m_unkE9 != 0) {
-            if (m_unk1B0 == 1) {
-                PlaySequence__15EntityBaseClassFPUi(this, DeadseaCeilingDebris_FallSeq);
-            } else if (m_unk1B0 == 0) {
+            switch (m_unk1B0) {
+            case 0:
                 PlaySequence__15EntityBaseClassFPUi(this, ChurchCeilingDebris_FallSeq);
-            } else {
+                break;
+            case 1:
+                PlaySequence__15EntityBaseClassFPUi(this, DeadseaCeilingDebris_FallSeq);
+                break;
+            default:
                 CDS_ASSERT(0x41, !"!mEVars.m_iDebrisType");
+                break;
             }
         } else if (m_unk160 == 0) {
             SetState__15EntityBaseClassFi(this, -2);
         }
+        break;
+    case -2:
+        break;
     }
 }
 
