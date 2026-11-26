@@ -27,6 +27,7 @@ public:
     int IsEBoxWithinEBox(tagBOX *arg0, tagBOX *arg1);
     void MakeVertexList(tagBOX *arg0, float (*arg1)[4]);
     static void VectorRotateY(float (*arg0)[4], float arg1);
+    static int GetGroundPos(float (*pPos)[4]);
     float SetE_BOX_Radius(tagBOX *arg0);
     float GetRelAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]);
     bool FacingPoint(EntityBaseClass *arg0, float (*arg1)[4], float arg2);

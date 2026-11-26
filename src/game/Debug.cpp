@@ -122,6 +122,7 @@ struct DebugTblEntry {
 extern DebugTblEntry DebugTbl[0x1A];
 
 #include "Debug.h"
+extern short gNoDamage;
 
 extern Debug gDebug;
 
@@ -314,6 +315,11 @@ void Debug::DebugClear() {
         this->m_unk0C->StartSubTimer(1);
     }
     this->ResetDebugTimer();
+}
+
+// FUNCTION: 0x0016AE30 IsNoDamage__5DebugFv
+short Debug::IsNoDamage() {
+    return gNoDamage;
 }
 
 // FUNCTION: 0x16AE40 SoundEdit__Fv

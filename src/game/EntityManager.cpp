@@ -29,6 +29,7 @@ class PList {
 public:
     ~PList();
     void RemoveAll();
+    void Add(void *pItem);
 };
 
 // Sleep-list entry: first virtual (vtable slot 0 at offset 8) takes an int.
@@ -398,6 +399,11 @@ public:
     int GetNumInstanceGroups();
     CEifInstanceGroup *GetInstanceGroup(int arg0);
 };
+
+// FUNCTION: 0x001460C0 BGAnimAdd__13EntityManagerFi
+void EntityManager::BGAnimAdd(int value) {
+    ((PList *)((char *)this + 0x5B80))->Add((void *)value);
+}
 
 // DRAFT: 0x001460D0 BGAnimIsReset__13EntityManagerFi
 // note: 21 diffs; entry beqz targets differ (orig +0x1F to shared return-0, ours +0x1B); tried guard form, while form (34), local cursor (21), flipped cursor order (25), early return (30+)

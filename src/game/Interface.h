@@ -82,6 +82,7 @@ public:
     void InitCombo(PMeshNode *arg0, HudData *arg1, PMNode *arg2);
 
     void Delete();
+    void Reset();
     char _pad000[0x4];
     PMNode *m_unk4;             // 0x004 node whose frustum test and frame rate are set
     int m_unk8;                 // 0x008 float bits, 0x40000000 is 2.0f

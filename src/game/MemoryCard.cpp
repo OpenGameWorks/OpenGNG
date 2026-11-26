@@ -169,6 +169,11 @@ void MemoryCard::ResetGameData() {
     m_unk20C = 0;
 }
 
+// FUNCTION: 0x00150000 ResetSetting__10MemoryCardFv
+int MemoryCard::ResetSetting() {
+    return SetSetting((MemorySetting *)DefaultSetting);
+}
+
 // FUNCTION: 0x00150010 ResetMCData__10MemoryCardFv
 void MemoryCard::ResetMCData() {
     memcpy(&m_unk218, DefaultSetting, 10);

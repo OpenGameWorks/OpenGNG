@@ -63,6 +63,9 @@ public:
     int GetNumResourcesOfType(eResourceTypes eType, bool bLocal);
 
 private:
+    void UnloadGlobalResource();
+    bool LoadGlobalResource(const char *, bool);
+    bool LoadLocalResource(const char *, bool);
     tagResourceData m_unk0;
     tagResourceData m_unk68;
 };

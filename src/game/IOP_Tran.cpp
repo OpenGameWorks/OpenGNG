@@ -18,6 +18,11 @@ void IOP_Tran::IOP_TranSet(unsigned int a0, unsigned int a1, unsigned int a2, un
     m_unk24 = a6;
 }
 
+// FUNCTION: 0x001DAA60 IOP_TranReset__8IOP_TranFv
+void IOP_Tran::IOP_TranReset() {
+    InitMembers();
+}
+
 // FUNCTION: 0x001DAA70 InitMembers__8IOP_TranFv
 void IOP_Tran::InitMembers()
 {

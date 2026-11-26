@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "PParticleManager.h"
+extern "C" void *Create__13PFireDamageFxFP6PMNodeUi(void *pThis, PMNode *pNode, unsigned int nId);
 
 // TODO(header): foreign declarations
 struct tagParticleRainParams;
@@ -706,6 +707,11 @@ int PParticleManager::CreateGroundDust(float *pPos, float fScale) {
     return 0;
 }
 
+// FUNCTION: 0x001B88E0 CreateFireDamageFx__16PParticleManagerFP6PMNodeUi
+void *PParticleManager::CreateFireDamageFx(PMNode *pA, unsigned int nA) {
+    return Create__13PFireDamageFxFP6PMNodeUi((char *)this + 0x2088, pA, nA);
+}
+
 // FUNCTION: 0x001B88F0 CreateFrozenFx__16PParticleManagerFP6PMNodeff
 PFrozenFx *PParticleManager::CreateFrozenFx(PMNode *pNode, float fA, float fB) {
     PFrozenFx *pFx = (PFrozenFx *)__nw__FUi(0x210);
@@ -874,6 +880,16 @@ PParticleRain *PParticleManager::CreateRain(tagParticleRainParams *pParams) {
         pResult = pRain;
     }
     return pResult;
+}
+
+// FUNCTION: 0x001B8FC0 GetResource__16PParticleManagerFUi
+void *PParticleManager::GetResource(unsigned int value) {
+    return GetResource__16PResourceManagerFUib(m_unk40, value, false);
+}
+
+// FUNCTION: 0x001B8FD0 GetFxTexture__16PParticleManagerFUi
+int PParticleManager::GetFxTexture(unsigned int value) {
+    return (int)GetResource__16PResourceManagerFUib(m_unk40, value, false);
 }
 
 // DRAFT: 0x001B8FE0 LoadFogObjects__16PParticleManagerFP8PPakFile16ePsx2FileVersion

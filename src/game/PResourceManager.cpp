@@ -891,6 +891,21 @@ unsigned int PResourceManager::GetResType(unsigned int uTheID) {
     return (uTheID & 0x7F000000) >> 24;
 }
 
+// FUNCTION: 0x001549F0 UnloadGlobalResource__16PResourceManagerFv
+void PResourceManager::UnloadGlobalResource() {
+    Unload(&m_unk0);
+}
+
+// FUNCTION: 0x00154A00 LoadGlobalResource__16PResourceManagerFPCcb
+bool PResourceManager::LoadGlobalResource(const char *pA, bool bA) {
+    return Load(pA, bA, &m_unk0);
+}
+
+// FUNCTION: 0x00154A20 LoadLocalResource__16PResourceManagerFPCcb
+bool PResourceManager::LoadLocalResource(const char *pA, bool bA) {
+    return Load(pA, bA, &m_unk68);
+}
+
 // FUNCTION: 0x00154A30 __dt__16PResourceManagerFv
 PResourceManager::~PResourceManager() {
     Unload(&m_unk68);

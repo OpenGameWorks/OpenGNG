@@ -125,6 +125,8 @@ public:
     int PlaySoundPMNode(unsigned int p0, unsigned int p1, const PMNode *pNode);
     void StopAmbientSoundsByOriginatorRef(unsigned int p0, unsigned int p1);
     void StopSoundsByOriginatorRef(unsigned int p0, unsigned int p1, unsigned int p2);
+    void StopSoundBySoundRefIfAmbient(unsigned int uID);
+    void StopSoundBySoundRef(unsigned int uID);
     char _pad000[0x10];
 };
 extern PSound gSound;
@@ -260,6 +262,11 @@ public:
     short m_unk08;          // 0x08 end frame; loop path runs only when positive
 };
 
+// FUNCTION: 0x001917D0 StopSoundBySoundRefIfAmbient__6PMNodeFUi
+void PMNode::StopSoundBySoundRefIfAmbient(unsigned int value) {
+    gSound.StopSoundBySoundRefIfAmbient(value);
+}
+
 // FUNCTION: 0x001917E0 StopAmbientSoundsByObject__6PMNodeFv
 void PMNode::StopAmbientSoundsByObject() {
     m_unkF4 = 0;
@@ -269,6 +276,11 @@ void PMNode::StopAmbientSoundsByObject() {
 // FUNCTION: 0x00191800 StopAllSoundsByObject__6PMNodeFv
 void PMNode::StopAllSoundsByObject() {
     gSound.StopSoundsByOriginatorRef(m_unkE8, 0x20U, 3U);
+}
+
+// FUNCTION: 0x00191820 StopSoundBySoundRef__6PMNodeFUi
+void PMNode::StopSoundBySoundRef(unsigned int value) {
+    gSound.StopSoundBySoundRef(value);
 }
 
 // FUNCTION: 0x00191830 PlaySound__6PMNodeFUi

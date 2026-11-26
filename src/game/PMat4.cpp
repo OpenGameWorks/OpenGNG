@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "PMat4.h"
+extern "C" void sceVu0ApplyMatrix(float *pDst, float (*pMat)[4], float *pSrc);
 
 // TODO(header): foreign declarations
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
@@ -197,6 +198,11 @@ void PMat4::MakeScreenMatrix(float arg0, float arg1, float arg2, float arg3, flo
 // FUNCTION: 0x001310D0 MakeViewMatrix__5PMat4FPfPfPf
 void PMat4::MakeViewMatrix(float *pEye, float *pAt, float *pUp) {
     sceVu0CameraMatrix((float (*)[4])this, pEye, pAt, pUp);
+}
+
+// FUNCTION: 0x001310E0 MulVector__5PMat4FPfPf
+void PMat4::MulVector(float *pA, float *pB) {
+    sceVu0ApplyMatrix(pA, (float (*)[4])this, pB);
 }
 
 // DRAFT: 0x001310F0 InverseByRT__5PMat4FPfPf

@@ -1297,6 +1297,12 @@ void HudCombo::ComboNumber() {
 static unsigned int ComboNumber_1169[10] = {0x6B0BE84A, 0x6AAE41FC, 0x6840BB26, 0x69E51290, 0x6D9D4E92,
                                             0x6C38E724, 0x6ED61DFE, 0x6F73B448, 0x6626A5FA, 0x67830C4C};
 
+// FUNCTION: 0x00141DD0 Reset__8HudComboFv
+void HudCombo::Reset() {
+    m_unkF = 0;
+    *(int *)((char *)m_unk4 + 0xC) = 0;
+}
+
 // FUNCTION: 0x00141DE0 Delete__8HudComboFv
 void HudCombo::Delete() {
     m_unk4 = 0;

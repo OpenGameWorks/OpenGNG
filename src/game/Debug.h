@@ -22,6 +22,7 @@ public:
     void StartTimer(unsigned int nId);
     void InitDebug();
 
+    short IsNoDamage();
     char *m_unk00;                  // 0x000 passed to sceDevConsPrintf
     unsigned int m_unk04;           // 0x004 zeroed by DebugClear
     unsigned int m_unk08;           // 0x008 newline count, zeroed by DebugClear, bumped by LineFeed

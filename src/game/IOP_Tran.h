@@ -10,6 +10,7 @@ public:
     void InitMembers();
     void IOP_TranSet(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3,
                      unsigned int a4, unsigned int a5, unsigned int a6);
+    void IOP_TranReset();
     int m_unk0;                     // 0x00 id
     int m_unk4;                     // 0x04
     int m_unk8;                     // 0x08

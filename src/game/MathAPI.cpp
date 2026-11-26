@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "MathAPI.h"
+#include "BGCollision.h"
 
 // TODO(header): foreign declarations
 extern "C" void memcpy(void *, const void *, unsigned int);
@@ -23,6 +24,7 @@ public:
     void InverseByRT(float *arg0, float *arg1);
 };
 extern "C" void sceVu0UnitMatrix(PMat4 *m);
+extern BGCollision mBGCollision__15EntityBaseClass;
 extern "C" void Inverse__5PMat4Fv(float *dst, float *src);
 extern "C" void sceVu0ApplyMatrix(tagBOX *dst, float *m, float *src);
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, char *pExpr);
@@ -215,6 +217,11 @@ float MathAPI::GetAngleBetweenVectors(float *arg0, float *arg1) {
         return 0.0f;
     }
     return FastMath_Fabs(57.295776f * acosf(c));
+}
+
+// FUNCTION: 0x00157BB0 GetGroundPos__7MathAPIFPA4_f
+int MathAPI::GetGroundPos(float (*pPos)[4]) {
+    return mBGCollision__15EntityBaseClass.GetGroundPos(pPos);
 }
 
 // FUNCTION: 0x157BC0 GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f

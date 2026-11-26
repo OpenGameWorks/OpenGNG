@@ -88,6 +88,7 @@ public:
 
     static void *mCameraAPI;    // MathAPI instance read by EntityBaseClass::CameraLookingAtMe
 
+    void BGAnimAdd(int);
     char _pad000[0x5050];
     unsigned int m_unk5050;     // 0x5050 entity id counter, used by Spawn
     unsigned int m_unk5054;     // 0x5054 bound for dependency flag indices

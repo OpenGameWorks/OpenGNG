@@ -102,6 +102,8 @@ public:
     void RenderShockwaveRings();
     void AnimateGroundDustFx(PFrustrum *pFrustrum, float fDt);
 
+    void *CreateFireDamageFx(PMNode *, unsigned int);
+    void *GetResource(unsigned int);
     unsigned int m_unk0;        // 0x00 list count
     unsigned int m_unk4;        // 0x04 list index
     void **m_unk8;              // 0x08 list storage of PParticleSystem pointers
