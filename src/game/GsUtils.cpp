@@ -503,37 +503,31 @@ void GsInitTexturedFogSprite(tagTexturedFogSpritePacket *pPacket, char cR, char 
     }
 }
 
-// DRAFT: 0x0017EBD0 GsInitFogSprite__FP18tagFogSpritePacketcccUi
-// note: DIFF 102; original has 0x40 frame saving s0..s3 and 0x198 body, ours 0x10 frame and 0x16c body, lhu vs lh header load; tried separate/shared nOff and early constant (no change)
+// FUNCTION: 0x0017EBD0 GsInitFogSprite__FP18tagFogSpritePacketcccUi
 void GsInitFogSprite(tagFogSpritePacket *pPacket, char cR, char cG, char cB, unsigned int nZ) {
-    long long nRGB = (long long)cR | ((long long)cG << 8) | ((long long)cB << 16);
+    GifTag *pTag = (GifTag *)pPacket;
     pPacket->m_unk00 = 0;
-    unsigned short nHdr = *(unsigned short *)pPacket;
-    *(unsigned short *)pPacket = (nHdr & 0x8000) | 0x2C;
-    unsigned char *pB = (unsigned char *)pPacket;
-    pB[1] = (pB[1] & ~0x80) | 0x80;
-    pB[7] = (pB[7] & ~0xF0) | 0x10;
-    pB[8] = (pB[8] & ~0x0F) | 0x0E;
+    pTag->NLOOP = 0x2C;
+    pTag->EOP = 1;
+    pTag->NREG = 1;
+    pTag->REGS0 = 0xE;
     pPacket->m_unk10 = 0x70000;
     pPacket->m_unk18 = 0x47;
     pPacket->m_unk30 = 0x46;
     pPacket->m_unk38 = 0;
     pPacket->m_unk20 = 0x11;
     pPacket->m_unk28 = 0x42;
-    pPacket->m_unk40 = nRGB | 0x3F80000080000000LL;
+    pPacket->m_unk40 = (unsigned long)cR | ((unsigned long)cG << 8) | ((unsigned long)cB << 16) | ((unsigned long)0x80 << 24) | ((unsigned long)0x3F800000 << 32);
     pPacket->m_unk48 = 1;
-    unsigned long long nZHi = (unsigned long long)nZ << 32;
-    int nX = 0;
-    int nOff = 0;
-    for (int i = 0; i < 20; i++) {
+    int i;
+    int nX;
+    int nOff;
+    nX = 0;
+    for (i = 0, nOff = 0; i < 20; i++) {
         char *pV = (char *)pPacket + nOff;
-        long long nX0 = (SCREEN_OFFSET_X + nX) << 4;
-        long long nY0 = (long long)(SCREEN_OFFSET_Y << 4) << 16;
-        *(long long *)(pV + 0x50) = nX0 | nY0 | nZHi;
+        *(unsigned long *)(pV + 0x50) = (unsigned long)((SCREEN_OFFSET_X + nX) << 4) | ((unsigned long)(SCREEN_OFFSET_Y << 4) << 16) | ((unsigned long)nZ << 32);
         *(long long *)(pV + 0x58) = 5;
-        long long nX1 = (SCREEN_OFFSET_X + nX + 0x20) << 4;
-        long long nY1 = (long long)((SCREEN_OFFSET_Y + SCREEN_HEIGHT) << 4) << 16;
-        *(long long *)(pV + 0x60) = nX1 | nY1 | nZHi;
+        *(unsigned long *)(pV + 0x60) = (unsigned long)((SCREEN_OFFSET_X + (nX + 0x20)) << 4) | ((unsigned long)((SCREEN_OFFSET_Y + SCREEN_HEIGHT) << 4) << 16) | ((unsigned long)nZ << 32);
         *(long long *)(pV + 0x68) = 5;
         nX += 0x20;
         nOff += 0x20;

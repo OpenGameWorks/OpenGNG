@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "PDisplayList.h"
+#include "GsUtils.h"
 
 // TODO(header): foreign declarations
 extern "C" void __ct__16PTextureDmaChainFv(void *pThis);
@@ -316,8 +317,7 @@ void PDisplayList::SendGsPacket(void *pvData, int iSize, bool bFlag) {
     asm { sync }
 }
 
-// DRAFT: 0x1811B0 SetGsRegisters__12PDisplayListFP1i
-// note: 37 differing lines; mask constants and lhu/sq order are scheduled differently; tried lh/lb vs lhu/lbu (39->37), hoisted masks, 64-bit temporaries (no change).
+// FUNCTION: 0x1811B0 SetGsRegisters__12PDisplayListFP1i
 void PDisplayList::SetGsRegisters(u_long128 *pRegData, int nNumRegs) {
     if (pRegData == 0) {
         CdsAssert("PDisplayList.cpp", 0x790, "pRegData");
@@ -332,15 +332,12 @@ void PDisplayList::SetGsRegisters(u_long128 *pRegData, int nNumRegs) {
     *(long long *)nPacket = ((long long)nNumRegs + 1) | 0x10000000LL;
     ((unsigned int *)nPacket)[2] = 0x11000000;
     ((unsigned int *)nPacket)[3] = (nNumRegs + 1) | 0x50000000;
-    *(u_long128 *)(nPacket + 0x10) = 0;
-    unsigned int uField = *(unsigned short *)(nPacket + 0x10);
-    *(unsigned short *)(nPacket + 0x10) = (uField & ~0x7FFF) | (nNumRegs & 0x7FFF);
-    uField = *(unsigned char *)(nPacket + 0x11);
-    *(unsigned char *)(nPacket + 0x11) = (uField & ~0x80) | 0x80;
-    uField = *(unsigned char *)(nPacket + 0x17);
-    *(unsigned char *)(nPacket + 0x17) = (uField & ~0xF0) | 0x10;
-    uField = *(unsigned char *)(nPacket + 0x18);
-    *(unsigned char *)(nPacket + 0x18) = (uField & ~0xF) | 0xE;
+    GifTag *pTag = (GifTag *)(nPacket + 0x10);
+    *(u_long128 *)pTag = 0;
+    pTag->NLOOP = nNumRegs;
+    pTag->EOP = 1;
+    pTag->NREG = 1;
+    pTag->REGS0 = 0xE;
     QwordCopy((u_long128 *)(nPacket + 0x20), pRegData, nNumRegs);
     asm {
         sync

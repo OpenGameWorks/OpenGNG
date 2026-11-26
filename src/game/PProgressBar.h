@@ -22,16 +22,22 @@ public:
     float m_unk4;
     float m_unk8;
     float m_unkC;
-    char _pad10[0x10];      // 0x10 cleared by ctor
+    float m_unk10;          // 0x10 vertex x, SetReading
+    float m_unk14;          // 0x14 vertex y, SetReading
+    int m_unk18;            // 0x18 1.0f bits, SetReading
+    int m_unk1C;            // 0x1C 1.0f bits, SetReading
     float m_unk20;          // 0x20 vertex row
     float m_unk24;
     float m_unk28;
     float m_unk2C;
-    char _pad30[0x10];      // 0x30 cleared by ctor
+    float m_unk30;          // 0x30 vertex row, SetReading
+    float m_unk34;          // 0x34 vertex y, SetReading
+    int m_unk38;            // 0x38 1.0f bits, SetReading
+    int m_unk3C;            // 0x3C 1.0f bits, SetReading
     unsigned int m_unk40[4];// 0x40 colour row 0, written by SetColor1
     unsigned int m_unk50[4];// 0x50 colour row 1, written by SetColor1 when m_unk230 is 0
     unsigned int m_unk60[4];// 0x60 colour row 2, written by SetColor1 when m_unk230 is set
-    char _pad70[0x10];      // 0x70 cleared by ctor
+    unsigned int m_unk70[4];// 0x70 colour row 3, written by SetReading
     float m_unk80;          // 0x80 vertex row
     float m_unk84;
     float m_unk88;
@@ -62,8 +68,8 @@ public:
     unsigned char m_unk230; // 0x230 set to 1 by ctor
     float m_unk234;         // 0x234 range, set by SetRange
     float m_unk238;         // 0x238 reading
-    int m_unk23C;
-    int m_unk240;
+    float m_unk23C;
+    float m_unk240;
     int m_unk244;           // 0x244 Init arg, 60 in ctor
     int m_unk248;           // 0x248 copy of 0x244
 };
