@@ -28,14 +28,12 @@ void PParticleLiteExplosion::ModifyPosition(PMat4 *pMat) {
     pMat->MulVector(m_unk1B0, m_unkE0);
 }
 
-// DRAFT: 0x001F6D70 Start__22PParticleLiteExplosionFv
-// note: a2/a1 literal order swapped and div dest f3 vs f2 (9 words); tried single-expression, swapped multiply, hoisted literals, split division
+// FUNCTION: 0x001F6D70 Start__22PParticleLiteExplosionFv
 void PParticleLiteExplosion::Start() {
     m_unk15 = 1;
     m_unk18 = 1;
     m_unk194 = 0;
-    float fRand = (float)rand() / 2147483648.0f;
-    m_unk1C0 = (int)(0.5f + (12345.0f + 41976.0f * fRand));
+    m_unk1C0 = (int)(0.5f + (12345.0f + 41976.0f * ((float)rand() / 2147483648.0f)));
     *(u_long128 *)m_unk1A0 = *(u_long128 *)m_unk1B0;
     m_unk80 = m_unk1B0[0];
     m_unk84 = m_unk1B0[1];

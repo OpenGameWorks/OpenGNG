@@ -666,26 +666,22 @@ extern "C" void *__dt__10EffectNodeFv(void *pThis, short nFlag) {
     return pThis;
 }
 
-// DRAFT: 0x156D20 EnableParticleFx__9EffectAPIFb
-// note: 33 words differ; original guard branch targets a nop before the epilogue, and Slot3 test is beq+b, not bne (tried &&-merged and empty-then forms, same count).
+// FUNCTION: 0x156D20 EnableParticleFx__9EffectAPIFb
 void EffectAPI::EnableParticleFx(bool arg0) {
     m_unk4 = 0;
     EffectNode *pNode = (m_unk0 != 0) ? m_ppEntries[0] : 0;
-    if (pNode != 0) {
-        do {
-            if (((EffectEntry *)pNode)->Slot3() == 1) {
-                PMNode *pMesh = (PMNode *)((EffectNode *)pNode)->m_unk4;
-                if (pMesh != 0) {
-                    pMesh->EnableFx(arg0, 1);
-                }
+    while (pNode != 0) {
+        switch (((EffectEntry *)pNode)->Slot3()) {
+        case 1:
+            PMNode *pMesh = (PMNode *)((EffectNode *)pNode)->m_unk4;
+            if (pMesh != 0) {
+                pMesh->EnableFx(arg0, 1);
             }
-            pNode = 0;
-            unsigned int nIndex = m_unk4 + 1;
-            m_unk4 = nIndex;
-            if (nIndex < m_unk0) {
-                pNode = m_ppEntries[m_unk4];
-            }
-        } while (pNode != 0);
+            break;
+        }
+        unsigned int nIndex = m_unk4 + 1;
+        m_unk4 = nIndex;
+        pNode = (nIndex < m_unk0) ? m_ppEntries[m_unk4] : 0;
     }
 }
 
