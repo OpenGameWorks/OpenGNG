@@ -65,9 +65,15 @@ def load():
     for s in (ROOT / "src").rglob("*.c*"):
         if "scratch" in s.relative_to(ROOT).parts:
             continue
-        for kind, addr, _, _ in srcmeta.tags(s):
+        lines = s.read_text(errors="replace").splitlines()
+        for kind, addr, _, line in srcmeta.tags(s):
             if kind == "DRAFT":
                 drafts.add(addr)
+            # An `asm` function body reproduces the original instructions by hand; it links
+            # but is not decompiled C/C++, so it never counts as a match.
+            body = next((l for l in lines[line:] if l.strip() and not l.startswith("//")), "")
+            if body.lstrip().startswith("asm "):
+                status[addr] = "asm-body"
     # Functions inside an SCE archive member that tools/sdklink.py verified come from the
     # original library object: a library match, kept apart from decompiled C/C++.
     sl = ROOT / "build/sdk_link.tsv"

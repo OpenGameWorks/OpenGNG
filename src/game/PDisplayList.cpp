@@ -1421,8 +1421,7 @@ void PDisplayList::SetVifCodes(unsigned int nCode0, unsigned int nCode1) {
     }
 }
 
-// DRAFT: 0x184040 KickVifDmaChain__12PDisplayListFb
-// note: 4 lines differ: original keeps 0x13000000 in a0 and masks the address with dsll32/dsrl32 by 4 (28-bit); mwcc uses v1 and folds the mask to 32-bit. Tried: 64-bit locals, pointer and signed casts, separate tag variable, inline tag constant (still 4 lines).
+// FUNCTION: 0x184040 KickVifDmaChain__12PDisplayListFb
 void PDisplayList::KickVifDmaChain(bool bWait) {
     int nPacket = AllocEntries(1);
     if (nPacket == 0) {
@@ -1432,7 +1431,7 @@ void PDisplayList::KickVifDmaChain(bool bWait) {
     ((unsigned int *)nPacket)[2] = 0;
     ((unsigned int *)nPacket)[3] = 0x13000000;
     *(unsigned int *)0x10009020 = 0;
-    *(unsigned int *)0x10009030 = (unsigned int)(((unsigned long long)((unsigned int)this + 0x40) << 36) >> 36);
+    *(unsigned int *)0x10009030 = (unsigned int)((unsigned long)((char *)this + 0x40) & 0x0FFFFFFF);
     *(unsigned int *)0x1000E010 = 2;
     FlushCache(0);
     asm {

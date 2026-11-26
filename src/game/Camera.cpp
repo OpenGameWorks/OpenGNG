@@ -693,7 +693,6 @@ void Camera::CheckCameraShake(PVec3 &arg0, PVec3 &arg1, bool arg2) {
 }
 
 // FUNCTION: 0x00179F60 SetCamMode__6CameraFsb
-// note: not compared yet; first draft from asm (bool branch, switch on m_unkB8 with default assert).
 void Camera::SetCamMode(short arg0, bool arg1) {
     if (!arg1) {
         m_unkB4 = arg0;
