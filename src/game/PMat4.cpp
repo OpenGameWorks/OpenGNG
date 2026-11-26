@@ -204,16 +204,20 @@ void PMat4::MulVector(float *pA, float *pB) {
     sceVu0ApplyMatrix(pA, (float (*)[4])this, pB);
 }
 
-// DRAFT: 0x001310F0 InverseByRT__5PMat4FPfPf
-// note: DIFF 46 words; first version without the sq/lq copy layout (sp+0x40/0x50/0x60) and with the wrong this+0x30 store; asm fold order not reproduced.
+// FUNCTION: 0x001310F0 InverseByRT__5PMat4FPfPf
 void PMat4::InverseByRT(float *arg0, float *arg1) {
+    float *tmp[4];
     float vec[4];
     float out[4];
+    float pad[4];
 
+    tmp[0] = arg1;
     sceVu0UnitMatrix((float *)this);
-    vec[0] = -arg1[0];
-    vec[1] = -arg1[1];
-    vec[2] = -arg1[2];
+    *(u_long128 *)out = *(u_long128 *)tmp;
+    *(u_long128 *)pad = *(u_long128 *)tmp;
+    vec[0] = -tmp[0][0];
+    vec[1] = -tmp[0][1];
+    vec[2] = -tmp[0][2];
     vec[3] = 1.0f;
     RotateZ(-arg0[2]);
     RotateY(-arg0[1]);
@@ -267,17 +271,16 @@ void PMat4::RotateX(float arg0) {
     FastMath_MatRotateX((float (*)[4])this, (float (*)[4])this, Round180(arg0));
 }
 
-// DRAFT: 0x00131360 Mul__5PMat4FP5PMat4
-// note: asm reads a1 and a2 as the two multiply operands and asserts on a2; the one-pointer mangled name can express only this and one operand.
-int PMat4::Mul(PMat4 *arg0) {
+// FUNCTION: 0x00131360 Mul__5PMat4FP5PMat4
+extern "C" int Mul__5PMat4FP5PMat4(PMat4 *pThis, PMat4 *pA, PMat4 *pB) {
     float tmp[4][4];
 
     sceVu0UnitMatrix(&tmp[0][0]);
-    if (arg0 == 0) {
+    if (pB == 0) {
         CdsAssert__FPciPc("PMat4.cpp", 0x5F, "pMat");
     }
-    sceVu0MulMatrix(tmp, (float (*)[4])this, (float (*)[4])arg0);
-    sceVu0CopyMatrix((float (*)[4])this, tmp);
+    sceVu0MulMatrix(tmp, (float (*)[4])pA, (float (*)[4])pB);
+    sceVu0CopyMatrix((float (*)[4])pThis, tmp);
     return 0;
 }
 

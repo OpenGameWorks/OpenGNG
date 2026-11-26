@@ -3238,8 +3238,7 @@ void Player::GrimJumpMove() {
     phys->m_unk11C = Round180__Ff(m_unk1C4);
 }
 
-// note: 36 words; the tier-zero block is inline where the original places it out of line, and the m_unk260 compares are ordered differently (original uses beq to the fp[13] block). Local fp with tier != 0 outer is the best form (36); tier == 0 outer gave 41.
-// DRAFT: 0x0015F0E0 GrimRunMove__6PlayerFv
+// FUNCTION: 0x0015F0E0 GrimRunMove__6PlayerFv
 void Player::GrimRunMove() {
     float *fp = m_unk3C;
     int tier;
@@ -3253,12 +3252,16 @@ void Player::GrimRunMove() {
         tier = 3;
     }
     if (tier != 0) {
-        if (m_unk260 == 2 || m_unk260 == 1) {
+        switch (m_unk260) {
+        case 1:
+        case 2:
             if ((int)fp[13] >= *((unsigned char *)m_unk254 + 5)) {
                 SetAction(2);
             }
-        } else {
+            break;
+        default:
             SetAction(2);
+            break;
         }
     } else {
         EndAction();
@@ -3495,7 +3498,7 @@ void Player::StandMove() {
     }
 }
 
-// note: DIFF 36 best (separate null guard); nested guard DIFF 43; bool/uchar Slot18 and early-return variants worse. Differs: beqz/bnez at 0x1C, sltu/andi after Slot18 call, branch-to-tail shape.
+// note: 19 words differ; `unsigned int raw` gives srl (was 36). Left: beqz/bnez layout at 0x1C (original shares one return-0 exit through andi) and tail (original falls through to addiu v0,1; ours has b and a dead daddu v0,0). Tried bool ok (46-47), merged guards (44, 49), split early returns (54).
 // DRAFT: 0x0015F8F0 EndAction__6PlayerFv
 int Player::EndAction() {
     PMNode *node = (PMNode *)m_unk3C;
@@ -3506,7 +3509,7 @@ int Player::EndAction() {
         if (node->m_unk24 != 0 && node->m_unk24->Slot28() == 1) {
             return 0;
         }
-        int raw = ((unsigned char *)m_unk254)[5];
+        unsigned int raw = ((unsigned char *)m_unk254)[5];
         if ((signed char)raw != -1) {
             float f;
             if (raw >= 0) {
@@ -4073,7 +4076,7 @@ void Player::SphereCheck() {
     p[0x3E] |= 8;
 }
 
-// note: 37 words differ: the first compare is c.eq.s f0,f12 against the original f12,f0; the original uses two base pointers (0x360, 0x364) and no sll. Tried swapped init order (39), off-based stores (37), separate char* bases (39), and the i-loop with off (37, kept).
+// note: 37 words differ: the first compare is c.eq.s f0,f12 against the original f12,f0; the original uses two base pointers (0x360, 0x364) and no sll. Tried swapped init order (39), off-based stores (37), separate char* bases (39), i-loop with off (37), `arg1 == 0.0f` with swapped arms (37).
 // DRAFT: 0x00163880 SetBoundingSphere__6PlayerFP6PMNodef
 void Player::SetBoundingSphere(PMNode *arg0, float arg1) {
     int i;

@@ -1480,8 +1480,7 @@ void GameHud::SetNumber() {
     } while (div != 0);
 }
 
-// DRAFT: 0x1424A0 UpdateStatus__7GameHudFb
-// note: switch on m_unkF with case order 0,3,2,1 gives DIFF 54 (if-chain 65, case order 2,3,1,0 67); compare sequence 1,2,3,0 vs original 2,3,1,0 and register use in the CoinAnim/virtual calls differ.
+// FUNCTION: 0x001424A0 UpdateStatus__7GameHudFb
 void GameHud::UpdateStatus(bool arg0) {
     m_unk8 = arg0 ? 2.0f : 80.0f;
     switch (m_unkF) {
@@ -1490,6 +1489,8 @@ void GameHud::UpdateStatus(bool arg0) {
         SetNumber();
         ((PMNode *)m_unk4)->SetAllFrustrumTest((eBoxIntersect)1);
         ((PVirtObj *)m_unk4)->Slot05((int)&CoinAnim);
+        break;
+    case 1:
         break;
     case 3:
         m_unkF = 1;
@@ -1507,8 +1508,6 @@ void GameHud::UpdateStatus(bool arg0) {
             ((PMNode *)m_unk4)->EnableAnim(true, false);
             ((PMNode *)m_unk4)->SetAnimLoopCount(0, false);
         }
-        break;
-    case 1:
         break;
     }
 }
@@ -1836,7 +1835,7 @@ void HudInventory::Delete() {
 }
 
 // DRAFT: 0x1430D0 UpdateShieldIcon__12HudInventoryFv
-// note: 64 words differ, size 0x110 vs 0x128. Original keeps elem in v1 and the PArray in a0; the m44 switch lays out 0x6A last; tail loop uses positive-branch sb body. Tried: if/else-if node (73), ternary node (73), switch m44 (73), if-chain m44 (67), reordered tail compares (73), explicit PArray pointer (65), ternary store (64), restored compare order (64).
+// note: 64 words differ, size 0x110 vs 0x128. Original keeps elem in v1 and the PArray in a0; the m44 switch lays out 0x6A last; tail loop uses positive-branch sb body. Tried: if/else-if node (73), ternary node (73), switch m44 (73), if-chain m44 (67), reordered tail compares (73), explicit PArray pointer (65), ternary store (64), restored compare order (64), reversed m44 case order (66).
 void HudInventory::UpdateShieldIcon() {
     char *elem = (char *)m_unk1C;
     *(int *)(elem + 0x18) = 0;
@@ -1881,7 +1880,7 @@ void HudInventory::UpdateShieldIcon() {
 }
 
 // DRAFT: 0x00143200 AddIcon__12HudInventoryFi
-// note: 68 words differ. Early branch at 0x20 targets 0x50 (orig 0x3B) so the copy loop is unrolled by eight in ours and the exit lands later. Tried: IconTable offset folded into index, i=0 before w=1, w declared before i, copy loop as base[i] (no change).
+// note: 68 words differ. Early branch at 0x20 targets 0x50 (orig 0x3B) so the copy loop is unrolled by eight in ours and the exit lands later. Tried: IconTable offset folded into index, i=0 before w=1, w declared before i, copy loop as base[i] (no change), count load with +0x14 table offset (70), `*dst++` copy form (69).
 void HudInventory::AddIcon(int arg0) {
     signed char sp18[8];
     signed char *entry;
@@ -2150,7 +2149,7 @@ int HudHint::HintScreen() {
 }
 
 // DRAFT: 0x143BC0 EnableBG__7HudHintFb
-// note: DIFF 57; ours is 0x170 bytes vs 0x180. Dispatch and loop-entry branches differ (original enters the for loop with a b to its test, ours falls in), and the Find call has no reloc. Tried: static initialiser, member Find call, extern "C" Find, while loop.
+// note: DIFF 53; ours is 0x170 bytes vs 0x180. Dispatch and loop-entry branches differ (original enters the for loop with a b to its test, ours falls in), and the Find call has no reloc. Tried: static initialiser, member Find call, extern "C" Find, while loop.
 void HudHint::EnableBG(bool arg0) {
     static unsigned int InventoryNames[4] = {0x4781EFDE, 0x59DDFCBB, 0xFCFE9AB1, 0xBBCD34F9};
     unsigned int i;
@@ -2172,13 +2171,14 @@ void HudHint::EnableBG(bool arg0) {
             case 0x2BA0F70C:
                 for (i = 0; i < 4; i++) {
                     pFound = pNode->Find(InventoryNames[i]);
+                    if (pFound == 0) { continue; }
                     if (pFound != 0) {
                         *(float *)((char *)pFound + 0x2C) = fValue;
                     }
                 }
                 break;
             case 0xFBD2D937:
-                *(int *)((char *)m_unkB4 + 0xC) = (arg0 == 0) ? 1 : 0;
+                *(int *)((char *)m_unkB4 + 0xC) = arg0 ? 0 : 1;
                 break;
             default:
                 *(float *)((char *)pNode + 0x2C) = fValue;
@@ -2186,7 +2186,7 @@ void HudHint::EnableBG(bool arg0) {
             }
             nIndex = pWalk->m_unk4 + 1;
             pWalk->m_unk4 = nIndex;
-            pNode = (nIndex < (int)pWalk->m_unk0) ? (PMNode *)pWalk->m_unk8[pWalk->m_unk4] : 0;
+            pNode = (nIndex < pWalk->m_unk0) ? (PMNode *)pWalk->m_unk8[pWalk->m_unk4] : 0;
         } while (pNode != 0);
     }
 }
