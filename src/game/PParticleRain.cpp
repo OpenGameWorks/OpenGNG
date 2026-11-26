@@ -17,6 +17,15 @@ extern "C" void __ct__13PRainSplatterFv(void *pThis);
 extern "C" void __dla__FPv(void *pBlock);
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
+extern "C" void *__nwa__FUi(unsigned int nSize);
+extern "C" int rand(void);
+extern "C" int GetFxTexture__16PParticleManagerFUi(void *pThis, unsigned int nId);
+extern "C" int GetGroundPos__11BGCollisionFPA4_f(void *pThis, float (*pPos)[4]);
+extern "C" void GetGroundPos__7PhysicsFv(void *pRet);
+extern "C" void Init__12PFlashScreenFffffUiUiUii(void *pThis, float fA, float fB, float fC, float fD, unsigned int nA, unsigned int nB, unsigned int nC, int nD);
+extern char mBGCollision__15EntityBaseClass[0x10];
+extern char mPlayerAPI__13EntityManager[0x10];
 float FastMath_Fabs(float f);
 
 // One quadrant of the rain volume, 0x50 bytes apart from 0x120: the box spawns particles [m_nStart, m_nEnd).
@@ -49,6 +58,62 @@ void PParticleRain::RenderQuadrant(unsigned int nIndex) {
     void *pBuf = m_unk248;
     unsigned int nCount = *(unsigned int *)((char *)this + 0x148 + nOff);
     DrawFxLines__10PGfxEngineFP11tagVuFxLineiffb(gGfxEng, (char *)pBuf + (nStart << 5), nCount, 0.0f, 128.0f, 1);
+}
+
+// DRAFT: 0x001CC160 AnimateQuadrant__13PParticleRainFUi
+// note: 141 words differ, prologue register choice (original keeps nOff in t0 and computes pVel early, ours keeps nOff in v1); pBase, pVel-first and loop-entry forms tried; the loop's pre-test beqz differs.
+void PParticleRain::AnimateQuadrant(unsigned int nIndex) {
+    unsigned int nOff = nIndex * 0x50;
+    char *pBase = (char *)this + 0x140;
+    PRainQuadrant *pQuad = (PRainQuadrant *)(pBase + nOff);
+    float *pBox = (float *)((char *)this + nOff + 0x100);
+    unsigned int i = pQuad->m_unk00;
+    unsigned int nEnd = i + pQuad->m_unk08;
+    float *pVel = (float *)m_unkE0;
+    float fScale;
+    int sb;
+    float *pPos;
+
+    for (; i < nEnd; i++) {
+        pPos = (float *)&m_pParts[i];
+        PR_STEP();
+        fScale = 1.0f + 2.0f * PR_RND();
+        asm {
+            lqc2 vf1, 0x0(pVel)
+            lqc2 vf2, 0x0(pPos)
+            vmove.xyzw vf5, vf2
+        }
+        asm { mfc1 sb, fScale }
+        asm {
+            qmtc2.i sb, vf3
+            vmulx.xyz vf4, vf1, vf3x
+            vnop
+            vnop
+            vnop
+            vadd.xyz vf5, vf4, vf2
+            vnop
+            vnop
+            vnop
+            sqc2 vf5, 0x0(pPos)
+        }
+        if (pPos[1] < pBox[9]) {
+            float fLo = pBox[8];
+            PR_STEP();
+            pPos[0] = fLo + (pBox[12] - fLo) * PR_RND();
+            pPos[1] = pBox[13];
+            fLo = pBox[10];
+            PR_STEP();
+            pPos[2] = fLo + (pBox[14] - fLo) * PR_RND();
+        } else if (!(pPos[1] <= pBox[13])) {
+            float fLo = pBox[8];
+            PR_STEP();
+            pPos[0] = fLo + (pBox[12] - fLo) * PR_RND();
+            pPos[1] = pBox[13];
+            fLo = pBox[10];
+            PR_STEP();
+            pPos[2] = fLo + (pBox[14] - fLo) * PR_RND();
+        }
+    }
 }
 
 // DRAFT: 0x001CC3B0 InitParticles__13PParticleRainFv
@@ -216,6 +281,172 @@ void PParticleRain::Render() {
     EndFxLines__10PGfxEngineFv(gGfxEng);
     m_unk270.Render();
 }
+
+// DRAFT: 0x001CCB80 Animate__13PParticleRainFf
+// note: 277 words differ, size 0x4E4 vs 0x524; unsigned-to-float second cvt.s.w in f2 (original f3), lightning ladder compares c.lt.s where original has c.le.s, constant lui/ori hoisting and LCG mult/addu placement differ.
+void PParticleRain::Animate(float fDt)
+{
+    if (fDt != 0.0f) {
+        m_unkD0 = m_unk24C;
+        if (m_unk25C != 0 && m_unk260 != 0) {
+            m_unk26C -= 1;
+            if (m_unk26C == 0) {
+                float fHi = (float)(unsigned int)m_unk268;
+                float fLo = (float)(unsigned int)m_unk264;
+                PR_STEP();
+                float fRnd = fLo + (fHi - fLo) * PR_RND();
+                if (!(fRnd >= 2.1474836e9f)) {
+                    m_unk26C = (int)fRnd;
+                } else {
+                    m_unk26C = (int)(fRnd - 2.1474836e9f) | 0x80000000;
+                }
+                PR_STEP();
+                int nSeed = m_unkD0;
+                PR_STEP();
+                float fLevel = 2.0f + (2.0f * (0.000030517578f * (float)((nSeed >> 16) & 0x7FFF)));
+                int nFlash;
+                if (!(fLevel >= 2.1474836e9f)) {
+                    nFlash = (int)fLevel;
+                } else {
+                    nFlash = (int)(fLevel - 2.1474836e9f) | 0x80000000;
+                }
+                Init__12PFlashScreenFffffUiUiUii((void *)m_unk25C, 200.0f, 200.0f, 255.0f, 75.0f + (40.0f * PR_RND()), 2U, 6U, (unsigned int)nFlash, 0x4E3B);
+            }
+        }
+        float fCur = m_unk250;
+        if (m_unk254 != fCur) {
+            float fNew = fCur + m_unk258;
+            m_unk250 = fNew;
+            if (fNew <= 0.0f) {
+                m_unk250 = 0.0f;
+            } else if (fNew >= 1.0f) {
+                m_unk250 = 1.0f;
+            }
+        }
+        float fScaled = 0.5f + (((float)(unsigned int)m_unk04 / 4.0f) * m_unk250);
+        int nNum;
+        if (!(fScaled >= 2.1474836e9f)) {
+            nNum = (int)fScaled;
+        } else {
+            nNum = (int)(fScaled - 2.1474836e9f) | 0x80000000;
+        }
+        SetNumRainParticles((unsigned int)nNum);
+        if (m_unk250 != 0.0f) {
+            if (m_unk2B0 == 0) {
+                m_unk2B0 = gSound.PlaySoundUbiquitous(0x159);
+            }
+        } else {
+            if (m_unk2B0 != 0) {
+                gSound.StopSoundBySoundRef(m_unk2B0);
+                m_unk2B0 = 0;
+            }
+        }
+        m_unk15 = (nNum != 0);
+        if (m_unk15 != 0) {
+            AnimateQuadrant(m_unk240);
+            AnimateQuadrant(m_unk244);
+            if (!(m_unk250 <= 0.25f)) {
+                void *pPlayer = *(void **)mPlayerAPI__13EntityManager;
+                if (pPlayer != 0 && *(int *)((char *)pPlayer + 0x38) != 0) {
+                    u_long128 sp40;
+                    GetGroundPos__7PhysicsFv(&sp40);
+                    float vPos[4];
+                    *(u_long128 *)vPos = sp40;
+                    vPos[0] += -15.0f + (30.0f * ((float)rand() / 2.1474836e9f));
+                    vPos[2] += -15.0f + (30.0f * ((float)rand() / 2.1474836e9f));
+                    vPos[1] += 5.0f;
+                    if (GetGroundPos__11BGCollisionFPA4_f(mBGCollision__15EntityBaseClass, &vPos) != 0) {
+                        m_unk270.Splatter(vPos);
+                    }
+                }
+            }
+            m_unk270.Animate(1.0f);
+        }
+    }
+}
+
+struct tagParticleRainParams {
+    char _pad00[0x10];
+    int m_nCount;               // 0x10 particle count
+    char _pad14[0xC];
+};
+
+// DRAFT: 0x001CD0B0 Create__13PParticleRainFP21tagParticleRainParamsPA4_fPA4_fP12PFlashScreen
+// note: 3 words differ, all addu v0,v1,v0 vs original addu v0,v0,v1 in the three m_nCount + PR_INT sums (0x120, 0x16C, 0x1BC); the flipped operand order gives 9.
+#define PR_INT(off) (*(int *)((char *)this + (off)))
+#define PR_UINT(off) (*(unsigned int *)((char *)this + (off)))
+#define PR_FLT(off) (*(float *)((char *)this + (off)))
+int PParticleRain::Create(tagParticleRainParams *arg0, float (*arg1)[4], float (*arg2)[4], PFlashScreen *arg3) {
+    m_unk0C = 8;
+    m_unk30 = 0x44;
+    m_unk04 = arg0->m_nCount * 4;
+    m_unk14 = 1;
+    m_unk248 = __nwa__FUi(m_unk04 << 5);
+    if (m_unk248 == 0) {
+        Cleanup();
+        return 0;
+    }
+    memcpy(m_unkE0, arg0, 0x20);
+    PR_INT(0x100) = 0;
+    PR_INT(0x104) = 0xC1480000;
+    PR_INT(0x108) = 0;
+    PR_INT(0x10C) = 0x3F800000;
+    PR_FLT(0x110) = m_unkFC;
+    PR_INT(0x114) = 0x41C80000;
+    PR_FLT(0x118) = m_unkFC;
+    PR_INT(0x11C) = 0x3F800000;
+    PR_INT(0x140) = 0;
+    PR_UINT(0x144) = m_unk04 >> 2;
+    PR_INT(0x148) = arg0->m_nCount;
+    PR_FLT(0x150) = -m_unkFC;
+    PR_INT(0x154) = 0xC1480000;
+    PR_INT(0x158) = 0;
+    PR_INT(0x15C) = 0x3F800000;
+    PR_INT(0x160) = 0;
+    PR_INT(0x164) = 0x41C80000;
+    PR_FLT(0x168) = m_unkFC;
+    PR_INT(0x16C) = 0x3F800000;
+    PR_UINT(0x190) = PR_UINT(0x144);
+    PR_INT(0x194) = arg0->m_nCount + PR_INT(0x190);
+    PR_INT(0x198) = arg0->m_nCount;
+    PR_INT(0x1A0) = 0;
+    PR_INT(0x1A4) = 0xC1480000;
+    PR_FLT(0x1A8) = -m_unkFC;
+    PR_INT(0x1AC) = 0x3F800000;
+    PR_FLT(0x1B0) = m_unkFC;
+    PR_INT(0x1B4) = 0x41C80000;
+    PR_INT(0x1B8) = 0;
+    PR_INT(0x1BC) = 0x3F800000;
+    PR_INT(0x1E0) = PR_INT(0x194);
+    PR_INT(0x1E4) = arg0->m_nCount + PR_INT(0x1E0);
+    PR_INT(0x1E8) = arg0->m_nCount;
+    PR_FLT(0x1F0) = -m_unkFC;
+    PR_INT(0x1F4) = 0xC1480000;
+    PR_FLT(0x1F8) = -m_unkFC;
+    PR_INT(0x1FC) = 0x3F800000;
+    PR_INT(0x200) = 0;
+    PR_INT(0x204) = 0x41C80000;
+    PR_INT(0x208) = 0;
+    PR_INT(0x20C) = 0x3F800000;
+    PR_INT(0x230) = PR_INT(0x1E4);
+    PR_INT(0x234) = arg0->m_nCount + PR_INT(0x230);
+    PR_INT(0x238) = arg0->m_nCount;
+    PR_INT(0xA0) = 0;
+    SetCameraPosRot(arg1, arg2);
+    InitParticles();
+    PR_INT(0x24C) = (int)(0.5f + (46352.0f + (38180.0f * ((float)rand() / 2.1474836e9f))));
+    SetDensity(1.0f, false);
+    PR_INT(0x25C) = (int)arg3;
+    {
+        float vec[4] = {90.0f, 90.0f, 90.0f, 80.0f};
+        m_unk270.Create(0x1E, vec);
+    }
+    PR_INT(0x2A0) = GetFxTexture__16PParticleManagerFUi(gGfxEng + 0x154F00, 0x84000003U);
+    return 1;
+}
+#undef PR_INT
+#undef PR_UINT
+#undef PR_FLT
 
 // FUNCTION: 0x001CD360 __dt__13PParticleRainFv
 PParticleRain::~PParticleRain() {
