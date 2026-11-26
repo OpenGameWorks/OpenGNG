@@ -382,6 +382,7 @@ extern "C" float cosf(float x);
 extern "C" float atan2f(float fY, float fX);
 extern "C" float Round180__Ff(float fAngle);
 extern "C" int GameVarSub__6PlayerFUii(void *pThis, unsigned int nId, int nValue);
+extern "C" short IsNoDamage__5DebugFv(void *pThis);
 extern "C" void InitShield__6ShieldFP15EntityBaseClassfPA4_fPA4_fUiPbi(void *pThis, void *pOwner, float fArg1, float (*pArg2)[4], float (*pArg3)[4], unsigned int nArg4, bool *pArg5, int nArg6);
 extern "C" float FastMath_Sin180__Ff(float fAngle);
 extern "C" float FastMath_Cos180__Ff(float fAngle);
@@ -4073,6 +4074,111 @@ int Player::MightyBlowCheck(unsigned int arg0) {
         return 1;
     }
     return 0;
+}
+
+// DRAFT: 0x001662B0 GameVarSub__6PlayerFUii
+// note: 192 diff words; value/slot registers swapped (orig s3=arg1, s4=&m_unk1D4[id]), switch and tail ordered; tried decl order, byte-offset slot ptr, value copy
+int Player::GameVarSub(unsigned int arg0, int arg1) {
+    int nValue = arg1;
+    int nRem;
+    int *pSlot;
+    int nVal;
+    int nStep;
+    int nAdd;
+    float *pA;
+    float *pB;
+    float *pTemp;
+    FontNode *pFont;
+
+    ((arg0 < 0x14) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x3FB, "iVar < GameVarMax"));
+    ((nValue >= 0) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x3FC, "iValue >= 0"));
+
+    pSlot = (int *)((char *)this + 0x1D4 + arg0 * 4);
+    nVal = *pSlot;
+    if (nVal <= 0) {
+        return nVal;
+    }
+    nRem = nVal - nValue;
+    if (GameVarTbl[arg0 * 6 + 4] != 0) {
+        if (!(m_unk1D0 & 1)) {
+            return nVal;
+        }
+    }
+    if (nRem < 0) {
+        nRem = 0;
+    }
+    switch (arg0) {
+    case 1:
+        if (m_unk20 != 0) {
+            return nVal;
+        }
+        nAdd = nValue >> 2;
+        if (m_unk218 == 2) {
+            nAdd += nAdd >> 1;
+        }
+        GameVarAdd(0xE, nAdd, 0);
+        if (IsNoDamage__5DebugFv(&gDebug)) {
+            return 1;
+        }
+        if ((m_unk1DC - 1) * 200 >= nRem) {
+            nStep = (nRem + 0xC7) / 200;
+            if (nStep != 0) {
+                ((EntityBaseClass *)this)->PlaySound(4);
+                ((EntityBaseClass *)this)->PlaySound(0xC3);
+            }
+            switch (nStep) {
+            case 0:
+                nStep = 1;
+                break;
+            case 1:
+                SetMaximo(2, false);
+                if (m_unk218 == 3) {
+                    GameVarAdd(0xE, 0xA00, 0);
+                }
+                pTemp = m_unk3C;
+                pA = (pTemp != 0) ? (float *)((char *)pTemp + 0x80) : m_unk190;
+                pB = (pTemp != 0) ? (float *)((char *)pTemp + 0x90) : (float *)((char *)this + 0x1A0);
+                mEffectAPI__13EntityManager.CreateOneshot(0x8100045A, 0x82000070, (float (*)[4])pA, (float (*)[4])pB, 0, 0.5f, false, 0, false);
+                break;
+            case 2:
+                SetMaximo(0, false);
+                break;
+            default:
+                if (m_unk229 == 3) {
+                    SetMaximo(1, false);
+                    pTemp = m_unk3C;
+                    pA = (pTemp != 0) ? (float *)((char *)pTemp + 0x80) : m_unk190;
+                    pB = (pTemp != 0) ? (float *)((char *)pTemp + 0x90) : (float *)((char *)this + 0x1A0);
+                    mEffectAPI__13EntityManager.CreateOneshot(0x81000459, 0x82000754, (float (*)[4])pA, (float (*)[4])pB, 0, 0.5f, false, 0, false);
+                }
+                break;
+            }
+            m_unk1DC = nStep;
+        }
+        if (nRem == 0) {
+            if (m_unk229 == 4) {
+                SetMaximo(MaximoArmor[m_unk1DC], false);
+            }
+            m_unk1D0 &= ~1;
+            m_unk103 = 0xFE;
+            pFont = m_unk31C;
+            if (pFont != 0) {
+                ((FontManager *)((char *)&gInterface + 0x1790))->RemoveText(pFont);
+                m_unk31C = 0;
+            }
+        }
+        break;
+    case 0xB:
+        if (nRem <= 0) {
+            SetMaximo(MaximoArmor[m_unk1DC], false);
+        }
+        break;
+    default:
+        break;
+    }
+    *pSlot = nRem;
+    ((Interface *)((char *)&gInterface + 0x1710))->UpdateStatus(arg0, false);
+    return nRem;
 }
 
 // FUNCTION: 0x00166690 __dt__6PlayerFv
