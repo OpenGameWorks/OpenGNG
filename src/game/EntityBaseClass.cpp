@@ -129,6 +129,7 @@ extern BGCollision mBGCollision__15EntityBaseClass;
 
 class Physics {
 public:
+    ~Physics() {}
     void RunPhysics(EntityBaseClass *arg0, float arg1, int arg2, BGCollision *arg3);
     void AddBGAnimNode(PMeshNode *arg0);
     void SetVelocity(float arg0, float arg1);
@@ -2654,8 +2655,7 @@ void EntityBaseClass::ModifyLoadClass(LoadClass arg0) {
     }
 }
 
-// DRAFT: 0x0014F0B0 __dt__15EntityBaseClassFv
-// note: DIFF 54 words; the 0x18 skip branch is 3 instructions shorter than the original, and the m_unk38 delete lacks the original's second null check and nop before __dl__. Tried: split delete check (54, same), virtual ~Physics (56, reverted); later branch shapes not analyzed.
+// FUNCTION: 0x0014F0B0 __dt__15EntityBaseClassFv
 EntityBaseClass::~EntityBaseClass() {
     RemoveFromBGAnimList();
     RemovePhysicsAnimList();
@@ -2675,7 +2675,8 @@ EntityBaseClass::~EntityBaseClass() {
     m_unk178 = 0;
     PParticleSystem *pFx = m_unkF4;
     if (pFx != 0) {
-        if (((PParticleManager *)(gGfxEng + 0x154F00))->IsValid(pFx)) {
+        PParticleManager *pMgr = (PParticleManager *)(gGfxEng + 0x154F00);
+        if (pFx != 0 && pMgr->IsValid(pFx)) {
             pFx->FadeAndDie(0);
         }
         m_unkF4 = 0;
