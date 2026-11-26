@@ -63,17 +63,16 @@ void EntityAttackManager::NotifyAttackManager(EntityBaseClass *pEntity) {
     }
 }
 
-// DRAFT: 0x00154BF0 RequestCloserThanAttacking__19EntityAttackManagerFf
-// note: 3 words differ: bFound=1 is addiu (original daddiu, bool-typed flag gave 43 words), and the (v>>1)|(v&1) or targets v1 (original a0); swapping the or operands gave 5 words.
+// FUNCTION: 0x00154BF0 RequestCloserThanAttacking__19EntityAttackManagerFf
 EntityBaseClass *EntityAttackManager::RequestCloserThanAttacking(float fDist) {
     EntityBaseClass *p;
     float fClosest;
-    int bFound;
+    bool bFound;
 
     m_unkC = m_unk4;
     p = m_unk4 ? (EntityBaseClass *)m_unk4->m_unk0 : 0;
     fClosest = 0.0f;
-    bFound = 0;
+    bFound = false;
     if (p != 0) {
         do {
             float d = p->GetDistFromPlayer();
@@ -82,7 +81,7 @@ EntityBaseClass *EntityAttackManager::RequestCloserThanAttacking(float fDist) {
                 fClosest = d;
             }
             if (!(d <= fDist)) {
-                bFound = 1;
+                bFound = true;
             }
             if (m_unkC == 0) {
                 m_unkC = m_unk4;
@@ -98,17 +97,10 @@ EntityBaseClass *EntityAttackManager::RequestCloserThanAttacking(float fDist) {
             }
         } while (p != 0);
     }
-    if (bFound != 0) {
+    if (bFound) {
         EntityBaseClass *c = m_unk1C;
         unsigned int v = *(unsigned short *)((char *)c + 0x180);
-        float f;
-        if ((int)v >= 0) {
-            f = (float)(int)v;
-        } else {
-            float t = (float)(int)((v >> 1) | (v & 1));
-            f = t + t;
-        }
-        if (!(fClosest <= f)) {
+        if (!(fClosest <= (float)v)) {
             return c;
         }
     }

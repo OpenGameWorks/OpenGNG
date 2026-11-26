@@ -76,19 +76,17 @@ TriggerSystem::TriggerSystem(int nId, float (*pMatrix)[4], unsigned int nU3, sho
     m_unk49 = bB20;
 }
 
-// DRAFT: 0x0014FC70 ConditionCheck__13TriggerSystemFP6Player
-// note: 2 words differ: the epilogue b lands on the jr with ld in its delay slot, the original lands on ld ra with a nop delay slot; bne/else-return/result-local forms tried
+// FUNCTION: 0x0014FC70 ConditionCheck__13TriggerSystemFP6Player
 int TriggerSystem::ConditionCheck(Player *pPlayer)
 {
-    if (m_unkA != 1) {
-        return 1;
-    } else {
+    switch (m_unkA) {
+    case 1:
         return CheckHammer__6PlayerFb(pPlayer, true);
     }
+    return 1;
 }
 
-// DRAFT: 0x0014FCB0 ResetTrigger__13TriggerSystemFP9PMeshNode
-// note: 4 words differ: m_unk0 lhu goes to a0 not v1, so slti/bnez/andi use other registers; local copy (13 words) and if/else split (4) tried
+// FUNCTION: 0x0014FCB0 ResetTrigger__13TriggerSystemFP9PMeshNode
 void TriggerSystem::ResetTrigger(PMeshNode *pNode)
 {
     if (m_unk9 == 0) {
@@ -103,7 +101,7 @@ void TriggerSystem::ResetTrigger(PMeshNode *pNode)
         gEng[0x8720] = 0;
         return;
     }
-    if (m_unk0 >= 2) {
+    if (m_unk0 > 1) {
         RecurseResetAnimByID__6PMNodeFUi(pNode, m_unk0);
     }
 }
