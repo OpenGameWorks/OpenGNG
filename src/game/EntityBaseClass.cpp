@@ -330,7 +330,6 @@ public:
     void UpdateLights();
     void UpdateLights(PMat4 *pDirMat, PMat4 *pColorMat, float (*pAmbient)[4]);
 };
-extern float aAmb_642[4];
 class Shadow {
 public:
     ~Shadow();
@@ -1864,23 +1863,23 @@ void EntityBaseClass::UpdateShadowVolume() {
     }
 }
 
-// DRAFT: 0x0014D8C0 SetShadowVolume__15EntityBaseClassFf
-// note: 25 words differ; the original builds 0.02f inline (lui/ori/mtc1, first lui in a branch delay slot) and ours pools it via gp. Tried: goto shared exit (25), hoisted 0.02f local (25).
+// FUNCTION: 0x0014D8C0 SetShadowVolume__15EntityBaseClassFf
 void EntityBaseClass::SetShadowVolume(float arg0) {
     float temp;
+    float k;
 
     if (arg0 != this->m_unkE0) {
         if (this->m_unkE0 < arg0) {
-            temp = this->m_unkE0 + 0.02f;
+            k = 0.02f;
+            temp = this->m_unkE0 + k;
             this->m_unkE0 = temp;
-            if (!(temp <= arg0)) {
-                goto block_5;
+            if (temp > arg0) {
+                this->m_unkE0 = arg0;
             }
         } else {
             temp = this->m_unkE0 - 0.02f;
             this->m_unkE0 = temp;
             if (temp < arg0) {
-block_5:
                 this->m_unkE0 = arg0;
             }
         }
@@ -2267,12 +2266,12 @@ void EntityBaseClass::SetFreeze(float arg0) {
 }
 
 // DRAFT: 0x0014E480 CreateFireDamageFx__15EntityBaseClassFf
-// note: 25000.0f compiles as int-to-float (addiu/cvt.s.w) not lui/ori/mtc1; c.eq.s operands stay f0,f20; a1/a2 load order differs. Tried: operand swap, both compare forms.
+// note: 2 words differ: the call's a1/a2 loads are swapped (original loads m_unk3C into a1 before m_unk08 into a2; ours loads a2 first). Tried: pm local, unsigned cast, temp for m_unk08, node local, bare-truth test (c.eq.s fixed by it).
 void EntityBaseClass::CreateFireDamageFx(float arg0) {
     PMNode *temp_a0;
 
     temp_a0 = (PMNode *)this->m_unk3C;
-    if ((temp_a0 != 0) && (arg0 != 0.0f)) {
+    if ((temp_a0 != 0) && arg0) {
         temp_a0->DestroyFxTriggersBySpawnFrame(25000.0f, true);
         this->m_unkF0 = arg0;
         ((PParticleManager *)(gGfxEng + 0x154F00))->CreateFireDamageFx((PMNode *)this->m_unk3C, this->m_unk08);
@@ -2368,23 +2367,23 @@ void EntityBaseClass::Animate(int arg0, float arg1) {
     this->m_unk101 = 0x80;
 }
 
-// DRAFT: 0x0014E7A0 Render__15EntityBaseClassFP13PLightManager
-// note: DIFF 2 words only, the lui/addiu pair at 0x60/0x6C for the local aAmb$642 (mwccps2 cannot spell '$', and config has no other alias); alpha and tail order match
+// FUNCTION: 0x0014E7A0 Render__15EntityBaseClassFP13PLightManager
 int EntityBaseClass::Render(PLightManager *arg0) {
+    static float aAmb[4] = {0.1f, 0.1f, 0.1f, 0.0f};
     int ret;
 
     if (this->m_unk3C == 0) {
         CdsAssert__FPciPc("EntityBaseClass.cpp", 0x1DF, "mpMeshNode");
     }
     if ((this->m_unk30 != 0) && (this->m_unk34 & 2)) {
-        ((PGfxEngine *)(gGfxEng + 0x6680))->SetOverrideTexture(this->m_unk30);
-        ((PGfxEngine *)(gGfxEng + 0x6680))->SetAmbientLight(aAmb_642);
-        ((PGfxEngine *)(gGfxEng + 0x6680))->UpdateLights();
+        ((PGfxEngine *)gGfxEng)->SetOverrideTexture(this->m_unk30);
+        ((PGfxEngine *)gGfxEng)->SetAmbientLight(aAmb);
+        ((PGfxEngine *)gGfxEng)->UpdateLights();
     } else if (this->m_unkD0 == 0) {
         this->m_unkD0 = 1;
         arg0->ComputeLights(this->m_unk3C != 0 ? (float *)(this->m_unk3C + 0x80) : (float *)((char *)this + 0x190), true, this->m_unkD1, true, (tagComputedLightCache *)((char *)this + 0x40), 0, this->m_unkE0);
     } else {
-        ((PGfxEngine *)(gGfxEng + 0x6680))->UpdateLights((PMat4 *)((char *)this + 0x40), (PMat4 *)((char *)this + 0x80), (float (*)[4])((char *)this + 0xC0));
+        ((PGfxEngine *)gGfxEng)->UpdateLights((PMat4 *)((char *)this + 0x40), (PMat4 *)((char *)this + 0x80), (float (*)[4])((char *)this + 0xC0));
     }
 
     {
@@ -2395,7 +2394,7 @@ int EntityBaseClass::Render(PLightManager *arg0) {
         }
         ret = ((RenderView *)this->m_unk3C)->Draw(0, alpha, this->m_unk164);
     }
-    ((PGfxEngine *)(gGfxEng + 0x6680))->SetOverrideTexture(0);
+    ((PGfxEngine *)gGfxEng)->SetOverrideTexture(0);
     if (this->m_unkD4 != 0) {
         ret += ((Shadow *)this->m_unkD4)->Render(this);
     }

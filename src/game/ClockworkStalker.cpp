@@ -526,7 +526,7 @@ void ClockworkStalker::OnWakeEvent() {
 }
 
 // DRAFT: 0x001E3510 OnHitEvent__16ClockworkStalkerFP15EntityBaseClassiUiUi
-// note: DIFF 8: node stays in v0 (original reloads 0x270 into a0 after the store), (float)m_unk274 emits cvt.s.w (original lwc1), 3 branch targets off by one; reload via m_unk270 gave 160, *(float*)&m_unk274 gave 158
+// note: 7 differing lines: node stays in v0 (original reloads m_unk270 into a0 after the sw, and hoists the state-5 test after the lwc1); the m_unk274 bit cast now matches lwc1; tried m_unk270 for the 3E flag (159 lines), both stores via m_unk270 (158)
 int ClockworkStalker::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3) {
     int state;
     unsigned int temp;
@@ -556,7 +556,7 @@ int ClockworkStalker::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int a
     state = m_unk20;
     node = (PMNodeView *)Find__6PMNodeFUi(m_unk3C, 0xE1612999U);
     m_unk270 = (int)node;
-    node->m_unk94 = (float)m_unk274;
+    ((PMNodeView *)m_unk270)->m_unk94 = *(float *)&m_unk274;
     node->m_unk3E = node->m_unk3E | 8;
     if ((unsigned int)(state - 5) < 2U || state == 7) {
         if (m_unk3C != 0) {

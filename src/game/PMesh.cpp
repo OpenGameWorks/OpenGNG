@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "PMesh.h"
+#include "PMeshFragment.h"
 
 // TODO(header): foreign declarations
 extern "C" void __dt__13PMeshFragmentFv(void);
@@ -27,11 +28,10 @@ public:
     void DrawVertices(void *pvData, int iSize);
 };
 
-// gGfxEng is a PGfxEngine object; the original reads its first word as the display list pointer.
+// gGfxEng is a PGfxEngine object; its display list pointer lives at offset 0x154C80.
 extern char gGfxEng[1504384];
 
-// DRAFT: 0x0018F590 SetSTAnimFlag__5PMeshFv
-// note: original is 0x58 bytes with a bottom-tested loop and a join nop before jr; ours is 0x50. Tried while+return and for+break (9 words).
+// FUNCTION: 0x0018F590 SetSTAnimFlag__5PMeshFv
 void PMesh::SetSTAnimFlag() {
     unsigned int nIndex;
     int nOffset;
@@ -42,11 +42,12 @@ void PMesh::SetSTAnimFlag() {
     while (nIndex < m_unk4) {
         if (*(unsigned int *)((char *)m_unk0 + nOffset + 0x10) & 1) {
             m_unkC = 1;
-            return;
+            break;
         }
         nOffset += 0x90;
         nIndex++;
     }
+    return;
 }
 
 // FUNCTION: 0x0018F5F0 SetSTAnimOptions__5PMeshFb
@@ -125,7 +126,7 @@ void PMesh::SetBoundBox(float (*pBox)[2][4]) {
 }
 
 // DRAFT: 0x0018F880 Load__5PMeshFP8PPakFileP6PArrayUiUi16ePsx2FileVersionb
-// note: 7 words differ. nUnk is kept in s0 where the original uses s1, so nIndex/nOffset swap s0/s1. Tried local orders (nOffset-first 10, nFirst-first 7, nIndex-nOffset-nFirst 7, nOffset-nFirst-nIndex 10).
+// note: 4 words differ (0xF8-0x104). Original zeroes nOffset after the nFirst subu (in the beqz delay slot); ours zeroes it before the lhu. Tried: all 6 local decl orders (7-10 words), nIndex=0 before nFirst (4, kept), nOffset=0 before nFirst (4), nOffset in for-init (4), while form (4).
 int PMesh::Load(PPakFile *pPakFile, PArray *pTextures, unsigned int nCount, unsigned int nUnk, ePsx2FileVersion eVersion, bool bFlag) {
     unsigned int nIndex;
     unsigned int nFirst;
@@ -147,9 +148,10 @@ int PMesh::Load(PPakFile *pPakFile, PArray *pTextures, unsigned int nCount, unsi
     }
     m_unk4 = nCount;
     m_unk8 = nUnk;
+    nIndex = 0;
     nFirst = m_unk4 - m_unk8;
     nOffset = 0;
-    for (nIndex = 0; nIndex < nCount; nIndex++) {
+    for (; nIndex < nCount; nIndex++) {
         if (Load__13PMeshFragmentFP8PPakFileP6PArray16ePsx2FileVersionb((char *)m_unk0 + nOffset, pPakFile, pTextures, eVersion, nIndex >= nFirst) == 0) {
             Destroy();
             return 0;
@@ -164,8 +166,7 @@ int PMesh::Load(PPakFile *pPakFile, PArray *pTextures, unsigned int nCount, unsi
     return 1;
 }
 
-// DRAFT: 0x0018FA40 RenderAllPolys__5PMeshFv
-// note: 5 words differ. Prologue maps nIndex to s2 where the original uses s0 (and the reverse at 0x6C); the a1/a2 loads at 0x7C/0x80 come in the opposite order. Tried: local orders (nSum/nIndex/nOffset), nIndex=0 inside the m_unk4 branch (28 words), and the nIndex init moved before the check (5 words, kept).
+// FUNCTION: 0x0018FA40 RenderAllPolys__5PMeshFv
 int PMesh::RenderAllPolys() {
     unsigned int nIndex;
     unsigned int nSum;
@@ -178,11 +179,14 @@ int PMesh::RenderAllPolys() {
     if (m_unk4 == 0) {
         CdsAssert__FPciPc("PMesh.cpp", 0xC1, "muNumFragments");
     }
+    nIndex = 0;
     nOffset = 0;
-    for (nIndex = 0; nIndex < m_unk4; nIndex++) {
-        ((PDisplayList *)*(void **)gGfxEng)->DrawVertices(*(void **)((char *)m_unk0 + nOffset), *(int *)((char *)m_unk0 + nOffset + 4));
+    while (nIndex < m_unk4) {
+        PMeshFragment *pFrag = (PMeshFragment *)((char *)m_unk0 + nOffset);
+        ((PDisplayList *)*(void **)(gGfxEng + 0x154C80))->DrawVertices(pFrag->m_unk0, pFrag->m_unk4);
         nSum += *(unsigned short *)((char *)m_unk0 + nOffset + 8);
         nOffset += 0x90;
+        nIndex++;
     }
     return nSum;
 }
