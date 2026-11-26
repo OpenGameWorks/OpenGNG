@@ -709,8 +709,7 @@ void EntityBaseClass::ShakeScreen(int arg0, int arg1, int arg2, int arg3, float 
     }
 }
 
-// DRAFT: 0x0014AF60 PlaySoundOnFrame__15EntityBaseClassFUiUi
-// note: 36 words; `bool inRange` set true in the two in-range arms took 37 to 36. Not reproduced: the dsll32/dsra32 pair before andi 4 on the flag byte, float value/constant register order, c.le.s operand order (earlier 55 words; (signed char) flag cast 56, f>=2^31 first 67).
+// FUNCTION: 0x0014AF60 PlaySoundOnFrame__15EntityBaseClassFUiUi
 int EntityBaseClass::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
     int ret;
     bool inRange;
@@ -732,7 +731,7 @@ int EntityBaseClass::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
             } else {
                 p = m_unk3C;
                 g = *(float *)(p + 0x38);
-                if (*(signed char *)(p + 0x3F) & 4) {
+                if ((signed char)(*(signed char *)(p + 0x3F) & 4) & 4) {
                     g = -1000000.0f;
                 }
                 if (arg1 < (unsigned int)frame) {
@@ -2017,7 +2016,7 @@ check:
 }
 
 // DRAFT: 0x0014DC20 ReadApparitionData__15EntityBaseClassFiUi
-// note: saved-register order is swapped (compiler puts iOffset in s1, original in s0); pSlot in v1 vs orig v0, base in a0 vs v1; 27 words differ. Tried: local index copy, local offset copy after the first branch, pSlot declared first (45), inverted null test (28); same output otherwise.
+// note: 27 words differ (size 0xB8 vs 0xBC). Saved-register order swapped: compiler puts iOffset in s1, original in s0; pSlot in v1 vs orig v0. Tried: local index copy, local offset copy after first branch, pSlot declared first (45), inverted null test (28), offset copy at entry (27), flipped count compare (27), base-pointer local (27). Missing one instruction vs original.
 char EntityBaseClass::ReadApparitionData(int iOffset, unsigned int uIndex) {
     if (m_unk18 == 0 && uIndex == 0) {
         return 0;
