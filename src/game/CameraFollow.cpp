@@ -725,7 +725,7 @@ int CameraFollow::CalcNewCameraViewpointPos() {
 }
 
 // DRAFT: 0x00175320 CalcNewCameraOffsets__12CameraFollowFv
-// note: DIFF 10 words, register picks and load order in the neg.s blocks. Tried: a-first scoped locals (20), b-first (10, kept), single-block flips (12, 13, 10).
+// note: DIFF 9 words, register picks and load order in the neg.s blocks (blocks 2 and 6). Tried: a-first scoped locals (20), b-first (9, kept), single-block load flips (11, 12), store-order perms on blocks 0-7 (10, 12, 13, 10, 10, 13).
 void CameraFollow::CalcNewCameraOffsets() {
     float sp50[4];
     float sp60[4];
@@ -870,7 +870,7 @@ float CameraFollow::GetAngleBetweenCamAndPlayer(float &arg0) {
 }
 
 // DRAFT: 0x00175830 PlayerIsIdle__12CameraFollowFv
-// note: 6 words differ; bool return of the && chain gives the original tail (bc1t with addiu v0,1 in the slot). Left: the abs tests use v0 instead of $at, so the first beqz chains through the second (original branches straight to the shared daddu v0,0). Tried if-form (11), nested if with bool return (12), || early return (18), bool local (30).
+// note: 6 words differ; bool return of the && chain gives the original tail (bc1t with addiu v0,1 in the slot). Left: abs tests use v0 not $at, and the 0.01f constant loads into v1 not v0. Tried: if-form (11), nested if (12), || early return (25), int locals (31), bool local (30), flipped float compare (8), early-return chain (25).
 bool CameraFollow::PlayerIsIdle() {
     return abs(m_unk1B8) < 0x33 && abs(m_unk1B9) < 0x33 && m_unk1A0 <= 0.01f;
 }
