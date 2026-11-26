@@ -409,6 +409,180 @@ void Bridge::SetEditableVars(char *pSrc) {
     memcpy((char *)this + 0x1B0, pSrc, 0x10);
 }
 
+// DRAFT: 0x001DD8E0 Execute__6BridgeFv
+// note: 430 words differ; frame 0xB0 vs 0x80 (extra fp/s6/s7 saves, live block locals); mTempArray ternary-walk and block-scoped player pointer variants tried, no gain
+void Bridge::Execute() {
+    switch (m_unk20) {
+    case -1:
+        m_unk10C &= 0xF8FFFFFF;
+        CheckVariable__15EntityBaseClassFii(this, m_unk1B0, 2);
+        if (m_unk1B0 == 0) {
+            printf("No more web bridge: Code optimized\n");
+            SetState__15EntityBaseClassFi(this, -2);
+            return;
+        }
+        PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)BridgeTable[m_unk1B0]);
+        m_unk338 = 1;
+        m_unk344 = 0;
+        m_unk348 = 5.0f;
+        m_unk33C = 10;
+        LoadBridgeParts();
+        LoadBridgeRope();
+        m_unk334 = 1;
+        PushPlank(0, -0.25f, 1.0f);
+        m_unk340 = 1;
+        SetState__15EntityBaseClassFi(this, 0);
+        return;
+    case 0: {
+        float fDist;
+        {
+            float (*pPos)[4] = m_unk3C ? (float (*)[4])((char *)m_unk3C + 0x80) : &m_unk190;
+            char *pApi = mPlayerAPI__13EntityManager;
+            char *pApi3C = *(char **)(pApi + 0x3C);
+            float (*pPlayer)[4] = pApi3C ? (float (*)[4])(pApi3C + 0x80) : (float (*)[4])(pApi + 0x190);
+            fDist = Distance__7MathAPIFPA4_fPA4_f(pPlayer, pPos);
+        }
+        if (fDist > 50.0f) {
+            EnableSleep__15EntityBaseClassFbb(this, true, false);
+        } else if (m_unk1B != 0) {
+            EnableSleep__15EntityBaseClassFbb(this, false, false);
+        }
+        if (m_unkE9 != 0) {
+            RunPhysics();
+            UpdateBridgeRope();
+        }
+        char *pSys = *(char **)((char *)mpEntMgr__15EntityBaseClass + 0x505C);
+        float fLen = sqrtf(sceVu0InnerProduct(*(float **)(pSys + 0x38), *(float **)(pSys + 0x38)));
+        unsigned char nState = (unsigned char)pSys[0x163];
+        if (IsPlayerOnNode__6PlayerFP9PMeshNodeb(*(void **)((char *)gEng + 0x1883C), (PMeshNode *)m_unk3C, false) != 0) {
+            if (fLen != 0.0f || nState == 2 || nState == 6) {
+                m_unk334 = -1;
+                float fMin = 3.4028235e38f;
+                int nOff = 0;
+                for (int i = 0; i < m_unk330; nOff += 0x20, i++) {
+                    char *pApi2 = mPlayerAPI__13EntityManager;
+                    char *pApi2_3C = *(char **)(pApi2 + 0x3C);
+                    float (*pP)[4] = pApi2_3C ? (float (*)[4])(pApi2_3C + 0x80) : (float (*)[4])(pApi2 + 0x190);
+                    float fD = Distance__7MathAPIFPA4_fPA4_f(pP, (float (*)[4])((char *)this + nOff + 0x210));
+                    if (fD < fMin) {
+                        fMin = fD;
+                        m_unk334 = i;
+                    }
+                }
+                int nIdx = m_unk334;
+                if (nIdx == 0 || nIdx == m_unk330 - 1) {
+                    int nNew = 1;
+                    if (nIdx != 0) {
+                        nNew = nIdx - 1;
+                    }
+                    m_unk334 = nNew;
+                }
+                char *pTimer = *(char **)((char *)mpEntMgr__15EntityBaseClass + 0x505C);
+                if ((*(unsigned int *)(*(char **)(pTimer + 0x38) + 0x108) & 0x80) && m_unk344 == 0) {
+                    static unsigned int aResetTimerFrame;
+                    static char init;
+                    if (init == 0) {
+                        aResetTimerFrame = 0x1E;
+                        init = 1;
+                    }
+                    m_unk344 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk4, aResetTimerFrame, true);
+                    static float aWalkForce;
+                    static char init2;
+                    if (init2 == 0) {
+                        aWalkForce = -0.25f;
+                        init2 = 1;
+                    }
+                    PushPlank(m_unk334, aWalkForce, 1.0f);
+                }
+                if (m_unk338 == 1) {
+                    m_unk338 = 0;
+                    if (m_unk334 != -1 && m_unk1E4[0] != 0) {
+                        PushPlank(m_unk334, -1.0f, 1.0f);
+                    }
+                }
+                LeanOnSides();
+                m_unk33C -= 1;
+                if (m_unk33C < 0) {
+                    PlaySound__15EntityBaseClassFUi(this, 0x4E58);
+                    m_unk33C = RandomIntRange__7MathAPIFii(0xA, 0x78);
+                }
+                m_unk340 = 1;
+            } else {
+                m_unk338 = 1;
+            }
+        } else {
+            m_unk338 = 1;
+        }
+        if (*(void **)(mTempArray__15EntityBaseClass + 8) != 0) {
+            *(void **)mTempArray__15EntityBaseClass = 0;
+            *(int *)(mTempArray__15EntityBaseClass + 4) = 0;
+        }
+        float (*pPos2)[4] = m_unk3C ? (float (*)[4])((char *)m_unk3C + 0x80) : &m_unk190;
+        GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 3, mTempArray__15EntityBaseClass, pPos2, 25.0f, 0, true, true);
+        int nCount = *(int *)mTempArray__15EntityBaseClass;
+        void **ppData = *(void ***)(mTempArray__15EntityBaseClass + 8);
+        for (int i = 0; i < nCount; i++) {
+            char *pEnt = (char *)ApparitionIsValid__15EntityBaseClassFUi((unsigned int)ppData[i]);
+            if (pEnt != 0 && *(int *)(pEnt + 0x20) >= 0) {
+                char *pMat = *(char **)(pEnt + 0x38);
+                if (pMat != 0) {
+                    sceVu0InnerProduct((float *)pMat, (float *)pMat);
+                    if (IsEntityOnNode((EntityBaseClass *)pEnt, (PMeshNode *)m_unk3C) != 0 && (*(unsigned int *)(pMat + 0x108) & 0x80)) {
+                        m_unk334 = -1;
+                        float fMin2 = 3.4028235e38f;
+                        int nOff2 = 0;
+                        for (int j = 0; j < m_unk330; nOff2 += 0x20, j++) {
+                            char *pE3C = *(char **)(pEnt + 0x3C);
+                            float (*pQ)[4] = pE3C ? (float (*)[4])(pE3C + 0x80) : (float (*)[4])(pEnt + 0x190);
+                            float fD2 = Distance__7MathAPIFPA4_fPA4_f(pQ, (float (*)[4])((char *)this + nOff2 + 0x210));
+                            if (fD2 < fMin2) {
+                                fMin2 = fD2;
+                                m_unk334 = j;
+                            }
+                        }
+                        int nIdx2 = m_unk334;
+                        if (nIdx2 == 0 || nIdx2 == m_unk330 - 1) {
+                            int nNew2 = 1;
+                            if (nIdx2 != 0) {
+                                nNew2 = nIdx2 - 1;
+                            }
+                            m_unk334 = nNew2;
+                        }
+                        if ((*(unsigned int *)(pMat + 0x108) & 0x80) && m_unk344 == 0) {
+                            static unsigned int aResetTimerFrame2;
+                            static char init3;
+                            if (init3 == 0) {
+                                aResetTimerFrame2 = 0x1E;
+                                init3 = 1;
+                            }
+                            m_unk344 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk4, aResetTimerFrame2, true);
+                            static float aWalkForce2;
+                            static char init4;
+                            if (init4 == 0) {
+                                aWalkForce2 = -0.25f;
+                                init4 = 1;
+                            }
+                            PushPlank(m_unk334, aWalkForce2, 1.0f);
+                        }
+                        m_unk33C -= 1;
+                        if (m_unk33C < 0) {
+                            PlaySound__15EntityBaseClassFUi(this, 0x4E58);
+                            m_unk33C = RandomIntRange__7MathAPIFii(0xA, 0x78);
+                        }
+                        m_unk340 = 1;
+                    }
+                }
+            }
+        }
+        if (m_unk340 != 0 && m_unk1E4[0] != 0) {
+            RunPhysics();
+            UpdateBridgeRope();
+        }
+        return;
+    }
+    }
+}
+
 // FUNCTION: 0x001DDF70 __dt__6BridgeFv
 Bridge::~Bridge() {
     m_unk0 = __vt__6Bridge;
