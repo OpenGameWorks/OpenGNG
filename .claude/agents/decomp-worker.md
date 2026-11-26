@@ -12,6 +12,7 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 
 - The job lists the files you own (`src/game/<File>.cpp` and its `.h`). Every other file belongs to another worker; a fix that needs a foreign file goes into the report.
 - Scratch experiments go in `src/scratch/<job-id>/`.
+- Files are written with the Write tool or a quoted heredoc (`cat > F <<'EOF'`). A bare `cat > F` reads the terminal, which never sends input, so the shell hangs as an orphaned background task that outlives the job.
 - A copy outside `src/game` is scored with `fncmp.py -q --as src/game/<File>.cpp COPY 0xADDR`. mwccps2 register scheduling depends on the source and object path lengths, and `--as` compiles the copy with the lengths ninja uses for the real file; without it a copy can report MATCH for code the link rejects.
 
 ## Procedure
