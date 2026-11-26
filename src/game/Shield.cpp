@@ -387,7 +387,7 @@ void Shield::DeleteShield() {
 }
 
 // DRAFT: 0x001693C0 __dt__6ShieldFv
-// note: 1 word differs at 0xA0: the 1C8 load is duplicated into the beqz v0 delay slot, original has nop; tried handle local (else arm) and nested 1B8 test (same)
+// note: 1 word differs at 0xA0: the original passes ApparitionIsValid's handle in a1 without loading it (a nop where ours loads m_unk1C8); an uninitialized local takes s2 instead (78 words). The player pointer is gEng + 0x1883C.
 extern "C" void *__dt__6ShieldFv(void *pThis, short nFlag) {
     Shield *self = (Shield *)pThis;
     if (pThis != 0) {
@@ -407,7 +407,7 @@ extern "C" void *__dt__6ShieldFv(void *pThis, short nFlag) {
             self->m_unk1C4 = 0;
         }
         if (self->m_unk1DB != 0) {
-            void *eng = *(void **)gEng;
+            void *eng = *(void **)(gEng + 0x1883C);
             if (eng != 0) {
                 SetFlyingShield__6PlayerFP6Shield(eng, 0);
             }
