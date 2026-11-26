@@ -557,8 +557,7 @@ void ClockworkStalker::OnWakeEvent() {
     }
 }
 
-// DRAFT: 0x001E3510 OnHitEvent__16ClockworkStalkerFP15EntityBaseClassiUiUi
-// note: 6 differing words: `<= 1U` spelling of the state range matches the sltiu register; node stays in v0 (original reloads m_unk270 into a0 after the sw); lb vs lbu on the 3E flag and at-register operand remain; tried m_unk270 for the 3E flag (159), both stores via m_unk270 (158), byte temp for the flag (6, no change), bool local (7), |= (7), reversed || (10)
+// FUNCTION: 0x001E3510 OnHitEvent__16ClockworkStalkerFP15EntityBaseClassiUiUi
 int ClockworkStalker::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3) {
     int state;
     unsigned int temp;
@@ -586,10 +585,10 @@ int ClockworkStalker::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int a
         LoadCorrectMesh(true);
     }
     state = m_unk20;
-    node = (PMNodeView *)Find__6PMNodeFUi(m_unk3C, 0xE1612999U);
-    m_unk270 = (int)node;
-    ((PMNodeView *)m_unk270)->m_unk94 = *(float *)&m_unk274;
-    node->m_unk3E = node->m_unk3E | 8;
+    m_unk270 = (int)Find__6PMNodeFUi(m_unk3C, 0xE1612999U);
+    node = (PMNodeView *)m_unk270;
+    node->m_unk94 = *(float *)&m_unk274;
+    node->m_unk3E |= 8;
     if ((unsigned int)(state - 5) <= 1U || state == 7) {
         if (m_unk3C != 0) {
             src = m_unk3C + 0x80;

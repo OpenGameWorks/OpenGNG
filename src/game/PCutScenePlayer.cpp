@@ -152,7 +152,7 @@ public:
 #define CDS_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert("PCutScenePlayer.cpp", line, msg))
 
 // DRAFT: 0x001BBBA0 KillActorFx__15PCutScenePlayerFv
-// note: 25 differing words; original guard `if (n != 0)` matches, but the do-while body makes the compiler keep a strength-reduced pointer in s2, pushing `this` to s3 and the frame to 0x50. Tried: for-loop forms (40-43), statement-guard item (41), pointer-local (43), int cast of storage (25).
+// note: 25 differing words; the i*4 element address is strength-reduced into a saved offset in s2 (ours), so `this` goes to s3 and the frame to 0x50; original keeps i in s1 and this in s2. Tried: for-loop forms (43), statement item read (41), int i with unsigned compares (25), (void **) cast of storage (25), explicit i*4 byte offset (25), item hoisted out of loop (25), i declared before n (28), dropping the bounds ternary (38, so the ternary stays).
 void PCutScenePlayer::KillActorFx() {
     unsigned int n = m_unkB0;
     unsigned int i = 0;
@@ -417,7 +417,7 @@ void PCutScenePlayer::ResetAnimations() {
 }
 
 // DRAFT: 0x001BCB60 Render__15PCutScenePlayerFP13PLightManager
-// note: DIFF 55; frame 0x70 vs 0x60, this in s5 not s3, pItem in s2 not s4; tried pItem hoist/in-loop, i init placement, void** items
+// note: DIFF 55; frame 0x70 vs 0x60, this in s5 not s3, pItem in s2 not s4; same strength-reduced i*4 offset as KillActorFx (extra saved reg). Tried: pItem hoist/in-loop, i init placement, void** items, explicit i*4 byte offset (55), statement item read (99).
 void PCutScenePlayer::Render(PLightManager *pLightMgr) {
     if (m_unk40 != 0) {
         m_unk40->Render(0, 0x80, 0);

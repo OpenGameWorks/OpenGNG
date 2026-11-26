@@ -369,30 +369,33 @@ void PObjectDisplayList::FindUniqueShaders(PMNode *pNode) {
 }
 
 // DRAFT: 0x1D46C0 FindUniqueTextures__18PObjectDisplayListFv
-// note: 62 differing words; declaration orders (4 permutations: 62-67) and the outer-loop form did not reduce it. Remaining diffs: outer/inner branch layout, off/i update order, CdsAssert argument setup.
+// note: 61 differing words; frame 0x70 vs 0x80 (original keeps a 7th saved reg, s5 = inner cursor). Tried: nOff cursor read `*(int *)((char *)pShader + nOff + 0x20)` (MWCC folds nOff to j*4, cursor reg vanishes; 69 words), j/nOff reset moved inside the pShader test (61, kept), nOff signed/unsigned, increment order, `> 0xC0` compare spelling (61, no change). Remaining: loop-bottom layout, this in s5 vs s6.
 void PObjectDisplayList::FindUniqueTextures() {
     int i;
     PShader *pShader;
     int nTexture;
     int off;
-    unsigned int j;
+    int j;
+    int nOff;
 
     off = 0;
     i = 0;
     while (i < m_unk20) {
         pShader = *(PShader **)((char *)this + off + 0xE4);
-        j = 0;
         if (pShader != 0) {
+            j = 0;
+            nOff = 0;
             while (j < pShader->m_unk8) {
-                nTexture = pShader->m_unk20[j];
+                nTexture = *(int *)((char *)pShader + nOff + 0x20);
                 if (nTexture != 0 && IsTextureUnique(nTexture) != 0 && m_unk1E0[j] != 0) {
                     m_unk118[m_unk114] = nTexture;
                     m_unk114 += 1;
-                    if ((unsigned int)m_unk114 >= 0xC1) {
+                    if ((unsigned int)m_unk114 > 0xC0) {
                         CdsAssert("PObjectDisplayList.cpp", 0x217, "miNumTextures <= sizeof(mhTextures)");
                     }
                 }
                 j += 1;
+                nOff += 4;
             }
         }
         off += 4;
@@ -559,7 +562,7 @@ void PObjectDisplayList::SetupNodeInfo(PArray *pArray) {
 }
 
 // DRAFT: 0x1D4D60 RenderBlendedFragments__18PObjectDisplayListF13eBoxIntersect
-// note: 28 words differ, all saved-register allocation (original this=s4, eBox=s3, index=s2, offset=s1); tried i-first (35), reversed decls (35), cached count (91)
+// note: 28 words differ, all saved-register allocation (original this=s5, eBox=s4, pNode=s3, offset=s2, index=s1; ours this=s4, eBox=s3). Tried: 12 orders of the pMesh/pNode/pInfo/i declarations (all 28), nTotal=0 before/after pNode init (28), i-first (35), reversed decls (35), cached count (91).
 int PObjectDisplayList::RenderBlendedFragments(eBoxIntersect eBox) {
     int nTotal;
     PMesh *pMesh;
