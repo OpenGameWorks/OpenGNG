@@ -371,8 +371,7 @@ struct tagParticleRainParams {
     char _pad14[0xC];
 };
 
-// DRAFT: 0x001CD0B0 Create__13PParticleRainFP21tagParticleRainParamsPA4_fPA4_fP12PFlashScreen
-// note: 3 words differ, all addu v0,v1,v0 vs original addu v0,v0,v1 in the three m_nCount + PR_INT sums (0x120, 0x16C, 0x1BC); the flipped operand order gives 9.
+// FUNCTION: 0x001CD0B0 Create__13PParticleRainFP21tagParticleRainParamsPA4_fPA4_fP12PFlashScreen
 #define PR_INT(off) (*(int *)((char *)this + (off)))
 #define PR_UINT(off) (*(unsigned int *)((char *)this + (off)))
 #define PR_FLT(off) (*(float *)((char *)this + (off)))
@@ -407,7 +406,7 @@ int PParticleRain::Create(tagParticleRainParams *arg0, float (*arg1)[4], float (
     PR_FLT(0x168) = m_unkFC;
     PR_INT(0x16C) = 0x3F800000;
     PR_UINT(0x190) = PR_UINT(0x144);
-    PR_INT(0x194) = arg0->m_nCount + PR_INT(0x190);
+    PR_INT(0x194) = PR_INT(0x190) + (int)arg0->m_nCount;
     PR_INT(0x198) = arg0->m_nCount;
     PR_INT(0x1A0) = 0;
     PR_INT(0x1A4) = 0xC1480000;
@@ -418,7 +417,7 @@ int PParticleRain::Create(tagParticleRainParams *arg0, float (*arg1)[4], float (
     PR_INT(0x1B8) = 0;
     PR_INT(0x1BC) = 0x3F800000;
     PR_INT(0x1E0) = PR_INT(0x194);
-    PR_INT(0x1E4) = arg0->m_nCount + PR_INT(0x1E0);
+    PR_INT(0x1E4) = PR_INT(0x1E0) + (int)arg0->m_nCount;
     PR_INT(0x1E8) = arg0->m_nCount;
     PR_FLT(0x1F0) = -m_unkFC;
     PR_INT(0x1F4) = 0xC1480000;
@@ -429,7 +428,7 @@ int PParticleRain::Create(tagParticleRainParams *arg0, float (*arg1)[4], float (
     PR_INT(0x208) = 0;
     PR_INT(0x20C) = 0x3F800000;
     PR_INT(0x230) = PR_INT(0x1E4);
-    PR_INT(0x234) = arg0->m_nCount + PR_INT(0x230);
+    PR_INT(0x234) = PR_INT(0x230) + (int)arg0->m_nCount;
     PR_INT(0x238) = arg0->m_nCount;
     PR_INT(0xA0) = 0;
     SetCameraPosRot(arg1, arg2);
