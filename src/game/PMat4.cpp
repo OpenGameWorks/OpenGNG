@@ -16,8 +16,7 @@ void FastMath_MatRotateZ(float (*arg0)[4], float (*arg1)[4], float arg2);
 void FastMath_MatRotateY(float (*arg0)[4], float (*arg1)[4], float arg2);
 void FastMath_MatRotateX(float (*arg0)[4], float (*arg1)[4], float arg2);
 
-// DRAFT: 0x00130690 MakeProjectionMatrix__5PMat4FPA4_fffiiii
-// note: 3 words differ: the three mul.s by -1.0f put the constant in the first operand (original has the variable first); swapping the source operands, a local neg variable, a local product, and an int (float)-1 constant did not change it.
+// FUNCTION: 0x00130690 MakeProjectionMatrix__5PMat4FPA4_fffiiii
 void PMat4::MakeProjectionMatrix(float (*arg0)[4], float arg1, float arg2, int arg3, int arg4, int arg5, int arg6) {
     float f3 = (float)(-arg3 / 2) + arg1;
     float f4 = (((float)(arg3 / 2) + arg1) - f3) / 2.0f;
@@ -25,18 +24,19 @@ void PMat4::MakeProjectionMatrix(float (*arg0)[4], float arg1, float arg2, int a
     float f2 = (((float)(arg4 / 2) + arg2) - f5) / 2.0f;
     float f6 = (float)arg6;
     float f1 = ((float)arg5 - f6) / 2.0f;
+    float fK = -1.0f;
     arg0[0][0] = f4;
     arg0[1][0] = 0.0f;
     arg0[2][0] = 0.0f;
-    arg0[3][0] = f3 - f4 * -1.0f;
+    arg0[3][0] = f3 - f4 * fK;
     arg0[0][1] = 0.0f;
     arg0[1][1] = f2;
     arg0[2][1] = 0.0f;
-    arg0[3][1] = f5 - f2 * -1.0f;
+    arg0[3][1] = f5 - f2 * fK;
     arg0[0][2] = 0.0f;
     arg0[1][2] = 0.0f;
     arg0[2][2] = f1;
-    arg0[3][2] = f6 - f1 * -1.0f;
+    arg0[3][2] = f6 - f1 * fK;
     arg0[0][3] = 0.0f;
     arg0[1][3] = 0.0f;
     arg0[2][3] = 0.0f;

@@ -1220,20 +1220,18 @@ void PGfxEngine::SetPrevFrameBufferAsTexture() {
     m_unk154C80->SetGsRegisters(&aTexEnv[1], 5);
 }
 
-// DRAFT: 0x187380 SetTexture__10PGfxEngineFi
-// note: 35 lines differ. pEnv sits at sp+0x28 (original sp+0x20), and the original's no-op v0/a1 swap after the nIndex compare is not reproduced. Tried: nTex override in a register, with and without the nTex local, combined and nested conditions.
+// FUNCTION: 0x187380 SetTexture__10PGfxEngineFi
 void PGfxEngine::SetTexture(int nIndex) {
-    tagGsTextureEnvironment *pEnv;
+    // The original places pEnv on a 16-byte boundary (sp+0x20, bFlag at sp+0x2F).
+    tagGsTextureEnvironment *pEnv __attribute__((aligned(16)));
     bool bFlag;
     int nTex;
 
     bFlag = false;
     pEnv = 0;
-    nTex = nIndex;
-    if (m_unk16D408 != 0) {
-        if (nIndex != m_unk16D408) {
-            nTex = m_unk16D408;
-        }
+    nTex = m_unk16D408;
+    if (nTex == 0 || nIndex != nTex) {
+        nTex = nIndex;
     }
     ((PTextureManager *)m_unk154C90)->SetTexture(nTex, m_unk154C80, &pEnv, bFlag);
     if (bFlag) {
@@ -1295,11 +1293,10 @@ void PGfxEngine::SetMaterial(int nIndex, float *pVec, unsigned long nA, unsigned
     m_unk154C80->SetMaterials((struct tagGsMaterial *)&aBuf, 1, aBuf.bFlag, m_unk158E24, 0, 0, 0);
 }
 
-// DRAFT: 0x187620 SetOverrideTexture__10PGfxEngineFi
-// note: 3 words differ; pEnv sits at sp+0x28 in ours, original at sp+0x20 (the sw/addiu/lw lines at 0x4C, 0x5C, 0xA8). Tried: swapping locals, unused pad locals (dropped by the optimizer), initialised declarations (47 words), unsigned char bFlag (does not compile, call needs bool&); slot stayed at 0x28 across eight variants.
+// FUNCTION: 0x187620 SetOverrideTexture__10PGfxEngineFi
 void PGfxEngine::SetOverrideTexture(int nIndex) {
-    tagGsTextureEnvironment *pEnv;
     bool bFlag;
+    tagGsTextureEnvironment *pEnv __attribute__((aligned(16)));
 
     m_unk16D408 = nIndex;
     if (m_unk16D408 != 0) {

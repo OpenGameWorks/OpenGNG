@@ -623,7 +623,7 @@ void EffectAPI::Animate(float arg0) {
 }
 
 // DRAFT: 0x156BB0 Update__10EffectNodeFf
-// note: 2 differing lines, a2/a1 addiu order (original computes a2 first). Tried: inline args, pMat local, PMNode struct fields, int base local (4 lines each for the last two).
+// note: 2 words, a2/a1 addiu order (original computes a2 first). Tried: inline args, pMat local, PMNode struct fields, int base local, frustum local, inline wrapper with swapped params, declare-then-assign in both orders.
 int EffectNode::Update(float arg0) {
     if (m_unk4 != 0) {
         if (((EffectDrawable *)m_unk4)->Slot4(0, 0, 0, 0.0f, arg0) & 7) {
