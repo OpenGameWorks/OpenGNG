@@ -810,17 +810,13 @@ long long EntityBaseClass::IsBGAnimating(unsigned int arg0) {
     return 0;
 }
 
-// DRAFT: 0x0014B370 AddToLoad__15EntityBaseClassFv
-// note: 2 differing lines; the idx==5 beq targets the shared addiu v0,1 return with a nop delay slot, ours targets jr with addiu in the slot; tried early returns (worse), ret variable (worse), inline index (same 2).
+// FUNCTION: 0x0014B370 AddToLoad__15EntityBaseClassFv
 int EntityBaseClass::AddToLoad() {
-    if (this->m_unk18 != 0) {
-        if (this->m_unk10 != 5) {
-            LoadEntry *e = &mLoadTable__15EntityBaseClass[this->m_unk10];
-            if (e->m4 < (unsigned int)(e->m0 + this->m_unk14)) {
-                return 0;
-            }
+    if (this->m_unk18 != 0 && this->m_unk10 != 5) {
+        LoadEntry *e = &mLoadTable__15EntityBaseClass[this->m_unk10];
+        if (e->m4 < (unsigned int)(e->m0 + this->m_unk14)) {
+            return 0;
         }
-        return 1;
     }
     return 1;
 }
