@@ -27,21 +27,38 @@ public:
     void ModifyPosition(PMat4 *pMat);
     void SetPosition(float *pPos, float *pUnused);
     int Create(tagParticleTrailParams *pParams, float fA, float fB, float fC);
+    void AnimateSmoothTrail();
 
     float m_unkE0;             // 0x0E0 MulVector output written by ModifyPosition; copied from the params
     float m_unkE4;              // 0x0E4
     float m_unkE8;              // 0x0E8
-    char _padEC[0x34];          // 0x0EC
+    char _padEC[0x04];          // 0x0EC
+    float m_unkF0;              // 0x0F0
+    float m_unkF4;              // 0x0F4
+    float m_unkF8;              // 0x0F8
+    float m_unkFC;              // 0x0FC
+    float m_unk100;             // 0x100
+    float m_unk104;             // 0x104
+    float m_unk108;             // 0x108
+    float m_unk10C;             // 0x10C
+    float m_unk110;             // 0x110
+    float m_unk114;             // 0x114
+    float m_unk118;             // 0x118
+    float m_unk11C;             // 0x11C
     float m_unk120;             // 0x120
     float m_unk124;             // 0x124
     float m_unk128;             // 0x128
-    char _pad12C[0x08];         // 0x12C
+    char _pad12C[0x04];         // 0x12C
+    unsigned int m_unk130;      // 0x130 dead-particle count limit read by Animate
     float m_unk134;             // 0x134
     float m_unk138;             // 0x138
     float m_unk13C;             // 0x13C
-    char _pad140[0x04];         // 0x140
+    float m_unk140;            // 0x140
     float m_unk144;             // 0x144
-    char _pad148[0x10];         // 0x148
+    float m_unk148;             // 0x148
+    float m_unk14C;             // 0x14C
+    float m_unk150;             // 0x150
+    float m_unk154;             // 0x154
     float m_unk158;             // 0x158
     char _pad15C[0x04];         // 0x15C
     unsigned char m_unk160;     // 0x160 nonzero selects the 0x10-byte buffer layout

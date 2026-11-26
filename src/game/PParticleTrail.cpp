@@ -10,6 +10,11 @@ extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 extern "C" int rand(void);
 extern "C" float sqrtf(float x);
+extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
+extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
+extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
+float FastMath_Sin180(float fAngle);
+float FastMath_Cos180(float fAngle);
 
 // SKIP: 0x001C5650 AnimateSmoothTrail__14PParticleTrailFv: 0x8B4 bytes (557 instructions) with an LCG random chain on unkD0, FastMath sin/cos and sceVu0ScaleVectorXYZ calls; not drafted in this run.
 // FUNCTION: 0x001C5F10 Start__14PParticleTrailFv
@@ -37,6 +42,206 @@ void PParticleTrail::SetPosition(float *pPos, float *pUnused) {
     m_unk84 = m_unk190[1];
     m_unk88 = m_unk190[2];
     m_unk8C = 0x3F800000;
+}
+
+// DRAFT: 0x001C5FE0 Animate__14PParticleTrailFf
+// note: 554 words differ; prologue saves f20-f26 (original f20-f24 only), no s5 copy of this, m_unk1B4 clamp and LCG/madd/colour order not matched.
+static inline float ClampRangeDraft(float fVal, float fHi) {
+    float fOut = fVal;
+    float fT = fHi;
+    if (fVal < fHi) {
+        fT = fVal;
+    }
+    if (!(fT <= 0.0f)) {
+        if (fVal < fHi) {
+        } else {
+            fOut = fHi;
+        }
+    } else {
+        fOut = 0.0f;
+    }
+    return fOut;
+}
+
+void PParticleTrail::Animate(float fDt) {
+    float spB0[4];
+    float vC[4];
+    unsigned int nDead;
+    unsigned int nNext;
+    unsigned int s2;
+    unsigned int s3;
+    unsigned int s4;
+    int nA;
+    int nB;
+    float *pPart;
+    float *pV;
+    float *pVec;
+    float fW;
+    float fRatio;
+    float fA;
+    float fB0;
+    float fT;
+    float fFrac;
+    float fF3;
+    float fF5;
+    float fF7;
+    float fF22;
+    float fF22s;
+    float fF23;
+    float fF24;
+    float fBase;
+    float fHalf;
+    float fTwo;
+    float fNeg;
+    float fLerp;
+    float fR;
+    float fC;
+    unsigned char b17;
+
+    nDead = 0;
+    if (m_unk15 != 0 && m_unk16 == 0) {
+        if (fDt == 0.0f) {
+            return;
+        }
+        m_unkD0 = m_unk1BC;
+        if ((unsigned int)m_unk1B4 < m_unk04) {
+            nNext = (unsigned int)m_unk1B4 + 1;
+            m_unk1B4 = (nNext >= m_unk04) ? (int)m_unk04 : (int)nNext;
+        }
+        if (m_unk160 == 0) {
+            AnimateSmoothTrail();
+            goto block_68;
+        }
+        sceVu0SubVector(spB0, m_unk1A0, m_unk190);
+        sceVu0Normalize(spB0, spB0);
+        s2 = 0;
+        s3 = 0;
+        s4 = 0;
+loop_67:
+        if (s2 >= m_unk04) {
+block_68:
+            ComputeBoundingBox();
+        } else {
+            pPart = (float *)((char *)m_unk08 + s3);
+            if (s2 >= (unsigned int)m_unk1B4) {
+                pPart[3] = 0.0f;
+                pPart[7] = 0.0f;
+                goto block_66;
+            }
+            fF3 = m_unk154;
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            pV = (float *)((char *)m_unk180 + s4);
+            pV[3] = pV[3] + fDt * (fF3 + (1.0f - fF3) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+            fB0 = m_unk1B0;
+            pV = (float *)((char *)m_unk180 + s4);
+            if (!(pV[3] <= fB0)) {
+                pV[3] = fB0;
+                b17 = m_unk17;
+                if (b17 != 0 || m_unk18 == 0) {
+                    nDead++;
+                    if (nDead >= m_unk130) {
+                        m_unk16 = b17;
+                        m_unk15 = 0;
+                        return;
+                    }
+                    goto block_18;
+                }
+                pV[3] = pV[3] - m_unk1B0;
+                *(u_long128 *)pV = *(u_long128 *)m_unk190;
+                pV[1] = m_unk190[1];
+                pV[2] = m_unk190[2];
+                sceVu0ScaleVectorXYZ((float *)((char *)m_unk184 + s4), spB0, m_unk140);
+                goto block_18;
+            }
+block_18:
+            pV = (float *)((char *)m_unk180 + s4);
+            fW = pV[3];
+            fRatio = fW / m_unk1B0;
+            if (fRatio < 0.9999999f) {
+            } else {
+                fRatio = 0.9999999f;
+            }
+            pVec = (float *)((char *)m_unk184 + s4);
+            fA = m_unk120;
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            pPart[0] = (pV[0] + (-fA + (fA + fA) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)))) + fRatio * pVec[0];
+            fA = m_unk124;
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            pPart[1] = (pV[1] + (-fA + (fA + fA) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)))) + fRatio * pVec[1];
+            fA = m_unk128;
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            pPart[2] = (pV[2] + (-fA + (fA + fA) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)))) + fRatio * pVec[2];
+            fT = fRatio * m_unk148;
+            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+            fF5 = 0.75f * m_unk158;
+            fFrac = fT - (float)(int)fT;
+            if (fFrac <= 0.5f) {
+                fLerp = m_unk134;
+                fR = fLerp + (2.0f * (fFrac * (m_unk138 - fLerp)));
+            } else {
+                fLerp = m_unk138;
+                fR = fLerp + (2.0f * ((fFrac - 0.5f) * (m_unk13C - fLerp)));
+            }
+            pPart[3] = fR;
+            pPart[3] = pPart[3] * (1.0f + (-fF5 + (2.0f * fF5 * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)))));
+            if (m_unk19 != 0) {
+                fF7 = 30.0f * m_unk2C;
+                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
+                nA = m_unkD0;
+                m_unkD0 = nA * 0x343FD + 0x269EC3;
+                nB = m_unkD0;
+                fBase = 0.001f + (0.0139999995f * m_unk28);
+                fHalf = 0.2f * fBase;
+                fTwo = 2.0f * fHalf;
+                fNeg = -fHalf;
+                m_unkD0 = nB * 0x343FD + 0x269EC3;
+                fF22 = 180.0f * ((((float)((int)(fW * (fF7 + ((0.5f * fF7) - fF7) * (0.000030517578f * (float)((nA >> 16) & 0x7FFF)))) % 360)) / 180.0f) - 1.0f);
+                fF23 = fBase + (fNeg + (fTwo * (0.000030517578f * (float)((nB >> 16) & 0x7FFF))));
+                fF24 = fBase + (fNeg + (fTwo * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF))));
+                fF22s = FastMath_Sin180(fF22);
+                pPart[4] = fF23 * FastMath_Cos180(fF22);
+                pPart[5] = fF24 * fF22s;
+            } else {
+                fT = fRatio * m_unk14C;
+                fFrac = fT - (float)(int)fT;
+                if (fFrac <= 0.5f) {
+                    vC[0] = m_unk100 - m_unkF0;
+                    vC[1] = m_unk104 - m_unkF4;
+                    vC[2] = m_unk108 - m_unkF8;
+                    sceVu0ScaleVectorXYZ(vC, vC, 2.0f * fFrac);
+                    vC[0] += m_unkF0;
+                    vC[1] += m_unkF4;
+                    vC[2] += m_unkF8;
+                } else {
+                    vC[0] = m_unk110 - m_unk100;
+                    vC[1] = m_unk114 - m_unk104;
+                    vC[2] = m_unk118 - m_unk108;
+                    sceVu0ScaleVectorXYZ(vC, vC, 2.0f * (fFrac - 0.5f));
+                    vC[0] += m_unk100;
+                    vC[1] += m_unk104;
+                    vC[2] += m_unk108;
+                }
+                pPart[4] = ClampRangeDraft(vC[0], 255.0f);
+                pPart[5] = ClampRangeDraft(vC[1], 255.0f);
+                pPart[6] = ClampRangeDraft(vC[2], 255.0f);
+            }
+            fT = fRatio * m_unk150;
+            fFrac = fT - (float)(int)fT;
+            if (fFrac <= 0.5f) {
+                fC = m_unkFC;
+                fLerp = ((m_unk10C - fC) * (2.0f * fFrac)) + fC;
+            } else {
+                fC = m_unk10C;
+                fLerp = ((m_unk11C - fC) * (2.0f * (fFrac - 0.5f))) + fC;
+            }
+            pPart[7] = ClampRangeDraft(fLerp, 128.0f);
+block_66:
+            s3 += 0x20;
+            s4 += 0x10;
+            s2 += 1;
+            goto loop_67;
+        }
+    }
 }
 
 // DRAFT: 0x001C69F0 Create__14PParticleTrailFP22tagParticleTrailParamsfff
