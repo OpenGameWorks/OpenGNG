@@ -14,15 +14,12 @@ extern "C" void __dl__FPv(void *pMem);
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
 extern "C" void sceVu0CopyVector(float *pDst, float *pSrc);
 extern "C" void sceVu0UnitMatrix(void *pMat);
-extern PScrollingTreeIds lit_0024DDC0;
-extern PScrollingTreeQuad lit_0024DDE0;
 extern char gGfxEng[1504384];
 extern float gUnitMatrix[16];
 extern "C" int rand(void);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 float FastMath_Fabs(float fVal);
 void FastMath_RotateMatrix(float (*pA)[4][4], float (*pB)[4][4], float (*pRot)[4], float (*pC)[4][4]);
-extern PScrollingTreeQuad lit_0024DDF0;
 
 // DRAFT: 0x1FAC10 Render__15PScrollingTreesFv
 // note: 115 words; frame 0x90 vs 0x80; this in s7 vs s0; first-call args and gUnitMatrix load order; loop 1 offset reg s6 (addu s6,s7,s5). Tried: local class stubs, nCount removal, per-iter entry pointer (118), nTotal after first call (115, kept), this-derived loop 2 base (no change).
@@ -90,9 +87,9 @@ void PScrollingTrees::Animate(float fTime) {
 }
 
 // DRAFT: 0x1FAF30 Create__15PScrollingTreesFiii
-// note: DIFF 216, size 0x3F8 vs 0x3E4 (frame 0x110 vs 0x100); this/nB register assignment, float save order, FastMath_RotateMatrix reloc differ. Tried: ids/rot hoisting, brace-init in loop, Z block first, field stores for rot, nOff/pNodes removal (240-247), ids load after assert (222).
+// note: DIFF 199, size 0x3E0 vs 0x3E4; lit stand-ins replaced by brace-init locals and a union quad (216 to 199); this/nB register assignment, float save order, FastMath_RotateMatrix reloc differ. Tried: ids/rot hoisting, brace-init in loop, Z block first, field stores for rot, nOff/pNodes removal, ids load after assert.
 int PScrollingTrees::Create(int nA, int nB, int nType) {
-    PScrollingTreeQuad ids = lit_0024DDF0;
+    PScrollingTreeTypeIds ids = {{0x0600000A, 0x06000009, 0x06000008, 0x00000000}};
     PScrollingTreeQuad pos;
     PScrollingTreeQuad rot = (PScrollingTreeQuad){{0.0f, 0.0f, 0.0f, 1.0f}};
     if (m_unk670 == 0) {
@@ -159,10 +156,10 @@ int PScrollingTrees::Create(int nA, int nB, int nType) {
 }
 
 // DRAFT: 0x1FB320 CreateFloor__15PScrollingTreesFv
-// note: prologue frame 0xB0 vs 0xA0 (compound literal temp); s0..s5 allocation differs; 1.0 quad not built inline; 91 words.
+// note: DIFF 56, frame 0xA0 vs 0xB0; the 1.0 quad is a union of two 64-bit halves (75 to 56); original keeps it in a register and splats with pcpyld, ours spills to stack and reloads with lq; reloc positions for GetResource, CdsAssert and sceVu0UnitMatrix sit 4 bytes early; literal names @177/@152 vs @569/@590. Tried: u_long128 shift build (compile error), unsigned long long local splat (56, equal), union hoisted out of loop (87).
 int PScrollingTrees::CreateFloor() {
-    PScrollingTreeIds ids = lit_0024DDC0;
-    PScrollingTreeQuad quad = lit_0024DDE0;
+    PScrollingTreeIds ids = {{0x0600001A, 0x06000014, 0x06000015, 0x06000016, 0x06000017, 0x06000018, 0x06000019, 0x06000013}};
+    PScrollingTreeQuad quad = {{0.0f, -140.0f, 170.0f, 1.0f}};
     int nRec = 0;
     int nOff = 0;
     for (int i = 0; i < 8; i++) {
@@ -175,7 +172,12 @@ int PScrollingTrees::CreateFloor() {
         *(int *)(rec + 0xB0) = 2;
         sceVu0UnitMatrix(pMat);
         *(PScrollingTreeQuad *)(pMat + 0x30) = quad;
-        *(PScrollingTreeQuad *)(pMat + 0x40) = (PScrollingTreeQuad){{1.0f, 1.0f, 1.0f, 1.0f}};
+        {
+            union { u_long128 q; unsigned long long d[2]; } one;
+            one.d[0] = 0x3F8000003F800000ULL;
+            one.d[1] = 0x3F8000003F800000ULL;
+            *(u_long128 *)(pMat + 0x40) = one.q;
+        }
         rec += 0x60;
         sceVu0UnitMatrix(rec);
         *(float *)(rec + 0x0) = 0.0f;

@@ -10,9 +10,6 @@ extern int SCREEN_HEIGHT;
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" float FastMath_IntCos180__Fi(int);
 extern "C" float FastMath_IntSin180__Fi(int);
-extern u_long128 lit_00252670[2];
-extern u_long128 lit_00252690;
-extern u_long128 lit_004D19C0;
 extern char gGfxEng[1504384];
 extern "C" void SetPrevFrameBufferAsTexture__10PGfxEngineFv(void *);
 extern "C" void UpdateHeatHazeBuffer__16PParticleManagerFv(void *);
@@ -21,17 +18,13 @@ extern "C" void SetGsRegisters__12PDisplayListFP1i(void *, u_long128 *, int);
 extern "C" void SendGsPacket__12PDisplayListFPvib(void *, void *, int, bool);
 
 // DRAFT: 0x00216500 WobbleSTGrids__13PScreenBlurFxFP21tagGsScreenBlurPacketf
-// note: 122 words differ; register roles and frame/spill layout differ, table-index loop form also differs. Tried: baseline, two-if angle wrap (123 to 122).
+// note: 80 words differ; lit_ stand-ins replaced by local initializers (vA, vB, nTbl). Register roles differ (this in s5, pPacket in fp, i/j/nIdx/nS3 assigned differently), frame 0x120 vs 0x100, literal base v0 vs v1. Tried: baseline 122, vA/vB placement and pRow hoisting (83), else-if angle wrap (80, kept), nIdx == 8 wrap (80, no change).
 void PScreenBlurFx::WobbleSTGrids(tagGsScreenBlurPacket *pPacket, float fAngle) {
     int nAngle = (int)fAngle;
-    int nTbl[8];
+    int nTbl[8] = {10, -15, 16, 27, 51, -32, 13, -46};
     int nIdx = 0;
-    float vA[4];
-    float vB[4];
     char *pRowCur;
     char *pRowPrev;
-    *(u_long128 *)nTbl = lit_00252670[0];
-    *(u_long128 *)(nTbl + 4) = lit_00252670[1];
     for (int i = 1; i < 16; i++) {
         pRowCur = (char *)pPacket + i * 0x840 + 0x40;
         pRowPrev = (char *)pPacket + (i - 1) * 0x840 + 0x40;
@@ -41,13 +34,16 @@ void PScreenBlurFx::WobbleSTGrids(tagGsScreenBlurPacket *pPacket, float fAngle) 
             nAngle += nTbl[nIdx];
             nIdx++;
             if (nIdx >= 8) nIdx = 0;
-            if (nAngle < 0) nAngle += 0x168;
-            if (nAngle >= 0x168) nAngle -= 0x168;
+            if (nAngle < 0) {
+                nAngle += 0x168;
+            } else if (nAngle >= 0x168) {
+                nAngle -= 0x168;
+            }
             int nS3 = nAngle - 0xB4;
-            *(u_long128 *)vA = lit_00252690;
+            float vA[4] = {0.0f, 0.0f, 0.0002f, 2.0f};
             vA[0] = FastMath_IntCos180__Fi(nS3);
             vA[1] = FastMath_IntSin180__Fi(nS3);
-            *(u_long128 *)vB = lit_004D19C0;
+            float vB[4] = {0.0f, 0.0f, 0.0f, 0.0f};
             vB[0] = m_unk8458;
             vB[1] = m_unk845C;
             char *pPrevHi = pPrev + 0x20;

@@ -11,8 +11,15 @@ struct PScrollingTreeIds {
 };
 
 // Four floats copied from a literal; the third one steps down each CreateFloor iteration.
-struct PScrollingTreeQuad {
+// The q member is the same 16 bytes as one quadword copy.
+union PScrollingTreeQuad {
     float f[4];
+    u_long128 q;
+};
+
+// Four resource ids (16 bytes) indexed by the tree type in Create.
+struct PScrollingTreeTypeIds {
+    unsigned int v[4];
 };
 
 // One 0x10-byte record of the tree table at 0x34. The dtor frees the pointer at +0x4.
