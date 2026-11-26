@@ -1027,7 +1027,7 @@ int PSound::CheckAllChannelsMatchSub() {
 }
 
 // DRAFT: 0x001A5870 CheckOneChannelMatchSub__6PSoundFPQ26PSound19AmbientChannelState
-// note: DIFF 23: original has 5 nops after each inner-loop lw (ours 4), so the else branch and loop offsets are one word off; tried do-while and top-tested while forms.
+// note: DIFF 23: original has 5 nops after each inner-loop lw (ours 4), so the else branch and loop offsets are one word off; tried do-while and top-tested while forms. Under `// COMPILER: mwcps2-3.0-011126` (probe in src/scratch/PSound-d862789/probe/) it MATCHES, so the file's compiler is a coordinator decision.
 int PSound::CheckOneChannelMatchSub(AmbientChannelState *pState) {
     int nResult = 0;
     if (pState != 0) {
@@ -1600,7 +1600,7 @@ int PSound::PauseAllAmbientSounds() {
 }
 
 // DRAFT: 0x001A87E0 AddChanToMultipleResumes__6PSoundFUi
-// note: 17 words differ; pointer register allocation (original keeps &m_unkC0[idx] in a2, ours spills it to t0). Tried indexed form, shift-in-branch, if/else split, 1u literal, m_unkC0 + nIdx pointer (all 17 or worse).
+// note: 15 words differ; original keeps &m_unkC0[idx] in a2, ours spills it to t0 and computes this+idx*4 before adding 0xC0; lui at,1 fills the beqz slot in the original. Applied `nBit & *pWord` (17 to 16) and pWord declared before nBit (16 to 15). Flag store as this+nChan+0x1808C stays 15. Earlier tried: indexed form, shift-in-branch, if/else split, 1u literal, m_unkC0 + nIdx pointer, flag-base pointer (all 15 or worse).
 int PSound::AddChanToMultipleResumes(unsigned int nChan) {
     int nRet = 0;
     unsigned int nIdx = 0;
@@ -1609,9 +1609,9 @@ int PSound::AddChanToMultipleResumes(unsigned int nChan) {
         nShift -= 0x18;
         nIdx = 1;
     }
-    unsigned int nBit = 1u << nShift;
     unsigned int *pWord = &m_unkC0[nIdx];
-    if (*pWord & nBit) {
+    unsigned int nBit = 1u << nShift;
+    if (nBit & *pWord) {
         nRet = -1;
     }
     *pWord |= nBit;
@@ -1620,7 +1620,7 @@ int PSound::AddChanToMultipleResumes(unsigned int nChan) {
 }
 
 // DRAFT: 0x001A8850 AddChanToMultiplePauses__6PSoundFUi
-// note: 16 words differ; index*4 scaled before the shift, base 0xB8 added to a register, and the flag store uses a2 for the constant (original uses a0). Tried indexed, pointer, shift-in-var, signed index, flag-base pointer, base-cast pointer, (this+0xB8+nIdx*4) pointer (16, 16, 16, 16, 18, 16, 16).
+// note: 14 words differ; index*4 scaled before the shift, base 0xB8 added to a register, and the flag store uses a2 for the constant (original uses a0). Applied `nBit & *pWord` and pWord before nBit (16 to 14). Unsigned nIdx stays 14. Earlier tried: indexed, pointer, shift-in-var, flag-base pointer, base-cast pointer (14 to 18).
 int PSound::AddChanToMultiplePauses(unsigned int nChan) {
     int nRet = 0;
     int nIdx = 0;
@@ -1629,9 +1629,9 @@ int PSound::AddChanToMultiplePauses(unsigned int nChan) {
         nShift -= 0x18;
         nIdx = 1;
     }
-    unsigned int nBit = 1u << nShift;
     unsigned int *pWord = (unsigned int *)((char *)this + 0xB8) + nIdx;
-    if (*pWord & nBit) {
+    unsigned int nBit = 1u << nShift;
+    if (nBit & *pWord) {
         nRet = -1;
     }
     *pWord |= nBit;
@@ -1640,7 +1640,7 @@ int PSound::AddChanToMultiplePauses(unsigned int nChan) {
 }
 
 // DRAFT: 0x001A88C0 AddChanToMultipleStops__6PSoundFUi
-// note: 17 words differ; same shape as AddChanToMultiplePauses with base 0xB0 and a 0 flag store; see the Pauses note for the register and order differences.
+// note: 15 words differ; same shape as AddChanToMultiplePauses with base 0xB0 and a 0 flag store. Applied `nBit & *pWord` and pWord before nBit (17 to 15). Residual: pointer register choice and the this+idx*4 scaling order, as in Resumes.
 int PSound::AddChanToMultipleStops(unsigned int nChan) {
     int nRet = 0;
     unsigned int nIdx = 0;
@@ -1649,9 +1649,9 @@ int PSound::AddChanToMultipleStops(unsigned int nChan) {
         nShift -= 0x18;
         nIdx = 1;
     }
-    unsigned int nBit = 1u << nShift;
     unsigned int *pWord = (unsigned int *)((char *)this + 0xB0) + nIdx;
-    if (*pWord & nBit) {
+    unsigned int nBit = 1u << nShift;
+    if (nBit & *pWord) {
         nRet = -1;
     }
     *pWord |= nBit;
@@ -2106,7 +2106,7 @@ int PSound::SetStandardSecondaryMusicFileID(unsigned int id) {
 }
 
 // DRAFT: 0x001A9500 MusicSwitchToPrimary__6PSoundFUi
-// note: 24 words differ; original builds table as addiu v0,s1,0x70 + addu, compiler folds 0x70 into lw offset; first beqz also one insn shorter. Tried m_unk70[idx][0], char* table+idx<<5, pSlot struct, pBase+=0x70, int nRet=-1 (all 24)
+// note: 24 words differ; original builds table as sll; addiu v0,s1,0x70; addu; lw 0, one insn more than ours, which folds 0x70 into the lw offset, so later branches are one word off. Tried m_unk70[idx][0], char* table+idx<<5, pSlot struct, pBase+=0x70, int nRet=-1, separate char* pTable base, precomputed nOff local (all 24)
 int PSound::MusicSwitchToPrimary(unsigned int nArg) {
     if (m_unk1C < 0x21) {
         unsigned int idx = m_unk28;

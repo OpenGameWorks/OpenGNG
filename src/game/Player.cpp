@@ -1462,12 +1462,13 @@ void Player::SetAbility(int arg0, int arg1) {
     }
 }
 
-// DRAFT: 0x0015B2A0 ResurrectionMove__6PlayerFv
-// note: 23 words, size 0x64 vs 0x6c; original uses beqz with addiu v1,2 in delay slot and a shared b exit; if-body, if/else-return, goto and early-return forms all stay at 23 (bnez + nop).
+// FUNCTION: 0x0015B2A0 ResurrectionMove__6PlayerFv
 void Player::ResurrectionMove() {
-    if (m_unk250 == 0) {
-        m_unk250 = 2;
-        mEffectAPI__13EntityManager.CreateOneshot(0x81000038, 0x8200006D, (float (*)[4])((char *)m_unk3C + 0x80), (float (*)[4])((char *)m_unk3C + 0x90), 0, 0.5f, false, 0, false);
+    switch (m_unk250) {
+    case 0:
+            m_unk250 = 2;
+            mEffectAPI__13EntityManager.CreateOneshot(0x81000038, 0x8200006D, (float (*)[4])((char *)m_unk3C + 0x80), (float (*)[4])((char *)m_unk3C + 0x90), 0, 0.5f, false, 0, false);
+            break;
     }
 }
 
@@ -2588,7 +2589,7 @@ void Player::HammerDSlashMove() {
 }
 
 // DRAFT: 0x0015DAD0 HammerSlashMove__6PlayerFv
-// note: 63 words; cancel-path shape and slti/bnez at branch form at t>=0x33 differ (tried 65 flat, 68 nested)
+// note: 28 words (single-case switch on m_unk250); cancel-path shape and slti/bnez at branch form at t>=0x33 differ (tried 65 flat, 68 nested)
 void Player::HammerSlashMove() {
     static unsigned char HammerSlashMoves[3] = {0x00, 0x00, 0x45};
     int t;
@@ -2596,9 +2597,11 @@ void Player::HammerSlashMove() {
     int var_a1;
     int var_a1_2;
 
-    if (m_unk250 == 0) {
-        m_unk250 = 1;
-        m_unk270 = -1;
+    switch (m_unk250) {
+    case 0:
+            m_unk250 = 1;
+            m_unk270 = -1;
+            break;
     }
     t = (int)m_unk3C[13];
     if (t >= 0x33) {
@@ -2845,34 +2848,36 @@ void Player::AirOverheadMove() {
 }
 
 // DRAFT: 0x0015E350 JumpMove__6PlayerFv
-// note: 70 words differ. Original branches beqz to the body and b to the tail (ours bnez to tail); guard inversion and explicit goto fold back to bnez. Body loads and index-chain registers also differ (pVel computed after slti in original).
+// note: 66 words (single-case switch on m_unk250) differ. Original branches beqz to the body and b to the tail (ours bnez to tail); guard inversion and explicit goto fold back to bnez. Body loads and index-chain registers also differ (pVel computed after slti in original).
 void Player::JumpMove() {
-    if (m_unk250 == 0) {
-        m_unk250 = 1;
-        float *pVel = (float *)((char *)m_unk25C + m_unk268 * 8 + 0x3C);
-        int idx = 1;
-        if (m_unk1BC < 0x32) {
-            idx = 0;
-        } else if (m_unk1BC >= 0x4B) {
-            idx = 3;
-            if (m_unk1BC < 0x64) {
-                idx = 2;
+    switch (m_unk250) {
+    case 0:
+            m_unk250 = 1;
+            float *pVel = (float *)((char *)m_unk25C + m_unk268 * 8 + 0x3C);
+            int idx = 1;
+            if (m_unk1BC < 0x32) {
+                idx = 0;
+            } else if (m_unk1BC >= 0x4B) {
+                idx = 3;
+                if (m_unk1BC < 0x64) {
+                    idx = 2;
+                }
             }
-        }
-        float out[4];
-        out[1] = pVel[0];
-        float fScale = -*(float *)((char *)m_unk25C + 0x18 + idx * 8) * pVel[1];
-        if (m_unk23D1 != 0) {
-            out[1] *= SLOW_JUMP;
-        }
-        out[3] = 1.0f;
-        out[0] = fScale * FastMath_Sin180__Ff(m_unk1C4);
-        out[2] = fScale * FastMath_Cos180__Ff(m_unk1C4);
-        *(u_long128 *)m_unk38 = *(u_long128 *)out;
-        m_unk268 += 1;
-        if (m_unk38[0x42] & 0x200) {
-            ((EntityBaseClass *)this)->PlaySound(0xE5);
-        }
+            float out[4];
+            out[1] = pVel[0];
+            float fScale = -*(float *)((char *)m_unk25C + 0x18 + idx * 8) * pVel[1];
+            if (m_unk23D1 != 0) {
+                out[1] *= SLOW_JUMP;
+            }
+            out[3] = 1.0f;
+            out[0] = fScale * FastMath_Sin180__Ff(m_unk1C4);
+            out[2] = fScale * FastMath_Cos180__Ff(m_unk1C4);
+            *(u_long128 *)m_unk38 = *(u_long128 *)out;
+            m_unk268 += 1;
+            if (m_unk38[0x42] & 0x200) {
+                ((EntityBaseClass *)this)->PlaySound(0xE5);
+            }
+            break;
     }
     Physics *pPhys = (Physics *)m_unk38;
     pPhys->m_unk11C = Round180__Ff(m_unk1C4);
