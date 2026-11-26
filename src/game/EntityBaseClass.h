@@ -36,7 +36,12 @@ public:
     int ChangeDamageFxInterval(unsigned int arg0, float arg1);
     long long IsBGAnimating(unsigned int arg0);
     void TriggerBGAnim(unsigned int arg0, int arg1, bool arg2, unsigned int arg3, TriggerSystemWakeKillRec *arg4);
+    void TriggerBGAnim(unsigned int arg0, int arg1, bool arg2, unsigned int arg3);
     int MusicChangePrimary(unsigned int arg0, unsigned int arg1);
+    void MusicSwitchToPrimary(unsigned int arg0);
+    void MusicSwitchToSecondary(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3);
+    static void *ApparitionIsValid(unsigned int arg0);
+    static void *InstanceIsValid(unsigned int arg0);
     void UpdateSulphurFx(float arg0);
     void UpdateRipple(float arg0, unsigned int arg1, bool arg2);
     void FacePlayer(float arg0);

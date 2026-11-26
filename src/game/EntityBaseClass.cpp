@@ -17,6 +17,9 @@ public:
     void StopSoundsByOriginatorRef(unsigned int arg0, unsigned int arg1, unsigned int arg2);
     int PlaySoundWPitch(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4);
     int IsAmbientSoundByID(unsigned int arg0);
+    void MusicSwitchToPrimary(unsigned int arg0);
+    void MusicSwitchToSecondary(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3);
+    void StopSoundBySoundRef(unsigned int arg0);
     char _pad000[0x10];
 };
 extern PSound gSound;
@@ -194,6 +197,7 @@ extern PResourceManager *mpResMgr__15EntityBaseClass;
 class EntityAttackManager {
 public:
     void RequestAttack(EntityBaseClass *arg0, float arg1, unsigned int arg2, EntityBaseClass *arg3);
+    void NotifyAttackManager(EntityBaseClass *arg0);
     char _pad000[0x505C];
     EntityBaseClass *m_unk505C;
     char _pad5060[0x14];
@@ -214,6 +218,7 @@ public:
     void *FindTrigger(unsigned int arg0, int arg1);
     void *Spawn(unsigned int arg0, bool arg1, int arg2);
     void *GetPtrToApparition(unsigned int arg0);
+    void *GetPtrToInstance(unsigned int arg0);
     void RemoveFromRenderList(EntityBaseClass *arg0);
     void AddToRenderList(EntityBaseClass *arg0);
 };
@@ -806,6 +811,11 @@ void EntityBaseClass::TriggerBGAnim(unsigned int arg0, int arg1, bool arg2, unsi
     }
 }
 
+// FUNCTION: 0x0014B320 TriggerBGAnim__15EntityBaseClassFUiibUi
+void EntityBaseClass::TriggerBGAnim(unsigned int arg0, int arg1, bool arg2, unsigned int arg3) {
+    TriggerBGAnim(arg0, arg1, arg2, arg3, 0);
+}
+
 // FUNCTION: 0x0014B330 IsBGAnimating__15EntityBaseClassFUi
 long long EntityBaseClass::IsBGAnimating(unsigned int arg0) {
     PMNode *node = gEng.ptr->FindAnimNode(arg0);
@@ -1193,6 +1203,16 @@ int EntityBaseClass::MusicChangePrimary(unsigned int arg0, unsigned int arg1) {
     return gSound.PlayMusic(arg0) & 0xFF;
 }
 
+// FUNCTION: 0x0014C190 MusicSwitchToPrimary__15EntityBaseClassFUi
+void EntityBaseClass::MusicSwitchToPrimary(unsigned int arg0) {
+    gSound.MusicSwitchToPrimary(arg0);
+}
+
+// FUNCTION: 0x0014C1A0 MusicSwitchToSecondary__15EntityBaseClassFUiUiUiUi
+void EntityBaseClass::MusicSwitchToSecondary(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3) {
+    gSound.MusicSwitchToSecondary(arg0, arg1, arg2, arg3);
+}
+
 // FUNCTION: 0x0014C1B0 ResumeAmbientSoundsByObject__15EntityBaseClassFv
 void EntityBaseClass::ResumeAmbientSoundsByObject() {
     gSound.ResumeAmbientSoundsByOriginatorRef(m_unk04, 0x10U);
@@ -1211,6 +1231,11 @@ void EntityBaseClass::StopAmbientSoundsByObject() {
 // FUNCTION: 0x0014C210 StopAllSoundsByObject__15EntityBaseClassFv
 void EntityBaseClass::StopAllSoundsByObject() {
     gSound.StopSoundsByOriginatorRef(m_unk04, 0x10U, 3U);
+}
+
+// FUNCTION: 0x0014C230 StopSoundBySoundRef__15EntityBaseClassFUi
+void EntityBaseClass::StopSoundBySoundRef(unsigned int arg0) {
+    gSound.StopSoundBySoundRef(arg0);
 }
 
 // FUNCTION: 0x0014C240 PlaySoundUbiquitous__15EntityBaseClassFUi
@@ -1308,6 +1333,16 @@ post_combo:
     }
 }
 
+// FUNCTION: 0x0014C600 InstanceIsValid__15EntityBaseClassFUi
+void *EntityBaseClass::InstanceIsValid(unsigned int arg0) {
+    return ((EntityManager *)mpEntMgr__15EntityBaseClass)->GetPtrToInstance(arg0);
+}
+
+// FUNCTION: 0x0014C610 ApparitionIsValid__15EntityBaseClassFUi
+void *EntityBaseClass::ApparitionIsValid(unsigned int arg0) {
+    return ((EntityManager *)mpEntMgr__15EntityBaseClass)->GetPtrToApparition(arg0);
+}
+
 // DRAFT: 0x0014C620 FaceHitDirection__15EntityBaseClassFP15EntityBaseClass
 // note: 15 words differ; 57.295776f is pooled via gp where the original builds it inline (lui/ori/mtc1), the tail store order differs, and m_unk38 is not kept in s0. Tried: cached m_unk38 local (20 words, worse, reverted).
 void EntityBaseClass::FaceHitDirection(EntityBaseClass *arg0) {
@@ -1333,6 +1368,11 @@ void EntityBaseClass::FaceHitDirection(EntityBaseClass *arg0) {
             *(float *)((char *)this->m_unk38 + 0x11C) = Round180(ang);
         }
     }
+}
+
+// FUNCTION: 0x0014C6C0 RemoveFromAttackSystem__15EntityBaseClassFv
+void EntityBaseClass::RemoveFromAttackSystem() {
+    mpEntMgr__15EntityBaseClass->NotifyAttackManager(this);
 }
 
 // FUNCTION: 0x0014C6D0 GetDistFromPlayer__15EntityBaseClassFv
