@@ -795,11 +795,12 @@ void EffectAPI::Reset() {
     m_unk10 = 1;
 }
 
-// DRAFT: 0x157360 __ct__9EffectAPIFv
-// note: original keeps this in stack home 0x1C(sp) and never uses s0; compile saves s0 and uses it (9 differing lines). Tried (void*) casts (9 lines) and volatile local (15 lines).
-EffectAPI::EffectAPI() {
-    __ct__6PArrayFv(this);
-    Allocate__6PArrayFUi(this, 0x80);
+// FUNCTION: 0x157360 __ct__9EffectAPIFv
+extern "C" EffectAPI *__ct__9EffectAPIFv(EffectAPI *volatile pThis)
+{
+    __ct__6PArrayFv(pThis);
+    Allocate__6PArrayFUi(pThis, 0x80);
+    return pThis;
 }
 
 // FUNCTION: 0x157390 __dt__11PlingEffectFv

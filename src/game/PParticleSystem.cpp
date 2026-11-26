@@ -248,43 +248,44 @@ extern "C" PParticleSystem *__dt__15PParticleSystemFv(PParticleSystem *pThis, sh
     return pThis;
 }
 
-// DRAFT: 0x001B5220 __ct__15PParticleSystemFv
-// note: 89 words differ; size 0xe0 vs 0x168. Original spills this to 0x1C(sp) and reloads before each store (no s0 save, 0x20 frame); ours keeps this in a register. Tried: local guard object (88 words, but it drops the vtable store, so not kept).
-PParticleSystem::PParticleSystem() {
-    *(unsigned char **)this = __vt__15PParticleSystem;
-    sceVu0UnitMatrix(&m_unk40);
-    m_unk04 = 0;
-    m_unk08 = 0;
-    m_unk0C = 0;
-    m_unk10 = 0;
-    m_unk15 = 0;
-    m_unk14 = 0;
-    m_unkA0 = 0.0f;
-    m_unk16 = 0;
-    m_unk1C = 1;
-    m_unk30 = 0x44;
-    m_unkA4 = 1;
-    memset(&m_unk80, 0, 0x20);
-    m_unkA8 = -1;
-    m_unkB8 = 1.0f;
-    m_unkBC = 1.0f;
-    m_unkD0 = 0;
-    m_unkC0 = 1.0f;
-    m_unkC4 = 1.0f;
-    m_unkC8 = 1.0f;
-    m_unkCC = 1.0f;
-    m_unkAC = 0;
-    m_unkB0 = 0.0f;
-    m_unkB4 = 0.0f;
-    m_unk19 = 0;
-    m_unk28 = 0;
-    m_unk2C = 0;
-    m_unk1B = 0;
-    m_unk20 = 0;
-    m_unk24 = 0;
-    m_unkD4 = 2;
-    m_unk1A = 0;
-    m_unk18 = 0;
-    m_unk17 = 0;
-    m_unk1B = 0;
+// FUNCTION: 0x001B5220 __ct__15PParticleSystemFv
+extern "C" PParticleSystem *__ct__15PParticleSystemFv(PParticleSystem *volatile pThis)
+{
+    *(unsigned char **)pThis = __vt__15PParticleSystem;
+    sceVu0UnitMatrix(&pThis->m_unk40);
+    pThis->m_unk04 = 0;
+    pThis->m_unk08 = 0;
+    pThis->m_unk0C = 0;
+    pThis->m_unk10 = 0;
+    pThis->m_unk15 = 0;
+    pThis->m_unk14 = 0;
+    pThis->m_unkA0 = 0.0f;
+    pThis->m_unk16 = 0;
+    pThis->m_unk1C = 1;
+    pThis->m_unk30 = 0x44;
+    pThis->m_unkA4 = 1;
+    memset(&pThis->m_unk80, 0, 0x20);
+    pThis->m_unkA8 = -1;
+    pThis->m_unkB8 = 1.0f;
+    pThis->m_unkBC = 1.0f;
+    pThis->m_unkD0 = 0;
+    pThis->m_unkC0 = 1.0f;
+    pThis->m_unkC4 = 1.0f;
+    pThis->m_unkC8 = 1.0f;
+    pThis->m_unkCC = 1.0f;
+    pThis->m_unkAC = 0;
+    pThis->m_unkB0 = 0.0f;
+    pThis->m_unkB4 = 0.0f;
+    pThis->m_unk19 = 0;
+    pThis->m_unk28 = 0;
+    pThis->m_unk2C = 0;
+    pThis->m_unk1B = 0;
+    pThis->m_unk20 = 0;
+    pThis->m_unk24 = 0;
+    pThis->m_unkD4 = 2;
+    pThis->m_unk1A = 0;
+    pThis->m_unk18 = 0;
+    pThis->m_unk17 = 0;
+    pThis->m_unk1B = 0;
+    return pThis;
 }

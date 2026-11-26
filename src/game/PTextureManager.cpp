@@ -1213,24 +1213,25 @@ PTextureManager::~PTextureManager() {
     __dt__6PArrayFv((char *)this + 0x1DC, -1);
 }
 
-// DRAFT: 0x0018C720 __ct__15PTextureManagerFv
-// note: 48 words differ: this spilled to 0x1C(sp) and frame is 0x20 vs 0x40 (only s0 kept, orig s0..s2); member-address and pointer-local variants both 48 words
-PTextureManager::PTextureManager() {
-    __ct__6PArrayFv(&m_nDynCount);
-    __ct__6PArrayFv(&m_nRenderedCount);
-    m_unk4 = 0;
-    m_unk8 = 0;
-    m_unkC = 0;
-    memset(&m_aBuf0, 0, 0xDC);
-    memset(&m_aBuf1, 0, 0xDC);
-    m_pCurBuf = 0;
-    m_unk1D0 = 0;
-    m_unk1D4 = 0;
-    m_unk1D8 = 0;
-    m_unk0 = 0;
-    Allocate__6PArrayFUi(&m_nDynCount, 0x180);
-    Allocate__6PArrayFUi(&m_nRenderedCount, 0x40);
-    m_unk260 = 1;
+// FUNCTION: 0x0018C720 __ct__15PTextureManagerFv
+extern "C" PTextureManager *__ct__15PTextureManagerFv(PTextureManager *volatile pThis)
+{
+    __ct__6PArrayFv(&pThis->m_nDynCount);
+    __ct__6PArrayFv(&pThis->m_nRenderedCount);
+    pThis->m_unk4 = 0;
+    pThis->m_unk8 = 0;
+    pThis->m_unkC = 0;
+    memset(&pThis->m_aBuf0, 0, 0xDC);
+    memset(&pThis->m_aBuf1, 0, 0xDC);
+    pThis->m_pCurBuf = 0;
+    pThis->m_unk1D0 = 0;
+    pThis->m_unk1D4 = 0;
+    pThis->m_unk1D8 = 0;
+    pThis->m_unk0 = 0;
+    Allocate__6PArrayFUi(&pThis->m_nDynCount, 0x180);
+    Allocate__6PArrayFUi(&pThis->m_nRenderedCount, 0x40);
+    pThis->m_unk260 = 1;
+    return pThis;
 }
 
 // FUNCTION: 0x0018C7F0 InitProcedural__8PTextureFv

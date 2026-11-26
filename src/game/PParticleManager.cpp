@@ -1805,40 +1805,41 @@ PParticleManager::~PParticleManager() {
     __dt__6PArrayFv(this, -1);
 }
 
-// DRAFT: 0x001BAF70 __ct__16PParticleManagerFv
-// note: original spills this to 0x1C(sp) and reloads per call (embedded dtor-bearing members PArray/PParticleRipples/PFlashScreen/PFireDamageFx at 0x00..0x2088); header keeps raw fields, so we get s0..s4 saves, 0x60 frame, DIFF 91 words. Tried: 1 variant (cast-based calls).
-PParticleManager::PParticleManager() {
-    __ct__6PArrayFv(this);
-    __ct__6PArrayFv((char *)this + 0x10);
-    __ct__6PArrayFv((char *)this + 0x20);
-    __ct__12PFlashScreenFv((char *)this + 0x6B0);
-    __ct__16PParticleRipplesFv((char *)this + 0xED0);
-    __ct__16PParticleRipplesFv((char *)this + 0x1790);
-    __ct__6PArrayFv((char *)this + 0x2068);
-    __ct__6PArrayFv((char *)this + 0x2078);
-    __ct__13PFireDamageFxFv((char *)this + 0x2088);
+// FUNCTION: 0x001BAF70 __ct__16PParticleManagerFv
+extern "C" PParticleManager *__ct__16PParticleManagerFv(PParticleManager *volatile pThis)
+{
+    __ct__6PArrayFv(pThis);
+    __ct__6PArrayFv((char *)pThis + 0x10);
+    __ct__6PArrayFv((char *)pThis + 0x20);
+    __ct__12PFlashScreenFv((char *)pThis + 0x6B0);
+    __ct__16PParticleRipplesFv((char *)pThis + 0xED0);
+    __ct__16PParticleRipplesFv((char *)pThis + 0x1790);
+    __ct__6PArrayFv((char *)pThis + 0x2068);
+    __ct__6PArrayFv((char *)pThis + 0x2078);
+    __ct__13PFireDamageFxFv((char *)pThis + 0x2088);
     void *pRes = __nw__FUi(0xD0);
     if (pRes != 0) {
         pRes = __ct__16PResourceManagerFv(pRes);
     }
-    m_unk40 = pRes;
-    if (m_unk40 == 0) {
+    pThis->m_unk40 = pRes;
+    if (pThis->m_unk40 == 0) {
         CdsAssert("PParticleManager.cpp", 0x5F, "mpFxResMgr");
     }
-    Allocate__6PArrayFUi(this, 0x12C);
-    Allocate__6PArrayFUi((char *)this + 0x10, 0x12C);
-    Allocate__6PArrayFUi((char *)this + 0x20, 0x100);
-    Allocate__6PArrayFUi((char *)this + 0x2068, 0x40);
-    Allocate__6PArrayFUi((char *)this + 0x2078, 0x20);
-    *(int *)((char *)this + 0x44) = 0;
-    m_unk9B4 = 0;
-    m_pRain = 0;
-    m_unk9B0 = 0;
-    m_unkEC0 = 0;
-    m_unk2060 = 0;
-    m_unk2064 = 0;
-    memset((char *)this + 0x208C, 0, 0x30);
-    memset((char *)this + 0x20BC, 0, 0x20);
-    memset((char *)this + 0x20DC, 0, 0x20);
-    m_unk670 = 0;
+    Allocate__6PArrayFUi(pThis, 0x12C);
+    Allocate__6PArrayFUi((char *)pThis + 0x10, 0x12C);
+    Allocate__6PArrayFUi((char *)pThis + 0x20, 0x100);
+    Allocate__6PArrayFUi((char *)pThis + 0x2068, 0x40);
+    Allocate__6PArrayFUi((char *)pThis + 0x2078, 0x20);
+    *(int *)((char *)pThis + 0x44) = 0;
+    pThis->m_unk9B4 = 0;
+    pThis->m_pRain = 0;
+    pThis->m_unk9B0 = 0;
+    pThis->m_unkEC0 = 0;
+    pThis->m_unk2060 = 0;
+    pThis->m_unk2064 = 0;
+    memset((char *)pThis + 0x208C, 0, 0x30);
+    memset((char *)pThis + 0x20BC, 0, 0x20);
+    memset((char *)pThis + 0x20DC, 0, 0x20);
+    pThis->m_unk670 = 0;
+    return pThis;
 }

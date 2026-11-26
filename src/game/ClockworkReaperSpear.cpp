@@ -239,24 +239,25 @@ void ClockworkReaperSpear::Execute() {
     }
 }
 
-// DRAFT: 0x001F0D40 __ct__20ClockworkReaperSpearFv
-// note: 51 words differ; the original spills this to 0x2C(sp) and saves only s0, ours keeps this in s0 and saves s1. Tried -Cpp_exceptions on, new Physics, and a Physics dtor declaration; none changed the count.
-ClockworkReaperSpear::ClockworkReaperSpear() {
-    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 5, 1);
-    m_unk0 = __vt__20ClockworkReaperSpear;
-    m_unk1D4 = 0;
+// FUNCTION: 0x001F0D40 __ct__20ClockworkReaperSpearFv
+extern "C" ClockworkReaperSpear *__ct__20ClockworkReaperSpearFv(ClockworkReaperSpear *volatile pThis)
+{
+    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(pThis, 5, 1);
+    pThis->m_unk0 = __vt__20ClockworkReaperSpear;
+    pThis->m_unk1D4 = 0;
     void *pPhys = __nw__FUi(0x120);
     if (pPhys != 0) {
         pPhys = __ct__7PhysicsFv(pPhys);
     }
-    m_unk38 = pPhys;
-    if (m_unk38 == 0) {
+    pThis->m_unk38 = pPhys;
+    if (pThis->m_unk38 == 0) {
         CdsAssert__FPciPc("ClockworkReaperSpear.cpp", 0x22, "mpPhysics");
     }
-    unsigned char *pInfo = (unsigned char *)m_unk38 + 0xA0;
+    unsigned char *pInfo = (unsigned char *)pThis->m_unk38 + 0xA0;
     if (pInfo == 0) {
         CdsAssert__FPciPc("ClockworkReaperSpear.cpp", 0x25, "pInfo");
     }
     *(unsigned int *)(pInfo + 0x4C) &= ~0x80;
-    EnableSleep__15EntityBaseClassFbb(this, 0, 0);
+    EnableSleep__15EntityBaseClassFbb(pThis, 0, 0);
+    return pThis;
 }

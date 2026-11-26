@@ -97,11 +97,11 @@ int Pickup::SoulSuckerInRange() {
 }
 
 // DRAFT: 0x0019D0D0 AdjustPickupBox__6PickupFv
-// note: 21-word diff; original enters the loop with a `b` to the bottom test that for-loop, do-while and while forms do not emit (constant 0<1 folded); outer pNode and byte-offset induction variants tried too.
+// note: 21-word diff; original enters the loop with a `b` to the bottom test (s0 = 0 in the delay slot) and bumps the offset s1 before the count s0; ours puts the s1 add in the bottom branch's delay slot. Tried: signed/unsigned i (unsigned matches beqz), byte-offset induction in header or body end, for-header increment order; all 21.
 void Pickup::AdjustPickupBox() {
     static unsigned int MeshTable[1] = { 0x810000A2 };
     PMNode *pNode;
-    int i;
+    unsigned int i;
     for (i = 0; i < 1; i++) {
         pNode = mpResMgr__15EntityBaseClass->GetResource(MeshTable[i], true);
         if (pNode != 0) {
