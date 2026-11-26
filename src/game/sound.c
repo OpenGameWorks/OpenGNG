@@ -165,17 +165,20 @@ void SOUND_MusicAddExciteHits(short arg0) {
 void SOUND_LevelRestart(void) {
     int i;
     char *p;
+    char *base;
     SetIOPCommand(0x24, 0);
     i = 6;
     do {
-        SOUND_SPUKeyStatus[i + 0] = 0;
-        SOUND_SPUKeyStatus[i + 1] = 0;
-        SOUND_SPUKeyStatus[i + 2] = 0;
-        SOUND_SPUKeyStatus[i + 3] = 0;
-        SOUND_SPUKeyStatus[i + 4] = 0;
-        SOUND_SPUKeyStatus[i + 5] = 0;
-        SOUND_SPUKeyStatus[i + 6] = 0;
-        SOUND_SPUKeyStatus[i + 7] = 0;
+        base = SOUND_SPUKeyStatus;
+        p = base + i;
+        p[0] = 0;
+        p[1] = 0;
+        p[2] = 0;
+        p[3] = 0;
+        p[4] = 0;
+        p[5] = 0;
+        p[6] = 0;
+        p[7] = 0;
         i += 8;
     } while (i < 8);
     if (i < 0x10) {
@@ -338,7 +341,7 @@ int SOUND_CountFreeSPUChannels(unsigned int arg0, unsigned int arg1) {
         if (base[i] == 0) {
             count += 1;
         }
-        i += 1;
+        i++;
     } while (arg1 >= i);
     return count;
 }
