@@ -238,7 +238,7 @@ void CameraFollow::ResetAfterReposition() {
 }
 
 // DRAFT: 0x00173D20 ForceReset__12CameraFollowFb
-// note: 28 lines; original copies by-value PVec3 temps to sp+0x20/0x30/0x40 with lwc1/swc1 pairs in a different order. Tried: empty copy ctor (43), no copy ctor (breaks 4 matches), copy ctor with body plus explicit locals (28), direct args (34).
+// note: 28 words differ; original copies by-value PVec3 temps to sp+0x20/0x30/0x40 with lwc1/swc1 pairs in a different order. Tried: empty copy ctor (43), no copy ctor (breaks 4 matches), copy ctor with body plus explicit locals (28), direct args (34), tmp1 as PodVec3 copy (45), both temps as PodVec3 copies (51).
 void CameraFollow::ForceReset(bool arg0) {
     if (arg0) {
         *(int *)&m_unk10[0] = 0;
@@ -541,7 +541,7 @@ void CameraFollow::ProcessRightAnalogue() {
 }
 
 // DRAFT: 0x00174A40 AddTwistEffect__12CameraFollowFv
-// note: 42 words differ; original builds float literals with lui/ori/mtc1 (0.01f hoisted to v1 before the saves, 0.15f and 180.0f inline), draft loads them from $gp pool with lwc1; the mul/add operand order also differs
+// note: 30 words differ; prologue and the 0.01f compare match. In the t = m_unk124 + 0.15f * m_unk16C block the original holds m_unk16C in f2, 0.15f in f3, m_unk124 in f1 (ours f1/f2/f3 in that order) and has no nop before mul.s, so the branch and store shift by one word. Tried: product written as m_unk16C * 0.15f (30), product in its own local (30), 0.15f in a named local (30), t = m_unk124 then t = t + 0.15f * m_unk16C (30).
 void CameraFollow::AddTwistEffect() {
     if (!(m_unk170 <= 0.01f)) {
         float t = m_unk124 + 0.15f * m_unk16C;
@@ -872,15 +872,9 @@ float CameraFollow::GetAngleBetweenCamAndPlayer(float &arg0) {
 }
 
 // DRAFT: 0x00175830 PlayerIsIdle__12CameraFollowFv
-// note: 23 lines with block-scope int abs(int) decl (27 without); remaining diff is the 0.01f literal (gp pool lwc1 vs lui/ori/mtc1) and branch layout around the abs calls; abs(signed char) and dont_inline did not stop abs inlining.
+// note: 11 words differ; && of the two abs tests and the 0.01f compare with block-scope int abs(int) decl. Remaining diff is branch layout: original is c.le.s; bc1t exit with addiu v0,1 in the delay slot and a shared daddu v0,0 fallthrough, ours is bc1f with the return-0 block before the epilogue. Tried: int ret local (30), if/else returns (12), !(x > y) bool (13), bool return (13); abs(signed char) and dont_inline did not stop abs inlining.
 int CameraFollow::PlayerIsIdle() {
-    if (abs(m_unk1B8) >= 0x33) {
-        return 0;
-    }
-    if (abs(m_unk1B9) >= 0x33) {
-        return 0;
-    }
-    if (m_unk1A0 <= 0.01f) {
+    if (abs(m_unk1B8) < 0x33 && abs(m_unk1B9) < 0x33 && m_unk1A0 <= 0.01f) {
         return 1;
     }
     return 0;
