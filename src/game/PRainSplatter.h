@@ -13,7 +13,12 @@ public:
     int Create(int nCount, float *pPos);
     ~PRainSplatter();
 
+    // Embedders (PParticleRain) store their vtable pointer by hand before calling this
+    // constructor, so only the defining unit declares it; elsewhere the member stays
+    // trivially constructible and the embedder calls __ct__13PRainSplatterFv itself.
+#ifdef PRAINSPLATTER_DEFINE_CTOR
     PRainSplatter();
+#endif
     void *m_unk00;              // 0x000 particle output array from AllocParticles
     int m_unk04;                // 0x004 element count
     void *m_unk08;              // 0x008 element array, 0x10 bytes per element

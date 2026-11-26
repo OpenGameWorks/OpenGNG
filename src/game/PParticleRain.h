@@ -23,6 +23,7 @@ public:
     ~PParticleRain();
 
     void RenderQuadrant(unsigned int nIndex);
+    void InitParticles();
     void SetNumRainParticles(unsigned int nNum);
     void Render();
     void SetLightningDensity(float fDensity);

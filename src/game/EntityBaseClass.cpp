@@ -1160,8 +1160,7 @@ void EntityBaseClass::EnableSleep(bool bA, bool bB) {
     *(unsigned char *)((char *)this + 0x1D) = bB;
 }
 
-// DRAFT: 0x0014C010 ProcessMeshFade__15EntityBaseClassFv
-// note: 9 words differ; original keeps clamp sum in v1 (addu v1,a1,v1) and orders clamp as bgez then slti. Tried: block-scope v, operand swap (worse), short v (worse), separate int temp (same).
+// FUNCTION: 0x0014C010 ProcessMeshFade__15EntityBaseClassFv
 void EntityBaseClass::ProcessMeshFade() {
     float temp;
 
@@ -1173,10 +1172,10 @@ void EntityBaseClass::ProcessMeshFade() {
             this->m_unk170 = temp - dt;
             this->m_unk174 += this->m_unk16C * dt;
             v = this->m_unk168 + (int)this->m_unk174;
-            if (v >= 0x81) {
-                v = 0x80;
-            } else if (v < 0) {
+            if (v < 0) {
                 v = 0;
+            } else if (v > 0x80) {
+                v = 0x80;
             }
             this->m_unkD2 = v;
             return;
@@ -1848,7 +1847,7 @@ int EntityBaseClass::FindCollision(EntityBaseClass *arg0) {
 }
 
 // DRAFT: 0x0014D7E0 ResetCollisions__15EntityBaseClassFv
-// note: 6 words differ; original keeps a carried byte offset in the remainder loop and has an extra nop before its loop test (size 0x6c vs 0x68). Tried: simple loop, unroll-by-8 with i<10 loop, separate offset, unsigned counter, while and for remainder forms.
+// note: DIFF 11 words, size 0x70 vs 0x6c; original keeps a carried byte offset in the remainder loop and has an extra nop before its loop test. Tried: simple loop, unroll-by-8 with i<10 loop, separate offset, unsigned counter, while and for remainder forms, goto orderings C/D/E, pointer temp, for-increment, int offset, COMPILER mwcps2-3.0-011126 (size 0x70, delay slot differs).
 void EntityBaseClass::ResetCollisions() {
     unsigned int i;
     unsigned int off;
@@ -1875,8 +1874,7 @@ void EntityBaseClass::ResetCollisions() {
     }
 }
 
-// DRAFT: 0x0014D850 UpdateShadowVolume__15EntityBaseClassFv
-// note: 12 words differ; original tail-merges the two SetShadowVolume arms into one jal with 0.4f built by lui/ori/mtc1 (ours pools 0.4f and calls twice). Tried: if/else with local scale, ternary, flipped branch, per-arm calls (best, 12 words; 15 for the others).
+// FUNCTION: 0x0014D850 UpdateShadowVolume__15EntityBaseClassFv
 void EntityBaseClass::UpdateShadowVolume() {
     float (*mtx)[4];
 
@@ -1885,11 +1883,7 @@ void EntityBaseClass::UpdateShadowVolume() {
     } else {
         mtx = (float (*)[4])((char *)this + 0x190);
     }
-    if (mBGCollision__15EntityBaseClass.CheckCeiling(mtx) != 0) {
-        this->SetShadowVolume(0.4f);
-    } else {
-        this->SetShadowVolume(1.0f);
-    }
+    this->SetShadowVolume(mBGCollision__15EntityBaseClass.CheckCeiling(mtx) != 0 ? 0.4f : 1.0f);
 }
 
 // FUNCTION: 0x0014D8C0 SetShadowVolume__15EntityBaseClassFf
@@ -1968,16 +1962,17 @@ void EntityBaseClass::AddToBGAnimList() {
 }
 
 // DRAFT: 0x0014DAA0 WriteApparitionData__15EntityBaseClassFicUi
-// note: DIFF 55 words; gate/tally block order and tail (sw before b, ld ra in delay slot) differ. Tried goto-done (74), tally-first (73), early returns (55).
+// note: DIFF 8 words; 0x59A0 store folds arg2 first (addiu a0,s0) and the tally tail sign-extends arg1 before the arg1==0 test (orig beqz s1 raw). Gate as goto-check matches. Tried pointer temp for store (worse), wrapped tail (worse), !arg1 (same), printf-first (same).
 void EntityBaseClass::WriteApparitionData(int arg0, char arg1, unsigned int arg2) {
     char *slot;
     if (m_unk18 == 0 && arg2 == 0) {
-        if (arg0 == 0) {
-            if (m_unk10 == 3) {
-                *(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5B4C) += 1;
-            }
+        if (arg0 != 0) {
             return;
         }
+        if (m_unk10 == 3) {
+            *(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5B4C) += 1;
+        }
+        return;
     } else {
         if (!(arg0 < 4)) {
             CdsAssert__FPciPc("EntityBaseClass.cpp", 0x3AB, "iOffset < STATIC_APPARITION_DATA_SIZE");
@@ -1992,7 +1987,7 @@ void EntityBaseClass::WriteApparitionData(int arg0, char arg1, unsigned int arg2
     }
     if (arg0 >= 0) {
         slot[arg0] = arg1;
-        if (arg1 == -2 && arg0 == 1) {
+        if (arg1 != -2 || arg0 != 1) {
             goto check;
         }
     }

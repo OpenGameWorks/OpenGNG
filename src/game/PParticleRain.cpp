@@ -17,6 +17,24 @@ extern "C" void __ct__13PRainSplatterFv(void *pThis);
 extern "C" void __dla__FPv(void *pBlock);
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
+float FastMath_Fabs(float f);
+
+// One quadrant of the rain volume, 0x50 bytes apart from 0x120: the box spawns particles [m_nStart, m_nEnd).
+struct PRainBox {
+    char _pad000[0x120];
+    float m_fMin[4];            // 0x120
+    float m_fMax[4];            // 0x130
+    unsigned int m_nStart;      // 0x140
+    unsigned int m_nEnd;        // 0x144
+};
+
+#define m_pParts ((PRainParticle *)m_unk248)
+struct PRainParticle {
+    float m_fPos[4];
+    float m_fVel[4];
+};
+#define PR_STEP() (m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3)
+#define PR_RND() (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF))
 
 // FUNCTION: 0x001CC100 FrustrumTest__13PParticleRainFP9PFrustrumPfff
 void PParticleRain::FrustrumTest(PFrustrum *, float *, float, float) {
@@ -32,6 +50,42 @@ void PParticleRain::RenderQuadrant(unsigned int nIndex) {
     void *pBuf = m_unk248;
     unsigned int nCount = *(unsigned int *)((char *)this + 0x148 + nOff);
     DrawFxLines__10PGfxEngineFP11tagVuFxLineiffb(gGfxEng, (char *)pBuf + (nStart << 5), nCount, 0.0f, 128.0f, 1);
+}
+
+// DRAFT: 0x001CC3B0 InitParticles__13PParticleRainFv
+// note: order matches; FP and saved-register numbering differ (constant in f0 and box pointers in s3..s5 in the original). Tried macro, inline RNG, hi/lo/range temporaries.
+void PParticleRain::InitParticles() {
+    unsigned int q;
+    for (q = 0; q < 4; q++) {
+        PRainBox *pBox = (PRainBox *)((char *)this + q * 0x50);
+        float &fMaxZ = pBox->m_fMax[2];
+        float &fMinZ = pBox->m_fMin[2];
+        FastMath_Fabs(fMaxZ - fMinZ);
+        unsigned int i;
+        for (i = pBox->m_nStart; i < pBox->m_nEnd; i++) {
+            float fHi = pBox->m_fMax[0];
+            float fLo = pBox->m_fMin[0];
+            float fRange = fHi - fLo;
+            PR_STEP();
+            m_pParts[i].m_fPos[0] = fLo + fRange * PR_RND();
+            m_pParts[i].m_fPos[1] = pBox->m_fMax[1];
+            fHi = fMaxZ;
+            fLo = fMinZ;
+            fRange = fHi - fLo;
+            PR_STEP();
+            m_pParts[i].m_fPos[2] = fLo + fRange * PR_RND();
+            fHi = ((float *)m_unkE0)[6];
+            fLo = ((float *)m_unkE0)[5];
+            fRange = fHi - fLo;
+            PR_STEP();
+            m_pParts[i].m_fPos[3] = fLo + fRange * PR_RND();
+            m_pParts[i].m_fVel[0] = ((float *)m_unkE0)[0];
+            m_pParts[i].m_fVel[1] = ((float *)m_unkE0)[1];
+            m_pParts[i].m_fVel[2] = ((float *)m_unkE0)[2];
+            PR_STEP();
+            m_pParts[i].m_fVel[3] = 0.3f + 0.14999998f * PR_RND();
+        }
+    }
 }
 
 // DRAFT: 0x001CC5F0 SetNumRainParticles__13PParticleRainFUi

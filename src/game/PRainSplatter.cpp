@@ -1,4 +1,5 @@
 #include "types.h"
+#define PRAINSPLATTER_DEFINE_CTOR
 #include "PRainSplatter.h"
 
 // TODO(header): foreign declarations

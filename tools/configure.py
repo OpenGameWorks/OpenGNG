@@ -9,6 +9,7 @@ when the rebuilt executable's SHA-1 equals config/SLUS_207.22.sha1.
 
 from __future__ import annotations
 
+import re
 import shlex
 import sys
 from pathlib import Path
@@ -16,6 +17,28 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import srcmeta  # noqa: E402
+
+
+INCLUDE = re.compile(r'^\s*#\s*include\s+"([^"]+)"', re.M)
+INCDIRS = (ROOT / "src/game", ROOT / "include")
+
+
+def headers(src: Path, seen: set[Path] | None = None) -> set[Path]:
+    """Every quoted header src reaches, so an edited header recompiles its users.
+
+    Without these implicit inputs ninja keeps objects built against the old
+    header, and the link and regression checks then verify stale code."""
+    seen = set() if seen is None else seen
+    for name in INCLUDE.findall(src.read_text(errors="replace")):
+        for d in (src.parent, *INCDIRS):
+            h = d / name
+            if h.is_file():
+                h = h.resolve()
+                if h not in seen:
+                    seen.add(h)
+                    headers(h, seen)
+                break
+    return seen
 
 
 def main() -> int:
@@ -38,11 +61,14 @@ def main() -> int:
         "  description = CHECK $in",
     ]
     objs, pairs = [], []
+    allhdrs: set[str] = set()
     for s in srcs:
         rel = s.relative_to(ROOT)
         o = Path("build/obj") / rel.with_suffix(".o")
         args = " ".join(shlex.quote(a) for a in srcmeta.compile_args(s))
-        lines += [f"build {o}: cc {rel} | tools/mwcc.py tools/srcmeta.py", f"  args = {args}"]
+        hdrs = sorted(str(h.relative_to(ROOT)) for h in headers(s))
+        allhdrs.update(hdrs)
+        lines += [f"build {o}: cc {rel} | tools/mwcc.py tools/srcmeta.py {' '.join(hdrs)}".rstrip(), f"  args = {args}"]
         objs.append(str(o))
         pairs.append(f"{o}:{rel}")
     # Unmatched units keep the original bytes, read from the executable tools/setup.py extracts.
@@ -72,7 +98,7 @@ def main() -> int:
         "  description = CONFIGURE",
         "  generator = 1",
         "build build.ninja: configure | tools/configure.py tools/srcmeta.py "
-        + " ".join(str(s.relative_to(ROOT)) for s in srcs),
+        + " ".join([*(str(s.relative_to(ROOT)) for s in srcs), *sorted(allhdrs)]),
     ]
     lines.append("default " + " ".join(default))
     (ROOT / "build.ninja").write_text("\n".join(lines) + "\n")
