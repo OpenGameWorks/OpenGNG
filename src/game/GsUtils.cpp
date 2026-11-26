@@ -369,10 +369,11 @@ void GsDumpFrameBuffersAsBmp(int nA, int nB) {
 }
 
 // DRAFT: 0x0017E560 GsInitClearPacket__FP17tagGsClearSpritesiiccccb
-// note: first C draft from asm; header words, RGBAQ and loop not yet compared
+// note: 134 differing words, size 0x28C vs 0x2B4; RGBAQ sign-extension order and per-entry RMW/sd order differ. Tried: nSize declared before nCount (140->134), loop RMW mask 0xFFFFFFFF (134, reverted); unused nHdr kept
 int GsInitClearPacket(tagGsClearSprites *pPacket, int nW, int nH, char cR, char cG, char cB, char cA, bool bFlag) {
+    int nSize;
     int nCount = nW / 32;
-    int nSize = 0x460 - ((0x20 - nCount) << 5);
+    nSize = 0x460 - ((0x20 - nCount) << 5);
     unsigned char *pB = (unsigned char *)pPacket;
     unsigned long long nRgbaq;
     unsigned short nHdr;
@@ -385,12 +386,12 @@ int GsInitClearPacket(tagGsClearSprites *pPacket, int nW, int nH, char cR, char 
     *(u_long128 *)pPacket = 0;
 
     nRgbaq = (unsigned long long)(long long)cR | ((unsigned long long)(long long)cG << 8) | ((unsigned long long)(long long)cB << 16) | ((unsigned long long)(long long)cA << 24) | ((unsigned long long)0x3F800000 << 32);
+    GifTag *pTag = (GifTag *)pPacket;
+    pTag->NLOOP = (nCount << 1) + 5;
+    pTag->EOP = 1;
+    pTag->NREG = 1;
+    pTag->REGS0 = 0xE;
 
-    nHdr = *(unsigned short *)pPacket;
-    *(unsigned short *)pPacket = (nHdr & 0x8000) | (((nCount << 1) + 5) & 0x7FFF);
-    pB[1] = (pB[1] & 0x7F) | 0x80;
-    pB[7] = (pB[7] & 0x0F) | 0x10;
-    pB[8] = (pB[8] & 0xF0) | 0x0E;
 
     *(unsigned long long *)(pB + 0x30) = 0x30000;
     *(unsigned long long *)(pB + 0x38) = 0x47;
@@ -452,19 +453,19 @@ void GsSetSpriteCoords(sprite_tag *pSprite, short nX0, short nX1, short nX2, sho
 }
 
 // DRAFT: 0x0017E920 GsInitTexturedFogSprite__FP26tagTexturedFogSpritePacketcccUi
-// note: first C draft from asm; header/byte RMW, fixed stores, PAL float init and 20-step loop written, not yet compared
+// note: 151 differing words; header is GifTag bitfield writes (159->151); prologue, a2/cG sign-extension order, PAL arm order (MODE_PAL==0 first, no change), 0x3F80 constant placement and per-entry loop still differ. Tried: nRGB before nZHi (no change), cG-first OR (152)
 void GsInitTexturedFogSprite(tagTexturedFogSpritePacket *pPacket, char cR, char cG, char cB, unsigned int nZ) {
     float aSrc[4];
     int aDst[4];
     unsigned long long nZHi = (unsigned long long)nZ << 32;
     long long nRGB = (long long)cR | ((long long)cG << 8) | ((long long)cB << 16) | 0x3F80000080000000LL;
     *(u_long128 *)pPacket = 0;
-    unsigned short nHdr = *(unsigned short *)pPacket;
-    *(unsigned short *)pPacket = (nHdr & 0x8000) | 0x54;
+    GifTag *pTag = (GifTag *)pPacket;
+    pTag->NLOOP = 0x54;
+    pTag->EOP = 1;
+    pTag->NREG = 1;
+    pTag->REGS0 = 0xE;
     unsigned char *pB = (unsigned char *)pPacket;
-    pB[1] = (pB[1] & 0x7F) | 0x80;
-    pB[7] = (pB[7] & 0x0F) | 0x10;
-    pB[8] = (pB[8] & 0xF0) | 0x0E;
     *(long long *)(pB + 0x10) = 0x70000;
     *(long long *)(pB + 0x18) = 0x47;
     *(long long *)(pB + 0x30) = 0x156;
@@ -535,7 +536,7 @@ void GsInitFogSprite(tagFogSpritePacket *pPacket, char cR, char cG, char cB, uns
 }
 
 // DRAFT: 0x0017ED70 GsInitMoveRG2BAPacket__FP19tagMoveRgToBaPacketssss
-// note: DIFF 216 words, size 0x370 vs 0x390; prologue spill order and nD sign-extension (s5), constant-store order and per-use SCREEN_* reloads differ. Tried: locals removed (227->216), (short) casts on nD (220, reverted).
+// note: 216 differing words, size 0x370 vs 0x390; prologue spill order and nD sign-extension (s5), constant-store order and per-use SCREEN_* reloads differ. Tried: locals removed (227->216), (short) casts on nD (220, reverted).
 void GsInitMoveRG2BAPacket(tagMoveRgToBaPacket *pPacket, short nA, short nB, short nC, short nD) {
     int nBlk8 = SCREEN_WIDTH / 8;
     int nX = 0;

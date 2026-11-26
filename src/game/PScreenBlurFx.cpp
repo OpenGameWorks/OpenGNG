@@ -2,6 +2,11 @@
 #include "types.h"
 #include "PScreenBlurFx.h"
 
+// GIF PACKED-mode ST and XYZ2 entries (eestruct.h sceGifPackSt / sceGifPackXyz); a strip step writes a top and a bottom vertex.
+typedef struct { float S; float T; float Q; unsigned int pad96; } sceGifPackSt;
+typedef struct { int X; int Y; unsigned int Z; unsigned int pad96:15; unsigned int ADC:1; unsigned int pad112:16; } sceGifPackXyz;
+struct tagBlurVertPair { sceGifPackSt st0; sceGifPackXyz xyz0; sceGifPackSt st1; sceGifPackXyz xyz1; };
+
 // TODO(header): foreign declarations
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void __dl__FPv(void *);
@@ -80,44 +85,35 @@ void PScreenBlurFx::WobbleSTGrids(tagGsScreenBlurPacket *pPacket, float fAngle) 
 }
 
 // DRAFT: 0x00216720 InitBlurStrip__13PScreenBlurFxFP12tagBlurStripcssssfbff
-// note: 69 words differ; the sC/sA temporaries get a0/v1 (original v1/a0), nX lands in a3 (original a1), and the prologue frame and save layout differ. Tried: float-first, int-first, shift instead of multiply, readonly flag.
+// note: 42 words differ; packed ST/XYZ form matches the instruction sequence, but loop counters and hoisted Y values take swapped temporaries (original i/offset in v1/a0, ours t3/t4). Declaration-order permutations all 42.
 void PScreenBlurFx::InitBlurStrip(tagBlurStrip *pStrip, char cA, short sA, short sB, short sC, short sD, float fA, bool bFlag, float fB, float fC) {
     if (pStrip == 0) {
         CdsAssert__FPciPc("PScreenBlurFx.cpp", 0xF7, "pStrip");
     }
-    int nStepX = sC << 4;
     int nX = sA << 4;
+    int nStep = sC << 4;
+    float fAcc = 0.0f;
     float fStep = fB / 33.0f;
     float fEdge = fA + fC / 16.0f;
-    int nW = sB << 4;
-    int nWW = (sB + sD) * 0x10;
-    float fAcc = 0.0f;
-    char *pBase = (char *)pStrip;
-    int nOff = 0;
-    int i = 0;
-    do {
-        char *p = pBase + nOff;
-        *(float *)(p + 0x00) = fAcc;
-        *(float *)(p + 0x04) = fA;
-        *(float *)(p + 0x08) = 1.0f;
-        *(int *)(p + 0x10) = nX;
-        *(int *)(p + 0x14) = nW;
-        *(float *)(p + 0x20) = fAcc;
-        *(float *)(p + 0x24) = fEdge;
-        *(float *)(p + 0x28) = 1.0f;
-        *(int *)(p + 0x30) = *(int *)(p + 0x10);
-        *(int *)(p + 0x34) = nWW;
-        if (bFlag) {
-            if (i == 0) {
-                p[0x1D] = (p[0x1D] & ~0x80) | 0x80;
-                p[0x3D] = (p[0x3D] & ~0x80) | 0x80;
-            }
+    tagBlurVertPair *p = (tagBlurVertPair *)pStrip;
+    for (int i = 0; i < 0x21; i++) {
+        p[i].st0.S = fAcc;
+        p[i].st0.T = fA;
+        p[i].st0.Q = 1.0f;
+        p[i].xyz0.X = nX;
+        p[i].xyz0.Y = sB << 4;
+        p[i].st1.S = fAcc;
+        p[i].st1.T = fEdge;
+        p[i].st1.Q = 1.0f;
+        p[i].xyz1.X = p[i].xyz0.X;
+        p[i].xyz1.Y = (sB + sD) << 4;
+        if (bFlag && i == 0) {
+            p[i].xyz0.ADC = 1;
+            p[i].xyz1.ADC = 1;
         }
-        i++;
         fAcc += fStep;
-        nX += nStepX;
-        nOff += 0x40;
-    } while (i < 0x21);
+        nX += nStep;
+    }
 }
 
 // DRAFT: 0x002168A0 InitBlurPacket__13PScreenBlurFxFP21tagGsScreenBlurPacketiicccc
