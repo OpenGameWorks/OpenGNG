@@ -35,6 +35,16 @@ struct PLightNode {
     PLightNode *m_unk4;
 };
 
+// The light list's inline lookup; the callers' loops come from this body.
+static inline PLightNode *FindLightNodeIn(PLightNode *pNode, unsigned int nKey) {
+    for (; pNode != 0; pNode = pNode->m_unk4) {
+        if (pNode->m_unk0 == nKey) {
+            return pNode;
+        }
+    }
+    return 0;
+}
+
 // FUNCTION: 0x0018E880 LightCompareBrightness__FPvPv
 static bool LightCompareBrightness(void *pA, void *pB) {
     return *(float *)((char *)pA + 0x50) < *(float *)((char *)pB + 0x50);
@@ -113,21 +123,12 @@ int PLightManager::FindBrightestLightsOfType(float *pOut, bool bA, bool bB, eLig
     return i;
 }
 
-// DRAFT: 0x0018EC70 GetLightObject__13PLightManagerFUi
-// note: 6 words differ; size 0x40 vs 0x48. Loop body emits beq to the exit where the original uses bne to advance plus b to exit; the tail emits movz then jr where the original emits beqz with a zero delay slot then daddu v0,a1,zero. Tried: return nId (12), ternary tail with break (8), if/pResult tail (14), else-arm loop (14), while loop (17), goto found with zero outside loop (6, best; also if/else body with goto, 6), if/pResult with goto (15).
+// FUNCTION: 0x0018EC70 GetLightObject__13PLightManagerFUi
 void *PLightManager::GetLightObject(unsigned int nId) {
-    PLightNode *pNode = (PLightNode *)m_unk14;
-    if (pNode != 0) {
-        do {
-            if (pNode->m_unk0 == nId) {
-                goto found;
-            }
-            pNode = pNode->m_unk4;
-        } while (pNode != 0);
+    if (FindLightNodeIn((PLightNode *)m_unk14, nId) != 0) {
+        return (void *)nId;
     }
-    pNode = 0;
-found:
-    return (void *)(pNode != 0 ? nId : 0);
+    return 0;
 }
 
 // FUNCTION: 0x0018ECC0 SetLightColor__13PLightManagerFUiPf
@@ -207,21 +208,9 @@ void PLightManager::DestroyAllDynamicLights() {
     RemoveAll__5PListFv(m_unk10);
 }
 
-// DRAFT: 0x0018EF60 RemoveDynamicLight__13PLightManagerFP6PLight
-// note: 5 words differ; the original branches with bne/beq into the tail and a b over the zeroing block, ours uses bnez at the loop back-edge and b for the break. Tried: do/while with else-null (5, best), while with inner break (25), for loop (20), goto found with zero after the if (21), r_goto/r_else/r_flag/r_goto2 (20 to 28).
+// FUNCTION: 0x0018EF60 RemoveDynamicLight__13PLightManagerFP6PLight
 void PLightManager::RemoveDynamicLight(PLight *pLight) {
-    void *pNode = m_unk14;
-    if (pNode != 0) {
-        do {
-            if (((PLightNode *)pNode)->m_unk0 == (unsigned int)pLight) {
-                break;
-            }
-            pNode = ((PLightNode *)pNode)->m_unk4;
-        } while (pNode != 0);
-    } else {
-        pNode = 0;
-    }
-    if (pNode != 0) {
+    if (FindLightNodeIn((PLightNode *)m_unk14, (unsigned int)pLight) != 0) {
         __dt__6PLightFv(pLight, 1);
         Remove__5PListFPv(m_unk10, pLight);
     }
