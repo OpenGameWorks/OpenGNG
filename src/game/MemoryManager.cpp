@@ -30,8 +30,7 @@ void MemoryManager::DeletePoolContents(int nPool) {
     m_aoPool[nPool].DeletePoolContents();
 }
 
-// DRAFT: 0x0012AB60 Delete__13MemoryManagerFPv
-// note: 6 words after permuter (spelling from build/permuter/0012AB60/best.cpp). Earlier: 12 words differ; masked address, index and offset registers are swapped vs original; frame 0xE0 vs ours. Tried: plain while (23), do-while (17), pointer walk (63), mask-first decl order (17), early copy/late mask (39), dropping nOffset (12).
+// FUNCTION: 0x0012AB60 Delete__13MemoryManagerFPv
 void MemoryManager::Delete(void *pMem) {
     void *pStart;
     void *pEnd;
@@ -40,16 +39,16 @@ void MemoryManager::Delete(void *pMem) {
         CdsAssert__FPciPc("MemoryManager.cpp", 0xA8, "0");
     }
     int nPool = 0;
-    int nAddr = (unsigned int)pMem & 0x0FFFFFFF;
+    pMem = (void *)((unsigned int)pMem & 0x0FFFFFFF);
     do {
         m_aoPool[nPool].GetStartEnd(pStart, pEnd);
-        if (nAddr >= (unsigned int)pStart && (unsigned int)pEnd >= nAddr) {
-            DeAllocate__10MemoryPoolFPvi(&m_aoPool[nPool], (void *)nAddr, nPool);
+        if ((unsigned int)pMem >= (unsigned int)pStart && (unsigned int)pMem <= (unsigned int)pEnd) {
+            DeAllocate__10MemoryPoolFPvi(&m_aoPool[nPool], pMem, nPool);
             return;
         }
         nPool += 1;
     } while (3 > nPool);
-    sprintf(buf, "Pointer passed to delete not in any pools! at 0x%x\n", nAddr);
+    sprintf(buf, "Pointer passed to delete not in any pools! at 0x%x\n", (unsigned int)pMem);
     CdsAssert__FPciPc("MemoryManager.cpp", 0xBC, buf);
 }
 
