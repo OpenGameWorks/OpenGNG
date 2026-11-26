@@ -626,7 +626,7 @@ void HudGrim::Init(PMeshNode *meshNode, HudData *hud) {
 
 // FUNCTION: 0x140270 Update__8HudSuperFi
 void HudSuper::Update(int arg0) {
-    int cur = m_unkC;
+    short cur = m_unkC;
     int target = *(int *)((char *)mpPlayerData__7GameHud + 0x3C);
     int diff = target - cur;
     if (diff != 0) {
