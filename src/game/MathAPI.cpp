@@ -37,29 +37,28 @@ struct tagSPHERE {
     float m_unkC;   // 0x0C
 };
 
-// DRAFT: 0x1574F0 MakeMatrixBox__7MathAPIFP14tagVuMatrixBoxP6tagBOXP6tagBOXf
-// note: 4 differing words: argument setup order (addiu a0,sp,0x90 vs daddu a1,s0) before memcpy and SetE_BOX_Radius calls, plus one nop vs addiu in the SetE_BOX_Radius delay slot; frame and lq/sq match; tried volatile temp (25->4), split null test (4->many).
-int MathAPI::MakeMatrixBox(tagVuMatrixBox *arg0, tagBOX *arg1, tagBOX *arg2, float arg3) {
+// FUNCTION: 0x1574F0 MakeMatrixBox__7MathAPIFP14tagVuMatrixBoxP6tagBOXP6tagBOXf
+int MathAPI::MakeMatrixBox(tagVuMatrixBox *pMatBox, tagBOX *pOut, tagBOX *pIn, float fGrow) {
     float mat[4][4];
     float box[12];
     float mat2[4][4];
     sceVu0UnitMatrix((PMat4 *)mat);
-    if (this == 0 || arg1 == 0) {
+    if (pMatBox == 0 || pIn == 0) {
         return -1;
     }
-    memcpy(box, arg1, 0x30);
-    if (arg3 != 0.0f) {
-        box[4] += arg3;
-        box[5] += arg3;
-        box[6] += arg3;
+    memcpy(box, pIn, 0x30);
+    if (fGrow != 0.0f) {
+        box[4] += fGrow;
+        box[5] += fGrow;
+        box[6] += fGrow;
     }
-    ((MathAPI *)box)->SetE_BOX_Radius(arg1);
+    SetE_BOX_Radius((tagBOX *)box);
     ((PMat4 *)mat)->InverseByRT(&box[8], box);
     sceVu0CopyMatrix(mat2, mat);
     volatile u_long128 tmp = *(u_long128 *)&box[4];
-    memcpy(this, mat2, 0x50);
-    if (arg0 != 0) {
-        memcpy(arg0, box, 0x30);
+    memcpy(pMatBox, mat2, 0x50);
+    if (pOut != 0) {
+        memcpy(pOut, box, 0x30);
     }
     return 0;
 }
@@ -164,15 +163,15 @@ void MathAPI::MakeVertexList(tagBOX *arg0, float (*arg1)[4]) {
 }
 
 // DRAFT: 0x157900 SetE_BOX_Radius__7MathAPIFP6tagBOX
-// note: 7 differing words (was 16): x/y/z named locals. Left: x load in f1 and eps const in f0 (orig f0/f1), so the mtc1 has no nop after it. Tried: load-order permutations (7-12), sum/eps as separate locals, zero as separate local, reversed eps add: none lower.
-float MathAPI::SetE_BOX_Radius(tagBOX *arg0) {
+// note: 7 differing words (was 16; static since PSound and MakeMatrixBox pass the box in a0): x/y/z named locals. Left: x load in f1 and eps const in f0 (orig f0/f1), so the mtc1 has no nop after it. Tried: load-order permutations (7-12), sum/eps as separate locals, zero as separate local, reversed eps add: none lower.
+float MathAPI::SetE_BOX_Radius(tagBOX *pBox) {
     float r = 0.0f;
-    if (this != 0) {
-        float x = m_unk10[0];
-        float y = m_unk10[1];
-        float z = m_unk10[2];
+    if (pBox != 0) {
+        float x = pBox->m_unk10[0];
+        float y = pBox->m_unk10[1];
+        float z = pBox->m_unk10[2];
         r = sqrtf(x * x + y * y + z * z) + 0.000001f;
-        m_unk10[3] = r;
+        pBox->m_unk10[3] = r;
     }
     return r;
 }

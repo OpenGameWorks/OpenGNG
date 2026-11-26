@@ -23,12 +23,12 @@ struct tag_EQuat {
 class MathAPI {
 public:
     static int IsESphereWithinESphere(tagSPHERE *arg0, tagSPHERE *arg1);
-    int MakeMatrixBox(tagVuMatrixBox *arg0, tagBOX *arg1, tagBOX *arg2, float arg3);
+    static int MakeMatrixBox(tagVuMatrixBox *pMatBox, tagBOX *pOut, tagBOX *pIn, float fGrow);
     int IsEBoxWithinEBox(tagBOX *arg0, tagBOX *arg1);
     void MakeVertexList(tagBOX *arg0, float (*arg1)[4]);
     static void VectorRotateY(float (*arg0)[4], float arg1);
     static int GetGroundPos(float (*pPos)[4]);
-    float SetE_BOX_Radius(tagBOX *arg0);
+    static float SetE_BOX_Radius(tagBOX *pBox);
     float GetRelAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]);
     bool FacingPoint(EntityBaseClass *arg0, float (*arg1)[4], float arg2);
     bool PointInMatrixBoxWSphereCheck(float *arg0, tagVuMatrixBox *arg1, tagFLOAT3D *arg2);
