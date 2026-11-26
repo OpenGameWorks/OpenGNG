@@ -113,20 +113,14 @@ int CameraCutManager::CutCameraMovesPlayer(unsigned int arg0) {
     while (pNode != 0) {
         if (*(unsigned int *)pNode == arg0) {
             *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
-            pElem = 0;
-            if (*(char **)(pNode + 8) != 0) {
-                pElem = *(char **)(*(char **)(pNode + 8));
-            }
+            pElem = (*(char **)(pNode + 8) != 0) ? *(char **)(*(char **)(pNode + 8)) : 0;
             while (pElem != 0) {
                 if (*(unsigned char *)(pElem + 0x29) != 0) {
                     return 1;
                 }
                 if (*(char **)(pNode + 0x10) == 0) {
                     *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
-                    pElem = 0;
-                    if (*(char **)(pNode + 8) != 0) {
-                        pElem = *(char **)(*(char **)(pNode + 8));
-                    }
+                    pElem = (*(char **)(pNode + 8) != 0) ? *(char **)(*(char **)(pNode + 8)) : 0;
                 } else {
                     pNext = *(char **)(*(char **)(pNode + 0x10) + 4);
                     if (pNext != 0) {
@@ -148,10 +142,7 @@ int CameraCutManager::CutCameraMovesPlayer(unsigned int arg0) {
             }
         } else {
             m_unk7C = m_unk74;
-            pNode = 0;
-            if (m_unk74 != 0) {
-                pNode = *(char **)m_unk74;
-            }
+            pNode = (m_unk74 != 0) ? *(char **)m_unk74 : 0;
         }
     }
     return 0;
@@ -808,26 +799,17 @@ void CameraCutManager::CleanUpCutCameras() {
     char *pNext;
     if (*(int *)m_unk70 != 0) {
         m_unk7C = m_unk74;
-        pNode = 0;
-        if (m_unk74 != 0) {
-            pNode = *(char **)m_unk74;
-        }
+        pNode = (m_unk74 != 0) ? *(char **)m_unk74 : 0;
         if (pNode != 0) {
             do {
                 *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
-                pItem = 0;
-                if (*(char **)(pNode + 8) != 0) {
-                    pItem = *(char **)(*(char **)(pNode + 8));
-                }
+                pItem = (*(char **)(pNode + 8) != 0) ? *(char **)(*(char **)(pNode + 8)) : 0;
                 if (pItem != 0) {
                     do {
                         FreeUpCameraStructure((CutSceneCamera_Generic *)pItem);
                         if (*(char **)(pNode + 0x10) == 0) {
                             *(char **)(pNode + 0x10) = *(char **)(pNode + 8);
-                            pItem = 0;
-                            if (*(char **)(pNode + 8) != 0) {
-                                pItem = *(char **)(*(char **)(pNode + 8));
-                            }
+                            pItem = (*(char **)(pNode + 8) != 0) ? *(char **)(*(char **)(pNode + 8)) : 0;
                         } else {
                             pNext = *(char **)(*(char **)(pNode + 0x10) + 4);
                             if (pNext != 0) {
@@ -855,10 +837,7 @@ void CameraCutManager::CleanUpCutCameras() {
                     }
                 } else {
                     m_unk7C = m_unk74;
-                    pNode = 0;
-                    if (m_unk74 != 0) {
-                        pNode = *(char **)m_unk74;
-                    }
+                    pNode = (m_unk74 != 0) ? *(char **)m_unk74 : 0;
                 }
             } while (pNode != 0);
         }

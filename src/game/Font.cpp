@@ -198,10 +198,7 @@ void FontManager::InitFrame() {
                 mbFadeOut__8FontNode = 0;
             }
             m_unk20 = m_unk20 + 1;
-            pNode = 0;
-            if ((unsigned int)m_unk20 < (unsigned int)m_unk1C) {
-                pNode = m_unk24[m_unk20];
-            }
+            pNode = ((unsigned int)m_unk20 < (unsigned int)m_unk1C) ? m_unk24[m_unk20] : 0;
         } while (pNode != 0);
     }
     if (m_unk24 != 0) {

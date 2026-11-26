@@ -2550,10 +2550,7 @@ void Interface::DeleteMeshLayer() {
             }
             idx = m_unk408 + 1;
             m_unk408 = idx;
-            node = 0;
-            if (idx < (unsigned int)m_unk404) {
-                node = (PMNode *)(*(void ***)((char *)this + 0x40C))[idx];
-            }
+            node = (idx < (unsigned int)m_unk404) ? (PMNode *)(*(void ***)((char *)this + 0x40C))[idx] : 0;
         } while (node != 0);
     }
     if (*(void ***)((char *)this + 0x40C) != 0) {

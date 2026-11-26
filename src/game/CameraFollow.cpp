@@ -1103,10 +1103,7 @@ int CameraFollow::UpdateCameraPos() {
                     m_unk62F4 += 1;
                     if (m_unk62F4 >= 6) {
                         m_unk62F4 = 0;
-                        var_v0 = 0;
-                        if (Distance__7MathAPIFPA4_fPA4_f((MathAPI *)m_unk6300, (float (*)[4])m_unk20) < 0.2f) {
-                            var_v0 = 1;
-                        }
+                        var_v0 = (Distance__7MathAPIFPA4_fPA4_f((MathAPI *)m_unk6300, (float (*)[4])m_unk20) < 0.2f) ? 1 : 0;
                         m_unk62F8 = var_v0;
                     }
                     sceVu0SubVector(m_unk10, m_unk10, m_unk30);

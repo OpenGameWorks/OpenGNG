@@ -1509,37 +1509,25 @@ int EntityBaseClass::MeshNodeCollision(PMNode *arg0, float (*arg1)[2][4], float 
             }
         }
         arg0->m_unk18 = 0;
-        child = 0;
-        if (arg0->m_unk14 != 0) {
-            child = arg0->m_unk1C[0];
-        }
+        child = (arg0->m_unk14 != 0) ? arg0->m_unk1C[0] : 0;
         if (child != 0) {
             do {
                 ret |= MeshNodeCollision(child, arg1, arg2, arg3);
                 idx = arg0->m_unk18 + 1;
                 arg0->m_unk18 = idx;
-                child = 0;
-                if (idx < (unsigned int)arg0->m_unk14) {
-                    child = arg0->m_unk1C[arg0->m_unk18];
-                }
+                child = (idx < (unsigned int)arg0->m_unk14) ? arg0->m_unk1C[arg0->m_unk18] : 0;
             } while (child != 0);
         }
         break;
     case 2:
         arg0->m_unk154 = 0;
-        child = 0;
-        if (arg0->m_unk150 != 0) {
-            child = arg0->m_unk158[0];
-        }
+        child = (arg0->m_unk150 != 0) ? arg0->m_unk158[0] : 0;
         if (child != 0) {
             do {
                 ret |= SkeletonCollision(child, arg1, arg2, arg3);
                 idx = arg0->m_unk154 + 1;
                 arg0->m_unk154 = idx;
-                child = 0;
-                if (idx < (unsigned int)arg0->m_unk150) {
-                    child = arg0->m_unk158[arg0->m_unk154];
-                }
+                child = (idx < (unsigned int)arg0->m_unk150) ? arg0->m_unk158[arg0->m_unk154] : 0;
             } while (child != 0);
         }
         break;
@@ -1957,10 +1945,7 @@ void EntityBaseClass::WriteApparitionData(int arg0, char arg1, unsigned int arg2
     if (arg2 == 0) {
         arg2 = m_unk04;
     }
-    slot = 0;
-    if (arg2 < *(unsigned int *)((char *)mpEntMgr__15EntityBaseClass + 0x5054)) {
-        slot = (char *)mpEntMgr__15EntityBaseClass + 0x53A0 + arg2 * 4;
-    }
+    slot = (arg2 < *(unsigned int *)((char *)mpEntMgr__15EntityBaseClass + 0x5054)) ? (char *)mpEntMgr__15EntityBaseClass + 0x53A0 + arg2 * 4 : 0;
     if (slot == 0) {
         return;
     }

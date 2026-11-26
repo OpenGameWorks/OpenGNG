@@ -119,20 +119,14 @@ void ExitLevel::Execute()
                 }
                 if (GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 6, &mTempArray__15EntityBaseClass, (float (*)[4])&m_unk190, fRadius, 0, false, false) != 0) {
                     mTempArray__15EntityBaseClass.m_unk4 = 0;
-                    nId = 0;
-                    if (mTempArray__15EntityBaseClass.m_unk0 != 0) {
-                        nId = (unsigned int)mTempArray__15EntityBaseClass.m_unk8[0];
-                    }
+                    nId = (mTempArray__15EntityBaseClass.m_unk0 != 0) ? (unsigned int)mTempArray__15EntityBaseClass.m_unk8[0] : 0;
                     if (nId != 0) {
 loop_26:
                         pApp = (char *)GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, nId);
                         if ((pApp == 0) || (*(int *)(pApp + 0x20) == 9)) {
                             t = mTempArray__15EntityBaseClass.m_unk4 + 1;
                             mTempArray__15EntityBaseClass.m_unk4 = t;
-                            nId = 0;
-                            if ((unsigned int)t < mTempArray__15EntityBaseClass.m_unk0) {
-                                nId = (unsigned int)mTempArray__15EntityBaseClass.m_unk8[mTempArray__15EntityBaseClass.m_unk4];
-                            }
+                            nId = ((unsigned int)t < mTempArray__15EntityBaseClass.m_unk0) ? (unsigned int)mTempArray__15EntityBaseClass.m_unk8[mTempArray__15EntityBaseClass.m_unk4] : 0;
                             if (nId == 0) {
                                 goto block_32;
                             }
@@ -156,10 +150,7 @@ block_32:
             }
             if (GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 5, &mTempArray__15EntityBaseClass, (float (*)[4])&m_unk190, fRadius, 0x1E, false, false) != 0) {
                 mTempArray__15EntityBaseClass.m_unk4 = 0;
-                nId = 0;
-                if (mTempArray__15EntityBaseClass.m_unk0 != 0) {
-                    nId = (unsigned int)mTempArray__15EntityBaseClass.m_unk8[0];
-                }
+                nId = (mTempArray__15EntityBaseClass.m_unk0 != 0) ? (unsigned int)mTempArray__15EntityBaseClass.m_unk8[0] : 0;
                 if (nId != 0) {
                     do {
                         pApp = (char *)ApparitionIsValid__15EntityBaseClassFUi(nId);
@@ -171,10 +162,7 @@ block_32:
                         }
                         t = mTempArray__15EntityBaseClass.m_unk4 + 1;
                         mTempArray__15EntityBaseClass.m_unk4 = t;
-                        nId = 0;
-                        if ((unsigned int)t < mTempArray__15EntityBaseClass.m_unk0) {
-                            nId = (unsigned int)mTempArray__15EntityBaseClass.m_unk8[mTempArray__15EntityBaseClass.m_unk4];
-                        }
+                        nId = ((unsigned int)t < mTempArray__15EntityBaseClass.m_unk0) ? (unsigned int)mTempArray__15EntityBaseClass.m_unk8[mTempArray__15EntityBaseClass.m_unk4] : 0;
                     } while (nId != 0);
                 }
                 if (mTempArray__15EntityBaseClass.m_unk0 != 0) {

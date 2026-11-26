@@ -701,12 +701,9 @@ EffectNode *EffectAPI::EffectValid(unsigned int arg0) {
         if (pNode->m_unk8 == arg0) {
             return pNode;
         }
-        pNode = 0;
         unsigned int nIndex = m_unk4 + 1;
         m_unk4 = nIndex;
-        if (nIndex < m_unk0) {
-            pNode = m_ppEntries[m_unk4];
-        }
+        pNode = (nIndex < m_unk0) ? m_ppEntries[m_unk4] : 0;
     }
     return 0;
 }
@@ -737,12 +734,9 @@ void EffectAPI::DeleteEffect(unsigned int arg0) {
             }
             return;
         }
-        pNode = 0;
         unsigned int nIndex = m_unk4 + 1;
         m_unk4 = nIndex;
-        if (nIndex < m_unk0) {
-            pNode = m_ppEntries[m_unk4];
-        }
+        pNode = (nIndex < m_unk0) ? m_ppEntries[m_unk4] : 0;
     }
 }
 

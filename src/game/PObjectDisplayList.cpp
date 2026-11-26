@@ -424,17 +424,11 @@ void PObjectDisplayList::GetNumSharedBones(PMNode *pNode, int *pCount) {
         CdsAssert("PObjectDisplayList.cpp", 0x1FF, "apoChildList");
     }
     pList->m_unk4 = 0;
-    pChild = 0;
-    if (pList->m_unk0 != 0) {
-        pChild = pList->m_unk8[0];
-    }
+    pChild = (pList->m_unk0 != 0) ? pList->m_unk8[0] : 0;
     while (pChild != 0) {
         GetNumSharedBones(pChild, pCount);
         pList->m_unk4 += 1;
-        pChild = 0;
-        if ((unsigned int)pList->m_unk4 < (unsigned int)pList->m_unk0) {
-            pChild = pList->m_unk8[pList->m_unk4];
-        }
+        pChild = ((unsigned int)pList->m_unk4 < (unsigned int)pList->m_unk0) ? pList->m_unk8[pList->m_unk4] : 0;
     }
 }
 
@@ -463,18 +457,12 @@ void PObjectDisplayList::WriteBoneMatrices(PMNode *pNode, int *pCount) {
         CdsAssert("PObjectDisplayList.cpp", 0x1EC, "apoChildList");
     }
     pList->m_unk4 = 0;
-    pChild = 0;
-    if (pList->m_unk0 != 0) {
-        pChild = pList->m_unk8[0];
-    }
+    pChild = (pList->m_unk0 != 0) ? pList->m_unk8[0] : 0;
     if (pChild != 0) {
         do {
             WriteBoneMatrices(pChild, pCount);
             pList->m_unk4 += 1;
-            pChild = 0;
-            if ((unsigned int)pList->m_unk4 < (unsigned int)pList->m_unk0) {
-                pChild = pList->m_unk8[pList->m_unk4];
-            }
+            pChild = ((unsigned int)pList->m_unk4 < (unsigned int)pList->m_unk0) ? pList->m_unk8[pList->m_unk4] : 0;
         } while (pChild != 0);
     }
 }
@@ -542,8 +530,7 @@ void PObjectDisplayList::SetupNodeInfo(PMNode *pNode) {
     }
 }
 
-// DRAFT: 0x1D4C30 SetupNodeInfo__18PObjectDisplayListFP6PArray
-// note: 51 differing lines, entry register allocation: original keeps pArray in s0 and this in s1 (copied in bnez delay slot); ours copies this to s2 first and adds a saved register for the pList local. Tried inline casts (76), pList first (51), pList last (51).
+// FUNCTION: 0x1D4C30 SetupNodeInfo__18PObjectDisplayListFP6PArray
 void PObjectDisplayList::SetupNodeInfo(PArray *pArray) {
     PMNodeChildList *pList;
     void *pInfo;
@@ -555,10 +542,7 @@ void PObjectDisplayList::SetupNodeInfo(PArray *pArray) {
     }
     pList = (PMNodeChildList *)pArray;
     pList->m_unk4 = 0;
-    pNode = 0;
-    if (pList->m_unk0 != 0) {
-        pNode = pList->m_unk8[0];
-    }
+    pNode = (pList->m_unk0 != 0) ? pList->m_unk8[0] : 0;
     if (pNode != 0) {
         do {
             pMesh = pNode->m_unk10;
@@ -575,10 +559,7 @@ void PObjectDisplayList::SetupNodeInfo(PArray *pArray) {
             {
                 int nIndex = pList->m_unk4 + 1;
                 pList->m_unk4 = nIndex;
-                pNode = 0;
-                if ((unsigned int)nIndex < (unsigned int)pList->m_unk0) {
-                    pNode = pList->m_unk8[pList->m_unk4];
-                }
+                pNode = ((unsigned int)nIndex < (unsigned int)pList->m_unk0) ? pList->m_unk8[pList->m_unk4] : 0;
             }
         } while (pNode != 0);
     }

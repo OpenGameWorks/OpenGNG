@@ -250,10 +250,7 @@ void Pad::UpdatePad() {
         if ((unsigned int)n >= 5) {
             CdsAssert__FPciPc("pad.cpp", 0x9D, "iSize <= sizeof(mVibProfile)");
         }
-        idx = 0;
-        if (n > 0) {
-            idx = m_unk140[0] & 3;
-        }
+        idx = (n > 0) ? m_unk140[0] & 3 : 0;
         *(int *)&m_unk140[4] = ActTable[idx * 2];
         m_unk148 = ActTable[idx * 2 + 1];
     }

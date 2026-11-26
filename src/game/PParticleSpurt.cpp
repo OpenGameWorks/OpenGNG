@@ -262,10 +262,7 @@ void PParticleSpurt::Animate(float fDt) {
             fRange2 = m_unk17C - m_unk178;
             sceVu0SubVector(spA0, m_unk110, m_unk100);
             sceVu0SubVector(spB0, m_unk120, m_unk110);
-            nZero = 0;
-            if (m_unk130[0] == 0.0f && m_unk130[1] == 0.0f && m_unk130[2] == 0.0f) {
-                nZero = 1;
-            }
+            nZero = (m_unk130[0] == 0.0f && m_unk130[1] == 0.0f && m_unk130[2] == 0.0f) ? 1 : 0;
             pBuf = (char *)AllocParticles__12PDisplayListFii(*(void **)(gGfxEng + 0x154C80), m_unk04, 2);
             if (pBuf == 0) {
                 CdsAssert__FPciPc("PParticleSpurt.cpp", 0xB2, "apVuParticles");
