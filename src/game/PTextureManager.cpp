@@ -106,18 +106,16 @@ PTexture *PTextureManager::GetTexture(bool bFlag, PTexture::eTextureType eType, 
     return pTex;
 }
 
-// DRAFT: 0x001894D0 DecodeTextureHandle__15PTextureManagerFiRbRQ28PTexture12eTextureTypeRi
-// note: 2 lines differ: original shifts a1 directly (dsll32 8/dsrl32 8), mine zero-extends nHandle first (dsll32 0/dsrl32 0); tried signed (long long) intermediate, unsigned int store cast, 64-bit local
+// FUNCTION: 0x001894D0 DecodeTextureHandle__15PTextureManagerFiRbRQ28PTexture12eTextureTypeRi
 void PTextureManager::DecodeTextureHandle(int nHandle, bool &bFlag, PTexture::eTextureType &eType, int &nIndex) {
     bFlag = (((unsigned int)nHandle & 0x80000000) >> 31) != 0;
     eType = (PTexture::eTextureType)((nHandle & 0x7F000000) >> 24);
-    nIndex = (int)(((unsigned long long)nHandle << 40) >> 40);
+    nIndex = nHandle & 0xFFFFFF;
 }
 
-// DRAFT: 0x00189510 EncodeTextureHandle__15PTextureManagerFbQ28PTexture12eTextureTypei
-// note: 2 lines differ: original shifts a3 directly (dsll32 8/dsrl32 8), mine zero-extends nIndex first (dsll32 0/dsrl32 0); tried signed (long long) intermediate and an unsigned int cast
+// FUNCTION: 0x00189510 EncodeTextureHandle__15PTextureManagerFbQ28PTexture12eTextureTypei
 int PTextureManager::EncodeTextureHandle(bool bFlag, PTexture::eTextureType eType, int nIndex) {
-    return (int)((((bFlag & 0xFF) << 31) | (eType << 24)) | (((unsigned long long)nIndex << 40) >> 40));
+    return (int)((((bFlag & 0xFF) << 31) | (eType << 24)) | (nIndex & 0xFFFFFF));
 }
 
 // FUNCTION: 0x00189530 KickDmaChain__15PTextureManagerFPvb
