@@ -7,7 +7,8 @@
 // TODO(header): foreign declarations
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int state);
 extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *pThis, unsigned int type, float (*matrix)[4]);
-extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(void *pThis, unsigned int arg);
+// Static EntityBaseClass::ApparitionIsValid(unsigned int): one argument, a0 only.
+extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(unsigned int nId);
 extern "C" void CdsAssert__FPciPc(char *file, int line, char *expr);
 extern "C" void sceVu0SubVector(float (*dst)[4], float (*a)[4], void *b);
 extern "C" float sceVu0InnerProduct(float (*a)[4], float (*b)[4]);
@@ -233,8 +234,7 @@ int Shield::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsig
     return 1;
 }
 
-// DRAFT: 0x00168760 ShieldDistance__6ShieldFPA4_f
-// note: 39 words differ; the a1 argument to ApparitionIsValid is kept in a1 in the original, ours reloads from s0 (tried inline cast, local tmp, cast hoisted above assert)
+// FUNCTION: 0x00168760 ShieldDistance__6ShieldFPA4_f
 float Shield::ShieldDistance(float (*arg0)[4]) {
     char *var_v0;
     void *temp_v0;
@@ -250,7 +250,7 @@ float Shield::ShieldDistance(float (*arg0)[4]) {
         if (m_unk1BC == 0) {
             CdsAssert__FPciPc("Shield.cpp", 0x193, "mParentRef");
         }
-        temp_v0 = ApparitionIsValid__15EntityBaseClassFUi(m_unk1BC, (unsigned int)arg0);
+        temp_v0 = ApparitionIsValid__15EntityBaseClassFUi((unsigned int)m_unk1BC);
         if (temp_v0 == 0) {
             return 0.0f;
         }
@@ -386,8 +386,7 @@ void Shield::DeleteShield() {
     m_unk1CC = 0;
 }
 
-// DRAFT: 0x001693C0 __dt__6ShieldFv
-// note: 1 word differs at 0xA0: the original passes ApparitionIsValid's handle in a1 without loading it (a nop where ours loads m_unk1C8); an uninitialized local takes s2 instead (78 words). The player pointer is gEng + 0x1883C.
+// FUNCTION: 0x001693C0 __dt__6ShieldFv
 extern "C" void *__dt__6ShieldFv(void *pThis, short nFlag) {
     Shield *self = (Shield *)pThis;
     if (pThis != 0) {
@@ -412,9 +411,8 @@ extern "C" void *__dt__6ShieldFv(void *pThis, short nFlag) {
                 SetFlyingShield__6PlayerFP6Shield(eng, 0);
             }
         } else {
-            unsigned int handle = self->m_unk1C8;
             if (self->m_unk1B8 != 0) {
-                if (ApparitionIsValid__15EntityBaseClassFUi(self->m_unk1BC, handle) != 0) {
+                if (ApparitionIsValid__15EntityBaseClassFUi((unsigned int)self->m_unk1BC) != 0) {
                     UpdateShieldStatus__15ClockworkMaximoFP6Shield(self->m_unk1B8, 0);
                 }
             }
