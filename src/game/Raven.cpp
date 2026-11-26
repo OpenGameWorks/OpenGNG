@@ -340,32 +340,26 @@ int Raven::OnHitEvent(EntityBaseClass *pAttacker, int nDamage, unsigned int nA, 
     return 1;
 }
 
-// DRAFT: 0x001B2D30 OnTouchEvent__5RavenFP15EntityBaseClass
-// note: 34 words (was 36); size 0x158 vs 0x148. Original shares one epilogue at 0x130 via bc1t; ours is 4 words longer before it. Tried: nesting tail in the >10 block, guard instead of return, flipped pPos ternary, single store base pointer (all 34, reverted).
+struct V4 { float v[4]; };
+
+// FUNCTION: 0x001B2D30 OnTouchEvent__5RavenFP15EntityBaseClass
 void Raven::OnTouchEvent(EntityBaseClass *pArg) {
     if (pArg != 0 && pArg->m_unk8 == 3 && m_unk20 == 0xD) {
         float *pSrc = mPlayerAPI__13EntityManager->m_unk3C ? (float *)((char *)mPlayerAPI__13EntityManager->m_unk3C + 0x80) : mPlayerAPI__13EntityManager->m_unk190;
         if (DistanceXZ__7MathAPIFPA4_fPA4_f((float (*)[4])pSrc, (float (*)[4])m_unk1E0) > 10.0f) {
             SetState__15EntityBaseClassFi(this, 7);
             m_unk10C &= 0xFBFFFFFF;
+            Player *pPlayer = mpEntMgr__15EntityBaseClass->m_unk505C;
+            if (pPlayer == 0) {
+                CdsAssert__FPciPc("Raven.cpp", 0x314, "apPlayer");
+            }
+            if (pPlayer->m_unk163 == 2 && pPlayer->m_unk1CC == m_unk4) {
+                return;
+            }
+            float *pPos = m_unk3C ? (float *)((char *)m_unk3C + 0x80) : m_unk190;
+            *(V4 *)mHitPos__15EntityBaseClass = *(V4 *)pPos;
+            ((EntityBaseView *)pArg)->OnHitEvent((EntityBaseClass *)this, 0, 0x1001, 0);
         }
-        Player *pPlayer = mpEntMgr__15EntityBaseClass->m_unk505C;
-        if (pPlayer == 0) {
-            CdsAssert__FPciPc("Raven.cpp", 0x314, "apPlayer");
-        }
-        if (pPlayer->m_unk163 == 2 && pPlayer->m_unk1CC == m_unk4) {
-            return;
-        }
-        float *pPos = m_unk3C ? (float *)((char *)m_unk3C + 0x80) : m_unk190;
-        float f3 = pPos[0];
-        float f2 = pPos[1];
-        float f1 = pPos[2];
-        float f0 = pPos[3];
-        mHitPos__15EntityBaseClass[0] = f3;
-        mHitPos__15EntityBaseClass[1] = f2;
-        mHitPos__15EntityBaseClass[2] = f1;
-        mHitPos__15EntityBaseClass[3] = f0;
-        ((EntityBaseView *)pArg)->OnHitEvent((EntityBaseClass *)this, 0, 0x1001, 0);
     }
 }
 

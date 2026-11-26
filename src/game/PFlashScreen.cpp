@@ -10,7 +10,7 @@ extern short gDebugExportVars;
 extern PSound gSound;
 
 // DRAFT: 0x001CFD60 Render__12PFlashScreenFv
-// note: DIFF 13 words; aRegs pointer allocation only: original holds &aRegs[2] in s0, &aRegs[1] in s1 and derives &aRegs[3] as s0+8 after the first call; a data/addr struct array gives the same 13
+// note: DIFF 13 words; aRegs pointer allocation only: original holds &aRegs[2] in s0, &aRegs[1] in s1 and derives &aRegs[3] as s0+8 after the first call; a data/addr struct array gives the same 13. No 4-lwc1/4-swc1 copy in the original (its lwc1 run feeds colour packing); pointer-local aRegs variant gave 83 lines, reverted.
 void PFlashScreen::Render() {
     if (gDebugExportVars != 0) {
         if (m_unk14 == 0) {

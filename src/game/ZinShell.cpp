@@ -59,25 +59,12 @@ void ZinShell::SetEditableVars(char *arg0) {
     m_unk1E0[2] = (m_unk3C ? (float *)((char *)m_unk3C + 0x80) : m_unk190)[2];
 }
 
-// DRAFT: 0x001AF500 SetShellStartAndDest__8ZinShellFRA4_fRA4_f
-// note: 12 words differ; loads match the original's registers, but the stores run in reverse order (forward stores give a different register mapping), tried 6 local-declaration and store-order variants.
+struct V4 { float v[4]; };
+
+// FUNCTION: 0x001AF500 SetShellStartAndDest__8ZinShellFRA4_fRA4_f
 void ZinShell::SetShellStartAndDest(float (&arg0)[4], float (&arg1)[4]) {
-    float d = arg0[3];
-    float c = arg0[2];
-    float b = arg0[1];
-    float a = arg0[0];
-    m_unk1D0[3] = d;
-    m_unk1D0[2] = c;
-    m_unk1D0[1] = b;
-    m_unk1D0[0] = a;
-    float h = arg1[3];
-    float g = arg1[2];
-    float f = arg1[1];
-    float e = arg1[0];
-    m_unk1E0[3] = h;
-    m_unk1E0[2] = g;
-    m_unk1E0[1] = f;
-    m_unk1E0[0] = e;
+    *(V4 *)m_unk1D0 = *(V4 *)arg0;
+    *(V4 *)m_unk1E0 = *(V4 *)arg1;
 }
 
 // DRAFT: 0x001AF550 Execute__8ZinShellFv

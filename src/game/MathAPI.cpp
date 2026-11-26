@@ -437,7 +437,7 @@ float MathAPI::GetRelAngleYToPoint(float (*arg0)[4], float arg1, float (*arg2)[4
 }
 
 // DRAFT: 0x158330 GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f
-// note: 48 words with the non-static header FacingPoint 0x157D10 needs; the original is static-style (entity in a0, array in a1), so static gives 45 here but breaks FacingPoint (DIFF 17). Remaining: obj in v0 not v1, early-return branch offset, f4 vs f3 angle reg, atan2f reloc one insn off.
+// note: no 4-lwc1/4-swc1 copy in original (its lwc1s feed sub.s and atan2f); 48 words with the non-static header FacingPoint 0x157D10 needs; the original is static-style (entity in a0, array in a1), so static gives 45 here but breaks FacingPoint (DIFF 17). Remaining: obj in v0 not v1, early-return branch offset, f4 vs f3 angle reg, atan2f reloc one insn off.
 float MathAPI::GetRelAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]) {
     char *self = (char *)arg0;
     char *obj = *(char **)(self + 0x3C);
@@ -477,7 +477,7 @@ float MathAPI::GetRelAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]) {
 }
 
 // DRAFT: 0x001584A0 GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f
-// note: 52 words differ; prologue reg order, ternary branch form (bc1t/bc1f), wrap-tail f2/f0 and neg placement remain; tried ?: compare swap (no change), clamp tail duplicated (66->52)
+// note: 52 words differ; no 4-lwc1/4-swc1 copy in original (lwc1s feed sub.s); prologue reg order, ternary branch form (bc1t/bc1f), wrap-tail f2/f0 and neg placement remain; tried ?: compare swap (no change), clamp tail duplicated (66->52)
 float MathAPI::GetAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]) {
     if (arg0 == 0) CdsAssert__FPciPc("MathAPI.cpp", 0x70, "pEnt");
     char *self = (char *)arg0;
