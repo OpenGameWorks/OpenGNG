@@ -443,8 +443,7 @@ void PParticleManager::RenderShockwaveRings() {
                 break;
             }
         }
-        m_unk4++;
-        pElem = (m_unk4 < m_unk0) ? (char *)m_unk8[m_unk4] : 0;
+                pElem = (++m_unk4 < m_unk0) ? (char *)m_unk8[m_unk4] : 0;
     }
     if (nCount != 0) {
         fCol[0] = 1.1f;
