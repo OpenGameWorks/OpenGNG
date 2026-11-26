@@ -18,6 +18,7 @@ extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, int nCount, int 
 extern "C" void DmaScratchPadToMainMem__FPvPvsbb(void *pSpad, void *pMain, short nSize, bool bFlagA, bool bFlagB);
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pMsg);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
+extern "C" void Vu0_Normalize_Vector(void);
 
 #define LITE_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert__FPciPc("PParticleLiteExplosion.cpp", line, msg))
 
@@ -33,7 +34,7 @@ static inline float LiteRand01(int *pSeed) {
 }
 
 // DRAFT: 0x001F6610 AnimateRotatableParticles__22PParticleLiteExplosionFf
-// note: VU0 runs (lqc2/sqc2, vmini/vmax, vmulx/vadd, Vu0_SinCos, Vu0_Normalize_Vector) are scalar stand-ins; compiles, not matched.
+// note: 422 words differ. Normalize block is asm; SinCos block adds a word (reverted); vmini/vmax and vmulx/vadd have no draft C counterpart; frame 0xC0 vs 0xB0 shifts saves.
 void PParticleLiteExplosion::AnimateRotatableParticles(float fDt) {
     float vSub[4];
     float vRand[4];
@@ -112,6 +113,22 @@ void PParticleLiteExplosion::AnimateRotatableParticles(float fDt) {
             vRand[2] = (float)LiteSeedStep(&m_unkD0);
             vRand[3] = (float)LiteSeedStep(&m_unkD0);
             sceVu0ScaleVector(vRand, vRand, 0.000030517578f);
+            {
+                float *pLo = m_unkF0;
+                float *pHi = m_unk100;
+                float *pRnd = vRand;
+                asm {
+                    lqc2 vf1, 0x0(pLo)
+                    lqc2 vf2, 0x0(pHi)
+                    lqc2 vf3, 0x0(pRnd)
+                    vsub.xyzw vf4, vf2, vf1
+                    vmul.xyzw vf5, vf4, vf3
+                    vadd.xyzw vf6, vf5, vf1
+                    sqc2 vf6, 0x0(pRnd)
+                    lqc2 vf5, 0x0(pRnd)
+                    vcallms Vu0_Normalize_Vector
+                }
+            }
             pP[0] = vRand[0] * fT;
             pP[1] = vRand[1] * fT;
             pP[2] = vRand[2] * fT;
