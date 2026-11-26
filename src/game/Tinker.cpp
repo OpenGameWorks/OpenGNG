@@ -508,8 +508,7 @@ test:
     return 0;
 }
 
-// DRAFT: 0x002095A0 GetClosestWaypoint__6TinkerFRA4_fb
-// note: 30 words differ: if/else arm order for m_unk3C, bc1t/bc1f on the angle bool, bLast/nBest order (reorder tried, 49 words), epilogue return materialisation. Variants tried: early-return restructure, if/else DistanceXZ, stored bool bNear, bLast reorder.
+// FUNCTION: 0x002095A0 GetClosestWaypoint__6TinkerFRA4_fb
 int Tinker::GetClosestWaypoint(float (&pos)[4], bool bFlag) {
     int nBest;
     unsigned char bLast;
@@ -539,17 +538,19 @@ int Tinker::GetClosestWaypoint(float (&pos)[4], bool bFlag) {
                     continue;
                 }
             }
+            float (*pTarget)[4];
             if (m_unk3C != 0) {
-                d = DistanceXZ__7MathAPIFPA4_fPA4_f((float (*)[4])(m_unk3C + 0x80), &p);
+                pTarget = (float (*)[4])(m_unk3C + 0x80);
             } else {
-                d = DistanceXZ__7MathAPIFPA4_fPA4_f((float (*)[4])((char *)this + 0x190), &p);
+                pTarget = (float (*)[4])m_unk190;
             }
+            d = DistanceXZ__7MathAPIFPA4_fPA4_f(pTarget, &p);
             if (d < fBest) {
                 *(u_long128 *)pos = *(u_long128 *)p;
                 fBest = d;
                 nBest = i;
-                bLast = 0;
-                if (bWpFlag != 0) {
+                bLast = bWpFlag != 0;
+                if (bLast) {
                     bLast = (i + 1 < m_unk2C8);
                 }
             }
@@ -558,8 +559,8 @@ int Tinker::GetClosestWaypoint(float (&pos)[4], bool bFlag) {
             Add__6PArrayFPv((char *)this + 0x2D0, (void *)m_unk2C4);
             m_unk2C4 = nBest;
             m_unk2E0 = bLast;
-            return 1;
         }
+        return nBest >= 0;
     }
     return 0;
 }
@@ -632,7 +633,7 @@ int Tinker::IsStalled(float fDist, float (*arg1)[4]) {
 }
 
 // DRAFT: 0x002099C0 MoveTo__6TinkerFPA4_ff
-// note: 23 words; this/pPath in s1/s2 instead of s2/s1, frame 0xA0 vs 0x90; flag test is a branch not movz; m_unk250 store sunk past the compare. Tried pPath-first load (60->23), local flag, bool range test (33).
+// note: 5 differing words; the flag select is a branch (`bnez`/`b`), not the original `movz`. m_unk250 store moved inside `if (c & 4)`. Tried ternary local (6), nCond local (5), bool bSet (6), default-8-then-override (5, kept).
 int Tinker::MoveTo(float (*arg0)[4], float arg1) {
     int nFlags;
     char *pPath;
@@ -658,7 +659,13 @@ int Tinker::MoveTo(float (*arg0)[4], float arg1) {
         f21 = GetAngleBetweenVectors__7MathAPIFPfPf(path, fwd);
         if (!(GetAngleBetweenVectors__7MathAPIFPfPf(path, dir) <= 90.0f)) {
             if (!(f21 <= 120.0f)) {
-                nFlags |= ((*(int *)(pPath + 0xC)) & 0x80) ? 8 : 4;
+                {
+                    int nBit = 8;
+                    if (((*(int *)(pPath + 0xC)) & 0x80) == 0) {
+                        nBit = 4;
+                    }
+                    nFlags |= nBit;
+                }
             }
         }
     }
@@ -681,9 +688,9 @@ int Tinker::MoveTo(float (*arg0)[4], float arg1) {
             if (IsStalled(0.5f, (float (*)[4])pos)) {
                 nFlags |= 1;
             }
+            *(u_long128 *)m_unk250 = *(u_long128 *)((m_unk3C != 0) ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190));
         }
     }
-    *(u_long128 *)m_unk250 = *(u_long128 *)((m_unk3C != 0) ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190));
     if (f20 <= arg1) {
         nFlags |= 2;
     }
@@ -781,7 +788,7 @@ void Tinker::ActivateAttackingEnemies() {
 }
 
 // DRAFT: 0x00209FF0 ActivatedEnemiesDead__6TinkerFv
-// note: 30 differing lines; the m_unk2BC/m_unk2C0 guards are folded into one `&&` (42 nested, 30 folded) and the m_unk2C0==0 path returns 1 as the asm does; still differs at the 0x1C/0x28 branch targets and the loop-init and join layout from 0x2C on. Tried early returns (49), and a `return 0` vs `return 1` on the m_unk2C0 guard (42, unchanged).
+// note: 16 differing lines; the m_unk2C0==0 path returns 0 (the 0x1C delay slot sets v0=0). Remaining diffs: the 0x1C/0x28 branch targets, the 0x2C daddu vs addiu return hoist, and the 0x94 beqz vs bnez. Tried folded && guards (22), split early returns (49), nested guard (42), and the tail `if (m_unk228 != 0 && InstanceIsValid(...) != 0) return 0; return 1;` (16, kept).
 int Tinker::ActivatedEnemiesDead() {
     if (m_unk2BC != 0 && m_unk2C0 != 0) {
         int i = 0;
@@ -799,13 +806,10 @@ int Tinker::ActivatedEnemiesDead() {
             i++;
             off += 4;
         } while (i < 4);
-        if (m_unk228 == 0) {
-            return 1;
+        if (m_unk228 != 0 && InstanceIsValid__15EntityBaseClassFUi(m_unk228) != 0) {
+            return 0;
         }
-        if (InstanceIsValid__15EntityBaseClassFUi(m_unk228) == 0) {
-            return 1;
-        }
-        return 0;
+        return 1;
     }
     return 1;
 }
@@ -1632,10 +1636,21 @@ int Tinker::OnHitEvent(EntityBaseClass *pOther, int arg1, unsigned int arg2, uns
 }
 
 // DRAFT: 0x0020A5A0 OnTouchEvent__6TinkerFP15EntityBaseClass
-// note: 28 differing lines; the vtable call at 0x3C matches. The original branches each guard with beqz to the shared epilogue (plus a `b` after the 0x5058 check), while MW emits bnez/beqz to a different exit. Tried early-return guards (about 30), a merged || (about 30), a flat && chain (28, kept), and nested ifs (28).
+// note: 27 differing lines; the vtable call matches. The original tests the 0x5058 and 0x1B4 loads as `beqz cont; b exit` (exit in a delay-slot-filled b), MW emits bnez to the epilogue. Tried early-return guards (about 30), a merged || (about 30), a flat && chain (28), nested ifs (28), split returns with the 0x5058 test as bnez (28), else-return arms (27, kept), mixed arms (30).
 void Tinker::OnTouchEvent(EntityBaseClass *pOther) {
-    if (((TinkerVirtual *)this)->Slot13() != 0 && *(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) == 0 && m_unk1B4 == 0 && pOther != 0 && (*(unsigned int *)((char *)pOther + 0x10C) & 1) == 0 && m_unk2E4 != *(unsigned int *)((char *)pOther + 0x4) && m_unk20 != 8) {
-        SetState__15EntityBaseClassFi(this, 7);
+    if (((TinkerVirtual *)this)->Slot13() == 0) {
+        return;
+    }
+    if (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) == 0) {
+        if (m_unk1B4 == 0) {
+            if (pOther != 0 && (*(unsigned int *)((char *)pOther + 0x10C) & 1) == 0 && m_unk2E4 != *(unsigned int *)((char *)pOther + 0x4) && m_unk20 != 8) {
+                SetState__15EntityBaseClassFi(this, 7);
+            }
+        } else {
+            return;
+        }
+    } else {
+        return;
     }
 }
 
