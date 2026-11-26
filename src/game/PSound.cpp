@@ -1905,20 +1905,18 @@ int PSound::StopAmbientEntry(PSound::AmbientEntry *pEntry, unsigned int nFlag) {
     return nRet;
 }
 
-// DRAFT: 0x001A8FA0 GetSpotInfo__6PSoundFUi
-// note: 13 words differ; original keeps the scan pointer in a0 (in-place addiu from this) and the end in a2, ours puts the pointer in v0 and the end in a0; byte cursor, SpotInfo cursor, for, do-while and while forms tried, best 13
+// FUNCTION: 0x001A8FA0 GetSpotInfo__6PSoundFUi
 PSound::SpotInfo *PSound::GetSpotInfo(unsigned int nID) {
-    char *pCur = m_unk2EB4;
-    char *pEnd = pCur + 0x2580;
-    if (pCur < pEnd) {
-        do {
-            if (((SpotInfo *)pCur)->m_unk00 == (int)nID) {
-                return (SpotInfo *)pCur;
-            }
-            pCur += 0x18;
-        } while (pCur < pEnd);
+    SpotInfo *p = (SpotInfo *)m_unk2EB4;
+    SpotInfo *pEnd = p + 400;
+    SpotInfo *pFound = 0;
+    for (; p < pEnd; p++) {
+        if (nID == p->m_unk00) {
+            pFound = p;
+            break;
+        }
     }
-    return 0;
+    return pFound;
 }
 
 // FUNCTION: 0x001A8FE0 SetLevelParameters__6PSoundFUiUiUiUi
