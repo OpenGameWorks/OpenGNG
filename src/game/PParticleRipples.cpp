@@ -235,7 +235,7 @@ void PParticleRipples::AutoEmit(float fArg0, float *pArr, float fArg2, float fAr
     m_unk88C = fArg5;
 }
 
-// DRAFT: 0x001EDFB0 Create__16PParticleRipplesFPffff
+// FUNCTION: 0x001EDFB0 Create__16PParticleRipplesFPffff
 // note: DIFF 8 words; original copies the 1.0f quad via lq into $a3 with sq in the delay slot and builds 0.01f/0.015f with lui/ori/mtc1, ours loads literals from $gp and copies via $v0. Tried: plain literals (14), union bit patterns (17, 0x30 frame), literal locals declared first (14).
 void PParticleRipples::Create(float *pArr, float fArg1, float fArg2, float fArg3) {
     float local[4] = {1.0f, 1.0f, 1.0f, 1.0f};

@@ -261,7 +261,7 @@ void PSlideShow::ResetTiles()
     }
 }
 
-// DRAFT: 0x00215990 ApplyTileOnGsPoly__10PSlideShowFPQ210PSlideShow9tagGsPolyPQ210PSlideShow7tagTile
+// FUNCTION: 0x00215990 ApplyTileOnGsPoly__10PSlideShowFPQ210PSlideShow9tagGsPolyPQ210PSlideShow7tagTile
 // note: asm transcription of the original, not C; needs a C body (scratchpad 0x70001000 vector stores).
 asm void PSlideShow::ApplyTileOnGsPoly(tagGsPoly *pPoly, tagTile *pTile)
 {
