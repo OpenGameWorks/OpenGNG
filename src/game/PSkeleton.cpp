@@ -465,8 +465,16 @@ int PSkeleton::Animate(float fTime, float fDelta, PMat4 *pMat, int nFlag, bool b
     return nRet;
 }
 
-// DRAFT: 0x00198130 Load__9PSkeletonFP8PPakFileP6PArray16ePsx2FileVersion
-// note: draft v1, control flow decoded from asm; fncmp differences not yet inspected
+class PSkelNodeVirt {
+public:
+    virtual void V08();
+    virtual void V0C();
+    virtual void V10();
+    virtual void V14();
+    virtual void V18(float a, float b, void *c, int d, bool e);
+};
+
+// FUNCTION: 0x00198130 Load__9PSkeletonFP8PPakFileP6PArray16ePsx2FileVersion
 int PSkeleton::Load(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
     unsigned char hdr16[0x10];
     int n;
@@ -493,13 +501,15 @@ int PSkeleton::Load(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
         return 0;
     }
     if ((node = __nw__FUi(0x100)) != 0) {
+        char *volatile pThis = (char *)node;
         *(void **)node = (void *)__vt__9PResource;
-        *((unsigned int *)node + 1) = 0;
-        *(void **)node = (void *)__vt__6PMNode;
-        __ct__6PArrayFv((char *)node + 0x14);
-        sceVu0UnitMatrix((char *)node + 0x40);
-        __ct__6PArrayFv((char *)node + 0xD8);
-        InitMembers__6PMNodeFv(node);
+        *(unsigned int *)(pThis + 4) = 0;
+        *(void **)pThis = (void *)__vt__6PMNode;
+        __ct__6PArrayFv(pThis + 0x14);
+        sceVu0UnitMatrix(pThis + 0x40);
+        __ct__6PArrayFv(pThis + 0xD8);
+        InitMembers__6PMNodeFv(pThis);
+        node = pThis;
     }
     if (node == 0) {
         CdsAssert__FPciPc("PSkeleton.cpp", 0x70, "pRootBone");
@@ -509,8 +519,8 @@ int PSkeleton::Load(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
     }
     Add__6PArrayFPv((void *)&m_unk14, node);
     BuildDispList();
-    if (hdr16[0] != 0) {
-        if (LoadMesh__6PMNodeFP8PPakFileP6PArray16ePsx2FileVersion(node, pFile, pArr, eVersion) == 0) {
+    if (*(int *)hdr16 != 0) {
+        if (LoadMesh__6PMNodeFP8PPakFileP6PArray16ePsx2FileVersion((void *)this, pFile, pArr, eVersion) == 0) {
             return 0;
         }
         ((unsigned char *)m_unk10)[0xE] = 0;
@@ -525,7 +535,7 @@ int PSkeleton::Load(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
     if (n != 7) {
         return 0;
     }
-    ((void (*)(void *, float, float, void *, int, bool))((*(void ***)node)[6]))(node, 0.0f, 0.0f, 0, 0, 0);
+    ((PSkelNodeVirt *)node)->V18(0.0f, 0.0f, 0, 0, 0);
     UpdateBoundBox();
     return 1;
 }
