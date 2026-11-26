@@ -16,7 +16,7 @@ extern "C" void sceVu0AddVector(float *, float *, float *);
 extern "C" void sceVu0ScaleVector(float *, float *, float);
 extern "C" void sceVu0Normalize(float *, float *);
 float FastMath_Fabs(float f);
-float Fabs(float f);
+static float Fabs(float f);
 struct STCollisionPoly {
     u_long128 *m_unk0;
     float *m_unk4;
@@ -1580,4 +1580,9 @@ BGCollision::BGCollision()
     m_unk40 = 0;
     m_unk44 = 0;
     m_unk70.Allocate(0x80);
+}
+
+// FUNCTION: 0x00170E70 Fabs__Ff
+static float Fabs(float f) {
+    return __s_abs(f);
 }

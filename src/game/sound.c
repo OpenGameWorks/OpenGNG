@@ -383,6 +383,12 @@ int SOUND_FindFreeSPUChannel(unsigned int arg0, unsigned int arg1, unsigned int 
     return -1;
 }
 
+// FUNCTION: 0x001AE190 SOUND_ClearIOPBuffer
+void SOUND_ClearIOPBuffer(void) {
+    IOP_Cnt = 0;
+    senddata[0] = 0;
+}
+
 // DRAFT: 0x001AE1A0 SetIOPCommand
 // note: 128 words differ; original frame is 0x30 with s0/s1 saved and 0x200 bytes vs our 0x180; signed loop index 140, cached IOP_Cnt no change.
 void SetIOPCommand(int arg0, int arg1) {
@@ -460,11 +466,36 @@ void SOUND_InitStreamData(short arg0) {
     SetIOPCommand(0xC, 1);
 }
 
+// FUNCTION: 0x001AE470 SOUND_InitSPU
+void SOUND_InitSPU(void) {
+    SetIOPCommand(7, 0);
+}
+
+// FUNCTION: 0x001AE480 SOUND_GetStatusPatient
+void SOUND_GetStatusPatient(void) {
+    fst_bGetStatusRequested = 1;
+}
+
 // FUNCTION: 0x001AE490 SOUND_GetStatus
 void SOUND_GetStatus(int arg0, int arg1) {
     IOPCommandData[0] = arg0;
     IOPCommandData[1] = arg1;
     SetIOPCommand(0x9, 2);
+}
+
+// FUNCTION: 0x001AE570 SOUND_StopAllStreams
+void SOUND_StopAllStreams(void) {
+    SetIOPCommand(0x43, 0);
+}
+
+// FUNCTION: 0x001AE580 SOUND_StopAllRegularSounds
+void SOUND_StopAllRegularSounds(void) {
+    SetIOPCommand(0x48, 0);
+}
+
+// FUNCTION: 0x001AE590 SOUND_StopAllMusic
+void SOUND_StopAllMusic(void) {
+    SetIOPCommand(0x26, 0);
 }
 
 // FUNCTION: 0x001AE5E0 SOUND_SetChannelPitch

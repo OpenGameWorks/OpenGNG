@@ -27,6 +27,8 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 
 - Saves are `sd ra` plus `sq s0..`; `lq`/`sq` pairs are a 128-bit copy (`*(u_long128 *)dst = *(u_long128 *)src`).
 - `lui at,1; addu at,base,at` is a member past offset 0x8000 of a large class.
+- A single `abs.s` comes from the MW intrinsic `__s_abs(f)` (no declaration needed); `fabsf` and a `f < 0 ? -f : f` ternary compile to a call or a branch.
+- A short string literal (7 bytes or less) lands in `.sdata` (`addiu v0,gp,…`); `// FLAGS: -str readonly` on line 1 of the source puts literals in the original's read-only section (`lui`/`addiu`).
 - Store order and local declaration order set instruction order; separate early returns or a duplicated tail replace a shared exit.
 - `% 2` versus `& 1`, signed versus unsigned locals, and `for` versus `while` change branch form and shifts.
 - An assert whose original tests a literal's address at runtime (`lui`/`addiu` of the message, `sltu`, `xori 1`, `bnez`, then `CdsAssert`) comes from `assert(!"message")`. The ternary form `((cond) ? (void)0 : CdsAssert__FPciPc("File.cpp", line, #cond))` keeps that test; `if` forms fold it away. A file-local `#define CDS_ASSERT(line, cond)` in that form serves every assert in the file; `src/game/PPakFile.cpp` is the reference.
