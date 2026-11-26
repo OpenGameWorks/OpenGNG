@@ -1514,8 +1514,7 @@ void *EntityManager::GetPtrToApparition(unsigned int arg0) {
     return 0;
 }
 
-// DRAFT: 0x001489E0 Animate__13EntityManagerFif
-// note: 3 words differ: outer-exit beqz target (005C) and nop/bnez placement at 012C-0130; original has one extra slot after the lw, ours has an extra nop before bnez. Tried: ternary tail (19), flags-first order (20), if/else tail (35), if tail with original order (3, kept); pList reorder (3, no gain, reverted).
+// FUNCTION: 0x001489E0 Animate__13EntityManagerFif
 void EntityManager::Animate(int arg0, float arg1) {
     ParticleSubList *pList;
     void *pEnt;
@@ -1541,17 +1540,11 @@ void EntityManager::Animate(int arg0, float arg1) {
             gDebug.StopDebugTimer(pEnt);
             i = pList->m_unk04 + 1;
             pList->m_unk04 = i;
-            pEnt = 0;
-            if (i < pList->m_unk00) {
-                pEnt = pList->m_unk08[pList->m_unk04];
-            }
+            pEnt = (i < pList->m_unk00) ? pList->m_unk08[pList->m_unk04] : 0;
         }
         i = m_unk50A4 + 1;
         m_unk50A4 = i;
-        pList = 0;
-        if (i < m_unk50A0) {
-            pList = (ParticleSubList *)m_unk50A8[m_unk50A4];
-        }
+        pList = (ParticleSubList *)((i < m_unk50A0) ? m_unk50A8[m_unk50A4] : 0);
     }
     gDebug.StopTimer(6);
     gDebug.StartTimer(7);
@@ -1693,21 +1686,25 @@ void EntityManager::Process() {
 }
 
 // DRAFT: 0x001490F0 SetItemCounter__13EntityManagerFQ213EntityManager15ItemCounterTypef
-// note: 10 lines; original keeps this+0x5F74 as a separate addiu after sll, ours folds 0x5F74 into swc1 displacement; tried m_unk5F74[i] (9 lines), local float* base (9), offset-then-add (9), deferred pointer (9); final form 10.
+// note: 1 word differs: addu operand order (0048 original `addu v1,v1,a0`, ours `addu v1,a0,v1`). Tried: base-first sum (3), pointer index (3), signed index, constant-first base, multiply index, shift-assign index (1 each, no gain); all folding spellings from before (9-10).
 void EntityManager::SetItemCounter(ItemCounterType theType, float value) {
     if (theType >= ITEM_COUNTER_MAX) {
         CdsAssert("EntityManager.cpp", 0x192, "theType < ITEM_COUNTER_MAX");
     }
-    m_unk5F74[theType] = value;
+    unsigned int idx = (unsigned int)theType << 2;
+    unsigned int base = (unsigned int)this + 0x5F74;
+    *(float *)(idx + base) = value;
 }
 
 // DRAFT: 0x00149160 GetItemCounter__13EntityManagerFQ213EntityManager15ItemCounterType
-// note: 8 words; original keeps this+0x5F74 as a separate addiu (lwc1 0(v0)) and is 0x5C bytes, ours folds 0x5F74 into lwc1 and is 0x58; tried m_unk5F74[i], local float*, (float*)(this+0x5F74)[i], char* index-then-offset, constant-first sum, char* base += 0x5F74, theType*4 index.
+// note: 1 word differs: addu operand order (0040 original `addu v0,v0,v1`, ours `addu v0,v1,v0`); the sll-first schedule and the 0x5F74 addiu now match. Tried: m_unk5F74[i], float* and char* bases (8), base-first, constant-first base, pointer index (3 or 1), signed index, multiply index (1 each).
 float EntityManager::GetItemCounter(ItemCounterType theType) {
     if (theType >= ITEM_COUNTER_MAX) {
         CdsAssert("EntityManager.cpp", 0x18A, "theType < ITEM_COUNTER_MAX");
     }
-    return *(float *)((char *)this + 0x5F74 + ((int)theType << 2));
+    unsigned int idx = (unsigned int)theType << 2;
+    unsigned int base = (unsigned int)this + 0x5F74;
+    return *(float *)(idx + base);
 }
 
 // DRAFT: 0x001491C0 CallOnTimerEvent__13EntityManagerFUiUi

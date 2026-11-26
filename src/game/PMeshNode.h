@@ -30,10 +30,8 @@ class PMeshPickup {
 public:
     char _pad00[0xD];
     unsigned char m_unk0D;      // 0x0D nonzero: the box at +0x10 is valid
-    char _pad0E[0x12];
-    float m_unk20;              // 0x20 clamped to at least 1.0f
-    char _pad24[0x4];
-    float m_unk28;              // 0x28 clamped to at least 1.0f
+    char _pad0E[0x2];
+    float m_unk10[2][4];        // 0x10 bounding box; AdjustPickup clamps [1][0] and [1][2] to at least 1.0f
 };
 
 class PMeshNode {

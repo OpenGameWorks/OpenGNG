@@ -128,15 +128,15 @@ void PMeshNode::TestMeshNodeInFrustum(PFrustrum *pFrustrum) {
     }
 }
 
-// DRAFT: 0x00190390 AdjustPickup__9PMeshNodeFv
-// note: 11 words differ; original addresses the first clamp through m_unk10+0x10 (one base reg) and reloads m_unk10 for the second clamp. Tried a cached local pointer (15 words, worse).
+// FUNCTION: 0x00190390 AdjustPickup__9PMeshNodeFv
 void PMeshNode::AdjustPickup() {
     if (m_unk10 != 0) {
-        if (m_unk10->m_unk20 < 1.0f) {
-            m_unk10->m_unk20 = 1.0f;
+        float (*pBox)[4] = m_unk10->m_unk10;
+        if (pBox[1][0] < 1.0f) {
+            pBox[1][0] = 1.0f;
         }
-        if (m_unk10->m_unk28 < 1.0f) {
-            m_unk10->m_unk28 = 1.0f;
+        if (pBox[1][2] < 1.0f) {
+            pBox[1][2] = 1.0f;
         }
     }
     m_unk18 = 0;
@@ -364,9 +364,9 @@ void PMeshNode::ComputeBoundingBox() {
     float (*pSrc)[2][4];
     int i;
 
-    pSrc = (m_unk10 != 0) ? ((m_unk10->m_unk0D != 0) ? (float (*)[2][4])((char *)m_unk10 + 0x10) : 0) : 0;
+    pSrc = (m_unk10 != 0) ? ((m_unk10->m_unk0D != 0) ? &m_unk10->m_unk10 : 0) : 0;
     if (pSrc != 0) {
-        PBoundBoxToBoundBox__FPA2_A4_fPA2_A4_f((m_unk10->m_unk0D != 0) ? (float (*)[2][4])((char *)m_unk10 + 0x10) : 0, &box);
+        PBoundBoxToBoundBox__FPA2_A4_fPA2_A4_f((m_unk10->m_unk0D != 0) ? &m_unk10->m_unk10 : 0, &box);
         bounds[0][0] = box[0][0];
         bounds[0][1] = box[0][1];
         bounds[0][2] = box[0][2];
