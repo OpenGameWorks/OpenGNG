@@ -14,8 +14,8 @@ extern "C" void FastMath_ComputeMatrixLite__FPA4_A4_fPA4_fPA4_fPA4_fPA4_A4_f(voi
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, char *pExpr);
 extern "C" int rand(void);
-float FastMath_Sin180__Ff(float fAngle);
-float FastMath_Cos180__Ff(float fAngle);
+extern "C" float FastMath_Sin180__Ff(float fAngle);
+extern "C" float FastMath_Cos180__Ff(float fAngle);
 
 // DRAFT: 0x00214BA0 AnimateFadingTiles__10PSlideShowFf
 // note: 67 words differ (was 74); prologue constant/seed scheduling and a0-a3 register allocation differ from the original; tried for-loop shape, hoisted poly base, seed store first, reordered locals, column counter outside, inverted fade test.

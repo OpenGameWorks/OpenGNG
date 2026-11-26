@@ -6,7 +6,7 @@
 
 // TODO(header): foreign declarations
 extern "C" void __dla__FPv(void *pBlock);
-void *__nwa__FUi(unsigned int nSize);
+extern "C" void *__nwa__FUi(unsigned int nSize);
 void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0CopyVector(float *pDst, void *pSrc);
 extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
@@ -137,8 +137,7 @@ unsigned int PStaticInstanceGroup::Render() {
     return nRet;
 }
 
-// DRAFT: 0x001D72B0 Load__20PStaticInstanceGroupFP8PPakFileP6PArray16ePsx2FileVersion
-// note: DIFF 11 words; original first check is sltu at + beqz to a shared return-0 (ours sltu v0 + bnez), nCount check order and extra b before epilogue differ. Tried: nested-index, negated check, tail-return forms (58-word diffs).
+// FUNCTION: 0x001D72B0 Load__20PStaticInstanceGroupFP8PPakFileP6PArray16ePsx2FileVersion
 int PStaticInstanceGroup::Load(PPakFile *pFile, PArray *pMasterMeshes, ePsx2FileVersion eVersion) {
     struct {
         unsigned int nIndex;
@@ -155,10 +154,7 @@ int PStaticInstanceGroup::Load(PPakFile *pFile, PArray *pMasterMeshes, ePsx2File
     if (((PCDFile *)pFile)->Read(&hdr, 0x18) != 0x18) {
         return 0;
     }
-    if (hdr.nIndex >= pMasterMeshes->m_unk0) {
-        return 0;
-    }
-    if (hdr.nCount == 0) {
+    if (hdr.nIndex >= pMasterMeshes->m_unk0 || hdr.nCount == 0) {
         return 0;
     }
     m_unk8 = (hdr.nIndex < pMasterMeshes->m_unk0) ? pMasterMeshes->m_unk8[hdr.nIndex] : 0;

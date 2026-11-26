@@ -6,7 +6,7 @@
 extern "C" int rand();
 extern "C" void __dla__FPv(void *pData);
 extern "C" void __dl__FPv(void *pData);
-float FastMath_Sin180__Ff(float fAngle);
+extern "C" float FastMath_Sin180__Ff(float fAngle);
 void FTOI4(float *pDst, float *pSrc);
 void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
