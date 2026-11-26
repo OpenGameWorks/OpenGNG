@@ -965,7 +965,7 @@ void MaximoMain::GameOptions() {
 }
 
 // DRAFT: 0x00137430 LoadGame__10MaximoMainFv
-// note: 37 lines differ. Frame and saves match. 0x6C beq targets 0xE4 in original, 0xDC in ours (return-path block length). 0x78 is beq 0xB in original, bne in ours. Tried: nested if/return, inverted 0xB test (worse, spreads to 0xA0), do/while, flat if/break.
+// note: 32 words differ (was 39). The switch(result) case 0xB form drops the count. Remaining: the 0x78 beq delay slot takes the body's first instruction (original has nop, hoisted lui); the 0x6C beq targets 0xE0 in ours, 0xE4 in original. Tried: nested if/return, inverted 0xB test (worse), do/while, flat if/break.
 int MaximoMain::LoadGame() {
     ResetGameData__10MemoryCardFv(gMC);
     InitLoadGame__10MemoryCardFv(gMC);
@@ -975,7 +975,8 @@ int MaximoMain::LoadGame() {
         InitRenderFrame__9MaxEngineFbUi(this, 0, 0);
         int result = LoadGame__10MemoryCardFv(gMC);
         if (result != -1) {
-            if (result == 0xB) {
+            switch (result) {
+            case 0xB:
                 m_unk19A78 = gMC[0x22C];
                 if (m_unk19A78 >= 0x14) {
                     m_unk19A78 = 0x13;
@@ -1244,7 +1245,7 @@ void MaximoMain::DeletePressStart() {
 }
 
 // DRAFT: 0x00137EF0 PressStart__10MaximoMainFi
-// note: 58 words differ: state-machine register picks (at vs v1 for the nMode test, a0 vs a2 for the state load, f0/f1 order in the ramps), nested branch shape; kept pFont local, text load via pFont+0x100, nMode before nFlag (129 -> 101 -> 67 -> 58); ternary assert and state-first reorder (62) tried
+// note: 58 words differ: state-machine register picks (at vs v1 for the nMode test, a0 vs a2 for the state load, f0/f1 order in the ramps), nested branch shape; kept pFont local, text load via pFont+0x100, nMode before nFlag (129 -> 101 -> 67 -> 58); ternary assert, state-first reorder (62), and direct m_unk19AD4 reads (58, no change) tried
 void MaximoMain::PressStart(int arg0) {
     unsigned char *pFont = gInterface + 0x80;
     unsigned int nMode = *(unsigned int *)pFont;
@@ -1276,15 +1277,16 @@ void MaximoMain::PressStart(int arg0) {
 }
 
 // DRAFT: 0x00139AB0 SetMarker__10MaximoMainFP6PMNodeiP6PMNode
-// note: vcall (Slot4) and prologue match; child select differs: original keeps count in v1 and loads children via addiu v0,s0,0x14 + lw 8(v0), then sll/addiu -4/addu; ours loads 0x1C directly. Tried: children[count], -4 cast, local count, &m_unk14+8 base, else-branch (all 33 lines)
+// note: 33 words differ (was 34). The PMChildList pointer local fixed one word; the rest is register choice: original keeps count in v1 and children in v0 via addiu v0,s0,0x14 + lw 8(v0), ours count in a0 and children in v1. Tried: children[count], -4 cast, local count, &m_unk14+8 base, else-branch, inline index (all 33)
 PMNode *MaximoMain::SetMarker(PMNode *arg0, int arg1, PMNode *arg2) {
     PMNode *node = arg0->Find(*(unsigned int *)(LevelTable + (arg1 << 7)));
 
     if (node != 0) {
         PMNode *child;
-        if (node->m_unk14.count != 0) {
-            PMNode **children = (PMNode **)((char *)node->m_unk14.children - 4);
-            child = children[node->m_unk14.count];
+        PMChildList *list = &node->m_unk14;
+        if (list->count != 0) {
+            PMNode **children = (PMNode **)((char *)list->children - 4);
+            child = children[list->count];
         } else {
             child = 0;
         }
@@ -2039,7 +2041,7 @@ int MaximoMain::MapscreenOpenBonusExists() {
 }
 
 // DRAFT: 0x0013C770 MapscreenPrintInfo__10MaximoMainFP11FontManageri
-// note: 77 words differ; register allocation and store order in the per-entry loop. Tried 8 variants (short vs signed char loads, tbl pointer, declaration order, entry pointer placement); best kept at 77.
+// note: 79 words differ; the first call's arguments (mtc1 of -120.0f and 0.0f) are hoisted above the entry index math in the original. Tried: short vs signed char loads, tbl pointer, declaration order, entry as a block-scoped pointer (79, no change).
 void MaximoMain::MapscreenPrintInfo(FontManager *arg0, int arg1) {
     char buf[0x20];
     static float aBonus;
