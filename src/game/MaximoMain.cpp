@@ -2074,25 +2074,30 @@ void MaximoMain::MapscreenPrintInfo(FontManager *arg0, int arg1) {
 }
 
 // DRAFT: 0x0013C9F0 SetMarkerAsMastered__10MaximoMainFP6PMNodeP6PMNode
-// note: 79 words differ; original inlines the PMeshNode ctor chain with this spilled to 0x5C(sp) and frame 0x60, ours uses manual __ct calls and frame 0x50 (stand-in PMNode has no embedded PArray member).
+// note: 7 words: PMNode vtable lui hoisted above the 0x58/0x5C spills in the original (same as PWorld LoadMeshNodeHierarchy). Tried: split decl/assign, vtable local, index store.
 void MaximoMain::SetMarkerAsMastered(PMNode *arg0, PMNode *arg1) {
     if (arg1 != 0) {
         PMNode *found = arg0->Find(0xA5D4D353U);
         if (found == 0) {
             CdsAssert__FPciPc((char *)"MaximoMain.cpp", 0x7F1, (char *)"aMastery");
         }
-        PMNode *node = (PMNode *)__nw__FUi(0x140);
-        if (node != 0) {
-            *(void **)node = __vt__9PResource;
-            *(int *)((char *)node + 4) = 0;
-            *(void **)node = __vt__6PMNode;
-            __ct__6PArrayFv((char *)node + 0x14);
-            sceVu0UnitMatrix((char *)node + 0x40);
-            __ct__6PArrayFv((char *)node + 0xD8);
-            InitMembers__6PMNodeFv(node);
-            *(void **)node = __vt__9PMeshNode;
-            __ct__6PArrayFv((char *)node + 0x130);
-            InitMembers__9PMeshNodeFv(node);
+        PMNode *node;
+        if ((node = (PMNode *)__nw__FUi(0x140)) != 0) {
+            char *volatile pMeshV = (char *)node;
+            {
+                char *volatile pNodeV = (char *)node;
+                *(void **)node = __vt__9PResource;
+                *(int *)(pNodeV + 4) = 0;
+                *(void **)pNodeV = __vt__6PMNode;
+                __ct__6PArrayFv(pNodeV + 0x14);
+                sceVu0UnitMatrix(pNodeV + 0x40);
+                __ct__6PArrayFv(pNodeV + 0xD8);
+                InitMembers__6PMNodeFv((PMNode *)pNodeV);
+            }
+            *(void **)pMeshV = __vt__9PMeshNode;
+            __ct__6PArrayFv(pMeshV + 0x130);
+            InitMembers__9PMeshNodeFv((PMNode *)pMeshV);
+            node = (PMNode *)pMeshV;
         }
         CopyMNode__6PMNodeFR6PMNodeb(node, found, true);
         *(u_long128 *)((char *)node + 0x80) = *(u_long128 *)((char *)arg1 + 0x80);
@@ -2116,7 +2121,7 @@ extern "C" void *__dt__9PResourceFv(void *pThis, short nFlag) {
 }
 
 // DRAFT: 0x0013CBD0 GetMapScreenPath__10MaximoMainFP6PMNodeiR6PArrayb
-// note: 16 words differ, all the s1/s2 swap (original PArray in s2, bool in s1); a bool local copy, reordered locals, and a PArray pointer local all leave 16. pRec addend kept separate so lw stays at offset 0.
+// note: 16 words differ, all the s1/s2 swap (original PArray in s2, bool in s1); a bool local copy, reordered locals, and a PArray pointer local all leave 16. pRec addend kept separate so lw stays at offset 0. All 720 local-declaration orders tried: best still 16.
 void MaximoMain::GetMapScreenPath(PMNode *arg0, int arg1, PArray &arg2, bool arg3) {
     unsigned int i;
     int idx;
