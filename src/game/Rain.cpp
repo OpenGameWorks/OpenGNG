@@ -27,25 +27,25 @@ void Rain::SetEditableVars(char *pSrc) {
     memcpy((char *)this + 0x1B0, pSrc, 0x8);
 }
 
-// DRAFT: 0x001CD4E0 Execute__4RainFv
-// note: size 0xC8 vs 0xD0; -1 create block is inline with bne, original has beq to an out-of-line block after a b to epilogue; tried empty-then, early return, return-then-create.
+// FUNCTION: 0x001CD4E0 Execute__4RainFv
 void Rain::Execute() {
-    if (m_unk20 != -2) {
-        if (m_unk20 != 0) {
-            if (m_unk20 != -1) {
-                return;
-            } else {
-                void *apParticleMgr = gGfxEng;
-                CDS_ASSERT(0x22, apParticleMgr);
-                CreateRain__16PParticleManagerFf(apParticleMgr, m_unk1B0);
-                SetLightningDensity__16PParticleManagerFf(apParticleMgr, m_unk1B4);
-                SetState(0);
-            }
-        }
-    } else {
-        void *apParticleMgr = gGfxEng;
+    switch (m_unk20) {
+    case -1: {
+        void *apParticleMgr = gGfxEng + 0x154F00;
+        CDS_ASSERT(0x22, apParticleMgr);
+        CreateRain__16PParticleManagerFf(apParticleMgr, m_unk1B0);
+        SetLightningDensity__16PParticleManagerFf(apParticleMgr, m_unk1B4);
+        SetState(0);
+        break;
+    }
+    case 0:
+        break;
+    case -2: {
+        void *apParticleMgr = gGfxEng + 0x154F00;
         CDS_ASSERT(0x30, apParticleMgr);
         DestroyRain__16PParticleManagerFv(apParticleMgr);
+        break;
+    }
     }
 }
 

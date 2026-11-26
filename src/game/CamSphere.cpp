@@ -38,24 +38,26 @@ void CamSphere::SetEditableVars(char *pSrc) {
 }
 
 // DRAFT: 0x001A3180 Execute__9CamSphereFv
-// note: 54 words differ; branch polarity on the copy block (original beq into it, then b to epilogue) and call-block placement differ, gEng lui/addiu immediates are unresolved relocs. Variants: zero test first 55 words, nested else-if 61 words.
+// note: 10 words differ, all in the case 0 vPos copy: the original loads m_unk1C0..1CC into f3,f2,f1,f0 before storing to sp+0x30..0x3C, ours interleaves each load with its store through f0. Variants: pBuf local before the copies 52 words; pBuf after the copies 10 (kept); brace-initialised vPos 31 words.
 void CamSphere::Execute() {
-    if (m_unk20 != 0) {
-        if (m_unk20 == -1) {
-            m_unk1C0 = m_unk1B0;
-            m_unk1C4 = m_unk1B4;
-            m_unk1C8 = m_unk1B8;
-            m_unk1D0 = m_unk1BC;
-            if (m_unk3C != 0) {
-                *(u_long128 *)(m_unk3C + 0x80) = *(u_long128 *)&m_unk1C0;
-                m_unk3C[0x3E] |= 8;
-            } else {
-                *(u_long128 *)_pad190 = *(u_long128 *)&m_unk1C0;
-            }
-            SetState(0);
+    switch (m_unk20) {
+    case -1: {
+        m_unk1C0 = m_unk1B0;
+        m_unk1C4 = m_unk1B4;
+        m_unk1C8 = m_unk1B8;
+        m_unk1D0 = m_unk1BC;
+        char *pBuf = m_unk3C;
+        if (pBuf != 0) {
+            *(u_long128 *)(pBuf + 0x80) = *(u_long128 *)&m_unk1C0;
+            ((unsigned char *)pBuf)[0x3E] |= 8;
+        } else {
+            *(u_long128 *)_pad190 = *(u_long128 *)&m_unk1C0;
         }
-    } else {
-        Camera *pCam = (Camera *)gEng;
+        SetState(0);
+        break;
+    }
+    case 0: {
+        Camera *pCam = (Camera *)(gEng + 0x19760);
         CDS_ASSERT(0x26, pCam);
         PVec3 vPos;
         vPos.m_v[0] = m_unk1C0;
@@ -63,6 +65,8 @@ void CamSphere::Execute() {
         vPos.m_v[2] = m_unk1C8;
         vPos.m_v[3] = m_unk1CC;
         pCam->CamCollideSphere(vPos, m_unk1D0);
+        break;
+    }
     }
 }
 

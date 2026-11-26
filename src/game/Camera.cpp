@@ -514,24 +514,24 @@ int Camera::UpdateFromCamBox() {
     return ret;
 }
 
-// DRAFT: 0x00179810 RestoreCamBox__6CameraFv
-// note: 25 differing lines, size 0x84 vs 0x8c; original shares an epilogue via `b` with ld ra in the delay slot and places the 2B0 test as beq; tried early returns, nested if, combined &&, gEng index form, and swapped add operands.
+// FUNCTION: 0x00179810 RestoreCamBox__6CameraFv
 void Camera::RestoreCamBox() {
     if (m_unkB4 != 4) {
         return;
     }
-    if (m_unk2B0 != 3) {
-        return;
+    switch (m_unk2B0) {
+    case 3:
+        *(float *)((char *)m_unk2B4 + 0x30) = 1.0f;
+        void *temp_v0 = *(void **)&gEng[0x1883C];
+        void *temp_v1 = *(void **)((char *)temp_v0 + 0x3C);
+        char *var_a1 = (char *)temp_v0 + 0x190;
+        if (temp_v1 != 0) {
+            var_a1 = (char *)temp_v1 + 0x80;
+        }
+        sceVu0CopyVector(m_unk10, (float *)var_a1);
+        m_unk10[1] += 5.0f;
+        break;
     }
-    *(float *)((char *)m_unk2B4 + 0x30) = 1.0f;
-    void *temp_v0 = *(void **)&gEng[0x1883C];
-    void *temp_v1 = *(void **)((char *)temp_v0 + 0x3C);
-    char *var_a1 = (char *)temp_v0 + 0x190;
-    if (temp_v1 != 0) {
-        var_a1 = (char *)temp_v1 + 0x80;
-    }
-    sceVu0CopyVector(m_unk10, (float *)var_a1);
-    m_unk10[1] = 5.0f + m_unk10[1];
 }
 
 // FUNCTION: 0x001798A0 UpdateFromApparition__6CameraFv
@@ -799,11 +799,14 @@ int Camera::SetHeadCam(bool arg0) {
     return 0;
 }
 
-// DRAFT: 0x0017A280 PolyDebug__6CameraFv
-// note: 11 differing words; original branches with b to the shared jr ra exit (ld in delay slot), ours uses bnez. Tried &&, early return, nested if/else, explicit returns; count unchanged.
+// FUNCTION: 0x0017A280 PolyDebug__6CameraFv
 void Camera::PolyDebug() {
-    if (m_unkB4 == 0 && m_unkB0 != 0) {
-        ((CameraFollow *)m_unkBC)->DrawPolyDebug();
+    switch (m_unkB4) {
+    case 0:
+        if (m_unkB0 != 0) {
+            ((CameraFollow *)m_unkBC)->DrawPolyDebug();
+        }
+        break;
     }
 }
 
