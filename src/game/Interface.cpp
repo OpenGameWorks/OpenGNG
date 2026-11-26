@@ -143,7 +143,7 @@ class PMat4;
 
 class PMNode {
 public:
-    virtual void Slot00(int flag);
+    virtual ~PMNode();
     virtual void Slot01();
     virtual void Slot02();
     virtual void Slot03();
@@ -1233,16 +1233,12 @@ void HudCombo::ComboFinish() {
 void HudCombo::ComboNumber() {
     if (m_unk3C != 0) {
         ((PArray *)((char *)m_unk38 + 0x14))->Remove(m_unk3C);
-        if (m_unk3C != 0) {
-            ((PMNode *)m_unk3C)->Slot00(1);
-        }
+        delete ((PMNode *)m_unk3C);
         m_unk3C = 0;
     }
     if (m_unk40 != 0) {
         ((PArray *)((char *)m_unk38 + 0x14))->Remove(m_unk40);
-        if (m_unk40 != 0) {
-            ((PMNode *)m_unk40)->Slot00(1);
-        }
+        delete ((PMNode *)m_unk40);
         m_unk40 = 0;
     }
     ((PVirtObj *)m_unk38)->Slot05(0);
@@ -2311,9 +2307,7 @@ void Interface::InitHud() {
         if (pNew) {
             ((PArray *)((char *)pNode + 0x14))->Remove(pNew);
         }
-        if (m_unk1C4) {
-            ((PMNode *)m_unk1C4)->Slot00(1);
-        }
+        delete ((PMNode *)m_unk1C4);
         m_unk1C4 = pNew;
         ((PMNode *)m_unk1C4)->SetAllFrustrumTest((eBoxIntersect)1);
         m_unk1C8 = ((PMNode *)m_unk1C4)->Find(0xE7811976);
@@ -2526,9 +2520,7 @@ void Interface::AddMeshLayer(PMNode *node) {
 
 // FUNCTION: 0x144D10 DeleteMeshLayer__9InterfaceFP6PMNode
 void Interface::DeleteMeshLayer(PMNode *node) {
-    if (node != 0) {
-        node->Slot00(1);
-    }
+    delete node;
     ((PArray *)((char *)this + 0x404))->Remove(node);
 }
 
@@ -2538,9 +2530,7 @@ void Interface::DeleteMeshLayer() {
     m_unk408 = 0;
     for (node = (PMNode *)(m_unk404 != 0 ? m_unk40C[0] : 0); node != 0;
          node = (PMNode *)(++m_unk408 < (unsigned int)m_unk404 ? m_unk40C[m_unk408] : 0)) {
-        if (node != 0) {
-            node->Slot00(1);
-        }
+        delete node;
     }
     if (m_unk40C != 0) {
         m_unk404 = 0;
@@ -2548,43 +2538,27 @@ void Interface::DeleteMeshLayer() {
     }
 }
 
-// DRAFT: 0x00144E20 Destroy__9InterfaceFv
-// note: 60 words differ, original frame 0x30 keeps this in s1 with field slots in s0 (addiu s0,s1,0x1C4/0x1C8); ours keeps this in s0 and folds the offsets; tried slot pointers, hoisted slot, declaration reorder, self local (6 attempts)
+// FUNCTION: 0x00144E20 Destroy__9InterfaceFv
 void Interface::Destroy() {
-    Interface *self;
-    PMNode **slot;
-    PMNode *node;
-    void **obj;
-    void ***objSlot;
-    self = this;
-    slot = (PMNode **)((char *)self + 0x1C4);
-    node = *(PMNode **)((char *)self + 0x1C4);
-    if (node != 0) {
-        node->ProcessFxTriggers(-1.0f, 0, true, false);
-        node = *slot;
-        if (node != 0) {
-            node->Slot00(1);
-        }
-        *slot = 0;
+    if (m_unk1C4 != 0) {
+        ((PMNode *)m_unk1C4)->ProcessFxTriggers(-1.0f, 0, true, false);
+        delete (PMNode *)m_unk1C4;
+        m_unk1C4 = 0;
         ((PVirtObj *)((char *)this + 0x22C))->Slot01();
         ((PVirtObj *)((char *)this + 0x290))->Slot01();
         ((PTextureManager *)((char *)gGfxEng + 0x154C90))->UnloadDynamicTextures((eTextureGroup)0x6A);
     }
-    objSlot = (void ***)((char *)self + 0x1C8);
-    obj = *(void ***)((char *)self + 0x1C8);
-    if (obj != 0) {
-        if (obj != 0) {
-            ((PMNode *)obj)->Slot00(1);
-        }
-        *objSlot = 0;
+    if (m_unk1C8 != 0) {
+        delete (PMNode *)m_unk1C8;
+        m_unk1C8 = 0;
     }
     *(signed char *)((char *)this + 0x2F8) = 1;
     *(signed char *)((char *)this + 0x3E4) = 0;
     m_unk1C0 = 1;
     DeleteMeshLayer();
     ((FontManager *)((char *)this + 0x80))->RemoveAll(true);
-    *(short *)((char *)this + 0x414) = 0;
-    *(short *)((char *)this + 0x416) = 0;
+    m_unk414 = 0;
+    m_unk416 = 0;
 }
 
 // FUNCTION: 0x00144F10 Load__9InterfaceFPCc
