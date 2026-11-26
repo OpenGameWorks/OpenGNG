@@ -388,8 +388,17 @@ class Pad {
 public:
     enum VibType { VIB_0 = 0, VIB_1 = 1 };
     void SetVibrate(VibType arg0, unsigned char arg1);
-    char _pad000[0x110];
-    unsigned short m_unk110;
+    char _pad000[0x108];
+    unsigned short m_unk108;
+    unsigned short m_unk10A;
+    short m_unk10C;
+    char _pad10E[0x110 - 0x10E];
+    short m_unk110;
+    char _pad112[0x114 - 0x112];
+    signed char m_unk114;
+    signed char m_unk115;
+    signed char m_unk116;
+    signed char m_unk117;
 };
 extern Pad gPad;
 class MaximoMain {
@@ -4402,6 +4411,117 @@ void Player::UpdateBodyBox() {
         }
         }
     }
+}
+
+static int PadTimer;
+static signed char StickDir[2];
+static signed char stick_tbl[32];
+
+// DRAFT: 0x00165570 PadUpdate__6PlayerFb
+// note: DIFF 197, size 0x3DC vs 0x3A4; flag-chain order, branch layout, 0x3D pointer walk, stick_tbl bytes, gEng/gPad addends differ; tried nested and flat 0x26B guard (197), pointer-walk variant (202)
+void Player::PadUpdate(bool arg0) {
+    if (arg0) {
+        unsigned char *pEng = gEng + 0x19760;
+        m_unk1B0 = *(short *)((char *)m_unk25C + 6) & gPad.m_unk10C;
+        m_unk1B2 = *(short *)((char *)m_unk25C + 6) & gPad.m_unk110;
+        m_unk1B6 = gPad.m_unk116;
+        m_unk1B7 = gPad.m_unk117;
+        m_unk1B8 = gPad.m_unk108;
+        m_unk1BA = gPad.m_unk10A;
+        unsigned char prev = m_unk26B;
+        m_unk26B = pEng[0x2B8];
+        if (m_unk26B != 0) {
+            if ((m_unk26B & 0xFF) != prev) {
+                if (((unsigned char *)m_unk254)[7] == 2) {
+                    char *p = (char *)m_unk3C;
+                    *(int *)(p + 0x18) = 0;
+                    char *q = 0;
+                    if (*(char **)(p + 0x14) != 0) {
+                        q = *(char **)(*(char **)(p + 0x14) + 8);
+                    }
+                    if (q != 0) {
+                        q[0x3D] = 6;
+                    }
+                }
+            }
+        }
+        if ((m_unk26C != 0) || (m_unk26A != 0) || (m_unk26B != 0) || (m_unk26D != 0)) {
+            m_unk1B0 &= 9;
+            if ((m_unk26A != 0) || (m_unk26B != 0) || (m_unk26D != 0)) {
+                m_unk1B2 &= 9;
+            }
+            m_unk1B4 = 0;
+            m_unk1B5 = 0;
+        } else {
+            m_unk1B4 = gPad.m_unk114;
+            m_unk1B5 = gPad.m_unk115;
+            if (*(int *)(pEng + 0xB4) == 3) {
+                m_unk1B4 = stick_tbl[((m_unk1B0 >> 4) & 0xF) * 2];
+                m_unk1B5 = stick_tbl[((m_unk1B0 >> 4) & 0xF) * 2 + 1];
+            }
+            if (PadTimer != 0) {
+                PadTimer = PadTimer - 1;
+                if (PadTimer <= 0) {
+                    char *p3;
+                    if (m_unk3C != 0) {
+                        p3 = (char *)m_unk3C + 0x80;
+                    } else {
+                        p3 = (char *)&m_unk190;
+                    }
+                    PadTimer = ((int)*(float *)p3 & 0xF) + 8;
+                    m_unk1B2 = 1 << ((*(unsigned short *)(gEng + 0x19A80) & 0xF) + 0xC);
+                    char *p4;
+                    if (m_unk3C != 0) {
+                        p4 = (char *)m_unk3C + 0x80;
+                    } else {
+                        p4 = (char *)&m_unk190;
+                    }
+                    StickDir[0] = (signed char)((unsigned char)gEng[0x19A80] + (*(int *)(p4 + 8) & 0xFF));
+                    StickDir[1] = -StickDir[0];
+                }
+                m_unk1B4 = StickDir[0];
+                m_unk1B5 = StickDir[1];
+            }
+        }
+    } else {
+        m_unk1B0 = 0;
+        m_unk1B2 = 0;
+        m_unk1B4 = 0;
+        m_unk1B5 = 0;
+        m_unk1B6 = 0;
+        m_unk1B7 = 0;
+        m_unk1B8 = 0;
+        m_unk1BA = 0;
+    }
+    signed char a = m_unk1B4;
+    signed char b = m_unk1B5;
+    if (a < 0) {
+        a = -a;
+    }
+    bool useB = b < a;
+    if (b < 0) {
+        b = -b;
+        useB = b < a;
+    }
+    m_unk1BC = ((useB == 0) ? b : a) & 0xFF;
+    if (m_unk1BC >= 0x65) {
+        m_unk1C0 += 1;
+    } else {
+        m_unk1C0 = 0;
+    }
+    float f;
+    if ((m_unk1BC >= 0x32) && !(m_unk264 & 0x400)) {
+        float t = 57.295776f * atan2f((float)-m_unk1B4, (float)m_unk1B5);
+        unsigned char *pEng2 = gEng + 0x19760;
+        if (pEng2[0xB1] != 0) {
+            f = Round180__Ff(t + *(float *)(pEng2 + 0x24));
+        } else {
+            f = Round180__Ff(t);
+        }
+    } else {
+        f = *(float *)((char *)m_unk38 + 0x11C);
+    }
+    m_unk1C4 = f;
 }
 
 // FUNCTION: 0x00165930 SavePlayerData__6PlayerFPQ26Player10PlayerData

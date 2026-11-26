@@ -110,6 +110,7 @@ public:
     void SetAbilityAction(PSkeleton *arg0, int arg1, int arg2);
     int AnimationViewer(int arg0);
     void UpdateBodyBox();
+    void PadUpdate(bool arg0);
     void CyclockDamageMove();
     void MBlowMove();
     void AirSlash2Move();
@@ -192,7 +193,7 @@ public:
     signed char m_unk1B5;   // 0x1B5 compared against -74 and 75 by SpinCheck
     signed char m_unk1B6;   // 0x1B6 cleared by DialogMove
     signed char m_unk1B7;   // 0x1B7 cleared by DialogMove
-    char _pad1B8[0x1BA - 0x1B8];
+    unsigned short m_unk1B8; // 0x1B8
     unsigned short m_unk1BA; // 0x1BA nonzero keeps ReleaseCheck counting the caught state
     int m_unk1BC;          // 0x1BC compared with 0x32 and 0x64 by GetGroundAction
     short m_unk1C0;         // 0x1C0 signed halfword read by SlashMove
@@ -233,10 +234,12 @@ public:
     int m_unk260;           // 0x260
     int m_unk264;           // 0x264
     signed char m_unk268;   // 0x268 cleared by GrimIdleMove
-    char _pad269[0x26B - 0x269];
+    char _pad269[0x26A - 0x269];
+    unsigned char m_unk26A; // 0x26A
     unsigned char m_unk26B; // 0x26B tested by DialogMove
     unsigned char m_unk26C; // 0x26C byte set by SetHeadCamera
-    char _pad26D[0x270 - 0x26D];
+    unsigned char m_unk26D; // 0x26D
+    char _pad26E[0x270 - 0x26E];
     int m_unk270;           // 0x270 spin state, read and written by SpinCheck
     int m_unk274;           // 0x274 timer, set from TAP_TIMER by DSlashMove
     int m_unk278;           // 0x278 spin state, read and written by SpinCheck
