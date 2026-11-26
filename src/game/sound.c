@@ -83,7 +83,7 @@ void SOUND_MakeStreamTransactionID(void) {
 }
 
 // DRAFT: 0x001ADAB0 SOUND_MakeSoundStreamRef
-// note: same flag-register difference as the ID function, plus original uses addiu $v1,$v0,1 after reload; 9 differing lines.
+// note: 8 differing lines (best of ~46 variants). Same flag-register difference as the ID function: original keeps the flag in $v0 and 0x100 in $v1, ours uses $v1 for the flag and $a0 for 0x100; original reloads into $v0 and increments into $v1 with addiu. Tried decl order, int/unsigned types, condition forms, increment forms and store orders; none below 8.
 void SOUND_MakeSoundStreamRef(void) {
     static int st_nextStreamRef;
     static char init;
@@ -274,7 +274,7 @@ void SOUND_ChangeReverbCore(short arg0, short arg1, short arg2, short arg3, shor
 }
 
 // DRAFT: 0x001ADEC0 FlushIOPCommand
-// note: 4 words differ. Original hoists daddu a1,zero,zero above jal SOUND_GetStatus and puts the flag sb in its delay slot; ours is reversed. Original sets a1 (addiu) before jal SOUND_SIFTransfer with daddu a0 in the delay slot; ours is reversed. Tried: volatile flag store, unsigned GetStatus arg, unsigned short* SIFTransfer arg (no change).
+// note: 2 words differ (was 4). Clearing fst_bGetStatusRequested before the SOUND_GetStatus call matched the store placement. Remaining: original sets a1 (addiu, senddata lo) before jal SOUND_SIFTransfer with daddu a0,zero in the delay slot; ours loads a0 first and puts the addiu a1 in the delay slot. Tried: volatile flag store, unsigned GetStatus arg, unsigned short* SIFTransfer arg, senddata temporary, (void *)&senddata[0], (int)arg0, arg0 + 0 (all 2 words).
 int FlushIOPCommand(int arg0, unsigned int arg1, unsigned int arg2) {
     int old;
     static volatile int oldcnt;
@@ -296,8 +296,8 @@ int FlushIOPCommand(int arg0, unsigned int arg1, unsigned int arg2) {
         return -1;
     }
     if (fst_bGetStatusRequested != 0) {
-        SOUND_GetStatus(SOUND_IOP_REQUEST_LOAD, 0);
         fst_bGetStatusRequested = 0;
+        SOUND_GetStatus(SOUND_IOP_REQUEST_LOAD, 0);
     }
     senddata[1] = 0;
     senddata[4] = (short)(arg1 >> 16);
@@ -435,7 +435,7 @@ void SOUND_SetSPUWriteAddress(unsigned int arg0) {
 }
 
 // DRAFT: 0x001AE3C0 SOUND_AllocateStreamBuffer
-// note: 6 differing lines; compiler folds the low-half mask so the original's ori $v0,0xFFFF + and is missing. Tried arg1 & 0xFFFFU, (short)(arg1 & 0xFFFF), (unsigned short) cast, unsigned long arg1 (header conflict); all 6.
+// note: 6 differing lines; compiler folds the low-half mask so the original's ori $v0,0xFFFF + and is missing. Tried arg1 & 0xFFFFU, (short)(arg1 & 0xFFFF), (unsigned short) cast, unsigned long arg1 (header conflict), unsigned int lo local with &=, mask local, (int)arg1 & 0xFFFF, arg1 & 65535; all 6.
 void SOUND_AllocateStreamBuffer(short arg0, unsigned int arg1, unsigned int arg2) {
     IOPCommandData[0] = arg0;
     IOPCommandData[4] = (short)arg2;
@@ -655,7 +655,7 @@ unsigned int SOUND_PlayMusicRelVol(unsigned int arg0, short arg1, unsigned int a
 }
 
 // DRAFT: 0x001AEA90 SOUND_TransferSFX
-// note: 8 differing words; compiler folds arg2 & 0xFFFF into a plain sh, dropping the original's ori $v0,0xFFFF + and. Tried store reorder (9 words) and hoisted masked local (9 words).
+// note: 8 differing words; compiler folds arg2 & 0xFFFF into a plain sh, dropping the original's ori $v0,0xFFFF + and. Tried store reorder (9 words), hoisted masked local (9 words), in-place unsigned int lo local with &=, (int)arg2 & 0xFFFF (all 8).
 void SOUND_TransferSFX(short arg0, short arg1, unsigned int arg2, unsigned int arg3) {
     IOPCommandData[0] = arg0;
     IOPCommandData[1] = arg1;
