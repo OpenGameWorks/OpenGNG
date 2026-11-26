@@ -598,21 +598,31 @@ int Tinker::GetNextPosition(float (&pos)[4]) {
     return 0;
 }
 
-// DRAFT: 0x00209860 AwardCheck__6TinkerFv
-// note: 44 differing lines; original materializes m_unk1B0 == 0 and == 1 as xor/sltiu bools (bnez), ours uses beqz/bne, and s0 is set late in the original. Tried: shared tail (kept), int locals (45), bool locals in both orders (44, kept).
+// FUNCTION: 0x00209860 AwardCheck__6TinkerFv
 int Tinker::AwardCheck() {
-    int r;
-    bool bOne = (m_unk1B0 == 1);
-    bool bZero = (m_unk1B0 == 0);
-    if (bZero || bOne) {
-        r = ReadApparitionData__15EntityBaseClassFiUi(this, 2, 0);
-    } else if (m_unk200 == 8 || m_unk200 == 7) {
-        r = ReadApparitionData__15EntityBaseClassFiUi(this, 1, 0);
-    } else {
-        r = ReadApparitionData__15EntityBaseClassFiUi(this, 3, 0);
+    bool bZero;
+    bZero = (m_unk1B0 == 0);
+    if (!bZero) {
+        bZero = (m_unk1B0 == 1);
     }
-    if (r == 0) {
-        return 1;
+    if (bZero) {
+        if (ReadApparitionData__15EntityBaseClassFiUi(this, 2, 0) == 0) {
+            return 1;
+        }
+    } else {
+        switch (m_unk200) {
+        case 7:
+        case 8:
+            if (ReadApparitionData__15EntityBaseClassFiUi(this, 1, 0) == 0) {
+                return 1;
+            }
+            break;
+        default:
+            if (ReadApparitionData__15EntityBaseClassFiUi(this, 3, 0) == 0) {
+                return 1;
+            }
+            break;
+        }
     }
     return (m_unk2C1 != 0) ^ 1;
 }
