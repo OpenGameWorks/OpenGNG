@@ -322,7 +322,7 @@ int FlushIOPCommand(int arg0, unsigned int arg1, unsigned int arg2) {
 }
 
 // DRAFT: 0x001AE060 SOUND_CountFreeSPUChannels
-// note: loop and lbu match; still differs in early-return scheduling (second compare sits in a branch delay slot with v0 vs at, and lui placement). Tried: split returns, reordered ||, arg0 >= vs > 0x2F.
+// note: 20 differing lines; do-while loop drops the top test (matches the original's loop body, but the original enters the loop through a bottom test). Still differs: early -3 check uses v0 vs at and no delay-slot fill for sltiu; original has b to the loop condition. Tried: split returns, reordered ||, arg0 >= vs > 0x2F, separate early-return checks (27), bad-local (25), while(i <= arg1) (23), for (23), reversed locals (20).
 int SOUND_CountFreeSPUChannels(unsigned int arg0, unsigned int arg1) {
     int count;
     unsigned int i;
@@ -334,12 +334,12 @@ int SOUND_CountFreeSPUChannels(unsigned int arg0, unsigned int arg1) {
         return -3;
     }
     count = 0;
-    while (arg1 >= i) {
+    do {
         if (*(unsigned char *)&SOUND_SPUKeyStatus[i] == 0) {
             count += 1;
         }
         i += 1;
-    }
+    } while (arg1 >= i);
     return count;
 }
 
@@ -628,7 +628,7 @@ unsigned int SOUND_DataDestEEDirect(unsigned int arg0, short arg1, unsigned int 
 }
 
 // DRAFT: 0x001AE8B0 SOUND_StreamAfterFlags
-// note: masked [2] store (x & 0xFFFF) is folded to plain sh; store order of [2]/[3]/[5]/[6] and early-branch offset differ; 25 lines
+// note: 25 differing words; size 0x94 vs 0x9c. Original keeps ori $v0,0xFFFF + and on arg1 & 0xFFFF (the two missing words); ours folds it to a plain sh of a1. Tried arg1 & 0xFFFFU direct and in a block-scoped unsigned int local; both fold to sh (25).
 void SOUND_StreamAfterFlags(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4, unsigned int arg5) {
     if (arg0 < 4U) {
         IOPCommandData[0] = arg0;
@@ -647,7 +647,7 @@ void SOUND_StreamAfterFlags(unsigned int arg0, unsigned int arg1, unsigned int a
 }
 
 // DRAFT: 0x001AE950 SOUND_PlayDialogRelVol
-// note: 26 differing lines; the original's ori $a2,0xFFFF + and mask on arg2's low half is folded to a plain sh, which shifts the branch and epilogue. (unsigned short) cast gives the same 26.
+// note: 26 differing words; size 0x98 vs 0xa0. The original's ori $a2,0xFFFF + and on arg2 & 0xFFFF (the two missing words) is folded to a plain sh, which shifts the b target and epilogue by 2 words. Tried (unsigned short) cast and (arg2 & 0xFFFFU) + 0U; both fold (26).
 unsigned int SOUND_PlayDialogRelVol(unsigned int arg0, short arg1, unsigned int arg2, short arg3, unsigned int arg4) {
     if (arg0 >= 4U) {
         return -1;
@@ -665,7 +665,7 @@ unsigned int SOUND_PlayDialogRelVol(unsigned int arg0, short arg1, unsigned int 
 }
 
 // DRAFT: 0x001AE9F0 SOUND_PlayMusicRelVol
-// note: 26 differing lines; same shape as SOUND_PlayDialogRelVol: the ori $a2,0xFFFF + and mask on arg2's low half is folded to a plain sh, shifting the branch and epilogue.
+// note: 26 differing words; size 0x98 vs 0xa0. Same shape as SOUND_PlayDialogRelVol: the ori $a2,0xFFFF + and mask on arg2 & 0xFFFF is folded to a plain sh, shifting the b target and epilogue by 2 words. The original's SetIOPCommand code is 0x3E, not 0x41.
 unsigned int SOUND_PlayMusicRelVol(unsigned int arg0, short arg1, unsigned int arg2, short arg3, unsigned int arg4) {
     if (arg0 >= 4U) {
         return -1;
