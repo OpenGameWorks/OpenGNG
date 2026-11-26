@@ -158,11 +158,11 @@ int PDynamicBuffer::WriteGhostData(unsigned int nQuadwords) {
     return nRet;
 }
 
-// DRAFT: 0x001D5DF0 Open__14PDynamicBufferFv
-// note: 2 words differ: the original materializes (size != 0) with sltu then xori 1; ours folds to xor/sltiu. Tried !(size), (size!=0)==1, !(!size), local bool != 0 ==1 (6 words each).
+// FUNCTION: 0x001D5DF0 Open__14PDynamicBufferFv
 int PDynamicBuffer::Open() {
-    int bZero = (m_uCurSize == 0);
-    if (bZero == 0) {
+    // sltu $zero,size then xori 1 is an unsigned `> 0` test negated into a bool.
+    bool b = !(m_uCurSize > 0);
+    if (!b) {
         CdsAssert__FPciPc("PDynamicBuffer.cpp", 0x27, "!muCurSize");
     }
     m_uCurSize = 0;

@@ -410,8 +410,7 @@ void PObjectDisplayList::FindUniqueTextures() {
     }
 }
 
-// DRAFT: 0x1D47D0 GetNumSharedBones__18PObjectDisplayListFP6PMNodePi
-// note: first attempt; child-list loop shape still differs.
+// FUNCTION: 0x1D47D0 GetNumSharedBones__18PObjectDisplayListFP6PMNodePi
 void PObjectDisplayList::GetNumSharedBones(PMNode *pNode, int *pCount) {
     PMNodeChildList *pList;
     PMNode *pChild;
@@ -427,13 +426,15 @@ void PObjectDisplayList::GetNumSharedBones(PMNode *pNode, int *pCount) {
     pChild = (pList->m_unk0 != 0) ? pList->m_unk8[0] : 0;
     while (pChild != 0) {
         GetNumSharedBones(pChild, pCount);
-        pList->m_unk4 += 1;
-        pChild = ((unsigned int)pList->m_unk4 < (unsigned int)pList->m_unk0) ? pList->m_unk8[pList->m_unk4] : 0;
+        {
+            int nIndex = pList->m_unk4 + 1;
+            pList->m_unk4 = nIndex;
+            pChild = ((unsigned int)nIndex < (unsigned int)pList->m_unk0) ? pList->m_unk8[pList->m_unk4] : 0;
+        }
     }
 }
 
-// DRAFT: 0x1D48B0 WriteBoneMatrices__18PObjectDisplayListFP6PMNodePi
-// note: entry and stores match; child-loop tail differs (original reloads m_unk4 after store; join nop before epilogue). Tried +=1, ++, explicit store.
+// FUNCTION: 0x1D48B0 WriteBoneMatrices__18PObjectDisplayListFP6PMNodePi
 void PObjectDisplayList::WriteBoneMatrices(PMNode *pNode, int *pCount) {
     PMNodeChildList *pList;
     PMNode *pChild;
@@ -461,8 +462,11 @@ void PObjectDisplayList::WriteBoneMatrices(PMNode *pNode, int *pCount) {
     if (pChild != 0) {
         do {
             WriteBoneMatrices(pChild, pCount);
-            pList->m_unk4 += 1;
-            pChild = ((unsigned int)pList->m_unk4 < (unsigned int)pList->m_unk0) ? pList->m_unk8[pList->m_unk4] : 0;
+            {
+                int nIndex = pList->m_unk4 + 1;
+                pList->m_unk4 = nIndex;
+                pChild = ((unsigned int)nIndex < (unsigned int)pList->m_unk0) ? pList->m_unk8[pList->m_unk4] : 0;
+            }
         } while (pChild != 0);
     }
 }
@@ -488,8 +492,7 @@ void PObjectDisplayList::SetupSharedMeshInfo(PMesh *pMesh, PMNode *pNode) {
     m_unk1E4 |= pMesh->m_unk8 > 0;
 }
 
-// DRAFT: 0x1D4AF0 SetupNodeInfo__18PObjectDisplayListFP6PMNode
-// note: 6 differing lines, all in the child-loop tail: original increments in v1 and reloads m_unk4 into a0 after the store; ours reuses a0. Tried info-pointer declaration order (fixed the entry, 13->7) and swapped compare operands (7->6); += 1 and ++ same as WriteBoneMatrices.
+// FUNCTION: 0x1D4AF0 SetupNodeInfo__18PObjectDisplayListFP6PMNode
 void PObjectDisplayList::SetupNodeInfo(PMNode *pNode) {
     void *pInfo;
     PMesh *pMesh;
@@ -520,10 +523,10 @@ void PObjectDisplayList::SetupNodeInfo(PMNode *pNode) {
         if (pChild != 0) {
             do {
                 SetupNodeInfo(pChild);
-                pList->m_unk4 += 1;
-                pChild = 0;
-                if ((unsigned int)pList->m_unk0 > (unsigned int)pList->m_unk4) {
-                    pChild = pList->m_unk8[pList->m_unk4];
+                {
+                    int nIndex = pList->m_unk4 + 1;
+                    pList->m_unk4 = nIndex;
+                    pChild = ((unsigned int)nIndex < (unsigned int)pList->m_unk0) ? pList->m_unk8[pList->m_unk4] : 0;
                 }
             } while (pChild != 0);
         }

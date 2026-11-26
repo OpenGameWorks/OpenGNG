@@ -49,6 +49,7 @@ extern "C" void Add2DependencyList__13EntityManagerFUiUi(EntityManager *pThis, u
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Innocent.cpp", line, #cond))
 extern "C" void *memcpy(void *, const void *, unsigned int);
 extern "C" int printf(const char *, ...);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
@@ -59,7 +60,6 @@ extern "C" void CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHi
 extern int mbHard__15EntityBaseClass;
 // Per-type sequence records, 0x4C bytes each, indexed by m_unk1B0; the size covers the ten types.
 extern unsigned char InnocentSeqData[0x2B8];
-extern char lit_00268980[];
 extern int InnocentDialogID[0x100];
 extern unsigned char gInterface[2656];
 extern "C" void PlaySequence__15EntityBaseClassFPUi(void *pThis, unsigned int *pSeq);
@@ -232,8 +232,7 @@ void Innocent::OutputDebug() {
     gDebug.DebugDisp(buf);
 }
 
-// DRAFT: 0x0019F760 SetEditableVars__8InnocentFPc
-// note: DIFF 4 at 0x0128-0x0134; original sltu/xori/bnez on lit_00268980 vs ours xor/sltiu; branch form only.
+// FUNCTION: 0x0019F760 SetEditableVars__8InnocentFPc
 void Innocent::SetEditableVars(char *pText) {
     memcpy(&m_unk1B0, pText, 0x6C);
     m_unk1B8 *= 50;
@@ -256,10 +255,7 @@ void Innocent::SetEditableVars(char *pText) {
         m_unk208 = 0;
     }
     if (m_unk1C0 == 0.0f && m_unk1C4 == 0.0f && m_unk1C8 == 0.0f) {
-        int noLit = (unsigned int)lit_00268980 == 0;
-        if (noLit == 0) {
-            CdsAssert__FPciPc("Innocent.cpp", 0x696, "!\"eif 0, 0, 0 error.  see keith or ted\"");
-        }
+        CDS_ASSERT(0x696, !"eif 0, 0, 0 error.  see keith or ted");
         m_unk230 = ((m_unk3C != 0) ? (float *)((char *)m_unk3C + 0x80) : &m_unk190)[0];
         m_unk234 = ((m_unk3C != 0) ? (float *)((char *)m_unk3C + 0x80) : &m_unk190)[1];
         m_unk238 = ((m_unk3C != 0) ? (float *)((char *)m_unk3C + 0x80) : &m_unk190)[2];
@@ -425,11 +421,12 @@ int Innocent::GetNextPosition(float (&pos)[4]) {
     return 0;
 }
 
-// DRAFT: 0x0019FE00 IsAlive__8InnocentFv
-// note: compiler emits lw/jr/slt (3 words); original is lw/bgtz with li 1 in the delay slot (6 words); local-variable variant gave 4 words, branch-out variant 5, ternary and if/else 5.
+// FUNCTION: 0x0019FE00 IsAlive__8InnocentFv
 int Innocent::IsAlive() {
-    int result = 0;
-    if (m_unk1B8 > 0) {
+    int result = m_unk1B8;
+    if (result <= 0) {
+        result = 0;
+    } else {
         result = 1;
     }
     return result;

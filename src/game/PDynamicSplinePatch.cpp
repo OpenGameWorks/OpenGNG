@@ -17,9 +17,13 @@ float FastMath_Cos180(float fAngle);
 void FastMath_VectorFabs(float *pDst, float *pSrc);
 extern u_long128 lit_004C9320;
 extern u_long128 lit_004C9330;
-extern u_long128 lit_0024D860;
-extern u_long128 lit_0024D870;
 extern float gfAngleDiff[8];
+
+// A 16-byte .rodata constant as floats; the q member is the quadword copied to the VU0 registers.
+union tagLitF4 {
+    float f[4];
+    u_long128 q;
+};
 extern char gGfxEng[1504384];
 class PMNode;
 
@@ -119,13 +123,11 @@ void PDynamicSplinePatch::InitMatrixCache() {
 }
 
 // DRAFT: 0x001F3510 GenerateAndRenderVuSplinePatch__19PDynamicSplinePatchFv
-// note: 98 words differ; frame 0xE0 against 0xD0. Original sets 1.0f (lui/mtc1) before the quad stores to 0xB0/0xC0 and computes the 0x1FB0/0x1FC0 pointers after them; ours does not. Tried: extern-symbol and absolute pool loads (146, 138, 99), pointer-local extern loads (98, best), key base moved earlier (98).
+// note: 98 words differ; frame 0xE0 against 0xD0. Reloc words for @428 (.bss, static litA gives litA$34), @429/@430 (union locals qB/qC) and gGfxEng addend differ by symbol name. Original sets 1.0f (lui/mtc1) before the quad stores to 0xB0/0xC0 and computes the 0x1FB0/0x1FC0 pointers after them; ours does not. Tried: extern-symbol and absolute pool loads (146, 138, 99), pointer-local extern loads (98), key base moved earlier (98), union locals declared at top (134), union locals after sceVu0UnitMatrix (129), union locals plus static litA (98, kept).
 void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
     u_long128 qCtl;
     float mtx[16];
     u_long128 qA;
-    u_long128 qB;
-    u_long128 qC;
     float fStepS;
     float fStepT;
     int i;
@@ -134,13 +136,11 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
     char *pRow;
 
     sceVu0UnitMatrix(mtx);
+    tagLitF4 qB = {{0.0f, 1.0f, 0.0f, 0.0f}};
+    tagLitF4 qC = {{0.5f, 0.0f, 0.0f, 0.0f}};
     {
-        u_long128 *pLitA = &lit_004C9330;
-        u_long128 *pLitB = &lit_0024D860;
-        u_long128 *pLitC = &lit_0024D870;
-        qA = *pLitA;
-        qB = *pLitB;
-        qC = *pLitC;
+        static tagLitF4 litA;
+        qA = litA.q;
     }
     pKeyBase = (char *)0x70001000;
     fStepT = 1.0f / (float)(m_unk00 - 1);
@@ -204,7 +204,7 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
 }
 
 // DRAFT: 0x001F39C0 InitSplineKeys__19PDynamicSplinePatchFPfPf
-// note: 162 words differ; literal load and 360.0f hoist order, angle wrap, outer-step and loop shape differ (variable gfAngleDiff index: 210; size 0x3a0 vs 0x3c0)
+// note: 162 words differ; the lit_004C9320 (@367, .bss) reloc word differs by name, so the copy from it always differs; original copies it after FastMath_VectorFabs (draft order matches). Angle wrap and loop shape differ (gfAngleDiff index 210; size 0x3a0 vs 0x3c0). Tried: 360.0f in a local hoisted after the copy (214, reverted).
 void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {
     float diff[4];
     float cvec[4];
