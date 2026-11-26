@@ -78,6 +78,7 @@ void Pickup::FlyToApparition(unsigned int arg0, float arg1) {
 // note: 10-word diff; count reload at bottom test uses v0 (orig v1), sltu source reg, return-0 daddu not in bnez delay slot; tried while/ternary forms, (0<x)!=0 wrap, local bool.
 int Pickup::SoulSuckerInRange() {
     float (*pBox)[4];
+    unsigned int nCount;
     if (mTempArray__15EntityBaseClass.m_unk8 != 0) {
         mTempArray__15EntityBaseClass.m_unk0 = 0;
         mTempArray__15EntityBaseClass.m_unk4 = 0;
@@ -88,8 +89,8 @@ int Pickup::SoulSuckerInRange() {
         pBox = (float (*)[4])&this->m_unk190;
     }
     GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 3, &mTempArray__15EntityBaseClass, pBox, 17.0f, 0x6B, true, false);
-    while ((0 < mTempArray__15EntityBaseClass.m_unk0) != 0) {
-        int bHas = (0 < mTempArray__15EntityBaseClass.m_unk0) != 0;
+    while ((0 < (nCount = mTempArray__15EntityBaseClass.m_unk0)) != 0) {
+        int bHas = (0 < nCount) != 0;
         ApparitionIsValid__15EntityBaseClassFUi(bHas ? (unsigned int)mTempArray__15EntityBaseClass.m_unk8[0] : 0U);
         return 1;
     }
@@ -141,7 +142,7 @@ void Pickup::OnSleepEvent() {
 }
 
 // DRAFT: 0x0019D200 OnTouchEvent__6PickupFP15EntityBaseClass
-// note: 36-word diff; original tests type 5 before 3 and branches forward into the record block (ours bnez/bne sense differs); switch dispatch 3/5 with shared tail beats else-if (41); testing 5 first gives 45.
+// note: 28-word diff; switch with case 5 written before case 3 tests 3 first as the original does; remaining diff is block layout of the pRec==3 arm (original branches out of line with beq) and the mpEntMgr reload addend. Tried nested switch on pRec (49), case 4 first (53), && form (28), break form (28).
 void Pickup::OnTouchEvent(EntityBaseClass *arg0) {
     if (this->m_unk1CC == 0) {
         if (this->m_unk1B0 == 0x26) {
@@ -150,8 +151,6 @@ void Pickup::OnTouchEvent(EntityBaseClass *arg0) {
             }
         } else if (this->m_unk1B0 != 0x25) {
             switch (*(int *)((char *)arg0 + 8)) {
-            case 3:
-                goto tail;
             case 5: {
                 signed char *pRec = PickUpData + this->m_unk1B0 * 24 + 1;
                 if (*pRec == 4) {
@@ -164,6 +163,8 @@ void Pickup::OnTouchEvent(EntityBaseClass *arg0) {
                 }
                 break;
             }
+            case 3:
+                goto tail;
             }
             return;
 tail:
