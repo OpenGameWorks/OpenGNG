@@ -909,7 +909,7 @@ int Peddler::OnHitEvent(EntityBaseClass *pEntity, int nArg1, unsigned int nEvent
 }
 
 // DRAFT: 0x001D1F90 FindItem__7PeddlerFi
-// note: original has one extra nop after the increments (0x2C) before the loop test; 8 diff lines. Tried: index loop (large diff), p++ in body (10), while form (8), i++ in header with p++ in body (10).
+// note: 15 diff words. Original enters the loop with an entry b to the test and keeps the ItemTable lo16 in the delay slot; ours folds the first test away. Tried: index loop (large diff), p++ in body (15), while form (15), i++ in header with p++ in body (15), init split (15), p-first init (15), p = p + 1 (15), i declared after p (15).
 unsigned int Peddler::FindItem(int arg0) {
     unsigned int i;
     ItemEntry *p;
@@ -923,17 +923,17 @@ unsigned int Peddler::FindItem(int arg0) {
 }
 
 // DRAFT: 0x001D1FE0 ValidateItems__7PeddlerFv
-// note: 46 diff lines; register assignment differs (orig nOff=s5, index=s3, entry=s4, counter=s2; ours nOff=s3, index=s5, entry=s2, counter=s4) and the prologue zeroing order. Tried: pEntry/pBase split (46), declaration reorder (50), signed nOff (46), inline slot pointer (46).
+// note: 6 diff words (was 18); this sits in s1 where the original has s0 and the loop counters swap s2/s4/s5. Local order (pEntry,i,nIndex,pIndex,pPlayer,nCur,nOff,pSlot,nResult) is the best of 30 sampled orders (next 9, 13, 13). Tried earlier: pEntry/pBase split, signed nOff, inline slot pointer.
 void Peddler::ValidateItems() {
-    unsigned int *pIndex;
     ItemEntry *pEntry;
-    Player *pPlayer;
-    unsigned int nOff;
     int i;
     int nIndex;
+    unsigned int *pIndex;
+    Player *pPlayer;
     int nCur;
-    int nResult;
+    unsigned int nOff;
     int *pSlot;
+    int nResult;
 
     nOff = 0;
     i = 0;
@@ -1068,11 +1068,11 @@ void Peddler::Execute() {
 }
 
 // DRAFT: 0x001D3870 __dt__7PeddlerFv
-// note: 18 diff lines; register permutation of this/nFlag/slot (orig this=s4, nFlag=s3, slot=s2). Raw vtable store restored (50 without it). Tried 3 local orders (nOff,ppSlot,i best; ppSlot-first 20, nOff-first alt 18), for-loop form (18, no change).
+// note: 15 diff lines; ppSlot takes s4 (orig this=s4, nFlag=s3, slot=s2). Local order (i,ppSlot,nOff) gives 15; (nOff,ppSlot,i) 18, (ppSlot,nOff,i) 20, (i,nOff,ppSlot) 21. Slot in loop 18, for-form 15, slot-first decl 20, nOff/i init in decl 19. Raw vtable store restored (50 without it).
 extern "C" Peddler *__dt__7PeddlerFv(Peddler *pThis, short nFlag) {
-    unsigned int nOff;
-    PeddlerItems **ppSlot;
     int i;
+    PeddlerItems **ppSlot;
+    unsigned int nOff;
 
     if (pThis != 0) {
         *(void **)pThis = __vt__7Peddler;
