@@ -80,8 +80,8 @@ extern "C" void Init__16PParticleRipplesFibb(void *pThis, int nCount, bool bA, b
 extern "C" int sceCdReadClock(void *pClock);
 extern "C" void srand(unsigned int nSeed);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
-float FastMath_Sin180__Ff(float fAngle);
-float FastMath_Cos180__Ff(float fAngle);
+extern "C" float FastMath_Sin180__Ff(float fAngle);
+extern "C" float FastMath_Cos180__Ff(float fAngle);
 extern "C" void *__ct__6PArrayFv(void *pThis);
 extern "C" void Allocate__6PArrayFUi(void *pThis, unsigned int nCount);
 extern "C" void *__ct__12PFlashScreenFv(void *pThis);
@@ -377,8 +377,7 @@ void *PParticleManager::InitRingMeshPacket(int &nOut, int nCount, bool bFlag, fl
     return pPacket;
 }
 
-// DRAFT: 0x001B7A90 CreateRingTriStrip__16PParticleManagerFiffffiiPA4_fPA4_fPA4_f
-// note: DIFF 48; loop body order differs (pA stores before the fA/fB division, beqz target one word off), jal relocations; tried angle-first decl, nVerts before fStep, 0 < nVerts, inline ratio.
+// FUNCTION: 0x001B7A90 CreateRingTriStrip__16PParticleManagerFiffffiiPA4_fPA4_fPA4_f
 int PParticleManager::CreateRingTriStrip(int nCount, float fA, float fB, float fC, float fD, int nE, int nF, float (*pA)[4], float (*pB)[4], float (*pC)[4]) {
     float fAngle;
     int nVerts = nCount * 2 + 2;
@@ -403,12 +402,12 @@ int PParticleManager::CreateRingTriStrip(int nCount, float fA, float fB, float f
             *(int *)&pC[nIdx + 1][1] = 0x80;
             *(int *)&pC[nIdx + 1][2] = 0x80;
             *(int *)&pC[nIdx + 1][3] = nF;
-            pA[nIdx + 1][0] = fB * fCos;
-            pA[nIdx + 1][2] = fB * fSin;
-            pA[nIdx + 1][1] = fC;
-            *(int *)&pA[nIdx + 1][3] = 0x3F800000;
-            pB[nIdx + 1][0] = 0.5f + 0.5f * fCos;
-            pB[nIdx + 1][1] = 0.5f + 0.5f * fSin;
+            pA[nIdx][4 + 0] = fB * fCos;
+            pA[nIdx][4 + 2] = fB * fSin;
+            pA[nIdx][4 + 1] = fC;
+            *(int *)&pA[nIdx][4 + 3] = 0x3F800000;
+            pB[nIdx][4 + 0] = 0.5f + 0.5f * fCos;
+            pB[nIdx][4 + 1] = 0.5f + 0.5f * fSin;
             fAngle += fStep;
             nIdx += 2;
         } while (nIdx < nVerts);
