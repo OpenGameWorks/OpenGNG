@@ -261,13 +261,14 @@ void FontManager::RemoveText(unsigned short nId) {
 }
 
 // DRAFT: 0x133350 SetColor__8FontNodeF9FontColor
-// note: original guards the loop with beqz a0 before it and is 0x48 bytes; plain while gives 6 differing lines; guarded do-while and while variants gave 14 and 16.
+// note: 6 words; the original pads the short loop with two nops before bnez and one after its delay slot (0x48 bytes vs our 0x44)
 void FontNode::SetColor(FontColor arg0) {
     char *p = m_unk0;
+    u_long128 *c = (u_long128 *)(FontColors + arg0 * 16);
     int n = m_unk4;
     while (n != 0) {
-        n -= 1;
-        *(u_long128 *)(p + 0x20) = *(u_long128 *)(FontColors + arg0 * 16);
+        n--;
+        *(u_long128 *)(p + 0x20) = *c;
         p += 0x40;
     }
 }
