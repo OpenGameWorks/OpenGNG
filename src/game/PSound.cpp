@@ -1141,7 +1141,7 @@ void PSound::FadeAmbientChannel(AmbientChannelState *pState, unsigned int nChan)
 }
 
 // DRAFT: 0x001A6260 AdjustEffectVolumes__6PSoundFRUiRUiRfRf
-// note: 5 words; the three flag compares use $v1/$a0 where the original uses $at. Tried: nested bLowA variant (5), no-local variant (5), ternary clamps (11).
+// note: 5 words; the three flag compares use $v1/$a0 where the original uses $at. Tried: nested bLowA variant (5), no-local variant (5), ternary clamps (11), bool bLowA (5, diff moves to nB flag), unsigned bLowA (5), ternary-initialised bLowA (20+).
 void PSound::AdjustEffectVolumes(unsigned int &nOutA, unsigned int &nOutB, float &fInA, float &fInB) {
     unsigned int nA = (unsigned int)fInA;
     unsigned int nB = (unsigned int)fInB;
@@ -1655,12 +1655,13 @@ int PSound::StopSoundBySoundRef(unsigned int nSoundRef) {
     return 0;
 }
 
-// DRAFT: 0x001A89E0 FindAmbientEntry__6PSoundFUi
-// note: DIFF 7 words; original has one extra join nop at 0x3C (fn 0x4C bytes, ours 0x48)
+// FUNCTION: 0x001A89E0 FindAmbientEntry__6PSoundFUi
 PSound::AmbientEntry *PSound::FindAmbientEntry(unsigned int nID) {
-    AmbientEntry *pEntry = (AmbientEntry *)(m_unkF8 + (0x380 - 0xF8));
-    AmbientEntry *pEnd = (AmbientEntry *)(m_unkF8 + (0x2220 - 0xF8));
+    AmbientEntry *pEntry;
+    AmbientEntry *pEnd;
     if (nID != 0) {
+        pEntry = (AmbientEntry *)(m_unkF8 + (0x380 - 0xF8));
+        pEnd = (AmbientEntry *)(m_unkF8 + (0x2220 - 0xF8));
         if (pEntry < pEnd) {
             do {
                 if (nID == pEntry->m_unk44) {
@@ -1673,12 +1674,13 @@ PSound::AmbientEntry *PSound::FindAmbientEntry(unsigned int nID) {
     return 0;
 }
 
-// DRAFT: 0x001A8A30 IsAmbientSoundBySoundRef__6PSoundFUi
-// note: DIFF 9 words; original has join nop at 0x6C before the return-0 daddu (fn 0x4C bytes, ours 0x48)
+// FUNCTION: 0x001A8A30 IsAmbientSoundBySoundRef__6PSoundFUi
 int PSound::IsAmbientSoundBySoundRef(unsigned int nSoundRef) {
-    AmbientEntry *pEntry = (AmbientEntry *)(m_unkF8 + (0x380 - 0xF8));
-    AmbientEntry *pEnd = (AmbientEntry *)(m_unkF8 + (0x2220 - 0xF8));
+    AmbientEntry *pEntry;
+    AmbientEntry *pEnd;
     if (nSoundRef != 0) {
+        pEntry = (AmbientEntry *)(m_unkF8 + (0x380 - 0xF8));
+        pEnd = (AmbientEntry *)(m_unkF8 + (0x2220 - 0xF8));
         if (pEntry < pEnd) {
             do {
                 if (nSoundRef == pEntry->m_unk44) {
@@ -3037,7 +3039,7 @@ int PSound::DebugPlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int 
 }
 
 // DRAFT: 0x001AB430 DebugRestartValues__6PSoundFv
-// note: DIFF 5 words; original reloads lui $at,0x24 before each lbu of gPSndDbg+0x30, ours keeps one base in a0. Tried indexed byte (5), cast+offset (5), local byte temp (9).
+// note: DIFF 5 words; original reloads lui $at,0x24 before each lbu of gPSndDbg+0x30, ours keeps one base in a0. Tried indexed byte (5), cast+offset (5), local byte temp (9), char-pointer offset (5), mixed spellings (5).
 void PSound::DebugRestartValues() {
     unsigned int nID = m_unk10;
     if (nID >= 0x64 && nID < 0x72) {

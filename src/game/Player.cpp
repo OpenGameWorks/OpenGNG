@@ -2859,10 +2859,10 @@ void Player::GrimSlashMove() {
 }
 
 // DRAFT: 0x0015EAC0 GrimAirSlashMove__6PlayerFv
-// note: 6 words differ: first temp<7 compare uses v1 not at, and ComboTarget float literal loads are in reverse order (f12 before f13); early-return form and nested form tried, same count.
+// note: 4 words differ: ComboTarget float literal loads in reverse order (f12 before f13); `temp > 6` fixed the $at compare (was 6); float locals and early-return form tried, same count.
 void Player::GrimAirSlashMove() {
     int temp = (int)m_unk3C[13];
-    if (temp >= 7) {
+    if (temp > 6) {
         if (m_unk1B2 & 0x8000) {
             m_unk250 = 1;
         }
@@ -3084,7 +3084,7 @@ block_19:
 }
 
 // DRAFT: 0x0015F5E0 FootStepSound__6PlayerFPUs
-// note: 6 words differ: addu index temp goes to a0 not a1, lhu/cvt order and mfc1 register swapped, slt sense inverted. Tried negated compare (31), index local (29), else-if sound chain (6, kept).
+// note: 6 words differ: addu index temp goes to a0 not a1, lhu/cvt order and mfc1 register swapped, slt sense inverted. Tried negated compare (31), index local (29), else-if sound chain (6, kept), flipped compare (7), temp local before index (6), temp local with flipped compare (7).
 void Player::FootStepSound(unsigned short *arg0) {
     if ((signed char)(((signed char *)m_unk3C)[0x3F] & 4)) {
         m_unk27C = 0;

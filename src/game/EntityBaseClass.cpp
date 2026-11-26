@@ -1039,7 +1039,7 @@ void EntityBaseClass::UpdateRipple(float arg0, unsigned int arg1, bool arg2) {
 }
 
 // DRAFT: 0x0014BAE0 CreateSplash__15EntityBaseClassFfbb
-// note: 2 words differ (mtc1 f12/f13 order for v[0]); scheduling depends on the preceding UpdateRipple body: with it emptied, v[0] = RandomFloatRange(3.0f, -3.0f) + pos[0] matches, so recheck that form once UpdateRipple matches
+// note: 2 words differ (mtc1 f12/f13 order for the v[0] call; original passes -3.0 in f12). Tried: v[0] as RandomFloatRange(-3.0f, 3.0f) (9 words, the constant loads at 0xF8 and 0x124 move too); the note's earlier claim that UpdateRipple's body changes this was not re-verified
 void EntityBaseClass::CreateSplash(float arg0, bool arg1, bool arg2) {
     float pos[4];
     float v[4];
@@ -1922,7 +1922,7 @@ void EntityBaseClass::RemoveFromBGAnimList() {
 }
 
 // DRAFT: 0x0014DA30 AddToBGAnimList__15EntityBaseClassFv
-// note: 2 differing words (0x38/0x40): original loads a0=m_unk3C before a2=m_unk04, ours loads a2 first; tried node/size locals, size-before-node order, direct m_unk04 arg with node-local null test (frame grows, worse).
+// note: 2 differing words (0x38/0x40): original loads a0=m_unk3C before a2=m_unk04, ours loads a2 first; the +0x70 addend is fixed (was 3 words). Tried: node-before-size locals (2), inline member-cast call with m_unk04 direct (2), direct m_unk04 arg with node-local null test (frame grows, worse).
 void EntityBaseClass::AddToBGAnimList() {
     PMeshNode *node;
     unsigned int size;
@@ -1933,7 +1933,7 @@ void EntityBaseClass::AddToBGAnimList() {
         }
         size = this->m_unk04;
         node = (PMeshNode *)this->m_unk3C;
-        if (node->BuildCollisionArray((PArray *)&mBGCollision__15EntityBaseClass, size) != 0) {
+        if (node->BuildCollisionArray((PArray *)((char *)&mBGCollision__15EntityBaseClass + 0x70), size) != 0) {
             this->m_unk161 = 1;
         }
     }
