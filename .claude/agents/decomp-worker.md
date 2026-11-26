@@ -45,6 +45,8 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 - A function whose result the original tests with a bare `beqz v0` and whose locals set 1 with `daddiu` returns `bool`: `bool F(...)`, a `bool` result local, and callers written `if (F(...))`. `F(...) != 0` on a bool adds `andi 0xFF`, and an `int` return of a bool local adds it at the return (`BuildCollisionArray` in `src/game/PMeshNode.cpp`). `long` and `long long` locals still load 1 with `addiu`.
 - The PArray walk advances with a ternary: `unsigned int i = m_nIdx + 1; m_nIdx = i; p = (i < m_nCount) ? m_ppData[m_nIdx] : 0;`. Spelled `p = 0; if (i < m_nCount) { p = m_ppData[m_nIdx]; }` it leaves an extra join `nop` before the loop's `bnez` and shifts every later branch (`src/game/EffectAPI.cpp`).
 - `bne a1, v1` against our `bne v1, a1` is the operand order of the comparison: `arg0 == p->m` versus `p->m == arg0`.
+- A local `@N` literal stands for an aggregate brace initializer of a local; `extern lit_XXXX` stand-ins never match. A `.rodata` `@N` holds the initializer's bytes (`T x = {...};` in declaration order). A `.bss` `@N` (address past the loaded image, 0x4xxxxx) is an all-zero initializer, `float v[4] = {0.0f, 0.0f, 0.0f, 0.0f};`, declared where the original copies it (`src/game/PDynamicSplinePatch.cpp`). The initialized local is the variable the code uses; a separate copy adds a frame slot.
+- An unsigned `sltu v0,$zero,x` then `xori 1` is `bool b = !(x > 0); if (!b)`; `x == 0` gives `xor`/`sltiu` (`Open` in `src/game/PDynamicBuffer.cpp`).
 
 ## Finishing
 
