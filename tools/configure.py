@@ -45,7 +45,8 @@ def main() -> int:
         lines += [f"build {o}: cc {rel} | tools/mwcc.py tools/srcmeta.py", f"  args = {args}"]
         objs.append(str(o))
         pairs.append(f"{o}:{rel}")
-    deps = "config/units.tsv config/symbols.tsv config/relocs.tsv tools/link.py"
+    # Unmatched units keep the original bytes, read from the executable tools/setup.py extracts.
+    deps = "original/extracted/SLUS_207.22 config/units.tsv config/symbols.tsv config/relocs.tsv tools/link.py"
     lines += [
         f"build build/main.bin build/link.tsv: link {' '.join(objs)} | {deps}",
         f"  pairs = {' '.join(pairs)}",

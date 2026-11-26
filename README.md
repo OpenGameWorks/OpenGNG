@@ -28,3 +28,17 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 The first compile downloads the pinned compiler package and builds the Wine image. A good build ends with `build/SLUS_207.22: OK`. After that, `ninja` alone rebuilds.
 
 `tools/progress.py` reports matched game code separately from SCE library code. Functions that stay as original assembly are never counted as matched. SCE library objects are verified only when `ext/sce/` holds the SDK archives; that directory is not shipped.
+
+## Building
+
+Requirements: Python 3.11+, `ninja`, and Docker or Podman. The Metrowerks compiler runs under Wine in the `godhand-eecc:wine` image (built automatically from `tools/docker/wine.Dockerfile`), or under native Wine on x86 Linux. Converting a `.chd` image needs MAME's `chdman`.
+
+```sh
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python tools/setup.py /path/to/SLUS-20722.iso   # or .chd
+ninja                                                      # build/SLUS_207.22: OK
+```
+
+`tools/setup.py` only reads the disc image. A `.chd` is converted to `build/disc/<name>.iso`. The disc's files go to `original/extracted/`. The script stops unless `SLUS_207.22` matches `config/SLUS_207.22.sha1`, then writes the symbol and relocation tables to `build/info/` and generates `build.ninja`. The first compile downloads the pinned compiler package into `tools/compilers/`.
+
+Progress: `.venv/bin/python tools/progress.py` reports game and SDK separately. A function counts as matched only when the linker placed compiled bytes equal to the original. SDK functions verified against original SCE library objects (`ext/sce/`, supplied separately, never decompiled) count as `library-object`. `tools/live.py` serves the live treemap on port 8722.
