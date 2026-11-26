@@ -692,7 +692,7 @@ void HudSuper::UpdateMaxSuper() {
 }
 
 // DRAFT: 0x140550 UpdateBar__8HudSuperFi
-// note: 30 words differ; the gate uses slti/beqz not slti/bnez, the 1.0f load is hoisted before the gate, and the loop-exit branch is one instruction short. Tried nested-if, empty-then and swapped-inner variants; all worse.
+// note: 29 words differ; the outer gate is slti into $v0 and bnez into the body in the original (ours uses $at and beqz), and the original fills the else-branch b's slot with the 1.0f lui; inner arg0 > 0 test falls through to the zero arm in the original (ours branches to it). Tried: nested-if, empty-then, swapped-inner (all worse, earlier); int bLess local for the gate (29, kept); inner arg0 <= 0 zero-first (55).
 void HudSuper::UpdateBar(int arg0) {
     void *pBase = m_unk4;
     PArray *pWalk;
@@ -707,7 +707,8 @@ void HudSuper::UpdateBar(int arg0) {
                 CdsAssert__FPciPc("Interface.cpp", 0x9F9, "pBlock");
             }
             float fScale = 1.0f;
-            if (arg0 < 640) {
+            int bLess = arg0 < 640;
+            if (bLess) {
                 if (arg0 > 0) {
                     fScale = (float)arg0 / 640.0f;
                 } else {
@@ -1149,7 +1150,7 @@ void HudBossMeter::Init(PMeshNode *meshNode, HudData *hud) {
 }
 
 // DRAFT: 0x001417F0 Update__8HudComboFi
-// note: 29 words differ; case 2 loads m_unk8 into $f2 and swaps sub.s operands (original loads $f1 first, then 0x3F80 into $f2); case 3 Slot04 loads 1.0f into $f13 before 0.0f into $f12 (ours reverses); original shares one epilogue b between case 3 and default and is 0x16C bytes vs our 0x174. Tried: local fStep vs compound -= (31), local fOne for 1.0f (29, no change), default before case 3 (44).
+// note: 27 words differ; case 2 puts m_unk8 in $f2 and 1.0f in $f1 (original is the reverse, so sub.s operands swap); default gets its own epilogue b where the original shares case 3's b at 0x12C, shifting the tail by 2 words. Tried: compound -= (31), fOne local (29), default before case 3 (44), split fStep declaration (29), early return inside case 3 (27, no change).
 void HudCombo::Update(int arg0) {
     switch (m_unkF) {
     case 1:
@@ -1160,7 +1161,8 @@ void HudCombo::Update(int arg0) {
         break;
     case 2:
         if (arg0 == 0) {
-            float fStep = *(float *)&m_unk8 - 1.0f;
+            float fCur = *(float *)&m_unk8;
+            float fStep = fCur - 1.0f;
             *(float *)&m_unk8 = fStep;
             if (fStep <= 0.0f) {
                 m_unkF = 3;
