@@ -582,7 +582,7 @@ block_6:
 }
 
 // DRAFT: 0x0014A8F0 OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi
-// note: 21 differing lines; original keeps a2=3 default in a delay slot and compares m_unk10 against a separate v0 literal, ours reuses a2 and uses branch-form select where original uses movz. Tried: nested if/else with ternary, pre-assigned default, nested plain assignment, if/else-if chain.
+// note: 21 differing lines; original keeps a2=3 default in a delay slot and compares m_unk10 against a separate v0 literal, ours reuses a2 and uses branch-form select where original uses movz. Tried: nested if/else with ternary, pre-assigned default, nested plain assignment, if/else-if chain, switch on m_unk10 (23 lines), inverted ternary (21), flipped `!= 3` test (21). The `== 3` test reuses a2 (the hitType 3) where the original loads a separate v0 literal, and no variant produced the movz select.
 void EntityBaseClass::OnInnocentAttack(EntityBaseClass *arg0, int arg1) {
     int hitType;
 
@@ -1342,8 +1342,7 @@ void *EntityBaseClass::ApparitionIsValid(unsigned int arg0) {
     return ((EntityManager *)mpEntMgr__15EntityBaseClass)->GetPtrToApparition(arg0);
 }
 
-// DRAFT: 0x0014C620 FaceHitDirection__15EntityBaseClassFP15EntityBaseClass
-// note: 15 words differ; 57.295776f is pooled via gp where the original builds it inline (lui/ori/mtc1), the tail store order differs, and m_unk38 is not kept in s0. Tried: cached m_unk38 local (20 words, worse, reverted).
+// FUNCTION: 0x0014C620 FaceHitDirection__15EntityBaseClassFP15EntityBaseClass
 void EntityBaseClass::FaceHitDirection(EntityBaseClass *arg0) {
     float vec[4];
     float (*a1)[4];
@@ -1361,10 +1360,16 @@ void EntityBaseClass::FaceHitDirection(EntityBaseClass *arg0) {
         }
         sceVu0SubVector(vec, (float *)a1, (float *)a2);
         ang = Round180(57.295776f * atan2f(vec[0], vec[2]));
-        *(float *)(this->m_unk3C + 0x94) = ang;
-        *(unsigned char *)(this->m_unk3C + 0x3E) |= 8;
-        if (this->m_unk38 != 0) {
-            *(float *)((char *)this->m_unk38 + 0x11C) = Round180(ang);
+        {
+            char *pCur = this->m_unk3C;
+            *(float *)(pCur + 0x94) = ang;
+            *(unsigned char *)(pCur + 0x3E) |= 8;
+        }
+        {
+            Physics *phys = this->m_unk38;
+            if (phys != 0) {
+                *(float *)((char *)phys + 0x11C) = Round180(ang);
+            }
         }
     }
 }
@@ -1812,7 +1817,7 @@ void EntityBaseClass::AddCollision(EntityBaseClass *arg0) {
 }
 
 // DRAFT: 0x0014D680 RemoveCollision__15EntityBaseClassFP15EntityBaseClass
-// note: 16 differing words (0x44 vs 0x50); source-level loop/store variants (return vs break, index init order, char-pointer and local-pointer store, compare operand swap) do not change the store and delay-slot allocation (original fills bne slot with nop and stores via sll a1 + addiu + addu).
+// note: 15 differing lines (0x48 vs 0x50 bytes); original is loop-rotated (entry `b` to the bottom test, `addu v1,a0,a3` in the bnez delay slot), stores through `sll a1; addiu v1,a0,0x110; addu` and compares `bne v1,a1` with the loaded value first. Tried: return vs break, index init order, char-pointer and local-pointer store, compare operand swap (MWCC keeps bne a1,v1), element local, while-loop form, pSlot[i] base-pointer store.
 void EntityBaseClass::RemoveCollision(EntityBaseClass *arg0) {
     int target;
     unsigned int i;
@@ -1830,18 +1835,22 @@ void EntityBaseClass::RemoveCollision(EntityBaseClass *arg0) {
 }
 
 // DRAFT: 0x0014D790 FindCollision__15EntityBaseClassFP15EntityBaseClass
-// note: 9 differing lines; bne operand order, loop tail nop, return branch targets jr at 0x40 not 0x3C; tried indexed m_unk110[i], byte-offset loop, hoisted target, decl reorder, operand swap, for-header off+=4, break/result variable (worse).
+// note: 12 differing lines; original enters the loop with a `b` to the bottom test and keeps `addu v0,a0,a2` in the bnez delay slot; ours has no entry branch and places the i++ before off+=4. Tried: indexed m_unk110[i], byte-offset loop, hoisted target, decl reorder, operand swap, for-header off+=4, break/result variable, while-loop with element local (best, 12), for-loop with element local (12).
 int EntityBaseClass::FindCollision(EntityBaseClass *arg0) {
     int target;
     unsigned int i;
     unsigned int off;
 
     target = arg0->m_unk04;
+    i = 0;
     off = 0;
-    for (i = 0; i < 10; off += 4, i++) {
-        if (*(int *)((char *)this + off + 0x110) == target) {
+    while (i < 10) {
+        int elem = *(int *)((char *)this + off + 0x110);
+        if (elem == target) {
             return 1;
         }
+        off += 4;
+        i++;
     }
     return 0;
 }
