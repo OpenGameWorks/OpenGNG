@@ -20,7 +20,7 @@ struct PShadowVolumeNode {
 };
 
 // Array of shadow nodes: the PArray base holds the node pointers.
-class PShadowVolume : public PArray {
+class PShadowVolume {
 public:
     PShadowVolume();
     PShadowVolume(PShadowVolume *pSource);
@@ -29,6 +29,7 @@ public:
     int Load(PPakFile *pFile);
     void Render(float *, float *, float *, float *, float *, float);
 
+    PArray m_array;            // 0x00 volume nodes; a member, so ~PShadowVolume destroys it with flag -1
     int m_unk10;               // 0x10 initialised to 0xC9742400
     int m_unk14;                // 0x14 cleared by ctor and dtor
     unsigned char m_unk18;      // 0x18 cleared by ctor, copy ctor and SetShadowCaster

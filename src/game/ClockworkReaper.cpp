@@ -262,10 +262,9 @@ int ClockworkReaper::PlayerInAttackRadius() {
     return 0;
 }
 
-// DRAFT: 0x001BF9C0 InBlockableState__15ClockworkReaperFv
-// note: 2 differing lines: range test is sltiu into v0, original uses at (sltiu at,v0,N; bnez at); early-return, ternary and operand-swap forms tried.
+// FUNCTION: 0x001BF9C0 InBlockableState__15ClockworkReaperFv
 int ClockworkReaper::InBlockableState() {
-    if ((unsigned int)(m_unk20 - 0x15) < 5U || m_unk20 == 4) {
+    if ((unsigned int)(m_unk20 - 0x15) <= 4U || m_unk20 == 4) {
         return 1;
     }
     return 0;
@@ -552,10 +551,9 @@ fail:
     return 0;
 }
 
-// DRAFT: 0x001C02F0 CanAttackInState__15ClockworkReaperFv
-// note: 2 differing lines: range test is sltiu into v0, original uses at (same as InBlockableState); split-range form gave 13, early returns 17.
+// FUNCTION: 0x001C02F0 CanAttackInState__15ClockworkReaperFv
 int ClockworkReaper::CanAttackInState() {
-    if (m_unk20 == 0 || m_unk20 == 3 || (unsigned int)(m_unk20 - 0x15) < 7U || m_unk20 == 0x1C) {
+    if (m_unk20 == 0 || m_unk20 == 3 || (unsigned int)(m_unk20 - 0x15) <= 6U || m_unk20 == 0x1C) {
         return 1;
     }
     return 0;

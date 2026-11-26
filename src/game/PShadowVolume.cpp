@@ -51,7 +51,7 @@ void PShadowVolume::Render(float *arg0, float *arg1, float *arg2, float *arg3, f
         Mul__5PMat4FP5PMat4(mA, mProj, (float (*)[4])(gGfxEng + 0x3A00));
         sceVu0CopyMatrix(mWorld, mA);
         sceVu0CopyVector(vCam, (float *)(gGfxEng + 0x39B0));
-        int count = (int)m_unk0;
+        int count = (int)m_array.m_unk0;
         if (count != 1) {
             *(u_long128 *)vPos = *(u_long128 *)arg2;
             vPos[2] += 1500.0f;
@@ -60,7 +60,7 @@ void PShadowVolume::Render(float *arg0, float *arg1, float *arg2, float *arg3, f
             unsigned int i = 0;
             unsigned int off = 0;
             do {
-                PShadowVolumeNode *pNode = (i < m_unk0) ? (PShadowVolumeNode *)*(void **)((char *)m_unk8 + off) : 0;
+                PShadowVolumeNode *pNode = (i < m_array.m_unk0) ? (PShadowVolumeNode *)*(void **)((char *)m_array.m_unk8 + off) : 0;
                 if (pNode != 0 && pNode->m_unk1C != 0 && pNode->m_unk20 != 0) {
                     if (pNode->m_unk0 == 0x2AF72F02) {
                         if (*(int *)((char *)pNode->m_unk20 + 4) == 0) {
@@ -115,16 +115,15 @@ void PShadowVolume::Render(float *arg0, float *arg1, float *arg2, float *arg3, f
     }
 }
 
-// DRAFT: 0x001D8EA0 SetShadowCaster__13PShadowVolumeFP6PMNode
-// note: 2 words differ: the count==1 ternary test uses a sltu into v1 where the original uses at; tried unsigned compare, bool local (folded away), and deferred i/off init (fixed register map).
+// FUNCTION: 0x001D8EA0 SetShadowCaster__13PShadowVolumeFP6PMNode
 void PShadowVolume::SetShadowCaster(PMNode *pNode) {
     if (pNode != 0) {
         unsigned int i;
         unsigned int off;
-        int count = (int)m_unk0;
+        int count = (int)m_array.m_unk0;
         if (count == 1) {
-            int nonZero = (count != 0);
-            PShadowVolumeNode *pFirst = nonZero ? (PShadowVolumeNode *)m_unk8[0] : 0;
+            unsigned int first = 0;
+            PShadowVolumeNode *pFirst = (first < m_array.m_unk0) ? (PShadowVolumeNode *)m_array.m_unk8[first] : 0;
             pFirst->m_unk1C = (char *)pNode + 0x40;
             pFirst->m_unk20 = pNode;
             return;
@@ -133,7 +132,7 @@ void PShadowVolume::SetShadowCaster(PMNode *pNode) {
             i = 0;
             off = 0;
             do {
-                PShadowVolumeNode *pEntry = (i < m_unk0) ? (PShadowVolumeNode *)*(void **)((char *)m_unk8 + off) : 0;
+                PShadowVolumeNode *pEntry = (i < m_array.m_unk0) ? (PShadowVolumeNode *)*(void **)((char *)m_array.m_unk8 + off) : 0;
                 if (pEntry != 0) {
                     PMNode *pFound = pNode->Find(pEntry->m_unk0);
                     if (pFound != 0) {
@@ -150,11 +149,11 @@ void PShadowVolume::SetShadowCaster(PMNode *pNode) {
         }
     } else {
         m_unk18 = 0;
-        int count = (int)m_unk0;
+        int count = (int)m_array.m_unk0;
         if (0 < count) {
             unsigned int i = 0;
             do {
-                PShadowVolumeNode *pEntry = (i < m_unk0) ? (PShadowVolumeNode *)m_unk8[i] : 0;
+                PShadowVolumeNode *pEntry = (i < m_array.m_unk0) ? (PShadowVolumeNode *)m_array.m_unk8[i] : 0;
                 pEntry->m_unk1C = 0;
                 i++;
                 pEntry->m_unk20 = 0;
@@ -209,20 +208,19 @@ int PShadowVolume::Load(PPakFile *pFile) {
             return 0;
         }
         pNode->m_unk24 = 1;
-        Add(pNode);
+        m_array.Add(pNode);
         i++;
     }
     return 1;
 }
 
-// DRAFT: 0x001D91D0 __dt__13PShadowVolumeFv
-// note: 1 word differs, base PArray dtor flag is 0 (original -1); explicit PArray::~PArray() and __dt__6PArrayFv(this,-1) give 19 words.
+// FUNCTION: 0x001D91D0 __dt__13PShadowVolumeFv
 PShadowVolume::~PShadowVolume() {
-    int count = (int)m_unk0;
+    int count = (int)m_array.m_unk0;
     if (0 < count) {
         unsigned int i = 0;
         do {
-            PShadowVolumeNode *pNode = (i < m_unk0) ? (PShadowVolumeNode *)m_unk8[i] : 0;
+            PShadowVolumeNode *pNode = (i < m_array.m_unk0) ? (PShadowVolumeNode *)m_array.m_unk8[i] : 0;
             if (pNode != 0) {
                 if (pNode->m_unk4 != 0 && pNode->m_unk24 != 0) {
                     operator delete[](pNode->m_unk4);
@@ -232,9 +230,9 @@ PShadowVolume::~PShadowVolume() {
             i++;
         } while ((int)i < count);
     }
-    if (m_unk8 != 0) {
-        m_unk0 = 0;
-        m_unk4 = 0;
+    if (m_array.m_unk8 != 0) {
+        m_array.m_unk0 = 0;
+        m_array.m_unk4 = 0;
     }
     m_unk14 = 0;
 }
@@ -244,13 +242,13 @@ PShadowVolume::PShadowVolume(PShadowVolume *pSource) {
     if (pSource == 0) {
         CdsAssert__FPciPc("PShadowVolume.cpp", 0x19, "apNodeArray");
     }
-    int count = (int)pSource->m_unk0;
+    int count = (int)pSource->m_array.m_unk0;
     if (0 < count) {
         unsigned int i = 0;
         do {
             PShadowVolumeNode *pNode = 0;
-            if (i < pSource->m_unk0) {
-                pNode = (PShadowVolumeNode *)pSource->m_unk8[i];
+            if (i < pSource->m_array.m_unk0) {
+                pNode = (PShadowVolumeNode *)pSource->m_array.m_unk8[i];
             }
             if (pNode != 0) {
                 PShadowVolumeNode *pCopy = (PShadowVolumeNode *)__nw__FUi(0x28);
@@ -261,12 +259,12 @@ PShadowVolume::PShadowVolume(PShadowVolume *pSource) {
                 pCopy->m_unk24 = 0;
                 pCopy->m_unk1C = 0;
                 pCopy->m_unk20 = 0;
-                Add(pCopy);
+                m_array.Add(pCopy);
             }
             i++;
         } while ((int)i < count);
     }
-    if (m_unk0 != pSource->m_unk0) {
+    if (m_array.m_unk0 != pSource->m_array.m_unk0) {
         CdsAssert__FPciPc("PShadowVolume.cpp", 0x2B, "moShadowVolumeNodes.GetCount() == apNodeArray->GetCount()");
     }
     m_unk18 = 0;

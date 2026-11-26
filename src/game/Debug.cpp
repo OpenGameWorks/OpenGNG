@@ -48,11 +48,12 @@ class PSound {
 public:
     void SoundEditEnter();
     void SoundEditLeave();
-    void DebugInterface(int nPad);
     char _pad000[0x10];
 };
 
 extern PSound gSound;
+// PSound::DebugInterface(unsigned int) takes the pad word without the andi a C++ unsigned parameter adds.
+extern "C" void DebugInterface__6PSoundFUi(PSound *pThis, int nPad);
 
 struct PadState {
     char _pad000[0x10C];
@@ -315,8 +316,7 @@ void Debug::DebugClear() {
     this->ResetDebugTimer();
 }
 
-// DRAFT: 0x16AE40 SoundEdit__Fv
-// note: 6 differing words: the original reuses the bnez delay-slot lui(gSound) for DebugInterface and has its own lui for SoundEditLeave; ours reloads gSound and shares one lui. Tried int DebugInterface param (15->6), do/while with break (6), local pad copy (6).
+// FUNCTION: 0x16AE40 SoundEdit__Fv
 void SoundEdit() {
     if (mSound != 0) {
         gSound.SoundEditEnter();
@@ -325,7 +325,7 @@ void SoundEdit() {
         gDebug.DebugDispPos("Sound Edit", 0x1E, 0, 7);
         gDebug.DebugDisp("\n");
         if (!(gPad.m_unk110 & 1)) {
-            gSound.DebugInterface(gPad.m_unk110);
+            DebugInterface__6PSoundFUi(&gSound, gPad.m_unk110);
             goto loop;
         }
         gSound.SoundEditLeave();

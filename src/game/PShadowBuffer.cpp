@@ -198,11 +198,11 @@ void PShadowBuffer::BeginRender() {
 void PShadowBuffer::Render() {
     ((PGfxEngine *)gGfxEng)->BeginShadowRender();
     BeginRender();
-    m_unk4 = 0;
-    PShadowVolume *pVolume = (m_unk0 != 0) ? (PShadowVolume *)m_unk8[0] : 0;
+    m_array.m_unk4 = 0;
+    PShadowVolume *pVolume = (m_array.m_unk0 != 0) ? (PShadowVolume *)m_array.m_unk8[0] : 0;
     while (pVolume != 0) {
         pVolume->Render(m_unk1AB0, m_unk1AC0, m_unk1AD0, m_unk1AE0, m_unk1AF0, *(float *)((char *)this + 0x10));
-        pVolume = (++m_unk4 < m_unk0) ? (PShadowVolume *)m_unk8[m_unk4] : 0;
+        pVolume = (++m_array.m_unk4 < m_array.m_unk0) ? (PShadowVolume *)m_array.m_unk8[m_array.m_unk4] : 0;
     }
     EndRender();
     ((PGfxEngine *)gGfxEng)->EndShadowRender();
@@ -227,9 +227,9 @@ void PShadowBuffer::SetZBufferRange(float fNear, float fFar) {
 
 // FUNCTION: 0x001D8460 RemoveShadowVolume__13PShadowBufferFP13PShadowVolume
 void PShadowBuffer::RemoveShadowVolume(PShadowVolume *pVolume) {
-    int nIndex = Find__6PArrayFPv(this, pVolume);
+    int nIndex = Find__6PArrayFPv(&m_array, pVolume);
     if (nIndex >= 0) {
-        RemoveAt(nIndex);
+        m_array.RemoveAt(nIndex);
     }
 }
 
@@ -238,11 +238,11 @@ void PShadowBuffer::AddShadowVolume(PShadowVolume *pVolume) {
     if (pVolume == 0) {
         CdsAssert__FPciPc("PShadowBuffer.cpp", 0x89, "poVolume");
     }
-    if (Find__6PArrayFPv(this, pVolume) < 0) {
-        if (m_unk0 >= 0x40U) {
+    if (Find__6PArrayFPv(&m_array, pVolume) < 0) {
+        if (m_array.m_unk0 >= 0x40U) {
             CdsAssert__FPciPc("PShadowBuffer.cpp", 0x8D, "moShadowVolumes.GetCount() < MAX_SHADOW_VOLUMES");
         }
-        Add(pVolume);
+        m_array.Add(pVolume);
     }
 }
 
@@ -252,9 +252,9 @@ void PShadowBuffer::Destroy() {
         DestroyRenderedTexture__15PTextureManagerFi(gGfxEng + 0x154C90, m_unk34);
         m_unk34 = 0;
     }
-    if (m_unk8 != 0) {
-        m_unk0 = 0;
-        m_unk4 = 0;
+    if (m_array.m_unk8 != 0) {
+        m_array.m_unk0 = 0;
+        m_array.m_unk4 = 0;
     }
 }
 
@@ -302,8 +302,7 @@ bool PShadowBuffer::Create(int nArg0, int nArg1, int nArg2, int nArg3, short sAr
     return m_unk34 > 0;
 }
 
-// DRAFT: 0x001D8830 __dt__13PShadowBufferFv
-// note: 1 word differs: implicit base dtor call passes flag 0, original passes -1 (explicit __dt__6PArrayFv(this,-1) call gives 15 words)
+// FUNCTION: 0x001D8830 __dt__13PShadowBufferFv
 PShadowBuffer::~PShadowBuffer() {
     Destroy();
 }
@@ -311,5 +310,5 @@ PShadowBuffer::~PShadowBuffer() {
 // FUNCTION: 0x001D8890 __ct__13PShadowBufferFv
 PShadowBuffer::PShadowBuffer() {
     memset(&_pad10, 0, 0x28);
-    Allocate(0x40U);
+    m_array.Allocate(0x40U);
 }

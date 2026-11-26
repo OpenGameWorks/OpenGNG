@@ -8,7 +8,7 @@ class PShadowVolume;
 
 // Shadow volume list: the PArray base holds the volume pointers (max 0x40).
 // The ctor clears 0x28 bytes from 0x10 and Destroy frees the texture at 0x34.
-class PShadowBuffer : public PArray {
+class PShadowBuffer {
 public:
     PShadowBuffer();
     ~PShadowBuffer();
@@ -21,6 +21,7 @@ public:
     void SetZBufferRange(float fNear, float fFar);
     bool Create(int nArg0, int nArg1, int nArg2, int nArg3, short sArg4, float fArg5);
 
+    PArray m_array;         // 0x00 shadow volumes; a member, so ~PShadowBuffer destroys it with flag -1
     char _pad10[0x24];      // 0x10 cleared by ctor
     int m_unk34;            // 0x34 rendered texture handle, freed by Destroy
     char _pad38[0x1A78];    // 0x38 render state

@@ -1700,8 +1700,7 @@ void Player::SetDeath() {
     }
 }
 
-// DRAFT: 0x0015BD50 CyclockDamageMove__6PlayerFv
-// note: 1 word differs at 0x008C: original delay slot is nop, ours is addiu a1,zero,1 (the original reuses the a1=1 from the switch compare). Tried: if-form for r (4 words), int one=1 hoisted before state (1), declared before state (1), inside case 2 (1), typed AbilityVirtuals local (1), one shared with m_unk250 stores (1).
+// FUNCTION: 0x0015BD50 CyclockDamageMove__6PlayerFv
 void Player::CyclockDamageMove() {
     int state = m_unk250;
     switch (state) {
@@ -1716,7 +1715,7 @@ void Player::CyclockDamageMove() {
         break;
     case 2: {
         void *pObj = *(void **)((char *)m_unk3C + 0x24);
-        int r = (pObj != 0) ? (((AbilityVirtuals *)pObj)->Slot18(1, state) != 0) : 0;
+        int r = (pObj != 0) ? (((AnimStateObject *)pObj)->Slot18() != 0) : 0;
         if (!(r & 0xFF)) {
             m_unk250 = 3;
             gSound.FadeOutAllMusic(0x1F4);
