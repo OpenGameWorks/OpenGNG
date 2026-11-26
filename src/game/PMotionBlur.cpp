@@ -15,7 +15,6 @@ extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern char gGfxEng[1504384];
-extern u_long128 lit_00249D40;
 extern "C" void BeginFxRender__10PGfxEngineFv(void *pThis);
 extern "C" void BeginMesh__10PGfxEngineF13eBoxIntersect(void *pThis, int eBox);
 extern "C" void BeginVertexGlow__10PGfxEngineFv(void *pThis);
@@ -126,13 +125,12 @@ void PMotionBlur::Reset() {
 }
 
 // DRAFT: 0x001C8DB0 Render__11PMotionBlurFv
-// note: 228 words differ (size 0x3C4 vs 0x404): early-return epilogue 16 insns short, assert delay slot (nop vs lui a0), ramp arm order and register use, loop i/j in fp/s7/s6 not matched. Tried: fTime init above m_unkA4 test (238->228), if-form assert (same), m_unk8C operand order (same).
+// note: 226 words differ (size 0x3D4 vs 0x404); vScale's {1,1,1,0} initializer is @N at 0x249D40. First element read is sltu/beqz/b in the original: early-return epilogue 16 insns short, assert delay slot (nop vs lui a0), ramp arm order and register use, loop i/j in fp/s7/s6 not matched. Tried: fTime init above m_unkA4 test (238->228), if-form assert (same), m_unk8C operand order (same).
 void PMotionBlur::Render() {
     PMotionBlurEntry *pEntry;
     float fTime;
     float fMid;
     float vBlend[4];
-    float vScale[4];
     int i;
     int nAge;
     int j;
@@ -168,7 +166,7 @@ void PMotionBlur::Render() {
             nAge += m_unk88;
         }
         if (m_unk60) {
-            *(u_long128 *)vScale = lit_00249D40;
+            float vScale[4] = {1.0f, 1.0f, 1.0f, 0.0f};
             vScale[3] = fTime / 128.0f;
             sceVu0ScaleVector(vBlend, (float *)((char *)this + i * 16 + 0x20), vScale);
             SetZBufferUpdate__10PGfxEngineFb10eGsContext(gGfxEng, 0, 0);
