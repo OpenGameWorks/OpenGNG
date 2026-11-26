@@ -1620,7 +1620,7 @@ int PSound::AddChanToMultipleResumes(unsigned int nChan) {
 }
 
 // DRAFT: 0x001A8850 AddChanToMultiplePauses__6PSoundFUi
-// note: 16 words differ; index*4 scaled before the shift, base 0xB8 added to a register, and the flag store uses a2 for the constant (original uses a0). Tried indexed, pointer, shift-in-var, signed index, flag-base pointer, base-cast pointer (16, 16, 16, 16, 18, 16).
+// note: 16 words differ; index*4 scaled before the shift, base 0xB8 added to a register, and the flag store uses a2 for the constant (original uses a0). Tried indexed, pointer, shift-in-var, signed index, flag-base pointer, base-cast pointer, (this+0xB8+nIdx*4) pointer (16, 16, 16, 16, 18, 16, 16).
 int PSound::AddChanToMultiplePauses(unsigned int nChan) {
     int nRet = 0;
     int nIdx = 0;
@@ -2086,7 +2086,7 @@ void PSound::SetMainMusicRelVolume(unsigned int nVolume) {
 }
 
 // DRAFT: 0x001A9470 StopMusic__6PSoundFv
-// note: size 0x60 vs 0x64; the second loop increment lands in the bnez delay slot, original keeps slti/bnez/nop. Tried for-loop, offset-bounded while, and reordered increments; none closed the gap.
+// note: DIFF 12; the second loop increment (addiu s1) lands in the bnez delay slot, original keeps slti/bnez/nop. Tried for-loop, offset-bounded while, reordered increments, unsigned counters; none closed the gap.
 void PSound::StopMusic() {
     SOUND_StopAllMusic();
     int i = 0;
@@ -2122,12 +2122,11 @@ int PSound::MusicSwitchToPrimary(unsigned int nArg) {
     return -1;
 }
 
-// DRAFT: 0x001A95A0 FadeMusicOnStream__6PSoundFUiUiUi
-// note: 14 words differ: original clamp path re-shifts a3 (folded to 0x190 here); compare uses at not v0; sw before bnez. Tried n*10, t=n<<2 clamp, param clamp, store via int*.
+// FUNCTION: 0x001A95A0 FadeMusicOnStream__6PSoundFUiUiUi
 void PSound::FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned int nFrames) {
     if (nStream < 2) {
         unsigned int n = nFrames;
-        if (n >= 0x65) {
+        if (n > 0x64) {
             n = 0x64;
         }
         int ticks = n * 10;
@@ -2135,8 +2134,9 @@ void PSound::FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned
         char *pState = (char *)this + (nStream << 5);
         int *pTicks = (int *)(pState + 0x7C);
         *pTicks = ticks;
+        MusicStreamState *pMusic = (MusicStreamState *)(pState + 0x70);
         if (ticks == 0) {
-            ((MusicStreamState *)(pState + 0x70))->ReInit();
+            pMusic->ReInit();
         }
     }
 }
