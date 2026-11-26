@@ -28,7 +28,7 @@ def main() -> int:
     only = {Path(a).resolve() for a in sys.argv[1:]}
     bad = 0
     for src in sorted((ROOT / "src").rglob("*.c*")):
-        if "scratch" in src.parts or (only and src.resolve() not in only):
+        if "scratch" in src.relative_to(ROOT).parts or (only and src.resolve() not in only):
             continue
         for kind, addr, name, _ in srcmeta.tags(src):
             st, why = status.get(addr, ("unlinked", ""))

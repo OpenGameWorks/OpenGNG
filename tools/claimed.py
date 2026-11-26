@@ -22,7 +22,7 @@ def claims() -> dict[int, list[str]]:
     for s in sorted((ROOT / "src").rglob("*.c*")):
         # Editors write atomic saves as `X.cpp.tmp.<pid>.<hash>`; only real
         # sources claim addresses.
-        if "scratch" in s.parts or s.suffix not in (".c", ".cpp"):
+        if "scratch" in s.relative_to(ROOT).parts or s.suffix not in (".c", ".cpp"):
             continue
         for kind, addr, _, line in srcmeta.tags(s):
             out[addr].append(f"{kind} {s.relative_to(ROOT)}:{line}")

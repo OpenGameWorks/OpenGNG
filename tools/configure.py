@@ -20,7 +20,7 @@ import srcmeta  # noqa: E402
 
 def main() -> int:
     py = ".venv/bin/python"
-    srcs = sorted(p for ext in ("*.cpp", "*.c") for p in (ROOT / "src").rglob(ext) if "scratch" not in p.parts)
+    srcs = sorted(p for ext in ("*.cpp", "*.c") for p in (ROOT / "src").rglob(ext) if "scratch" not in p.relative_to(ROOT).parts)
     lines = [
         "ninja_required_version = 1.10",
         f"py = {py}",

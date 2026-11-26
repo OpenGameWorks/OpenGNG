@@ -47,7 +47,7 @@ def score(src: Path, obj: Path, addr: int) -> int:
 def main() -> int:
     rows = []
     for src in sorted((ROOT / "src").rglob("*.c*")):
-        if "scratch" in src.parts:
+        if "scratch" in src.relative_to(ROOT).parts:
             continue
         obj = ROOT / "build/obj" / src.relative_to(ROOT).with_suffix(".o")
         tags = [t for t in srcmeta.tags(src) if t[0] == "DRAFT"]

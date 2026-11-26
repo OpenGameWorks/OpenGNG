@@ -7,3 +7,24 @@ OpenGNG's first project is to attempt decompilation of the sequel to "Maximo: Gh
 You can take liberties and tooling code from xsyetopz/GodHand repository, including their .claude/agents/ definitions, and adjust to this repo. Same principle and live feed on unobscured port: match byte-for-byte using exact tooling and language standard they did. it is a 100% byte-match decompilation for the PS2, including following the exact code structure that the debug symbols give.
 
 SLUS-20722.iso is in this repo. Dissect it if not already dissected. At the end of the day, users should only provide the .iso/.chd (that gets converted to .iso) of this exact game, because it needs to take assets from it. Everything else is handled.
+
+## Building
+
+Requirements: Python 3.11+, `ninja`, and Docker or Podman (the Metrowerks compiler is a Win32 binary that runs under Wine in an i386 container; on x86 Linux with Wine installed it runs natively). A `.chd` image also needs `chdman` from the MAME tools.
+
+```sh
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python tools/setup.py /path/to/SLUS-20722.iso    # or .chd
+```
+
+`tools/setup.py` opens the image read-only and never modifies it. It:
+
+1. converts a `.chd` into `build/disc/`, if one was given
+2. extracts the disc into `original/extracted/`
+3. stops unless the executable's SHA-1 equals `config/SLUS_207.22.sha1`
+4. writes the symbol and relocation tables into `build/info/`
+5. configures and runs `ninja`
+
+The first compile downloads the pinned compiler package and builds the Wine image. A good build ends with `build/SLUS_207.22: OK`. After that, `ninja` alone rebuilds.
+
+`tools/progress.py` reports matched game code separately from SCE library code. Functions that stay as original assembly are never counted as matched. SCE library objects are verified only when `ext/sce/` holds the SDK archives; that directory is not shipped.

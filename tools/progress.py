@@ -63,7 +63,7 @@ def load():
             status[int(p[0], 16)] = p[2]
     drafts = set()
     for s in (ROOT / "src").rglob("*.c*"):
-        if "scratch" in s.parts:
+        if "scratch" in s.relative_to(ROOT).parts:
             continue
         for kind, addr, _, _ in srcmeta.tags(s):
             if kind == "DRAFT":
