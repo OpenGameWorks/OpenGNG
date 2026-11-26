@@ -1153,6 +1153,101 @@ void PSound::FadeAmbientChannel(AmbientChannelState *pState, unsigned int nChan)
     }
 }
 
+// DRAFT: 0x001A5CB0 CalculatePositionalVolume__6PSoundFRfRfRfPCfUibUiPQ26PSound8SpotInfoUiUi
+// note: compiles; the reconstructed flow matches the asm but the register and branch shapes differ (see fncmp)
+void PSound::CalculatePositionalVolume(float &fA, float &fB, float &fC, const float *pPos, unsigned int nFlags, bool bFlag, unsigned int nHandle, SpotInfo *pSpot, unsigned int nArg1C, unsigned int nArg20) {
+    float fDx = pPos[0] - m_unk2EA0;
+    float fDz = pPos[2] - m_unk2EA8;
+    float fAng = Round180__Ff(57.295776f * atan2f(-fDx, -fDz) - m_unk2EB0);
+    float fDy = pPos[1] - m_unk2EA4;
+    float fDist = sqrtf(fDx * fDx + fDy * fDy + fDz * fDz);
+
+    if (fAng < -90.0f) {
+        fAng = -(180.0f + fAng);
+    } else if (!(fAng <= 90.0f)) {
+        fAng = 180.0f - fAng;
+    }
+    ((fAng >= -90.0f && fAng <= 90.0f) ? (void)0 : CdsAssert("PSound.cpp", 0x1BF8, "fAlpha >= -90.0f && fAlpha <= 90.0f"));
+
+    bool bNear = false;
+    float fRange;
+    if (fDist <= 15.0f) {
+        fRange = 0.0f;
+        bNear = true;
+    } else {
+        fRange = fDist - 15.0f;
+    }
+
+    float fRaw = 0.01f * (fRange * (float)(unsigned int)pSpot->m_unk14);
+    if (pSpot->m_unk13 == 2) {
+        fRaw = 0.01f * (fRaw * (float)(unsigned int)gPSndDbg[9]);
+    }
+
+    unsigned int nScale = nFlags;
+    float fDen = 0.0f;
+    bool bOverride = false;
+    if (nArg20 & 0x40) {
+        char *pChan = (char *)nArg1C;
+        nScale = (nFlags * *(unsigned int *)(pChan + 0x11C)) / 1000;
+        if (*(unsigned int *)(pChan + 0x120) & 1) {
+            unsigned int nKind = *(unsigned int *)(pChan + 0x110);
+            bOverride = true;
+            if (nKind == 1) {
+                fDen = *(float *)(pChan + 0x1C);
+            } else if (nKind == 2) {
+                fDen = *(float *)(pChan + 0x2C);
+            } else {
+                bOverride = false;
+            }
+        }
+    }
+
+    float fRatio;
+    if (bOverride) {
+        fRatio = fRaw / fDen;
+    } else if (bFlag) {
+        fRatio = fRaw / m_unk5C;
+    } else {
+        fRatio = fRaw / m_unk58;
+    }
+
+    float fT = 1.0f - fRatio;
+    if (fT < 0.0f) {
+        fT = 0.0f;
+    }
+    float fCurve = m_unk64 * fT * fT + m_unk60 * fT;
+    if (fCurve < 0.003f) {
+        fCurve = 0.003f;
+    }
+    if (!(fCurve <= 1.0f)) {
+        fCurve = 1.0f;
+    }
+
+    float fOut = 0.001f * (fCurve * (float)nScale);
+    if (nHandle == 2) {
+        fOut = 0.001f * (float)nFlags;
+    }
+    if (fOut >= 1.0f) {
+        fOut = bNear ? 1.0f : 0.9f;
+    }
+    ((fOut >= 0.0f) ? (void)0 : CdsAssert("PSound.cpp", 0x1C63, "fVol >= 0"));
+
+    float fPan = fAng / 180.0f;
+    ((fPan >= -1.0f && fPan <= 1.0f) ? (void)0 : CdsAssert("PSound.cpp", 0x1C69, "fPan >= -1.0f && fPan <= 1.0f"));
+
+    float fLeft = fOut;
+    float fRight = fOut;
+    if (fAng < 0.0f) {
+        fLeft = fOut * (1.0f + fPan);
+    } else {
+        fRight = fOut * (1.0f - fPan);
+    }
+
+    fA = fDist;
+    fB = 1000.0f * fLeft;
+    fC = 1000.0f * fRight;
+}
+
 // DRAFT: 0x001A6260 AdjustEffectVolumes__6PSoundFRUiRUiRfRf
 // note: 5 words; the three flag compares use $v1/$a0 where the original uses $at. Tried: nested bLowA variant (5), no-local variant (5), ternary clamps (11), bool bLowA (5, diff moves to nB flag), unsigned bLowA (5), ternary-initialised bLowA (20+).
 void PSound::AdjustEffectVolumes(unsigned int &nOutA, unsigned int &nOutB, float &fInA, float &fInB) {

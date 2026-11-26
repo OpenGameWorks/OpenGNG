@@ -626,7 +626,7 @@ void HudGrim::Init(PMeshNode *meshNode, HudData *hud) {
 
 // FUNCTION: 0x140270 Update__8HudSuperFi
 void HudSuper::Update(int arg0) {
-    short cur = m_unkC;
+    int cur = m_unkC;
     int target = *(int *)((char *)mpPlayerData__7GameHud + 0x3C);
     int diff = target - cur;
     if (diff != 0) {
@@ -1257,15 +1257,17 @@ void HudCombo::ComboNumber() {
     for (int i = 0; i < 2; i++) {
         int digit = v % 10;
         if (digit != 0 || i == 0) {
-            void *node = __nw__FUi(0x100);
-            if (node != 0) {
+            void *node;
+            if ((node = __nw__FUi(0x100)) != 0) {
+                char *volatile pThis = (char *)node;
                 *(unsigned char **)node = __vt__9PResource;
-                *(int *)((char *)node + 4) = 0;
-                *(unsigned char **)node = __vt__6PMNode;
-                __ct__6PArrayFv((char *)node + 0x14);
-                sceVu0UnitMatrix((char *)node + 0x40);
-                __ct__6PArrayFv((char *)node + 0xD8);
-                InitMembers__6PMNodeFv((PMNode *)node);
+                *(int *)(pThis + 4) = 0;
+                *(unsigned char **)pThis = __vt__6PMNode;
+                __ct__6PArrayFv(pThis + 0x14);
+                sceVu0UnitMatrix(pThis + 0x40);
+                __ct__6PArrayFv(pThis + 0xD8);
+                InitMembers__6PMNodeFv((PMNode *)pThis);
+                node = pThis;
             }
             PMNode *pNew = (PMNode *)node;
             ((pNew != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x7B7, "pNode"));
@@ -1419,35 +1421,36 @@ void GameHud::Update(int arg0) {
     }
 }
 
-// DRAFT: 0x00142280 SetNumber__7GameHudFv
-// note: 131 words; frame size differs (0x220 vs 0x23C-class spill) because the PMNode node-ctor spill needs PMNode as a real class (another worker's header). Tried: local reorder, void *volatile self (136, reverted).
+// FUNCTION: 0x00142280 SetNumber__7GameHudFv
 void GameHud::SetNumber() {
-    short cur;
-    int first = 0;
-    int div = 1000;
-    float vec[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-
     DestroyChildren__6PMNodeFv((PMNode *)m_unk4);
-    vec[0] += *(float *)((char *)m_unk4 + 0xB0);
-    vec[1] += *(float *)((char *)m_unk4 + 0xB4);
+    float vec[4] = {0.0f, -0.4f, 0.05f, 1.0f};
+    char *pRoot = (char *)m_unk4;
+    float *pPos = (float *)(pRoot + 0xB0);
+    vec[0] += pPos[0];
+    vec[1] += pPos[1];
     if (m_unkC >= 0x2710) {
         CdsAssert__FPciPc("Interface.cpp", 0x717, "miValue < 10000");
     }
-    cur = m_unkC;
+    int cur = m_unkC;
+    bool first = false;
+    int div = 1000;
     do {
         int digit = cur / div;
-        if (digit != 0 || first != 0 || div == 1) {
-            cur = (short)(cur % (short)div);
-            first = 1;
-            void *node = __nw__FUi(0x100);
-            if (node != 0) {
+        if (digit != 0 || first || div == 1) {
+            cur = cur % (short)div;
+            first = true;
+            void *node;
+            if ((node = __nw__FUi(0x100)) != 0) {
+                char *volatile pThis = (char *)node;
                 *(unsigned char **)node = __vt__9PResource;
-                *(int *)((char *)node + 4) = 0;
-                *(unsigned char **)node = __vt__6PMNode;
-                __ct__6PArrayFv((char *)node + 0x14);
-                sceVu0UnitMatrix((char *)node + 0x40);
-                __ct__6PArrayFv((char *)node + 0xD8);
-                InitMembers__6PMNodeFv((PMNode *)node);
+                *(int *)(pThis + 4) = 0;
+                *(unsigned char **)pThis = __vt__6PMNode;
+                __ct__6PArrayFv(pThis + 0x14);
+                sceVu0UnitMatrix(pThis + 0x40);
+                __ct__6PArrayFv(pThis + 0xD8);
+                InitMembers__6PMNodeFv((PMNode *)pThis);
+                node = pThis;
             }
             if (node == 0) {
                 CdsAssert__FPciPc("Interface.cpp", 0x720, "pNode");
@@ -1460,7 +1463,7 @@ void GameHud::SetNumber() {
             vec[0] += f1;
             ((PArray *)((char *)m_unk4 + 0x14))->Add(node);
         }
-        div = div / 10 + ((unsigned int)div >> 31);
+        div /= 10;
     } while (div != 0);
 }
 

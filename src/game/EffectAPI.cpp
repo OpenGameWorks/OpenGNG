@@ -166,17 +166,18 @@ extern unsigned char __vt__16MotionBlurEffect[0x20];
 extern "C" int Create__16MotionBlurEffectFP6PMNodeUii(void *pThis, PMNode *arg0, unsigned int arg1, int arg2);
 extern "C" void *__ct__11PMotionBlurFv(void *pThis);
 
-// DRAFT: 0x155980 CreateMotionBlurEffect__9EffectAPIFP6PMNodeUii
-// note: 64 words differ: original frame 0x70 spills pEffect to 0x6C(sp) (cleanup scope of a member with a dtor); ours 0x60 keeps it in s0. Tried: PMotionBlur member class, vtable store reorder, assign-in-condition null check (65->64).
+// FUNCTION: 0x155980 CreateMotionBlurEffect__9EffectAPIFP6PMNodeUii
 MotionBlurEffect *EffectAPI::CreateMotionBlurEffect(PMNode *arg0, unsigned int arg1, int arg2) {
     MotionBlurEffect *pEffect;
     if ((pEffect = (MotionBlurEffect *)__nw__FUi(0xC0)) != 0) {
+        MotionBlurEffect *volatile pThis = pEffect;
         *(void **)pEffect = __vt__10EffectNode;
-        *(void **)pEffect = __vt__16MotionBlurEffect;
-        pEffect->m_unk4 = 0;
-        pEffect->m_unkC = 0;
-        __ct__11PMotionBlurFv(&pEffect->m_unk10);
-        pEffect->m_unk4 = 0;
+        pThis->m_unk4 = 0;
+        *(unsigned char *)&pThis->m_unkC = 0;
+        *(void **)pThis = __vt__16MotionBlurEffect;
+        __ct__11PMotionBlurFv(&pThis->m_unk10);
+        pThis->m_unk4 = 0;
+        pEffect = pThis;
     }
     if (pEffect != 0) {
         if (m_unk0 >= 0x80) {

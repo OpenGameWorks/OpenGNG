@@ -658,15 +658,13 @@ void CameraFollow::ProcessHeadCam() {
 }
 
 // DRAFT: 0x00174F20 CanDoHeadcam__12CameraFollowFv
-// note: 33 lines; abs calls and 0.01f literal (gp pool vs lui/ori/mtc1) and branch shape differ; block-scope int abs(int) decl stops abs inlining; goto-shaped exit gave 34.
+// note: 12 words; abs(m_unk1B8/1B9) beqz targets, float bc1f threaded to epilogue (orig bc1t over shared b), m_unk2C0 tail bnez+b vs orig beqz with addiu in slot.
 int CameraFollow::CanDoHeadcam() {
     if (m_unk62F0 != 0) { return 0; }
-    if (abs(m_unk1B8) >= 0x33) { return 0; }
-    if (abs(m_unk1B9) >= 0x33) { return 0; }
-    if (!(m_unk1A0 <= 0.01f)) { return 0; }
-    if (m_unk6290 != 0) { return 0; }
-    if (m_unk2C0 != 0) { return 0; }
-    return 1;
+    if (abs(m_unk1B8) < 0x33 && abs(m_unk1B9) < 0x33 && m_unk1A0 <= 0.01f && m_unk6290 == 0) {
+        if (m_unk2C0 == 0) { return 1; }
+    }
+    return 0;
 }
 
 // DRAFT: 0x00174FC0 CreatePathToPlayer__12CameraFollowFv
@@ -814,35 +812,33 @@ void CameraFollow::CalcNewCameraOffsets() {
     }
 }
 
-// DRAFT: 0x00175540 CamCollideSphere__12CameraFollowF5PVec3f
-// note: 33 words differ in all copy variants (direct, pointer-cast, pointer-local, 128-bit temp); original takes d's address via addiu v0,sp,0x50 then lq, and reuses a0=sp+0x40 for the store and GetLength arg
+// FUNCTION: 0x00175540 CamCollideSphere__12CameraFollowF5PVec3f
 void CameraFollow::CamCollideSphere(PVec3 arg0, float arg1) {
-    float n[4];
-    float d[4];
-    __mi__5PVec3FR5PVec3(d, m_unk20, arg0.m_v);
-    *(u_long128 *)n = *(u_long128 *)d;
-    if (GetLength__5PVec3Fv(n) < arg1) {
-        sceVu0Normalize(n, n);
-        m_unk20[0] = arg0.m_v[0] + n[0] * arg1;
-        m_unk20[1] = arg0.m_v[1] + n[1] * arg1;
-        m_unk20[2] = arg0.m_v[2] + n[2] * arg1;
+    PVec3 n;
+    PVec3 d;
+    __mi__5PVec3FR5PVec3(d.m_v, m_unk20, arg0.m_v);
+    n = d;
+    if (GetLength__5PVec3Fv(n.m_v) < arg1) {
+        sceVu0Normalize(n.m_v, n.m_v);
+        m_unk20[0] = arg0.m_v[0] + n.m_v[0] * arg1;
+        m_unk20[1] = arg0.m_v[1] + n.m_v[1] * arg1;
+        m_unk20[2] = arg0.m_v[2] + n.m_v[2] * arg1;
         m_unk22C = 1;
     }
 }
 
-// DRAFT: 0x00175600 CamCollideCylinder__12CameraFollowF5PVec3ff
-// note: 40 words differ; same copy-addressing mismatch as CamCollideSphere (original keeps a0=sp+0x40 live from the sq into GetLength, draft re-materializes it); n-before-d order gave 41 to 40
+// FUNCTION: 0x00175600 CamCollideCylinder__12CameraFollowF5PVec3ff
 void CameraFollow::CamCollideCylinder(PVec3 arg0, float arg1, float arg2) {
-    float n[4];
-    float d[4];
-    __mi__5PVec3FR5PVec3(d, m_unk20, arg0.m_v);
-    *(u_long128 *)n = *(u_long128 *)d;
-    n[1] = 0.0f;
+    PVec3 n;
+    PVec3 d;
+    __mi__5PVec3FR5PVec3(d.m_v, m_unk20, arg0.m_v);
+    n = d;
+    n.m_v[1] = 0.0f;
     if (!(m_unk20[1] < arg0.m_v[1]) && m_unk20[1] <= arg0.m_v[1] + arg2) {
-        if (GetLength__5PVec3Fv(n) < arg1) {
-            sceVu0Normalize(n, n);
-            m_unk20[0] = arg0.m_v[0] + n[0] * arg1;
-            m_unk20[2] = arg0.m_v[2] + n[2] * arg1;
+        if (GetLength__5PVec3Fv(n.m_v) < arg1) {
+            sceVu0Normalize(n.m_v, n.m_v);
+            m_unk20[0] = arg0.m_v[0] + n.m_v[0] * arg1;
+            m_unk20[2] = arg0.m_v[2] + n.m_v[2] * arg1;
             m_unk22C = 1;
         }
     }
@@ -1409,23 +1405,15 @@ void CameraFollow::ProcessPlayerIO() {
 }
 
 // DRAFT: 0x00177090 PlayerMovedSinceLastSwing__12CameraFollowFv
-// note: 68 lines; 0.1f pooled via gp where the original builds it inline (lui/ori/mtc1), which shifts branch layout. Shared-exit variant gave 79.
+// note: 34 lines; 0.1f pooled via gp where the original builds it inline (lui/ori/mtc1) per test, shifting branch layout. Flat early-return form gave 68.
 int CameraFollow::PlayerMovedSinceLastSwing() {
     sceVu0SubVector(m_unk10, m_unk1C0, m_unk180);
     if (FastMath_Fabs__Ff(m_unk10[0]) <= 0.1f) {
-        if (!(FastMath_Fabs__Ff(m_unk10[1]) <= 0.1f) || !(FastMath_Fabs__Ff(m_unk10[2]) <= 0.1f)) {
-            return 1;
-        }
+        if (!(FastMath_Fabs__Ff(m_unk10[1]) <= 0.1f) || !(FastMath_Fabs__Ff(m_unk10[2]) <= 0.1f)) { return 1; }
         sceVu0SubVector(m_unk10, m_unk1D0, (float *)m_unk184);
-        if (!(FastMath_Fabs__Ff(m_unk10[0]) <= 0.1f)) {
-            return 1;
-        }
-        if (!(FastMath_Fabs__Ff(m_unk10[1]) <= 0.1f)) {
-            return 1;
-        }
-        if (FastMath_Fabs__Ff(m_unk10[2]) <= 0.1f) {
-            return 0;
-        }
+        if (!(FastMath_Fabs__Ff(m_unk10[0]) <= 0.1f)) { return 1; }
+        if (!(FastMath_Fabs__Ff(m_unk10[1]) <= 0.1f)) { return 1; }
+        if (FastMath_Fabs__Ff(m_unk10[2]) <= 0.1f) { return 0; }
     }
     return 1;
 }
