@@ -156,7 +156,10 @@ public:
     unsigned int m_unk2078;     // 0x2078
     unsigned int m_unk207C;     // 0x207C
     PParticleSystem **m_unk2080; // 0x2080
-    char _pad2084[0x20FC - 0x2084];
+    char _pad2084[0x208C - 0x2084];
+    PParticleSystem *m_unk208C[12]; // 0x208C ground dust explosions
+    PParticleSystem *m_unk20BC[8];  // 0x20BC
+    PParticleSystem *m_unk20DC[8];  // 0x20DC
     PParticleSystem *m_unk20FC; // 0x20FC
 };
 

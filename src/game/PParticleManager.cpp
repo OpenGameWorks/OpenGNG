@@ -623,12 +623,9 @@ void PParticleManager::DestroyGroundDustFx() {
     } while (i < 12);
 }
 
-// DRAFT: 0x001B85B0 InitGroundDustFx__16PParticleManagerFv
-// note: DIFF 5: this/off registers swapped (ours s1=off s0=this, original s1=this s0=off); DIFF 5 after 13 variants: tried i-first (7), decl-late (7), offcast (7), off-after-i (7), unsigned (7), pSelf (5), pBase (5), this-first (5), off=off+4 (5), int-cast (5), counter-first (7), unsigned counter (6), for/while (5-7)
+// FUNCTION: 0x001B85B0 InitGroundDustFx__16PParticleManagerFv
 void PParticleManager::InitGroundDustFx() {
-    int off = 0;
-    int i = 0;
-    do {
+    for (int i = 0; i < 12; i++) {
         PParticleLiteExplosion *pFx;
         pFx = (PParticleLiteExplosion *)__nw__FUi(0x1D0);
         if (pFx != 0) {
@@ -640,10 +637,8 @@ void PParticleManager::InitGroundDustFx() {
         pFx->Create((tagParticleLiteExplosionParams *)&gGroundDustParams, 0.0f, 0.0f, 0.0f);
         pFx->m_unk10 = GetFxTexture(0x84000006);
         pFx->m_unk30 = 0x44;
-        *(PParticleLiteExplosion **)((char *)this + off + 0x208C) = pFx;
-        off += 4;
-        i++;
-    } while (i < 12);
+        m_unk208C[i] = (PParticleSystem *)pFx;
+    }
 }
 
 // FUNCTION: 0x001B8690 EnableFxByType__16PParticleManagerF7ePSTypeb

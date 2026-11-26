@@ -1025,12 +1025,12 @@ void EntityBaseClass::UpdateRipple(float arg0, unsigned int arg1, bool arg2) {
     }
 }
 
-// DRAFT: 0x0014BAE0 CreateSplash__15EntityBaseClassFfbb
-// note: 2 words differ (mtc1 f12/f13 order for the v[0] call; original passes -3.0 in f12). Tried: v[0] as RandomFloatRange(-3.0f, 3.0f) (9 words, the constant loads at 0xF8 and 0x124 move too); the note's earlier claim that UpdateRipple's body changes this was not re-verified
+// FUNCTION: 0x0014BAE0 CreateSplash__15EntityBaseClassFfbb
 void EntityBaseClass::CreateSplash(float arg0, bool arg1, bool arg2) {
     float pos[4];
     float v[4];
     float r;
+    float f0t;
     float (*src)[4];
     PParticleSystem *ps;
     if (this->m_unk3C != 0) {
@@ -1052,7 +1052,8 @@ void EntityBaseClass::CreateSplash(float arg0, bool arg1, bool arg2) {
     if (ps != 0 && ((PParticleManager *)gfx)->IsValid(ps)) {
         ps->FadeAndDie(0);
     }
-    v[0] = pos[0] + MathAPI::RandomFloatRange(3.0f, -3.0f);
+    f0t = MathAPI::RandomFloatRange(-3.0f, 3.0f);
+    v[0] = pos[0] + f0t;
     v[1] = pos[1];
     v[2] = pos[2] + MathAPI::RandomFloatRange(-3.0f, 3.0f);
     r = MathAPI::RandomFloatRange(60.0f, 90.0f);
@@ -1897,7 +1898,7 @@ void EntityBaseClass::RemoveFromBGAnimList() {
 }
 
 // DRAFT: 0x0014DA30 AddToBGAnimList__15EntityBaseClassFv
-// note: 2 differing words (0x38/0x40): original loads a0=m_unk3C before a2=m_unk04, ours loads a2 first; the +0x70 addend is fixed (was 3 words). Tried: node-before-size locals (2), inline member-cast call with m_unk04 direct (2), direct m_unk04 arg with node-local null test (frame grows, worse).
+// note: 2 differing words (0x38/0x40): original loads a0=m_unk3C before a2=m_unk04, ours loads a2 first; the +0x70 addend is fixed (was 3 words). Tried: node-before-size locals (2), inline member-cast call with m_unk04 direct (2), direct m_unk04 arg with node-local null test (frame grows, worse), node local with direct m_unk04 size arg (ab_e, 2).
 void EntityBaseClass::AddToBGAnimList() {
     PMeshNode *node;
     unsigned int size;
@@ -2170,8 +2171,7 @@ void EntityBaseClass::ProcessSequence() {
     m_unk162 = 0;
 }
 
-// DRAFT: 0x0014E250 PlaySequence__15EntityBaseClassFPUi
-// note: DIFF 2 words; original fills the ProcessSequence delay slot with sb zero,0x162 and computes a0 before jal, ours fills it with the a0 daddu. Tried: this->ProcessSequence() (no gain).
+// FUNCTION: 0x0014E250 PlaySequence__15EntityBaseClassFPUi
 int EntityBaseClass::PlaySequence(unsigned int *arg0) {
     if (arg0 == 0) {
         CdsAssert__FPciPc("EntityBaseClass.cpp", 0x28D, "pSeq");
@@ -2187,8 +2187,8 @@ int EntityBaseClass::PlaySequence(unsigned int *arg0) {
         }
         m_unk144 = 0;
         m_unk160 = 1;
-        ProcessSequence();
         m_unk162 = 0;
+        ProcessSequence();
         return 1;
     }
     return 0;
@@ -2239,7 +2239,7 @@ void EntityBaseClass::SetFreeze(float arg0) {
 }
 
 // DRAFT: 0x0014E480 CreateFireDamageFx__15EntityBaseClassFf
-// note: 2 words differ: the call's a1/a2 loads are swapped (original loads m_unk3C into a1 before m_unk08 into a2; ours loads a2 first). Tried: pm local, unsigned cast, temp for m_unk08, node local, bare-truth test (c.eq.s fixed by it).
+// note: 2 words differ: the call's a1/a2 loads are swapped (original loads m_unk3C into a1 before m_unk08 into a2; ours loads a2 first). Tried: pm local, unsigned cast, temp for m_unk08, node local, bare-truth test (c.eq.s fixed by it); no-temp form (2); unsigned size local assigned before the call (2); size loaded at function top (31, adds an s1 save); temp assigned in the if condition (2).
 void EntityBaseClass::CreateFireDamageFx(float arg0) {
     PMNode *temp_a0;
 
