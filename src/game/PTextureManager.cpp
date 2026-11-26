@@ -557,20 +557,23 @@ void PTextureManager::DestroyRenderedTexture(int nHandle) {
     }
 }
 
-// DRAFT: 0x0018AA60 UnloadAllRenderedTextures__15PTextureManagerFv
-// note: 32 words differ: frame 0x40 vs 0x50 (original keeps this in s3 and a byte-offset induction in s2, needing a 4th saved reg); tried while-loop, outer nCount>0 guard removed, 0<nCount guard (kept, 44->32 words), i declared outside for
+// FUNCTION: 0x0018AA60 UnloadAllRenderedTextures__15PTextureManagerFv
 void PTextureManager::UnloadAllRenderedTextures() {
+    int i = 0;
     int nCount = m_nRenderedCount;
     if (0 < nCount) {
-        for (int i = 0; i < nCount; i++) {
+        int nOff = 0;
+        do {
             PTexture *p = 0;
             if ((unsigned int)i < (unsigned int)m_nRenderedCount) {
-                p = m_apRendered[i];
+                p = *(PTexture **)((char *)m_apRendered + nOff);
             }
             if (p != 0) {
                 delete p;
             }
-        }
+            i++;
+            nOff += 4;
+        } while (i < nCount);
     }
     if (m_apRendered != 0) {
         m_nRenderedCount = 0;
