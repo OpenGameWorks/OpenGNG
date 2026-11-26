@@ -406,38 +406,33 @@ void EntityManager::BGAnimAdd(int value) {
     ((PList *)((char *)this + 0x5B80))->Add((void *)value);
 }
 
-// DRAFT: 0x001460D0 BGAnimIsReset__13EntityManagerFi
-// note: 21 diffs; entry beqz targets differ (orig +0x1F to shared return-0, ours +0x1B); tried guard form, while form (34), local cursor (21), flipped cursor order (25), early return (30+)
-int EntityManager::BGAnimIsReset(int arg0) {
-    m_unk5B8C = m_unk5B84;
-    int v;
-    if (m_unk5B84 != 0) {
-        v = m_unk5B84->m_unk00;
-    } else {
-        v = 0;
+// FUNCTION: 0x001460D0 BGAnimIsReset__13EntityManagerFi
+static inline int BGAnimGetFirst(EntityManager *pMgr) {
+    pMgr->m_unk5B8C = pMgr->m_unk5B84;
+    if (pMgr->m_unk5B84 != 0) {
+        return pMgr->m_unk5B84->m_unk00;
     }
-    if (v != 0) {
-        do {
-            if (v == arg0) {
-                return 1;
-            }
-            if (m_unk5B8C == 0) {
-                m_unk5B8C = m_unk5B84;
-                if (m_unk5B84 != 0) {
-                    v = m_unk5B84->m_unk00;
-                } else {
-                    v = 0;
-                }
-            } else {
-                BGAnimNode *next = m_unk5B8C->m_unk04;
-                if (next != 0) {
-                    m_unk5B8C = next;
-                    v = m_unk5B8C->m_unk00;
-                } else {
-                    v = 0;
-                }
-            }
-        } while (v != 0);
+    return 0;
+}
+
+static inline int BGAnimGetNext(EntityManager *pMgr) {
+    if (pMgr->m_unk5B8C == 0) {
+        return BGAnimGetFirst(pMgr);
+    }
+    BGAnimNode *pNext = pMgr->m_unk5B8C->m_unk04;
+    if (pNext != 0) {
+        pMgr->m_unk5B8C = pNext;
+        return pMgr->m_unk5B8C->m_unk00;
+    }
+    return 0;
+}
+
+int EntityManager::BGAnimIsReset(int arg0) {
+    int v;
+    for (v = BGAnimGetFirst(this); v != 0; v = BGAnimGetNext(this)) {
+        if (v == arg0) {
+            return 1;
+        }
     }
     return 0;
 }
@@ -921,7 +916,7 @@ void EntityManager::ProcessTrigger() {
 }
 
 // DRAFT: 0x001473D0 RestoreHolyGround__13EntityManagerFv
-// note: DIFF 18; else-arm placement of `pTrig = 0` and the copy-loop/join nops differ; tried for-form walk (24), six copy-loop shapes (24), kept do-while (18)
+// note: DIFF 18; else-arm placement of `pTrig = 0` and the copy-loop/join nops differ (orig: one extra nop before copy-loop bnez and after its delay slot). Tried hoisted pTrig = 0 (30), ternary walk (24), decrement moved to copy-loop tail (24), for-form copy loop (24), unsigned counter with n-- first (24); kept do-while if/else shape (18).
 void EntityManager::RestoreHolyGround() {
     PMeshNode *pNode = *(PMeshNode **)gEng;
     if (pNode != 0) {
@@ -1149,7 +1144,7 @@ void EntityManager::SaveApparitionData(int arg0) {
 }
 
 // DRAFT: 0x00147B40 LoadApparitionData__13EntityManagerFi
-// note: 22 lines differ; branch offset 0x1D vs 0x1C, p=0 in t1 (orig v1), addiu 0x2B1 placement, b/mask/i/off/q registers (orig a2/a3/t0/t1/t2), loop tail order. Tried gMC[idx+0x2B1] (27), two-pointer q (22), single pointer p (22), counters before byte load (23).
+// note: 16 words differ; loop body and tail match with `int b` (no unsigned-char cast). Remaining: p sits in a2 (orig t1), bit in t2 (orig a1), off in t1 (orig t2), mask in a3 (orig a2), i in t1 vs t0; branch 0x0004 skip 0x1E vs 0x1C and 2-word extra tail. Tried gMC[idx+0x2B1] (27), two-pointer q (22), single pointer p (22), counters before byte load (23), unsigned char cast removed (23), int b (16, kept), counters declared before p (26).
 void EntityManager::LoadApparitionData(int arg0) {
     if (arg0 < 0x15) {
         unsigned char *p = 0;
@@ -1157,13 +1152,13 @@ void EntityManager::LoadApparitionData(int arg0) {
             p = &gMC[arg0 * 0x31];
             p = p + 0x2B1;
         }
-        unsigned char b = *p;
+        int b = *p;
         p = p + 1;
         unsigned int mask = 0x80;
         int i = 0;
         int off = 0;
         do {
-            int bit = (unsigned char)b & mask;
+            int bit = b & mask;
             mask = mask >> 1;
             *(signed char *)((char *)this + 0x53A0 + off) = bit;
             if (mask == 0) {
@@ -2066,17 +2061,13 @@ void EntityManager::Reset(bool arg0) {
     }
 }
 
-// DRAFT: 0x00149B10 LoadOverlay__13EntityManagerFPcPc
-// note: 21 words differ; the original tests the failure-message string address at runtime (lui/addiu/sltu/xori/bnez, skip over the CdsAssert call) and ours folds the test away; the 0x13-word beqz skip differs from 0x15. Tried !(!"...") (23), local char* pMsg with pMsg != 0 (21), !(!pMsg) (21, kept as pMsg != 0 form).
+// FUNCTION: 0x00149B10 LoadOverlay__13EntityManagerFPcPc
 void EntityManager::LoadOverlay(char *arg0, char *arg1) {
     m_unk5D4C = 0;
     Reset(true);
     if (arg0 != 0) {
         if (((OverlayManager *)m_unk50C0)->LoadOverlay(arg0) == 0) {
-            char *pMsg = "Load Overlay failed";
-            if (pMsg != 0) {
-                CdsAssert("EntityManager.cpp", 0x8A, "!\"Load Overlay failed\"");
-            }
+            CDS_ASSERT(0x8A, !"Load Overlay failed");
         }
         LoadResource(arg1, false);
     }
