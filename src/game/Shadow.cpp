@@ -77,13 +77,11 @@ extern "C" Shadow *__dt__6ShadowFv(Shadow *pThis, short nFlag) {
     return pThis;
 }
 
-// DRAFT: 0x001B03D0 __ct__6ShadowFQ26Shadow10ShadowTypeUi
-// note: 2 words differ at 0x70/0x74: original emits daddu v0,s0 before sw zero,0xC(s0) in the shared tail, ours emits the store first. Tried: branch sense flipped (beq to particle path, now matched), local return pointer (same output), duplicated non-particle return with its own store (27 words), particle test as early-return if with stores after it (27 words).
+// FUNCTION: 0x001B03D0 __ct__6ShadowFQ26Shadow10ShadowTypeUi
 extern "C" Shadow *__ct__6ShadowFQ26Shadow10ShadowTypeUi(Shadow *pThis, int eType, unsigned int nId) {
     pThis->m_unk0 = 0;
-    if (eType != Shadow::eShadowParticle) {
-        pThis->m_unk4 = 0;
-    } else {
+    switch (eType) {
+    case Shadow::eShadowParticle:
         pThis->m_unkC = GetResource__16PParticleManagerFUi(gGfxEng + 0x154F00, nId);
         if (pThis->m_unkC == 0) {
             CdsAssert__FPciPc("Shadow.cpp", 0x27, "mpShadowVolume");
@@ -91,6 +89,7 @@ extern "C" Shadow *__ct__6ShadowFQ26Shadow10ShadowTypeUi(Shadow *pThis, int eTyp
         ((PShadowBuffer *)(gGfxEng + 0x157000))->AddShadowVolume(pThis->m_unkC);
         return pThis;
     }
+    pThis->m_unk4 = 0;
     pThis->m_unkC = 0;
     return pThis;
 }
