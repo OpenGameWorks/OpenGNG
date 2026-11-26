@@ -2802,12 +2802,13 @@ void *Player::ComboTarget(float arg0, float arg1, bool arg2) {
     return s2;
 }
 
-// note: 10 words differ: original branches to the body on beqz and skips it with an unthreaded b to the epilogue; compiled code threads that into bnez. Tried the early-return form and an empty-then if/else, both threaded the same way.
-// DRAFT: 0x0015E250 AirSliceMove__6PlayerFv
+// FUNCTION: 0x0015E250 AirSliceMove__6PlayerFv
 void Player::AirSliceMove() {
-    if (m_unk250 == 0) {
+    switch (m_unk250) {
+    case 0:
         m_unk250 = 1;
         m_unk38[1] = 0x3A83126F;
+        break;
     }
 }
 
