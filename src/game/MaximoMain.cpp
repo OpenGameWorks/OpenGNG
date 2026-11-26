@@ -5,6 +5,11 @@
 
 // TODO(header): foreign declarations
 extern "C" int ReadPush__3PadFv(void *);
+extern char BONUSSCREEN_FILE[26];
+extern int Level2GalleryMap[21];
+extern "C" PMNode *Load__6PWorldFPCcb13eTextureGroup(void *, const char *, bool, int);
+extern "C" char *strcpy(char *, const char *);
+extern "C" char *strcat(char *, const char *);
 extern "C" void RemoveAllParticleSystems__16PParticleManagerFv(void *);
 extern "C" void ReturnControlOfIOPToMjln__6PSoundFv(void *);
 class FontNode {
@@ -1666,6 +1671,316 @@ int MaximoMain::TextureViewer(MaximoMain::BonusGallery *arg0, int arg1)
     spB0->RemoveText(spCC);
     spB0->InitFrame();
     return var_s2;
+}
+
+// DRAFT: 0x00139070 BonusScreen__10MaximoMainFP6PMNode
+// note: 564 differing words, size 0xA54 vs 0xA38; state var in s0 (orig s1), this spill at 0xEC (orig 0xFC), gallery array 8 bytes low (0xF8 vs 0x100); tried local reorder and sp280[16] (kept)
+void MaximoMain::BonusScreen(PMNode *arg0) {
+    PResourceManager sp1B0;
+    BonusGallery sp100[21];
+    char sp280[16];
+    char sp28C[4];
+    static int aX;
+    static int aY;
+    static int aYStart;
+    FontNode *spBC;
+    FontNode *spB8;
+    int spA0;
+    int spC0;
+    int spD0;
+    int spE0;
+    int var_s1;
+    int var_s1_2;
+    int var_s1_3;
+    int var_s1_4;
+    int var_s2;
+    int var_s2_2;
+    int var_s2_3;
+    int var_s5;
+    int var_s6;
+    int var_s7;
+    int var_fp;
+    int var_a1;
+    int var_a2;
+    int var_a2_2;
+    int var_a2_3;
+    int var_a3;
+    int temp_s2;
+    int temp_s3;
+    int temp_s4;
+    int temp_v0;
+    int temp_v1;
+    int var_v0_2;
+    int var_v0_3;
+    signed char var_v0;
+
+    var_s1 = 0;
+loop_1:
+    InitRenderFrame__9MaxEngineFbUi(this, false, 0);
+    *(float *)((char *)this + 0x1E8) = 1.0f;
+    switch (var_s1) {
+    case 3:
+        break;
+    case 0:
+        FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 4.25f, true, 0);
+block_7:
+        spBC = (FontNode *)DisplayString__11FontManagerFiiib(gInterface + 0x80, 0x26E, 0, 0, false);
+        spB8 = (FontNode *)DisplayString__11FontManagerFiiib(gInterface + 0x80, 0x293, 0, 0, false);
+        SoundGainEEControl__9InterfaceFv(gInterface);
+        pBonusScreen = Load__6PWorldFPCcb13eTextureGroup(this, BONUSSCREEN_FILE, false, 0x65);
+        ReturnControlOfIOPToMjln__6PSoundFv(gSound);
+        ResetWarning__11FontManagerFv(gInterface + 0x80);
+        ((pBonusScreen != 0) ? (void)0 : CdsAssert__FPciPc("MaximoMain.cpp", 0xD8F, "pBonusScreen"));
+        *(float *)((char *)pBonusScreen + 0x2C) = 1.0f;
+        *(int *)((char *)pBonusScreen + 0x0C) = 1;
+        ((void (*)(void *, int, int, int, int, int))(*(void ***)pBonusScreen)[6])(pBonusScreen, 0, 0, 0, 0, 0x3F800000);
+        AddMeshLayer__9InterfaceFP6PMNode(gInterface, pBonusScreen);
+        spC0 = 0;
+        var_s1_2 = 0;
+        var_s5 = 4;
+        spD0 = 0;
+        spE0 = 0;
+        do {
+            var_fp = spE0;
+            var_s2 = 0;
+loop_11:
+            {
+                static bool init;
+                if (!init) {
+                    aX = 0xC8;
+                    init = true;
+                }
+            }
+            {
+                static bool init;
+                if (!init) {
+                    aY = -0x28;
+                    init = true;
+                }
+            }
+            {
+                static bool init;
+                if (!init) {
+                    aYStart = 0x64;
+                    init = true;
+                }
+            }
+            temp_v1 = var_s2 + (spD0 * 8);
+            temp_s3 = temp_v1 - 1;
+            if (temp_s3 != 0x13) {
+                if (temp_v1 == 0x16) {
+                    var_s2 = 8;
+                    spD0 = 2;
+                } else {
+                    temp_s4 = Level2GalleryMap[temp_s3];
+                    if ((temp_s3 == 0xC) || (temp_s3 == 0x10) || (temp_s3 == 0x14)) {
+                        var_s6 = var_s5;
+                        var_s7 = 2;
+                        var_s5 += 1;
+                        strcpy(sp280, *(char **)(gInterface + 0x180) + 0x1EF0);
+                        sprintf(sp28C, " %d", var_s5 - 4);
+                        strcat(sp280, sp28C);
+                    } else {
+                        var_s6 = var_s1_2;
+                        var_s1_2 += 1;
+                        var_s7 = spC0;
+                        if (var_s1_2 == 8) {
+                            var_fp += 8;
+                            var_s1_2 = 0;
+                            spE0 += 8;
+                            spC0 = var_s7 + 1;
+                        }
+                        strcpy(sp280, *(char **)(gInterface + 0x180) + 0x1EFC);
+                        sprintf(sp28C, " %d", var_s1_2 + var_fp);
+                        strcat(sp280, sp28C);
+                    }
+                    if (temp_s4 != 0) {
+                        var_v0 = 0;
+                        if (temp_s3 < 0x15) {
+                            var_v0 = *(signed char *)(gMC + (temp_s3 * 0x31) + 0x2B0);
+                        }
+                        if (var_v0 >= 0x64) {
+                            goto block_31;
+                        }
+                        sp100[temp_s4].m_unk0 = (int)DisplayString__11FontManagerFPcffi9FontColor9FontAlign(gInterface + 0x80, "???", (float)((var_s7 - 1) * aX), (float)(aYStart + (aY * var_s6)), 0, 7, 0);
+                        sp100[temp_s4].m_unk4 = 0;
+                    } else {
+block_31:
+                        sp100[temp_s4].m_unk0 = (int)DisplayString__11FontManagerFPcffi9FontColor9FontAlign(gInterface + 0x80, sp280, (float)((var_s7 - 1) * aX), (float)(aYStart + (aY * var_s6)), 0, 4, 0);
+                        sp100[temp_s4].m_unk4 = 1;
+                    }
+                    ((FontNode *)sp100[temp_s4].m_unk0)->m_unk8 = 0x3F000000;
+                }
+            }
+            var_s2 += 1;
+            if (var_s2 < 8) {
+                goto loop_11;
+            }
+            temp_v0 = spD0 + 1;
+            spD0 = temp_v0;
+        } while (temp_v0 < 3);
+        var_s1 = 1;
+    default:
+block_95:
+        ((void (*)(void *, int, int, int, int, int))(*(void ***)pBonusScreen)[6])(pBonusScreen, 0, 0, 0, 0, 0x3F800000);
+        this->m_unk19AD8 += Render__9InterfaceFi(gInterface, 0);
+        goto loop_1;
+    case 1:
+        if (gInterface[0x425] == 0) {
+            var_s1 = 2;
+            spA0 = 0;
+        }
+        goto block_95;
+    case 2:
+        temp_s2 = (gPad[0x10A] & 0xF0) | (*(unsigned short *)(gPad + 0x110) & 0xF0) | (*(unsigned short *)(gPad + 0x110) & 0x5000);
+        if ((temp_s2 & 0x4000) && (sp100[spA0].m_unk4 != 0)) {
+            PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+            var_a1 = 0;
+            var_a2 = 0;
+            *(float *)((char *)pBonusScreen + 0x2C) = 0.0f;
+            spB8->m_unk8 = 0;
+            spBC->m_unk8 = 0;
+            do {
+                char *p = (char *)sp100 + var_a2;
+                var_a1 += 8;
+                var_a2 += 0x40;
+                ((FontNode *)*(int *)(p + 0x00))->m_unk8 = 0;
+                ((FontNode *)*(int *)(p + 0x08))->m_unk8 = 0;
+                ((FontNode *)*(int *)(p + 0x10))->m_unk8 = 0;
+                ((FontNode *)*(int *)(p + 0x18))->m_unk8 = 0;
+                ((FontNode *)*(int *)(p + 0x20))->m_unk8 = 0;
+                ((FontNode *)*(int *)(p + 0x28))->m_unk8 = 0;
+                ((FontNode *)*(int *)(p + 0x30))->m_unk8 = 0;
+                ((FontNode *)*(int *)(p + 0x38))->m_unk8 = 0;
+            } while (var_a1 < 0xD);
+            var_a2_2 = var_a1 * 8;
+            if (var_a1 < 0x15) {
+                do {
+                    ((FontNode *)*(int *)((char *)sp100 + var_a2_2))->m_unk8 = 0;
+                    var_a1 += 1;
+                    var_a2_2 += 8;
+                } while (var_a1 < 0x15);
+            }
+            spA0 = TextureViewer(sp100, spA0);
+            if (pBonusScreen == 0) {
+                ((FontManager *)(gInterface + 0x80))->RemoveText(spB8);
+                ((FontManager *)(gInterface + 0x80))->RemoveText(spBC);
+                var_s1_3 = 0;
+                var_s2_2 = 0;
+                do {
+                    ((FontManager *)(gInterface + 0x80))->RemoveText((FontNode *)*(int *)((char *)sp100 + var_s2_2));
+                    var_s1_3 += 1;
+                    var_s2_2 += 8;
+                } while (var_s1_3 < 0x15);
+                ((FontManager *)(gInterface + 0x80))->InitFrame();
+                goto block_7;
+            }
+            *(float *)((char *)pBonusScreen + 0x2C) = 1.0f;
+            var_a3 = 0;
+            var_a2_3 = 0;
+            spB8->m_unk8 = 0x3F800000;
+            spBC->m_unk8 = 0x3F800000;
+            do {
+                if (var_a3 == spA0) {
+                    ((FontNode *)sp100[var_a3].m_unk0)->m_unk8 = 0x3F800000;
+                } else {
+                    ((FontNode *)sp100[var_a3].m_unk0)->m_unk8 = 0x3F000000;
+                }
+                var_a3 += 1;
+                var_a2_3 += 8;
+            } while (var_a3 < 0x15);
+            goto block_55;
+        }
+block_55:
+        if (temp_s2 & 0x1000) {
+            var_s1 = 3;
+            PlaySoundUbiquitous__6PSoundFUi(gSound, 0x41);
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 4.25f, true, 0);
+        } else {
+            if ((temp_s2 & 0x80) && (spA0 >= 8)) {
+                PlaySoundUbiquitous__6PSoundFUi(gSound, 0x40);
+                ((FontNode *)sp100[spA0].m_unk0)->m_unk8 = 0x3F000000;
+                switch (spA0) {
+                case 18:
+                    spA0 = 0xC;
+                    break;
+                case 19:
+                    spA0 = 0xD;
+                    break;
+                case 20:
+                    spA0 = 0xE;
+                    break;
+                default:
+                    if ((spA0 - 8) < 0x14) {
+                        spA0 -= 8;
+                    } else {
+                        spA0 = 0x14;
+                    }
+                    break;
+                }
+            }
+            if ((temp_s2 & 0x20) && (spA0 < 0x10)) {
+                PlaySoundUbiquitous__6PSoundFUi(gSound, 0x40);
+                ((FontNode *)sp100[spA0].m_unk0)->m_unk8 = 0x3F000000;
+                switch (spA0) {
+                case 11:
+                case 12:
+                    var_v0_2 = 0x12;
+                    break;
+                case 13:
+                    var_v0_2 = 0x13;
+                    break;
+                case 14:
+                    var_v0_2 = 0x14;
+                    break;
+                default:
+                    if ((spA0 + 8) < 0x14) {
+                        var_v0_2 = spA0 + 8;
+                    } else {
+                        var_v0_2 = 0x14;
+                    }
+                    break;
+                }
+                spA0 = var_v0_2;
+            }
+            if (temp_s2 & 0x10) {
+                PlaySoundUbiquitous__6PSoundFUi(gSound, 0x40);
+                ((FontNode *)sp100[spA0].m_unk0)->m_unk8 = 0x3F000000;
+                if ((spA0 - 1) < 0) {
+                    spA0 = 0;
+                } else {
+                    spA0 -= 1;
+                }
+            }
+            if (temp_s2 & 0x40) {
+                PlaySoundUbiquitous__6PSoundFUi(gSound, 0x40);
+                ((FontNode *)sp100[spA0].m_unk0)->m_unk8 = 0x3F000000;
+                if ((spA0 + 1) < 0x14) {
+                    var_v0_3 = spA0 + 1;
+                } else {
+                    var_v0_3 = 0x14;
+                }
+                spA0 = var_v0_3;
+            }
+            ((FontNode *)sp100[spA0].m_unk0)->m_unk8 = 0x3F800000;
+        }
+        goto block_95;
+    }
+    if (gInterface[0x425] != 0) {
+        goto block_95;
+    }
+    DeleteMeshLayer__9InterfaceFP6PMNode(gInterface, pBonusScreen);
+    ((FontManager *)(gInterface + 0x80))->RemoveText(spB8);
+    ((FontManager *)(gInterface + 0x80))->RemoveText(spBC);
+    var_s1_4 = 0;
+    var_s2_3 = 0;
+    do {
+        ((FontManager *)(gInterface + 0x80))->RemoveText((FontNode *)*(int *)((char *)sp100 + var_s2_3));
+        var_s1_4 += 1;
+        var_s2_3 += 8;
+    } while (var_s1_4 < 0x15);
+    ((FontManager *)(gInterface + 0x80))->InitFrame();
+    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 4.25f, true, 0);
 }
 
 // FUNCTION: 0x0013C720 MapscreenOpenBonusExists__10MaximoMainFv

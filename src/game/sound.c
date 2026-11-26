@@ -15,7 +15,7 @@ void SOUND_CopyIOPBuffer(void);
 int sceSifCheckStatRpc(void *cd);
 void FlushCache(int nMode);
 void SOUND_GetStatus(int arg0, int arg1);
-void SOUND_SIFTransfer(int arg0, void *arg1, int arg2);
+void SOUND_SIFTransfer(int arg0, unsigned int arg1, int arg2);
 void memcpy(void *dst, const void *src, unsigned int size);
 extern unsigned short senddata[0x400];
 extern short senddataPrevDbg[0x400];
@@ -271,8 +271,7 @@ void SOUND_ChangeReverbCore(short arg0, short arg1, short arg2, short arg3, shor
     SetIOPCommand(0x4D, 6);
 }
 
-// DRAFT: 0x001ADEC0 FlushIOPCommand
-// note: 2 words differ (was 4). Clearing fst_bGetStatusRequested before the SOUND_GetStatus call matched the store placement. Remaining: original sets a1 (addiu, senddata lo) before jal SOUND_SIFTransfer with daddu a0,zero in the delay slot; ours loads a0 first and puts the addiu a1 in the delay slot. Tried: volatile flag store, unsigned GetStatus arg, unsigned short* SIFTransfer arg, senddata temporary, (void *)&senddata[0], (int)arg0, arg0 + 0 (all 2 words).
+// FUNCTION: 0x001ADEC0 FlushIOPCommand
 int FlushIOPCommand(int arg0, unsigned int arg1, unsigned int arg2) {
     int old;
     static volatile int oldcnt;
@@ -309,7 +308,7 @@ int FlushIOPCommand(int arg0, unsigned int arg1, unsigned int arg2) {
     FlushCache(0);
     asm { sync }
     asm { sync.p }
-    SOUND_SIFTransfer(0, senddata, arg0);
+    SOUND_SIFTransfer(0, (unsigned int)senddata, arg0);
     memcpy(senddataPrevDbg, senddata, 0x800);
     FlushCache(0);
     asm { sync }
@@ -518,7 +517,7 @@ void SOUND_ResumeMultipleSounds(unsigned int arg0, unsigned int arg1) {
 }
 
 // DRAFT: 0x001AE4F0 SOUND_PauseMultipleSounds
-// note: 12 differing words; same masked-store shape as SOUND_ResumeMultipleSounds (mask ori/and dropped by compiler).
+// note: 12 words; the original keeps ori 0xFFFF + and on index 1, ours folds it. No change from 0xFFFFLL/UL, (unsigned long long) arg, (unsigned short)-1, ~0xFFFF0000, static const mask, uncast stores, or compilers 3.0-011126/3.0.1-020123; (arg0 << 16) >> 16 gives 7 (adds dsll32/dsrl32).
 void SOUND_PauseMultipleSounds(unsigned int arg0, unsigned int arg1) {
     IOPCommandData[3] = arg1;
     IOPCommandData[0] = (short)(arg0 >> 16);
@@ -528,7 +527,7 @@ void SOUND_PauseMultipleSounds(unsigned int arg0, unsigned int arg1) {
 }
 
 // DRAFT: 0x001AE530 SOUND_StopMultipleSounds
-// note: 12 differing words; same masked-store shape as SOUND_ResumeMultipleSounds (mask ori/and dropped by compiler).
+// note: 12 words; the original keeps ori 0xFFFF + and on index 1, ours folds it. No change from 0xFFFFLL/UL, (unsigned long long) arg, (unsigned short)-1, ~0xFFFF0000, static const mask, uncast stores, or compilers 3.0-011126/3.0.1-020123; (arg0 << 16) >> 16 gives 7 (adds dsll32/dsrl32).
 void SOUND_StopMultipleSounds(unsigned int arg0, unsigned int arg1) {
     IOPCommandData[3] = arg1;
     IOPCommandData[0] = (short)(arg0 >> 16);
