@@ -1966,14 +1966,14 @@ void *Player::IsMidasActive() {
     return 0;
 }
 
-// note: 12 words differ: original tests m_unk250 with beqz into the body and exits via b with ld ra in the delay slot; compiled code emits bnez to the shared exit. Tried nested if, inner early return and && forms, all 12 words.
-// DRAFT: 0x0015C4F0 GuardHitMove__6PlayerFv
+// FUNCTION: 0x0015C4F0 GuardHitMove__6PlayerFv
 void Player::GuardHitMove() {
-    if (m_unk250 == 0) {
+    switch (m_unk250) {
+    case 0:
         if (((EntityBaseClass *)this)->ProcessHitBack() == 0) {
             m_unk250 = 1;
         }
-        return;
+        break;
     }
 }
 
