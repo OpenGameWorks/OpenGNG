@@ -251,16 +251,19 @@ void BattleArena::Execute() {
     }
 }
 
-// DRAFT: 0x001C8740 __ct__11BattleArenaFv
-// note: DIFF 32; base ctor call is a mem-initializer, but the real PArray members are constructed before the body, so the original's base-ctor order (0x14, before any PArray ctor) differs; explicit PArray ctor calls after the vptr store gave DIFF 46 (size 0xC0 vs 0xCC).
-BattleArena::BattleArena() : EntityBaseClass((LoadClass)5, 0U) {
-    *(void **)this = __vt__11BattleArena;
-    __construct_array(m_unk204, __ct__18WAVE_TABLE_ELEMENTFv, __dt__18WAVE_TABLE_ELEMENTFv, 0x2C, 0xA);
-    __ct__5PListFv(m_unk3D0);
-    EnableSleep__15EntityBaseClassFbb(this, false, false);
-    Allocate__6PArrayFUi((char *)this + 0x1E4, 0xA);
-    Allocate__6PArrayFUi((char *)this + 0x1F4, 0x64);
-    m_unk3F4 = 0;
-    m_unk3F5 = 0;
-    m_unk3EC = 0;
+// FUNCTION: 0x001C8740 __ct__11BattleArenaFv
+extern "C" BattleArena *__ct__11BattleArenaFv(BattleArena *volatile pThis) {
+    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(pThis, 5, 0U);
+    *(void **)pThis = __vt__11BattleArena;
+    __ct__6PArrayFv((char *)pThis + 0x1E4);
+    __ct__6PArrayFv((char *)pThis + 0x1F4);
+    __construct_array(pThis->m_unk204, __ct__18WAVE_TABLE_ELEMENTFv, __dt__18WAVE_TABLE_ELEMENTFv, 0x2C, 0xA);
+    __ct__5PListFv(pThis->m_unk3D0);
+    EnableSleep__15EntityBaseClassFbb(pThis, false, false);
+    Allocate__6PArrayFUi((char *)pThis + 0x1E4, 0xA);
+    Allocate__6PArrayFUi((char *)pThis + 0x1F4, 0x64);
+    pThis->m_unk3F4 = 0;
+    pThis->m_unk3F5 = 0;
+    pThis->m_unk3EC = 0;
+    return pThis;
 }
