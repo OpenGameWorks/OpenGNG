@@ -54,6 +54,14 @@ extern PMNode *pMasteryTextIcon;
 extern unsigned char __vt__9PResource[12];
 extern "C" int GetDialogStreamReadiness__6PSoundFUi(void *, unsigned int);
 extern "C" void PrepDialog__6PSoundFUi(void *, unsigned int);
+extern "C" void PSoundLevelClear__6PSoundFv(void *);
+extern "C" void LevelClear__9InterfaceFv(void *);
+extern "C" void SaveApparitionData__13EntityManagerFi(void *, int);
+extern "C" int CalculateTallyData__13EntityManagerFv(void *);
+extern "C" void DeleteMeshLayer__9InterfaceFv(void *);
+extern "C" void UpdateHeader__10MemoryCardFUc(void *, unsigned char);
+extern float RES_POS;
+extern unsigned int TallySound[6];
 struct LevelFiles {
     char _pad00[0x10];
     int m_unk10;            // 0x10, zero when the level lists no dialog files
@@ -1879,6 +1887,164 @@ void MaximoMain::RestartGame(bool arg0) {
         return;
     }
     m_unk19A70 = 9;
+}
+
+// DRAFT: 0x0013CE50 LevelClearDemo__10MaximoMainFv
+// note: fncmp DIFF 570 words, size 0x9bc vs 0x9f8; switch case order, tally loop, sprintf/divu chain and the 0x19A70 state store differ from the asm (one variant tried)
+int MaximoMain::LevelClearDemo() {
+    char sp50[32];
+    char sp70[32];
+    int colour;
+    unsigned int snd;
+    char *tbl;
+    int lvl;
+    int tally;
+
+    switch (m_unk19AAC) {
+    case 0:
+        m_unk19AC0 = m_unk19A78;
+        PSoundLevelClear__6PSoundFv(gSound);
+        FadeOutAllMusic__6PSoundFUi(gSound, 1000);
+        RemoveAll__11FontManagerFb(gInterface + 0x80, true);
+        LevelClear__9InterfaceFv(gInterface);
+        SaveApparitionData__13EntityManagerFi((char *)this + 0x137E0, m_unk19A78);
+        if (LevelTable[0x7C + (m_unk19A78 << 7)] & 0x80) {
+            m_unk19AAC = 6;
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 4.25f, false, 0);
+            lvl = m_unk19A78;
+            if (lvl < 0x15) {
+                if ((signed char)gMC[0x2B0 + lvl * 0x31] < 0x64) {
+                    gMC[0x2B0 + lvl * 0x31] = 0x64;
+                }
+            }
+        } else {
+            m_unk19AAC = 1;
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 64.0f, 4.25f, false, 0);
+            tbl = *(char **)(gInterface + 0x180);
+            ((FontManager *)(gInterface + 0x80))->DisplayString(m_unk19A78 + 0x270, -1, 0, false);
+            ((FontManager *)(gInterface + 0x80))->DisplayString(0x10E, 0, 0, false);
+            DisplayString__11FontManagerFPcffi9FontColor9FontAlign(gInterface + 0x80, *(char **)(tbl + (gMC[0x22F] + 0xD) * 0xC), 230.0f, 200.0f, 3, 7, 0);
+            RES_POS = (float)*(int *)(tbl + 0xD00);
+            m_unk19AB0 = 0;
+            tally = CalculateTallyData__13EntityManagerFv((char *)this + 0x137E0) + (m_unk19AAC * 8);
+            m_unk19AB4 = ((int *)tally)[0];
+            m_unk19AB8 = ((int *)tally)[1];
+            if (LevelTable[0x75 + (m_unk19A78 << 7)] != 0) {
+                m_unk19AB4 = m_unk19AB4 + m_unk1932C;
+                if ((unsigned int)m_unk19AB4 >= 0x3E8) {
+                    m_unk19AB4 = 0x3E7;
+                }
+                m_unk19AB8 = m_unk19AB8 + m_unk1932C;
+                if ((unsigned int)m_unk19AB8 >= 0x3E8) {
+                    m_unk19AB8 = 0x3E7;
+                }
+            }
+            m_unk19ABC = 0;
+            m_unk19AD4 = 4;
+        }
+        m_unk18838 = 8;
+        return 1;
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+        if ((unsigned int)m_unk19AB4 >= (unsigned int)m_unk19AB0) {
+            if (gPad[0x110] & 0x5000) {
+                m_unk19AB0 = m_unk19AB4;
+                m_unk19AD4 = 0;
+            }
+            m_unk19AD4 = m_unk19AD4 - 1;
+            if (m_unk19AD4 <= 0) {
+                m_unk19AD4 = 4;
+                PlaySoundUbiquitous__6PSoundFUi(gSound, TallySound[m_unk19AAC]);
+                if (m_unk19ABC != 0) {
+                    ((FontManager *)(gInterface + 0x80))->RemoveText((FontNode *)m_unk19ABC);
+                }
+                tbl = *(char **)(gInterface + 0x180);
+                if ((unsigned int)m_unk19AB0 < (unsigned int)m_unk19AB8) {
+                    sprintf(sp50, "%d (%d)", m_unk19AB0, m_unk19AB8);
+                    colour = 0;
+                } else {
+                    sprintf(sp50, *(char **)(tbl + 0xCFC), m_unk19AB0, m_unk19AB8);
+                    colour = 4;
+                }
+                m_unk19ABC = DisplayString__11FontManagerFPcffi9FontColor9FontAlign(gInterface + 0x80, sp50, RES_POS, (float)*(short *)(tbl + (m_unk19AAC + 0x10D) * 0xC + 6), 0, colour, 0);
+                m_unk19AB0 = m_unk19AB0 + 1;
+                if ((unsigned int)(m_unk19AB0 - 1) >= (unsigned int)m_unk19AB4) {
+                    m_unk19AAC = m_unk19AAC + 1;
+                    ((FontManager *)(gInterface + 0x80))->DisplayString(m_unk19AAC + 0x10D, 0, 0, false);
+                    m_unk19AB0 = 0;
+                    m_unk19AB4 = m_unk19304[m_unk19AAC * 2];
+                    m_unk19AB8 = m_unk19304[m_unk19AAC * 2 + 1];
+                    m_unk19ABC = 0;
+                    if (m_unk19AAC >= 5) {
+                        int sum0 = 0;
+                        int sum1 = 0;
+                        int a3 = 1;
+                        int *t = &m_unk19304[2];
+                        do {
+                            a3 += 1;
+                            sum0 += t[0];
+                            sum1 += t[1];
+                            t += 2;
+                        } while (a3 < 5);
+                        float q = (float)(sum0 * 100) / (float)sum1;
+                        unsigned int pct = (unsigned int)q;
+                        if (pct >= 0x64) {
+                            sprintf(sp50, *(char **)(tbl + 0xCFC), sum0, a3);
+                            colour = 4;
+                            snd = 0xFF;
+                            pct = 0x64;
+                        } else {
+                            sprintf(sp50, "%d%s", pct, "%");
+                            colour = 3;
+                            snd = 0xFE;
+                        }
+                        PlaySoundUbiquitous__6PSoundFUi(gSound, snd);
+                        lvl = m_unk19A78;
+                        if (lvl < 0x15 && (signed char)gMC[0x2B0 + lvl * 0x31] < (signed char)pct) {
+                            gMC[0x2B0 + lvl * 0x31] = (unsigned char)pct;
+                        }
+                        DisplayString__11FontManagerFPcffi9FontColor9FontAlign(gInterface + 0x80, sp50, RES_POS, (float)*(short *)(tbl + 0xCDE), 0, colour, 0);
+                        sprintf(sp70, "%d:%02d'%02d\"", (*(int *)(gMC + 0x230) / 60) / 60, (*(int *)(gMC + 0x230) / 60) % 60);
+                        DisplayString__11FontManagerFPcffi9FontColor9FontAlign(gInterface + 0x80, sp70, RES_POS, (float)(*(short *)(tbl + 0xCD8 + 6) - 0x2D), 0, 3, 0);
+                    }
+                }
+            }
+        }
+        break;
+    case 5:
+        if (gPad[0x110] & 0x4000) {
+            m_unk19AAC = m_unk19AAC + 1;
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 4.25f, true, 0);
+        }
+        break;
+    case 6:
+        if (gInterface[0x425] == 0) {
+            RemoveAll__11FontManagerFb(gInterface + 0x80, true);
+            DeleteMeshLayer__9InterfaceFv(gInterface);
+            Reset__13EntityManagerFb((char *)this + 0x137E0, true);
+            Destroy__6PWorldFv(this);
+            RemoveAllFogObjects__16PParticleManagerFv(gGfxEng + 0x154F00);
+            lvl = m_unk19A78;
+            if ((LevelTable[0x7C + (lvl << 7)] & 0x3F) == 0x16) {
+                UpdateHeader__10MemoryCardFUc(gMC, lvl & 0xFF);
+                PlayMovie__9MaxEngineFiiUi(this, 2, 0, 1);
+                PlayCredits();
+                m_unk19A70 = 8;
+            } else {
+                m_unk19A78 = LevelTable[0x7C + (lvl << 7)] & 0x3F;
+                UpdateHeader__10MemoryCardFUc(gMC, m_unk19A78 & 0xFF);
+                m_unk19A70 = (m_unk19A78 != 0x14) ? 7 : 0;
+            }
+            return 0;
+        }
+        break;
+    default:
+        return 0;
+    }
+    m_unk18838 = 8;
+    return 1;
 }
 
 // FUNCTION: 0x0013D850 SetLevelClear__10MaximoMainFv

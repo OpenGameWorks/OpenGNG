@@ -32,7 +32,9 @@ public:
     int MapscreenOpenBonusExists();
     int PlayMarkerSound(int arg0);
     int PlayBGSound(int arg0);
+    int LevelClearDemo();
     void RestartGame(bool arg0);
+    void PlayCredits();
     void SetLevelClear();
     void *GetLevelFile(int arg0);
     PMNode *SetMarker(PMNode *arg0, int arg1, PMNode *arg2);
@@ -66,14 +68,18 @@ public:
     char _pad08721[3];
     int m_unk8724;          // 0x08724, cut scene index, checked against 4 by InitCutScene
     char _pad08728[0x8760 - 0x8728];
-    char _pad08760[0x1883C - 0x8760];
+    char _pad08760[0x18838 - 0x8760];
+    int m_unk18838;         // 0x18838, stored as 8 by LevelClearDemo (store at 0x13D828)
     void *m_unk1883C;       // 0x1883C, EntityBaseClass pointer driven by SetLevelClear
-    char _pad18840[0x19784 - 0x18840];
+    char _pad18840[0x19304 - 0x18840];
+    int m_unk19304[10];     // 0x19304, five (value, value) tally pairs indexed by the level-clear phase
+    int m_unk1932C;         // 0x1932C, bonus added to the tally by LevelClearDemo
+    char _pad19330[0x19784 - 0x19330];
     int m_unk19784;         // 0x19784
     char _pad19788[0x19814 - 0x19788];
     int m_unk19814;         // 0x19814, PauseCheck returns early when it equals 1
     char _pad19818[0x19A70 - 0x19818];
-    int m_unk19A70;         // 0x19A70, game state (7 after MainGame's LoadGame succeeds, 8 after QuitGame, 6 after SetLevelClear, 9/10 after RestartGame)
+    int m_unk19A70;         // 0x19A70, game state (7 after MainGame's LoadGame succeeds, 8 after QuitGame, 6 after SetLevelClear, 9/10 after RestartGame); LevelClearDemo case 6 also stores 8, or 7/0
     int m_unk19A74;         // 0x19A74, MainGame state switch word
     int m_unk19A78;         // 0x19A78, fallback level index for GetLevelFile
     int m_unk19A7C;         // 0x19A7C, cleared by the constructor
@@ -87,7 +93,10 @@ public:
     int m_unk19AA4;         // 0x19AA4, dialog stream handle checked by InitCutSceneIfDialogReady
     int m_unk19AA8;         // 0x19AA8, dialog index chosen by FindFirstDialog (-1 when none)
     int m_unk19AAC;        // 0x19AAC, cleared by SetLevelClear
-    char _pad19AB0[0x19AC0 - 0x19AB0];
+    int m_unk19AB0;         // 0x19AB0, tally index in LevelClearDemo
+    int m_unk19AB4;         // 0x19AB4, tally value shown in LevelClearDemo
+    int m_unk19AB8;         // 0x19AB8, tally value shown in LevelClearDemo
+    void *m_unk19ABC;       // 0x19ABC, FontNode of the tally line
     int m_unk19AC0;         // 0x19AC0, set to -1 by AttractDemo
     void *m_unk19AC4;      // 0x19AC4, press-start FontNode, cleared by DeletePressStart
     PMNode *m_unk19AC8;     // 0x19AC8, title mesh root loaded by LoadTitleMesh

@@ -70,28 +70,26 @@ static int fst_WaitUpdateArray;
 static unsigned int fst_uEECallCntReturned;
 static unsigned char fst_bGetStatusRequested;
 
-// DRAFT: 0x001ADA80 SOUND_MakeStreamTransactionID
-// note: flag load goes to $v1 (original $v0) and 0x100 uses $a0; 9 differing lines. Tried reversed decl order, signed char, !init vs init==0, += 1 vs ++; no change.
-void SOUND_MakeStreamTransactionID(void) {
+// FUNCTION: 0x001ADA80 SOUND_MakeStreamTransactionID
+int SOUND_MakeStreamTransactionID(void) {
     static int st_nextStreamTransactionID;
     static char init;
     if (!init) {
         st_nextStreamTransactionID = 0x100;
         init = 1;
     }
-    st_nextStreamTransactionID += 1;
+    return ++st_nextStreamTransactionID;
 }
 
-// DRAFT: 0x001ADAB0 SOUND_MakeSoundStreamRef
-// note: 8 differing lines (best of ~46 variants). Same flag-register difference as the ID function: original keeps the flag in $v0 and 0x100 in $v1, ours uses $v1 for the flag and $a0 for 0x100; original reloads into $v0 and increments into $v1 with addiu. Tried decl order, int/unsigned types, condition forms, increment forms and store orders; none below 8.
-void SOUND_MakeSoundStreamRef(void) {
+// FUNCTION: 0x001ADAB0 SOUND_MakeSoundStreamRef
+int SOUND_MakeSoundStreamRef(void) {
     static int st_nextStreamRef;
     static char init;
     if (!init) {
         st_nextStreamRef = 0x100;
         init = 1;
     }
-    st_nextStreamRef += 1;
+    return st_nextStreamRef++;
 }
 
 // FUNCTION: 0x001ADAE0 SOUND_Set_EE_Control

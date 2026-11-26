@@ -1,8 +1,8 @@
 #ifndef SOUND_H
 #define SOUND_H
 
-void SOUND_MakeStreamTransactionID(void);
-void SOUND_MakeSoundStreamRef(void);
+int SOUND_MakeStreamTransactionID(void);
+int SOUND_MakeSoundStreamRef(void);
 void SOUND_Set_EE_Control(int arg0);
 void SOUND_InitWaitUpdate(void);
 void SOUND_SetChanUse(short arg0, short arg1, short arg2, short arg3, short arg4);
