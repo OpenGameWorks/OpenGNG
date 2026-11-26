@@ -38,8 +38,7 @@ void FogTrigger::SetEditableVars(char *pSrc) {
     memcpy((char *)this + 0x1B0, pSrc, 0x34);
 }
 
-// DRAFT: 0x001CEF90 Execute__10FogTriggerFv
-// note: 7 words differ; second case 0 block (0x0A8-0x0B8) puts pAlt in $v1 and pPlayer in $v0 where the original does the reverse (same swap as RainTrigger), and the "m_unk204" literal address (0x00F8, 0x0108) is unrelocated. Switch -1,0,1,-2 with break exits matched the dispatch (96 -> 86 with pAlt-first, then 7 with break exits).
+// FUNCTION: 0x001CEF90 Execute__10FogTriggerFv
 void FogTrigger::Execute()
 {
     float fColor[3];
@@ -64,11 +63,13 @@ void FogTrigger::Execute()
                 SetState__15EntityBaseClassFi(this, 1);
             }
         }
-        pPlayer = mPlayerAPI__13EntityManager;
-        pAlt = *(char **)(pPlayer + 0x3C);
-        pTarget = pPlayer + 0x190;
-        if (pAlt != 0) {
-            pTarget = pAlt + 0x80;
+        {
+            char *pP = mPlayerAPI__13EntityManager;
+            char *pA = *(char **)(pP + 0x3C);
+            pTarget = pP + 0x190;
+            if (pA != 0) {
+                pTarget = pA + 0x80;
+            }
         }
         if (!(Distance__7MathAPIFPA4_fPA4_f((float (*)[4])m_unk1F0, (float (*)[4])pTarget) <= m_unk1E0)) {
             m_unk200 = 0;
@@ -77,7 +78,7 @@ void FogTrigger::Execute()
     case 1:
         m_unk204 = (PZBufferFog *)(gEng + 0x8750);
         if (m_unk204 == 0) {
-            CdsAssert__FPciPc("FogTrigger.cpp", 0x2F, "m_unk204");
+            CdsAssert__FPciPc("FogTrigger.cpp", 0x2F, "m_FogObj");
         }
         fColor[0] = 255.0f * m_unk1BC;
         fColor[1] = 255.0f * m_unk1C0;

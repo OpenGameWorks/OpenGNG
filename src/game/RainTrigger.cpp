@@ -38,8 +38,7 @@ void RainTrigger::SetEditableVars(char *pSrc) {
     memcpy((char *)this + 0x1B0, pSrc, 0x1C);
 }
 
-// DRAFT: 0x001CD720 Execute__11RainTriggerFv
-// note: 5 words differ, all in the second case 0 block (0x0A8-0x0B8): original keeps pPlayer in $v1 and pAlt in $v0, ours swaps them. Switch -1,0,1,-2 with gGfxEng+0x154F00 and pPlayer-first operand order (68 -> 6 -> 5). Tried pAlt-first second block (5), attempt-2 ordering in first block (6).
+// FUNCTION: 0x001CD720 Execute__11RainTriggerFv
 void RainTrigger::Execute()
 {
     char *pPlayer;
@@ -69,11 +68,13 @@ void RainTrigger::Execute()
                 SetState__15EntityBaseClassFi(this, 1);
             }
         }
-        pPlayer = mPlayerAPI__13EntityManager;
-        pAlt = *(char **)(pPlayer + 0x3C);
-        pTarget = pPlayer + 0x190;
-        if (pAlt != 0) {
-            pTarget = pAlt + 0x80;
+        {
+            char *pP = mPlayerAPI__13EntityManager;
+            char *pA = *(char **)(pP + 0x3C);
+            pTarget = pP + 0x190;
+            if (pA != 0) {
+                pTarget = pA + 0x80;
+            }
         }
         pSelf = (char *)m_unk190;
         pAlt = (char *)m_unk3C;
