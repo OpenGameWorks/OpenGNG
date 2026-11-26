@@ -1,4 +1,5 @@
 // FLAGS: -str readonly
+#pragma opt_strength_reduction off
 #include "types.h"
 #include "PCutScenePlayer.h"
 #include "PMat4.h"
@@ -151,22 +152,17 @@ public:
 
 #define CDS_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert("PCutScenePlayer.cpp", line, msg))
 
-// DRAFT: 0x001BBBA0 KillActorFx__15PCutScenePlayerFv
-// note: 25 differing words; the i*4 element address is strength-reduced into a saved offset in s2 (ours), so `this` goes to s3 and the frame to 0x50; original keeps i in s1 and this in s2. Tried: for-loop forms (43), statement item read (41), int i with unsigned compares (25), (void **) cast of storage (25), explicit i*4 byte offset (25), item hoisted out of loop (25), i declared before n (28), dropping the bounds ternary (38, so the ternary stays).
+// FUNCTION: 0x001BBBA0 KillActorFx__15PCutScenePlayerFv
 void PCutScenePlayer::KillActorFx() {
     unsigned int n = m_unkB0;
-    unsigned int i = 0;
-    if (n != 0) {
-        do {
-            void *pItem = (i < m_unkB0) ? m_unkB8[i] : 0;
-            if (pItem != 0) {
-                PMNode *pNode = *(PMNode **)((char *)pItem + 0x30);
-                if (pNode != 0) {
-                    pNode->ProcessFxTriggers(-1.0f, 0, true, false);
-                }
+    for (unsigned int i = 0; i < n; i++) {
+        void *pItem = (i < m_unkB0) ? m_unkB8[i] : 0;
+        if (pItem != 0) {
+            PMNode *pNode = *(PMNode **)((char *)pItem + 0x30);
+            if (pNode != 0) {
+                pNode->ProcessFxTriggers(-1.0f, 0, true, false);
             }
-            i++;
-        } while (i < n);
+        }
     }
 }
 
@@ -321,7 +317,7 @@ bool PCutScenePlayer::LoadActors(PPakFile *pFile, unsigned int nFlag) {
 }
 
 // DRAFT: 0x001BC770 SetBgNodesOpacity__15PCutScenePlayerFP6PArrayf
-// note: matches at -O4 only; at the file's -O4,p the index loop is strength-reduced (offset in s1) where the original recomputes sll i,2 and reloads the count each pass. Tried ternary tail and an inline PArray::Get accessor (for over m_unk0).
+// note: 2 words differ: the epilogue restores f20 before s4 (original) vs after (ours); the loop matches under the file-wide opt_strength_reduction off. Tried fOpacity == 0.0f (3), for over the count with ternary read (69), fZero at function scope (2), copied fOpacity (2), negated compare (2).
 void PCutScenePlayer::SetBgNodesOpacity(PArray *pArray, float fOpacity) {
     if (pArray == 0) {
         CdsAssert("PCutScenePlayer.cpp", 0x2E1, "poNodeTable");
