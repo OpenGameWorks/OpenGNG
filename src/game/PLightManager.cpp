@@ -114,17 +114,19 @@ int PLightManager::FindBrightestLightsOfType(float *pOut, bool bA, bool bB, eLig
 }
 
 // DRAFT: 0x0018EC70 GetLightObject__13PLightManagerFUi
-// note: 8 words differ; the original keeps the node in v1 and tests a shared tail with beqz v1, we emit movz. Tried: return nId (12), ternary tail (8, best), if/pResult tail (14), else-arm loop (14), while loop (17).
+// note: 6 words differ; size 0x40 vs 0x48. Loop body emits beq to the exit where the original uses bne to advance plus b to exit; the tail emits movz then jr where the original emits beqz with a zero delay slot then daddu v0,a1,zero. Tried: return nId (12), ternary tail with break (8), if/pResult tail (14), else-arm loop (14), while loop (17), goto found with zero outside loop (6, best; also if/else body with goto, 6), if/pResult with goto (15).
 void *PLightManager::GetLightObject(unsigned int nId) {
     PLightNode *pNode = (PLightNode *)m_unk14;
     if (pNode != 0) {
         do {
             if (pNode->m_unk0 == nId) {
-                break;
+                goto found;
             }
             pNode = pNode->m_unk4;
         } while (pNode != 0);
     }
+    pNode = 0;
+found:
     return (void *)(pNode != 0 ? nId : 0);
 }
 
@@ -201,7 +203,7 @@ void PLightManager::DestroyAllDynamicLights() {
 }
 
 // DRAFT: 0x0018EF60 RemoveDynamicLight__13PLightManagerFP6PLight
-// note: 5 words differ; the original branches with bne/beq into the tail and a b over the zeroing block, ours uses bnez at the loop back-edge and b for the break. Tried: do/while with else-null (5, best), while with inner break (25), for loop (20).
+// note: 5 words differ; the original branches with bne/beq into the tail and a b over the zeroing block, ours uses bnez at the loop back-edge and b for the break. Tried: do/while with else-null (5, best), while with inner break (25), for loop (20), goto found with zero after the if (21), r_goto/r_else/r_flag/r_goto2 (20 to 28).
 void PLightManager::RemoveDynamicLight(PLight *pLight) {
     void *pNode = m_unk14;
     if (pNode != 0) {

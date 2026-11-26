@@ -125,7 +125,7 @@ int PMidasShieldRings::FindFreeRing() {
 }
 
 // DRAFT: 0x001F8D50 Emit__17PMidasShieldRingsFv
-// note: 6 differing lines, constant registers swapped: orig loads -0.015 into f5 first, ours loads 0.03 there; tried local -0.015f, reversed add operands
+// note: 6 differing lines, constant registers swapped: orig loads -0.015 into f5 first, ours loads 0.03 there; tried local -0.015f (top of function, sinks to the same load), local 0.03f, split product into a temporary, reversed add operands
 int PMidasShieldRings::Emit() {
     int nIdx = FindFreeRing();
     if (nIdx >= 0) {
@@ -406,9 +406,8 @@ void PMidasShieldRings::Create(float fA, float fB, float fC, float *pA, float *p
 }
 
 // DRAFT: 0x001F9670 Create__17PMidasShieldRingsFb
-// note: 6 differing words, all float constant loads: ours 8,5,2,-4 vs orig 8,-4,5,2; tried local fD before/after call, local fB, fD/fB declaration order
+// note: 4 differing words, float constant loads: ours -4,8 vs orig 8,-4 (f12/f15 pair, 5 and 2 match); tried fB as local (4), fB+fD locals (6), fA+fB locals (6), fC local (4), fD local before/after call (6), literal -4 with fB local (best)
 void PMidasShieldRings::Create(bool bFlag) {
-    float fD = -4.0f;
     float fB = 5.0f;
     float a[4];
     float b[4];
@@ -440,7 +439,7 @@ void PMidasShieldRings::Create(bool bFlag) {
         c[2] = 1.0f;
         c[3] = 0.0f;
     }
-    Create(8.0f, fB, 2.0f, a, b, c, fD, 0.0f, 0.75f, 25, 10, bFlag, bFlag);
+    Create(8.0f, fB, 2.0f, a, b, c, -4.0f, 0.0f, 0.75f, 25, 10, bFlag, bFlag);
     m_unk30 = 0x44;
 }
 

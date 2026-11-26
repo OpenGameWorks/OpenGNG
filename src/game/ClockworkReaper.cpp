@@ -634,7 +634,7 @@ void ClockworkReaper::OutputDebug() {
     gDebug.DebugDisp(buf);
     PMNode *node = m_unk3C;
     if (node != 0) {
-        sprintf(buf, "Anim Frame = %f\n", fptodp(GetFrameTime__6PMNodeFv(node)));
+        sprintf(buf, "Anim Frame = %f\n", (double)(GetFrameTime__6PMNodeFv(node)));
         gDebug.DebugDisp(buf);
         sprintf(buf, "Anim Loop = %d\n", (signed char)(m_unk3C->m_unk3F & 7) & 4);
         gDebug.DebugDisp(buf);

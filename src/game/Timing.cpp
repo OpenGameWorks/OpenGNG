@@ -102,7 +102,7 @@ void ESubTimer::GenerateString(char *pOut, unsigned int nArg, unsigned int nArg2
                 } else {
                     fVal = 2.0f * (float)(((unsigned int)nTime >> 1) | (nTime & 1));
                 }
-                sprintf(aTmp, "%.0f", fptodp((fVal * gEng.m_unk1E8) / 1000.0f));
+                sprintf(aTmp, "%.0f", (double)((fVal * gEng.m_unk1E8) / 1000.0f));
             } else {
                 float fVal2;
                 if (nTime >= 0) {
@@ -236,7 +236,7 @@ void ETiming::PrintCalcTimings() {
     char aOut[0x800];
     aOut[0] = 0;
     float fRate = 60.0f / gEng.m_unk1E8;
-    sprintf(aOut, "Frame Rate: %.0f FPS, over %d\n", fptodp(fRate), m_unkD38);
+    sprintf(aOut, "Frame Rate: %.0f FPS, over %d\n", (double)fRate, m_unkD38);
     GenerateStringWSuffixAndCat(aOut, 1);
     GenerateStringWSuffixAndCat(aOut, 2);
     GenerateStringWSuffixAndCat(aOut, 3);
@@ -253,7 +253,7 @@ void ETiming::PrintRenderTimings() {
     char aOut[0x800];
     aOut[0] = 0;
     float fRate = 60.0f / gEng.m_unk1E8;
-    sprintf(aOut, "Frame Rate: %.0f FPS, over %d\n", fptodp(fRate), m_unkD38);
+    sprintf(aOut, "Frame Rate: %.0f FPS, over %d\n", (double)fRate, m_unkD38);
     GenerateStringWSuffixAndCat(aOut, 1);
     GenerateStringWSuffixAndCat(aOut, 8);
     GenerateStringWSuffixAndCat(aOut, 9);

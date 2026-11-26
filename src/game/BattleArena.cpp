@@ -66,7 +66,7 @@ void BattleArena::OutputDebug() {
     if (m_unk20 >= 0) {
         sprintf(buf, "Arena state = %d\n", m_unk20);
         gDebug.DebugDisp(buf);
-        sprintf(buf, "Completed delay = %d\n", fptodp(m_unk3E8));
+        sprintf(buf, "Completed delay = %d\n", (double)m_unk3E8);
         gDebug.DebugDisp(buf);
         if (m_unk3C8 != 0) {
             sprintf(buf, "All Enemies dead = true\n");

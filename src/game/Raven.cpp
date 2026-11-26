@@ -188,7 +188,7 @@ void Raven::OutputDebug() {
     char buf[0x100];
     PMNode *node = m_unk3C;
     if (node != 0) {
-        sprintf(buf, "Anim Frame = %f\n", fptodp(GetFrameTime__6PMNodeFv(node)));
+        sprintf(buf, "Anim Frame = %f\n", (double)(GetFrameTime__6PMNodeFv(node)));
         gDebug.DebugDisp(buf);
     }
 }
@@ -291,7 +291,7 @@ void Raven::SetEditableVars(char *pArg) {
         m_unk1B8 = pSrc[2];
     }
     if (m_unk1BC <= 10.0f) {
-        sprintf(buf, "Warning: Raven (%d), activation radius (%3.2f) <= minimum (%3.2f). Please fix!\n", m_unk4, fptodp(m_unk1BC), 10.0);
+        sprintf(buf, "Warning: Raven (%d), activation radius (%3.2f) <= minimum (%3.2f). Please fix!\n", m_unk4, (double)m_unk1BC, 10.0);
         printf(buf);
     }
     CheckVariable__15EntityBaseClassFii(this, m_unk1C0, 3);

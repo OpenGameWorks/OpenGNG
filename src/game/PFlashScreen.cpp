@@ -10,15 +10,14 @@ extern short gDebugExportVars;
 extern PSound gSound;
 
 // DRAFT: 0x001CFD60 Render__12PFlashScreenFv
-// note: DIFF 48 words; colour packing registers and aRegs pointer allocation (original reuses s0+8 for &aRegs[3], ours uses sp+0x68); 64-bit nColour variants gave 67-76
+// note: DIFF 13 words; aRegs pointer allocation only: original holds &aRegs[2] in s0, &aRegs[1] in s1 and derives &aRegs[3] as s0+8 after the first call; a data/addr struct array gives the same 13
 void PFlashScreen::Render() {
     if (gDebugExportVars != 0) {
         if (m_unk14 == 0) {
             unsigned long long aRegs[4];
-            unsigned int nColour;
-            unsigned int nR = (int)m_unk20 & 0xFF;
-            nColour = nR | (((int)m_unk24 & 0xFF) << 8) | (((int)m_unk28 & 0xFF) << 16) | (((int)m_unk2C & 0xFF) << 24);
-            m_unk70 = ((unsigned long long)0x3F800000 << 32) | nColour;
+            m_unk70 = (((unsigned long long)(unsigned char)(int)m_unk20) << 0) | (((unsigned long long)(unsigned char)(int)m_unk24) << 8)
+                    | (((unsigned long long)(unsigned char)(int)m_unk28) << 16) | (((unsigned long long)(unsigned char)(int)m_unk2C) << 24)
+                    | ((unsigned long long)0x3F800000 << 32);
 
             aRegs[0] = 1;
             aRegs[1] = 0x1A;

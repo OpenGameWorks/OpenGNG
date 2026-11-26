@@ -482,7 +482,7 @@ void Physics::RunPhysics(EntityBaseClass *arg0, float arg1, int arg2, BGCollisio
                                     fTmp = fDiff * (vRefl[1] * PHY_F(0x10C));
                                     PHY_F(0x4) = fTmp;
                                     if (fTmp == 0.0f) {
-                                        printf("bad reflection %f, %f, %f\n", fptodp(m_unk0), fptodp(fTmp), fptodp(m_unk8));
+                                        printf("bad reflection %f, %f, %f\n", (double)m_unk0, (double)fTmp, (double)m_unk8);
                                         PHY_F(0x4) = 0.01f;
                                     }
                                     PHY_F(0xC) = 1.0f;

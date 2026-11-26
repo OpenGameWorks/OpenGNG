@@ -260,7 +260,7 @@ void PParticleTracers::Animate(float fA) {
             pO[16] = 1.0f;
             pO[17] = 1.0f;
             pO[18] = 1.0f;
-            if (_dpfgt(fptodp(t), 0x3FE999999999999ALL) != 0) {
+            if (t > 0.8) {
                 pO[19] = m_unk134 + (t - 0.8f) / (1.0f - 0.8f) * (m_unk138 - m_unk134);
             } else {
                 pO[19] = m_unk134;
@@ -287,7 +287,7 @@ void PParticleTracers::Animate(float fA) {
             }
             m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
             pO[3] = m_unk130 + (m_unk12C - m_unk130) * ((float)((m_unkD0 >> 16) & 0x7FFF) * 0.000030517578125f);
-            if (_dpfgt(fptodp(t), 0x3FE999999999999ALL) != 0) {
+            if (t > 0.8) {
                 pO[7] = m_unk134 + (t - 0.8f) / (1.0f - 0.8f) * (m_unk138 - m_unk134);
             } else {
                 pO[7] = m_unk134;

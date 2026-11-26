@@ -737,7 +737,7 @@ void Player::SetAbilityAction(PSkeleton *arg0, int arg1, int arg2) {
 void Player::OutputDebug() {
     char buf[0x100];
     if (m_unk3C != 0) {
-        sprintf(buf, "Action %d, frame %f, Atk(%d, 0x%x), Combo %d", m_unk260, fptodp(m_unk3C[13]), m_unk15C, m_unk15E, m_unk220);
+        sprintf(buf, "Action %d, frame %f, Atk(%d, 0x%x), Combo %d", m_unk260, (double)m_unk3C[13], m_unk15C, m_unk15E, m_unk220);
         gDebug.DebugDisp(buf);
     }
 }

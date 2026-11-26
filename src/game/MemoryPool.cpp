@@ -61,7 +61,7 @@ void MemoryPool::DisplayDebugPs2(int arg0) {
     gDebug.DebugDisp(sp60);
     var_f1 = (float)(unsigned int)(m_unk104 * 0x10);
     var_f0 = (float)(unsigned int)(m_unk100 * 0x10);
-    sprintf(sp60, "%3.1f Percent Full\n", fptodp(100.0f * (1.0f - (var_f1 / var_f0))));
+    sprintf(sp60, "%3.1f Percent Full\n", (double)(100.0f * (1.0f - (var_f1 / var_f0))));
     gDebug.DebugDisp(sp60);
     sprintf(sp60, "Free List Length = %d\n", var_s0);
     gDebug.DebugDisp(sp60);
