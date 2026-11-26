@@ -66,13 +66,13 @@ void PGasTexture::Reset()
     Reset__16PParticleTextureFv(m_unk10);
 }
 
-// DRAFT: 0x001EF5B0 Update__11PGasTextureFv
-// note: DIFF 12 words; original reaches the call through a bnez with a fall-through b to the shared exit; nested if/else, early-return and flat && forms all DIFF 12
+// FUNCTION: 0x001EF5B0 Update__11PGasTextureFv
 void PGasTexture::Update()
 {
-    if (m_unk0 != 0 && m_unk570 != 0 && m_unk574 != 0) {
-        Update__16PParticleTextureFf(m_unk10, 1.0f);
+    if (!m_unk0 || !m_unk570 || !m_unk574) {
+        return;
     }
+    Update__16PParticleTextureFf(m_unk10, 1.0f);
 }
 
 // FUNCTION: 0x001EF600 Init__11PGasTextureFP24tagProceduralTextureDataP6PArray

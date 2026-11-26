@@ -65,15 +65,13 @@ void PFogTexture::Reset()
     Reset__16PParticleTextureFv(m_unk10);
 }
 
-// DRAFT: 0x001F0390 Update__11PFogTextureFv
-// note: 11 words differ; original branches m_unk570 with bnez into the call and b to the epilogue; tried &&, reversed &&, early return, else-return: 11-13 words
+// FUNCTION: 0x001F0390 Update__11PFogTextureFv
 void PFogTexture::Update()
 {
-    if (m_unk0 != 0) {
-        if (m_unk570 != 0) {
-            Update__16PParticleTextureFf(m_unk10, 1.0f);
-        }
+    if (!m_unk0 || !m_unk570) {
+        return;
     }
+    Update__16PParticleTextureFf(m_unk10, 1.0f);
 }
 
 // FUNCTION: 0x001F03E0 Init__11PFogTextureFP24tagProceduralTextureDataP6PArray

@@ -93,15 +93,15 @@ public:
 };
 
 // DRAFT: 0x0014FD40 UpdateHeader__10MemoryCardFUc
-// note: 12 words differ: original keeps loop byte in v1 and i*0x31 in t1 (ours t1/t2), and reloads m_unk22E into a1 in a different order; tried pointer walk (16), nSum before header block (18), cached level (67)
+// note: 6 words differ: original keeps loop byte in v1 and i*0x31 in t1 (ours t1/t2), and reloads m_unk22E into a1 in a different order; tried pointer walk (16), nSum before header block (18), cached level (67)
 void MemoryCard::UpdateHeader(unsigned char nVal) {
     if (nVal > m_unk22E) {
         m_unk22E = nVal;
-        m_unk22C = nVal;
     }
+    m_unk22C = nVal;
     int nSum = 0;
-    for (int i = 0; i <= m_unk22E && i < 0x15; i++) {
-        signed char nVal2 = _pad2B0[i * 0x31];
+    for (int i = 0, nOff = 0; i <= m_unk22E && i < 0x15; nOff += 0x31, i++) {
+        signed char nVal2 = _pad2B0[nOff];
         if (nVal2 >= 0) {
             if (nVal2 >= 0x65) {
                 nVal2 = 0x64;
@@ -135,7 +135,7 @@ void MemoryCard::GetSetting(MemorySetting *pDst) {
 }
 
 // DRAFT: 0x0014FF20 ResetGameData__10MemoryCardFv
-// note: 25 words differ; second-loop shape (beqz target, nop at 0x98/0xA4, per-iteration offset recompute), m_unk6B5 store not hoisted, 0x234 arg order; size 0xD4 vs 0xD8. Tried do-while/nOffset/per-iteration variants.
+// note: 17 words differ on default build (matches under mwcps2-3.0-011126 with do-while form); second-loop shape (beqz target, nop at 0x98/0xA4, per-iteration offset recompute), m_unk6B5 store not hoisted, 0x234 arg order; size 0xD4 vs 0xD8. Tried do-while/nOffset/per-iteration variants.
 void MemoryCard::ResetGameData() {
     signed char cKeep = m_unk22F;
     memset(&m_unk224, 0, 0x4B4);
@@ -217,13 +217,14 @@ int MemoryCard::CheckLoadData() {
 }
 
 // DRAFT: 0x00150130 CheckSum__10MemoryCardFPUc
-// note: 6 words differ; original has no entry branch and two nops before bnez, ours has a daddu copy of the counter. Tried for, do-while, while(i--), while(i--!=0), mid-body decrement.
+// note: 10 words differ on default build (matches under mwcps2-3.0-011126, coordinator decision); original has no entry branch and two nops before bnez, ours has a daddu copy of the counter. Tried for, do-while, while(i--), while(i--!=0), mid-body decrement.
 int MemoryCard::CheckSum(unsigned char *pBuf) {
     int nSum = 0;
     int i = 0x1C38;
-    while (i--) {
-        nSum += *pBuf++;
-    }
+    do {
+        unsigned char c = *pBuf++;
+        nSum += c;
+    } while (--i);
     if (nSum != 0) {
         return nSum;
     }
@@ -1445,22 +1446,25 @@ void MemoryCard::IssueCommand(const char *pCmd) {
 }
 
 // DRAFT: 0x00151D40 LoadGame__10MemoryCardFv
-// note: 31 words differ; original chains tests 12,8,9,11 with case bodies out of line (11,9,8 order), ours inlines case 8; float args f12/f13 load in swapped order. Tried switch (binary-search tree), if/else chain (31 words), 12-then-switch (38 words).
+// note: 20 words differ; switch with cases in reverse-test order; original tests 12,8,9,11 and keeps case bodies out of line, ours is 0xE8 bytes vs 0xDC; float args f12 loaded before f13. Tried if/else chain (29), named float locals (22), reversed case order (36), early return -1 tail (23).
 int MemoryCard::LoadGame() {
     m_unk3F6C->Slot4(0, 0, 0, 0.0f, 1.0f);
     int nResult = ProcessCommand();
-    if (nResult == 12) {
-    } else if (nResult == 8) {
-        m_unk1DC = 0;
-        m_unk1E0 = 0x3C;
-    } else if (nResult == 9) {
-        DeleteScreen();
-        return 9;
-    } else if (nResult == 11) {
+    switch (nResult) {
+    case 11:
         SetSetting(&m_unk6D8);
         DeleteScreen();
         return 11;
-    } else {
+    case 9:
+        DeleteScreen();
+        return 9;
+    case 8:
+        m_unk1DC = 0;
+        m_unk1E0 = 0x3C;
+        break;
+    case 12:
+        break;
+    default:
         return -1;
     }
     m_unk1E0 = m_unk1E0 - 1;

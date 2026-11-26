@@ -38,15 +38,13 @@ void PFireTexture::Reset()
     Reset__16PParticleTextureFv(m_unk10);
 }
 
-// DRAFT: 0x001EF2D0 Update__12PFireTextureFv
-// note: compiles; branch sense differs (original bnez to call then b to exit, ours beqz over call). Tried nested, &&, double early return, if/else variants: all DIFF 11 words.
+// FUNCTION: 0x001EF2D0 Update__12PFireTextureFv
 void PFireTexture::Update()
 {
-    if (m_unk0 != 0) {
-        if (m_unk5F0 != 0) {
-            Update__16PParticleTextureFf(m_unk10, 1.0f);
-        }
+    if (!m_unk0 || !m_unk5F0) {
+        return;
     }
+    Update__16PParticleTextureFf(m_unk10, 1.0f);
 }
 
 // FUNCTION: 0x001EF320 Init__12PFireTextureFP24tagProceduralTextureDataP6PArray
