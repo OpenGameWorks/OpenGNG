@@ -595,7 +595,7 @@ void CameraFollow::SetCamBoxValue_FollowHeight(float value) {
 }
 
 // DRAFT: 0x00174C60 ProcessHeadCam__12CameraFollowFv
-// note: DIFF 64: sp40 frame at 0x30 not 0x40 (local reorder no effect); clamp branch shapes; fptodp via jalr not jal (direct call gave 125); double constant register order.
+// note: DIFF 64: sp40 frame at 0x30 not 0x40 (local reorder no effect); clamp branch shapes; fptodp via jalr not jal (direct call gave 125); double constant register order. Tried: upper clamp as `> 90.0f` (64, no change).
 void CameraFollow::ProcessHeadCam() {
     float sp30[3];
     float sp40[4][4];
@@ -845,7 +845,7 @@ void CameraFollow::CamCollideCylinder(PVec3 arg0, float arg1, float arg2) {
 }
 
 // DRAFT: 0x001756F0 GetAngleBetweenCamAndPlayer__12CameraFollowFRf
-// note: 48 words differ; c and a volatile matches stack slots (65 without); tried local reorder, c-only volatile (62), dot-before-arg0 (49), range-check form (48); remaining is schedule and c[2]/a[2] pointer use.
+// note: 32 words differ; out-of-line zero arm for ang and swapped normalisation operands helped (43 to 32); original keeps &c[2], &a[2], &v[2] in $v1/$a0/$a1 and reuses value regs; c-only volatile 62, a-only 63.
 float CameraFollow::GetAngleBetweenCamAndPlayer(float &arg0) {
     float v[4];
     volatile float c[4];
@@ -859,10 +859,12 @@ float CameraFollow::GetAngleBetweenCamAndPlayer(float &arg0) {
     a[2] = m_unkA0[2];
     arg0 = v[0] * a[0] + v[2] * a[2];
     float dot = v[0] * c[0] + v[2] * c[2];
-    float q = dot / (sqrtf(v[0] * v[0] + v[2] * v[2]) * sqrtf(c[0] * c[0] + c[2] * c[2]));
-    float ang = 0.0f;
+    float q = dot / (sqrtf(c[0] * c[0] + c[2] * c[2]) * sqrtf(v[0] * v[0] + v[2] * v[2]));
+    float ang;
     if (q >= -1.0f && q <= 1.0f) {
         ang = 57.295776f * acosf(q);
+    } else {
+        ang = 0.0f;
     }
     return FastMath_Fabs__Ff(ang);
 }
@@ -1523,7 +1525,7 @@ void CameraFollow::Update() {
 }
 
 // DRAFT: 0x00177680 CreatePathFromPlayersRoute__12CameraFollowFv
-// note: DIFF 56 words; original re-reads m_unk20 for each AddControlPoint arg, ours keeps start in f20..f23 and saves f21..f23. Tried: inline PVec3 copies (106), hoisted float d (106), per-call scoped temps (106), shared temp (56, kept), POD start local passed by cast (117), POD start assigned via cast (117).
+// note: DIFF 56 words; original re-reads m_unk20 for each AddControlPoint arg, ours keeps start in f20..f23 and saves f21..f23. Tried: inline PVec3 copies (106), hoisted float d (106), per-call scoped temps (106), shared temp (56, kept), POD start local passed by cast (117), POD start assigned via cast (117). Re-check this round: all re-reads and block copies gave 106 with an extra $s4 save.
 void CameraFollow::CreatePathFromPlayersRoute() {
     float best = 9999.0f;
     int bestIdx = 0;
