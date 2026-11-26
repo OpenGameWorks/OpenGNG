@@ -2509,13 +2509,11 @@ void PSound::SetPositionalRangeOneshot(unsigned int nRange) {
     m_unk58 = fRange;
 }
 
-// DRAFT: 0x001A9250 SetDistLinearPercent__6PSoundFUi
-// note: DIFF 12; nPercent/this swapped (original nPercent=s0, this=s1; ours the reverse), gPSndDbg store and swc1 offsets follow. Tried: ternary assert, hoisted fScale (0x3C23D70A before the sign test, matches), plain cast, store-first order (22), local copy of nPercent (12), local PSound* alias for this (12).
+// FUNCTION: 0x001A9250 SetDistLinearPercent__6PSoundFUi
 void PSound::SetDistLinearPercent(unsigned int nPercent) {
-    float fScale = 0.01f;
-    ((nPercent < 0x65) ? (void)0 : CdsAssert("PSound.cpp", 0x100F, "i_distLinearPercent <= 100"));
+    ((nPercent <= 100) ? (void)0 : CdsAssert("PSound.cpp", 0x100F, "i_distLinearPercent <= 100"));
     gPSndDbg[17] = nPercent;
-    m_unk60 = fScale * (float)nPercent;
+    m_unk60 = 0.01f * (float)nPercent;
     m_unk64 = 1.0f - m_unk60;
 }
 
