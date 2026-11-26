@@ -770,13 +770,14 @@ void EntityBaseClass::CheckVariable(int arg0, int arg1) {
     }
 }
 
-// DRAFT: 0x0014B170 ProcessHitBack__15EntityBaseClassFv
-// note: original builds 0.05f inline (lui/ori/mtc1); mwcc pools it via gp (lwc1), shifting the body by one word.
+// FUNCTION: 0x0014B170 ProcessHitBack__15EntityBaseClassFv
 int EntityBaseClass::ProcessHitBack() {
     float temp;
     int ret;
+    float fProd;
 
-    temp = this->m_unkDC - 0.05f * *(float *)((char *)&gEng + 0x1E8);
+    fProd = 0.05f * *(float *)((char *)&gEng + 0x1E8);
+    temp = this->m_unkDC - fProd;
     this->m_unkDC = temp;
     if (temp < 0.0f) {
         this->m_unkDC = 0.0f;
@@ -2018,7 +2019,7 @@ check:
 }
 
 // DRAFT: 0x0014DC20 ReadApparitionData__15EntityBaseClassFiUi
-// note: saved-register order is swapped (compiler puts iOffset in s1, original in s0); 27 words differ. Tried: local index copy, local offset copy after the first branch; same output.
+// note: saved-register order is swapped (compiler puts iOffset in s1, original in s0); pSlot in v1 vs orig v0, base in a0 vs v1; 27 words differ. Tried: local index copy, local offset copy after the first branch, pSlot declared first (45), inverted null test (28); same output otherwise.
 char EntityBaseClass::ReadApparitionData(int iOffset, unsigned int uIndex) {
     if (m_unk18 == 0 && uIndex == 0) {
         return 0;
@@ -2268,7 +2269,7 @@ void EntityBaseClass::FreezeCheck(EntityBaseClass *arg0, int arg1) {
 }
 
 // DRAFT: 0x0014E370 SetFreeze__15EntityBaseClassFf
-// note: 27 words differ: c.eq.s operands (orig f20,f0), first-branch b/bnez targets, shared store tail (orig duplicates swc1 in delay slot); tried operand swap, fx!=0 re-test (30), early return (38).
+// note: 26 words differ: first-branch b/bnez targets, one extra beqz s0 re-test before IsValid (orig 0x00B0), shared store tail (orig duplicates swc1 in delay slot); tried arg0 == 0.0f form (27), fx!=0 re-test (30), fx!=0 re-test with !arg0 (29), early return (38).
 void EntityBaseClass::SetFreeze(float arg0) {
     if (arg0 > 0.0f) {
         if (m_unkEB != 0) {
@@ -2281,7 +2282,7 @@ void EntityBaseClass::SetFreeze(float arg0) {
     } else {
         PParticleSystem *fx = m_unkF4;
         if (fx != 0) {
-            if (arg0 == 0.0f && m_unkEC > 170.0f) {
+            if (!arg0 && m_unkEC > 170.0f) {
                 return;
             }
             if (((PParticleManager *)(gGfxEng + 0x154F00))->IsValid(fx)) {
