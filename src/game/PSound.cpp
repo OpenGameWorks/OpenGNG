@@ -1962,13 +1962,10 @@ void PSound::SoundEditEnter() {
     PauseByCategories(0x9E);
 }
 
-// DRAFT: 0x001A91A0 SetMonoOut__6PSoundFb
-// note: DIFF 3; andi/lw register swap: original keeps bool in v1 and field in a1, ours the reverse at 0x04, 0x0C, 0x1C. Tried: swapped compare operands (DIFF 4), bool store to field (DIFF 3), bool local then int (DIFF 3), cached load and ternary bool-to-int (no gain)
+// FUNCTION: 0x001A91A0 SetMonoOut__6PSoundFb
 void PSound::SetMonoOut(bool bMono) {
-    int nMono = bMono;
-
-    if (nMono != m_unk30) {
-        m_unk30 = nMono;
+    if ((unsigned int)m_unk30 != (unsigned int)bMono) {
+        m_unk30 = bMono;
         InternalUpdateRelVolumes();
     }
 }
@@ -3058,15 +3055,14 @@ int PSound::DebugPlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int 
     return nRet;
 }
 
-// DRAFT: 0x001AB430 DebugRestartValues__6PSoundFv
-// note: DIFF 5 words; original reloads lui $at,0x24 before each lbu of gPSndDbg+0x30, ours keeps one base in a0. Tried indexed byte (5), cast+offset (5), local byte temp (9), char-pointer offset (5), mixed spellings (5).
+// FUNCTION: 0x001AB430 DebugRestartValues__6PSoundFv
 void PSound::DebugRestartValues() {
     unsigned int nID = m_unk10;
     if (nID >= 0x64 && nID < 0x72) {
         SpotInfo *pSpot = GetSpotInfo(0x1C);
         if (pSpot != 0) {
-            pSpot->m_unk0E = ((unsigned char *)gPSndDbg)[0x30];
-            pSpot->m_unk0F = ((unsigned char *)gPSndDbg)[0x30];
+            pSpot->m_unk0E = *(unsigned char *)&gPSndDbg[12];
+            pSpot->m_unk0F = *(unsigned char *)&gPSndDbg[12];
         }
     }
 }
