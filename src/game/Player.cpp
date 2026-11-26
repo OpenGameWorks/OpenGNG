@@ -26,6 +26,8 @@ extern "C" int LoadMesh__15EntityBaseClassFUibb(void *pThis, unsigned int uId, b
 extern "C" void SetAbilityAction__6PlayerFP9PSkeletonii(void *pSkeleton, int nIndex, int nRemain);
 extern float MIN_TOP;
 extern "C" void PlaySoundApparition__6PSoundFUiUi(void *pThis, unsigned int nSound, unsigned int nFlags);
+extern "C" void Add__16PParticleManagerFP15PParticleSystem(void *pThis, void *pSystem);
+extern "C" int GetFxTexture__16PParticleManagerFUi(void *pThis, unsigned int hFx);
 extern "C" int printf(const char *pFmt, ...);
 struct PlingEntry {
     int unk0;
@@ -228,6 +230,7 @@ public:
     void EnableFx(bool arg0, bool arg1);
     void EnableAnim(bool arg0, bool arg1);
     void SetAnimLoopCount(int arg0, bool arg1);
+    void AttachFx(unsigned int arg0, float arg1, float arg2, float arg3, float arg4, bool arg5);
     float GetFrameTime();
     PMNode *FindAnimNode(unsigned int arg0);
     int Find(PMNode *arg0);
@@ -313,6 +316,7 @@ class EffectAPI {
 public:
     char _pad000[20];
     int CreateOneshot(unsigned int, unsigned int, float (*)[4], float (*)[4], EntityBaseClass *, float, bool, int, bool);
+    int CreateOneshot(unsigned int, unsigned int, PMat4 *, EntityBaseClass *, float, int, bool);
     EffectNode *EffectValid(unsigned int arg0);
     void DeleteEffect(EffectNode *arg0);
     void DeleteEffect(unsigned int arg0);
@@ -1951,6 +1955,92 @@ void Player::GuardHitMove() {
     if (((EntityBaseClass *)this)->ProcessHitBack() == 0) {
         m_unk250 = 1;
     }
+}
+
+struct ShieldPowerup {
+    unsigned int a;
+    unsigned int b;
+    unsigned int c;
+};
+
+static ShieldPowerup ShieldPowerupTable[2] = {
+    {0x81000047, 0x82000079, 0x1F},
+    {0x8100023D, 0x820003EA, 0x2A2},
+};
+
+class PMidasShieldRings {
+public:
+    PMidasShieldRings();
+    void Create(bool bFlag);
+    char _pad000[0x10];
+    int m_unk10;
+    char _pad14[0x30 - 0x14];
+    unsigned long long m_unk30;
+    char _pad38[0x210 - 0x38];
+};
+
+// note: 16 words differ: tail lw s0 missing from the jal delay slot (nop plus extra load); 0.5f lui and m_unk28C load order swapped at CreateOneshot args. Tried switch dispatch (fixed), pm local, float temp tail, Physics local tail.
+// DRAFT: 0x0015C540 GuardMove__6PlayerFv
+void Player::GuardMove() {
+    if (!(m_unk1B0 & 0x200)) {
+        EndAction();
+        if (m_unk2AC != 0) {
+            mEffectAPI__13EntityManager.DeleteEffect(m_unk2AC);
+            m_unk2AC = 0;
+            if (m_unk2B4 != 0) {
+                ((EntityBaseClass *)this)->StopSoundBySoundRef(m_unk2B4);
+                m_unk2B4 = 0;
+            }
+        }
+    } else {
+        AnimStateObject *s0 = ((PMNode *)m_unk3C)->m_unk24;
+        if (s0->Slot28() != 0 || s0->Slot18() == 0) {
+            SetAction(0x27);
+            return;
+        }
+        {
+            int m = m_unk210;
+            switch (m) {
+            case 1:
+            case 2:
+                if (m_unk2AC == 0 && (short)((PMNode *)m_unk3C)->m_unk34 >= ((unsigned char *)m_unk254)[4]) {
+                    ShieldPowerup *e = &ShieldPowerupTable[m - 1];
+                    m_unk2AC = mEffectAPI__13EntityManager.CreateOneshot(e->a, e->b, (PMat4 *)((char *)m_unk28C + 0x40), (EntityBaseClass *)this, 0.5f, 0, false);
+                    if (m_unk2AC == 0) {
+                        CdsAssert__FPciPc("Player.cpp", 0x1925, "mMidas");
+                    }
+                    EffectNode *temp = mEffectAPI__13EntityManager.EffectValid(m_unk2AC);
+                    if (temp == 0) {
+                        CdsAssert__FPciPc("Player.cpp", 0x1927, "pMidas");
+                    }
+                    ((PMNode *)temp->m_unk4)->SetAnimLoopCount(0, true);
+                    if (m_unk2B4 == 0) {
+                        m_unk2B4 = ((EntityBaseClass *)this)->PlaySound(e->c);
+                    }
+                    if (m == 1) {
+                        PMidasShieldRings *p = new PMidasShieldRings;
+                        if (p == 0) {
+                            CdsAssert__FPciPc("Player.cpp", 0x192F, "apFx");
+                        }
+                        p->Create(true);
+                        Add__16PParticleManagerFP15PParticleSystem(gGfxEng + 0x154F00, p);
+                        ((PMNode *)temp->m_unk4)->AttachFx((unsigned int)p, 0.0f, 0.0f, -1.0f, -1.0f, true);
+                        PMidasShieldRings *q = new PMidasShieldRings;
+                        if (q == 0) {
+                            CdsAssert__FPciPc("Player.cpp", 0x1935, "apFx");
+                        }
+                        q->Create(false);
+                        q->m_unk10 = GetFxTexture__16PParticleManagerFUi(gGfxEng + 0x154F00, 0x8400000D);
+                        q->m_unk30 = 0x48;
+                        Add__16PParticleManagerFP15PParticleSystem(gGfxEng + 0x154F00, q);
+                        ((PMNode *)temp->m_unk4)->AttachFx((unsigned int)q, 0.0f, 0.0f, -1.0f, -1.0f, true);
+                    }
+                }
+                break;
+            }
+        }
+    }
+    ((Physics *)m_unk38)->m_unk11C = Round180__Ff(m_unk1C4);
 }
 
 // FUNCTION: 0x0015C8A0 MBlow2Move__6PlayerFv

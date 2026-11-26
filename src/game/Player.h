@@ -51,6 +51,7 @@ public:
     void AirOverheadMove();
     void GrimSliceMove();
     void GuardHitMove();
+    void GuardMove();
     void StabDownMove();
     int CancelAttack(unsigned int arg0);
     void CancelMove();

@@ -18,6 +18,31 @@ public:
     void ResetReading();
     void Render();
 
+    // 0x80-byte marker quad: vertex rows at 0x00..0x3F, colour rows at 0x40..0x7F.
+    struct tagRawVertexData {
+        float m_unk0;
+        float m_unk4;
+        int m_unk8;         // 1.0f bits
+        int m_unkC;         // 1.0f bits
+        float m_unk10;
+        float m_unk14;
+        int m_unk18;        // 1.0f bits
+        int m_unk1C;        // 1.0f bits
+        float m_unk20;
+        float m_unk24;
+        int m_unk28;        // 1.0f bits
+        int m_unk2C;        // 1.0f bits
+        float m_unk30;
+        float m_unk34;
+        int m_unk38;        // 1.0f bits
+        int m_unk3C;        // 1.0f bits
+        unsigned int m_unk40[4];
+        unsigned int m_unk50[4];
+        unsigned int m_unk60[4];
+        unsigned int m_unk70[4];
+    };
+    void SetMarker(tagRawVertexData *pRaw, float *pVec, float fA, float fB);
+
     float m_unk0;           // 0x00 vertex x, y, 1, 1
     float m_unk4;
     float m_unk8;

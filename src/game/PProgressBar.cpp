@@ -13,7 +13,69 @@ extern "C" void EndMesh__12PDisplayListFv(void *pThis);
 extern "C" void DrawRawVertices__12PDisplayListFPA4_fPA4_fPA4_fPA4_fi(void *pThis, float (*p0)[4], float (*p1)[4], float (*p2)[4], float (*p3)[4], int nCount);
 extern PGfxEngine gGfxEng;
 extern "C" void sceVu0InterVector(float *pDst, float *pA, float *pB, float fT);
-extern "C" void SetMarker__12PProgressBarFPQ212PProgressBar16tagRawVertexDataPfff(void *pThis, void *pRaw, float *pVec, float fA, float fB);
+// FUNCTION: 0x0016B610 SetMarker__12PProgressBarFPQ212PProgressBar16tagRawVertexDataPfff
+void PProgressBar::SetMarker(PProgressBar::tagRawVertexData *pRaw, float *pVec, float fA, float fB) {
+    pRaw->m_unk0 = (float)SCREEN_OFFSET_X + m_unk220;
+    pRaw->m_unk4 = (float)SCREEN_OFFSET_Y + fA;
+    pRaw->m_unk8 = 0x3F800000;
+    pRaw->m_unkC = 0x3F800000;
+    pRaw->m_unk20 = fB + ((float)SCREEN_OFFSET_X + m_unk220);
+    pRaw->m_unk24 = (float)SCREEN_OFFSET_Y + fA;
+    pRaw->m_unk28 = 0x3F800000;
+    pRaw->m_unk2C = 0x3F800000;
+    pRaw->m_unk10 = (float)SCREEN_OFFSET_X + m_unk220;
+    pRaw->m_unk14 = ((float)SCREEN_OFFSET_Y + fA) - 1.0f;
+    pRaw->m_unk18 = 0x3F800000;
+    pRaw->m_unk1C = 0x3F800000;
+    pRaw->m_unk30 = fB + ((float)SCREEN_OFFSET_X + m_unk220);
+    pRaw->m_unk34 = ((float)SCREEN_OFFSET_Y + fA) - 1.0f;
+    pRaw->m_unk38 = 0x3F800000;
+    pRaw->m_unk3C = 0x3F800000;
+    {
+        unsigned int c0, c1, c2, c3;
+        c3 = (unsigned int)pVec[3];
+        c2 = (unsigned int)pVec[2];
+        c1 = (unsigned int)pVec[1];
+        c0 = (unsigned int)pVec[0];
+        pRaw->m_unk40[0] = c0;
+        pRaw->m_unk40[1] = c1;
+        pRaw->m_unk40[2] = c2;
+        pRaw->m_unk40[3] = c3;
+    }
+    {
+        unsigned int c0, c1, c2, c3;
+        c3 = (unsigned int)pVec[3];
+        c2 = (unsigned int)pVec[2];
+        c1 = (unsigned int)pVec[1];
+        c0 = (unsigned int)pVec[0];
+        pRaw->m_unk60[0] = c0;
+        pRaw->m_unk60[1] = c1;
+        pRaw->m_unk60[2] = c2;
+        pRaw->m_unk60[3] = c3;
+    }
+    {
+        unsigned int c0, c1, c2, c3;
+        c3 = (unsigned int)pVec[3];
+        c2 = (unsigned int)pVec[2];
+        c1 = (unsigned int)pVec[1];
+        c0 = (unsigned int)pVec[0];
+        pRaw->m_unk50[0] = c0;
+        pRaw->m_unk50[1] = c1;
+        pRaw->m_unk50[2] = c2;
+        pRaw->m_unk50[3] = c3;
+    }
+    {
+        unsigned int c0, c1, c2, c3;
+        c3 = (unsigned int)pVec[3];
+        c2 = (unsigned int)pVec[2];
+        c1 = (unsigned int)pVec[1];
+        c0 = (unsigned int)pVec[0];
+        pRaw->m_unk70[0] = c0;
+        pRaw->m_unk70[1] = c1;
+        pRaw->m_unk70[2] = c2;
+        pRaw->m_unk70[3] = c3;
+    }
+}
 
 // FUNCTION: 0x0016BB90 Render__12PProgressBarFv
 void PProgressBar::Render() {
@@ -102,8 +164,8 @@ void PProgressBar::SetReading(float fReading) {
     m_unk70[2] = (unsigned int)vC[2];
     m_unk70[3] = (unsigned int)vC[3];
 
-    SetMarker__12PProgressBarFPQ212PProgressBar16tagRawVertexDataPfff(this, (char *)this + 0x100, vB, m_unk224 - f20 * m_unk22C, 1.25f * m_unk228);
-    SetMarker__12PProgressBarFPQ212PProgressBar16tagRawVertexDataPfff(this, (char *)this + 0x180, vC, m_unk224 - f21 * m_unk22C, 1.5f * m_unk228);
+    SetMarker((PProgressBar::tagRawVertexData *)((char *)this + 0x100), vB, m_unk224 - f20 * m_unk22C, 1.25f * m_unk228);
+    SetMarker((PProgressBar::tagRawVertexData *)((char *)this + 0x180), vC, m_unk224 - f21 * m_unk22C, 1.5f * m_unk228);
 }
 
 // FUNCTION: 0x0016C1D0 ResetReading__12PProgressBarFv
