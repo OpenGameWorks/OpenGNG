@@ -143,7 +143,13 @@ def resolve(obj: Obj, code: bytearray, rels, addr: int, glob, byindex, orel, ima
         local = sym["st_info"]["bind"] == "STB_LOCAL" or sym.name.startswith("@")
         if sym["st_info"]["type"] == "STT_SECTION":
             return f"section-relative reloc at +{off:#x}"
-        if local:
+        if local and sym["st_info"]["type"] == "STT_FUNC":
+            # A call to a file-local function proves its target by name: the callee's
+            # own bytes are verified (or kept original) when its unit is placed.
+            if sym.name != oname:
+                return f"local {sym.name} is not the original target {oname}"
+            s = oaddr
+        elif local:
             if not local_matches(obj, sym, oaddr, osize, addr, glob, byindex, orel, image):
                 return f"local {sym.name} differs from original {oname}"
             s = oaddr

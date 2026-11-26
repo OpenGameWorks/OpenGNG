@@ -179,7 +179,7 @@ void getTrayStatus() {
 }
 
 // FUNCTION: 0x001FFCB0 fillBuff__FP7sceMpegi
-int fillBuff(sceMpeg *arg0, int arg1) {
+static int fillBuff(sceMpeg *arg0, int arg1) {
     char *var_a1;
     int temp_v0;
 
