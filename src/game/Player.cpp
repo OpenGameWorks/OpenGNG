@@ -499,8 +499,9 @@ void Player::FreeJoint(int arg0) {
     if ((unsigned int)idx >= 6U) {
         idx = 5;
     }
-    if (AttachedTimer[5 - idx] == 0.0f) {
-        m_unk2FC = AttachedTimer[5 - idx];
+    float fTimer = AttachedTimer[5 - idx];
+    m_unk2FC = fTimer;
+    if (!fTimer) {
         *(float *)&m_unk2F8 = 0.0f;
     }
     int freed = 0;
@@ -2229,7 +2230,9 @@ void Player::SliceMove() {
         v1 = t < 0x12;
     }
     if (v1 == 0 && m_unk250 != 0) {
-        ComboTarget(-1.0f, 100.0f, true);
+        float fRange = 100.0f;
+        float fDir = -1.0f;
+        ComboTarget(fDir, fRange, true);
         SetAction(SliceMoves[m_unk250]);
     }
 }
