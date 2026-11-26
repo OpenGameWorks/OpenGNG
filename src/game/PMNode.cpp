@@ -1601,8 +1601,7 @@ int PMNode::LoadMesh(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
     return 0;
 }
 
-// DRAFT: 0x00194DB0 LoadBone__6PMNodeFP8PPakFileP6PArray16ePsx2FileVersion
-// note: 68 lines differ: b offsets at 0x94/0xC8/0x14C/0x170/0x1FC; clone block matches except volatile pNew spill (0x148) that the original lacks, tag slot at 0x144 vs 0x148; tried plain pNew (85), direct assign-in-if (85), volatile pNew at function scope (68)
+// FUNCTION: 0x00194DB0 LoadBone__6PMNodeFP8PPakFileP6PArray16ePsx2FileVersion
 int PMNode::LoadBone(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
     unsigned char hdrA[0x60];
     unsigned char hdrB[0x44];
@@ -1651,26 +1650,27 @@ int PMNode::LoadBone(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
 
     tag = 0;
     if (((PCDFile *)pFile)->Read(&tag, 4) != 4) { return 0; }
-    while (tag != 9) {
-        if (tag != 8) { return 0; }
-        char *volatile pNew = (char *)__nw__FUi(0x100);
-        apCloneChild = (PMNode *)pNew;
-        if (pNew) {
+    if (tag == 9) { return 1; }
+    while (tag == 8) {
+        if ((apCloneChild = (PMNode *)__nw__FUi(0x100)) != 0) {
             char *volatile pThis = (char *)apCloneChild;
-            *(void **)apCloneChild = __vt__9PResource + 0x970;
+            *(void **)apCloneChild = __vt__9PResource;
             *(int *)(pThis + 4) = 0;
-            *(void **)pThis = __vt__6PMNode + 0xE00;
+            *(void **)pThis = __vt__6PMNode;
             __ct__6PArrayFv((PArray *)(pThis + 0x14));
             sceVu0UnitMatrix((float (*)[4])(pThis + 0x40));
             __ct__6PArrayFv((PArray *)(pThis + 0xD8));
-            apCloneChild->InitMembers();
+            ((PMNode *)pThis)->InitMembers();
+            apCloneChild = (PMNode *)pThis;
         }
         ((apCloneChild) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0x25D, "apChildBone"));
         Add__6PArrayFPv(&m_unk14, apCloneChild);
         if (!apCloneChild->LoadBone(pFile, pArr, eVersion)) { return 0; }
+        tag = 0;
         if (((PCDFile *)pFile)->Read(&tag, 4) != 4) { return 0; }
+        if (tag == 9) { return 1; }
     }
-    return 1;
+    return 0;
 }
 
 // FUNCTION: 0x00195180 DestroyChildren__6PMNodeFv
@@ -2041,8 +2041,7 @@ PMNode::~PMNode() {
     }
 }
 
-// DRAFT: 0x00195F50 CopyMNode__6PMNodeFR6PMNodeb
-// note: 31 diff lines; case 1 temp pNew (0x140 path) fixed the branch shape; case 3 still spills a volatile pNew at 0x58(sp) the original does not (plain pNew: 69, assign-after-block: 95); frame 0x60 vs 0x50.
+// FUNCTION: 0x00195F50 CopyMNode__6PMNodeFR6PMNodeb
 void PMNode::CopyMNode(PMNode &src, bool bFlag) {
     PMNode *apCloneChild;
     PMNode *pChild;
@@ -2090,17 +2089,16 @@ void PMNode::CopyMNode(PMNode &src, bool bFlag) {
                     break;
                 }
                 case 3: {
-                    char *volatile pNew = (char *)__nw__FUi(0x100);
-                    apCloneChild = (PMNode *)pNew;
-                    if (pNew) {
+                    if ((apCloneChild = (PMNode *)__nw__FUi(0x100)) != 0) {
                         char *volatile pThis = (char *)apCloneChild;
-                        *(void **)apCloneChild = __vt__9PResource + 0x970;
+                        *(void **)apCloneChild = __vt__9PResource;
                         *(int *)(pThis + 4) = 0;
-                        *(void **)pThis = __vt__6PMNode + 0xE00;
+                        *(void **)pThis = __vt__6PMNode;
                         __ct__6PArrayFv((PArray *)(pThis + 0x14));
                         sceVu0UnitMatrix((float (*)[4])(pThis + 0x40));
                         __ct__6PArrayFv((PArray *)(pThis + 0xD8));
-                        apCloneChild->InitMembers();
+                        ((PMNode *)pThis)->InitMembers();
+                        apCloneChild = (PMNode *)pThis;
                     }
                 }
                     ((apCloneChild) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0xA0, "apCloneChild"));
@@ -2112,8 +2110,7 @@ void PMNode::CopyMNode(PMNode &src, bool bFlag) {
                 }
                 ((apCloneChild) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0xA7, "apCloneChild"));
                 Add__6PArrayFPv(&m_unk14, apCloneChild);
-                pSrcArr->m_unk4++;
-                pChild = ((unsigned int)pSrcArr->m_unk4 < pSrcArr->m_unk0) ? ((PMNode **)pSrcArr->m_unk8)[pSrcArr->m_unk4] : 0;
+                pChild = ((unsigned int)++pSrcArr->m_unk4 < pSrcArr->m_unk0) ? ((PMNode **)pSrcArr->m_unk8)[pSrcArr->m_unk4] : 0;
             } while (pChild);
         }
     }
