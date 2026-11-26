@@ -48,6 +48,15 @@ extern "C" void SOUND_CopyIOPBuffer();
 extern "C" void ProcessAmbientChannels__6PSoundFv(PSound *);
 // TODO(header): foreign declarations
 extern "C" int CheckAllChannelsMatch__6PSoundFv(PSound *pThis);
+// TODO(header): foreign declarations
+extern "C" int SOUND_FindFreeSPUChannel(unsigned int, unsigned int, int, unsigned int);
+extern "C" void SOUND_CountFreeSPUChannels(unsigned int, unsigned int);
+extern "C" int FindASubTableRandomItem__16PTranslateATableFPUiUiPFUi_iPCUi(unsigned int *, unsigned int, int (*)(unsigned int), const unsigned int *);
+int SoundInBankStatus(unsigned int nBank);
+extern "C" unsigned int MakeSoundRef__6PSoundFv(PSound *pThis);
+extern int fst_PSWP_bUseDistCheck;
+extern float fst_PSWP_fDistCheckRadSq;
+extern int fst_ADSR_Msecs_Attack[16];
 extern "C" int CheckOneChannelMatch__6PSoundFPQ26PSound19AmbientChannelState(PSound *pThis, void *pState);
 extern "C" void FadeMsecFloatUpdate__14PFadeMsecFloatFUi(void *pThis, unsigned int nArg);
 extern "C" void PlayEffect__6PSoundFUiUi(PSound *, unsigned int, unsigned int);
@@ -1716,6 +1725,145 @@ int PSound::PlaySoundPMNode(unsigned int p0, unsigned int p1, const PMNode *pNod
     if (pNode != 0) {
         return PlaySoundWPitch(p0, p1, (unsigned int)pNode, 0x20, 0);
     }
+    return 0;
+}
+
+// DRAFT: 0x001A72D0 PlaySoundWPitch__6PSoundFUiUiUiUiUi
+// note: 850 words; INCOMPLETE: the ambient channel-state search (spAC->unkC & 2) is missing and the distance check is simplified; frame 0x190 vs 0xE0. Needs the missing logic before tuning.
+int PSound::PlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3, unsigned int p4) {
+    static unsigned int st_uLastIDOutOfRange;
+    static signed char bInitIDOut;
+    static unsigned int st_uLastVBCOutOfRange;
+    static signed char bInitVBC;
+    int nErr = 0;
+    int bDbg = 0;
+    int bInRange;
+    unsigned int nSpot = p0;
+    unsigned int nTable = 0;
+    unsigned int nFlags = p3;
+    unsigned int nOrigin = p1;
+    unsigned int nPawn = p2;
+    int nIdx = 0;
+    SpotInfo *pSpot = 0;
+    int *pUsage = 0;
+    float vPos[4];
+
+    if (!bInitIDOut) {
+        bInitIDOut = 1;
+        st_uLastIDOutOfRange = 0x12D687;
+    }
+    bInRange = p0 < 0x4E20U;
+    if (!bInitVBC) {
+        st_uLastVBCOutOfRange = 0;
+        bInitVBC = 1;
+        bInRange = p0 < 0x4E20U;
+    }
+    if (!bInRange && p0 < 0x4E74U) {
+        nSpot = 0x3FFD;
+        if (FindASubTableRandomItem__16PTranslateATableFPUiUiPFUi_iPCUi(&nTable, p0, SoundInBankStatus, gSndSetOfIDsTable) == 0) {
+            nSpot = nTable;
+        } else {
+            nErr = 5;
+        }
+    }
+
+    if (nErr == 0) {
+        if (nSpot == 0) {
+            nErr = 3;
+        } else {
+            pSpot = GetSpotInfo(nSpot);
+            if (pSpot != 0 && (gPSndDbg[13] != 0 || gPSndDbg[14] != 0)) {
+                nSpot = 0x3FFD;
+            }
+        }
+    }
+    if (nErr == 0) {
+        if (nSpot == 0x3FFD) {
+            nErr = 2;
+        } else if (nSpot > 0x3FFD) {
+            nErr = 3;
+        } else if (pSpot == 0) {
+            nErr = 4;
+        }
+    }
+
+    if (nErr != 0) {
+        if (gPSndDbg[15] != 0) {
+            nSpot = 2;
+            pSpot = GetSpotInfo(2);
+            bDbg = 1;
+        } else if (nErr == 3 && (st_uLastIDOutOfRange != nSpot || st_uLastVBCOutOfRange + 0x258 < (unsigned int)gCDSVBlankCount)) {
+            st_uLastIDOutOfRange = nSpot;
+            st_uLastVBCOutOfRange = gCDSVBlankCount;
+        }
+    }
+
+    if (nErr == 0 || bDbg) {
+        pUsage = UsageFind(nSpot);
+        if (fst_bCalledByDebug == 0 && gPSndDbg[22] == 0 && pUsage != 0) {
+            pUsage[1]++;
+        }
+        CheckAllChannelsMatch__6PSoundFv(this);
+
+        if (nOrigin == 0x80000000U) {
+            nFlags = 0x200;
+        } else if ((nFlags & 0x70) == 0x30) {
+            nErr = 8;
+        } else if (nFlags & 0x10) {
+            if (nOrigin == 0 || ApparitionIsValid__15EntityBaseClassFUi(nOrigin) == 0) {
+                nErr = 6;
+            }
+        } else if (nFlags & 0x20) {
+            if (nOrigin == 0 || nPawn == 0) {
+                nErr = 6;
+            } else if (nOrigin != *(unsigned int *)((char *)nPawn + 0xE8)) {
+                nErr = 6;
+            }
+        } else if (nFlags & 0x40) {
+            if (nPawn == 0) {
+                nErr = 6;
+            }
+        } else {
+            nErr = 9;
+        }
+
+        if (nErr == 0) {
+            if (nFlags & 0x70) {
+                if (GetOriginatorPos(vPos, nFlags, nOrigin, p4) < 0) {
+                    nErr = 7;
+                } else if (nSpot != 0x82 && fst_PSWP_bUseDistCheck) {
+                    float fDist = vPos[0] * vPos[0] + vPos[1] * vPos[1] + vPos[2] * vPos[2];
+                    if (!(fDist <= fst_PSWP_fDistCheckRadSq)) {
+                        nErr = 0xC;
+                    }
+                }
+            }
+        }
+
+        if (nErr == 0) {
+            // SPU fallback only; the ambient channel-state search (unkC & 2) is not written yet.
+            SOUND_CountFreeSPUChannels(m_unk2E28, m_unk2E2C);
+            nIdx = SOUND_FindFreeSPUChannel(m_unk2E30, m_unk2E34, m_unk2E40, 0);
+            if (nIdx >= 0) {
+                *(unsigned int *)((char *)this + nIdx * 0x40 + 0x2220) = p0;
+            }
+            CheckAllChannelsMatch__6PSoundFv(this);
+            *(int *)((char *)this + 0xC) = 0;
+            return nIdx;
+        }
+    }
+
+    if (pUsage != 0) {
+        if (nErr == 0xC) {
+            pUsage[3]++;
+        } else if (nErr == 4) {
+            pUsage[4]++;
+        } else {
+            pUsage[2]++;
+        }
+    }
+    *(int *)((char *)this + 0xC) = nErr;
+    *(int *)((char *)this + 0x8) = nErr;
     return 0;
 }
 
