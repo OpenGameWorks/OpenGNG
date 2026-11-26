@@ -216,8 +216,16 @@ CameraSpline::CameraSpline() {
 tag_ControlData::~tag_ControlData() {
 }
 
+// FUNCTION: 0x00173CA0 __ct__15tag_ControlDataFv
+tag_ControlData::tag_ControlData() {
+}
+
 // FUNCTION: 0x00173CB0 __dt__13tag_CurveDataFv
 tag_CurveData::~tag_CurveData() {
+}
+
+// FUNCTION: 0x00173D00 __ct__13tag_CurveDataFv
+tag_CurveData::tag_CurveData() {
 }
 
 // FUNCTION: 0x00173D10 ResetAfterReposition__12CameraFollowFv

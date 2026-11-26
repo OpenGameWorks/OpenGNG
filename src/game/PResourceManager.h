@@ -53,6 +53,7 @@ public:
     PMNode *GetResourceFromIndex(tagResourceData *pData, int nIndex, eResourceTypes eType, unsigned int uFlags, bool bFlag);
     unsigned int GetResType(unsigned int uTheID);
     void Unload(tagResourceData *pData);
+    void Unload();
     bool Load(const char *pszResDataFile, bool bLocal, tagResourceData *pTheResData);
     int LoadShadowVolumeTable(PPakFile *pFile, tagResourceData *pData, unsigned int uId);
     int LoadInstanceMeshTable(PPakFile *pFile, tagResourceData *pData, PArray *pArray, ePsx2FileVersion eVersion, unsigned int uId);

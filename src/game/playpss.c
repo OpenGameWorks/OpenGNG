@@ -178,6 +178,11 @@ static void getTrayStatus() {
     fst_trayOpen = 0;
 }
 
+// FUNCTION: 0x001FFCA0 audioUpdate__Fv
+void audioUpdate() {
+    audioDecSendToIOP(&audioDec);
+}
+
 // FUNCTION: 0x001FFCB0 fillBuff__FP7sceMpegi
 static int fillBuff(sceMpeg *arg0, int arg1) {
     char *var_a1;

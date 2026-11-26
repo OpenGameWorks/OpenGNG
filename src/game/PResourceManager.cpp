@@ -901,6 +901,11 @@ bool PResourceManager::LoadGlobalResource(const char *pA, bool bA) {
     return Load(pA, bA, &m_unk0);
 }
 
+// FUNCTION: 0x00154A10 Unload__16PResourceManagerFv
+void PResourceManager::Unload() {
+    Unload(&m_unk68);
+}
+
 // FUNCTION: 0x00154A20 LoadLocalResource__16PResourceManagerFPCcb
 bool PResourceManager::LoadLocalResource(const char *pA, bool bA) {
     return Load(pA, bA, &m_unk68);
