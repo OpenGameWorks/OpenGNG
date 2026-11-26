@@ -123,14 +123,14 @@ int PObjectDisplayList::CreateDisplayList() {
             }
         }
     }
-    if (((PArray *)m_unkC)->m_unk0 != 0) {
+    if ((&m_unkC)->m_unk0 != 0) {
         for (k = 0; k < m_unk20; k++) {
             shader = m_apoShaders[k];
             if (shader != 0) {
                 gPDynamicBuffer.WriteShader(shader, (bool *)m_unk1E0, (int *)((char *)this + 0x24 + k * 0x10), false);
-                count = ((PArray *)m_unkC)->m_unk0;
+                count = (&m_unkC)->m_unk0;
                 for (m = 0; m < (int)count; m++) {
-                    e = (m < (int)count) ? (PMNode *)((PArray *)m_unkC)->m_unk8[m] : 0;
+                    e = (m < (int)count) ? (PMNode *)(&m_unkC)->m_unk8[m] : 0;
                     apNodeInfo = e;
                     CDS_ASSERT(0x316, apNodeInfo);
                     apMesh = e->m_unk0->m_unk10;
@@ -160,8 +160,7 @@ int PObjectDisplayList::CreateDisplayList() {
     m_unk1E5 = 1;
 }
 
-// DRAFT: 0x1D4050 Destroy__18PObjectDisplayListFv
-// note: 50 differing lines; ours saves s1 as this with a 0x30 frame, original uses s0 only with 0x20 and a do-while loop; do-while (68) and raw-offset (70) variants were worse.
+// FUNCTION: 0x1D4050 Destroy__18PObjectDisplayListFv
 void PObjectDisplayList::Destroy() {
     PMNode *pChild;
 
@@ -173,22 +172,14 @@ void PObjectDisplayList::Destroy() {
         __dl__FPv(m_unk8);
         m_unk8 = 0;
     }
-    ((PMNodeChildList *)m_unkC)->m_unk4 = 0;
-    pChild = 0;
-    if (((PMNodeChildList *)m_unkC)->m_unk0 != 0) {
-        pChild = ((PMNodeChildList *)m_unkC)->m_unk8[0];
-    }
-    while (pChild != 0) {
+    m_unkC.m_unk4 = 0;
+    for (pChild = (PMNode *)(m_unkC.m_unk0 != 0 ? m_unkC.m_unk8[0] : 0); pChild != 0;
+         pChild = (PMNode *)(++m_unkC.m_unk4 < m_unkC.m_unk0 ? m_unkC.m_unk8[m_unkC.m_unk4] : 0)) {
         __dl__FPv(pChild);
-        ((PMNodeChildList *)m_unkC)->m_unk4 += 1;
-        pChild = 0;
-        if ((unsigned int)((PMNodeChildList *)m_unkC)->m_unk4 < (unsigned int)((PMNodeChildList *)m_unkC)->m_unk0) {
-            pChild = ((PMNodeChildList *)m_unkC)->m_unk8[((PMNodeChildList *)m_unkC)->m_unk4];
-        }
     }
-    if (((PMNodeChildList *)m_unkC)->m_unk8 != 0) {
-        ((PMNodeChildList *)m_unkC)->m_unk0 = 0;
-        ((PMNodeChildList *)m_unkC)->m_unk4 = 0;
+    if (m_unkC.m_unk8 != 0) {
+        m_unkC.m_unk0 = 0;
+        m_unkC.m_unk4 = 0;
     }
     m_unk20 = 0;
     m_unk114 = 0;
@@ -507,7 +498,7 @@ void PObjectDisplayList::SetupNodeInfo(PMNode *pNode) {
                 CdsAssert("PObjectDisplayList.cpp", 0x1A2, "apNodeInfo");
             }
             memset(pInfo, 0, 4);
-            ((PArray *)m_unkC)->Add(pInfo);
+            (&m_unkC)->Add(pInfo);
             *(PMNode **)pInfo = pNode;
             m_unk1E4 |= pMesh->m_unk8 > 0;
         }
@@ -555,7 +546,7 @@ void PObjectDisplayList::SetupNodeInfo(PArray *pArray) {
                     CdsAssert("PObjectDisplayList.cpp", 0x18D, "apNodeInfo");
                 }
                 memset(pInfo, 0, 4);
-                ((PArray *)m_unkC)->Add(pInfo);
+                (&m_unkC)->Add(pInfo);
                 *(PMNode **)pInfo = pNode;
                 m_unk1E4 |= pMesh->m_unk8 > 0;
             }
@@ -590,8 +581,8 @@ int PObjectDisplayList::RenderBlendedFragments(eBoxIntersect eBox) {
             }
         }
     }
-    for (i = 0; i < ((PArray *)m_unkC)->m_unk0; i++) {
-        pInfo = (i < ((PArray *)m_unkC)->m_unk0) ? ((PArray *)m_unkC)->m_unk8[i] : 0;
+    for (i = 0; i < (&m_unkC)->m_unk0; i++) {
+        pInfo = (i < (&m_unkC)->m_unk0) ? (&m_unkC)->m_unk8[i] : 0;
         if (pInfo == 0) {
             CdsAssert("PObjectDisplayList.cpp", 0x172, "apNodeInfo");
         }
@@ -732,8 +723,8 @@ int PObjectDisplayList::Render(eBoxIntersect eBox) {
                     }
                 }
             }
-            for (i = 0; i < ((PArray *)m_unkC)->m_unk0; i++) {
-                pInfo = (i < ((PArray *)m_unkC)->m_unk0) ? (char *)((PArray *)m_unkC)->m_unk8[i] : 0;
+            for (i = 0; i < (&m_unkC)->m_unk0; i++) {
+                pInfo = (i < (&m_unkC)->m_unk0) ? (char *)(&m_unkC)->m_unk8[i] : 0;
                 if (pInfo == 0) {
                     CdsAssert("PObjectDisplayList.cpp", 0x130, "apNodeInfo");
                 }
@@ -834,13 +825,10 @@ int PObjectDisplayList::Create(PArray *pArray, PMNode *pNode, PMesh *pMesh, bool
 // FUNCTION: 0x1D5700 __dt__18PObjectDisplayListFv
 PObjectDisplayList::~PObjectDisplayList() {
     Destroy();
-    ((PArray *)m_unkC)->~PArray();
 }
 
-// DRAFT: 0x1D5760 __ct__18PObjectDisplayListFv
-// note: 39 differing lines; first attempt, memset/PArray ctor sequence not yet aligned with the original.
+// FUNCTION: 0x1D5760 __ct__18PObjectDisplayListFv
 PObjectDisplayList::PObjectDisplayList() {
-    __ct__6PArrayFv(m_unkC);
     m_unk0 = 0;
     m_unk4 = 0;
     m_unk8 = 0;

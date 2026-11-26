@@ -1467,25 +1467,13 @@ void PParticleManager::Update(float fDt, Camera *pCamera, PFrustrum *pFrustrum, 
     }
 }
 
-// DRAFT: 0x001BA3F0 UpdateMasterParticleInstances__16PParticleManagerFfP9PFrustrum
-// note: 10 lines: original reloads 0x207C after the store and keeps fDt copy in the branch delay slot; tried if/else tail (worse, 14)
+// FUNCTION: 0x001BA3F0 UpdateMasterParticleInstances__16PParticleManagerFfP9PFrustrum
 void PParticleManager::UpdateMasterParticleInstances(float fDt, PFrustrum *pFrustrum) {
     PParticleSystem *pSystem;
     m_unk207C = 0;
-    if (m_unk2078 != 0) {
-        pSystem = m_unk2080[0];
-    } else {
-        pSystem = 0;
-    }
-    if (pSystem != 0) {
-        do {
-            pSystem->Slot01(fDt);
-            ++m_unk207C;
-            pSystem = 0;
-            if (m_unk207C < m_unk2078) {
-                pSystem = m_unk2080[m_unk207C];
-            }
-        } while (pSystem != 0);
+    for (pSystem = (m_unk2078 != 0) ? m_unk2080[0] : 0; pSystem != 0;
+         pSystem = (++m_unk207C < m_unk2078) ? m_unk2080[m_unk207C] : 0) {
+        pSystem->Slot01(fDt);
     }
 }
 

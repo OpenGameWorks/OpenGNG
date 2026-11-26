@@ -35,8 +35,7 @@ void PFxMesh::Render() {
     }
 }
 
-// DRAFT: 0x001BEEA0 Init__7PFxMeshFP6PMNodeP6PMNode
-// note: 13 words differ, register swap of pAnimChild (ours s4, orig s5) and new-ptr (ours s5, orig s4); tried ternary init (69->13), decl reorder, hoisted decl (no gain), child-list init order swap (21, worse)
+// FUNCTION: 0x001BEEA0 Init__7PFxMeshFP6PMNodeP6PMNode
 bool PFxMesh::Init(PMNode *pFxObj, PMNode *pAnimObj) {
     CDS_ASSERT(0x27, pFxObj);
     CDS_ASSERT(0x28, pAnimObj);
@@ -62,13 +61,9 @@ bool PFxMesh::Init(PMNode *pFxObj, PMNode *pAnimObj) {
         apChildFxMesh->Init(pFxChild, pAnimChild);
         m_unk8.Add(apChildFxMesh);
 
-        unsigned int nFxIndex = apFxObjChildList->m_unk4 + 1;
-        apFxObjChildList->m_unk4 = nFxIndex;
-        pFxChild = (nFxIndex < apFxObjChildList->m_unk0) ? (PMNode *)apFxObjChildList->m_unk8[apFxObjChildList->m_unk4] : 0;
+        pFxChild = (++apFxObjChildList->m_unk4 < apFxObjChildList->m_unk0) ? (PMNode *)apFxObjChildList->m_unk8[apFxObjChildList->m_unk4] : 0;
 
-        unsigned int nAnimIndex = apAnimObjChildList->m_unk4 + 1;
-        apAnimObjChildList->m_unk4 = nAnimIndex;
-        pAnimChild = (nAnimIndex < apAnimObjChildList->m_unk0) ? (PMNode *)apAnimObjChildList->m_unk8[apAnimObjChildList->m_unk4] : 0;
+        pAnimChild = (++apAnimObjChildList->m_unk4 < apAnimObjChildList->m_unk0) ? (PMNode *)apAnimObjChildList->m_unk8[apAnimObjChildList->m_unk4] : 0;
     }
     return 1;
 }

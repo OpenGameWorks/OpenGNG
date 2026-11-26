@@ -176,30 +176,21 @@ void FontManager::EnableAllText(bool arg0) {
     }
 }
 
-// DRAFT: 0x1330C0 InitFrame__11FontManagerFv
-// note: original is 0xD0 bytes against our 0xC8; original loads m_unk20 into a0 and stores a0 (new value) before the index reload, ours stores the old register and reloads; 25 words for both m_unk20 = m_unk20 + 1 and m_unk20++ (also tried local nIndex 28, pArg temp 43).
+// FUNCTION: 0x1330C0 InitFrame__11FontManagerFv
 void FontManager::InitFrame() {
     FontNode *pNode;
 
     m_unk20 = 0;
-    if (m_unk1C != 0) {
-        pNode = *m_unk24;
-    } else {
-        pNode = 0;
-    }
-    if (pNode != 0) {
-        do {
-            __dt__8FontNodeFv(pNode, 1);
-            if (pNode == m_unk18) {
-                m_unk18 = 0;
-                m_unk14 = 0;
-                m_unk12 = 0;
-                m_unk120 = 0;
-                mbFadeOut__8FontNode = 0;
-            }
-            m_unk20 = m_unk20 + 1;
-            pNode = ((unsigned int)m_unk20 < (unsigned int)m_unk1C) ? m_unk24[m_unk20] : 0;
-        } while (pNode != 0);
+    for (pNode = (m_unk1C != 0) ? m_unk24[0] : 0; pNode != 0;
+         pNode = ((unsigned int)++m_unk20 < (unsigned int)m_unk1C) ? m_unk24[m_unk20] : 0) {
+        __dt__8FontNodeFv(pNode, 1);
+        if (pNode == m_unk18) {
+            m_unk18 = 0;
+            m_unk14 = 0;
+            m_unk12 = 0;
+            m_unk120 = 0;
+            mbFadeOut__8FontNode = 0;
+        }
     }
     if (m_unk24 != 0) {
         m_unk1C = 0;
