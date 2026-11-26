@@ -5,6 +5,7 @@
 
 // Ring slots are 0x14 bytes each, starting at +0x15C. The flag byte at slot offset 0 is zero while the slot is free.
 // The array is kept as raw bytes up to +0x1EC, where the gate and handle members begin.
+class PFrustrum;
 class PMidasShieldRings {
 public:
     PMidasShieldRings();
@@ -18,6 +19,7 @@ public:
     void Render();
     void Animate(float fA);
 
+    void FrustrumTest(PFrustrum *, float *, float, float);
     void *m_unk000;
     char _pad004[0x08];
     int m_unkC;

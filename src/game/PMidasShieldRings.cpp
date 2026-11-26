@@ -353,6 +353,11 @@ void PMidasShieldRings::Animate(float fA) {
     asm { sync }
 }
 
+// FUNCTION: 0x001F9430 FrustrumTest__17PMidasShieldRingsFP9PFrustrumPfff
+void PMidasShieldRings::FrustrumTest(PFrustrum *, float *, float, float) {
+    *(int *)((char *)this + 0xA4) = 1;
+}
+
 // FUNCTION: 0x001F9440 Create__17PMidasShieldRingsFfffPfPfPffffiibb
 void PMidasShieldRings::Create(float fA, float fB, float fC, float *pA, float *pB, float *pC, float fD, float fE, float fF, int nA, int nB, bool bA, bool bB) {
     if (m_unk1F4 != 0) {

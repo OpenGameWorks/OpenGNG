@@ -71,6 +71,11 @@ int EnemyGenerator::GetHealth() {
     return 100;
 }
 
+// FUNCTION: 0x0020DE00 NeedsToBeWoken__14EnemyGeneratorFv
+int EnemyGenerator::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x1FC);
+}
+
 // FUNCTION: 0x0020DE10 GetWokenVarPos__14EnemyGeneratorFv
 int EnemyGenerator::GetWokenVarPos() {
     return 4;

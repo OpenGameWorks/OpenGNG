@@ -299,6 +299,11 @@ void PProjectileRipples::Animate(float arg0) {
     }
 }
 
+// FUNCTION: 0x00217E80 FrustrumTest__18PProjectileRipplesFP9PFrustrumPfff
+void PProjectileRipples::FrustrumTest(PFrustrum *, float *, float, float) {
+    *(int *)((char *)this + 0xA4) = 1;
+}
+
 // FUNCTION: 0x00217E90 Create__18PProjectileRipplesFP25tagProjectileRippesParams
 void PProjectileRipples::Create(tagProjectileRippesParams *pParams) {
     if (pParams == 0) {

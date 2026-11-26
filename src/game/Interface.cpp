@@ -3,6 +3,7 @@
 #include "Interface.h"
 #include "PTextureManager.h"
 #include "PArray.h"
+#include "PAnimFrame.h"
 #include "PGrimBarAura.h"
 
 // TODO(header): foreign declarations
@@ -1486,6 +1487,21 @@ void GameHud::UpdateStatus(bool arg0) {
     }
 }
 
+// FUNCTION: 0x001425F0 SetLoopFrame__10PAnimFrameFs
+void PAnimFrame::SetLoopFrame(short value) {
+    m_unk26 = value;
+}
+
+// FUNCTION: 0x00142600 SetAnimLoopCount__10PAnimFrameFi
+void PAnimFrame::SetAnimLoopCount(int value) {
+    m_unk20 = (short)value;
+}
+
+// FUNCTION: 0x00142610 SetFrameRate__10PAnimFrameFf
+void PAnimFrame::SetFrameRate(float value) {
+    m_unk30 = value;
+}
+
 // DRAFT: 0x142620 Reset__7GameHudFv
 // note: 30 words differ; lbu/bltz match, but the original loads the mpPlayerData pointer before andi and folds +4 into addiu before the index add; ours folds +4 into the lh offset and reloads the global after andi. Tried: int local for m_unkE, char* base + 4, int table view, explicit offset variable.
 void GameHud::Reset() {
@@ -1758,6 +1774,11 @@ void HudInventory::Update(int arg0) {
         return;
     }
     ((PMNode *)m_unk4)->Slot04(0.0f, 1.0f, 0, 0, false);
+}
+
+// FUNCTION: 0x00142FE0 IsAnimate__5PAnimFv
+int PAnim::IsAnimate() {
+    return 0;
 }
 
 // FUNCTION: 0x142FF0 UpdateStatus__12HudInventoryFb

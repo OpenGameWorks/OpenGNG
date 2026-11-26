@@ -19,6 +19,7 @@ struct PProjectileRing {
 
 struct tagProjectileRippesParams;
 
+class PFrustrum;
 class PProjectileRipples {
 public:
     PProjectileRipples();
@@ -32,6 +33,7 @@ public:
     void Render();
     void Animate(float arg0);
 
+    void FrustrumTest(PFrustrum *, float *, float, float);
     void *m_unk000;
     char _pad004[0x08];
     int m_unkC;

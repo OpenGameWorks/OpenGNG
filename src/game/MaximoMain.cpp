@@ -2,6 +2,7 @@
 #include "MaximoMain.h"
 #include "PSlideShow.h"
 #include "PResourceManager.h"
+#include "PAnim.h"
 
 // TODO(header): foreign declarations
 extern "C" int ReadPush__3PadFv(void *);
@@ -1981,6 +1982,11 @@ block_55:
     } while (var_s1_4 < 0x15);
     ((FontManager *)(gInterface + 0x80))->InitFrame();
     FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 4.25f, true, 0);
+}
+
+// FUNCTION: 0x0013C710 GetEndFrame__5PAnimFv
+int PAnim::GetEndFrame() {
+    return 0;
 }
 
 // FUNCTION: 0x0013C720 MapscreenOpenBonusExists__10MaximoMainFv

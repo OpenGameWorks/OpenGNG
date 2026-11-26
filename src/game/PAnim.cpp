@@ -41,6 +41,10 @@ void PAnim::EnableAnim(bool) {
 void PAnim::SetAnimLoopCount(int) {
 }
 
+// FUNCTION: 0x0018C880 SetAllAnimFlags__5PAnimFP8AnimData
+void PAnim::SetAllAnimFlags(AnimData *) {
+}
+
 // FUNCTION: 0x0018C890 SetEndFrame__5PAnimFs
 void PAnim::SetEndFrame(short) {
 }

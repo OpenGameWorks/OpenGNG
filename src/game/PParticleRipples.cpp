@@ -149,6 +149,11 @@ void PParticleRipples::Render() {
     }
 }
 
+// FUNCTION: 0x001EDC10 FrustrumTest__16PParticleRipplesFP9PFrustrumPfff
+void PParticleRipples::FrustrumTest(PFrustrum *, float *, float, float) {
+    *(int *)((char *)this + 0xA4) = 1;
+}
+
 // FUNCTION: 0x001EDC20 Animate__16PParticleRipplesFf
 void PParticleRipples::Animate(float fArg) {
     float fAngle;

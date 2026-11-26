@@ -6,6 +6,7 @@
 // Particle ripple emitter. The first 0x860 bytes hold the PParticleSystem base
 // and a 30-slot array of 0x40-byte ripples; the flag at +0x11C of each slot is
 // zero while the slot is free.
+class PFrustrum;
 class PParticleRipples {
 public:
     PParticleRipples();
@@ -23,6 +24,7 @@ public:
     int CreateRingTriStrip(int nArg0, float fArg1, float fArg2, int nArg3, int nArg4,
                            float (*pTop)[4], float (*pMid)[4], float (*pBot)[4]);
 
+    void FrustrumTest(PFrustrum *, float *, float, float);
     void *m_unk000;
     char _pad004[8];
     int m_unk00C;

@@ -26,6 +26,7 @@ public:
     const char *GetClassName();
     void SetEditableVars(char *);
 
+    int NeedsToBeWoken();
     char _pad000[4];
     unsigned int m_unk4;            // 0x004 timer argument
     char _pad008[0x20 - 0x08];

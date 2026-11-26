@@ -22,6 +22,7 @@ enum eAnimType {
 
 // Animation holder: vptr at 0x00, a 4-byte field at 0x04, a s16 at 0x08, two bytes at 0x0A and 0x0B,
 // and five PChannel slots at 0x0C..0x1C. Size 0x20.
+class AnimData;
 class PAnim {
 public:
     PAnim();
@@ -40,6 +41,9 @@ public:
     void SetEndFrame(short);
     void SetFrameTime(float);
 
+    void SetAllAnimFlags(AnimData *);
+    int IsAnimate();
+    int GetEndFrame();
     int m_unk4;                      // 0x04
     short m_unk8;                    // 0x08
     unsigned char m_unkA;            // 0x0A
