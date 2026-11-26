@@ -18,6 +18,7 @@ public:
     // Debug size is unknown; the placeholder keeps gDebug out of small data (threshold 8 bytes).
     char _pad000[0x10];
     void DebugDisp(char *pStr);
+    void DebugColorDisp(char *pStr, unsigned char nColor);
     void DebugDispPos(char *pStr, unsigned int nX, unsigned int nY, int nColor);
 };
 extern Debug gDebug;
@@ -3681,6 +3682,418 @@ block_end:
     }
     printf(sp1B0);
     return nRet;
+}
+
+// DRAFT: 0x001AB880 DebugInterfaceEditASound__6PSoundFUi
+// note: 949 words differ (statics/branch offsets in ID-nav, switch args, display block); tried nFrame local, ++x>=y, unsigned nPad/nPitch, operand flips, movz ternary flip
+void PSound::DebugInterfaceEditASound(unsigned int nArg) {
+    static int st_tSoundRef = 0;
+    static int st_tAutoSoundRef = 0;
+    static unsigned int st_lastPlayedSoundID = -1;
+    static unsigned int st_lastPlayedSoundAutoID = -1;
+    static unsigned int st_delayCnt = 0;
+    static unsigned int st_delayCntTrg = 0;
+    static signed char st_bHadFirstDelay = 0;
+    static unsigned int st_lastCallFrame = 0;
+    static unsigned int st_lastActiveTrg = 0;
+    static int st_lastNewButton = 0;
+    static unsigned int st_nRepeats = 0;
+    static unsigned int st_delayCntTrgInitial = 0xC;
+    static unsigned int st_delayCntTrgThereafter = 4;
+    static int st_FramesSinceAction = 0;
+    static int st_AutoMode = 0;
+    static unsigned int st_AutoDelayCnt = 0;
+    static int st_EditSoundBank = 0;
+    static int st_AutoSoundBank = 0;
+    char sp70[0x80];
+    unsigned int nIdx = 0;
+    unsigned int nTrg = nArg;
+    unsigned int nPad = *(unsigned short *)&gPad[67];
+    unsigned int spF8, spFC, sp100, sp104, sp108, sp10C, sp110, sp114, sp118, sp11C;
+    unsigned char *pRec;
+    unsigned char *pDisp;
+    int nOff;
+
+    sprintf(sp70, "\n\n");
+    gDebug.DebugDisp(sp70);
+    unsigned int nFrame = *(unsigned int *)(gEng + 0x137A4);
+    if (st_lastCallFrame + 1 < nFrame) {
+        st_lastActiveTrg = 0;
+        st_delayCnt = 0;
+        st_nRepeats = 0;
+        st_FramesSinceAction = 0;
+        st_delayCntTrg = st_delayCntTrgInitial;
+    } else {
+        st_FramesSinceAction++;
+    }
+    st_lastCallFrame = nFrame;
+    if (gPSndDbg[0] != 0) {
+        if (st_EditSoundBank != (int)m_unk10) {
+            st_EditSoundBank = m_unk10;
+            if (gPSndDbg[3] != 0) {
+                DebugFindFirstID(&spF8, &spFC);
+                gPSndDbg[41] = spFC;
+            } else {
+                gPSndDbg[41] = 0;
+            }
+        }
+        if ((unsigned int)gPSndDbg[41] >= 0x190) {
+            gPSndDbg[41] = 0;
+        }
+        if ((unsigned int)gPSndDbg[41] >= m_unk14) {
+            gPSndDbg[41] = 0;
+        }
+        if ((unsigned int)gPSndDbg[43] > 0xA) {
+            gPSndDbg[43] = 0;
+        }
+        pRec = (unsigned char *)this + gPSndDbg[41] * 0x18 + 0x2EB4;
+        if (nTrg != 0) {
+            st_lastActiveTrg = nTrg;
+            st_delayCnt = 0;
+            st_delayCntTrg = st_delayCntTrgInitial;
+        } else if (st_lastActiveTrg != 0) {
+            st_lastActiveTrg &= nPad;
+            if (st_lastActiveTrg != 0) {
+                if (++st_delayCnt >= st_delayCntTrg) {
+                    nTrg = st_lastActiveTrg;
+                    st_delayCnt = 0;
+                    st_delayCntTrg = st_delayCntTrgThereafter;
+                    st_nRepeats++;
+                }
+            } else {
+                st_nRepeats = 0;
+                st_delayCnt = 0;
+                st_delayCntTrg = st_delayCntTrgInitial;
+            }
+        }
+        if (nTrg & 0x100) {
+            gPSndDbg[0] = 0;
+            if (st_lastPlayedSoundID != 0) {
+                DebugStopAllSoundsBySoundID(st_lastPlayedSoundID);
+                st_lastPlayedSoundID = 0;
+            }
+        } else if (nTrg & 0x1000) {
+            DebugStopAllSoundsBySoundID(st_lastPlayedSoundID);
+            st_lastPlayedSoundID = 0;
+        } else if (nTrg & 0x4000) {
+            unsigned int nPitch = 0;
+            if (gPSndDbg[43] == 1) {
+                nPitch = *(unsigned short *)(pRec + 8);
+            } else if (gPSndDbg[43] == 2) {
+                nPitch = *(unsigned short *)(pRec + 0xA);
+            }
+            st_tSoundRef = DebugPlaySoundWPitch(*(unsigned int *)pRec, *(unsigned int *)((char *)this + 0x18088), nPitch);
+            st_lastPlayedSoundID = *(unsigned int *)pRec;
+        } else if (nTrg & 0x50) {
+            if (st_lastPlayedSoundID != 0) {
+                DebugStopAllSoundsBySoundID(st_lastPlayedSoundID);
+                st_lastPlayedSoundID = 0;
+            }
+            if (gPSndDbg[3] != 0) {
+                if (nTrg & 0x10) {
+                    DebugFindPrevID(&sp100, &sp104, *(unsigned int *)pRec);
+                } else {
+                    DebugFindNextID(&sp100, &sp104, *(unsigned int *)pRec);
+                }
+                if (sp104 > m_unk14 - 1) {
+                    sp104 = 0;
+                }
+                gPSndDbg[41] = sp104;
+            } else {
+                int nDir = (nTrg & 0x40) ? 1 : -1;
+                unsigned int nNew = gPSndDbg[41] + nDir;
+                gPSndDbg[41] = nNew;
+                if ((unsigned int)gPSndDbg[41] > m_unk14 - 1) {
+                    gPSndDbg[41] = ((nTrg & 0x40) != 0) ? 0 : m_unk14 - 1;
+                }
+            }
+            pRec = (unsigned char *)this + gPSndDbg[41] * 0x18 + 0x2EB4;
+            if (nPad & 0x4000) {
+                unsigned int nPitch = 0;
+                if (gPSndDbg[43] == 1) {
+                    nPitch = *(unsigned short *)(pRec + 8);
+                } else if (gPSndDbg[43] == 2) {
+                    nPitch = *(unsigned short *)(pRec + 0xA);
+                }
+                st_tSoundRef = DebugPlaySoundWPitch(*(unsigned int *)pRec, *(unsigned int *)((char *)this + 0x18088), nPitch);
+                st_lastPlayedSoundID = *(unsigned int *)pRec;
+            }
+        } else if (nTrg & 0xA000) {
+            int nDir = ((nTrg & 0x2000) != 0) ? 1 : -1;
+            gPSndDbg[43] = gPSndDbg[43] + nDir;
+            if ((unsigned int)gPSndDbg[43] > 0xA) {
+                gPSndDbg[43] = ((nTrg & 0x2000) == 0) ? 0xA : 0;
+            }
+        } else if (nTrg & 0xA0) {
+            int nDir = !(nTrg & 0x20) ? -1 : 1;
+            int nStepA, nStepB;
+            unsigned int nRate;
+            if (st_nRepeats >= 0x3D) {
+                nStepA = nDir * 8;
+                nStepB = nDir * 3;
+                nRate = 0x12;
+            } else if (st_nRepeats >= 0x1F) {
+                nStepA = nDir * 4;
+                nStepB = nDir * 2;
+                nRate = 9;
+            } else {
+                nStepA = nDir;
+                nStepB = nDir;
+                nRate = 1;
+            }
+            switch (gPSndDbg[43]) {
+            case 0:
+                pRec[0x10] = DebugChangeParam(pRec[0x10], nStepB, 0, 0, 0x64, false);
+                break;
+            case 1:
+                *(unsigned short *)(pRec + 8) = DebugChangeParam(*(unsigned short *)(pRec + 8), nStepA, nRate, 0x19, *(unsigned short *)(pRec + 0xA), false);
+                break;
+            case 2:
+                *(unsigned short *)(pRec + 0xA) = DebugChangeParam(*(unsigned short *)(pRec + 0xA), nStepA, nRate, *(unsigned short *)(pRec + 8), 0xFFFF, false);
+                break;
+            case 3:
+                pRec[0xE] = DebugChangeParam(pRec[0xE], nDir, 0, 1, 0x1E, false);
+                break;
+            case 4:
+                pRec[0xF] = DebugChangeParam(pRec[0xF], nDir, 0, 1, 0x14, false);
+                break;
+            case 5:
+                pRec[0x11] = DebugChangeParam(pRec[0x11], nStepB, 0, 0, 0x64, false);
+                break;
+            case 6:
+                pRec[0x15] = DebugChangeParam(pRec[0x15], nStepB, 0, 0, 0x64, false);
+                break;
+            case 7:
+                pRec[0x12] = (pRec[0x12] & 0xF) | ((DebugChangeParam((pRec[0x12] & 0xF0) >> 4, nDir, 0, 0, 0xF, false) & 0xF) << 4);
+                break;
+            case 8:
+                pRec[0x12] = (pRec[0x12] & 0xF0) | (DebugChangeParam(pRec[0x12] & 0xF, nDir, 0, 0, 0xF, false) & 0xF);
+                break;
+            case 9:
+                pRec[0x13] = DebugChangeParam(pRec[0x13], nDir, 0, 0, 0x32, false);
+                break;
+            case 10:
+                pRec[0x14] = DebugChangeParam(pRec[0x14], nStepA, 0, 0, 0xFF, false);
+                break;
+            }
+        }
+        nIdx = gPSndDbg[41];
+    } else if (gPSndDbg[2] != 0 || gPSndDbg[1] != 0) {
+        int bNext = 0;
+        int bMoved = 0;
+        if (st_AutoSoundBank != (int)m_unk10) {
+            st_AutoSoundBank = m_unk10;
+            if (gPSndDbg[3] != 0) {
+                DebugFindFirstID(&sp108, &sp10C);
+                gPSndDbg[47] = sp10C;
+            } else {
+                gPSndDbg[47] = 0;
+            }
+        }
+        pRec = (unsigned char *)this + gPSndDbg[47] * 0x18 + 0x2EB4;
+        if (nTrg & 0x100) {
+            gPSndDbg[2] = 0;
+            gPSndDbg[1] = 0;
+            if (st_lastPlayedSoundAutoID != 0) {
+                DebugStopAllSoundsBySoundID(st_lastPlayedSoundID);
+                st_lastPlayedSoundAutoID = 0;
+            }
+        }
+        if (nTrg & 0x50) {
+            bNext = 1;
+            if (st_lastPlayedSoundID != 0) {
+                DebugStopAllSoundsBySoundID(st_lastPlayedSoundID);
+                st_lastPlayedSoundID = 0;
+            }
+            if (gPSndDbg[3] != 0) {
+                if (nTrg & 0x10) {
+                    DebugFindPrevID(&sp110, &sp114, *(unsigned int *)pRec);
+                } else {
+                    DebugFindNextID(&sp110, &sp114, *(unsigned int *)pRec);
+                }
+                if (sp114 > m_unk14 - 1) {
+                    sp114 = 0;
+                }
+                gPSndDbg[47] = sp114;
+            } else {
+                int nDir = (nTrg & 0x40) ? 1 : -1;
+                gPSndDbg[47] = gPSndDbg[47] + nDir;
+                if ((unsigned int)gPSndDbg[47] > m_unk14 - 1) {
+                    gPSndDbg[47] = ((nTrg & 0x40) != 0) ? 0 : m_unk14 - 1;
+                }
+            }
+            bMoved = 1;
+            if ((unsigned int)gPSndDbg[47] >= 0x190) {
+                gPSndDbg[47] = 0;
+            }
+        }
+        pRec = (unsigned char *)this + gPSndDbg[47] * 0x18 + 0x2EB4;
+        if (st_FramesSinceAction == 0) {
+            st_AutoMode = 0;
+            st_AutoDelayCnt = 0;
+            if (st_lastPlayedSoundAutoID != 0) {
+                DebugStopAllSoundsBySoundID(st_lastPlayedSoundAutoID);
+                st_lastPlayedSoundAutoID = -1;
+            }
+            if ((unsigned int)gPSndDbg[47] >= 0x190) {
+                gPSndDbg[47] = 0;
+            }
+            if ((unsigned int)gPSndDbg[47] >= m_unk14) {
+                gPSndDbg[47] = 0;
+            }
+            pRec = (unsigned char *)this + gPSndDbg[47] * 0x18 + 0x2EB4;
+        } else if (bNext == 0) {
+            switch (st_AutoMode) {
+            case 0:
+                st_AutoDelayCnt++;
+                if (st_AutoDelayCnt >= 4) {
+                    st_AutoMode++;
+                }
+                break;
+            case 1: {
+                unsigned int nPitch = 0;
+                if ((unsigned int)gPSndDbg[47] >= 0x190) {
+                    gPSndDbg[47] = 0;
+                }
+                if ((unsigned int)gPSndDbg[47] >= m_unk14) {
+                    gPSndDbg[47] = 0;
+                }
+                pRec = (unsigned char *)this + gPSndDbg[47] * 0x18 + 0x2EB4;
+                if (gPSndDbg[43] == 1) {
+                    nPitch = *(unsigned short *)(pRec + 8);
+                } else if (gPSndDbg[43] == 2) {
+                    nPitch = *(unsigned short *)(pRec + 0xA);
+                }
+                st_tAutoSoundRef = DebugPlaySoundWPitch(*(unsigned int *)pRec, *(unsigned int *)((char *)this + 0x18088), nPitch);
+                st_lastPlayedSoundAutoID = *(unsigned int *)pRec;
+                st_AutoDelayCnt = 0;
+                st_AutoMode++;
+                break;
+            }
+            case 2:
+                st_AutoDelayCnt++;
+                if (st_AutoDelayCnt >= 4) {
+                    st_AutoMode++;
+                }
+                break;
+            case 3:
+                if (!(nPad & 0x4000)) {
+                    if (gPSndDbg[2] != 0) {
+                        st_AutoDelayCnt++;
+                        if ((unsigned int)gPSndDbg[35] < st_AutoDelayCnt) {
+                            st_AutoMode++;
+                            bNext = 1;
+                        }
+                    } else if (pRec[0xC] & 2) {
+                        st_AutoDelayCnt++;
+                        if ((unsigned int)gPSndDbg[37] < st_AutoDelayCnt) {
+                            st_AutoMode++;
+                            bNext = 1;
+                        }
+                    }
+                }
+                if (!(pRec[0xC] & 2) && SOUND_SPUKeyStatus[m_unk2E40] == 0) {
+                    bNext = 1;
+                }
+                break;
+            default:
+                CdsAssert("PSound.cpp", 0x5FC, "0");
+                break;
+            }
+        }
+        if (bNext != 0) {
+            if (st_lastPlayedSoundAutoID != 0) {
+                DebugStopAllSoundsBySoundID(st_lastPlayedSoundAutoID);
+                st_lastPlayedSoundAutoID = -1;
+            }
+            st_AutoDelayCnt = 0;
+            st_AutoMode = 0;
+            if (bMoved == 0 && !(nPad & 0x4000)) {
+                if (gPSndDbg[3] != 0) {
+                    DebugFindNextID(&sp118, &sp11C, *(unsigned int *)pRec);
+                    if (sp11C > m_unk14 - 1) {
+                        sp11C = 0;
+                    }
+                    gPSndDbg[47] = sp11C;
+                } else {
+                    gPSndDbg[47] = gPSndDbg[47] + 1;
+                }
+            }
+            if ((unsigned int)gPSndDbg[47] >= 0x190) {
+                gPSndDbg[47] = 0;
+            }
+            if ((unsigned int)gPSndDbg[47] >= m_unk14) {
+                gPSndDbg[47] = 0;
+            }
+        }
+        nIdx = gPSndDbg[47];
+    }
+    nOff = nIdx * 3;
+    pDisp = (unsigned char *)this + nOff * 8 + 0x2EB4;
+    sprintf(sp70, "idx     id Vol loPch hiPch use chn pri SPri ARidx\n");
+    sp70[0x7F] = 0;
+    gDebug.DebugColorDisp(sp70, 5);
+    sprintf(sp70, "%3d %6d", nIdx, *(unsigned int *)pDisp);
+    gDebug.DebugColorDisp(sp70, 7);
+    {
+        unsigned char nV = pDisp[0x10];
+        if (nV >= 0x65) {
+            nV = 0x64;
+        }
+        sprintf(sp70, " %3d", nV);
+        gDebug.DebugColorDisp(sp70, (gPSndDbg[43] != 0) ? 7 : 6);
+    }
+    sprintf(sp70, " %5d", (*(unsigned short *)(pDisp + 8) * 0xBB80) >> 0xC);
+    gDebug.DebugColorDisp(sp70, (gPSndDbg[43] == 1) ? 6 : 7);
+    sprintf(sp70, " %5d", (*(unsigned short *)(pDisp + 0xA) * 0xBB80) >> 0xC);
+    gDebug.DebugColorDisp(sp70, (gPSndDbg[43] == 2) ? 6 : 7);
+    sprintf(sp70, "  %2d", pDisp[0xE]);
+    gDebug.DebugColorDisp(sp70, (gPSndDbg[43] == 3) ? 6 : 7);
+    sprintf(sp70, "  %2d", pDisp[0xF]);
+    gDebug.DebugColorDisp(sp70, (gPSndDbg[43] == 4) ? 6 : 7);
+    sprintf(sp70, " %3d", pDisp[0x11]);
+    gDebug.DebugColorDisp(sp70, (gPSndDbg[43] == 5) ? 6 : 7);
+    sprintf(sp70, "  %3d", pDisp[0x15]);
+    gDebug.DebugColorDisp(sp70, (gPSndDbg[43] == 6) ? 6 : 7);
+    sprintf(sp70, "    %x", (pDisp[0x12] & 0xF0) >> 4);
+    gDebug.DebugColorDisp(sp70, (gPSndDbg[43] == 7) ? 6 : 7);
+    sprintf(sp70, "%x", pDisp[0x12] & 0xF);
+    gDebug.DebugColorDisp(sp70, (gPSndDbg[43] == 8) ? 6 : 7);
+    sprintf(sp70, "\n");
+    gDebug.DebugColorDisp(sp70, 5);
+    sprintf(sp70, "      grp Dst Flg1 Flg2\n");
+    sp70[0x7F] = 0;
+    gDebug.DebugColorDisp(sp70, 5);
+    sprintf(sp70, "      %3d", pDisp[0x13]);
+    gDebug.DebugColorDisp(sp70, (gPSndDbg[43] == 9) ? 6 : 7);
+    sprintf(sp70, " %3d", pDisp[0x14]);
+    gDebug.DebugColorDisp(sp70, (gPSndDbg[43] == 10) ? 6 : 7);
+    sprintf(sp70, "  %02x", pDisp[0xC]);
+    gDebug.DebugColorDisp(sp70, 7);
+    sprintf(sp70, "  %02x\n", pDisp[0xD]);
+    gDebug.DebugColorDisp(sp70, 7);
+    sprintf(sp70, "\n calls drops outBank  far        spu\n");
+    sp70[0x7F] = 0;
+    gDebug.DebugColorDisp(sp70, 5);
+    {
+        int *pUsage = UsageFind(*(unsigned int *)pDisp);
+        if (pUsage != 0) {
+            sprintf(sp70, " %5d", pUsage[1]);
+            gDebug.DebugColorDisp(sp70, 7);
+            sprintf(sp70, " %5d", pUsage[2]);
+            gDebug.DebugColorDisp(sp70, 7);
+            sprintf(sp70, " %5d", pUsage[4]);
+            gDebug.DebugColorDisp(sp70, 7);
+            sprintf(sp70, " %5d", pUsage[3]);
+            gDebug.DebugColorDisp(sp70, 7);
+            sprintf(sp70, "      %6x", *(int *)(pDisp + 4) + 0x50010);
+            gDebug.DebugColorDisp(sp70, 7);
+        }
+    }
+    if (gPSndDbg[0] != 0 && (unsigned int)gPSndDbg[44] >= 3) {
+        sprintf(sp70, "\n\nConfirm ***File Write***  yes (square) / no (circle)\n");
+        gDebug.DebugDisp(sp70);
+    }
 }
 
 // FUNCTION: 0x001ACB40 DebugFindPrevID__6PSoundFPUiPUiUi
