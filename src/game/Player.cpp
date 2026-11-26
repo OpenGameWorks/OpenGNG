@@ -411,6 +411,18 @@ extern "C" short IsNoDamage__5DebugFv(void *pThis);
 extern "C" void InitShield__6ShieldFP15EntityBaseClassfPA4_fPA4_fUiPbi(void *pThis, void *pOwner, float fArg1, float (*pArg2)[4], float (*pArg3)[4], unsigned int nArg4, bool *pArg5, int nArg6);
 extern "C" float FastMath_Sin180__Ff(float fAngle);
 extern "C" float FastMath_Cos180__Ff(float fAngle);
+extern "C" void *GetLevelFile__10MaximoMainFi(void *pThis, int nIdx);
+extern "C" void ReleaseControlOfCamera__9CameraAPIFP15EntityBaseClassb(void *pThis, void *pEntity, bool bFlag);
+extern "C" int __ptmf_test(void *pVec);
+extern "C" void __ptmf_scall(void *pThis);
+class VirtualSlot18Call {
+public:
+    virtual void Slot08();
+    virtual void Slot0C();
+    virtual void Slot10();
+    virtual void Slot14();
+    virtual void Slot18(int arg0, int arg1, int arg2, int arg3, int arg4);
+};
 extern float SLOW_JUMP;
 class Pad {
 public:
@@ -4542,6 +4554,116 @@ void Player::Animate(int arg0, float arg1) {
             *(PAnim **)((char *)node + 0x24) = anim;
         }
     }
+}
+
+// DRAFT: 0x00164360 Execute__6PlayerFv
+// note: 230 words differ; case -1/0/1-2 layout (beq targets 0x1C/0x28/0x30), PadUpdate/epilogue b+ld ra, mpEntMgr gp load, quad copy order, vcall arg setup; tried default-arm removal (252), bPad/break layout (231), pSub local (233)
+void Player::Execute() {
+    float sp40[4];
+    float sp30[4];
+    m_unk23D2 = 0;
+    switch (m_unk20) {
+    case -1:
+        ((EntityBaseClass *)this)->SetState(0);
+        m_unk1C4 = Round180__Ff(m_unk1A4);
+        m_unk1A0 = 0;
+        m_unk1A8 = 0;
+        m_unk250 = 0;
+        m_unk1D0 |= 1;
+        SetMaximo(m_unk229, false);
+        {
+            int nAct = 0x37;
+            if (*(unsigned char *)((char *)mpEntMgr__15EntityBaseClass + 0x5070) == 0) {
+                nAct = 0;
+            }
+            SetAction(nAct);
+        }
+        *(u_long128 *)((char *)m_unk3C + 0x90) = *(u_long128 *)&m_unk1A0;
+        *((unsigned char *)m_unk3C + 0x3E) |= 8;
+        *(float *)((char *)m_unk38 + 0x11C) = Round180__Ff(m_unk1C4);
+        ((VirtualSlot18Call *)m_unk3C)->Slot18(0, 0, 0, 0, 0);
+        m_unk268 = 2;
+        m_unk26A = 1;
+        m_unk26C = 0;
+        m_unk26D = 0;
+        m_unk33B = 0;
+        m_unk335 = 0;
+        m_unk336 = 0;
+        m_unk300 = 0x42700000;
+        switch (*(unsigned int *)((char *)GetLevelFile__10MaximoMainFi(gEng, -1) + 0x7C) & 0x3C00) {
+        case 0x1000:
+            m_unk2F4 = 0x25B;
+            FootSound[0] = 0x4E24;
+            break;
+        case 0xC00:
+        case 0x800:
+            m_unk2F4 = 9;
+            FootSound[0] = 0x4E24;
+            break;
+        default:
+            FootSound[0] = 0x4E21;
+            m_unk2F4 = 9;
+            break;
+        }
+        m_unk30C = 0x19;
+        if (mbHard__15EntityBaseClass == 0) {
+            m_unk30C = 0xC;
+            if (*(int *)(gEng + 0x19A78) != 0x10) {
+                m_unk30C = 0x19;
+            }
+        }
+        return;
+    case 0: {
+        int bPad = (*(unsigned char *)((char *)&gInterface + 0x425) == 0) & 0xFF;
+        PadUpdate(bPad);
+        goto block_19;
+    }
+    case 1:
+    case 2:
+        m_unk1C4 = ((float *)m_unk3C)[0x94 / 4];
+        *(float *)((char *)m_unk38 + 0x11C) = Round180__Ff(m_unk1C4);
+        if (m_unk229 >= 4) {
+            SetMaximo(MaximoArmor[m_unk1DC], false);
+        }
+        PadUpdate(0);
+        goto block_19;
+    default:
+        return;
+    }
+block_19:
+    if (m_unk335 & 1) {
+        if (m_unk1B2 & 0xF000) {
+            if (*(int *)((char *)&gInterface + 0x98) == 0) {
+                *(int *)((char *)&gInterface + 0x94) = 1;
+                m_unk335 &= ~1;
+                ReleaseControlOfCamera__9CameraAPIFP15EntityBaseClassb(mCameraAPI__13EntityManager, 0, true);
+                gSound.SetMainMusicSpecialVolume(PSound::MUSIC_SPECIAL_VOLS_NONE);
+            } else {
+                *((unsigned char *)&gInterface + 0x91) = 1;
+            }
+        }
+    }
+    TimerUpdate();
+    AnimCheck();
+    PlingCheck();
+    if (m_unk33B == 0) {
+        UpdatePlayerFx();
+    }
+    if (ButtonCheck() == 0 && m_unk229 != 4 && !(m_unk1D0 & 4) && (m_unk264 & 0x30) && m_unk1BC >= 0x33) {
+        float *pV = (float *)m_unk38;
+        pV[0] = pV[0] - 0.008f * FastMath_Sin180__Ff(m_unk1C4);
+        pV[2] = pV[2] - 0.008f * FastMath_Cos180__Ff(m_unk1C4);
+    }
+    sp40[0] = *(float *)((char *)m_unk254 + 0x10);
+    sp40[1] = *(float *)((char *)m_unk254 + 0x14);
+    sp40[2] = *(float *)((char *)m_unk254 + 0x18);
+    if (__ptmf_test(sp40) != 0) {
+        __ptmf_scall(this);
+    }
+    *(u_long128 *)sp30 = *(u_long128 *)m_unk38;
+    sp30[1] = 0.0f;
+    m_unk1C8 = sceVu0InnerProduct(sp30, sp30);
+    UpdateBodyBox();
 }
 
 // FUNCTION: 0x00164770 ResetPling__6PlayerFv

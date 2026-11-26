@@ -72,6 +72,10 @@ public:
     void SwimMove();
     enum PlingType { PLING_TYPE_UNUSED = 0 };
     void SetPling(PlingType arg0, EntityBaseClass *arg1, unsigned int arg2);
+    void Execute();
+    int ButtonCheck();
+    void AnimCheck();
+    void TimerUpdate();
     void ResetPling();
     void PlingCheck();
     void ResetShield();
@@ -190,7 +194,10 @@ public:
     unsigned short m_unk15E; // 0x15E read by OutputDebug
     char _pad160[0x190 - 0x160];
     float m_unk190[4];      // 0x190 vector read by NotifyTreasure when m_unk3C is null
-    char _pad1A0[0x1B0 - 0x1A0];
+    int m_unk1A0;           // 0x1A0 cleared by Execute
+    float m_unk1A4;         // 0x1A4 float read by Execute, Round180 gives m_unk1C4
+    int m_unk1A8;           // 0x1A8 cleared by Execute
+    char _pad1AC[4];
     unsigned short m_unk1B0; // 0x1B0 bit 0x200 is tested by IsMidasActive
     unsigned short m_unk1B2; // 0x1B2 bit 0x4000 is tested by CatchIdleMove
     signed char m_unk1B4;   // 0x1B4 compared against -74 and 75 by SpinCheck
@@ -268,13 +275,14 @@ public:
     float m_unk2D0[4];      // 0x2D0 vector, source of sceVu0ApplyMatrix in CatchLedgeMove
     float m_unk2E0[4];      // 0x2E0 vector, source of sceVu0ApplyMatrix in CatchLedgeMove
     int m_unk2F0;           // 0x2F0 matrix holder, +0x40 is the matrix used by CatchLedgeMove
-    char _pad2F4[0x2F8 - 0x2F4];
+    int m_unk2F4;           // 0x2F4 written by Execute
     int m_unk2F8;           // 0x2F8 cleared by InitAttachableJoints
     float m_unk2FC;         // 0x2FC attached timer value, set by DetachJoint
-    char _pad300[0x304 - 0x300];
+    int m_unk300;           // 0x300 written by Execute
     float m_unk304;         // 0x304 float, set by OnAttackEvent
     int m_unk308;           // 0x308 cleared by SetDeath
-    char _pad30C[0x314 - 0x30C];
+    int m_unk30C;           // 0x30C written by Execute
+    char _pad310[0x314 - 0x310];
     int m_unk314;           // 0x314 int, set to 0x42A00000 by OnAttackEvent
     char _pad318[0x31C - 0x318];
     FontNode *m_unk31C;     // 0x31C font node, passed to FontManager::RemoveText and cleared by ForceDie
