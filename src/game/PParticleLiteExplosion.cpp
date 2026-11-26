@@ -19,6 +19,8 @@ extern "C" void DmaScratchPadToMainMem__FPvPvsbb(void *pSpad, void *pMain, short
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pMsg);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
 extern "C" void Vu0_Normalize_Vector(void);
+extern "C" float FastMath_Sin180__Ff(float fAngle);
+extern "C" float FastMath_Cos180__Ff(float fAngle);
 
 #define LITE_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert__FPciPc("PParticleLiteExplosion.cpp", line, msg))
 
@@ -181,6 +183,218 @@ void PParticleLiteExplosion::Start() {
     m_unk84 = m_unk1B0[1];
     m_unk88 = m_unk1B0[2];
     m_unk8C = 0x3F800000;
+}
+
+// DRAFT: 0x001F6E30 Animate__22PParticleLiteExplosionFf
+// note: compiles; VU0 runs are asm from the disasm mnemonics, loop follows AnimateRotatableParticles; frame layout and scheduling not compared yet
+static inline float LiteRandOf(int nSeed) {
+    return 0.000030517578f * (float)((nSeed >> 16) & 0x7FFF);
+}
+
+void PParticleLiteExplosion::Animate(float fDt) {
+    float vSub[4];
+    float vRnd[4];
+    float vA3[4];
+    float vA2[4];
+    float vT0[4];
+    float vT1[4];
+    float vT2[4];
+    float fF20;
+    float fF21;
+    float fT;
+    float fAng;
+    float fTmp;
+    float fA4;
+    float fAC;
+    float fF5;
+    float fF6;
+    float fF7;
+    float fTmp2;
+    float fTmp4;
+    float fF22b;
+    float fF23;
+    float fF21a;
+    float fSin;
+    float fCos;
+    int nSeedA;
+    int nSeedB;
+    int nBits;
+    unsigned int nHits;
+    unsigned int i;
+    char *pBase;
+    void *pOut;
+    float *pP;
+
+    if (m_unk1B != 0) {
+        AnimateRotatableParticles(fDt);
+        return;
+    }
+    UpdateLoopDelay(fDt);
+    if (m_unk15 == 0) {
+        return;
+    }
+    if (m_unk16 != 0) {
+        return;
+    }
+    m_unkD0 = m_unk1C0;
+    pOut = AllocParticles__12PDisplayListFii(*(void **)(gGfxEng + 0x154C80), m_unk04, 2);
+    LITE_ASSERT(0x74, pOut != 0, "apVuParticles");
+    m_unk08 = pOut;
+    pBase = (char *)pOut;
+    if (m_unk04 < 0x101) {
+        pBase = (char *)0x70001000;
+        LITE_ASSERT(0x7C, (unsigned int)(m_unk04 << 5) < 0x2001u, "(sizeof(VuParticle) * muNumParticles) <= SPAD_TEMP_BUFFER_SIZE");
+    }
+    m_unk194 += fDt;
+    sceVu0SubVector(vSub, m_unk140, m_unk130);
+    fF20 = m_unk16C;
+    nHits = 0;
+    for (i = 0; i < m_unk04; i++) {
+        bool bEmit = false;
+
+        pP = (float *)(pBase + (i << 5));
+        fF21 = m_unk194 * (fF20 + ((1.0f - fF20) * LiteRand01(&m_unkD0)));
+        if (fF21 < m_unk190) {
+            bEmit = true;
+        } else {
+            nHits += 1;
+            fF21 = m_unk190;
+            if (nHits < m_unk150) {
+                bEmit = true;
+            } else {
+                fF21 = 0.0f;
+                m_unk194 = 0.0f;
+                m_unk1C0 = (int)(0.5f + (12345.0f + (41976.0f * ((float)rand() / 2.1474836e9f))));
+                UpdateLoopCounter();
+                *(u_long128 *)m_unk1A0 = *(u_long128 *)m_unk1B0;
+                m_unk80 = m_unk1B0[0];
+                m_unk84 = m_unk1B0[1];
+                m_unk88 = m_unk1B0[2];
+                m_unk8C = 0x3F800000;
+                if (m_unk15 != 0) {
+                    bEmit = true;
+                }
+            }
+        }
+        if (bEmit) {
+            fT = fF21 / m_unk190;
+            vRnd[0] = (float)LiteSeedStep(&m_unkD0);
+            vRnd[1] = (float)LiteSeedStep(&m_unkD0);
+            vRnd[2] = (float)LiteSeedStep(&m_unkD0);
+            vRnd[3] = (float)LiteSeedStep(&m_unkD0);
+            sceVu0ScaleVector(vRnd, vRnd, 0.000030517578f);
+            {
+                float *pLo = m_unkF0;
+                float *pHi = m_unk100;
+                float *pRnd = vRnd;
+                asm {
+                    lqc2 vf1, 0x0(pLo)
+                    lqc2 vf2, 0x0(pHi)
+                    lqc2 vf3, 0x0(pRnd)
+                    vsub.xyzw vf4, vf2, vf1
+                    vmul.xyzw vf5, vf4, vf3
+                    vadd.xyzw vf6, vf5, vf1
+                    sqc2 vf6, 0x0(pRnd)
+                    lqc2 vf5, 0x0(pRnd)
+                    vcallms Vu0_Normalize_Vector
+                }
+            }
+            fTmp = 0.75f * m_unk170;
+            fAng = m_unk154 + (fT * (m_unk158 - m_unk154));
+            pP[3] = fAng;
+            pP[3] = fAng * (1.0f + (-fTmp + (2.0f * fTmp * LiteRand01(&m_unkD0))));
+            fA4 = m_unk110[1] + ((m_unk120[1] - m_unk110[1]) * LiteRand01(&m_unkD0));
+            fAC = 1.0f - (fT * m_unk168);
+            {
+                float *pA3 = vA3;
+                float *pA2 = vA2;
+                float *pT0 = vT0;
+                float *pT1 = vT1;
+                float *pT2 = vT2;
+                float *pA1 = pP;
+                nBits = 0;
+                asm {
+                    qmtc2.i nBits, vf0
+                    lqc2 vf29, 0x0(pA3)
+                    vmini.xz vf31, vf29, vf31
+                    lqc2 vf30, 0x0(pA2)
+                    lqc2 vf28, 0x0(pT0)
+                    lqc2 vf27, 0x0(pT2)
+                    lqc2 vf26, 0x0(pT1)
+                    vmax.xz vf31, vf31, vf30
+                    vmove.y vf31, vf28
+                    vnop
+                    vadd.xyzw vf26, vf26, vf27
+                    vmulw.xyz vf31, vf31, vf28w
+                    vnop
+                    vnop
+                    vnop
+                    sqc2 vf31, 0x0(pA1)
+                    sqc2 vf26, 0x0(pT2)
+                }
+            }
+            nBits = *(int *)&fAC;
+            {
+                float *pA1 = pP;
+                float *pT2 = vT2;
+                float *pP5 = pP;
+                asm {
+                    lqc2 vf1, 0x0(pA1)
+                    lqc2 vf2, 0x0(pT2)
+                    lqc2 vf5, 0x0(pP5)
+                    qmtc2.i nBits, vf3
+                    vmulx.xyz vf4, vf1, vf3x
+                    vnop
+                    vnop
+                    vnop
+                    vadd.xyz vf5, vf4, vf2
+                    vnop
+                    vnop
+                    vnop
+                    sqc2 vf5, 0x0(pP5)
+                }
+            }
+            fF6 = m_unk164;
+            if (fF6 != 0.0f) {
+                fF5 = 0.75f * fF6;
+                pP[1] = pP[1] - (fT * (fT * (fT * (fF6 + (-fF5 + (2.0f * fF5 * LiteRand01(&m_unkD0)))))));
+            }
+            if (m_unk19 != 0) {
+                fF5 = 30.0f * m_unk2C;
+                LiteSeedStep(&m_unkD0);
+                nSeedA = m_unkD0;
+                LiteSeedStep(&m_unkD0);
+                nSeedB = m_unkD0;
+                LiteSeedStep(&m_unkD0);
+                fF7 = 0.001f + (0.0139999995f * m_unk28);
+                fTmp2 = 0.2f * fF7;
+                fTmp4 = -fTmp2;
+                fF21a = 180.0f * (((float)((int)(fF21 * (fF5 + (((0.5f * fF5) - fF5) * LiteRandOf(nSeedA)))) % 360) / 180.0f) - 1.0f);
+                fF22b = fF7 + (fTmp4 + (2.0f * fTmp2 * LiteRandOf(nSeedB)));
+                fF23 = fF7 + (fTmp4 + (2.0f * fTmp2 * LiteRandOf(m_unkD0)));
+                fSin = FastMath_Sin180__Ff(fF21a);
+                fCos = FastMath_Cos180__Ff(fF21a);
+                pP[4] = fF22b * fCos;
+                pP[5] = fF23 * fSin;
+            } else {
+                float *pOutD = pP + 4;
+                float *pV130 = m_unk130;
+                float *pSub = vSub;
+                nBits = *(int *)&fT;
+                asm {
+                    lqc2 vf1, 0x0(pSub)
+                    lqc2 vf2, 0x0(pV130)
+                    qmtc2.i nBits, vf3
+                    vmulx.xyzw vf4, vf1, vf3x
+                    vadd.xyzw vf5, vf4, vf2
+                    sqc2 vf5, 0x0(pOutD)
+                }
+            }
+        }
+    }
+    if (((unsigned int)pBase & 0x70000000) == 0x70000000) {
+        DmaScratchPadToMainMem__FPvPvsbb(pBase, m_unk08, (short)(m_unk04 * 2), false, true);
+    }
 }
 
 // FUNCTION: 0x001F75C0 Create__22PParticleLiteExplosionFP30tagParticleLiteExplosionParamsfff

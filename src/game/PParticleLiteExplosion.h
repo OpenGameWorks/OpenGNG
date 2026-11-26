@@ -28,6 +28,7 @@ public:
     void Start();
     void ModifyPosition(PMat4 *pMat);
     void AnimateRotatableParticles(float fDt);
+    void Animate(float fDt);
 
     void SetPosition(float *, float *);
     float m_unkE0[4];           // 0x0E0 position, offset by Create's fA/fB/fC
