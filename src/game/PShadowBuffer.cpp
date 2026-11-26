@@ -208,13 +208,11 @@ void PShadowBuffer::Render() {
     ((PGfxEngine *)gGfxEng)->EndShadowRender();
 }
 
-// DRAFT: 0x001D8530 SetZBufferRange__13PShadowBufferFff
-// note: 24 words differ; original keeps the halved width in f1 and stores it second, and the lui order for 0x4500/0x4380/0x3F00 and gp loads differ (width-first, height-first, int locals, direct stores tried)
+// FUNCTION: 0x001D8530 SetZBufferRange__13PShadowBufferFff
 void PShadowBuffer::SetZBufferRange(float fNear, float fFar) {
-    int nWidth = SCREEN_WIDTH / 2;
-    int nHeight = SCREEN_HEIGHT / 2;
-    m_unk1AC0[0] = (float)nWidth;
-    m_unk1AC0[1] = (float)nHeight;
+    float fH = (float)(SCREEN_HEIGHT / 2);
+    m_unk1AC0[0] = (float)(SCREEN_WIDTH / 2);
+    m_unk1AC0[1] = fH;
     m_unk1AC0[2] = -(0.5f * (fFar - fNear));
     *(int *)&m_unk1AC0[3] = 0;
     *(int *)&m_unk1AD0[0] = 0x45000000;
