@@ -505,20 +505,18 @@ bool ClockworkMaximo::FaceTarget(float arg0) {
 }
 
 
-// DRAFT: 0x00211150 InBlockableState__15ClockworkMaximoFv
-// note: original is a beq chain on constants in v0 with unsorted case order and a shared v0=1 exit; switch sorts cases, 11 words differ. Tried value ||, if-chain, condition ||, int return with 1/0: 18-25 words.
+// FUNCTION: 0x00211150 InBlockableState__15ClockworkMaximoFv
 bool ClockworkMaximo::InBlockableState() {
     switch (m_unk20) {
-    case 3:
-    case 0xD:
-    case 2:
-    case 1:
     case 0:
+    case 1:
+    case 2:
+    case 0xD:
+    case 3:
     case 4:
         return true;
-    default:
-        return false;
     }
+    return false;
 }
 
 // FUNCTION: 0x002111B0 CheckBlockAttack__15ClockworkMaximoFv

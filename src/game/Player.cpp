@@ -926,14 +926,17 @@ void Player::CatchLedgeMove() {
 }
 
 // note: 8 words differ: original keeps the loaded value in v1 and the 1 in v0 before the 0x2A compare; compiled code loads into a0 and uses daddiu. Tried bool, ||, nested if/else and unsigned char locals.
-// DRAFT: 0x0015A4B0 IsHanging__6PlayerFv
+// FUNCTION: 0x0015A4B0 IsHanging__6PlayerFv
 unsigned char Player::IsHanging() {
-    int state = m_unk260;
-    int ret = 1;
-    if (state != 0x2A) {
-        if (state != 0x2B) {
-            ret = 0;
-        }
+    int ret;
+    switch (m_unk260) {
+    case 0x2B:
+    case 0x2A:
+        ret = 1;
+        break;
+    default:
+        ret = 0;
+        break;
     }
     return ret;
 }
