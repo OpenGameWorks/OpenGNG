@@ -164,7 +164,7 @@ void ESubTimer::ZeroTimer() {
 }
 
 // DRAFT: 0x00169890 StopTimer__9ESubTimerFv
-// note: 8 differing lines. Two mfpc (dummy, counter) match; compare block loads m_unk008/m_unk004 into swapped a1/v1 (tried <, >, explicit sum, nElapsed local).
+// note: 8 differing words; compare block loads m_unk008/m_unk004 into swapped a1/v1 (tried <, >, explicit sum, nElapsed local, nMax local loaded before the compare).
 void ESubTimer::StopTimer() {
     if (m_unk044 != 0) {
         unsigned int nDummy;
@@ -224,13 +224,11 @@ void ETiming::PrintPerformanceMeter(unsigned int nUnused, PMat4 *pMat) {
     ((PProgressBar *)m_unk890)->Render();
 }
 
-// DRAFT: 0x00169B70 PrintDisplayListStatusMeter__7ETimingFUiP5PMat4
-// note: 3 differing lines; compiler keeps this+0xAE0 in s0 (original keeps this in s0 and recomputes a0 per call). Tried pBar local (3), reordered nCount first (9), pSelf local (9), inline cast at both calls (9).
+// FUNCTION: 0x00169B70 PrintDisplayListStatusMeter__7ETimingFUiP5PMat4
 void ETiming::PrintDisplayListStatusMeter(unsigned int nUnused, PMat4 *pMat) {
-    PProgressBar *pBar = (PProgressBar *)((char *)this + 0xAE0);
-    int nCount = *(int *)(((PGfxEngineRef *)gGfxEng)->pDisplayList + 0xA3340);
-    pBar->SetReading(100.0f * ((float)nCount / 32768.0f));
-    pBar->Render();
+    int nCount = *(int *)(((PGfxEngineRef *)((char *)gGfxEng + 0x154C80))->pDisplayList + 0xA3340);
+    ((PProgressBar *)m_unkAE0)->SetReading(100.0f * ((float)nCount / 32768.0f));
+    ((PProgressBar *)m_unkAE0)->Render();
 }
 
 // FUNCTION: 0x00169BE0 PrintCalcTimings__7ETimingFv
@@ -284,7 +282,7 @@ int ETiming::GenerateStringWSuffixAndCat(char *pDest, unsigned int nId) {
 }
 
 // DRAFT: 0x00169E30 ZeroAllOneFrameVals__7ETimingFv
-// note: guarded do-while matches the loop; 4 differing lines remain, one extra nop before the loop bnez; top-tested, counted and byte-step forms were worse.
+// note: 6 differing words; original has 2 extra nops (one before the loop bnez, one after its delay slot), so the join sits at +0x38. Tried prefix ++ (6), unsigned compare (6), pTimer = pTimer + 1 (6), end pointer declared first (12), store before increment (9); top-tested, counted, byte-step worse.
 void ETiming::ZeroAllOneFrameVals() {
     ESubTimer *pTimer = m_aTimers;
     ESubTimer *pEnd = (ESubTimer *)((char *)this + 0x634);

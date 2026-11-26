@@ -409,7 +409,7 @@ void PSound::WaitOnVSync() {
 }
 
 // DRAFT: 0x001A4200 PlayMultipleAtOnce__6PSoundFUi
-// note: 7 words differ: pEnd lands in s2 and nPlayed in s1 (original s1/s2 swapped); declaration order, unsigned pEnd and nPlayed scoped in the guard did not fix it.
+// note: 7 words differ: pEnd lands in s2 and nPlayed in s1 (original s1/s2 swapped); tried declaration order (7), unsigned nEnd cursor (12), pEnd from m_unk2EB4 (9), pointer compares with >= break (7), signed nPlayed (7), unsigned pEnd and nPlayed scoped in the guard (7).
 int PSound::PlayMultipleAtOnce(unsigned int nSound) {
     SpotInfo *pSpot = (SpotInfo *)m_unk2EB4;
     unsigned int nPlayed = 0;
@@ -1047,7 +1047,7 @@ void PSound::ErrorRecovery() {
 }
 
 // DRAFT: 0x001A5960 OneFrameHasElapsed_R__6PSoundFPffRiRi
-// note: DIFF 8 words after 8 variants (from 129); best variant kept, cause of the remaining 8 words not isolated
+// note: DIFF 6 words; rA/rB global order fixed (8 to 6); m_unk68 reload lands in v1 and t in v0 (original v0/v1); tried int t split, base local, if/else split, != 0 vs truthiness (no change)
 int PSound::OneFrameHasElapsed_R(float *pElapsed, float fFrame, int &rA, int &rB) {
     m_unk68 = *(int *)(gEng + 0x1883C);
     m_unk6C = *(int *)(gEng + 0x19B74);
@@ -1113,8 +1113,8 @@ int PSound::OneFrameHasElapsed_R(float *pElapsed, float fFrame, int &rA, int &rB
         PlayEffect__6PSoundFUiUi(this, a1, m_unk18084);
         m_unk18080 = 0;
     }
-    rA = SOUND_IOP_CD_STATUS;
-    rB = SOUND_CD_TRAY_OPEN;
+    rA = SOUND_CD_TRAY_OPEN;
+    rB = SOUND_IOP_CD_STATUS;
     return 1;
 }
 
@@ -2826,7 +2826,7 @@ int PSound::UsageFindNextHigherID(PSound::PSoundUsage **ppUsage) {
 }
 
 // DRAFT: 0x001AAF20 UsageInit__6PSoundFv
-// note: DIFF 6 words; original has three scheduling nops between the loop sltu and bnez and the guard beqz targets one slot further; tried int*, char*, unsigned cursors (15), int stride 5 (6), for-loop (11)
+// note: DIFF 6 words; original has three scheduling nops between the loop sltu and bnez and the guard beqz targets one slot further; tried int*, char*, unsigned cursors (15), int stride 5 (6), for-loop (11), while form (6), end as int* + 6000 (6), end declared before cursor (12)
 void PSound::UsageInit() {
     int *p = (int *)fst_Usage;
     int *end = (int *)(fst_Usage + 24000);

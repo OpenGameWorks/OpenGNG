@@ -130,7 +130,7 @@ void PTextureManager::KickDmaChain(void *pBuf, bool bWait) {
 }
 
 // DRAFT: 0x00189590 PrepareStaticTextureForDma__15PTextureManagerFP1P19tagPs2TexDataHeaderPvPvP23tagGsTextureEnvironment
-// note: 5 words differ: nWidth goes to t1 in the original (ours t0) at 0x0F8/0x0FC and the 0x128 copy direction is reversed; lw a3,unk8 precedes lb t2,unk4 at 0x1A0/0x1A8
+// note: 5 words differ: nWidth goes to t1 in the original (ours t0) at 0x0F8/0x0FC and the 0x128 copy direction is reversed; lw a3,unk8 precedes lb t2,unk4 at 0x1A0/0x1A8; tried nWidth declared last and nWidth as a ternary, both still 5
 int PTextureManager::PrepareStaticTextureForDma(u_long128 *pDmaChain, tagPs2TexDataHeader *pTexHeader, void *pvTexClutPacket, void *pvTexImagePacket, tagGsTextureEnvironment *pTexEnv) {
     int nQwords = 0;
     int nWidth;
