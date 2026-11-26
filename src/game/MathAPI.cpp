@@ -120,7 +120,7 @@ int MathAPI::IsEBoxWithinEBox(tagBOX *arg0, tagBOX *arg1) {
 }
 
 // DRAFT: 0x1577A0 MakeVertexList__7MathAPIFP6tagBOXPA4_f
-// note: 28 differing words; this/arg0 registers s1/s0 vs s0/s5, packed 1.0f build (lui/dsll32/or/pcpyld/sq) vs four sw. Tried: local order (42->32), unsigned counters (->31), reversed counter order (->28), separate dst pointer (47, reverted).
+// note: 28 differing words; this/arg0 registers s1/s0 vs s0/s5, packed 1.0f build (lui/dsll32/or/pcpyld/sq) vs four sw. Tried: local order (42->32), unsigned counters (->31), reversed counter order (->28), separate dst pointer (47, reverted), null guards swapped (32, reverted).
 void MathAPI::MakeVertexList(tagBOX *arg0, float (*arg1)[4]) {
     float sp90[4][4];
     float spD0[4];
@@ -164,7 +164,7 @@ void MathAPI::MakeVertexList(tagBOX *arg0, float (*arg1)[4]) {
 }
 
 // DRAFT: 0x157900 SetE_BOX_Radius__7MathAPIFP6tagBOX
-// note: 17 differing lines: literal 0x358637BD pooled via $gp (orig inline lui/ori/mtc1 into f1); load order f0/f3/f4 vs f2/f1/f3; beqz target off by one. Tried eps local, reversed add, -sdatathreshold 0: all 17.
+// note: 16 differing lines: literal 0x358637BD pooled via $gp (orig inline lui/ori/mtc1 into f1); load order f0/f3/f4 vs f2/f1/f3; beqz target off by one. Tried eps local, reversed add, -sdatathreshold 0: all 17.
 float MathAPI::SetE_BOX_Radius(tagBOX *arg0) {
     float r = 0.0f;
     if (this != 0) {
@@ -207,13 +207,14 @@ void MathAPI::QuatSlerp(tag_EQuat *arg0, tag_EQuat *arg1, float arg2, tag_EQuat 
 }
 
 // DRAFT: 0x157B00 GetAngleBetweenVectors__7MathAPIFPfPf
-// note: 25 differing lines: -1.0f, 1.0f, 57.295776f are inline lui/mtc1 in orig, gp-pooled here (known pattern); clamp as two ifs or one || gave 35 and 25; register allocation of loads follows the literals.
+// note: 23 differing lines: hoisted -1.0f local with one || clamp (two separate ifs give 35; lo declared after the norms also 23); original loads a0[2],a1[2],a0[0],a1[0] into f2,f3,f5,f1 and branch layout around bc1t/bc1f differs.
 float MathAPI::GetAngleBetweenVectors(float *arg0, float *arg1) {
+    float lo = -1.0f;
     float dot = arg0[2] * arg1[2] + arg0[0] * arg1[0];
     float na = arg0[0] * arg0[0] + arg0[2] * arg0[2];
     float nb = arg1[0] * arg1[0] + arg1[2] * arg1[2];
     float c = dot / (sqrtf(na) * sqrtf(nb));
-    if (c < -1.0f || c > 1.0f) {
+    if (c < lo || c > 1.0f) {
         return 0.0f;
     }
     return FastMath_Fabs(57.295776f * acosf(c));
@@ -251,9 +252,9 @@ void MathAPI::GetForwardVector(EntityBaseClass *arg0, float (&arg1)[4]) {
 }
 
 // DRAFT: 0x157CA0 VectorRotateY__7MathAPIFPA4_ff
-// note: 27 differing lines: literal 0x3C8EFA35 is inline lui/ori/mtc1 in orig, gp-pooled here; accumulator ops match but madd/msub results land in f0/f1 swapped. Tried temp outputs (27), operand swap (27), -sdatathreshold 0 in scratch (25, not a match).
+// note: 19 differing lines: rad = 0.017453292f * arg1 (19; arg1 * K gave 27); orig copies arg1 to f20 with mov.s before the mul and the madd/msub results land in f0/f1 swapped; copy-then-scale form also 19.
 void MathAPI::VectorRotateY(float (*arg0)[4], float arg1) {
-    float rad = arg1 * 0.017453292f;
+    float rad = 0.017453292f * arg1;
     float s = sinf(rad);
     float c = cosf(rad);
     float x = (*arg0)[0];
