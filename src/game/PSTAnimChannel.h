@@ -19,6 +19,7 @@ public:
     float GetNumFrames();
     void EvaluateAnim(float fTime, float &fOut);
 
+    PSTAnimChannel();
     int m_unk0;
     PSTAnimKeyFrame *m_unk4;
     int m_unk8;

@@ -1665,3 +1665,9 @@ extern "C" MemoryCard *__dt__10MemoryCardFv(MemoryCard *pThis, short nFlag) {
     }
     return pThis;
 }
+
+// FUNCTION: 0x00152980 __ct__10MemoryCardFv
+MemoryCard::MemoryCard() {
+    m_unk200 = 0;
+    m_unk1DC = 0;
+}

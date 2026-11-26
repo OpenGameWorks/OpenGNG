@@ -97,3 +97,9 @@ PSTAnimChannel::~PSTAnimChannel() {
         __dla__FPv(m_unk4);
     }
 }
+
+// FUNCTION: 0x0019A670 __ct__14PSTAnimChannelFv
+PSTAnimChannel::PSTAnimChannel() {
+    m_unk4 = 0;
+    m_unk0 = 0;
+}

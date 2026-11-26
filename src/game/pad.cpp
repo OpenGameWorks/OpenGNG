@@ -355,6 +355,11 @@ void Pad::DeletePad() {
     }
 }
 
+// FUNCTION: 0x0012D6E0 __ct__3PadFv
+Pad::Pad() {
+    m_unk100 = -1;
+}
+
 // FUNCTION: 0x0012D6F0 __dt__3PadFv
 Pad::~Pad() {
     DeletePad();

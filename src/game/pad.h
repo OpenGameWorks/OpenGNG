@@ -25,6 +25,7 @@ public:
     void DeletePad();
     void UpdatePad();
 
+    Pad();
     char _pad000[0x100];
     int m_unk100;                   // 0x100 scePad2 socket handle, -1 when none
     int m_unk104;                   // 0x104 cleared with the socket

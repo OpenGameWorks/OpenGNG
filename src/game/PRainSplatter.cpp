@@ -116,3 +116,8 @@ PRainSplatter::~PRainSplatter() {
         m_unk08 = 0;
     }
 }
+
+// FUNCTION: 0x001D04E0 __ct__13PRainSplatterFv
+PRainSplatter::PRainSplatter() {
+    *(int *)((char *)this + 0x8) = 0;
+}

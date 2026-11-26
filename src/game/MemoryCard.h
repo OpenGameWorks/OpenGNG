@@ -54,6 +54,7 @@ public:
     int SaveGame();
 
     int ResetSetting();
+    MemoryCard();
     char _pad000[0x1C0];
     int m_unk1C0;                   // 0x1C0 entry count bound for CheckFree, 0x40-byte entries from offset 0
     int m_unk1C4;                   // 0x1C4 loop counter used by CheckFree and CheckLoadData

@@ -12,6 +12,7 @@ class PMNode;
 // of their own.
 class PFireDamageFx {
 public:
+    PFireDamageFx();
     ~PFireDamageFx();
     int Create(PMNode *poRoot, unsigned int uCharType);
 };

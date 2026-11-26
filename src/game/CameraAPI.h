@@ -19,6 +19,7 @@ public:
     void ShakeScreenUsingTable(int arg0, unsigned int arg1);
     void ShakeScreen(float arg0, float arg1, float arg2, unsigned int arg3);
 
+    CameraAPI();
     Camera *m_unk0;     // 0x000 (m_pCamera)
 };
 

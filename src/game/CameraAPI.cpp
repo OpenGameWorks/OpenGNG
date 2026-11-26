@@ -107,3 +107,8 @@ void CameraAPI::ShakeScreen(float arg0, float arg1, float arg2, unsigned int arg
     }
     m_unk0->SetupShakeScreen(arg0, arg1, arg2, 0, 0, arg3);
 }
+
+// FUNCTION: 0x001557D0 __ct__9CameraAPIFv
+CameraAPI::CameraAPI() {
+    m_unk0 = 0;
+}

@@ -121,3 +121,7 @@ int PFireDamageFx::Create(PMNode *poRoot, unsigned int uCharType) {
 
 // FUNCTION: 0x002033C0 __dt__13PFireDamageFxFv
 PFireDamageFx::~PFireDamageFx() {}
+
+// FUNCTION: 0x00203410 __ct__13PFireDamageFxFv
+PFireDamageFx::PFireDamageFx() {
+}
