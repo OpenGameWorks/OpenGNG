@@ -74,11 +74,9 @@ void Pickup::FlyToApparition(unsigned int arg0, float arg1) {
     }
 }
 
-// DRAFT: 0x0019D020 SoulSuckerInRange__6PickupFv
-// note: 10-word diff; count reload at bottom test uses v0 (orig v1), sltu source reg, return-0 daddu not in bnez delay slot; tried while/ternary forms, (0<x)!=0 wrap, local bool.
+// FUNCTION: 0x0019D020 SoulSuckerInRange__6PickupFv
 int Pickup::SoulSuckerInRange() {
     float (*pBox)[4];
-    unsigned int nCount;
     if (mTempArray__15EntityBaseClass.m_unk8 != 0) {
         mTempArray__15EntityBaseClass.m_unk0 = 0;
         mTempArray__15EntityBaseClass.m_unk4 = 0;
@@ -89,9 +87,8 @@ int Pickup::SoulSuckerInRange() {
         pBox = (float (*)[4])&this->m_unk190;
     }
     GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 3, &mTempArray__15EntityBaseClass, pBox, 17.0f, 0x6B, true, false);
-    while ((0 < (nCount = mTempArray__15EntityBaseClass.m_unk0)) != 0) {
-        int bHas = (0 < nCount) != 0;
-        ApparitionIsValid__15EntityBaseClassFUi(bHas ? (unsigned int)mTempArray__15EntityBaseClass.m_unk8[0] : 0U);
+    for (unsigned int i = 0; i < mTempArray__15EntityBaseClass.m_unk0; i++) {
+        ApparitionIsValid__15EntityBaseClassFUi((i < mTempArray__15EntityBaseClass.m_unk0) ? (unsigned int)mTempArray__15EntityBaseClass.m_unk8[i] : 0U);
         return 1;
     }
     return 0;
