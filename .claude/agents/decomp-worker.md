@@ -43,6 +43,8 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 - A constant 1 loaded with `daddiu reg,$zero,1` where an int would give `addiu`/`li` is a `bool` local: `bool f;`, `f = true;` / `f = false;`, `if (!f)`; `f == 0` adds an `andi 0xFF` (`ReadData` in `src/game/PCDFile.cpp`). `tools/permute.py FILE 0xADDR` tries this respelling among others.
 - `dsll32 r,r,N` then `dsrl32 r,r,N` (or `dsll`/`dsrl` by N) on an int is a mask of its low 32-N bits written plainly: `x & 0xFFFFFF` for N = 8. CodeWarrior emits the shift pair instead of loading the constant; a hand-written 64-bit shift compiles to another amount (`DecodeTextureHandle` in `src/game/PTextureManager.cpp`).
 - A function whose result the original tests with a bare `beqz v0` and whose locals set 1 with `daddiu` returns `bool`: `bool F(...)`, a `bool` result local, and callers written `if (F(...))`. `F(...) != 0` on a bool adds `andi 0xFF`, and an `int` return of a bool local adds it at the return (`BuildCollisionArray` in `src/game/PMeshNode.cpp`). `long` and `long long` locals still load 1 with `addiu`.
+- The PArray walk advances with a ternary: `unsigned int i = m_nIdx + 1; m_nIdx = i; p = (i < m_nCount) ? m_ppData[m_nIdx] : 0;`. Spelled `p = 0; if (i < m_nCount) { p = m_ppData[m_nIdx]; }` it leaves an extra join `nop` before the loop's `bnez` and shifts every later branch (`src/game/EffectAPI.cpp`).
+- `bne a1, v1` against our `bne v1, a1` is the operand order of the comparison: `arg0 == p->m` versus `p->m == arg0`.
 
 ## Finishing
 
