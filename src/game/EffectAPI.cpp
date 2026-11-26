@@ -746,8 +746,7 @@ void EffectAPI::DeleteEffect(unsigned int arg0) {
     }
 }
 
-// DRAFT: 0x157100 DeleteEffect__9EffectAPIFP15EntityBaseClass
-// note: 24 differing lines: loop top and bottom match, but the Slot0 guard skips to an extra nop before the join (original 0x7C), and the do-while join lacks the nop before the epilogue. Tried: guarded do-while (24), plain while (24, top becomes b).
+// FUNCTION: 0x157100 DeleteEffect__9EffectAPIFP15EntityBaseClass
 void EffectAPI::DeleteEffect(EntityBaseClass *arg0) {
     m_unk4 = 0;
     EffectNode *pNode = (m_unk0 != 0) ? m_ppEntries[0] : 0;
@@ -759,18 +758,14 @@ void EffectAPI::DeleteEffect(EntityBaseClass *arg0) {
                     ((EffectDrawable *)pNode)->Slot0(1);
                 }
             }
-            pNode = 0;
             unsigned int nIndex = m_unk4 + 1;
             m_unk4 = nIndex;
-            if (nIndex < m_unk0) {
-                pNode = m_ppEntries[m_unk4];
-            }
+            pNode = (nIndex < m_unk0) ? m_ppEntries[m_unk4] : 0;
         } while (pNode != 0);
     }
 }
 
-// DRAFT: 0x1571E0 Render__9EffectAPIFP13PLightManager
-// note: 11 differing words: loop-top beqz vs our b to bottom test, shared nop before the return block. Tried: guarded while (11), plain while (12), do-while (31).
+// FUNCTION: 0x1571E0 Render__9EffectAPIFP13PLightManager
 int EffectAPI::Render(PLightManager *arg0) {
     m_unk4 = 0;
     int nSum = 0;
@@ -778,19 +773,15 @@ int EffectAPI::Render(PLightManager *arg0) {
     if (pNode != 0) {
         while (pNode != 0) {
             nSum += ((EffectDrawable *)pNode)->Slot2(arg0);
-            pNode = 0;
             unsigned int nIndex = m_unk4 + 1;
             m_unk4 = nIndex;
-            if (nIndex < m_unk0) {
-                pNode = m_ppEntries[m_unk4];
-            }
+            pNode = (nIndex < m_unk0) ? m_ppEntries[m_unk4] : 0;
         }
     }
     return nSum;
 }
 
-// DRAFT: 0x1572A0 Reset__9EffectAPIFv
-// note: 29 differing words, size 0xAC vs 0xBC: loop-exit target lands one word early, call-block delay slot is a nop in the original, the assert guard is sltu/xori in the original. Tried: double-negation guard (29, folded by the compiler).
+// FUNCTION: 0x1572A0 Reset__9EffectAPIFv
 void EffectAPI::Reset() {
     m_unk4 = 0;
     EffectNode *pNode = (m_unk0 != 0) ? m_ppEntries[0] : 0;
@@ -800,15 +791,10 @@ void EffectAPI::Reset() {
                 ((EffectDrawable *)pNode)->Slot0(1);
             }
             m_unk4 = 0;
-            pNode = 0;
-            if (m_unk0 != 0) {
-                pNode = m_ppEntries[0];
-            }
+            pNode = (m_unk0 != 0) ? m_ppEntries[0] : 0;
         } while (pNode != 0);
     }
-    if (m_unk0 != 0) {
-        CdsAssert("EffectAPI.cpp", 0x25, "!mEffectList.GetCount()");
-    }
+    (!m_unk0) ? (void)0 : CdsAssert("EffectAPI.cpp", 0x25, "!mEffectList.GetCount()");
     m_unk10 = 1;
 }
 
