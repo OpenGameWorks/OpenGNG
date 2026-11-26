@@ -46,6 +46,18 @@ def symbol_table() -> tuple[dict[str, int], dict[int, tuple[int, int, str]]]:
     return glob, byindex
 
 
+def linker_defined() -> dict[str, int]:
+    """Linker-script symbols (`_overlay_group_addresses`, `_gp`, segment bounds): defined,
+    untyped, zero-size globals. ld resolves references to them without keeping a `.relmain`
+    entry, so the original has bare address bits where an object relocates against them."""
+    out = {}
+    for line in (ROOT / "config/symbols.tsv").read_text().splitlines()[1:]:
+        _, a, s, t, b, sh, _, n = line.split("\t")
+        if t == "STT_NOTYPE" and s == "0" and b == "STB_GLOBAL" and sh != "SHN_UNDEF":
+            out.setdefault(n, int(a, 16))
+    return out
+
+
 def original_relocs() -> dict[int, tuple[int, int]]:
     out = {}
     for line in (ROOT / "config/relocs.tsv").read_text().splitlines()[1:]:
@@ -135,8 +147,13 @@ def local_matches(obj: Obj, sym, oaddr: int, osize: int, addr: int, glob, byinde
 def resolve(obj: Obj, code: bytearray, rels, addr: int, glob, byindex, orel, image: bytes) -> str | None:
     """Patch code in place; return an error string when a target cannot be proven."""
     targets = []
+    ld = linker_defined()
     for off, typ, sym in rels:
         o = orel.get(addr + off)
+        if o is None and sym.name in ld and typ in (2, 5, 6):
+            # Resolved by address; the final byte compare proves the bits.
+            targets.append((off, typ, ld[sym.name]))
+            continue
         if o is None or o[0] != typ:
             return f"reloc {typ} at +{off:#x} absent in original"
         oaddr, osize, oname = byindex[o[1]]

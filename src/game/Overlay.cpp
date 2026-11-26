@@ -29,8 +29,7 @@ int OverlayManager::LoadOverlay(const char *pName) {
     return 0;
 }
 
-// DRAFT: 0x0012BE20 __ct__14OverlayManagerFUi
-// note: table load uses R_MIPS reloc on _overlay_group_addresses; original has absolute lui/addiu 0x2C3F20 with no reloc (2 words differ). Tried byte-pointer, pointer+index, volatile base, and reordered stores; none reduced the count.
+// FUNCTION: 0x0012BE20 __ct__14OverlayManagerFUi
 OverlayManager::OverlayManager(unsigned int nGroup) {
     m_unk0 = _overlay_group_addresses[nGroup];
     if (m_unk0 == 0) {

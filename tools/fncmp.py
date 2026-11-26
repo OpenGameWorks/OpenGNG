@@ -152,6 +152,7 @@ def compare(src: Path, key: str, obj: Path | None, quiet: bool) -> int:
     for line in (disasm.INFO / "symbols.tsv").read_text().splitlines()[1:]:
         f = line.split("\t")
         symaddr[int(f[0])] = int(f[1], 16)
+    ld = link.linker_defined()
     diffs, notes = 0, []
     n = max(size, len(code)) // 4
     lines = []
@@ -168,6 +169,14 @@ def compare(src: Path, key: str, obj: Path | None, quiet: bool) -> int:
         if i * 4 in bad_locals:
             ok = False
             notes.append(f"{i * 4:#06x}: {bad_locals[i * 4]}")
+        elif r and not o and r[1] in ld and have is not None and want is not None and r[0] in (5, 6):
+            # A linker-script symbol: the original holds its address bits with no relocation.
+            s = ld[r[1]]
+            lo = ((have & 0xFFFF) ^ 0x8000) - 0x8000
+            field = ((s + 0x8000) >> 16) if r[0] == 5 else (s + lo)
+            ok = (want & 0xFFFF0000) == (have & 0xFFFF0000) and (want & 0xFFFF) == (field & 0xFFFF)
+            if not ok:
+                notes.append(f"{i * 4:#06x}: {r[1]} bits differ from the original's bare address")
         elif r or o:
             if bool(r) != bool(o) or r[0] != o[0]:
                 ok = False
