@@ -689,8 +689,7 @@ void EffectAPI::EnableParticleFx(bool arg0) {
     }
 }
 
-// DRAFT: 0x156F30 EffectValid__9EffectAPIFUi
-// note: 13 differing words (size 0x90 vs 0x94): loop-top branch form, index update in v0/v1 vs a2, extra nop before the return block. Tried: ternary first fetch (16), local nIndex (13), m_unk4++ (28), ternary index update (17), for-loop form (13), pNode clear before update (13).
+// FUNCTION: 0x156F30 EffectValid__9EffectAPIFUi
 EffectNode *EffectAPI::EffectValid(unsigned int arg0) {
     if (arg0 == 0) {
         return 0;
@@ -698,7 +697,7 @@ EffectNode *EffectAPI::EffectValid(unsigned int arg0) {
     m_unk4 = 0;
     EffectNode *pNode = (m_unk0 != 0) ? m_ppEntries[0] : 0;
     while (pNode != 0) {
-        if (pNode->m_unk8 == arg0) {
+        if (arg0 == pNode->m_unk8) {
             return pNode;
         }
         unsigned int nIndex = m_unk4 + 1;
@@ -721,13 +720,12 @@ void EffectAPI::DeleteEffect(EffectNode *arg0) {
     }
 }
 
-// DRAFT: 0x157040 DeleteEffect__9EffectAPIFUi
-// note: 15 differing words: loop-top branch form (original beqz at top, ours b to bottom test), pNode=0 store order, bottom bnez. Tried: Slot2 (16, wrong vtable offset 0x10; Slot0 gives 0x8 as original), indexed for-loop (44), dropped inner null check (32).
+// FUNCTION: 0x157040 DeleteEffect__9EffectAPIFUi
 void EffectAPI::DeleteEffect(unsigned int arg0) {
     m_unk4 = 0;
     EffectNode *pNode = (m_unk0 != 0) ? m_ppEntries[0] : 0;
     while (pNode != 0) {
-        if (pNode->m_unk8 == arg0) {
+        if (arg0 == pNode->m_unk8) {
             RemoveCurrent__6PArrayFv(this);
             if (pNode != 0) {
                 ((EffectDrawable *)pNode)->Slot0(1);
