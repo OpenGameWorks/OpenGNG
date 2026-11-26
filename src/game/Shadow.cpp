@@ -78,7 +78,7 @@ extern "C" Shadow *__dt__6ShadowFv(Shadow *pThis, short nFlag) {
 }
 
 // DRAFT: 0x001B03D0 __ct__6ShadowFQ26Shadow10ShadowTypeUi
-// note: 2 words differ at 0x70/0x74: original emits daddu v0,s0 before sw zero,0xC(s0) in the shared tail, ours emits the store first. Tried: branch sense flipped (beq to particle path, now matched), local return pointer (same output).
+// note: 2 words differ at 0x70/0x74: original emits daddu v0,s0 before sw zero,0xC(s0) in the shared tail, ours emits the store first. Tried: branch sense flipped (beq to particle path, now matched), local return pointer (same output), duplicated non-particle return with its own store (27 words), particle test as early-return if with stores after it (27 words).
 extern "C" Shadow *__ct__6ShadowFQ26Shadow10ShadowTypeUi(Shadow *pThis, int eType, unsigned int nId) {
     pThis->m_unk0 = 0;
     if (eType != Shadow::eShadowParticle) {
