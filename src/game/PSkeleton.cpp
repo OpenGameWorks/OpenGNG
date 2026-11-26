@@ -543,19 +543,25 @@ extern "C" PSkeleton *__dt__9PSkeletonFv(PSkeleton *pThis, short nFlag) {
     return pThis;
 }
 
-// DRAFT: 0x00198440 __ct__9PSkeletonFR9PSkeleton
-// note: frame is 0x30 vs 0x11C-byte body (original 0x15C); original spills this to 0x24/0x28/0x2C and interleaves vtable stores with PArray ctors (base-class ctors inlined), not restructured.
-extern "C" PSkeleton *__ct__9PSkeletonFR9PSkeleton(PSkeleton *pThis, PSkeleton &rSrc) {
-    *(void **)pThis = __vt__9PResource;
-    pThis->m_unk4 = 0;
-    *(void **)pThis = __vt__6PMNode;
-    __ct__6PArrayFv((char *)pThis + 0x14);
-    sceVu0UnitMatrix((char *)pThis + 0x40);
-    __ct__6PArrayFv((char *)pThis + 0xD8);
-    InitMembers__6PMNodeFv(pThis);
-    *(void **)pThis = __vt__9PMeshNode;
-    __ct__6PArrayFv((char *)pThis + 0x130);
-    InitMembers__9PMeshNodeFv(pThis);
+// FUNCTION: 0x00198440 __ct__9PSkeletonFR9PSkeleton
+extern "C" PSkeleton *__ct__9PSkeletonFR9PSkeleton(PSkeleton *volatile pThis, PSkeleton &rSrc) {
+    {
+        unsigned char *pRaw = (unsigned char *)pThis;
+        unsigned char *volatile pMesh = pRaw;
+        {
+            unsigned char *volatile pBase = pRaw;
+            *(unsigned char **)pRaw = __vt__9PResource;
+            *(unsigned int *)(pBase + 4) = 0;
+            *(unsigned char **)pBase = __vt__6PMNode;
+            __ct__6PArrayFv(pBase + 0x14);
+            sceVu0UnitMatrix(pBase + 0x40);
+            __ct__6PArrayFv(pBase + 0xD8);
+            InitMembers__6PMNodeFv((PSkeleton *)pBase);
+        }
+        *(unsigned char **)pMesh = __vt__9PMeshNode;
+        __ct__6PArrayFv(pMesh + 0x130);
+        InitMembers__9PMeshNodeFv((PSkeleton *)pMesh);
+    }
     *(void **)pThis = __vt__9PSkeleton;
     __ct__6PArrayFv((char *)pThis + 0x150);
     pThis->InitMembers();
@@ -582,22 +588,27 @@ void PSkeleton::InitMembers() {
     m_unk4 = 0;
 }
 
-// DRAFT: 0x001985D0 __ct__9PSkeletonFQ29PResource11eResObjType
-// note: manual __ct__6PArrayFv calls at 0x14/0xD8/0x130/0x150; the original spills this to the stack and needs PArray members, which overlap the scalar fields and lack base classes here. Not restructured.
-extern "C" PSkeleton *__ct__9PSkeletonFQ29PResource11eResObjType(PSkeleton *pThis, int eType) {
-    unsigned char *p = (unsigned char *)pThis;
-    *(unsigned char **)p = __vt__9PResource;
-    pThis->m_unk4 = 0;
-    *(unsigned char **)p = __vt__6PMNode;
-    __ct__6PArrayFv(p + 0x14);
-    sceVu0UnitMatrix(p + 0x40);
-    __ct__6PArrayFv(p + 0xD8);
-    InitMembers__6PMNodeFv(pThis);
-    *(unsigned char **)p = __vt__9PMeshNode;
-    __ct__6PArrayFv(p + 0x130);
-    InitMembers__9PMeshNodeFv(pThis);
-    *(unsigned char **)p = __vt__9PSkeleton;
-    __ct__6PArrayFv(p + 0x150);
+// FUNCTION: 0x001985D0 __ct__9PSkeletonFQ29PResource11eResObjType
+extern "C" PSkeleton *__ct__9PSkeletonFQ29PResource11eResObjType(PSkeleton *volatile pThis, int eType) {
+    {
+        unsigned char *pRaw = (unsigned char *)pThis;
+        unsigned char *volatile pMesh = pRaw;
+        {
+            unsigned char *volatile pBase = pRaw;
+            *(unsigned char **)pRaw = __vt__9PResource;
+            *(unsigned int *)(pBase + 4) = 0;
+            *(unsigned char **)pBase = __vt__6PMNode;
+            __ct__6PArrayFv(pBase + 0x14);
+            sceVu0UnitMatrix(pBase + 0x40);
+            __ct__6PArrayFv(pBase + 0xD8);
+            InitMembers__6PMNodeFv((PSkeleton *)pBase);
+        }
+        *(unsigned char **)pMesh = __vt__9PMeshNode;
+        __ct__6PArrayFv(pMesh + 0x130);
+        InitMembers__9PMeshNodeFv((PSkeleton *)pMesh);
+    }
+    *(unsigned char **)pThis = __vt__9PSkeleton;
+    __ct__6PArrayFv((unsigned char *)pThis + 0x150);
     pThis->InitMembers();
     pThis->m_unk4 = (unsigned int)eType;
     return pThis;

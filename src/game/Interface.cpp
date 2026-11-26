@@ -2980,55 +2980,74 @@ Interface::~Interface() {
     __dt__11FontManagerFv((char *)this + 0x80, -1);
 }
 
-// DRAFT: 0x145CA0 __ct__9InterfaceFv
-// note: DIFF 99 words; frame and this spill now match via InterfaceSpillGuard, but the six vtable lui/addiu pairs are scheduled and register-assigned differently (original keeps this in t0 for the first stores) and each store reloads this. Tried: spill guard member (100 -> 99).
-Interface::Interface() {
-    sceVu0UnitMatrix(this);
-    sceVu0UnitMatrix((char *)this + 0x40);
-    __ct__11FontManagerFv((char *)this + 0x80);
-    m_unk1CC = __vt__7GameHud;
-    *(int *)((char *)this + 0x1D0) = 0;
-    m_unk1CC = __vt__9HudHealth;
-    m_unk1DC = __vt__7GameHud;
-    *(int *)((char *)this + 0x1E0) = 0;
-    m_unk1DC = __vt__8HudSuper;
-    m_unk1EC = __vt__7GameHud;
-    *(int *)((char *)this + 0x1F0) = 0;
-    m_unk1FC = __vt__7GameHud;
-    *(int *)((char *)this + 0x200) = 0;
-    m_unk20C = __vt__7GameHud;
-    *(int *)((char *)this + 0x210) = 0;
-    m_unk21C = __vt__7GameHud;
-    *(int *)((char *)this + 0x220) = 0;
-    m_unk22C = __vt__7GameHud;
-    *(int *)((char *)this + 0x230) = 0;
-    m_unk22C = __vt__7HudGrim;
-    *(int *)((char *)this + 0x24C) = 0;
-    *(int *)((char *)this + 0x230) = 0;
-    m_unk250 = __vt__7GameHud;
-    *(int *)((char *)this + 0x254) = 0;
-    m_unk250 = __vt__12HudBossMeter;
-    m_unk270 = __vt__7GameHud;
-    *(int *)((char *)this + 0x274) = 0;
-    m_unk270 = __vt__12HudBossMeter;
-    m_unk290 = __vt__7GameHud;
-    *(int *)((char *)this + 0x294) = 0;
-    m_unk290 = __vt__8HudCombo;
-    __ct__12HudInventoryFv((char *)this + 0x2E8);
-    __ct__6PArrayFv((char *)this + 0x404);
-    m_unk1C4 = 0;
-    m_unk1C8 = 0;
-    *(int *)((char *)this + 0x428) = 0;
-    m_unk1B8 = 0;
-    m_unk1BC = 0;
-    m_unk1C0 = 9;
-    mName[0] = 0;
-    m_unk414 = 0;
-    m_unk416 = 0;
-    InitScreenFadeVars();
-    m_unk427 = 0;
-    *(int *)((char *)this + 0x42C) = 0;
-    *(int *)((char *)this + 0xA50) = 0;
+// FUNCTION: 0x145CA0 __ct__9InterfaceFv
+extern "C" Interface *__ct__9InterfaceFv(Interface *volatile pThis)
+{
+    sceVu0UnitMatrix(pThis);
+    sceVu0UnitMatrix((char *)pThis + 0x40);
+    __ct__11FontManagerFv((char *)pThis + 0x80);
+    {
+        char *h = (char *)pThis + 0x1CC;
+        *(void **)h = __vt__7GameHud;
+        *(int *)(h + 4) = 0;
+        *(void **)h = __vt__9HudHealth;
+    }
+    {
+        char *h = (char *)pThis + 0x1DC;
+        *(void **)h = __vt__7GameHud;
+        *(int *)(h + 4) = 0;
+        *(void **)h = __vt__8HudSuper;
+    }
+    *(void **)((char *)pThis + 0x1EC) = __vt__7GameHud;
+    *(int *)((char *)pThis + 0x1F0) = 0;
+    *(void **)((char *)pThis + 0x1FC) = __vt__7GameHud;
+    *(int *)((char *)pThis + 0x200) = 0;
+    *(void **)((char *)pThis + 0x20C) = __vt__7GameHud;
+    *(int *)((char *)pThis + 0x210) = 0;
+    *(void **)((char *)pThis + 0x21C) = __vt__7GameHud;
+    *(int *)((char *)pThis + 0x220) = 0;
+    {
+        char *h = (char *)pThis + 0x22C;
+        *(void **)h = __vt__7GameHud;
+        *(int *)(h + 4) = 0;
+        *(void **)h = __vt__7HudGrim;
+        *(int *)(h + 0x20) = 0;
+        *(int *)(h + 4) = 0;
+    }
+    {
+        char *h = (char *)pThis + 0x250;
+        *(void **)h = __vt__7GameHud;
+        *(int *)(h + 4) = 0;
+        *(void **)h = __vt__12HudBossMeter;
+    }
+    {
+        char *h = (char *)pThis + 0x270;
+        *(void **)h = __vt__7GameHud;
+        *(int *)(h + 4) = 0;
+        *(void **)h = __vt__12HudBossMeter;
+    }
+    {
+        char *h = (char *)pThis + 0x290;
+        *(void **)h = __vt__7GameHud;
+        *(int *)(h + 4) = 0;
+        *(void **)h = __vt__8HudCombo;
+    }
+    __ct__12HudInventoryFv((char *)pThis + 0x2E8);
+    __ct__6PArrayFv((char *)pThis + 0x404);
+    pThis->m_unk1C4 = 0;
+    pThis->m_unk1C8 = 0;
+    *(int *)((char *)pThis + 0x428) = 0;
+    pThis->m_unk1B8 = 0;
+    pThis->m_unk1BC = 0;
+    pThis->m_unk1C0 = 9;
+    pThis->mName[0] = 0;
+    pThis->m_unk414 = 0;
+    pThis->m_unk416 = 0;
+    pThis->InitScreenFadeVars();
+    pThis->m_unk427 = 0;
+    *(int *)((char *)pThis + 0x42C) = 0;
+    *(int *)((char *)pThis + 0xA50) = 0;
+    return pThis;
 }
 
 // FUNCTION: 0x145E40 __dt__12HudInventoryFv

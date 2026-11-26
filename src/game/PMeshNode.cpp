@@ -459,39 +459,49 @@ PMeshNode::~PMeshNode() {
     __dt__6PMNodeFv(this, 0);
 }
 
-// DRAFT: 0x00190F90 __ct__9PMeshNodeFR9PMeshNode
-// note: 51 words differ; original spills this to 0x28/0x2C and keeps other in s0 (ours keeps this in s0, other in s1); spill needs PArray-with-dtor members, header uses char arrays. Not fixed.
-PMeshNode::PMeshNode(PMeshNode &other) {
-    *(void **)this = __vt__9PResource;
-    m_unk04 = 0;
-    *(void **)this = __vt__6PMNode;
-    __ct__6PArrayFv(&m_unk14);
-    sceVu0UnitMatrix(&m_unk40[0][0]);
-    __ct__6PArrayFv(&m_unkD8);
-    ((PMNode *)this)->InitMembers();
-    *(void **)this = __vt__9PMeshNode;
-    __ct__6PArrayFv(&m_unk130);
-    InitMembers();
-    ((PMNode *)this)->CopyMNode(*(PMNode *)&other, true);
-    m_unk104 = other.m_unk104;
-    *(u_long128 *)m_unk110 = *(u_long128 *)other.m_unk110;
-    *(u_long128 *)m_unk120 = *(u_long128 *)other.m_unk120;
+// FUNCTION: 0x00190F90 __ct__9PMeshNodeFR9PMeshNode
+extern "C" PMeshNode *__ct__9PMeshNodeFR9PMeshNode(PMeshNode *volatile pThis, PMeshNode &other)
+{
+    {
+        PMeshNode *pRaw = pThis;
+        PMeshNode *volatile pBase = pRaw;
+        *(void **)pRaw = __vt__9PResource;
+        pBase->m_unk04 = 0;
+        *(void **)pBase = __vt__6PMNode;
+        __ct__6PArrayFv(&pBase->m_unk14);
+        sceVu0UnitMatrix(&pBase->m_unk40[0][0]);
+        __ct__6PArrayFv(&pBase->m_unkD8);
+        ((PMNode *)pBase)->InitMembers();
+    }
+    *(void **)pThis = __vt__9PMeshNode;
+    __ct__6PArrayFv(&pThis->m_unk130);
+    pThis->InitMembers();
+    ((PMNode *)pThis)->CopyMNode(*(PMNode *)&other, true);
+    pThis->m_unk104 = other.m_unk104;
+    *(u_long128 *)pThis->m_unk110 = *(u_long128 *)other.m_unk110;
+    *(u_long128 *)pThis->m_unk120 = *(u_long128 *)other.m_unk120;
+    return pThis;
 }
 
-// DRAFT: 0x00191070 __ct__9PMeshNodeFQ29PResource11eResObjType
-// note: 40 words differ; m2c draft; base-class vtable stores and PResource/PMNode ctor sequence not matched (PArray ctor/member layout as in copy ctor).
-PMeshNode::PMeshNode(PResource::eResObjType eType) {
-    *(void **)this = __vt__9PResource;
-    m_unk04 = 0;
-    *(void **)this = __vt__6PMNode;
-    __ct__6PArrayFv(&m_unk14);
-    sceVu0UnitMatrix(&m_unk40[0][0]);
-    __ct__6PArrayFv(&m_unkD8);
-    ((PMNode *)this)->InitMembers();
-    *(void **)this = __vt__9PMeshNode;
-    __ct__6PArrayFv(&m_unk130);
-    InitMembers();
-    m_unk04 = (int)eType;
+// FUNCTION: 0x00191070 __ct__9PMeshNodeFQ29PResource11eResObjType
+extern "C" PMeshNode *__ct__9PMeshNodeFQ29PResource11eResObjType(PMeshNode *volatile pThis, PResource::eResObjType eType)
+{
+    {
+        PMeshNode *pRaw = pThis;
+        PMeshNode *volatile pBase = pRaw;
+        *(void **)pRaw = __vt__9PResource;
+        pBase->m_unk04 = 0;
+        *(void **)pBase = __vt__6PMNode;
+        __ct__6PArrayFv(&pBase->m_unk14);
+        sceVu0UnitMatrix(&pBase->m_unk40[0][0]);
+        __ct__6PArrayFv(&pBase->m_unkD8);
+        ((PMNode *)pBase)->InitMembers();
+    }
+    *(void **)pThis = __vt__9PMeshNode;
+    __ct__6PArrayFv(&pThis->m_unk130);
+    pThis->InitMembers();
+    pThis->m_unk04 = (int)eType;
+    return pThis;
 }
 
 // FUNCTION: 0x00191120 InitMembers__9PMeshNodeFv

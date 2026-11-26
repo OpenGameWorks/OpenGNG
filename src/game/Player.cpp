@@ -4119,84 +4119,89 @@ extern "C" void *__dt__6PlayerFv(void *pThis, short nFlag) {
 
 #define PL_AT(T, off) (*(T *)((char *)this + (off)))
 
-// DRAFT: 0x00166830 __ct__6PlayerFv
-// note: not yet compiled
-Player::Player() {
-    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 5, 1);
-    *(unsigned char **)this = __vt__6Player;
-    __ct__15PGrimReaperCapeFv((char *)this + 0x390);
-    PL_AT(unsigned char, 0xE8) = 0x13;
-    ((EntityBaseClass *)this)->EnableSleep(false, false);
-    PL_AT(unsigned char, 0x103) = 0x20;
-    PL_AT(unsigned char, 0xEA) = 1;
-    PL_AT(unsigned char, 0x1B6) = 0;
-    PL_AT(unsigned char, 0x1B7) = 0;
-    PL_AT(unsigned char, 0x1B4) = 0;
-    PL_AT(unsigned char, 0x1B5) = 0;
-    PL_AT(int, 0x25C) = 0;
-    PL_AT(int, 0x260) = 0;
-    PL_AT(unsigned char, 0x33A) = 0;
-    PL_AT(int, 0x2A4) = 0;
-    PL_AT(int, 0x284) = 0;
-    PL_AT(int, 0x28C) = 0;
-    PL_AT(int, 0x2A8) = 0;
-    PL_AT(int, 0x2B0) = 0;
-    PL_AT(int, 0x2AC) = 0;
-    PL_AT(int, 0x2B4) = 0;
-    PL_AT(int, 0x2B8) = 0;
-    PL_AT(int, 0x320) = 0;
-    PL_AT(int, 0x308) = 0;
-    PL_AT(int, 0x314) = 0;
-    PL_AT(int, 0x2F8) = 0;
-    PL_AT(int, 0x324) = 0;
-    PL_AT(int, 0x32C) = 0;
-    PL_AT(signed char, 0x339) = -1;
-    PL_AT(int, 0x330) = 0;
-    PL_AT(unsigned char, 0x335) = 0;
-    PL_AT(unsigned char, 0x337) = 0;
-    PL_AT(int, 0x318) = 0;
-    PL_AT(int, 0x31C) = 0;
-    PL_AT(int, 0x288) = 0;
-    PL_AT(int, 0x1CC) = 0;
-    PL_AT(int, 0x2BC) = 0;
-    PL_AT(unsigned char, 0x338) = 0;
-    PL_AT(int, 0x23C4) = 3;
-    m_unk38 = (int *)(new Physics);
-    if (m_unk38 == 0) {
+// FUNCTION: 0x00166830 __ct__6PlayerFv
+extern "C" Player *__ct__6PlayerFv(Player *volatile pThis)
+{
+    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(pThis, 5, 1);
+    *(unsigned char **)pThis = __vt__6Player;
+    __ct__15PGrimReaperCapeFv((char *)pThis + 0x390);
+    (*(unsigned char *)((char *)pThis + (0xE8))) = 0x13;
+    ((EntityBaseClass *)pThis)->EnableSleep(false, false);
+    (*(unsigned char *)((char *)pThis + (0x103))) = 0x20;
+    (*(unsigned char *)((char *)pThis + (0xEA))) = 1;
+    (*(unsigned char *)((char *)pThis + (0x1B6))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x1B7))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x1B4))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x1B5))) = 0;
+    (*(int *)((char *)pThis + (0x25C))) = 0;
+    (*(int *)((char *)pThis + (0x260))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x33A))) = 0;
+    (*(int *)((char *)pThis + (0x2A4))) = 0;
+    (*(int *)((char *)pThis + (0x284))) = 0;
+    (*(int *)((char *)pThis + (0x28C))) = 0;
+    (*(int *)((char *)pThis + (0x2A8))) = 0;
+    (*(int *)((char *)pThis + (0x2B0))) = 0;
+    (*(int *)((char *)pThis + (0x2AC))) = 0;
+    (*(int *)((char *)pThis + (0x2B4))) = 0;
+    (*(int *)((char *)pThis + (0x2B8))) = 0;
+    (*(int *)((char *)pThis + (0x320))) = 0;
+    (*(int *)((char *)pThis + (0x308))) = 0;
+    (*(int *)((char *)pThis + (0x314))) = 0;
+    (*(int *)((char *)pThis + (0x2F8))) = 0;
+    (*(int *)((char *)pThis + (0x324))) = 0;
+    (*(int *)((char *)pThis + (0x32C))) = 0;
+    (*(signed char *)((char *)pThis + (0x339))) = -1;
+    (*(int *)((char *)pThis + (0x330))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x335))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x337))) = 0;
+    (*(int *)((char *)pThis + (0x318))) = 0;
+    (*(int *)((char *)pThis + (0x31C))) = 0;
+    (*(int *)((char *)pThis + (0x288))) = 0;
+    (*(int *)((char *)pThis + (0x1CC))) = 0;
+    (*(int *)((char *)pThis + (0x2BC))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x338))) = 0;
+    (*(int *)((char *)pThis + (0x23C4))) = 3;
+    pThis->m_unk38 = (int *)(new Physics);
+    if (pThis->m_unk38 == 0) {
         CdsAssert__FPciPc("Player.cpp", 0x358, "mpPhysics");
     }
-    ((Physics *)m_unk38)->m_unk118 = 0.2f;
-    ((Physics *)m_unk38)->m_unkEC = 0x8019FF55;
-    m_unkD4 = new Shadow(Shadow::eShadowParticle, 0x8700000B);
-    PL_AT(void *, 0x23CC) = new Shadow(Shadow::eShadowParticle, 0x87000009);
-    PL_AT(void *, 0x23C8) = new Shadow(Shadow::eShadowParticle, 0x87000004);
-    if (m_unkD4 == 0) {
+    ((Physics *)pThis->m_unk38)->m_unk118 = 0.2f;
+    ((Physics *)pThis->m_unk38)->m_unkEC = 0x8019FF55;
+    pThis->m_unkD4 = new Shadow(Shadow::eShadowParticle, 0x8700000B);
+    (*(void * *)((char *)pThis + (0x23CC))) = new Shadow(Shadow::eShadowParticle, 0x87000009);
+    (*(void * *)((char *)pThis + (0x23C8))) = new Shadow(Shadow::eShadowParticle, 0x87000004);
+    if (pThis->m_unkD4 == 0) {
         CdsAssert__FPciPc("Player.cpp", 0x36B, "mpShadow");
     }
-    if (m_unkD4 != 0) {
-        ((Shadow *)m_unkD4)->m_unk0 = 1;
-        if (((Shadow *)m_unkD4)->m_unkC != 0) {
-            *(int *)((char *)((Shadow *)m_unkD4)->m_unkC + 0x18) = 1;
+    {
+        Shadow *pShadow = (Shadow *)pThis->m_unkD4;
+        if (pShadow != 0) {
+            pShadow->m_unk0 = 1;
+            char *pPart = (char *)pShadow->m_unkC;
+            if (pPart != 0) {
+                *(unsigned char *)(pPart + 0x18) = 1;
+            }
         }
     }
-    PL_AT(float, 0x104) = 1.0f;
-    PL_AT(float, 0x108) = 4.0f;
-    PL_AT(float, 0xE4) = 1.0f;
-    m_unk10C |= 0x071A1E01;
-    PL_AT(int, 0x344) = 0;
-    PL_AT(int, 0x360) = 0;
-    PL_AT(int, 0x368) = 0;
-    PL_AT(int, 0x370) = 0;
-    PL_AT(int, 0x378) = 0;
-    LoadPlayerData((PlayerData *)(gMC + 0x234));
-    gInterface.SetPlayerData((PlayerData *)((char *)this + 0x1D0));
-    PL_AT(float, 0x380) = 128.0f;
-    PL_AT(float, 0x384) = 10.0f;
-    PL_AT(int, 0x388) = 0;
-    PL_AT(int, 0x38C) = 0;
-    PL_AT(float, 0x23C0) = -2.5f;
-    ((PGrimReaperCape *)((char *)this + 0x390))->Init();
-    InitAttachableJoints();
+    (*(float *)((char *)pThis + (0x104))) = 1.0f;
+    (*(float *)((char *)pThis + (0x108))) = 4.0f;
+    (*(float *)((char *)pThis + (0xE4))) = 1.0f;
+    pThis->m_unk10C |= 0x071A1E01;
+    (*(int *)((char *)pThis + (0x344))) = 0;
+    (*(int *)((char *)pThis + (0x360))) = 0;
+    (*(int *)((char *)pThis + (0x368))) = 0;
+    (*(int *)((char *)pThis + (0x370))) = 0;
+    (*(int *)((char *)pThis + (0x378))) = 0;
+    pThis->LoadPlayerData((Player::PlayerData *)(gMC + 0x234));
+    gInterface.SetPlayerData((Player::PlayerData *)((char *)pThis + 0x1D0));
+    (*(float *)((char *)pThis + (0x380))) = 128.0f;
+    (*(float *)((char *)pThis + (0x384))) = 10.0f;
+    (*(int *)((char *)pThis + (0x388))) = 0;
+    (*(int *)((char *)pThis + (0x38C))) = 0;
+    (*(float *)((char *)pThis + (0x23C0))) = -2.5f;
+    ((PGrimReaperCape *)((char *)pThis + 0x390))->Init();
+    pThis->InitAttachableJoints();
+    return pThis;
 }
 
 #undef PL_AT
