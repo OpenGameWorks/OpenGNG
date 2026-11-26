@@ -2648,9 +2648,9 @@ void Player::HammerDSlashMove() {
 void Player::HammerSlashMove() {
     static unsigned char HammerSlashMoves[3] = {0x00, 0x00, 0x45};
     int t;
-    int temp_a2;
     int var_a1;
     int var_a1_2;
+    int temp_a2;
 
     switch (m_unk250) {
     case 0:
@@ -2903,20 +2903,19 @@ void Player::AirOverheadMove() {
 }
 
 // DRAFT: 0x0015E350 JumpMove__6PlayerFv
-// note: 66 words (single-case switch on m_unk250) differ. Original branches beqz to the body and b to the tail (ours bnez to tail); guard inversion and explicit goto fold back to bnez. Body loads and index-chain registers also differ (pVel computed after slti in original).
+// note: 32 words differ (single-case switch on m_unk250; idx chain tested in reverse order). Original branches beqz to the body and b to the tail (ours bnez to tail); guard inversion and explicit goto fold back to bnez. Body loads and index-chain registers also differ (pVel computed after slti in original).
 void Player::JumpMove() {
     switch (m_unk250) {
     case 0:
             m_unk250 = 1;
             float *pVel = (float *)((char *)m_unk25C + m_unk268 * 8 + 0x3C);
             int idx = 1;
-            if (m_unk1BC < 0x32) {
-                idx = 0;
-            } else if (m_unk1BC >= 0x4B) {
+            if (m_unk1BC >= 0x64) {
                 idx = 3;
-                if (m_unk1BC < 0x64) {
-                    idx = 2;
-                }
+            } else if (m_unk1BC >= 0x4B) {
+                idx = 2;
+            } else if (m_unk1BC < 0x32) {
+                idx = 0;
             }
             float out[4];
             out[1] = pVel[0];
@@ -3925,7 +3924,7 @@ int Player::GetGroundAction() {
 }
 
 // DRAFT: 0x00162090 SetShockwave__6PlayerFi
-// note: DIFF 60 words; frame and s1/s2/s3 spill order now match; remaining diff is the if-test branch layout (beq/bne to tail, andi hoisted into delay slot) and sll scheduling; tried !=0 mask test, flag split (63), s1*4.
+// note: DIFF 58 words; frame and s1/s2/s3 spill order now match; remaining diff is the if-test branch layout (beq/bne to tail, andi hoisted into delay slot) and sll scheduling; tried !=0 mask test, flag split (63), s1*4.
 void Player::SetShockwave(int arg0) {
     void *proj;
     int s1;
@@ -3936,9 +3935,19 @@ void Player::SetShockwave(int arg0) {
         CdsAssert__FPciPc("Player.cpp", 0xC67, "pPrj");
     }
     m_unk2B0 = *(unsigned int *)((char *)proj + 4);
-    s1 = m_unk1FC;
     unsigned int v1 = m_unk1D0;
-    if (arg0 == 9 || (arg0 == 10 && (v1 & 2))) {
+    s1 = m_unk1FC;
+    if (arg0 == 9) {
+        goto body;
+    }
+    if (arg0 != 10) {
+        goto tail;
+    }
+    if (!(v1 & 2)) {
+        goto tail;
+    }
+body:
+    {
         unsigned int a0 = m_unk250;
         if (v1 & 2) {
             v1 >>= 5;
@@ -3955,7 +3964,9 @@ void Player::SetShockwave(int arg0) {
             }
         }
     }
-    InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(proj, arg0 + (s1 << 2), p80, p90, 0);
+tail:
+    arg0 += (s1 << 2);
+    InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(proj, arg0, p80, p90, 0);
 }
 
 // FUNCTION: 0x00162E50 ForceDie__6PlayerFi
