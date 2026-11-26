@@ -93,7 +93,7 @@ public:
 };
 
 // DRAFT: 0x0014FD40 UpdateHeader__10MemoryCardFUc
-// note: 6 words differ: original keeps loop byte in v1 and i*0x31 in t1 (ours t1/t2), and reloads m_unk22E into a1 in a different order; tried pointer walk (16), nSum before header block (18), cached level (67)
+// note: 6 words differ, all in the loop's byte load: original keeps nVal2 in v1 (lb v1 then slti $at and daddu v1,a2 for the clamp), ours puts it in t2 with v1 as the address temp. Tried: pointer walk (16), nSum before header block (18), cached level (67), nVal2 hoisted out of loop (13), char and raw this+0x2B0 address (6), (signed char) cast (6), nOff-first loop (11), while form (6), i<0x15 test first (25), explicit i/nOff decls (6), continue form (6)
 void MemoryCard::UpdateHeader(unsigned char nVal) {
     if (nVal > m_unk22E) {
         m_unk22E = nVal;
@@ -217,7 +217,7 @@ int MemoryCard::CheckLoadData() {
 }
 
 // DRAFT: 0x00150130 CheckSum__10MemoryCardFPUc
-// note: 10 words differ on default build (matches under mwcps2-3.0-011126, coordinator decision); original has no entry branch and two nops before bnez, ours has a daddu copy of the counter. Tried for, do-while, while(i--), while(i--!=0), mid-body decrement.
+// note: 10 words differ, all from one extra nop before the short loop's bnez (original size 0x44, ours 0x40); matches under 011126 padding. Tried for, do-while, while(i--), while(i--!=0), mid-body decrement.
 int MemoryCard::CheckSum(unsigned char *pBuf) {
     int nSum = 0;
     int i = 0x1C38;
