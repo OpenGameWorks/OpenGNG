@@ -295,7 +295,7 @@ void ClockworkStalker::KillTimers() {
 }
 
 // DRAFT: 0x001E2BE0 LoadCorrectMesh__16ClockworkStalkerFb
-// note: 8 words differ: f20/f21 swapped for fFrameTime/fAlpha (decl order, split init tried, no change); switch case 1 before 3 kept (10->8)
+// note: 8 words differ: f20/f21 swapped for fFrameTime/fAlpha; tried decl order swap, split init, -1.0f/0.0f on the left of the test, store/Find order swap (92), hoisted fAlpha (107), temp for m_unk38 (8, no change)
 void ClockworkStalker::LoadCorrectMesh(bool arg0) {
     if ((m_unk2B0 == 0 || arg0) && (m_unk20 != 9 || m_unk20 != 0x18)) {
         float fFrameTime = -1.0f;
@@ -558,7 +558,7 @@ void ClockworkStalker::OnWakeEvent() {
 }
 
 // DRAFT: 0x001E3510 OnHitEvent__16ClockworkStalkerFP15EntityBaseClassiUiUi
-// note: 7 differing lines: node stays in v0 (original reloads m_unk270 into a0 after the sw, and hoists the state-5 test after the lwc1); the m_unk274 bit cast now matches lwc1; tried m_unk270 for the 3E flag (159 lines), both stores via m_unk270 (158)
+// note: 6 differing words: `<= 1U` spelling of the state range matches the sltiu register; node stays in v0 (original reloads m_unk270 into a0 after the sw); lb vs lbu on the 3E flag and at-register operand remain; tried m_unk270 for the 3E flag (159), both stores via m_unk270 (158), byte temp for the flag (6, no change), bool local (7), |= (7), reversed || (10)
 int ClockworkStalker::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3) {
     int state;
     unsigned int temp;
@@ -590,7 +590,7 @@ int ClockworkStalker::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int a
     m_unk270 = (int)node;
     ((PMNodeView *)m_unk270)->m_unk94 = *(float *)&m_unk274;
     node->m_unk3E = node->m_unk3E | 8;
-    if ((unsigned int)(state - 5) < 2U || state == 7) {
+    if ((unsigned int)(state - 5) <= 1U || state == 7) {
         if (m_unk3C != 0) {
             src = m_unk3C + 0x80;
         } else {
