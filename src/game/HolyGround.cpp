@@ -45,12 +45,11 @@ HolyGround::HolyGround() : EntityBaseClass((LoadClass)5, 0U) {}
 // FUNCTION: 0x001A32C0 __dt__10HolyGroundFv
 HolyGround::~HolyGround() {}
 
-// DRAFT: 0x001A3330 CreateRipplesFx__10HolyGroundFv
-// note: 6 words differ, all in block 2 AutoEmit float constants (ours loads 120.0f via v1 before a0/a1 setup; original uses v0 after). Tried: direct ModifyPosition 85, pGfx local 91, block-scope b array 197.
+// FUNCTION: 0x001A3330 CreateRipplesFx__10HolyGroundFv
 void HolyGround::CreateRipplesFx() {
     PMNode *pNode;
     PParticleRipples *apFx;
-    if (m_unk3C) {
+    if (*(char **)((char *)this + 0x3C)) {
         pNode = ((PMNode *)m_unk3C)->Find(0x7BF9ACB7);
         if (pNode) {
             float a[4] = {1.2f, 1.2f, 1.2f, 1.0f};

@@ -3,20 +3,7 @@
 
 #include "types.h"
 
-// One IOP transaction slot. Id at +0, state at +0x18, value at +0x20.
-class IOP_Tran {
-public:
-    int m_unk0;
-    int m_unk4;
-    int m_unk8;
-    int m_unkC;
-    int m_unk10;
-    int m_unk14;
-    int m_unk18;
-    int m_unk1C;
-    int m_unk20;
-    int m_unk24;
-};
+#include "IOP_Tran.h"
 
 // Size 0xC8 (gIOPTransactionManager, 200 bytes).
 class IOPTransactionManager {

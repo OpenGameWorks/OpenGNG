@@ -14,6 +14,23 @@ const char *LockOnTarget::GetClassName() {
     return "LockOnTarget";
 }
 
+// FUNCTION: 0x001D3AC0 Execute__12LockOnTargetFv
+void LockOnTarget::Execute() {
+    switch (m_unk20) {
+    case -1:
+        EnableSleep(false, false);
+        ((char *)this)[0x179] = 0;
+        m_unk163 = 1;
+        SetState(0);
+        /* fallthrough */
+    case 0:
+        if (m_unk1B0 != 0) {
+            m_unk190 = *(u_long128 *)((char *)m_unk1B0 + 0x70);
+        }
+        return;
+    }
+}
+
 // FUNCTION: 0x001D3B40 __ct__12LockOnTargetFv
 LockOnTarget::LockOnTarget() : EntityBaseClass((LoadClass)3, 1) {
     m_unk1B0 = 0;

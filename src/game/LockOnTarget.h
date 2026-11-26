@@ -12,8 +12,9 @@ public:
     const char *GetClassName();
     void Execute();
 
-    char _pad190[0x20];
-    int m_unk1B0;               // 0x1B0 cleared by the ctor
+    u_long128 m_unk190;         // 0x190 copy of the 0x70 quadword of m_unk1B0
+    char _pad1A0[0x10];
+    void *m_unk1B0;             // 0x1B0 cleared by the ctor, points at a 0x80-byte block
 };
 
 #endif
