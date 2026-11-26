@@ -152,17 +152,21 @@ public:
 #define CDS_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert("PCutScenePlayer.cpp", line, msg))
 
 // DRAFT: 0x001BBBA0 KillActorFx__15PCutScenePlayerFv
-// note: 33 differing lines; the diff starts at the prologue loop guard (original uses sltu $at,$zero,$s0 with a branch over the loop, ours tests the count directly) and the saved s1 register differs.
+// note: 25 differing words; original guard `if (n != 0)` matches, but the do-while body makes the compiler keep a strength-reduced pointer in s2, pushing `this` to s3 and the frame to 0x50. Tried: for-loop forms (40-43), statement-guard item (41), pointer-local (43), int cast of storage (25).
 void PCutScenePlayer::KillActorFx() {
     unsigned int n = m_unkB0;
-    for (unsigned int i = 0; i < n; i++) {
-        void *pItem = (i < m_unkB0) ? m_unkB8[i] : 0;
-        if (pItem != 0) {
-            PMNode *pNode = *(PMNode **)((char *)pItem + 0x30);
-            if (pNode != 0) {
-                pNode->ProcessFxTriggers(-1.0f, 0, true, false);
+    unsigned int i = 0;
+    if (n != 0) {
+        do {
+            void *pItem = (i < m_unkB0) ? m_unkB8[i] : 0;
+            if (pItem != 0) {
+                PMNode *pNode = *(PMNode **)((char *)pItem + 0x30);
+                if (pNode != 0) {
+                    pNode->ProcessFxTriggers(-1.0f, 0, true, false);
+                }
             }
-        }
+            i++;
+        } while (i < n);
     }
 }
 
@@ -228,7 +232,7 @@ void PCutScenePlayer::GetViewMatrix(PMat4 *pMat) {
 }
 
 // DRAFT: 0x001BBEE0 LoadBgAnims__15PCutScenePlayerFP8PPakFileUi
-// note: 37 differing words; ours lacks the join nop after the __ct result move (original 0x1BBF8C), so every later word shifts by one. Vtable call uses $v0 where original uses $t9. Tried: function-scope pObj, temp for __ct result, ternary (49), else-form guard (37), typed fn-pointer for release call (37).
+// note: 25 differing words; ours lacks the join nop after the __ct result move (original 0x1BBF8C), so every later word shifts by one. Vtable release call uses $v0 where original uses $t9. Tried: function-scope pObj, temp for __ct result, ternary (49), else-form guard (37), typed fn-pointer release (25), direct `(void (*)(...))(*(void ***)pObj)[2](pObj,1)` release (25), `(*(void (***)(...))pObj)[2](pObj,1)` (25), `if (pObj != 0) pObj = __ct(pObj)` guard (25).
 bool PCutScenePlayer::LoadBgAnims(PPakFile *pFile, unsigned int nFlag) {
     if (pFile == 0) {
         CdsAssert("PCutScenePlayer.cpp", 0x3C9, "poFile");

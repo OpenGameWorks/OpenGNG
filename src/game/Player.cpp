@@ -2456,28 +2456,32 @@ void Player::Spin360Move() {
     static unsigned short Spin720Attack[8] = {0x10, 0x08, 0x1E, 0x08, 0xFFFF, 0, 0, 0};
     static unsigned int SpinEffect[9] = {0x8100020C, 0x82000367, 0x81000201, 0x820003B1, 0x81000337, 0x8200057F, 0, 0, 0x8100006B};
     unsigned short *attack;
-    if (m_unk250 == 2) {
-        attack = Spin720Attack;
-    } else if (m_unk250 == 1) {
-        attack = Spin360Attack;
-    } else if (m_unk250 == 0) {
+    switch (m_unk250) {
+    case 0: {
         SpinEffectEntry *eff = 0;
+        int fx = m_unk1FC;
         if (m_unk260 == 0x33) {
             m_unk250 = 1;
-            if (m_unk1FC != 0) {
+            if (fx != 0) {
                 eff = (SpinEffectEntry *)&SpinEffect[4];
             }
         } else {
             m_unk250 = 2;
-            eff = (SpinEffectEntry *)&SpinEffect[(m_unk1FC != 0) ? 2 : 0];
-            if (m_unk1FC != 0) {
+            eff = ((SpinEffectEntry *)SpinEffect) + ((fx != 0) ? 1 : 0);
+            if (fx != 0) {
                 ((EntityBaseClass *)this)->PlaySound(0xAD);
             }
         }
         if (eff != 0) {
             m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(eff->a, eff->b, 0, 0, (EntityBaseClass *)this, 1.0f, true, 0, false);
         }
+    }
+    case 1:
         attack = Spin360Attack;
+        break;
+    case 2:
+        attack = Spin720Attack;
+        break;
     }
     MultipleAttack(attack);
 }
@@ -3988,9 +3992,9 @@ void Player::OnTriggerCheck() {
         animId = pTarget->m_unk24->m_unk4;
     }
     switch (animId) {
-    case 0x1FF:
-    case 0x200:
     case 0x202:
+    case 0x200:
+    case 0x1FF:
         break;
     default:
         return;
