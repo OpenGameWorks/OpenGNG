@@ -1,3 +1,4 @@
+// FLAGS: -str readonly
 #include "ClockworkReaperSpear.h"
 #include "types.h"
 
@@ -118,24 +119,25 @@ void ClockworkReaperSpear::OnTimerEvent(unsigned int) {
     SetState__15EntityBaseClassFi(this, -2);
 }
 
-// DRAFT: 0x001F08A0 OnTouchEvent__20ClockworkReaperSpearFP15EntityBaseClass
-// note: 36 words differ in block placement; the original tests 0x48 first with an out-of-line block, ours inverts the type-3 test and the 0x24 beqz target differs.
+// FUNCTION: 0x001F08A0 OnTouchEvent__20ClockworkReaperSpearFP15EntityBaseClass
 void ClockworkReaperSpear::OnTouchEvent(EntityBaseClass *arg0) {
     m_unk10C &= 0xF8FFFFFF;
     if (arg0 != 0) {
         u_long128 *pSrc = (m_unk3C != 0) ? (u_long128 *)((char *)m_unk3C + 0x80) : (u_long128 *)((char *)this + 0x190);
         mHitPos__15EntityBaseClass = *pSrc;
         int nType = *(int *)((char *)arg0 + 8);
-        if (nType != 0x48) {
-            if (nType == 3) {
-                void *pPlayer = mPlayerAPI__13EntityManager;
-                if (pPlayer == 0) {
-                    CdsAssert__FPciPc("ClockworkReaperSpear.cpp", 0xE7, "pPlayer");
-                }
-                ((EntityBaseVirtuals *)pPlayer)->OnHitEvent((EntityBaseClass *)this, 0x32, 0x1001, 0);
+        switch (nType) {
+        case 3: {
+            void *pPlayer = mPlayerAPI__13EntityManager;
+            if (pPlayer == 0) {
+                CdsAssert__FPciPc("ClockworkReaperSpear.cpp", 0xE7, "pPlayer");
             }
-        } else {
+            ((EntityBaseVirtuals *)pPlayer)->OnHitEvent((EntityBaseClass *)this, 0x32, 0x1001, 0);
+            break;
+        }
+        case 0x48:
             ((EntityBaseVirtuals *)arg0)->OnHitEvent((EntityBaseClass *)this, 0x32, 0, 0);
+            break;
         }
     }
 }

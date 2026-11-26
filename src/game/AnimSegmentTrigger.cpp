@@ -86,24 +86,28 @@ void AnimSegmentTrigger::SetEditableVars(char *pSrc) {
     memcpy((char *)this + 0x1B0, pSrc, 0x68);
 }
 
-// DRAFT: 0x0020F160 OnHitEvent__18AnimSegmentTriggerFP15EntityBaseClassiUiUi
-// note: 41 words differ, frame layout and pOther register; tried single-exit returns (43), no nResult local (43), nMasked local (41), inline mask (41, kept).
+// FUNCTION: 0x0020F160 OnHitEvent__18AnimSegmentTriggerFP15EntityBaseClassiUiUi
 int AnimSegmentTrigger::OnHitEvent(EntityBaseClass *pOther, int nArg1, unsigned int nFlags, unsigned int nArg3)
 {
     int nResult;
 
     nResult = 0;
     if (*(int *)((char *)pOther + 0x10C) & 1) {
-        if (m_unk1E8 == 1) {
-            if ((nFlags & ~0x100) == 0x42 || (nFlags & ~0x100) == 0x41) {
+        switch (m_unk1E8) {
+        case 1:
+            switch (nFlags & ~0x100) {
+            case 0x41:
+            case 0x42:
                 PlaySound__15EntityBaseClassFUi(this, 0x84);
                 m_unk22A = 1;
-                nResult = 1;
                 if (m_unk210 != 0) {
                     m_unk10C &= 0xFDFFFFFF;
                     WriteApparitionData__15EntityBaseClassFicUi(this, 2, 1, 0);
                 }
+                nResult = 1;
+                break;
             }
+            break;
         }
     }
     return nResult;

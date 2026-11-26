@@ -49,9 +49,25 @@ void CamCylinder::SetEditableVars(char *pSrc) {
 }
 
 // DRAFT: 0x001A3B20 Execute__11CamCylinderFv
-// note: 58 words differ; original has a CdsAssert reloc at 0x00b8 that ours lacks, the CamCollideCylinder call sequence differs, and SetState(0) placement on the -1 path is unverified.
+// note: 10 words differ (was 58): the switch shape and the unsigned m_unk3C[0x3E] byte through a local pointer now match. Left: the vPos setup. The original loads the four floats into f3..f0 before forming &vPos in a1, then stores through a1; ours stores each one in turn. Brace init of vPos gave 32 words; float locals loaded first gave 10 (no change).
 void CamCylinder::Execute() {
-    if (m_unk20 == 0) {
+    switch (m_unk20) {
+    case -1:
+        m_unk1D0 = m_unk1B0;
+        m_unk1D4 = m_unk1B4;
+        m_unk1D8 = m_unk1B8;
+        m_unk1E0 = m_unk1BC;
+        m_unk1E4 = m_unk1C0;
+        char *pBox = m_unk3C;
+        if (pBox != 0) {
+            *(u_long128 *)(pBox + 0x80) = *(u_long128 *)&m_unk1D0;
+            ((unsigned char *)pBox)[0x3E] |= 8;
+        } else {
+            *(u_long128 *)_pad190 = *(u_long128 *)&m_unk1D0;
+        }
+        SetState(0);
+        break;
+    case 0: {
         Camera *pCam = (Camera *)(gEng + 0x19760);
         CDS_ASSERT(0x27, pCam);
         PVec3 vPos;
@@ -60,19 +76,8 @@ void CamCylinder::Execute() {
         vPos.m_v[2] = m_unk1D8;
         vPos.m_v[3] = m_unk1DC;
         pCam->CamCollideCylinder(vPos, m_unk1E0, m_unk1E4);
-    } else if (m_unk20 == -1) {
-        m_unk1D0 = m_unk1B0;
-        m_unk1D4 = m_unk1B4;
-        m_unk1D8 = m_unk1B8;
-        m_unk1E0 = m_unk1BC;
-        m_unk1E4 = m_unk1C0;
-        if (m_unk3C != 0) {
-            *(u_long128 *)(m_unk3C + 0x80) = *(u_long128 *)&m_unk1D0;
-            m_unk3C[0x3E] |= 8;
-        } else {
-            *(u_long128 *)_pad190 = *(u_long128 *)&m_unk1D0;
-        }
-        SetState(0);
+        break;
+    }
     }
 }
 

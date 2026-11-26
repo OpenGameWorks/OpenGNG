@@ -44,24 +44,20 @@ void MovingFog::SetEditableVars(char *pSrc) {
 }
 
 // DRAFT: 0x001D68F0 Execute__9MovingFogFv
-// note: frame 0x70 vs 0x90 (vMin/vMax temps folded, no lq copies), branch layout and gGfxEng reloc differ; tried local order (vMin,vMax,p and p,vMax,vMin).
+// note: 54 words differ (was 65). The switch now tests -2/0 before -1 and writes vMin/vMax straight into p; frame 0x70 vs 0x90. Original builds vMin/vMax as frame locals at 0x20/0x30 and copies them to p with lq/sq; that form (with -2/0/-1 order) gave 65. Reordering cases alone gave 66. Left: the -1 arm's load/store order and the gGfxEng addend (lui 0x15/addiu 0x4F00 vs lui 0x46/addiu -0x4A80).
 void MovingFog::Execute() {
     MovingFogParams p;
-    MovingFogVec4 vMax;
-    MovingFogVec4 vMin;
 
     switch (m_unk20) {
     case -1:
-        vMin.x = *(float *)(m_unk1B0 + 0x00) - *(float *)(m_unk1B0 + 0x10);
-        vMin.y = *(float *)(m_unk1B0 + 0x04) - *(float *)(m_unk1B0 + 0x14);
-        vMin.z = *(float *)(m_unk1B0 + 0x08) - *(float *)(m_unk1B0 + 0x18);
-        vMax.x = *(float *)(m_unk1B0 + 0x00) + *(float *)(m_unk1B0 + 0x10);
-        vMax.y = *(float *)(m_unk1B0 + 0x04) + *(float *)(m_unk1B0 + 0x14);
-        vMax.z = *(float *)(m_unk1B0 + 0x08) + *(float *)(m_unk1B0 + 0x18);
-        p.vMin = vMin;
+        p.vMin.x = *(float *)(m_unk1B0 + 0x00) - *(float *)(m_unk1B0 + 0x10);
+        p.vMin.y = *(float *)(m_unk1B0 + 0x04) - *(float *)(m_unk1B0 + 0x14);
+        p.vMin.z = *(float *)(m_unk1B0 + 0x08) - *(float *)(m_unk1B0 + 0x18);
+        p.vMax.x = *(float *)(m_unk1B0 + 0x00) + *(float *)(m_unk1B0 + 0x10);
+        p.vMax.y = *(float *)(m_unk1B0 + 0x04) + *(float *)(m_unk1B0 + 0x14);
+        p.vMax.z = *(float *)(m_unk1B0 + 0x08) + *(float *)(m_unk1B0 + 0x18);
         p.nOne0 = 0x3F800000;
         p.nOne1 = 0x3F800000;
-        p.vMax = vMax;
         p.nZero0 = 0;
         p.nZero1 = 0;
         p.fEdit[0] = *(float *)(m_unk1B0 + 0x30);

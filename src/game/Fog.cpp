@@ -163,17 +163,20 @@ void Fog::SetEditableVars(char *pSrc) {
     m_unk21C->SetClutFogTable((GsRGBA *)tbl);
 }
 
-// DRAFT: 0x001CFC20 Execute__3FogFv
-// note: 25 words differ; the -2 body loads 0x21C and literals in a different order, and the prologue schedules addiu v1,-2 differently. Tried switch orders (-1,-2,0 / -2,0,-1 / 0,-1,-2) and if/else-if orders; the if-chain (-2,0,-1) gives the fewest differing words.
+// FUNCTION: 0x001CFC20 Execute__3FogFv
 void Fog::Execute() {
-    if (m_unk20 == -2) {
+    switch (m_unk20) {
+    case -1:
+        SetState(0);
+        break;
+    case 0:
+        break;
+    case -2:
         if (m_unk21C == 0) {
             CdsAssert__FPciPc("Fog.cpp", 0x25, "m_FogObj");
         }
         m_unk21C->m_unk17A9 = 0;
-    } else if (m_unk20 == 0) {
-    } else if (m_unk20 == -1) {
-        SetState(0);
+        break;
     }
 }
 
