@@ -57,6 +57,8 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 - Calls to `fptodp`, `_dpfgt`, `_dpfge` and other soft-double helpers are compiler output for `double` arithmetic: a float passed to `printf` is promoted by itself, and a 64-bit literal built in `a1` before `_dpfgt` is a double constant (`if (1.0f - dot > 1e-6)` in `MathAPI::QuatSlerp`). Explicit helper calls schedule the literal differently.
 - A two-way return whose taken arm is `b` over a `nop` delay slot to `ld ra`, where `if/else` fills the slot with `ld ra`, is a one-case `switch (x) { case 1: return ...; } return 1;` (`TriggerSystem::ConditionCheck`).
 - `slti $at, x, N` then `bnez $at` is `x > N-1`; `x >= N` compiles to `slti` into an ordinary register (`TriggerSystem::ResetTrigger`).
+- A byte flag tested as `sltu v1,$zero,x; xori v1,1; beqz v1` in a branchy body is `if ((x != 0) ^ 1)`; `!x` compiles to `bnez` (`ZinShellExplosion::Execute`).
+- `GetClassName` returns the original literal, which can differ from the class name ("Zin Shell Explosion"); read it with `disasm.literal(ADDR)`.
 - A switch whose tests run -2, 0, -1 but whose bodies are laid out -1 then -2 is `switch (x) { case -1: ...; case 0: break; case -2: ...; }`. An out-of-line zero arm in a clamp is `if (lim > 0.0f) {...} else { v = 0.0f; }`.
 
 ## Finishing
