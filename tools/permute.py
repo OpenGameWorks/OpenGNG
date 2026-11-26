@@ -205,9 +205,9 @@ def mutate(body: str, rng: random.Random) -> str:
     return "\n".join(lines)
 
 
-def score(src_text: str, body: tuple[int, int], new_body: str, path: Path, addr: int) -> int | None:
+def score(src_text: str, body: tuple[int, int], new_body: str, path: Path, addr: int, real: Path) -> int | None:
     path.write_text(src_text[:body[0]] + new_body + src_text[body[1]:])
-    p = subprocess.run([sys.executable, str(ROOT / "tools/fncmp.py"), "-q", str(path), f"0x{addr:X}"],
+    p = subprocess.run([sys.executable, str(ROOT / "tools/fncmp.py"), "-q", "--as", str(real), str(path), f"0x{addr:X}"],
                        stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=300)
     m = DIFF.search(p.stdout.strip().splitlines()[-1] if p.stdout.strip() else "")
     if not m:
@@ -245,7 +245,7 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     rng = random.Random(a.seed)
     cur = best = text[span[0]:span[1]]
-    base = score(text, span, cur, out / f"{a.src.stem}_0.cpp", a.addr)
+    base = score(text, span, cur, out / f"{a.src.stem}_0.cpp", a.addr, a.src)
     if base is None:
         print("base does not compile")
         return 2
@@ -265,7 +265,7 @@ def main() -> int:
             if not cands:
                 continue
             paths = [out / f"{a.src.stem}_{k % (a.j * 2) + 1}.cpp" for k in range(len(cands))]
-            scores = list(pool.map(lambda cp: score(text, span, cp[0], cp[1], a.addr), zip(cands, paths)))
+            scores = list(pool.map(lambda cp: score(text, span, cp[0], cp[1], a.addr, a.src), zip(cands, paths)))
             n += len(cands)
             for c, s in sorted(((c, s) for c, s in zip(cands, scores) if s is not None), key=lambda x: x[1]):
                 if s <= cur_s:

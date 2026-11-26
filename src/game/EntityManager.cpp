@@ -786,12 +786,12 @@ int CompareDistToCam(void *pA, void *pB) {
 }
 
 // DRAFT: 0x00146E70 PutApparitionsToSleep__13EntityManagerFv
-// note: 45 lines differ; prologue and entry addressing match, loop shape differs (original enters at a bottom test via b with s0=0 in the delay slot, has a beqz $at guard at the head, and loads m_unk5078 at the test). Tried while form, swapped counter/offset declarations (worse), for form (45, kept).
+// note: 2 lines differ (daddu s1,s0 init-order swap); ternary guard in the loop head matches. Tried while form (7), int/unsigned variants (2), separate i/off init (7).
 void EntityManager::PutApparitionsToSleep() {
     if (m_unk5D48 == 0) {
         unsigned int off = 0;
         for (unsigned int i = 0; i < m_unk5078; i++) {
-            EntityBaseClass *pEntity = *(EntityBaseClass **)((char *)m_unk5080 + off);
+            EntityBaseClass *pEntity = (i < m_unk5078) ? *(EntityBaseClass **)((char *)m_unk5080 + off) : 0;
             if (pEntity == 0) {
                 CdsAssert("EntityManager.cpp", 0x721, "pEntity");
             }
@@ -1183,12 +1183,13 @@ struct EifEntry {
 };
 
 // DRAFT: 0x00147BC0 SetEifPosition__13EntityManagerFUiUiPA4_f
-// note: 35 diffs; original keeps count+1 in a1 and the entry offset in v1, ours swaps them and stores count+1 early (not in the delay slot). Tried store placement, pointer-indexed entry, direct member test (slti, 36).
+// note: 35 diffs; original keeps count+1 in a1 and the entry offset in v1, ours swaps them and stores count+1 early (not in the delay slot). Tried store placement, pointer-indexed entry, direct member test (36), ternary assert, if/else (about 12 variants).
 void EntityManager::SetEifPosition(unsigned int arg0, unsigned int arg1, float (*arg2)[4]) {
     unsigned int count = m_unk5D4C;
     if (count < 0x20) {
+        unsigned int next = count + 1;
         EifEntry *entry = (EifEntry *)((char *)this + 0x5D50 + count * 0x10);
-        m_unk5D4C = count + 1;
+        m_unk5D4C = next;
         if (arg0 >= 0x10000) {
             CdsAssert("EntityManager.cpp", 0x44E, "iInstance < 0x10000");
         }
@@ -1696,7 +1697,7 @@ int EntityManager::Render(PLightManager *arg0) {
 }
 
 // DRAFT: 0x00148F40 LoadResource__13EntityManagerFPcb
-// note: 45 words, frame 0x130 vs 0x120 (saves s1 for arg0, buffer at sp+0x30); original saves arg0 in s0 and never spills this, a0 reaches AdjustPickupBox unreloaded; local name pointer variant also 45.
+// note: 45 words, frame 0x130 vs 0x120 (saves s1 for arg0, buffer at sp+0x30); original saves arg0 in s0 and never spills this, a0 reaches AdjustPickupBox unreloaded. Tried local name pointer, inline-cast and block-scoped variants (all 45).
 void EntityManager::LoadResource(char *arg0, bool arg1) {
     char buf[0x100];
 

@@ -2049,8 +2049,8 @@ public:
     char _pad38[0x210 - 0x38];
 };
 
-// note: 16 words differ: tail lw s0 missing from the jal delay slot (nop plus extra load); 0.5f lui and m_unk28C load order swapped at CreateOneshot args. Tried switch dispatch (fixed), pm local, float temp tail, Physics local tail.
-// DRAFT: 0x0015C540 GuardMove__6PlayerFv
+// FUNCTION: 0x0015C540 GuardMove__6PlayerFv
+// note: mwccps2 schedules this function by heap layout; it matches only with the file's current bytes
 void Player::GuardMove() {
     if (!(m_unk1B0 & 0x200)) {
         EndAction();
@@ -2075,7 +2075,8 @@ void Player::GuardMove() {
             case 2:
                 if (m_unk2AC == 0 && (short)((PMNode *)m_unk3C)->m_unk34 >= ((unsigned char *)m_unk254)[4]) {
                     ShieldPowerup *e = &ShieldPowerupTable[m - 1];
-                    m_unk2AC = mEffectAPI__13EntityManager.CreateOneshot(e->a, e->b, (PMat4 *)((char *)m_unk28C + 0x40), (EntityBaseClass *)this, 0.5f, 0, false);
+                    float fHalf = 0.5f;
+                    m_unk2AC = mEffectAPI__13EntityManager.CreateOneshot(e->a, e->b, (PMat4 *)((char *)m_unk28C + 0x40), (EntityBaseClass *)this, fHalf, 0, false);
                     if (m_unk2AC == 0) {
                         CdsAssert__FPciPc("Player.cpp", 0x1925, "mMidas");
                     }
@@ -2110,7 +2111,8 @@ void Player::GuardMove() {
             }
         }
     }
-    ((Physics *)m_unk38)->m_unk11C = Round180__Ff(m_unk1C4);
+    Physics *pPhys = (Physics *)m_unk38;
+    pPhys->m_unk11C = Round180__Ff(m_unk1C4);
 }
 
 // FUNCTION: 0x0015C8A0 MBlow2Move__6PlayerFv

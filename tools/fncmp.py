@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Compile a source and compare one function against SLUS_207.22.
 
-Usage: fncmp.py [-q] [--obj OBJ] SOURCE NAME|0xADDR
+Usage: fncmp.py [-q] [--obj OBJ] [--as REAL] SOURCE NAME|0xADDR
+--as names the source file SOURCE stands in for (a permuter candidate, a scratch
+copy): mwccps2 codegen depends on the source and object path lengths, so SOURCE
+is compiled from a path as long as REAL into an object path as long as ninja's
+build/obj/REAL.o.
 Exit 0 = MATCH: every instruction word is identical outside relocated fields,
 and every relocation in the compiled function names the same symbol that the
 original executable's `.relmain` names at that offset, with the same in-place
@@ -67,13 +71,43 @@ def original_offset(a: int, want: int, ofull, symaddr) -> int | None:
     return None
 
 
-def compile_source(src: Path, out: Path) -> None:
-    out.parent.mkdir(parents=True, exist_ok=True)
-    cmd = [sys.executable, str(ROOT / "tools/mwcc.py"), *srcmeta.compile_args(src), "-c", "-o", str(out), str(src)]
-    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+SCRATCH = "build/q/"
+
+
+def scratch_path(length: int, suffix: str) -> str:
+    """A per-process path relative to ROOT, padded to exactly `length` characters."""
+    tag = f"{SCRATCH}{os.getpid():x}"
+    pad = length - len(tag) - len(suffix)
+    if pad < 0:
+        raise SystemExit(f"fncmp: no {length}-character scratch path fits {tag}{suffix}")
+    return tag + "_" * pad + suffix
+
+
+def compile_as(src: Path, real: Path) -> Path:
+    """Compile src exactly as ninja compiles real (a path relative to ROOT); return the object.
+
+    mwccps2 codegen depends on the lengths of the source and -o path strings
+    (GuardMove__6PlayerFv schedules differently with a shorter path), so the compile
+    mirrors the ninja command: cwd ROOT, the source path and an object path of the
+    same lengths as `real` and `build/obj/<real>.o`."""
+    if src.resolve() == (ROOT / real).resolve():
+        cpp = str(real)
+    else:
+        cpp = scratch_path(len(str(real)), real.suffix)
+        (ROOT / cpp).parent.mkdir(parents=True, exist_ok=True)
+        (ROOT / cpp).write_bytes(src.read_bytes())
+    out = scratch_path(len(str(Path("build/obj") / real.with_suffix(".o"))), ".o")
+    (ROOT / out).parent.mkdir(parents=True, exist_ok=True)
+    cmd = [sys.executable, str(ROOT / "tools/mwcc.py"), *srcmeta.compile_args(src), "-c", "-o", out, cpp]
+    try:
+        p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=ROOT)
+    finally:
+        if cpp != str(real):
+            (ROOT / cpp).unlink(missing_ok=True)
     if p.returncode:
         sys.stdout.write(p.stdout.decode(errors="replace"))
         raise SystemExit(2)
+    return ROOT / out
 
 
 def object_function(obj: Path, name: str):
@@ -128,11 +162,10 @@ def local_data_diffs(obj: Path, name: str, addr: int) -> dict[int, str]:
     return out
 
 
-def compare(src: Path, key: str, obj: Path | None, quiet: bool) -> int:
+def compare(src: Path, key: str, obj: Path | None, quiet: bool, real: Path | None = None) -> int:
     addr, size, name = disasm.lookup(key)
     if obj is None:
-        obj = ROOT / "build/fncmp" / f"{os.getpid()}_{src.stem}.o"
-        compile_source(src, obj)
+        obj = compile_as(src, (real or src).resolve().relative_to(ROOT))
         temp = True
     else:
         temp = False
@@ -218,7 +251,12 @@ def main() -> int:
         i = args.index("--obj")
         obj = Path(args[i + 1])
         del args[i:i + 2]
-    return compare(Path(args[0]), args[1], obj, quiet)
+    real = None
+    if "--as" in args:
+        i = args.index("--as")
+        real = Path(args[i + 1])
+        del args[i:i + 2]
+    return compare(Path(args[0]), args[1], obj, quiet, real)
 
 
 if __name__ == "__main__":

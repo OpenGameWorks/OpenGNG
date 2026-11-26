@@ -831,14 +831,15 @@ void PGfxEngine::SetDirLight(int nIndex, float *pDir, float *pScale) {
 }
 
 // DRAFT: 0x185EE0 SetDirLightColor__10PGfxEngineFifff
-// note: original has 0x80 bytes with this+idx*16 computed before the member constant (folded into store displacements, 128.0f reloaded per store); ours folds the constant first. Tried: swapped range test, local pointer (best, 29 words), pointer+index, operand swap, index-first pointer math.
+// note: 25 words differ (was 29). Per-field (int)this+K+nOff stores with a shared nOff and a float fK = 128.0f local; the remaining diffs are register naming and where sll and the constant lui are placed. Tried: swapped range test, local pointer, pointer+index, operand swap, index-first pointer math.
 void PGfxEngine::SetDirLightColor(int nIndex, float fR, float fG, float fB) {
     if (nIndex < 4 && nIndex >= 0) {
-        tagDirLightColor *pLight = &m_unk158E70[nIndex];
-        pLight->m_fR = 128.0f * fR;
-        pLight->m_fG = 128.0f * fG;
-        pLight->m_fB = 128.0f * fB;
-        pLight->m_nW = 0;
+        int nOff = nIndex * 16;
+        float fK = 128.0f;
+        *(float *)((int)&m_unk158E70[0] + nOff) = fK * fR;
+        *(float *)((int)this + 0x158E74 + nOff) = fK * fG;
+        *(float *)((int)this + 0x158E78 + nOff) = fK * fB;
+        *(int *)((int)this + 0x158E7C + nOff) = 0;
     }
 }
 
