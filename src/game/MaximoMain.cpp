@@ -2116,7 +2116,7 @@ extern "C" void *__dt__9PResourceFv(void *pThis, short nFlag) {
 }
 
 // DRAFT: 0x0013CBD0 GetMapScreenPath__10MaximoMainFP6PMNodeiR6PArrayb
-// note: 16 words differ, all the s1/s2 swap (original PArray in s2, bool in s1); a bool local copy, reordered locals, and a PArray pointer local all leave 16.
+// note: 16 words differ, all the s1/s2 swap (original PArray in s2, bool in s1); a bool local copy, reordered locals, and a PArray pointer local all leave 16. pRec addend kept separate so lw stays at offset 0.
 void MaximoMain::GetMapScreenPath(PMNode *arg0, int arg1, PArray &arg2, bool arg3) {
     unsigned int i;
     int idx;
@@ -2124,7 +2124,8 @@ void MaximoMain::GetMapScreenPath(PMNode *arg0, int arg1, PArray &arg2, bool arg
     PMChildList *list;
     PMNode *child;
 
-    node = arg0->Find(*(unsigned int *)(LevelTable + (arg1 << 7)));
+    char *pRec = (char *)(LevelTable + 0x78);
+    node = arg0->Find(*(unsigned int *)(pRec + (arg1 << 7)));
     if (node != 0) {
         list = &node->m_unk14;
         Allocate__6PArrayFUi(&arg2, list->count);
@@ -2462,7 +2463,7 @@ void MaximoMain::InitCutScene() {
 }
 
 // DRAFT: 0x0013DB50 StartCutScene__10MaximoMainFi
-// note: index math matches (addiu base, scaled adds); still differs in camera arg (gEng+0x19760 folded into one lui/addiu), so v0/a0 register order and the 0x30 branch shift; 6 variants tried (base ptr, slot array, member array, int addr, split base, operand order); 24 differing lines.
+// note: 24 differing lines. Index chain operand order differs (original base in v0, product in v1). Camera arg: original builds the 0x19760 constant first (lui v0,1; ori v1,v0,0x9760) then gEng's address (lui 0x2D; addiu -0x590), addu a0,v0,v1; ours folds gEng+0x19760. The bare test `if (f())` drops the andi (needed to match) but gives 28-31 words; `(unsigned int)gEng + 0x19760` gives 28 bare, 33 with `!= 0`; single-exit ret-local form 41-42. Tried: index variants (base ptr, int addr, operand order), camera spellings, both truth tests, single-exit form.
 int MaximoMain::StartCutScene(int arg0) {
     int ok;
     DisplayLevelName__9InterfaceFii(gInterface, -1, 0xF0);

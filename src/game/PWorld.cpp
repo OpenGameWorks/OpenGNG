@@ -239,7 +239,7 @@ void PWorld::InitFrustrum(PMat4 *pMat, float (*pVec)[4]) {
 }
 
 // DRAFT: 0x19A7B0 LoadMeshNodeHierarchy__6PWorldFP8PPakFileP6PArray16ePsx2FileVersion
-// note: frame, saved regs and ctor chain match; pRaw spill goes to 0x5C not 0x54, delay-slot move order differs (DIFF 99). Tried: nTop/apMeshNode decl order, separate pMesh local, nTop=1 dead store.
+// note: 7 words: PMNode vtable lui hoisted above the pMeshV/pNodeV spills in the original. Tried: store via apMeshNode, unsigned char locals, flat volatile decls.
 PMeshNode *PWorld::LoadMeshNodeHierarchy(PPakFile *pFile, PArray *pArr, ePsx2FileVersion nVersion) {
     int nTop;
     PMeshNode *apMeshNode;
@@ -250,21 +250,23 @@ PMeshNode *PWorld::LoadMeshNodeHierarchy(PPakFile *pFile, PArray *pArr, ePsx2Fil
     (void)((pFile != 0) ? (void)0 : CdsAssert__FPciPc("PWorld.cpp", 0x390, (char *)"poFile"));
     (void)((pArr != 0) ? (void)0 : CdsAssert__FPciPc("PWorld.cpp", 0x391, (char *)"poTextureHandles"));
     nTop = 1;
-    pRaw = (char *)__nw__FUi(0x140);
-    apMeshNode = (PMeshNode *)pRaw;
-    if (pRaw != 0) {
-        pNode = pRaw;
-        *(char **)pRaw = __vt__9PResource + 0x970;
-        *(int *)(pNode + 4) = 0;
-        *(char **)pNode = __vt__6PMNode + 0xE00;
-        __ct__6PArrayFv(pNode + 0x14);
-        sceVu0UnitMatrix((float (*)[4])(pNode + 0x40));
-        __ct__6PArrayFv(pNode + 0xD8);
-        InitMembers__6PMNodeFv(pNode);
-        pMesh = pRaw;
-        *(char **)pMesh = __vt__9PMeshNode + 0xDC0;
-        __ct__6PArrayFv(pMesh + 0x130);
-        InitMembers__9PMeshNodeFv(apMeshNode);
+    if ((apMeshNode = (PMeshNode *)__nw__FUi(0x140)) != 0) {
+        pRaw = (char *)apMeshNode;
+        char *volatile pMeshV = pRaw;
+        {
+            char *volatile pNodeV = pRaw;
+            *(char **)pRaw = __vt__9PResource;
+            *(int *)(pNodeV + 4) = 0;
+            *(char **)pNodeV = __vt__6PMNode;
+            __ct__6PArrayFv(pNodeV + 0x14);
+            sceVu0UnitMatrix((float (*)[4])(pNodeV + 0x40));
+            __ct__6PArrayFv(pNodeV + 0xD8);
+            InitMembers__6PMNodeFv(pNodeV);
+        }
+        *(char **)pMeshV = __vt__9PMeshNode;
+        __ct__6PArrayFv(pMeshV + 0x130);
+        InitMembers__9PMeshNodeFv((PMeshNode *)pMeshV);
+        apMeshNode = (PMeshNode *)pMeshV;
     }
     if (apMeshNode == 0) {
         CdsAssert("PWorld.cpp", 0x397, "apMeshNode");
@@ -279,7 +281,9 @@ PMeshNode *PWorld::LoadMeshNodeHierarchy(PPakFile *pFile, PArray *pArr, ePsx2Fil
     if (((PCDFile *)pFile)->Read(&nTop, 4) != 4) {
         return 0;
     }
-    (void)((nTop == 3 || !"There's multiple top node in dbf\n") ? (void)0 : CdsAssert__FPciPc("PWorld.cpp", 0x3A8, (char *)"!\"There's multiple top node in dbf\\n\""));
+    if (nTop != 3) {
+        (!"There's multiple top node in dbf\n") ? (void)0 : CdsAssert__FPciPc("PWorld.cpp", 0x3A8, (char *)"!\"There's multiple top node in dbf\\n\"");
+    }
     ((PMNodeVirtual *)apMeshNode)->Animate(0.0f, 0.0f, 0, 0, false);
     return apMeshNode;
 }
