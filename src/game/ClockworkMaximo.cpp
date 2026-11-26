@@ -41,6 +41,8 @@ extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, void
 extern "C" int RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(void *, void *, unsigned int);
 extern "C" int FacingPoint__7MathAPIFP15EntityBaseClassPA4_ff(void *, void *, float);
 extern "C" void CdsAssert__FPciPc(char *, int, char *);
+// The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("ClockworkMaximo.cpp", line, #cond))
 extern "C" void RotateTo__15EntityBaseClassFff(void *, float, float);
 extern "C" float Round180__Ff(float);
 extern char CMaximo_RunSeq[0x40];
@@ -311,7 +313,7 @@ void ClockworkMaximo::UpdateShieldStatus(Shield *arg0) {
 }
 
 // DRAFT: 0x00210830 ThrowShield__15ClockworkMaximoFv
-// 30 words: frame 0x214 vs 0x210, m_unk38 load order around Round180, final sp40 stores and 16-byte copy.
+// 5 words: tail copy at 0x1D8-0x1F8 has the shield and skeleton pointers in v1/a1 and a0; original has the shield in a0 and the skeleton in v1.
 void ClockworkMaximo::ThrowShield() {
     if (m_unk280 != 0) {
         CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA69, "mpShield == NULL");
@@ -352,13 +354,17 @@ void ClockworkMaximo::ThrowShield() {
     } else {
         pSrc2 = (float *)((char *)this + 0x1A0);
     }
+    ClockworkMaximoState *pState = m_unk38;
     float yaw = Round180__Ff(pSrc2[1]);
-    m_unk38->m_unk11C = yaw;
+    pState->m_unk11C = yaw;
     sp30[3] = 1.0f;
     InitShield__6ShieldFP15EntityBaseClassfPA4_fPA4_fUiPbi(m_unk280, this, 22.142857f, (float (*)[4])sp40, (float (*)[4])sp30, 0, (bool *)0, 0);
-    sp40[0] = *(float *)(m_unk3C + 0x80);
-    sp40[2] = *(float *)(m_unk3C + 0x88);
-    *(u_long128 *)((char *)*(void **)((char *)m_unk280 + 0x38) + 0xA0) = *(u_long128 *)sp40;
+    Shield *pShield = m_unk280;
+    void *pDst = *(void **)((char *)pShield + 0x38);
+    char *pSk = (char *)m_unk3C;
+    sp40[0] = *(float *)(pSk + 0x80);
+    sp40[2] = *(float *)(pSk + 0x88);
+    *(u_long128 *)((char *)pDst + 0xA0) = *(u_long128 *)sp40;
 }
 
 // FUNCTION: 0x00210A40 SetShockwave__15ClockworkMaximoFv
@@ -445,8 +451,7 @@ int ClockworkMaximo::GetAttackTimeOut() {
     return MathAPI::RandomIntRange(0, 1);
 }
 
-// DRAFT: 0x00210E80 FaceHit__15ClockworkMaximoFP15EntityBaseClass
-// note: DIFF 17 words; compare-chain branch sense and duplicated 150.0f lui in delay slots differ; merged || arm gave 38, nested form 17.
+// FUNCTION: 0x00210E80 FaceHit__15ClockworkMaximoFP15EntityBaseClass
 void ClockworkMaximo::FaceHit(EntityBaseClass *arg0) {
     float sp30[4];
     float *sel;
@@ -465,22 +470,20 @@ void ClockworkMaximo::FaceHit(EntityBaseClass *arg0) {
     }
     f1 = sel[1];
     type = *(unsigned int *)((char *)arg0 + 0x154);
-    if (type == 0x0200051D) {
-        return;
-    }
-    if (type == 0x82000010) {
-        return;
-    }
-    if (type != 0x8200000E) {
-        if (type == 0x020004E8) {
-            f1 = f1 - 150.0f;
-        } else if (type == 0x82000007) {
-            f1 = f1 - 150.0f;
-        } else {
-            f1 = f1 - 180.0f;
-        }
-    } else {
+    switch (type) {
+    case 0x82000007:
+    case 0x020004E8:
+        f1 = f1 - 150.0f;
+        break;
+    case 0x8200000E:
         f1 = f1 - -150.0f;
+        break;
+    case 0x82000010:
+    case 0x0200051D:
+        return;
+    default:
+        f1 = f1 - 180.0f;
+        break;
     }
     if (m_unk3C != 0) {
         sel = (float *)(m_unk3C + 0x90);
@@ -662,27 +665,25 @@ void ClockworkMaximo::SetDefaultVars() {
     m_unk1E8 = MathAPI::RandomIntRange(0, 0x64) & 1;
 }
 
-// DRAFT: 0x002116E0 SetEditableVars__15ClockworkMaximoFPc
-// note: ternary, chain and call match; literal test emits xor/sltiu/bnez not sltu/xori/bnez; 8 forms tried (nested pMsg best, 23 lines).
+// FUNCTION: 0x002116E0 SetEditableVars__15ClockworkMaximoFPc
 void ClockworkMaximo::SetEditableVars(char *arg0) {
-    char *pMsg;
-    int bNull;
     memcpy(&m_unk1B0, arg0, 0x3C);
     m_unk240 = (MathAPI::RandomIntRange(1, 0x64) & 1) ? 0x3DE : 0x429;
-    if (m_unk1E0 != 8 && m_unk1E0 != 7 && m_unk1E0 != 0) {
-        pMsg = "Invalid m_iSpawnsKey in ClockworkMaximo.\n";
-        bNull = pMsg == 0;
-        if (!bNull) {
-            CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x882, "!\"Invalid m_iSpawnsKey in ClockworkMaximo.\\n\"");
-        }
+    switch (m_unk1E0) {
+    case 0:
+    case 7:
+    case 8:
+        break;
+    default:
+        CDS_ASSERT(0x882, !"Invalid m_iSpawnsKey in ClockworkMaximo.\n");
+        break;
     }
 }
 
-// DRAFT: 0x00211780 OnWakeEvent__15ClockworkMaximoFv
-// note: ternary compiles to branches, not movz; load order differs. Tried local-variable form: same 15 lines.
+// FUNCTION: 0x00211780 OnWakeEvent__15ClockworkMaximoFv
 void ClockworkMaximo::OnWakeEvent() {
     if (m_unk3C != 0) {
-        AttachWeapon((m_unk1E4 == 0) ? WEAPON_TYPE_0 : WEAPON_TYPE_2);
+        AttachWeapon(m_unk1E4 ? WEAPON_TYPE_2 : WEAPON_TYPE_0);
         if (m_unk1E8 != 0) {
             AttachWeapon(WEAPON_TYPE_1);
         }
