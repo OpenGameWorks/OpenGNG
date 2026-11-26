@@ -59,6 +59,10 @@ extern "C" int _dpfge(long long a, long long b);
 extern "C" int IsHanging__6PlayerFv(void *pPlayer);
 extern "C" void QuatSlerp__7MathAPIFP9tag_EQuatP9tag_EQuatfP9tag_EQuat(void *pA, void *pB, float t, void *pOut);
 
+struct PodVec3 {
+    float m_v[4];
+};
+
 class PVec3 {
 public:
     PVec3() {}
@@ -666,7 +670,7 @@ int CameraFollow::CanDoHeadcam() {
 }
 
 // DRAFT: 0x00174FC0 CreatePathToPlayer__12CameraFollowFv
-// note: size 0x1D4 vs 0x1D0 (116 words); original frame 0xA0 keeps this in s2 and saves s0/s1 only, ours frame 0xB0 saves s3; tried local mid before/after copies, loop for m_unk10 copy: no change
+// note: size 0x1D4 vs 0x1D0 (116 words); original frame 0xA0 keeps this in s2 and saves s0/s1 only, ours frame 0xB0 saves s3; original copies mid (sp+0x40) to the call temp with lq/sq. Tried: local mid before/after copies, loop for m_unk10 copy (no change), PodVec3 mid passed by cast (132, reverted).
 void CameraFollow::CreatePathToPlayer() {
     ((CameraSpline *)_pad2D0)->Reset();
     ((CameraSpline *)_pad2D0)->AddControlPoint(*(PVec3 *)m_unk20);
@@ -1264,7 +1268,7 @@ block_37:
 }
 
 // DRAFT: 0x00176A00 UpdateTargetPos__12CameraFollowFv
-// note: size 0x318 vs 0x320, DIFF 172 words; the 16-byte GetGroundPos copy at 0x58 lacks the two addiu pointer loads (ptr locals, temp, folded); tried flag order (kept), pointer locals and temp (no change)
+// note: size 0x318 vs 0x320, DIFF 172 words; the 16-byte GetGroundPos copy at 0x58 lacks the two addiu pointer loads (ptr locals, temp, folded); tried flag order (kept), pointer locals and temp (no change), PodVec3 copy of raw to gpc (183, reverted), u_long128 pointer local for the source (172, no change)
 void CameraFollow::UpdateTargetPos() {
     float tgt[4];
     float cur[4];
@@ -1540,7 +1544,7 @@ void CameraFollow::Update() {
 }
 
 // DRAFT: 0x00177680 CreatePathFromPlayersRoute__12CameraFollowFv
-// note: DIFF 56 words; first loop's FP temps are saved (f20..f23) and the copies to the call temps are scheduled differently. Tried: inline PVec3 copies (106), hoisted float d (106), per-call scoped temps (106), shared temp (56, kept).
+// note: DIFF 56 words; original re-reads m_unk20 for each AddControlPoint arg, ours keeps start in f20..f23 and saves f21..f23. Tried: inline PVec3 copies (106), hoisted float d (106), per-call scoped temps (106), shared temp (56, kept), POD start local passed by cast (117), POD start assigned via cast (117).
 void CameraFollow::CreatePathFromPlayersRoute() {
     float best = 9999.0f;
     int bestIdx = 0;
@@ -1595,22 +1599,21 @@ void CameraFollow::SetFollowCameraParams(float arg0, float arg1) {
     m_unk17C = 100.0f;
 }
 
-// DRAFT: 0x001778E0 SetHeadCam__12CameraFollowFb
-// note: 50 words differ; CanDoHeadcam test is an inverted branch (beqz to the return-0 tail in the original, bnez skip in ours); the _pad060 variant cut 103 to 50 words.
+// FUNCTION: 0x001778E0 SetHeadCam__12CameraFollowFb
 int CameraFollow::SetHeadCam(bool arg0) {
     if (arg0) {
         if (m_unk118 == 1) {
             return 1;
         }
-        if (!CanDoHeadcam()) {
-            return 0;
+        if (CanDoHeadcam()) {
+            sceVu0CopyVector(m_unkF0, m_unk20);
+            sceVu0CopyVector(m_unk100, m_unk40);
+            m_unk1F8 = 1;
+            m_unk11C = m_unk118;
+            m_unk118 = 1;
+            return 1;
         }
-        sceVu0CopyVector(m_unkF0, m_unk20);
-        sceVu0CopyVector(m_unk100, m_unk40);
-        m_unk1F8 = 1;
-        m_unk11C = m_unk118;
-        m_unk118 = 1;
-        return 1;
+        return 0;
     }
     if (m_unk118 != 1) {
         return 1;
@@ -1627,24 +1630,12 @@ int CameraFollow::SetHeadCam(bool arg0) {
     float tmp50[4];
     float tmpMat[4][4];
 
-    tmp20[0] = m_unk20[0];
-    tmp20[1] = m_unk20[1];
-    tmp20[2] = m_unk20[2];
-    tmp20[3] = m_unk20[3];
-    tmp30[0] = m_unk40[0];
-    tmp30[1] = m_unk40[1];
-    tmp30[2] = m_unk40[2];
-    tmp30[3] = m_unk40[3];
+    *(PodVec3 *)tmp20 = *(PodVec3 *)m_unk20;
+    *(PodVec3 *)tmp30 = *(PodVec3 *)m_unk40;
     UpdatePos__6CameraF5PVec35PVec3(m_pCamera, tmp20, tmp30);
 
-    tmp40[0] = m_unk20[0];
-    tmp40[1] = m_unk20[1];
-    tmp40[2] = m_unk20[2];
-    tmp40[3] = m_unk20[3];
-    tmp50[0] = m_unk40[0];
-    tmp50[1] = m_unk40[1];
-    tmp50[2] = m_unk40[2];
-    tmp50[3] = m_unk40[3];
+    *(PodVec3 *)tmp40 = *(PodVec3 *)m_unk20;
+    *(PodVec3 *)tmp50 = *(PodVec3 *)m_unk40;
     CreateViewMatrix__6CameraFR5PMat45PVec35PVec3(m_pCamera, (float *)_pad060, tmp40, tmp50);
     sceVu0CopyMatrix(tmpMat, (float (*)[4])_pad060);
     SetViewMatrix__6CameraF5PMat4(m_pCamera, (float *)tmpMat);
