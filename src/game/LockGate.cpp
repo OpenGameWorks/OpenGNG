@@ -18,3 +18,8 @@ const char *LockGate::GetClassName() {
 void LockGate::SetEditableVars(char *pSrc) {
     memcpy(m_unk1B0, pSrc, 0x8);
 }
+
+// FUNCTION: 0x001DC260 __ct__8LockGateFv
+LockGate::LockGate() : EntityBaseClass((LoadClass)5, 0) {
+    m_unk1B8 = 0;
+}

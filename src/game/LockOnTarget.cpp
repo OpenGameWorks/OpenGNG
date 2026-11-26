@@ -13,3 +13,8 @@ LockOnTarget::~LockOnTarget() {
 const char *LockOnTarget::GetClassName() {
     return "LockOnTarget";
 }
+
+// FUNCTION: 0x001D3B40 __ct__12LockOnTargetFv
+LockOnTarget::LockOnTarget() : EntityBaseClass((LoadClass)3, 1) {
+    m_unk1B0 = 0;
+}

@@ -18,3 +18,9 @@ const char *ActionPling::GetClassName() {
 void ActionPling::SetEditableVars(char *pSrc) {
     memcpy(m_unk1B0, pSrc, 0x1);
 }
+
+// FUNCTION: 0x001B0A40 __ct__11ActionPlingFv
+ActionPling::ActionPling() : EntityBaseClass((LoadClass)5, 0) {
+    EnableSleep(false, false);
+    m_unk1B1 = 0;
+}

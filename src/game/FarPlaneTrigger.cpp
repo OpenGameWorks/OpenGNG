@@ -18,3 +18,8 @@ const char *FarPlaneTrigger::GetClassName() {
 void FarPlaneTrigger::SetEditableVars(char *pSrc) {
     memcpy(m_unk1B0, pSrc, 0x14);
 }
+
+// FUNCTION: 0x00202F80 __ct__15FarPlaneTriggerFv
+FarPlaneTrigger::FarPlaneTrigger() : EntityBaseClass((LoadClass)2, 0) {
+    m_unk1C4 = 0;
+}
