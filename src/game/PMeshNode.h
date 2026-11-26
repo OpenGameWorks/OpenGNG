@@ -45,7 +45,7 @@ public:
     void TestMeshNodeInFrustum(PFrustrum *pFrustrum);
     void DetachLight(PLight *pLight);
     void RemoveFromCollisionArray(PArray *pArr);
-    int BuildCollisionArray(PArray *pArr, unsigned int flag);
+    bool BuildCollisionArray(PArray *pArr, unsigned int flag);
     void DetachAllLights();
     void InitMembers();
     int RecurseAttachAnim(PMeshNodeAnimDataTable *pAnimDataTable);

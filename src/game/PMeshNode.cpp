@@ -195,17 +195,16 @@ void PMeshNode::RemoveFromCollisionArray(PArray *pArr) {
     }
 }
 
-// DRAFT: 0x001905D0 BuildCollisionArray__9PMeshNodeFP6PArrayUi
-// note: 14 words differ; assert compare now matches. Remaining: set-to-1 is addiu (ours) vs daddiu (orig), early return jumps to a shared exit in the original (ours duplicates it in the delay slot), and branch offsets at 0x8C/0xA4. Tried break for shared exit (worse).
-int PMeshNode::BuildCollisionArray(PArray *pArr, unsigned int flag) {
-    int result = 0;
+// FUNCTION: 0x001905D0 BuildCollisionArray__9PMeshNodeFP6PArrayUi
+bool PMeshNode::BuildCollisionArray(PArray *pArr, unsigned int flag) {
+    bool result = false;
     if (m_unk104 != 0) {
         if (pArr->size <= pArr->count) {
             CdsAssert__FPciPc("PMeshNode.cpp", 0x202, "pArray->GetSize() > pArray->GetCount()");
         }
         pArr->Add(this);
         m_unk100 = (short)flag;
-        result = 1;
+        result = true;
     }
     m_unk18 = 0;
     PMeshNode *var = (m_unk14 != 0) ? m_unk1C[0] : 0;
@@ -214,8 +213,8 @@ int PMeshNode::BuildCollisionArray(PArray *pArr, unsigned int flag) {
             if (var->m_unk04 == 3) {
                 return result;
             }
-            if (var->BuildCollisionArray(pArr, flag) != 0) {
-                result = 1;
+            if (var->BuildCollisionArray(pArr, flag)) {
+                result = true;
             }
             unsigned int next = m_unk18 + 1;
             m_unk18 = next;
