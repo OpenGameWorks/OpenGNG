@@ -42,6 +42,7 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 - A ctor that spills `this` to `0x1C(sp)` and reloads it before stores needs a member sub-object with an empty user-declared destructor.
 - A constant 1 loaded with `daddiu reg,$zero,1` where an int would give `addiu`/`li` is a `bool` local: `bool f;`, `f = true;` / `f = false;`, `if (!f)`; `f == 0` adds an `andi 0xFF` (`ReadData` in `src/game/PCDFile.cpp`). `tools/permute.py FILE 0xADDR` tries this respelling among others.
 - `dsll32 r,r,N` then `dsrl32 r,r,N` (or `dsll`/`dsrl` by N) on an int is a mask of its low 32-N bits written plainly: `x & 0xFFFFFF` for N = 8. CodeWarrior emits the shift pair instead of loading the constant; a hand-written 64-bit shift compiles to another amount (`DecodeTextureHandle` in `src/game/PTextureManager.cpp`).
+- A function whose result the original tests with a bare `beqz v0` and whose locals set 1 with `daddiu` returns `bool`: `bool F(...)`, a `bool` result local, and callers written `if (F(...))`. `F(...) != 0` on a bool adds `andi 0xFF`, and an `int` return of a bool local adds it at the return (`BuildCollisionArray` in `src/game/PMeshNode.cpp`). `long` and `long long` locals still load 1 with `addiu`.
 
 ## Finishing
 
