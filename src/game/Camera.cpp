@@ -766,7 +766,7 @@ void Camera::ResetCamBoxCount() {
 }
 
 // DRAFT: 0x0017A190 SetCamBoxValue_FollowHeight__6CameraFf
-// note: 27 differing words; frame 0x30 vs 0x40 and this in s0 vs s1; original builds the 3.0 double in s0 before fptodp, ours after. Tried literal 3.0 in printf, local double inside the if, function-scope double, cast removed; count unchanged at 27.
+// note: 27 differing words; original keeps this in s1 and the 3.0 double in s0 across the fptodp call (constant built before the call); ours evaluates the (double)arg0 call first and rebuilds 3.0 after it. Also tried: split double local before the cast, assign inside the guard, implicit float promotion; all 27.
 void Camera::SetCamBoxValue_FollowHeight(float arg0) {
     double min = 3.0;
     if (m_unkBC != 0) {
