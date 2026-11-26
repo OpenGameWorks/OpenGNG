@@ -556,28 +556,27 @@ void CameraFollow::SetSourceAndTarget(PVec3 arg0, PVec3 arg1) {
     sceVu0CopyVector(m_unk40, arg1.m_v);
 }
 
-// DRAFT: 0x00174B30 ProcessCamBox__12CameraFollowFv
-// note: 46 lines; 0.1f is pooled (lwc1 0x0($gp)) where the original builds it inline (lui/ori/mtc1), which shifts the branch layout; case 0 first gave 54, case 1 first is kept.
+// FUNCTION: 0x00174B30 ProcessCamBox__12CameraFollowFv
 int CameraFollow::ProcessCamBox() {
     float diff;
     switch (m_unk210) {
     case 1:
         if (m_unk144 != m_unk214) {
             diff = m_unk214 - m_unk144;
-            if (FastMath_Fabs__Ff(diff) <= 0.1f) {
-                m_unk144 = m_unk214;
-            } else {
+            if (FastMath_Fabs__Ff(diff) > 0.1f) {
                 m_unk144 = m_unk144 + (diff * (0.1f * m_unk16C));
+            } else {
+                m_unk144 = m_unk214;
             }
         }
         break;
     case 0:
         if (m_unk144 != m_unk174) {
             diff = m_unk174 - m_unk144;
-            if (FastMath_Fabs__Ff(diff) <= 0.1f) {
-                m_unk144 = m_unk174;
-            } else {
+            if (FastMath_Fabs__Ff(diff) > 0.1f) {
                 m_unk144 = m_unk144 + (diff * (0.1f * m_unk16C));
+            } else {
+                m_unk144 = m_unk174;
             }
         }
         break;
@@ -792,9 +791,9 @@ void CameraFollow::CalcNewCameraOffsets() {
     {
         float b = m_unk20[1];
         float a = m_unk140;
+        sp50[2] = -a;
         sp50[0] = a;
         sp50[1] = b;
-        sp50[2] = -a;
         sp50[3] = 1.0f;
         sceVu0ApplyMatrix(sp60, m_unkA0, sp50);
         sceVu0CopyVector((float *)(_pad230 + 0x60), sp60);
@@ -883,8 +882,7 @@ int CameraFollow::PlayerIsIdle() {
     return 0;
 }
 
-// DRAFT: 0x001758A0 MoveCameraToNewViewpoint__12CameraFollowFv
-// note: 12 words after plain (float)/(unsigned int) conversion casts; earlier: DIFF 22 words. Open: early-return epilogue (b at 0x5C targets 0x6B, ours 0x69); float x/K register order at 0x68-0x78; bc1 sense; cvt/lui/or split layout; blend load order from 0xCC. Tried: `K <= x` (103), `x >= K` (103), local fx (103), `!(x < K)` member form (22), blend operand swap (22), hoisted 0.1f*16C local (90).
+// FUNCTION: 0x001758A0 MoveCameraToNewViewpoint__12CameraFollowFv
 int CameraFollow::MoveCameraToNewViewpoint() {
     PVec3 sp20;
     unsigned int idx;
@@ -901,8 +899,8 @@ int CameraFollow::MoveCameraToNewViewpoint() {
     idx = (unsigned int)(*(float *)&m_unk6190);
     if (idx < (unsigned int)m_unk2D8) {
         ((CameraSpline *)_pad2D0)->GetPosition(idx, sp20);
-        m_unk20[0] = m_unk20[0] + (0.1f * m_unk16C) * (sp20.m_v[0] - m_unk20[0]);
-        m_unk20[2] = m_unk20[2] + (0.1f * m_unk16C) * (sp20.m_v[2] - m_unk20[2]);
+        m_unk20[0] += (0.1f * m_unk16C) * (sp20.m_v[0] - m_unk20[0]);
+        m_unk20[2] += (0.1f * m_unk16C) * (sp20.m_v[2] - m_unk20[2]);
         if (*(float *)&m_unk6254 < 3.0f) {
             *(float *)&m_unk6254 = *(float *)&m_unk6254 * (1.2f * m_unk16C);
         }
