@@ -20,9 +20,9 @@ extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, int nCount, int 
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 
 // DRAFT: 0x001D00B0 Render__13PRainSplatterFv
-// note: DIFF 4 words. DrawParticles float constants: original loads 1.0f into v1 first (f13), ours loads 0.5f into v1 (f12); tried 4 variants (literal, two locals).
+// note: 4 words; DrawParticles float constants: original materialises 1.0f (f13) before 0.5f (f12); literal {1,1,1,1} fixed. Tried locals in both orders, const locals, scaled and summed constants, PGfxEngine member calls (all 4).
 void PRainSplatter::Render() {
-    float vec[4] = {1.0f, 0.0f, 0.0f, 0.0f};
+    float vec[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, m_unk30, vec, 1, 0x48, 0x50000);
     SetWorldMatrix__10PGfxEngineFP5PMat4(gGfxEng, (PMat4 *)gUnitMatrix);
     BeginParticles__10PGfxEngineF13eBoxIntersect(gGfxEng, 2);

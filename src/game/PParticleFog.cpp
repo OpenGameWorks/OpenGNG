@@ -62,10 +62,11 @@ void PParticleFog::FrustrumTest(PFrustrum *pFrustum, float *pPos, float fNear, f
 }
 
 // DRAFT: 0x001BDF40 Render__12PParticleFogFP5PMat4
-// note: 4 words differ, load order only: original loads a1 (0x54) before the 64-bit a4 (0x58) and a2 before a1 for DrawFogParticles; tried local for nCount, local copy of m_unk58 (10 words), both worse or same.
+// note: 4 words, load order only: original loads a1 (0x54) before the 64-bit t0 (0x58), and a2 before a1 for DrawFogParticles; literal {1,1,1,1} plus w store fixed. Tried nCount local, m_unk58 local (10), PGfxEngine member calls (4).
 void PParticleFog::Render(PMat4 *pMat) {
     if (m_unk50 != 0) {
-        float vec[4] = {1.0f, 0.0f, 0.0f, m_unk20};
+        float vec[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+        vec[3] = m_unk20;
         SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, m_unk54, vec, true, m_unk58, 0x50000);
         if (pMat != 0) {
             SetWorldMatrix__10PGfxEngineFP5PMat4(gGfxEng, pMat);

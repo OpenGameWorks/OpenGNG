@@ -15,13 +15,12 @@ extern PGfxEngine gGfxEng;
 extern "C" void sceVu0InterVector(float *pDst, float *pA, float *pB, float fT);
 extern "C" void SetMarker__12PProgressBarFPQ212PProgressBar16tagRawVertexDataPfff(void *pThis, void *pRaw, float *pVec, float fA, float fB);
 
-// DRAFT: 0x0016BB90 Render__12PProgressBarFv
-// note: only the sp60 literal load differs (lui/addiu of lit_00244CD0 vs @361+0x4CD0 in .rodata, 2 words); frame and calls match
+// FUNCTION: 0x0016BB90 Render__12PProgressBarFv
 void PProgressBar::Render() {
     float sp20[4][4];
 
     sceVu0UnitMatrix(sp20);
-    float sp60[4] = {1.0f, 0.0f, 0.0f, 0.0f};
+    float sp60[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     float sp70[4][4];
     float spB0[4][4];
     sceVu0CopyMatrix(sp70, (float (*)[4])((char *)&gGfxEng + 0x16D3C0));
