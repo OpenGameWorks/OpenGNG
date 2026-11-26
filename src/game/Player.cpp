@@ -1398,7 +1398,7 @@ signed char Player::GetAbility() {
 }
 
 // DRAFT: 0x0015AE60 SetPowerupMotion__6PlayerFi
-// note: original keeps 0x3D in v0 and uses a shared jr-ra exit (size 0x80); ours uses v1/a2 and separate epilogues (size 0x6c). Tried separate returns (28 words), goto exit (27), nested with result (27), reversed compare (27), switch-form nesting (27).
+// note: 27 words; original keeps 0x3D in v0 and uses a shared jr-ra exit (size 0x80); ours uses v1/a2 and separate epilogues (size 0x6c). Tried separate returns (28), goto exit (27), nested with result (27), reversed compare (27), switch-form nesting (27), early-return guard with 0x3D/4 tests first (28), swapped && operands (28).
 int Player::SetPowerupMotion(int arg0) {
     int result = 0;
     if (m_unk260 != 0x3D && m_unk229 < 4) {
@@ -2646,7 +2646,7 @@ void Player::HammerDSlashMove() {
 }
 
 // DRAFT: 0x0015DAD0 HammerSlashMove__6PlayerFv
-// note: 28 words (single-case switch on m_unk250); cancel-path shape and slti/bnez at branch form at t>=0x33 differ (tried 65 flat, 68 nested)
+// note: 22 words (single-case switch on m_unk250); cancel-path shape and slti/bnez at branch form at t>=0x33 differ. Tried: 65 flat, 68 nested, flipped compares 0x32 < t, 0x1A >= t, t <= 0x1A (22, no gain).
 void Player::HammerSlashMove() {
     static unsigned char HammerSlashMoves[3] = {0x00, 0x00, 0x45};
     int t;
