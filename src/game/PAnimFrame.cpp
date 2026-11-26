@@ -62,35 +62,37 @@ void PAnimFrame::RestoreAnim(PAnimFrame *pSrc) {
     m_unk30 = pSrc->m_unk30;
 }
 
-// DRAFT: 0x0018CED0 Load__10PAnimFrameFP8PPakFile
-// note: 7 words differ: original shares one epilogue via b; ours repeats ld ra/jr ra per return. Tried ||, single trailing return (14), result variable (20).
+// FUNCTION: 0x0018CED0 Load__10PAnimFrameFP8PPakFile
 int PAnimFrame::Load(PPakFile *pFile) {
     if (!PAnim::Load(pFile)) {
         return 0;
     }
     m_unk24 = m_unk8;
     m_unk28 = m_unk8;
-    if (m_unk4 != 1000 && m_unk4 != 1) {
-        return 1;
+    switch (m_unk4) {
+    case 1:
+    case 1000:
+        m_unk2A = 1;
+        m_unk20 = 0;
+        break;
     }
-    m_unk2A = 1;
-    m_unk20 = 0;
     return 1;
 }
 
-// DRAFT: 0x0018CF50 Load__10PAnimFrameFP8PPakFileP26tagMeshNodeAnimationHeader
-// note: 7 words differ, same epilogue-sharing difference as Load(PPakFile*) (calls PAnim::Load(pFile, pHeader)).
+// FUNCTION: 0x0018CF50 Load__10PAnimFrameFP8PPakFileP26tagMeshNodeAnimationHeader
 int PAnimFrame::Load(PPakFile *pFile, tagMeshNodeAnimationHeader *pHeader) {
     if (!PAnim::Load(pFile, pHeader)) {
         return 0;
     }
     m_unk24 = m_unk8;
     m_unk28 = m_unk8;
-    if (m_unk4 != 1000 && m_unk4 != 1) {
-        return 1;
+    switch (m_unk4) {
+    case 1:
+    case 1000:
+        m_unk2A = 1;
+        m_unk20 = 0;
+        break;
     }
-    m_unk2A = 1;
-    m_unk20 = 0;
     return 1;
 }
 
