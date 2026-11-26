@@ -162,7 +162,7 @@ void SOUND_MusicAddExciteHits(short arg0) {
 }
 
 // DRAFT: 0x001ADC60 SOUND_LevelRestart
-// note: 23 differing lines; frame and call match, but first-loop base is lui $a0 vs original lui $v1 (+addiu 0x3E50), pointer in $a2 vs $a0, loop test in $v1 vs $at, and second loop stores before addiu. Tried indexed stores (23), p = &arr[i] with mid-block increment (23 with reordered tail), and i += 1 ahead of the store.
+// note: 19 words; frame and call match, but first-loop base is lui $a0 vs original lui $v1 (+addiu 0x3E50), pointer in $a2 vs $a0, loop test in $v1 vs $at, and second loop stores before addiu with an extra nop before the bnez. Tried indexed stores, p = &arr[i] with mid-block increment, i += 1 ahead of the store, pointer-base first loop (20), and the draft-shape alternates (19).
 void SOUND_LevelRestart(void) {
     int i;
     char *p;
@@ -189,7 +189,7 @@ void SOUND_LevelRestart(void) {
 }
 
 // DRAFT: 0x001ADCF0 SOUND_StopAllSounds
-// note: 23 differing lines; same loop shape and same register-allocation gap as SOUND_LevelRestart (base in $a0 vs $v1, pointer in $a2 vs $a0).
+// note: 19 words; same loop shape and register-allocation gap as SOUND_LevelRestart (base in $a0 vs $v1, pointer in $a2 vs $a0). Tried four draft-shape and pointer-form alternates, all 19.
 void SOUND_StopAllSounds(void) {
     int i;
     char *p;
@@ -701,7 +701,7 @@ void JP(void *) {
 #pragma cplusplus reset
 
 // DRAFT: 0x001AECF0 SOUND_InitIOP
-// note: about 20 differing lines: bgez delay slot filled with countdown init (orig fills with lui a0 of printf block), shifts countdown and tail by 3 instructions; do-while and for-loop countdown both tried, same count.
+// note: 21 words; the original's countdown is a 0x2710 loop with v1 counter and v0 copy, 3 nops after the body, and one extra nop before the countdown init (bgez target) and in the printf-block pad, so the tail is 3 instructions short. Tried do-while, post-decrement (for/do/while), for(;;) and while(1) error loops, and gCd addressing forms: all 21 to 22.
 int SOUND_InitIOP(void) {
     int temp_v0;
     int var_v1;
