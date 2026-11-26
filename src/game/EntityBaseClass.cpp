@@ -710,16 +710,16 @@ void EntityBaseClass::ShakeScreen(int arg0, int arg1, int arg2, int arg3, float 
 }
 
 // DRAFT: 0x0014AF60 PlaySoundOnFrame__15EntityBaseClassFUiUi
-// note: 37 words after plain (float)/(unsigned int) conversion casts; earlier: 55 words differ: float value/constant register (orig value f1, const f0), c.le.s operand order and branch sense, subtract-path regs, missing dsll32/dsra32 flag pair, addiu vs daddiu for inRange=1; tried f>=2^31 first (67), g-before-f with f<2^31 (55), (signed char) flag cast (56).
+// note: 36 words; `bool inRange` set true in the two in-range arms took 37 to 36. Not reproduced: the dsll32/dsra32 pair before andi 4 on the flag byte, float value/constant register order, c.le.s operand order (earlier 55 words; (signed char) flag cast 56, f>=2^31 first 67).
 int EntityBaseClass::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
     int ret;
-    int inRange;
+    bool inRange;
     int frame;
     float g;
     float f;
     char *p;
 
-    inRange = 0;
+    inRange = false;
     p = m_unk3C;
     ret = 0;
     if (p != 0) {
@@ -728,7 +728,7 @@ int EntityBaseClass::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
         if (frame != m_unk138) {
             m_unk138 = 0xF423F;
             if (frame == (int)arg1) {
-                inRange = 1;
+                inRange = true;
             } else {
                 p = m_unk3C;
                 g = *(float *)(p + 0x38);
@@ -738,7 +738,7 @@ int EntityBaseClass::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
                 if (arg1 < (unsigned int)frame) {
                     f = (float)arg1;
                     if (g < f) {
-                        inRange = 1;
+                        inRange = true;
                     }
                 }
             }
@@ -1584,7 +1584,7 @@ int EntityBaseClass::MeshNodeCollision(PMNode *arg0, float (*arg1)[2][4], float 
 }
 
 // DRAFT: 0x0014CD10 SkeletonCollision__15EntityBaseClassFP6PMNodeP15EntityBaseClass
-// note: DIFF 39 words; register allocation differs (original ret=s0, flags=s1, arg1=s2), the original ORs the call result into ret, and an andi on the u8 flag|0x20 argument is extra. Tried: ret|= (40), unsigned int flags (no gain), hoisted u8 flag|0x20 (42), early return (40).
+// note: DIFF 39 words; register allocation differs (original ret=s0, flags=s1, arg1=s2; ours s1/s2/s0), the original ORs the call result into ret, and an andi on the u8 flag|0x20 argument is extra. Tried: ret|= (40), int/unsigned int flags (39), hoisted u8 flag|0x20 (42), early return (40), pOther/pNode pointer aliases (39), flags declared before ret (39), int flags with ret|= (39).
 int EntityBaseClass::SkeletonCollision(PMNode *arg0, EntityBaseClass *arg1) {
     float local40[2][4];
     float local60[4][4];
@@ -1652,11 +1652,11 @@ int EntityBaseClass::MeshNodeCollision(PMNode *arg0, EntityBaseClass *arg1) {
 }
 
 // DRAFT: 0x0014CF80 NormalizedBox__FPA2_A4_fRA2_A4_fPA4_A4_fRA4_A4_f
-// note: 41 differing lines; sqrt result lands in f1 not f0 and zero-compare operands are reversed (c.eq.s $f1,$f0 vs $f0,$f1); tried !(d!=0), else-branch restructure (57), block temp, folded sqrt, 1.0f!=d, 0.0f==d, len temp; sqc2 in asm.
+// note: DIFF 38 words (`if (!d)` form, was 41); sqrt result lands in f1 not f0 so the matrix load and mul.s use swapped registers. Tried: !(d!=0), else-branch restructure (57), block temp, folded sqrt, 1.0f!=d, 0.0f==d, len temp, sqc2 in asm (38-41).
 #define NORMALIZEDBOX_ROW(I)                                    \
     d = sceVu0InnerProduct(arg2[0][I], arg2[0][I]);             \
     if (d != 1.0f) {                                            \
-        if (d == 0.0f) {                                        \
+        if (!d) {                                               \
             return 0;                                           \
         }                                                       \
         d = sqrtf(d);                                           \
@@ -1794,28 +1794,24 @@ void EntityBaseClass::RadiusAdjust(float arg0, float (*arg1)[4]) {
 }
 
 // DRAFT: 0x0014D6D0 AddCollision__15EntityBaseClassFP15EntityBaseClass
-// note: loop shape and store addressing differ (34 words); tried explicit this+0x110 base and post-loop store (35 words)
+// note: loop shape and store addressing differ (34 words); tried explicit this+0x110 base and post-loop store (35 words), 25 brute variants over for/while, array/pointer/flat/offset stores, value local vs direct, unsigned vs int: none below 34.
 void EntityBaseClass::AddCollision(EntityBaseClass *arg0) {
     unsigned int i;
     unsigned int off;
     unsigned int target;
     void *pEnt;
 
-    i = 0;
-    off = 0;
-    while (i < 10) {
+    for (i = 0, off = 0; i < 10; i++, off += 4) {
         target = *(unsigned int *)((char *)this + off + 0x110);
         if (target == 0) {
-            this->m_unk110[i] = arg0->m_unk04;
+            *(this->m_unk110 + i) = arg0->m_unk04;
             return;
         }
         pEnt = ((EntityManager *)mpEntMgr__15EntityBaseClass)->GetPtrToApparition(target);
         if (pEnt == 0 || ((unsigned char *)pEnt)[0x163] == 6) {
-            this->m_unk110[i] = arg0->m_unk04;
+            *(this->m_unk110 + i) = arg0->m_unk04;
             return;
         }
-        off += 4;
-        i++;
     }
 }
 
