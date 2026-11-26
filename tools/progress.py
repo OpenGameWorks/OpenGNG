@@ -68,6 +68,14 @@ def load():
         for kind, addr, _, _ in srcmeta.tags(s):
             if kind == "DRAFT":
                 drafts.add(addr)
+    # Functions inside an SCE archive member that tools/sdklink.py verified come from the
+    # original library object: a library match, kept apart from decompiled C/C++.
+    sl = ROOT / "build/sdk_link.tsv"
+    if sl.exists():
+        libs = [(int(p[0], 16), int(p[1], 16)) for p in (l.split("\t") for l in sl.read_text().splitlines()) if p[4] == "lib"]
+        for a, size, _ in funcs:
+            if any(s <= a and a + size <= e for s, e in libs) and a not in status:
+                status[a] = "lib"
     return tus, starts, funcs, status, drafts
 
 
@@ -82,8 +90,8 @@ def main() -> int:
     for a, size, n in funcs:
         i = bisect_right(starts, a) - 1
         cat, f = (tus[i][2], tus[i][3]) if i >= 0 and a < tus[i][1] else ("unknown", "?")
-        st = "matched" if status.get(a) == "match" else "draft" if (a in drafts or status.get(a) in ("differ", "refs", "missing", "draft-match")) else "asm"
-        c = cats.setdefault(cat, {"funcs": 0, "bytes": 0, "matched_funcs": 0, "matched_bytes": 0, "draft_funcs": 0, "draft_bytes": 0})
+        st = "matched" if status.get(a) == "match" else "lib" if status.get(a) == "lib" else "draft" if (a in drafts or status.get(a) in ("differ", "refs", "missing", "draft-match")) else "asm"
+        c = cats.setdefault(cat, {"funcs": 0, "bytes": 0, "matched_funcs": 0, "matched_bytes": 0, "draft_funcs": 0, "draft_bytes": 0, "lib_funcs": 0, "lib_bytes": 0})
         c["funcs"] += 1
         c["bytes"] += size
         if st != "asm":
@@ -119,7 +127,8 @@ def main() -> int:
            "categories": cats, "files": sorted(files.values(), key=lambda x: x["file"])}
     for k, c in sorted(cats.items()):
         pf = 100 * c["matched_bytes"] / c["bytes"] if c["bytes"] else 0
-        print(f"{k:8} matched {c['matched_funcs']:5}/{c['funcs']:5} funcs  {c['matched_bytes']:8}/{c['bytes']:8} bytes ({pf:6.2f}%)  draft {c['draft_funcs']} funcs")
+        lib = f"  library-object {c['lib_funcs']} funcs {c['lib_bytes']} bytes" if c["lib_funcs"] else ""
+        print(f"{k:8} matched {c['matched_funcs']:5}/{c['funcs']:5} funcs  {c['matched_bytes']:8}/{c['bytes']:8} bytes ({pf:6.2f}%)  draft {c['draft_funcs']} funcs{lib}")
     if "--json" in sys.argv:
         SEEN.write_text(json.dumps(seen))
         tmp = ROOT / "build/progress.json.tmp"

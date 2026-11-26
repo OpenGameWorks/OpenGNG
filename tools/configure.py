@@ -51,8 +51,19 @@ def main() -> int:
         f"  pairs = {' '.join(pairs)}",
         "build build/SLUS_207.22: pack build/main.bin | config/elf_layout.json tools/elfpack.py",
         "build build/SLUS_207.22.ok: check build/SLUS_207.22 | config/SLUS_207.22.sha1",
-        "default build/SLUS_207.22.ok",
     ]
+    default = ["build/SLUS_207.22.ok"]
+    # SCE archives are user-supplied (never committed); with them present the build also
+    # verifies that every located library member is linked unchanged.
+    if (ROOT / "ext/sce").is_dir():
+        lines += [
+            "rule sdklink",
+            "  command = $py tools/sdklink.py > build/sdk_link.log",
+            "  description = SDKLINK verify library members",
+            "build build/sdk_link.tsv: sdklink | config/sdk.tsv tools/sdklink.py tools/sdkmatch.py",
+        ]
+        default.append("build/sdk_link.tsv")
+    lines.append("default " + " ".join(default))
     (ROOT / "build.ninja").write_text("\n".join(lines) + "\n")
     print(f"configure: {len(srcs)} sources")
     return 0
