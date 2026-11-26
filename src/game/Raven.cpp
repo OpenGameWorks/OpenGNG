@@ -115,7 +115,7 @@ extern "C" int CreateTimer__8TimerAPIFUiUib(void *pThis, unsigned int, unsigned 
 extern "C" int CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(void *pThis, unsigned int, unsigned int, float (*)[4], float (*)[4], void *, float, bool, int, bool);
 extern "C" void *Spawn__13EntityManagerFUibi(void *pThis, unsigned int, bool, int);
 extern "C" void Destroy__13EntityManagerFUiUi(void *pThis, unsigned int, unsigned int);
-extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(void *pThis, unsigned int);
+extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(unsigned int nId);
 extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*pA)[4], float (*pB)[4]);
 extern "C" float GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *pEnt, float (*pPos)[4]);
 extern "C" float FastMath_Fabs__Ff(float fVal);
@@ -589,7 +589,7 @@ void Raven::Execute() {
             }
         }
         if (DistanceXZ__7MathAPIFPA4_fPA4_f(RAVEN_SELF_POS, &m_unk1E0) < 7.0f) {
-            if (m_unk250 != 0 && ApparitionIsValid__15EntityBaseClassFUi(m_unk254, 0U) != 0) {
+            if (m_unk250 != 0 && ApparitionIsValid__15EntityBaseClassFUi((unsigned int)m_unk254) != 0) {
                 Destroy__13EntityManagerFUiUi(mpEntMgr__15EntityBaseClass, (unsigned int)m_unk254, 0U);
                 m_unk250 = 0;
                 m_unk254 = 0;
@@ -647,7 +647,7 @@ void Raven::Execute() {
         break;
     case 10:
         if (m_unkE9) {
-            if (m_unk254 != 0 && ApparitionIsValid__15EntityBaseClassFUi(m_unk254, (unsigned int)jtbl_00269CE0) != 0) {
+            if (m_unk254 != 0 && ApparitionIsValid__15EntityBaseClassFUi((unsigned int)m_unk254) != 0) {
                 *((unsigned char *)m_unk254 + 0x1EF) = 1;
             }
             m_unk250 = 0;
@@ -676,7 +676,7 @@ void Raven::Execute() {
         break;
     case 12:
         if (m_unkE9) {
-            if (m_unk254 != 0 && ApparitionIsValid__15EntityBaseClassFUi(m_unk254, (unsigned int)jtbl_00269CE0) != 0) {
+            if (m_unk254 != 0 && ApparitionIsValid__15EntityBaseClassFUi((unsigned int)m_unk254) != 0) {
                 *((unsigned char *)m_unk254 + 0x1EF) = 1;
             }
             if (m_unk38 != 0) {

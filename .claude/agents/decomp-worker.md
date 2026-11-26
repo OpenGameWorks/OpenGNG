@@ -47,6 +47,10 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 - `bne a1, v1` against our `bne v1, a1` is the operand order of the comparison: `arg0 == p->m` versus `p->m == arg0`.
 - A local `@N` literal stands for an aggregate brace initializer of a local; `extern lit_XXXX` stand-ins never match. A `.rodata` `@N` holds the initializer's bytes (`T x = {...};` in declaration order). A `.bss` `@N` (address past the loaded image, 0x4xxxxx) is an all-zero initializer, `float v[4] = {0.0f, 0.0f, 0.0f, 0.0f};`, declared where the original copies it (`src/game/PDynamicSplinePatch.cpp`). The initialized local is the variable the code uses; a separate copy adds a frame slot.
 - An unsigned `sltu v0,$zero,x` then `xori 1` is `bool b = !(x > 0); if (!b)`; `x == 0` gives `xor`/`sltiu` (`Open` in `src/game/PDynamicBuffer.cpp`).
+- A callee's arity comes from its mangled name and the original's argument setup, not from a neighbouring file's declaration: `ApparitionIsValid__15EntityBaseClassFUi` is static and takes one `unsigned int` in `a0` (`Shield.cpp`). An extra argument adds an `a1` setup and shifts registers.
+- A 128-bit constant built in a register (`lui; dsll32; pcpyld v0,v0,$zero; sq`) is a 64-bit constant cast to `u_long128`: `q = (u_long128)0x3F80000000000000ULL;`.
+- A guard that compiles to `beqz a -> exit; beqz b -> body; b exit` is `if (!a || b) return;`.
+- A switch whose tests run -2, 0, -1 but whose bodies are laid out -1 then -2 is `switch (x) { case -1: ...; case 0: break; case -2: ...; }`. An out-of-line zero arm in a clamp is `if (lim > 0.0f) {...} else { v = 0.0f; }`.
 
 ## Finishing
 

@@ -81,7 +81,7 @@ extern char stADPCM_SpotFXArrayCurrent[9600];
 extern int SOUND_STREAM_ON[4];
 extern int SOUND_TRANSFER_DATA_BLOCK_TO_EE_STATUS;
 extern int SOUND_SFX_TRANSFER_END;
-extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(void *pThis, unsigned int arg);
+extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(unsigned int nId);
 extern "C" int GetWorldMeshCenter__6PMNodeFPf(void *pThis, float *pOut);
 extern "C" void *GetWorldPos__20GameSoundTrigletPawnFv(void *pThis);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
@@ -1269,7 +1269,7 @@ void PSound::ProcessSFXChannels() {
 int PSound::GetOriginatorPos(float *pOut, unsigned int nFlags, unsigned int nOriginator, unsigned int nNode) {
     if (nFlags & 0x10) {
         if (nOriginator != 0x80000000) {
-            void *pOrig = ApparitionIsValid__15EntityBaseClassFUi((void *)nOriginator, (unsigned int)pOut);
+            void *pOrig = ApparitionIsValid__15EntityBaseClassFUi(nOriginator);
             if (pOrig != 0) {
                 int nSub = *(int *)((char *)pOrig + 0x3C);
                 char *pSrc = (nSub != 0) ? ((char *)nSub + 0x80) : ((char *)pOrig + 0x190);
@@ -1786,7 +1786,7 @@ int PSound::StartAESoftwareFadeout(AmbientEntry *pEntry, unsigned int nArg) {
 }
 
 // DRAFT: 0x001A8D30 StopAmbientEntry__6PSoundFPQ26PSound12AmbientEntryUi
-// note: DIFF 85 words; this/pEntry/nFlag in s2/s1/s0 vs original s1/s0/s6, so the walk and 0x1808C index differ; if-form asserts kept (ternary form 141, reordered locals 117)
+// note: DIFF 151 words (85 with the wrong two-argument ApparitionIsValid; the original passes only a0); this/pEntry/nFlag in s2/s1/s0 vs original s1/s0/s6, so the walk and 0x1808C index differ; if-form asserts kept (ternary form 141, reordered locals 117)
 int PSound::StopAmbientEntry(PSound::AmbientEntry *pEntry, unsigned int nFlag) {
     PSound::AmbientChannelState *pState;
     char *pAcs;
@@ -1879,7 +1879,7 @@ int PSound::StopAmbientEntry(PSound::AmbientEntry *pEntry, unsigned int nFlag) {
         }
     } else {
         nRet = 1;
-        ApparitionIsValid__15EntityBaseClassFUi((void *)pEntry->m_unk1C, nUnset);
+        ApparitionIsValid__15EntityBaseClassFUi((unsigned int)pEntry->m_unk1C);
     }
     CheckAllChannelsMatch();
     return nRet;
