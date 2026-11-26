@@ -1134,14 +1134,17 @@ void HudBossMeter::Init(PMeshNode *meshNode, HudData *hud) {
     m_unkF = hud->m_unk5;
     m_unkE = hud->m_unk4;
     m_unk8 = *(float *)((char *)m_unk4 + 0x84);
-    if (hud->m_unk0 != 0xA389995D) {
-        m_unk18 = ((PMNode *)m_unk4)->Find(0x463547C7U);
-        m_unk1C = ((PMNode *)m_unk4)->Find(0x6780BC04U);
-        m_unk16 = 2;
-    } else {
+    switch (hud->m_unk0) {
+    case 0xA389995D:
         m_unk18 = ((PMNode *)m_unk4)->Find(0x2291CBBBU);
         m_unk1C = ((PMNode *)m_unk4)->Find(0x20DDED4AU);
         m_unk16 = 0;
+        break;
+    default:
+        m_unk18 = ((PMNode *)m_unk4)->Find(0x463547C7U);
+        m_unk1C = ((PMNode *)m_unk4)->Find(0x6780BC04U);
+        m_unk16 = 2;
+        break;
     }
     SetFace();
 }
