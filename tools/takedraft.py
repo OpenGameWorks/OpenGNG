@@ -30,12 +30,12 @@ def main() -> int:
     maxb = int(sys.argv[2], 0) if len(sys.argv) > 2 else 0x400
     act = q.load_active()
     busy = {j["file"] for j in act}
-    tried = {l.split("\t")[0].upper() for r in (ROOT / "build/results").glob("*-d*.tsv")
+    tried = {int(l.split("\t")[0], 16) for r in (ROOT / "build/results").glob("*-d*.tsv")
              for l in r.read_text().splitlines() if "\tDRAFT" in l}
     files: dict[str, list] = {}
     for l in (ROOT / "build/slices/drafts_known.tsv").read_text().splitlines():
         a, f, d, n, size = l.split("\t")
-        if int(d) <= maxd and int(size) <= maxb and f not in busy and a.upper() not in tried:
+        if int(d) <= maxd and int(size) <= maxb and f not in busy and int(a, 16) not in tried:
             files.setdefault(f, []).append((int(d), a, n))
     for f, v in sorted(files.items(), key=lambda kv: (-len(kv[1]), sum(d for d, _, _ in kv[1]))):
         src = (ROOT / f).read_text()
