@@ -65,17 +65,17 @@ void PMesh::SetSTAnimOptions(bool bFlag) {
 }
 
 // DRAFT: 0x0018F670 ComputeBoundingBox__5PMeshFv
-// note: 13 words differ. Pointer locals (pMin/pMax/pTemp) cut 31 to 13. Still differs: loop prologue register assignment (original j in a2, aMax in v1, aTemp in a1, aMin in a0), and the zero-compare at 0x11C/0x120 loads into f1 where ours loads f0. Tried: int/unsigned j, swapped zero-compare operands, reordered pointer assignments (no change).
+// note: 4 words differ (0x90-0x9C). Zero tests use the truth form `!m_unk10[1][n]`, which fixed the zero-compare operand order. Original zeroes the offset register (a3) before loading pMax/pTemp/pMin (v1/a1/a0); ours zeroes it after. Tried: 24 declaration orders of the four pointer/index locals (best pMax, pMin, pTemp, j = 4 words, applied), nOffset = 0 at top, before nIndex, and inside the loop (4 or 86 words), int/unsigned j.
 void PMesh::ComputeBoundingBox() {
     float aTemp[2][4];
     float aMin[4];
     float aMax[4];
     unsigned int nIndex;
     int nOffset;
-    unsigned int j;
-    float *pMin;
     float *pMax;
+    float *pMin;
     float *pTemp;
+    unsigned int j;
 
     if (m_unk0 == 0) {
         CdsAssert__FPciPc("PMesh.cpp", 0x13D, "mpMeshFragments");
@@ -87,10 +87,11 @@ void PMesh::ComputeBoundingBox() {
     nOffset = 0;
     while (nIndex < m_unk4) {
         PBoundBoxToBoundBox__FPA2_A4_fPA2_A4_f((float (*)[2][4])((char *)m_unk0 + nOffset + 0x70), &aTemp);
+        j = 0;
         pMax = aMax;
         pTemp = &aTemp[0][0];
         pMin = aMin;
-        for (j = 0; j < 3; j++) {
+        for (; j < 3; j++) {
             if (pTemp[j] < pMin[j]) {
                 pMin[j] = pTemp[j];
             }
@@ -102,13 +103,13 @@ void PMesh::ComputeBoundingBox() {
         nIndex++;
     }
     MakePBoundBox__FPfPfPA2_A4_f(aMin, aMax, &m_unk10);
-    if (m_unk10[1][0] == 0.0f) {
+    if (!m_unk10[1][0]) {
         m_unk10[1][0] = 0.5f;
     }
-    if (m_unk10[1][1] == 0.0f) {
+    if (!m_unk10[1][1]) {
         m_unk10[1][1] = 0.5f;
     }
-    if (m_unk10[1][2] == 0.0f) {
+    if (!m_unk10[1][2]) {
         m_unk10[1][2] = 0.5f;
     }
     m_unkE = 0x20;
@@ -126,7 +127,7 @@ void PMesh::SetBoundBox(float (*pBox)[2][4]) {
 }
 
 // DRAFT: 0x0018F880 Load__5PMeshFP8PPakFileP6PArrayUiUi16ePsx2FileVersionb
-// note: 4 words differ (0xF8-0x104). Original zeroes nOffset after the nFirst subu (in the beqz delay slot); ours zeroes it before the lhu. Tried: all 6 local decl orders (7-10 words), nIndex=0 before nFirst (4, kept), nOffset=0 before nFirst (4), nOffset in for-init (4), while form (4).
+// note: 4 words differ (0xF8-0x104). Original zeroes nOffset after the nFirst subu (in the beqz delay slot); ours zeroes it before the lhu. Tried: all 6 local decl orders (7-10 words), nIndex=0 before nFirst (4, kept), nOffset=0 before nFirst (4), nOffset in for-init (4), while form (4), nIndex/nOffset/nFirst and nOffset/nIndex/nFirst orders (4 and 7).
 int PMesh::Load(PPakFile *pPakFile, PArray *pTextures, unsigned int nCount, unsigned int nUnk, ePsx2FileVersion eVersion, bool bFlag) {
     unsigned int nIndex;
     unsigned int nFirst;
