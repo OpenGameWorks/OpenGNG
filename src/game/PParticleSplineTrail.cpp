@@ -34,7 +34,7 @@ extern "C" float sqrtf(float);
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PParticleSplineTrail.cpp", line, #cond))
 
 // DRAFT: 0x001F0E20 Start__20PParticleSplineTrailFv
-// note: 7 words differ after the comma-form loop init (for (i = 0, nOffset = 0; ...)); the nOffset and nVal registers still swap (orig offset a3, const a1). Tried: nOffset-before-nVal, unsigned nVal, unsigned nOffset, nOffset/i/nVal order, split nVal assignment.
+// note: 7 words differ; the nOffset and nVal registers still swap (orig offset a3, const a1). Tried (8 attempts): nOffset-before-nVal, unsigned nVal, unsigned nOffset, nOffset/i/nVal order, split nVal assignment, nVal in the for-init (7), inline literal (7).
 void PParticleSplineTrail::Start() {
     m_unk160 = 1.0f;
     int nVal = 0xC9742400;
@@ -180,7 +180,7 @@ void PParticleSplineTrail::FrustrumTest(PFrustrum *pFrustum, float *pVec, float 
 }
 
 // DRAFT: 0x001F1740 Animate__20PParticleSplineTrailFf
-// note: 14 words differ. Original loads m_unk128 before m_unk160 and subtracts as m160-m128 (sub.s f0,f0,f1); no ordering of the local reproduces both. The fDelta tail compiles as bc1t+jal, original as bc1f+b to a shared exit; empty-then, early-return and else-return forms all gave the same layout.
+// note: 14 words differ (5 attempts). Original loads m_unk128 before m_unk160 and subtracts as m160-m128 (sub.s f0,f0,f1); no ordering of the local reproduces both. The fDelta tail compiles as bc1t+jal, original as bc1f+b to a shared exit; empty-then, early-return, else-return, trailing-return, goto-exit and reversed `0.0f == fDelta` forms all gave 14.
 void PParticleSplineTrail::Animate(float fDelta) {
     if ((m_unk18 == 0) || (m_unk17 != 0)) {
         float fVal = m_unk160 - m_unk128;

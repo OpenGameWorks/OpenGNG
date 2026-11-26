@@ -250,7 +250,7 @@ int ZCompareFragments(void *pIdx0, void *pIdx1)
 }
 
 // DRAFT: 0x184800 VBlankEndInterruptHandler__Fi
-// note: 2 words differ: the original places daddu v1,zero,zero before sd ra; ours emits sd ra first. Tried: scalar/array counter, consolidated/split COP0 asm, lui/sync as .word, nop, daddu in its own asm, unused and used zero local (X2: 29 words; X3 asm block with zero local: 5 words), mfpc reads with named local (10 lines, wrong v0/a0 allocation).
+// note: 2 words differ: the original places daddu v1,zero,zero before sd ra; ours emits sd ra first. Tried: scalar/array counter, consolidated/split COP0 asm, lui/sync as .word, nop, daddu in its own asm, unused and used zero local (X2: 29 words; X3 asm block with zero local: 5 words), mfpc reads with named local (29 words, wrong v0/a0 allocation), mtc0 with named C operands (assembler rejects the mnemonic, so the COP0 writes stay .word).
 static int VBlankEndInterruptHandler(int nIrq) {
     asm { .word 0x0000182D }
     gCDSVBlankCount[0]++;
@@ -534,7 +534,7 @@ void PGfxEngine::BeginVertexGlow() {
 }
 
 // DRAFT: 0x1852D0 SetGlowSizeAndColor__10PGfxEngineFffPf
-// note: 11 words differ (best of 4): volatile int struct copy keeps the 0x40 frame but copies via lwc1/swc1 where the original batches four lw then four sw; fA lands in v1 not v0. Tried: volatile array (22), plain struct copy (dropped as dead, frame 0x30), unsigned struct volatile (lwc1 copy).
+// note: 11 words differ: volatile int struct copy keeps the 0x40 frame but copies via lwc1/swc1 where the original batches four lw then four sw; base is v0 not t2, fA lands in v1 not v0. Tried: volatile array copy (22), volatile struct assignment (22), non-volatile struct assignment (22), plain struct copy (dropped as dead, frame 0x30), unsigned struct volatile (lwc1 copy, 24).
 void PGfxEngine::SetGlowSizeAndColor(float fA, float fB, float *pColor) {
     struct Col4 {
         int v[4];
