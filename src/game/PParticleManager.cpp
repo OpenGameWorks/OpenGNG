@@ -163,7 +163,7 @@ public:
 
 class PMovingFog {
 public:
-    virtual void Slot00(int bFlag);
+    virtual ~PMovingFog();
     virtual void Slot01();
     virtual void Slot02();
     virtual void Slot03();
@@ -505,8 +505,8 @@ void PParticleManager::DestroyEweedReactionFx() {
     int off = 0;
     do {
         PMovingFog *pFx = *(PMovingFog **)((char *)this + off + 0x20DC);
-        if (pFx != 0 && pFx != 0) {
-            pFx->Slot00(1);
+        if (pFx != 0) {
+            delete pFx;
         }
         i++;
         off += 4;
@@ -558,8 +558,8 @@ void PParticleManager::DestroySulphurReactionFx() {
     int off = 0;
     do {
         PMovingFog *pFx = *(PMovingFog **)((char *)this + off + 0x20BC);
-        if (pFx != 0 && pFx != 0) {
-            pFx->Slot00(1);
+        if (pFx != 0) {
+            delete pFx;
         }
         i++;
         off += 4;
@@ -615,8 +615,8 @@ void PParticleManager::DestroyGroundDustFx() {
     int off = 0;
     do {
         PMovingFog *pFx = *(PMovingFog **)((char *)this + off + 0x208C);
-        if (pFx != 0 && pFx != 0) {
-            pFx->Slot00(1);
+        if (pFx != 0) {
+            delete pFx;
         }
         i++;
         off += 4;
@@ -753,11 +753,10 @@ void *PParticleManager::AllocAuraParticle() {
     return 0;
 }
 
-// DRAFT: 0x001B8AD0 DestroyMovingFog__16PParticleManagerFv
-// note: the original has one null check with the vtable call and store inside; ours emits an extra beqz before the vtable load (variants: local pointer, early return, store outside guard).
+// FUNCTION: 0x001B8AD0 DestroyMovingFog__16PParticleManagerFv
 void PParticleManager::DestroyMovingFog() {
     if (m_unk9B4 != 0) {
-        m_unk9B4->Slot00(1);
+        delete m_unk9B4;
         m_unk9B4 = 0;
     }
 }
@@ -768,9 +767,7 @@ void PParticleManager::CreateMovingFog(tagParticleMovingFogParams *pParams) {
         CdsAssert("PParticleManager.cpp", 0x47A, "pParams");
     }
     if (m_unk9B4 != 0) {
-        if (m_unk9B4 != 0) {
-            m_unk9B4->Slot00(1);
-        }
+        delete m_unk9B4;
         m_unk9B4 = 0;
     }
     m_unk9B4 = (PMovingFog *)new PParticleMovingFog;
@@ -1578,9 +1575,7 @@ void PParticleManager::RemoveAllParticleSystems() {
         m_unk14 = 0;
     }
     if (m_unk9B4 != 0) {
-        if (m_unk9B4 != 0) {
-            m_unk9B4->Slot00(1);
-        }
+        delete m_unk9B4;
         m_unk9B4 = 0;
     }
     memset(m_unk9C0, 0, 0x500);
