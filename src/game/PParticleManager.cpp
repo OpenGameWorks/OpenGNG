@@ -868,11 +868,10 @@ void PParticleManager::CreateRain(float fDensity) {
     m_unk9B0 = 1;
 }
 
-// DRAFT: 0x001B8EB0 SetRainDensity__16PParticleManagerFUifb
-// note: 1 word differs at 0x1C; ours beqz $s0 (local pRain) vs original beqz $a1 (hRain). Tried nested if (6 words), and no local (6 words).
+// FUNCTION: 0x001B8EB0 SetRainDensity__16PParticleManagerFUifb
 void PParticleManager::SetRainDensity(unsigned int hRain, float fDensity, bool bFlag) {
     PParticleRain *pRain = (PParticleRain *)hRain;
-    if (hRain != 0 && IsValid((PParticleSystem *)hRain) && pRain->m_unkC == 8) {
+    if (pRain != 0 && IsValid((PParticleSystem *)pRain) && pRain->m_unkC == 8) {
         pRain->SetDensity(fDensity, bFlag);
     }
 }
