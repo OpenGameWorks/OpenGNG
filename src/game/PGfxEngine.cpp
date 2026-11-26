@@ -219,10 +219,10 @@ static void ComputeDistanceSq(float *pA, float *pB, float (*pMatA)[4][4], float 
 }
 
 // DRAFT: 0x001846D0 ZCompareFragments__FPvPv
-// note: 26 words differ: fDist at sp+0x18 (orig sp+0x10); matrix branch order; bc1t vs bc1f on the return compare. Tried: scratch vector, member-array slot bases, hoisted vec loads (53->29), int returns (->26), fDist first (no change), flipped 158F01 test (27), flipped pMat0 test (no change).
+// note: 18 words differ: fDist aligned(16) and ternary return fixed the frame and bc1t form. Remaining: pFrag1->m_unk64 cached before the first branch and pVec0 placed in a beqz delay slot. Tried: scratch vector, member-array slot bases, hoisted vec loads (53->29), int returns, fDist first, flipped 158F01 and pMat0 tests, cached m64 local (31), nRet bool return (59).
 int ZCompareFragments(void *pIdx0, void *pIdx1)
 {
-    float fDist[2];
+    float fDist[2] __attribute__((aligned(16)));
     char *pSlot0 = gpGfxEngine->m_unk159310 + ((int)pIdx0 << 8);
     char *pSlot1 = gpGfxEngine->m_unk159310 + ((int)pIdx1 << 8);
     PMeshFragment *pFrag0 = *(PMeshFragment **)pSlot0;
@@ -244,7 +244,7 @@ int ZCompareFragments(void *pIdx0, void *pIdx1)
     }
     ComputeDistanceSq(pVec0, pVec1, pMat0, pMat1, gpGfxEngine->m_unk16D330, fDist);
     if (gpGfxEngine->m_unk158F01 != 0) {
-        return fDist[0] > fDist[1] ? 1 : 0;
+        return fDist[0] <= fDist[1] ? 0 : 1;
     }
     return fDist[0] <= fDist[1] ? 1 : 0;
 }
@@ -537,18 +537,17 @@ void PGfxEngine::BeginVertexGlow() {
 }
 
 // DRAFT: 0x1852D0 SetGlowSizeAndColor__10PGfxEngineFffPf
-// note: frame 0x40 matches with volatile colour copy; the four colour loads are one-at-a-time, original batches loads then stores (struct copy is dropped as dead without volatile).
+// note: 11 words differ (best of 4): volatile int struct copy keeps the 0x40 frame but copies via lwc1/swc1 where the original batches four lw then four sw; fA lands in v1 not v0. Tried: volatile array (22), plain struct copy (dropped as dead, frame 0x30), unsigned struct volatile (lwc1 copy).
 void PGfxEngine::SetGlowSizeAndColor(float fA, float fB, float *pColor) {
+    struct Col4 {
+        int v[4];
+    };
     unsigned int aData[4];
-    volatile unsigned int aColor[4];
     aData[0] = *(unsigned int *)&fA;
     aData[2] = 0;
     aData[1] = *(unsigned int *)&fB;
     aData[3] = 0;
-    aColor[0] = *(unsigned int *)&pColor[0];
-    aColor[1] = *(unsigned int *)&pColor[1];
-    aColor[2] = *(unsigned int *)&pColor[2];
-    aColor[3] = *(unsigned int *)&pColor[3];
+    volatile Col4 aColor = *(Col4 *)pColor;
     m_unk154C80->WriteToVu1Mem(0x3C3, (u_long128 *)aData, 2);
 }
 
@@ -941,7 +940,7 @@ void PGfxEngine::RenderBlendedFragments(float *pVec) {
 }
 
 // DRAFT: 0x1865F0 AddBlendedFragment__10PGfxEngineFP13PMeshFragmentiPbb
-// note: DIFF 27 vs original; original is 0x1BC bytes (ours 0x1AC), tail table address is (this+0x158F04)+idx*4 via lui 0x15 + addu and it reloads m_unk169310 and m_unk16D324 with fresh lui 0x17; return-0 branch targets 0x4A (ours 0x46). Tried: direct member index (DIFF 30), pointer local with m_unk169310 index (30), re-read counter with nIndex store (30), pointer local with nIndex index (30), pOut loop via pDst pointer (50), hoisted loop bound (51).
+// note: 27 words differ; original is 0x1BC bytes (ours 0x1AC). Table address is (this+0x158F04)+idx*4 (original adds this+0x158F04 first, ours adds idx*4 first) and the original reloads m_unk169310 for the +1 after the table store; return-0 branch targets 0x4A (ours 0x46). Tried: direct member index (30), pointer local with m_unk169310 index (30), re-read counter with nIndex store (30), pointer local with nIndex index (30), m_unk169310 reload +1 (30), pOut loop via pDst pointer (50), hoisted loop bound (51).
 int PGfxEngine::AddBlendedFragment(PMeshFragment *pFrag, int nIdx, bool *pOut, bool bFlag) {
     if (pFrag == 0) {
         CdsAssert__FPciPc("PGfxEngine.cpp", 0x515, "pFragment");
