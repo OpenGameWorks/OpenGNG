@@ -323,13 +323,13 @@ unsigned int PSound::FindFreeAmbientChannel() {
 }
 
 // DRAFT: 0x001A3F90 DelinkChannelState__6PSoundFPPQ26PSound19AmbientChannelStatePQ26PSound12AmbientEntry
-// note: DIFF 36; register map swapped (original pFound=t1 pPrev=t2 pCur=t0 pNewHead=a3); goto-fail exit used; tried decl orders (DIFF 55/60/46), nKey hoist gave 36; 8 attempts.
+// note: DIFF 24; decl order from 120-permutation sweep (pFound=0,pCur,pNewHead,pPrev=0,pChain) plus unsigned short copy of m_unk04; remaining diff is t1/a3/t0 register swap (original pFound=t1 pPrev=t2 pCur=t0 pNewHead=a3).
 int PSound::DelinkChannelState(AmbientChannelState **ppHead, AmbientEntry *pEntry) {
     AmbientChannelState *pHead;
     AmbientChannelState *pFound = 0;
-    AmbientChannelState *pPrev = 0;
     AmbientChannelState *pCur;
     AmbientChannelState *pNewHead;
+    AmbientChannelState *pPrev = 0;
     AmbientEntry *pChain;
     short nKey;
 
@@ -368,7 +368,7 @@ int PSound::DelinkChannelState(AmbientChannelState **ppHead, AmbientEntry *pEntr
     }
     if (pNewHead != pHead) {
         if (pNewHead != 0) {
-            pNewHead->m_unk04 = pHead->m_unk04;
+            *(unsigned short *)&pNewHead->m_unk04 = *(unsigned short *)&pHead->m_unk04;
             pNewHead->m_unk0C = pHead->m_unk0C;
             pNewHead->m_unk10 = pHead->m_unk10;
             pNewHead->m_unk14 = pHead->m_unk14;
@@ -907,7 +907,7 @@ void PSound::RegisterSoundEntityAmounts(unsigned int p0, unsigned int p1, unsign
 }
 
 // DRAFT: 0x001A5290 RegisterRoom__6PSoundFP9SoundRoom
-// note: frame 0x50 vs 0x40 (pRoom+0x1B0 hoisted to s0, extra s3); third MakeMatrixBox arg is an uninit local that lands on pRoom reg, original leaves a3 untouched; dead lw pRoom+0xC missing. Tried block-scope/function-scope uninit, literal 0, unsigned compare.
+// note: 38 words; frame 0x50 vs 0x40 (pRoom+0x1B0 hoisted to s0, extra s3); third MakeMatrixBox arg is an uninit local that lands on pRoom reg, original leaves a3 untouched; dead lw pRoom+0xC missing (keeps pRoom in s0). Tried block-scope/function-scope uninit, literal 0, unsigned compare, volatile pRoom (57).
 int PSound::RegisterRoom(SoundRoom *pRoom) {
     tagBOX *pUnset;
     if (!((unsigned int)m_unk544C < 0x28)) {
@@ -1298,7 +1298,7 @@ void PSound::AdjustEffectVolumes(unsigned int &nOutA, unsigned int &nOutB, float
 }
 
 // DRAFT: 0x001A6340 ProcessMusic__6PSoundFv
-// note: 38 words; this kept in s1 with 0x30 frame (orig s0, 0x20); table row addressing folds into lw/sw immediates in other forms (57 words); 8 attempts used
+// note: 38 words; CSE of this+0x78 keeps row pointer in s0 across the call so this moves to s1 (orig keeps this in s0, frame 0x20 vs 0x30); blocking the CSE with separate row pointers in each block gave 57/64; 8 attempts used
 
 int PSound::ProcessMusic() {
     unsigned int idx = m_unk28;
@@ -2257,7 +2257,7 @@ int PSound::StartAESoftwareFadeout(unsigned int nID, unsigned int nArg) {
 }
 
 // DRAFT: 0x001A8B80 StartAESoftwareFadeout__6PSoundFPQ26PSound12AmbientEntryUi
-// note: 53 words differ; nCount in v0 instead of s4 and no top guard before the loop (do-while, while, for, declaration-at-use, pointer-split and reorder forms tried; while 57, for 57, split returns 55)
+// note: 53 words differ; nCount in v0 instead of s4 (orig bFound is a bool, daddiu 1), no top guard before the loop; tried do-while, while, for, declaration-at-use, pointer-split, reorder (while 57, for 57, split 55), bool bFound with test (53), bool without test (60)
 int PSound::StartAESoftwareFadeout(AmbientEntry *pEntry, unsigned int nArg) {
     int bFound = 0;
     int nRet;
