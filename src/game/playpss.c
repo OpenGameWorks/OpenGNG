@@ -13,7 +13,7 @@ extern "C" int sceMpegDemuxPss(sceMpeg *, void *, int);
 extern "C" void RemoteChangePCMVolume(int);
 void CdsAssert(char *, int, char *);
 void audioUpdate();
-void getTrayStatus();
+static void getTrayStatus();
 
 extern signed char gbMoviesOnDisc;
 extern int fst_trayOpen;
@@ -103,7 +103,7 @@ extern SubTitleState subTitle;
 
 // DRAFT: 0x001FFA40 ProcessNextSubtitle__Fv
 // note: 39 words differ; original keeps pEntry in s0 and computes the next entry in-register (ours reloads subTitle.m_unk8), length 0x164 vs our 0x15C. Tried extern vs static subTitle (relocs now match), local end-time sum; none reduced the diff.
-void ProcessNextSubtitle() {
+static void ProcessNextSubtitle() {
     FontManager *gi;
     FontSubtitle *pEntry;
     FontNode *pNode;
@@ -144,7 +144,7 @@ void ProcessNextSubtitle() {
 
 // DRAFT: 0x001FFBB0 checkAndWaitForDisk__Fv
 // note: 20 words differ; loop layout (do-while back-branch one word early, unfilled delay-slot nops after sceCdGetDiskType, tail call at 0x80 vs 0x88). Tried while(1), loop-scoped diskType, for(;;)+break; none reduced the diff.
-void checkAndWaitForDisk() {
+static void checkAndWaitForDisk() {
     if (gbMoviesOnDisc != 0) {
         getTrayStatus();
         if (fst_trayOpen != 0) {
@@ -166,7 +166,7 @@ void checkAndWaitForDisk() {
 }
 
 // FUNCTION: 0x001FFC50 getTrayStatus__Fv
-void getTrayStatus() {
+static void getTrayStatus() {
     int status;
 
     status = sceCdStatus();
@@ -206,19 +206,18 @@ block_8:
 }
 
 // FUNCTION: 0x001FFD60 errorCallback__FP7sceMpegP13sceMpegCbDataPv
-int errorCallback(sceMpeg *arg0, sceMpegCbData *arg1, void *arg2) {
+static int errorCallback(sceMpeg *arg0, sceMpegCbData *arg1, void *arg2) {
     CdsAssert("playpss.c", 0x3DB, "0");
     return 1;
 }
 
-// DRAFT: 0x001FFD90 backgroundCallback__FP7sceMpegP13sceMpegCbDataPv
-// note: 2 words differ; load order of the counter and bgDuration. Tried single-expression, split, counter-local, cast, and swapped-operand forms; the counter-local form is the best at 2.
-int backgroundCallback(sceMpeg *arg0, sceMpegCbData *arg1, void *arg2) {
-    unsigned int temp_s0;
-    unsigned int counter;
+// FUNCTION: 0x001FFD90 backgroundCallback__FP7sceMpegP13sceMpegCbDataPv
+static int backgroundCallback(sceMpeg *arg0, sceMpegCbData *arg1, void *arg2) {
+    int temp_s0;
+    int counter;
 
     counter = *(unsigned int *)0x10000000;
-    temp_s0 = bgDuration + counter;
+    temp_s0 = counter + (unsigned int)bgDuration;
     while ((unsigned int)*(unsigned int *)0x10000000 < temp_s0) {
         fillBuff(arg0, 0);
         audioUpdate();
@@ -227,7 +226,7 @@ int backgroundCallback(sceMpeg *arg0, sceMpegCbData *arg1, void *arg2) {
 }
 
 // FUNCTION: 0x001FFE00 nodataCallback__FP7sceMpegP13sceMpegCbDataPv
-int nodataCallback(sceMpeg *arg0, sceMpegCbData *arg1, void *arg2) {
+static int nodataCallback(sceMpeg *arg0, sceMpegCbData *arg1, void *arg2) {
     int temp_s1;
     int temp_a1;
 
@@ -271,7 +270,7 @@ int nodataCallback(sceMpeg *arg0, sceMpegCbData *arg1, void *arg2) {
 
 // DRAFT: 0x001FFF50 audioCallback__FP7sceMpegP16sceMpegCbDataStrPv
 // note: 19 words differ; arg1 and size are swapped between s0/s1. Tried local reorder, pointer copy first/last, dropping temp_a2; declaration order does not change register assignment.
-int audioCallback(sceMpeg *arg0, sceMpegCbDataStr *arg1, void *arg2) {
+static int audioCallback(sceMpeg *arg0, sceMpegCbDataStr *arg1, void *arg2) {
     int temp_s1;
     char *ptr1;
     char *ptr2;
@@ -296,9 +295,8 @@ int audioCallback(sceMpeg *arg0, sceMpegCbDataStr *arg1, void *arg2) {
     return 1;
 }
 
-// DRAFT: 0x00200040 videoCallback__FP7sceMpegP16sceMpegCbDataStrPv
-// note: 5 words differ; wrap path loads m_unkC/m_unk8 into swapped registers (original m_unkC in v1). Tried the original wrap expression (10), local first-chunk length (60), and reordered memcpy source; else-path operand swap gave 5.
-int videoCallback(sceMpeg *arg0, sceMpegCbDataStr *arg1, void *arg2) {
+// FUNCTION: 0x00200040 videoCallback__FP7sceMpegP16sceMpegCbDataStrPv
+static int videoCallback(sceMpeg *arg0, sceMpegCbDataStr *arg1, void *arg2) {
     int avail;
     int wrap;
 
@@ -315,11 +313,11 @@ int videoCallback(sceMpeg *arg0, sceMpegCbDataStr *arg1, void *arg2) {
     wrap = (demuxBuffPast - demuxBuff) + arg1->m_unkC - demuxBuffSize;
     if (wrap > 0) {
         memcpy((void *)(((unsigned int)demuxBuffPast & 0x0FFFFFFF) | 0x20000000), (void *)arg1->m_unk8, arg1->m_unkC - wrap);
-        memcpy((void *)(((unsigned int)demuxBuff & 0x0FFFFFFF) | 0x20000000), (void *)(arg1->m_unk8 + (arg1->m_unkC - wrap)), wrap);
+        memcpy((void *)(((unsigned int)demuxBuff & 0x0FFFFFFF) | 0x20000000), (void *)(arg1->m_unk8 + (int)(arg1->m_unkC - wrap)), wrap);
         demuxBuffPast = demuxBuff + wrap;
     } else {
         memcpy((void *)(((unsigned int)demuxBuffPast & 0x0FFFFFFF) | 0x20000000), (void *)arg1->m_unk8, arg1->m_unkC);
-        demuxBuffPast = arg1->m_unkC + demuxBuffPast;
+        demuxBuffPast = demuxBuffPast + arg1->m_unkC;
     }
     return 1;
 }
