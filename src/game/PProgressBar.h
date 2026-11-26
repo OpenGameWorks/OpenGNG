@@ -13,6 +13,10 @@ public:
     void SetRange(float fRange);
     void SetReading(float fReading);
     void SetBgColor(float fR, float fG, float fB, float fA);
+    void SetColor1(float fR, float fG, float fB, float fA);
+    void SetColor2(float fR, float fG, float fB, float fA);
+    void ResetReading();
+    void Render();
 
     float m_unk0;           // 0x00 vertex x, y, 1, 1
     float m_unk4;
@@ -23,7 +27,11 @@ public:
     float m_unk24;
     float m_unk28;
     float m_unk2C;
-    char _pad30[0x50];      // 0x30 cleared by ctor
+    char _pad30[0x10];      // 0x30 cleared by ctor
+    unsigned int m_unk40[4];// 0x40 colour row 0, written by SetColor1
+    unsigned int m_unk50[4];// 0x50 colour row 1, written by SetColor1 when m_unk230 is 0
+    unsigned int m_unk60[4];// 0x60 colour row 2, written by SetColor1 when m_unk230 is set
+    char _pad70[0x10];      // 0x70 cleared by ctor
     float m_unk80;          // 0x80 vertex row
     float m_unk84;
     float m_unk88;
@@ -41,11 +49,12 @@ public:
     float m_unkB8;
     float m_unkBC;
     unsigned int m_unkC0[16]; // 0xC0 background colour, four rows of r, g, b, a
-    char _pad100[0x110];    // 0x100 cleared by ctor (0x100..0x1FF), 0x200 unused
-    int m_unk210;          // 0x210 cleared by ctor
-    int m_unk214;
-    int m_unk218;
-    float m_unk21C;         // 0x21C 1.0f in ctor
+    char _pad100[0x100];    // 0x100 cleared by ctor (0x100..0x1FF)
+    float m_unk200[4];      // 0x200 colour floats, written by SetColor1
+    float m_unk210;         // 0x210 cleared by ctor, SetColor2 r
+    float m_unk214;         // 0x214 SetColor2 g
+    float m_unk218;         // 0x218 SetColor2 b
+    float m_unk21C;         // 0x21C 1.0f in ctor, SetColor2 a
     float m_unk220;         // 0x220 Init x
     float m_unk224;         // 0x224 Init y
     float m_unk228;         // 0x228 Init width

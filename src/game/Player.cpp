@@ -1597,10 +1597,9 @@ void Player::AlignPosition(EntityBaseClass *arg0) {
     }
 }
 
-// DRAFT: 0x0015B9B0 UnlockGateMove__6PlayerFv
-// note: 1 word differs at 0x0014: the original loads m_unk328 through s1 (this saved to s1 at 0x10), ours through a0 (incoming this). Tried: direct this (1), Player *self alias for whole body (1), self alias only for the m_unk328 argument (1, copy propagation folds it back).
+// FUNCTION: 0x0015B9B0 UnlockGateMove__6PlayerFv
 void Player::UnlockGateMove() {
-    void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk328);
+    void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, *(unsigned int *)((char *)this + 0x328));
     if (pApparition != 0) {
         int state = m_unk250;
         int h = (int)m_unk3C[13];
@@ -1669,11 +1668,11 @@ void Player::UnlockChestMove() {
 }
 
 // note: 2 words differ (0x40/0x48): the gp global mpEntMgr loads into a0 before the m_unk328 load into a1; the original has them reversed, and the m_unk328 load fills the jal delay slot in ours. Tried: hoisted id local (worse), cast local (same), id local after the m_unk250 store (same, copy propagation), separate mgr local (same), nested if form (same).
-// DRAFT: 0x0015BC20 OpenChestMove__6PlayerFv
+// FUNCTION: 0x0015BC20 OpenChestMove__6PlayerFv
 void Player::OpenChestMove() {
     if (m_unk250 == 0 && !(m_unk3C[0xD] <= 8.0f)) {
         m_unk250 = 1;
-        void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk328);
+        void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, *(unsigned int *)((char *)this + 0x328));
         if (pApparition != 0) {
             ((ApparitionVirtuals *)pApparition)->OnHitEvent(this, 0, 0x1FD, 0);
         }
@@ -1842,9 +1841,9 @@ void Player::ResetShield() {
 }
 
 // note: 2 words differ: SetShield argument is lowered to movn/sltu instead of the original's daddu zero-preload and movz a1,v0,s0. Tried arg0 ? 0 : 1 (33 words), !arg0 (33), (arg0 == 0) ? true : false (movn, no gain), and the empty-then layout (33 words).
-// DRAFT: 0x0015C0E0 SetFlyingShield__6PlayerFP6Shield
+// FUNCTION: 0x0015C0E0 SetFlyingShield__6PlayerFP6Shield
 void Player::SetFlyingShield(Shield *arg0) {
-    SetShield((arg0 == 0) ? 1 : 0);
+    SetShield(arg0 ? false : true);
     if (arg0 == 0 && m_unk2A4 != 0) {
         ((EntityBaseClass *)this)->PlaySound(0x1C);
         if (m_unk260 != 0x22 && m_unk260 != 0) {
@@ -1857,23 +1856,20 @@ void Player::SetFlyingShield(Shield *arg0) {
 }
 
 // note: 2 words differ: the zero-set for the return-0 arm lands in the bne delay slot and the nop moves to the b delay slot. Tried ret=0 and return 0 in the != 1 arm (both 2 lines), and the == 1 layout (about 20 lines).
-// DRAFT: 0x0015C490 IsMidasActive__6PlayerFv
+// FUNCTION: 0x0015C490 IsMidasActive__6PlayerFv
 void *Player::IsMidasActive() {
-    void *ret;
-    if (m_unk210 != 1) {
-        ret = 0;
-    } else {
+    switch (m_unk210) {
+    case 1:
         if (m_unk2A4 != 0) {
-            ret = m_unk2A4;
-        } else {
-            Player *p = this;
-            if (!(m_unk264 & 2) || ((m_unk1B0 & 0x200) == 0)) {
-                p = 0;
-            }
-            ret = p;
+            return m_unk2A4;
         }
+        Player *p = this;
+        if (!(m_unk264 & 2) || ((m_unk1B0 & 0x200) == 0)) {
+            p = 0;
+        }
+        return p;
     }
-    return ret;
+    return 0;
 }
 
 // note: 12 words differ: original tests m_unk250 with beqz into the body and exits via b with ld ra in the delay slot; compiled code emits bnez to the shared exit. Tried nested if, inner early return and && forms, all 12 words.

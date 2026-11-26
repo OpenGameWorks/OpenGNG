@@ -58,6 +58,10 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 - A two-way return whose taken arm is `b` over a `nop` delay slot to `ld ra`, where `if/else` fills the slot with `ld ra`, is a one-case `switch (x) { case 1: return ...; } return 1;` (`TriggerSystem::ConditionCheck`).
 - `slti $at, x, N` then `bnez $at` is `x > N-1`; `x >= N` compiles to `slti` into an ordinary register (`TriggerSystem::ResetTrigger`).
 - A byte flag tested as `sltu v1,$zero,x; xori v1,1; beqz v1` in a branchy body is `if ((x != 0) ^ 1)`; `!x` compiles to `bnez` (`ZinShellExplosion::Execute`).
+- A `beq x,K` whose target is the shared `addiu v0,1` return block with a `nop` delay slot comes from one `&&`-merged guard, `if (a && x != K) { ... return 0; } return 1;`; nested `if`s branch past it with `addiu v0,1` in the slot (`EntityBaseClass::AddToLoad`).
+- When a call's argument loads come in a different order or through the incoming `a0` instead of the saved `this` register, write that member argument as `*(unsigned int *)((char *)this + 0x328)` (`Player::OpenChestMove`, `Player::UnlockGateMove`, `Peddler::ActivateAttackingEnemies`).
+- A bool argument built as `a1 = 0; movz a1, one, p` is `f(p ? false : true)`; `!p` and `p == 0` give `sltu`/`movn` (`Player::SetFlyingShield`).
+- A test `beq x,1 -> body; nop; b exit` with `daddu v0,0` in the `b` slot is `switch (x) { case 1: ... } return 0;` (`Player::IsMidasActive`, `EffectAPI::EnableParticleFx`).
 - `GetClassName` returns the original literal, which can differ from the class name ("Zin Shell Explosion"); read it with `disasm.literal(ADDR)`.
 - A switch whose tests run -2, 0, -1 but whose bodies are laid out -1 then -2 is `switch (x) { case -1: ...; case 0: break; case -2: ...; }`. An out-of-line zero arm in a clamp is `if (lim > 0.0f) {...} else { v = 0.0f; }`.
 

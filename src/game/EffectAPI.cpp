@@ -475,8 +475,7 @@ OneshotEffect::OneshotEffect(unsigned int arg0, unsigned int arg1, PMat4 *arg2, 
     ((PMNode *)m_unk4)->Unk14();
 }
 
-// DRAFT: 0x00156490 Update__13OneshotEffectFf
-// note: 2 differing lines: the box/matrix args are computed in the opposite order (original a2 first at 0xC0, a1 at 0xC8). Bool visibility fixed the daddiu at 0x2C. Tried: pMat local, pBox and pMat locals, pSlot base, char *pBase, int nBase, inline m_unk4+0x110/0x40 (all 2 lines).
+// FUNCTION: 0x00156490 Update__13OneshotEffectFf
 int OneshotEffect::Update(float arg0) {
     bool bVisible;
     if (m_unk4 != 0) {
@@ -492,7 +491,7 @@ int OneshotEffect::Update(float arg0) {
                 float *pSlot = (float *)(m_unk4 + 0x90);
                 pSlot[1] = Round180(180.0f + *(float *)(gEng + 0x19784));
             }
-            int test = mpFrustum__15EntityBaseClass->IntersectBox((float (*)[2][4])(m_unk4 + 0x110), (PMat4 *)(m_unk4 + 0x40));
+            int test = mpFrustum__15EntityBaseClass->IntersectBox((float (*)[2][4])(*(char **)((char *)this + 4) + 0x110), (PMat4 *)(m_unk4 + 0x40));
             ((PMNode *)m_unk4)->SetAllFrustrumTest((eBoxIntersect)test);
             return 1;
         }

@@ -15,8 +15,7 @@ extern unsigned char MODE_PAL;
 extern float GAME_FPS;
 extern EntityManager *mpEntMgr__15EntityBaseClass;
 
-// DRAFT: 0x00158790 KillAllApparitionTimers__8TimerAPIFUib
-// note: 2 words differ; the gp-relative mpEntMgr load sits before the nSeq load (orig: nSeq load then global in jal delay slot). Tried nSeq/pEm locals in both orders, a shared nodeId local, and a direct call; all DIFF 2; member-call spelling and tools/permute.py (192 candidates) no gain.
+// FUNCTION: 0x00158790 KillAllApparitionTimers__8TimerAPIFUib
 void TimerAPI::KillAllApparitionTimers(unsigned int nId, bool bFlag) {
     m_unk10 = m_unk8;
     TimerNode *pNode = m_unk8 ? (TimerNode *)m_unk8->pData : 0;
@@ -24,7 +23,7 @@ void TimerAPI::KillAllApparitionTimers(unsigned int nId, bool bFlag) {
         unsigned int nNodeId = pNode->nId;
         if (nNodeId == nId) {
             if (bFlag) {
-                CallOnTimerEvent__13EntityManagerFUiUi(mpEntMgr__15EntityBaseClass, nNodeId, pNode->nSeq);
+                CallOnTimerEvent__13EntityManagerFUiUi(mpEntMgr__15EntityBaseClass, nNodeId, *(unsigned int *)((char *)pNode + 0xC));
             }
             __dl__FPv(pNode);
             RemoveCurrent__5PListFv((char *)this + 4);

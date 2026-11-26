@@ -1,11 +1,50 @@
 #include "types.h"
 #include "PProgressBar.h"
+#include "PMat4.h"
+#include "PGfxEngine.h"
 
 // TODO(header): foreign declarations
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern int SCREEN_OFFSET_X;
 extern int SCREEN_OFFSET_Y;
 extern "C" void SetReading__12PProgressBarFf(void *pThis, float fReading);
+extern "C" void sceVu0UnitMatrix(float (*pMat)[4]);
+extern "C" void EndMesh__12PDisplayListFv(void *pThis);
+extern "C" void DrawRawVertices__12PDisplayListFPA4_fPA4_fPA4_fPA4_fi(void *pThis, float (*p0)[4], float (*p1)[4], float (*p2)[4], float (*p3)[4], int nCount);
+extern PGfxEngine gGfxEng;
+
+// DRAFT: 0x0016BB90 Render__12PProgressBarFv
+// note: only the sp60 literal load differs (lui/addiu of lit_00244CD0 vs @361+0x4CD0 in .rodata, 2 words); frame and calls match
+void PProgressBar::Render() {
+    float sp20[4][4];
+
+    sceVu0UnitMatrix(sp20);
+    float sp60[4] = {1.0f, 0.0f, 0.0f, 0.0f};
+    float sp70[4][4];
+    float spB0[4][4];
+    sceVu0CopyMatrix(sp70, (float (*)[4])((char *)&gGfxEng + 0x16D3C0));
+    sceVu0CopyMatrix(spB0, (float (*)[4])((char *)&gGfxEng + 0x16D380));
+    ((unsigned char *)&gGfxEng)[0x158E22] = 0;
+    gGfxEng.SetWorldMatrix((PMat4 *)sp20);
+    gGfxEng.SetViewMatrix((PMat4 *)sp20);
+    gGfxEng.SetScreenMatrix((PMat4 *)sp20);
+    gGfxEng.SetMaterial(0, sp60, true, 0x44, 0x31001);
+    gGfxEng.BeginMesh((eBoxIntersect)1);
+    DrawRawVertices__12PDisplayListFPA4_fPA4_fPA4_fPA4_fi(gGfxEng.m_unk154C80, (float (*)[4])((char *)this + 0x80), 0, (float (*)[4])m_unkC0, 0, 4);
+    DrawRawVertices__12PDisplayListFPA4_fPA4_fPA4_fPA4_fi(gGfxEng.m_unk154C80, (float (*)[4])this, 0, (float (*)[4])m_unk40, 0, 4);
+    DrawRawVertices__12PDisplayListFPA4_fPA4_fPA4_fPA4_fi(gGfxEng.m_unk154C80, (float (*)[4])((char *)this + 0x100), 0, (float (*)[4])((char *)this + 0x140), 0, 4);
+    DrawRawVertices__12PDisplayListFPA4_fPA4_fPA4_fPA4_fi(gGfxEng.m_unk154C80, (float (*)[4])((char *)this + 0x180), 0, (float (*)[4])((char *)this + 0x1C0), 0, 4);
+    EndMesh__12PDisplayListFv(gGfxEng.m_unk154C80);
+    gGfxEng.SetScreenMatrix((PMat4 *)sp70);
+    gGfxEng.SetViewMatrix((PMat4 *)spB0);
+}
+
+// FUNCTION: 0x0016C1D0 ResetReading__12PProgressBarFv
+void PProgressBar::ResetReading() {
+    m_unk248 = 0;
+    m_unk240 = 0;
+    SetReading(0.0f);
+}
 
 // FUNCTION: 0x0016C1F0 SetRange__12PProgressBarFf
 void PProgressBar::SetRange(float fRange) {
@@ -13,6 +52,49 @@ void PProgressBar::SetRange(float fRange) {
     float fReading = m_unk238;
     fReading = (fReading < m_unk234) ? fReading : m_unk234;
     SetReading__12PProgressBarFf(this, fReading);
+}
+
+// FUNCTION: 0x0016C220 SetColor2__12PProgressBarFffff
+void PProgressBar::SetColor2(float fR, float fG, float fB, float fA) {
+    m_unk210 = fR;
+    m_unk214 = fG;
+    m_unk218 = fB;
+    m_unk21C = fA;
+}
+
+// FUNCTION: 0x0016C240 SetColor1__12PProgressBarFffff
+void PProgressBar::SetColor1(float fR, float fG, float fB, float fA) {
+    m_unk200[0] = fR;
+    m_unk200[1] = fG;
+    m_unk200[2] = fB;
+    m_unk200[3] = fA;
+    if (m_unk230) {
+        unsigned int r = (unsigned int)fR;
+        m_unk40[0] = r;
+        unsigned int g = (unsigned int)fG;
+        m_unk40[1] = g;
+        unsigned int b = (unsigned int)fB;
+        m_unk40[2] = b;
+        unsigned int a = (unsigned int)fA;
+        m_unk40[3] = a;
+        m_unk60[0] = r;
+        m_unk60[1] = g;
+        m_unk60[2] = b;
+        m_unk60[3] = a;
+    } else {
+        unsigned int r = (unsigned int)fR;
+        m_unk40[0] = r;
+        unsigned int g = (unsigned int)fG;
+        m_unk40[1] = g;
+        unsigned int b = (unsigned int)fB;
+        m_unk40[2] = b;
+        unsigned int a = (unsigned int)fA;
+        m_unk40[3] = a;
+        m_unk50[0] = r;
+        m_unk50[1] = g;
+        m_unk50[2] = b;
+        m_unk50[3] = a;
+    }
 }
 
 // FUNCTION: 0x0016C4B0 SetBgColor__12PProgressBarFffff

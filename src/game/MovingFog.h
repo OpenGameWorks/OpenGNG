@@ -8,6 +8,7 @@
 class MovingFog : public EntityBaseClass {
 public:
     MovingFog();
+    virtual ~MovingFog();
     const char *GetClassName();
     void SetEditableVars(char *pSrc);
     void Execute();

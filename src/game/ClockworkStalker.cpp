@@ -246,10 +246,9 @@ void ClockworkStalker::CircleAround(float *arg0, float arg1) {
     *(float *)(m_unk38 + 0x11C) = Round180__Ff(f20 + t[1]);
 }
 
-// DRAFT: 0x001E2B80 KillTimers__16ClockworkStalkerFv
-// note: 2 differing lines; original copies this to s0 before the first timer load, ours loads a0 first (tried local self pointer and unsigned cast, no change)
+// FUNCTION: 0x001E2B80 KillTimers__16ClockworkStalkerFv
 void ClockworkStalker::KillTimers() {
-    mTimerAPI__13EntityManager.KillTimer(m_unk214);
+    mTimerAPI__13EntityManager.KillTimer(*(unsigned int *)((char *)this + 0x214));
     mTimerAPI__13EntityManager.KillTimer(m_unk2D8);
     mTimerAPI__13EntityManager.KillTimer(m_unk2D0);
     mTimerAPI__13EntityManager.KillTimer(m_unk2AC);
