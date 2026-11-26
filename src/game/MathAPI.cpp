@@ -173,8 +173,7 @@ float MathAPI::SetE_BOX_Radius(tagBOX *arg0) {
     return r;
 }
 
-// DRAFT: 0x157950 QuatSlerp__7MathAPIFP9tag_EQuatP9tag_EQuatfP9tag_EQuat
-// note: 8 differing words, all the 64-bit literal 0x3EB0C6F7A0B5ED8D build at 0xA0-0xC0 (orig: hi in a0, lo in v1, or a1,v1,a0; ours hi/lo in v1/v0). Tried split hi<<32|lo and swapped operands: both 8. Negation order now matches.
+// FUNCTION: 0x157950 QuatSlerp__7MathAPIFP9tag_EQuatP9tag_EQuatfP9tag_EQuat
 void MathAPI::QuatSlerp(tag_EQuat *arg0, tag_EQuat *arg1, float arg2, tag_EQuat *arg3) {
     float dot = arg0->m_unkC * arg1->m_unkC + (arg0->m_unk4 * arg1->m_unk4 + arg0->m_unk8 * arg1->m_unk8) + arg0->m_unk0 * arg1->m_unk0;
     float by = arg1->m_unk4;
@@ -190,7 +189,7 @@ void MathAPI::QuatSlerp(tag_EQuat *arg0, tag_EQuat *arg1, float arg2, tag_EQuat 
     }
     float w1;
     float w2;
-    if (_dpfgt(fptodp(1.0f - dot), 0x3EB0C6F7A0B5ED8DLL) != 0) {
+    if (1.0f - dot > 1e-6) {
         float theta = acosf(dot);
         float sinTheta = sinf(theta);
         w1 = sinf((1.0f - arg2) * theta) / sinTheta;
