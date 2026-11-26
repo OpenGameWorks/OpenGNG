@@ -320,20 +320,22 @@ int FlushIOPCommand(int arg0, unsigned int arg1, unsigned int arg2) {
 }
 
 // DRAFT: 0x001AE060 SOUND_CountFreeSPUChannels
-// note: 20 differing lines; do-while loop drops the top test (matches the original's loop body, but the original enters the loop through a bottom test). Still differs: early -3 check uses v0 vs at and no delay-slot fill for sltiu; original has b to the loop condition. Tried: split returns, reordered ||, arg0 >= vs > 0x2F, separate early-return checks (27), bad-local (25), while(i <= arg1) (23), for (23), reversed locals (20).
+// note: 10 differing lines; base pointer local and split early returns. Still differs in loop-join nop and count/base placement. Tried: split returns (12), while(i <= arg1) (12), count-first (12), for/while forms (19-23).
 int SOUND_CountFreeSPUChannels(unsigned int arg0, unsigned int arg1) {
     int count;
     unsigned int i;
+    unsigned char *base;
     i = arg0;
     if (i > 0x2FU) {
         return -2;
     }
-    if ((arg1 < i) || (arg1 >= 0x30U)) {
+    if (arg1 < i || arg1 > 0x2FU) {
         return -3;
     }
     count = 0;
+    base = (unsigned char *)SOUND_SPUKeyStatus;
     do {
-        if (*(unsigned char *)&SOUND_SPUKeyStatus[i] == 0) {
+        if (base[i] == 0) {
             count += 1;
         }
         i += 1;
