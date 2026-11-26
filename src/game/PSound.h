@@ -231,6 +231,8 @@ public:
     int GetEEControlStatus();
     int DebugPlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int p2);
     void DebugClearPlayedInGame();
+    void DebugInterface(unsigned int nArg);
+    void DebugInterfaceEditASound(unsigned int nArg);
     void PSoundReInitRegularSounds();
     void SetEEControlOfIOP(unsigned int nMode);
     void Resume();

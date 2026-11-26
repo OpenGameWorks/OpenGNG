@@ -17,6 +17,8 @@ class Debug {
 public:
     // Debug size is unknown; the placeholder keeps gDebug out of small data (threshold 8 bytes).
     char _pad000[0x10];
+    void DebugDisp(char *pStr);
+    void DebugDispPos(char *pStr, unsigned int nX, unsigned int nY, int nColor);
 };
 extern Debug gDebug;
 extern int fst_bProcessTriglets;
@@ -61,6 +63,16 @@ extern int fst_bUseSimulatedCDErrors;
 extern unsigned int fst_DataToEEBuffer[10240];
 extern u_long128 gZeroVectorW1;
 extern char gEng[105360];
+struct DebugTopEntry {
+    char *unk0;
+    unsigned int *unk4;
+    unsigned int unk8;
+    unsigned int unkC;
+};
+extern DebugTopEntry fst_TopDebugTable[35];
+extern unsigned int gPad[112];
+extern "C" void SOUND_LogWindowInfo(int, int, int);
+extern "C" void SOUND_MjlnCall(int, int, int);
 extern "C" unsigned int EngGenerateUniqueID__9MaxEngineFv(void *pThis);
 extern unsigned char MODE_PAL;
 extern "C" void SOUND_FadeOutAllMusic(int);
@@ -3632,6 +3644,289 @@ unsigned int PSound::DebugChangeParam(unsigned int nValue, int nStep, unsigned i
         return nHi;
     }
     return nLo;
+}
+
+// DRAFT: 0x001ACDA0 DebugInterface__6PSoundFUi
+// note: 605 differing words; frame 0xF0 vs 0xB0 (sp70 0x40 extra), body 0xA10 vs 0x9F4, static guards and gPSndDbg/gDebug relocs differ; not matched
+void PSound::DebugInterface(unsigned int nArg) {
+    static int miDebugTopMenu = 0;
+    static int st_tSoundRef = 0;
+    static unsigned int st_lastPlayedSoundID = 0;
+    static int st_lastCallFrame = 0;
+    static signed char st_bHadBreak = 0;
+    static unsigned int st_frameSinceRead = 0;
+    static int st_frameSincePush = 0;
+    char sp70[0x40];
+    unsigned int nPad = nArg;
+    int bEdit = 0;
+    char *pTemp;
+
+    *(unsigned int *)((char *)this + 0x18088) = 0x80000000;
+    pTemp = *(char **)(gEng + 0x1883C);
+    if (pTemp != 0) {
+        *(unsigned int *)((char *)this + 0x18088) = *(unsigned int *)(pTemp + 4);
+    } else {
+        CdsAssert("PSound.cpp", 0x1E5, "0");
+    }
+
+    if (gPSndDbg[0] || gPSndDbg[2] || gPSndDbg[1]) {
+        bEdit = 1;
+    } else {
+        if (st_lastCallFrame + 1 == *(int *)(gEng + 0x137A4)) {
+            if (nArg != 0) {
+                st_frameSinceRead = 0;
+                st_bHadBreak = 1;
+                st_frameSincePush = 0;
+            } else {
+                st_frameSinceRead++;
+                if (gPad[67] != 0) {
+                    if (st_frameSinceRead >= 8) {
+                        st_frameSinceRead = 0;
+                        if (fst_TopDebugTable[miDebugTopMenu].unkC >= 0xB) {
+                            nPad |= gPad[67];
+                        }
+                    }
+                } else {
+                    st_frameSincePush++;
+                }
+            }
+        } else {
+            st_bHadBreak = 0;
+            nPad = 0;
+            st_frameSinceRead = 0;
+            st_frameSincePush = 0;
+        }
+        st_lastCallFrame = *(int *)(gEng + 0x137A4);
+
+        if (gPSndDbg[49] != 0) {
+            int bDone = 0;
+            if (nPad & 0xA0F0) {
+                if (nPad & 0xF0) {
+                    bDone = 1;
+                    nPad &= 0xF0;
+                } else if (gPSndDbg[45] == 0 || (unsigned int)gPSndDbg[46] >= 3) {
+                    if (nPad & 0xA000) {
+                        if (nPad & 0x8000) {
+                            switch (miDebugTopMenu) {
+                            case 25:
+                                if (gPSndDbg[22] != 0) {
+                                    gPSndDbg[51] = 1;
+                                }
+                                break;
+                            case 30:
+                                if (gPSndDbg[22] != 0) {
+                                    SOUND_MjlnCall(gPSndDbg[22], 0, 0);
+                                }
+                                break;
+                            case 29:
+                                if (gPSndDbg[22] != 0) {
+                                    SOUND_LogWindowInfo(gPSndDbg[22], 0, 0);
+                                }
+                                break;
+                            case 28:
+                                gDebug.DebugDispPos("Writing", 5, 4, 6);
+                                WriteSoundFileToPC();
+                                break;
+                            case 34:
+                                Test2();
+                                break;
+                            case 33:
+                                Test1();
+                                break;
+                            case 22:
+                                if (gPSndDbg[22] == 1) {
+                                    DebugClearPlayedInGame();
+                                }
+                                break;
+                            }
+                        }
+                        nPad = 0;
+                        bDone = 1;
+                    }
+                }
+            }
+            if (bDone) {
+                gPSndDbg[49] = 0;
+                gPSndDbg[45] = 0;
+                gPSndDbg[46] = 0;
+            }
+        }
+
+        if (nArg != 0 && gPSndDbg[45] != 0) {
+            if (nArg & 0x200) {
+                gPSndDbg[46]++;
+            } else {
+                gPSndDbg[46] = 0;
+            }
+        }
+
+        if (miDebugTopMenu == 6) {
+            if (nPad & 0x4000) {
+                st_tSoundRef = DebugPlaySoundWPitch(0x1C, *(unsigned int *)((char *)this + 0x18088), 0);
+                nPad = 0;
+                st_lastPlayedSoundID = 0x1C;
+            }
+        } else if (st_lastPlayedSoundID != 0) {
+            DebugStopAllSoundsBySoundID(st_lastPlayedSoundID);
+            st_lastPlayedSoundID = 0;
+        }
+
+        if (nPad & 0x4000) {
+            if (miDebugTopMenu == 0x17) {
+                if ((unsigned int)gPSndDbg[23] >= 3 && (unsigned int)gPSndDbg[23] < 0x21) {
+                    PlayMusic(gPSndDbg[23]);
+                    nPad = 0;
+                }
+            }
+        }
+        if (nPad & 0x1000) {
+            if (miDebugTopMenu == 0x1B) {
+                AddChanToMultipleStops(0x2F);
+            }
+        }
+
+        if ((nPad & 0xA0) == 0 && (nPad & 0x50)) {
+            if (nPad & 0x10) {
+                miDebugTopMenu--;
+                if (miDebugTopMenu < 0) {
+                    miDebugTopMenu = 0x22;
+                }
+            } else if (nPad & 0x40) {
+                miDebugTopMenu++;
+                if (miDebugTopMenu == 0x23) {
+                    miDebugTopMenu = 0;
+                }
+            }
+            gPSndDbg[49] = 0;
+            gPSndDbg[45] = 0;
+            gPSndDbg[46] = 0;
+        }
+
+        if (miDebugTopMenu == 0x18 && pTemp != 0) {
+            *fst_TopDebugTable[miDebugTopMenu].unk4 = *(unsigned int *)(pTemp + 0x23C4);
+        }
+
+        if ((nPad & 0xA0) != 0) {
+            unsigned int nS3;
+            int nDelta = (nPad & 0x20) ? 1 : -1;
+            int nStep = (nPad & 0x20) ? 5 : -5;
+            int s1 = 0;
+            unsigned int nCur;
+            gPSndDbg[49] = 0;
+            gPSndDbg[45] = 0;
+            gPSndDbg[46] = 0;
+            nCur = *fst_TopDebugTable[miDebugTopMenu].unk4;
+            nS3 = nCur + nDelta;
+            if (fst_TopDebugTable[miDebugTopMenu].unkC >= 0x65 && (unsigned int)(nCur + nStep) >= 0x65) {
+                nS3 = ((nCur + nStep) / 5) * 5;
+            }
+            if (fst_TopDebugTable[miDebugTopMenu].unkC < nS3) {
+                nS3 = (nPad & 0x20) ? fst_TopDebugTable[miDebugTopMenu].unk8 : fst_TopDebugTable[miDebugTopMenu].unkC;
+            }
+            *fst_TopDebugTable[miDebugTopMenu].unk4 = nS3;
+
+            switch (miDebugTopMenu) {
+            case 34:
+            case 28:
+                if (nS3 != 0) s1 = 1;
+                break;
+            case 33:
+                if (nS3 != 0) gPSndDbg[49] = 1;
+                break;
+            case 27:
+                if (nS3 != 0) {
+                    gPSndDbg[50] = (gPSndDbg[50] == 0x1E) ? 0x1F : 0x1E;
+                    SOUND_PlaySFXRelVol(gPSndDbg[50], 0x2F, 0x3E8, 0x3E8, 0x36FF1FCE);
+                }
+                break;
+            case 25:
+                if (nS3 != 0) {
+                    s1 = 1;
+                } else {
+                    gPSndDbg[51] = 0;
+                }
+                break;
+            case 24:
+                if (pTemp != 0) {
+                    *(unsigned int *)(pTemp + 0x23C4) = nS3;
+                }
+                break;
+            case 30:
+            case 29:
+                if (nS3 != 0) s1 = 1;
+                break;
+            case 22:
+                if (gPSndDbg[39] == 1) gPSndDbg[49] = 1;
+                break;
+            case 19:
+                SetPositionalRangeAmbient(gPSndDbg[39]);
+                break;
+            case 18:
+                SetPositionalRangeOneshot(gPSndDbg[39]);
+                break;
+            case 17:
+                SetDistLinearPercent(gPSndDbg[39]);
+                break;
+            case 8:
+                SetUbiquitousFactorRelVol(gPSndDbg[39]);
+                break;
+            case 7:
+                SetPositionalFactorRelVol(gPSndDbg[39]);
+                break;
+            case 6:
+                SetEffectsRelVolume(gPSndDbg[39]);
+                break;
+            case 4:
+                SetMasterRelVolume(gPSndDbg[39]);
+                break;
+            case 5:
+                SetMainMusicRelVolume(gPSndDbg[39]);
+                break;
+            case 12:
+                {
+                    char *pSpot = (char *)GetSpotInfo(0x1C);
+                    if (pSpot != 0) {
+                        *(unsigned char *)(pSpot + 0xE) = (unsigned char)nS3;
+                        *(unsigned char *)(pSpot + 0xF) = (unsigned char)nS3;
+                    }
+                }
+                break;
+            case 11:
+                gPSndDbg[39] = (nS3 != 0);
+                gPSndDbg[40] = gPSndDbg[39];
+                break;
+            case 10:
+                SetMusicPitchBend(nS3 != 0);
+                break;
+            }
+            if (s1) {
+                gPSndDbg[46] = 0;
+                gPSndDbg[49] = 1;
+                gPSndDbg[45] = 1;
+            }
+        }
+
+        bEdit = bEdit;
+    }
+
+    sprintf(sp70, "%s %d\n", fst_TopDebugTable[miDebugTopMenu].unk0, *fst_TopDebugTable[miDebugTopMenu].unk4);
+    gDebug.DebugDisp(sp70);
+    if (miDebugTopMenu == 0x1B) {
+        sprintf(sp70, "%d\n", SOUND_SPUKeyStatus[0x2F]);
+        gDebug.DebugDispPos(sp70, 4, 3, 7);
+    }
+    if (gPSndDbg[49] != 0 && (gPSndDbg[45] == 0 || (unsigned int)gPSndDbg[46] >= 3)) {
+        gDebug.DebugDispPos("Confirm?  yes (square) / no (circle)", 4, 3, 6);
+    }
+    if (bEdit) {
+        if (gPSndDbg[0] == 0) {
+            if (gPSndDbg[2] || gPSndDbg[1]) {
+                DebugInterfaceEditASound(nPad);
+            }
+        } else {
+            DebugInterfaceEditASound(nPad);
+        }
+    }
 }
 
 // FUNCTION: 0x001A9F10 PSoundInit__6PSoundFUi
