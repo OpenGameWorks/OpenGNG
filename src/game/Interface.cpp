@@ -646,7 +646,7 @@ void HudSuper::Update(int arg0) {
 }
 
 // DRAFT: 0x1402F0 UpdateMaxSuper__8HudSuperFv
-// note: frame 0x70 vs 0x80; original spills pNew (s2) to 0x7C(sp) for the inline PMNode ctor (PArray members with dtors), and loads mpPlayerData before this->m_unk4. Variants tried: locals reordered, loop-scoped pNew/pTmp (DIFF 135 each).
+// note: DIFF 133 words; frame 0x70 vs 0x80 (the node-block ctor form took 135 to 133); the original loads mpPlayerData before this->m_unk4 and fills the assert bnez slot with addiu pList; register map differs (pList s0 vs s2). Tried: locals reordered, loop-scoped pNew/pTmp (135 each), node-block ctor.
 void HudSuper::UpdateMaxSuper() {
     unsigned int nTarget;
     PArray *pList;
@@ -667,16 +667,19 @@ void HudSuper::UpdateMaxSuper() {
         while (pList->m_unk0 < nTarget) {
             PMNode *pNew;
             PMNode *pTmp;
-            pNew = (PMNode *)__nw__FUi(0x100);
-            if (pNew != 0) {
-                *(void **)pNew = __vt__9PResource;
-                *(int *)((char *)pNew + 4) = 0;
-                *(void **)pNew = __vt__6PMNode;
-                __ct__6PArrayFv((char *)pNew + 0x14);
-                sceVu0UnitMatrix((char *)pNew + 0x40);
-                __ct__6PArrayFv((char *)pNew + 0xD8);
-                InitMembers__6PMNodeFv(pNew);
+            void *node;
+            if ((node = __nw__FUi(0x100)) != 0) {
+                char *volatile pThis = (char *)node;
+                *(unsigned char **)node = __vt__9PResource;
+                *(int *)(pThis + 4) = 0;
+                *(unsigned char **)pThis = __vt__6PMNode;
+                __ct__6PArrayFv(pThis + 0x14);
+                sceVu0UnitMatrix(pThis + 0x40);
+                __ct__6PArrayFv(pThis + 0xD8);
+                InitMembers__6PMNodeFv((PMNode *)pThis);
+                node = pThis;
             }
+            pNew = (PMNode *)node;
             ((pNew != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0xA11, "pTmp"));
             CopyMNode__6PMNodeFR6PMNodeb(pNew, pLast, true);
             fStep += 3.3f;
@@ -726,7 +729,7 @@ void HudSuper::UpdateBar(int arg0) {
 }
 
 // DRAFT: 0x001406B0 Reset__8HudSuperFv
-// note: first draft; the surplus/deficit gate order and the tail UpdateBar call are unverified.
+// note: DIFF 165 words; the node-block ctor form took 168 to 165. Register map differs (original pList s2, nTarget s4, pLast s3, pCap s0; ours pList s0, nTarget s2, pLast s4, pCap s1); the original loads mpPlayerData before m_unk4. Tried: all 120 orders of the five locals, all DIFF 165.
 void HudSuper::Reset() {
     PArray *pList;
     PMNode *pLast;
@@ -754,16 +757,19 @@ void HudSuper::Reset() {
         fStep = pLast->m_unk80;
         while (pList->m_unk0 < nTarget) {
             PMNode *pNew;
-            pNew = (PMNode *)__nw__FUi(0x100);
-            if (pNew != 0) {
-                *(void **)pNew = __vt__9PResource;
-                *(int *)((char *)pNew + 4) = 0;
-                *(void **)pNew = __vt__6PMNode;
-                __ct__6PArrayFv((char *)pNew + 0x14);
-                sceVu0UnitMatrix((char *)pNew + 0x40);
-                __ct__6PArrayFv((char *)pNew + 0xD8);
-                InitMembers__6PMNodeFv(pNew);
+            void *node;
+            if ((node = __nw__FUi(0x100)) != 0) {
+                char *volatile pThis = (char *)node;
+                *(unsigned char **)node = __vt__9PResource;
+                *(int *)(pThis + 4) = 0;
+                *(unsigned char **)pThis = __vt__6PMNode;
+                __ct__6PArrayFv(pThis + 0x14);
+                sceVu0UnitMatrix(pThis + 0x40);
+                __ct__6PArrayFv(pThis + 0xD8);
+                InitMembers__6PMNodeFv((PMNode *)pThis);
+                node = pThis;
             }
+            pNew = (PMNode *)node;
             ((pNew != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x9E4, "pTmp"));
             CopyMNode__6PMNodeFR6PMNodeb(pNew, pLast, true);
             fStep += 3.3f;
@@ -779,7 +785,7 @@ void HudSuper::Reset() {
 }
 
 // DRAFT: 0x00140980 Update__9HudHealthFi
-// note: first draft; the wanted-count branch order and the tail-node removal path are unverified.
+// note: DIFF 227 words; the node-block ctor form in the grow path took 248 to 227. The wanted-count branch order and the tail-node removal path are unverified.
 void HudHealth::Update(int arg0) {
     PArray *pList;
     PMNode *pCur;
@@ -814,16 +820,19 @@ void HudHealth::Update(int arg0) {
                 pCap = pCur->Find(0x851A08AB);
                 ((pCap != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x980, "pCap"));
                 ((PArray *)((char *)pCur + 0x14))->Remove(pCap);
-                pNew = (PMNode *)__nw__FUi(0x100);
-                if (pNew != 0) {
-                    *(void **)pNew = __vt__9PResource;
-                    *(int *)((char *)pNew + 4) = 0;
-                    *(void **)pNew = __vt__6PMNode;
-                    __ct__6PArrayFv((char *)pNew + 0x14);
-                    sceVu0UnitMatrix((char *)pNew + 0x40);
-                    __ct__6PArrayFv((char *)pNew + 0xD8);
-                    InitMembers__6PMNodeFv(pNew);
+                void *node;
+                if ((node = __nw__FUi(0x100)) != 0) {
+                    char *volatile pThis = (char *)node;
+                    *(unsigned char **)node = __vt__9PResource;
+                    *(int *)(pThis + 4) = 0;
+                    *(unsigned char **)pThis = __vt__6PMNode;
+                    __ct__6PArrayFv(pThis + 0x14);
+                    sceVu0UnitMatrix(pThis + 0x40);
+                    __ct__6PArrayFv(pThis + 0xD8);
+                    InitMembers__6PMNodeFv((PMNode *)pThis);
+                    node = pThis;
                 }
+                pNew = (PMNode *)node;
                 CopyMNode__6PMNodeFR6PMNodeb(pNew, pCur, true);
                 ((PArray *)((char *)pNew + 0x14))->Add(pCap);
                 pList->Add(pNew);
@@ -887,7 +896,7 @@ void HudHealth::Update(int arg0) {
 }
 
 // DRAFT: 0x00140D90 Reset__9HudHealthFv
-// note: first draft; the grow/shrink branch order, the do-while walk and register allocation are unverified.
+// note: DIFF 251 words; the node-block ctor form took 257 to 251. The grow/shrink branch order, the do-while walk and register allocation are unverified.
 void HudHealth::Reset() {
     PArray *pList;
     PMNode *pLast;
@@ -927,16 +936,19 @@ void HudHealth::Reset() {
         ((PArray *)((char *)pLast + 0x14))->Remove(pCap);
         fLevel = pLast->m_unk80;
         while (pList->m_unk0 < nWanted) {
-            pNew = (PMNode *)__nw__FUi(0x100);
-            if (pNew != 0) {
-                *(void **)pNew = __vt__9PResource;
-                *(int *)((char *)pNew + 4) = 0;
-                *(void **)pNew = __vt__6PMNode;
-                __ct__6PArrayFv((char *)pNew + 0x14);
-                sceVu0UnitMatrix((char *)pNew + 0x40);
-                __ct__6PArrayFv((char *)pNew + 0xD8);
-                InitMembers__6PMNodeFv(pNew);
+            void *node;
+            if ((node = __nw__FUi(0x100)) != 0) {
+                char *volatile pThis = (char *)node;
+                *(unsigned char **)node = __vt__9PResource;
+                *(int *)(pThis + 4) = 0;
+                *(unsigned char **)pThis = __vt__6PMNode;
+                __ct__6PArrayFv(pThis + 0x14);
+                sceVu0UnitMatrix(pThis + 0x40);
+                __ct__6PArrayFv(pThis + 0xD8);
+                InitMembers__6PMNodeFv((PMNode *)pThis);
+                node = pThis;
             }
+            pNew = (PMNode *)node;
             ((pNew != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x90C, "pTmp"));
             CopyMNode__6PMNodeFR6PMNodeb(pNew, pLast, true);
             fLevel += 3.3f;
