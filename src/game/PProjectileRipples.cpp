@@ -11,7 +11,7 @@ extern "C" void __dl__FPv(void *);
 extern unsigned char __vt__18PProjectileRipples[];
 extern "C" void SetMaterial__10PGfxEngineFPfbUlUl(void *, float *, bool, unsigned long, unsigned long);
 extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *, int, float *, bool, unsigned long, unsigned long);
-extern "C" void BeginFxInstances__10PGfxEngineFPvib(void *, void *, int, bool);
+extern "C" void BeginFxInstances__10PGfxEngineFPvib(void *, void *, int, unsigned char);
 extern "C" void DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(void *, void *, int, bool);
 extern unsigned char gGfxEng[0x10];
 extern unsigned char gDisplayListPtr[0x10];
@@ -71,13 +71,11 @@ int PProjectileRipples::CreateRingTriStrip(int arg0, float arg1, float arg2, int
     return count;
 }
 
-// DRAFT: 0x00217790 FindFreeRing__18PProjectileRipplesFv
-// note: loop shape differs; original has an extra nop before the bottom slt and a b to jr ra at +0x48 (ours +0x44); tried index, running offset, while, break, continue, comma increment
+// FUNCTION: 0x00217790 FindFreeRing__18PProjectileRipplesFv
 int PProjectileRipples::FindFreeRing() {
     int i = 0;
-    int count = m_unk10C;
     int off = 0;
-    for (; i < count; off += 0x60, i++) {
+    for (; i < m_unk10C; off += 0x60, i++) {
         if (((PProjectileRing *)((char *)m_unk120 + off))->m_unk50 == 0) {
             return i;
         }
@@ -154,7 +152,7 @@ void *PProjectileRipples::InitRingMeshPacket(int &arg0, int arg1, bool arg2) {
 }
 
 // DRAFT: 0x00217900 CreateRing__18PProjectileRipplesFPfPf
-// note: DIFF 4; all instructions match except the order of the -0.02f and 0.04f literal loads; tried inline literals, hoisted locals, swapped declaration order, reversed add operands
+// note: DIFF 4; all words match except the FP register of the -0.02f and 0.04f literals (original loads -0.02f into f3 first, ours loads 0.04f into f2); tried inline literals, hoisted locals, swapped declaration order, split declarations (before/after the idx check and after pRing), reversed add operands
 void PProjectileRipples::CreateRing(float *arg0, float *arg1) {
     float sp40[4];
     float sp50[4];
@@ -188,28 +186,24 @@ void PProjectileRipples::FadeAndDie(unsigned int uArg) {
     m_unk18 = 0;
 }
 
-// DRAFT: 0x00217AA0 Render__18PProjectileRipplesFv
-// note: 49 differing lines; gate branches and m_unk138 layout differ (original shares one epilogue via b, ours uses direct beqz); tried nested gates, combined &&, early returns, locals at top
+// FUNCTION: 0x00217AA0 Render__18PProjectileRipplesFv
 void PProjectileRipples::Render() {
-    if (m_unk15 != 0) {
-        if (m_unk124 != 0) {
-            if (m_unk138 != 0) {
-                if (m_unk19 != 0) {
-                    float a[4] = {1.1f, 1.1f, 1.1f, 1.0f};
-                    SetMaterial__10PGfxEngineFPfbUlUl(gGfxEng, a, true, m_unk30, 0x50000);
-                } else {
-                    float b[4] = {1.0f, 1.0f, 1.0f, 0.8f};
-                    SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, m_unk10, b, true, m_unk30, 0x50000);
-                }
-                BeginFxInstances__10PGfxEngineFPvib(gGfxEng, m_unk12C, m_unk130, m_unk19);
-                DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(*(void **)gDisplayListPtr, m_unk134, m_unk138, false);
-            }
-        }
+    if (m_unk15 == 0 || m_unk124 == 0 || m_unk138 == 0) {
+        return;
     }
+    if (m_unk19 != 0) {
+        float a[4] = {1.1f, 1.1f, 1.1f, 1.0f};
+        SetMaterial__10PGfxEngineFPfbUlUl(gGfxEng, a, true, m_unk30, 0x50000);
+    } else {
+        float b[4] = {1.0f, 1.0f, 1.0f, 0.8f};
+        SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, m_unk10, b, true, m_unk30, 0x50000);
+    }
+    BeginFxInstances__10PGfxEngineFPvib(gGfxEng, m_unk12C, m_unk130, m_unk19);
+    DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(*(void **)(gGfxEng + 0x154C80), m_unk134, m_unk138, false);
 }
 
 // DRAFT: 0x00217B90 Animate__18PProjectileRipplesFf
-// note: 153 words differ; frame 0xB0 vs 0x80 with s4/s5 saved (original keeps this in s3); tried rot-ref removal (185->153), diff moved into loop (178), sub/tmp merged (181), angle uninitialized (157), f3 loaded before out (157), while loop (153), for-scoped i (153)
+// note: 153 words differ; frame 0xB0 vs 0x80 with s4/s5 saved (original keeps this in s3); original frame 0x80 with s0-s3 saved, ours 0xB0 with s4/s5; original's AllocParticles arg is *(void **)(gGfxEng+0x154C80) (offset form tried, count unchanged at 153); tried rot-ref removal (185->153), diff moved into loop (178), sub/tmp merged (181), angle uninitialized (157), f3 loaded before out (157), while loop (153), for-scoped i (153)
 void PProjectileRipples::Animate(float arg0) {
     float scale = arg0;
     float angle = 0.0f;
