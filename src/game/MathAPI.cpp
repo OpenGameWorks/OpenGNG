@@ -405,7 +405,7 @@ float MathAPI::Distance(float (*arg0)[4], float (*arg1)[4]) {
 }
 
 // DRAFT: 0x1581D0 GetRelAngleYToPoint__7MathAPIFPA4_ffPA4_f
-// note: DIFF 64 (attempt 1). Original inlines 57.295776f/360.0f/180.0f as lui/ori/mtc1, ours loads gp-pooled lwc1; branch layout differs at 0x48. Integer-bit literal variant gave DIFF 69 (worse).
+// note: 13 differing words. Post-wrap tail duplicated (`if (d <= wrap) {sum = arg1 + d;} else {d = wrap; sum = arg1 + d;}`, 36 -> 13); remaining is the cvt/sub order after the wrap and else-arm mov/add order. Shared tail, `sum = d + arg1`, `sum -= 360` and temp variants were no better.
 float MathAPI::GetRelAngleYToPoint(float (*arg0)[4], float arg1, float (*arg2)[4]) {
     float dx = arg0[0][0] - arg2[0][0];
     float dz = arg0[0][2] - arg2[0][2];
@@ -423,12 +423,16 @@ float MathAPI::GetRelAngleYToPoint(float (*arg0)[4], float arg1, float (*arg2)[4
     }
     float d = a - b;
     float wrap = (360.0f - a) + b;
-    if (!(d <= wrap)) {
+    float sum;
+    if (d <= wrap) {
+        sum = arg1 + d;
+    } else {
         d = wrap;
+        sum = arg1 + d;
     }
-    float sum = arg1 + d;
     if (!(sum <= 180.0f)) {
-        if ((int)(sum - 360.0f) == (int)ang) {
+        float t = sum - 360.0f;
+        if ((int)t == (int)ang) {
             return d;
         }
         return -d;
@@ -440,7 +444,7 @@ float MathAPI::GetRelAngleYToPoint(float (*arg0)[4], float arg1, float (*arg2)[4
 }
 
 // DRAFT: 0x158330 GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f
-// note: no 4-lwc1/4-swc1 copy in original (its lwc1s feed sub.s and atan2f); 48 words with the non-static header FacingPoint 0x157D10 needs; the original is static-style (entity in a0, array in a1), so static gives 45 here but breaks FacingPoint (DIFF 17). Remaining: obj in v0 not v1, early-return branch offset, f4 vs f3 angle reg, atan2f reloc one insn off.
+// note: 25 differing words. Same duplicated tail as the float overload (48 -> 25). Original is static-style (entity in a0, array in a1); a `static` here breaks FacingPoint 0x157D10 (DIFF 17), so it stays a member. Remaining: obj in v0 not v1, early-return branch offset, f4 vs f3 angle reg.
 float MathAPI::GetRelAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]) {
     char *self = (char *)arg0;
     char *obj = *(char **)(self + 0x3C);
@@ -463,10 +467,13 @@ float MathAPI::GetRelAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]) {
     }
     float d = lo - hi;
     float wrap = (360.0f - lo) + hi;
-    if (!(d <= wrap)) {
+    float sum;
+    if (d <= wrap) {
+        sum = arg1f + d;
+    } else {
         d = wrap;
+        sum = arg1f + d;
     }
-    float sum = arg1f + d;
     if (!(sum <= 180.0f)) {
         if ((int)(sum - 360.0f) == (int)ang) {
             return d;
@@ -480,7 +487,7 @@ float MathAPI::GetRelAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]) {
 }
 
 // DRAFT: 0x001584A0 GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f
-// note: 52 words differ; no 4-lwc1/4-swc1 copy in original (lwc1s feed sub.s); prologue reg order, ternary branch form (bc1t/bc1f), wrap-tail f2/f0 and neg placement remain; tried ?: compare swap (no change), clamp tail duplicated (66->52)
+// note: 48 words differ. Ternary arms swapped to `(f20 >= f1) ? f20 : f1` (bc1t form, 52 -> 48) and wrap tail duplicated. Remaining: sub result in f0 not f2 for (int)(f2-360), sign-flip tail layout, 0x1F0 vs 0x20C size. Tried: duplicated `f0 = f20+f3` in the >180 arm (55), operand swap in the >180 compare (51), direct `f20 + t` in the wrap arm (48, same).
 float MathAPI::GetAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]) {
     if (arg0 == 0) CdsAssert__FPciPc("MathAPI.cpp", 0x70, "pEnt");
     char *self = (char *)arg0;
@@ -495,14 +502,14 @@ float MathAPI::GetAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]) {
     if (dx == 0.0f && dz == 0.0f) return v1[1];
     float f20 = v1[1];
     float f1 = 57.295776f * atan2f(dx, dz);
-    float f0 = (f20 < f1) ? f1 : f20;
+    float f0 = (f20 >= f1) ? f20 : f1;
     float f2 = (f0 == f20) ? f1 : f20;
     float f3 = f0 - f2;
     float t = (360.0f - f0) + f2;
-    if (f3 > t) {
-        f3 = t;
+    if (f3 <= t) {
         f2 = f20 + f3;
     } else {
+        f3 = t;
         f2 = f20 + f3;
     }
     if (f2 > 180.0f) {
