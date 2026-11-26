@@ -110,13 +110,12 @@ struct PMeshNodeGroundView {
     float m_unk148;
 };
 
-// DRAFT: 0x00171000 ApplyGroundMove__7PhysicsFRA4_fP9PMeshNode
-// note: 43 words differ: s0 daddiu vs addiu; compare operand order in gate and fDiff tests; 0x140 addiu scheduling; fDiff constant in f1 vs f2 and zero in f3 vs f1, so the nop/tail shift by one word. Tried: 0x148 pointer form, 0.0f== flips, mul operand swap, != flip, local pointer for 0x140.
-int Physics::ApplyGroundMove(float (&vOut)[4], PMeshNode *pNode)
+// FUNCTION: 0x00171000 ApplyGroundMove__7PhysicsFRA4_fP9PMeshNode
+bool Physics::ApplyGroundMove(float (&vOut)[4], PMeshNode *pNode)
 {
     float vA[4];
     float vB[4];
-    int nResult = 0;
+    bool bResult = false;
     float (*pMat)[4];
 
     pMat = (float (*)[4])(m_unkCC + 0x40);
@@ -125,18 +124,18 @@ int Physics::ApplyGroundMove(float (&vOut)[4], PMeshNode *pNode)
     sceVu0SubVector(m_unk20, vB, vA);
     ((unsigned int *)m_unk20)[3] = 0;
     if (sceVu0InnerProduct(m_unk20, m_unk20) > 1e-5f) {
-        nResult = 1;
+        bResult = true;
         m_unk108 |= 8;
     }
     {
         PMNodeAnimView *pCC = (PMNodeAnimView *)m_unkCC;
         if ((((signed char)(pCC->m_unk3F & 7) != 0) || pCC->m_unk100 != 0)
             && ((PMeshNodeGroundView *)pNode)->m_unk4 == 2
-            && ((float *)&m_unk10)[0] == 0.0f
-            && ((float *)&m_unk10)[1] == 0.0f
-            && ((float *)&m_unk10)[2] == 0.0f
-            && ((PMeshNodeGroundView *)pNode)->m_unk140 == 0.0f
-            && ((PMeshNodeGroundView *)pNode)->m_unk148 == 0.0f) {
+            && !((float *)&m_unk10)[0]
+            && !((float *)&m_unk10)[1]
+            && !((float *)&m_unk10)[2]
+            && !((PMeshNodeGroundView *)pNode)->m_unk140
+            && !((float *)&((PMeshNodeGroundView *)pNode)->m_unk140)[2]) {
             if (IsAnimatedWallHit() != 0) {
                 *(u_long128 *)((char *)this + 0x30) = m_unkD0;
             } else {
@@ -155,7 +154,7 @@ int Physics::ApplyGroundMove(float (&vOut)[4], PMeshNode *pNode)
     {
         float fCur = 57.295776f * atan2f(pMat[0][0], pMat[0][2]);
         float fDiff = fCur - 57.295776f * atan2f(m_unk40[0], m_unk40[2]);
-        if (0.0f != fDiff) {
+        if (fDiff) {
             m_unk108 |= 0x10;
         }
         if (pMat[1][1] < 0.0f) {
@@ -164,7 +163,7 @@ int Physics::ApplyGroundMove(float (&vOut)[4], PMeshNode *pNode)
         m_unkF4 = fDiff;
         m_unk11C = Round180__Ff(fDiff + m_unk11C);
     }
-    return nResult;
+    return bResult;
 }
 
 // Local views of the animated-wall objects IsAnimatedWallHit reads (0x24 surface link, 0x8 type).
@@ -178,38 +177,35 @@ struct AnimWallObject {
     AnimWallSurface *m_unk24;
 };
 
-// DRAFT: 0x00171280 IsAnimatedWallHit__7PhysicsFv
-// note: 36 words differ; original shares one exit at 0xB0, separate returns and c.eq.s operand order tried, not matched.
+// FUNCTION: 0x00171280 IsAnimatedWallHit__7PhysicsFv
 int Physics::IsAnimatedWallHit()
 {
     AnimWallSurface *pA;
     AnimWallSurface *pB;
 
-    if (m_unk3C == 0.0f) {
+    if (!m_unk3C) {
         return 1;
     }
-    if (m_unkE4 == 0) {
-        return 0;
-    }
-    pA = 0;
-    if (m_unkCC == m_unkE0) {
-        return 0;
-    }
-    pB = 0;
-    if (m_unkCC != 0) {
-        pA = ((AnimWallObject *)m_unkCC)->m_unk24;
-        if (pA != 0 && pA->m_unk8 < 2) {
-            pA = 0;
-        }
-    }
-    if (m_unkE0 != 0) {
-        pB = ((AnimWallObject *)m_unkE0)->m_unk24;
-        if (pB != 0 && pB->m_unk8 < 2) {
+    if (m_unkE4 != 0) {
+        pA = 0;
+        if (m_unkCC != m_unkE0) {
+            if (m_unkCC != 0) {
+                pA = ((AnimWallObject *)m_unkCC)->m_unk24;
+                if (pA != 0 && pA->m_unk8 < 2) {
+                    pA = 0;
+                }
+            }
             pB = 0;
+            if (m_unkE0 != 0) {
+                pB = ((AnimWallObject *)m_unkE0)->m_unk24;
+                if (pB != 0 && pB->m_unk8 < 2) {
+                    pB = 0;
+                }
+            }
+            if (pA != 0 || pB != 0) {
+                return 1;
+            }
         }
-    }
-    if (pA != 0 || pB != 0) {
-        return 1;
     }
     return 0;
 }
@@ -581,16 +577,17 @@ struct PMeshNodeAngleView {
 };
 
 // DRAFT: 0x001720C0 AdjustFaceAngle__7PhysicsFP9PMeshNodef
-// note: 63 words differ; 0x118 compare loads into f0 not f1, fDiff compare order and 0x11C load order differ; fDiff-before-fCur kept.
+// note: 60 words differ; hoisted fZero and truth test on m_unk118 leave the 0x11C load order and the fDiff/fCur order differing; tried fZero on both tests (63), fDiff truth test (60), fZero before the first test (63).
 void Physics::AdjustFaceAngle(PMeshNode *pNode, float fRate)
 {
     PMeshNodeAngleView *pView = (PMeshNodeAngleView *)pNode;
+    float fZero = 0.0f;
     m_unk108 &= ~0x800;
-    if (m_unk118 != 0.0f) {
+    if (m_unk118) {
         float fDiff;
         float fCur = pView->m_unk94;
         fDiff = Round180__Ff(m_unk11C - fCur);
-        if (fDiff != 0.0f) {
+        if (fDiff != fZero) {
             float fNew;
             if (m_unk118 <= 1.0f) {
                 float fStep = m_unk118 * fRate;

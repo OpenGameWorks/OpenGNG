@@ -24,7 +24,7 @@ public:
     void SetVelocity(float fAngle, float fSpeed);
     void ResetPhysics(PMeshNode *pNode);
     void AdjustFaceAngle(PMeshNode *pNode, float fRate);
-    int ApplyGroundMove(float (&vOut)[4], PMeshNode *pNode);
+    bool ApplyGroundMove(float (&vOut)[4], PMeshNode *pNode);
     void CalculateVelocity(float fSpeed, float (*pMatrix)[4]);
     void RunPhysics(EntityBaseClass *pEntity, float fDelta, int nFlag, BGCollision *pBG);
 
