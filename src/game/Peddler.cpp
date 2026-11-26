@@ -254,18 +254,13 @@ void Peddler::OutputDebug() {
     gDebug.DebugDisp(buf);
 }
 
-// DRAFT: 0x001D0730 ActivateAttackingEnemies__7PeddlerFv
-// note: 2 diff words, call setup loads a2 (m_unk04) before a0 (mpEntMgr); orig loads a0 first. Tried: nOff+=4 before ppSlot++ in tail (4 to 2, kept), local EntityManager* for mpEntMgr, nTo temp for m_unk04, nFrom temp for m_unk4, (EntityManager*)/(unsigned) casts; all keep a2 first.
+// FUNCTION: 0x001D0730 ActivateAttackingEnemies__7PeddlerFv
 void Peddler::ActivateAttackingEnemies() {
-    EntityBaseClass **ppSlot;
-    int i;
+    EntityBaseClass **ppSlot = m_unk1F4;
+    int i = 0;
     EntityBaseClass *pEnt;
     EntityInstance *pInst;
-    unsigned int nOff;
-
-    ppSlot = m_unk1F4;
-    nOff = 0;
-    i = 0;
+    unsigned int nOff = 0;
     do {
         pEnt = *ppSlot;
         if (pEnt != 0) {
@@ -276,7 +271,7 @@ void Peddler::ActivateAttackingEnemies() {
                 }
                 pInst->SetSlot30(*(int *)((char *)this + 0xC));
                 *(EntityBaseClass **)((char *)this + nOff + 0x2C8) = pEnt;
-                Add2DependencyList__13EntityManagerFUiUi(mpEntMgr__15EntityBaseClass, pInst->m_unk4, m_unk04);
+                Add2DependencyList__13EntityManagerFUiUi(mpEntMgr__15EntityBaseClass, pInst->m_unk4, *(unsigned int *)((char *)this + 4));
             }
         }
         i++;

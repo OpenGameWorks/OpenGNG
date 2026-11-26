@@ -64,50 +64,41 @@ void *PMidasShieldRings::InitRingMeshPacket(int &nCount, int nSegs, bool bFlag) 
     return pHdr;
 }
 
-// DRAFT: 0x001F8B40 CreateRingTriStrip__17PMidasShieldRingsFiffiiPA4_fPA4_fPA4_f
-// note: 19 differing words in loop body (0x00C8-0x014C): lui a1 placement, addu a3/t0 order, sll placement, pc1 base register, slt vs addiu s2 and div.s order; tried guard 0<n, hoisting fAng/fStep/nIdx, moving pc1 decl, (nIdx+1)<<4
-int PMidasShieldRings::CreateRingTriStrip(int nSegs, float fA, float fB, int iC, int iD, float (*pA)[4], float (*pB)[4], float (*pC)[4]) {
-    int nCount = nSegs * 2 + 2;
-    float fAng = 0.0f;
-    float fStep = 360.0f / (float)nSegs;
-    int nIdx = 0;
-    if (0 < nCount) {
-        int nOff = 0;
-        do {
-            float fSin = FastMath_Sin180__Ff(fAng - 180.0f);
-            float fCos = FastMath_Cos180__Ff(fAng - 180.0f);
-            float *pa = (float *)((char *)pA + nOff);
-            float *pb = (float *)((char *)pB + nOff);
-            int *pc0 = (int *)((char *)pC + nOff);
-            int *pc1 = (int *)((char *)pC + (nIdx + 1) * 16);
-            pa[1] = fA * fCos;
-            nIdx += 2;
-            nOff += 0x20;
-            pa[2] = fA * fSin;
-            float fRatio = fA / fB;
-            pa[0] = 0.0f;
-            pa[3] = 1.0f;
-            fAng += fStep;
-            float fHalf = 0.5f * fRatio;
-            pb[0] = 0.5f + fCos * fHalf;
-            pb[1] = 0.5f + fSin * fHalf;
-            pc0[0] = 0x80;
-            pc0[1] = 0x80;
-            pc0[2] = 0x80;
-            pc0[3] = iC;
-            pc1[0] = 0x80;
-            pc1[1] = 0x80;
-            pc1[2] = 0x80;
-            pc1[3] = iD;
-            pa[5] = fB * fCos;
-            pa[6] = fB * fSin;
-            pa[4] = 0.0f;
-            pa[7] = 1.0f;
-            pb[4] = 0.5f + 0.5f * fCos;
-            pb[5] = 0.5f + 0.5f * fSin;
-        } while (nIdx < nCount);
+// FUNCTION: 0x001F8B40 CreateRingTriStrip__17PMidasShieldRingsFiffiiPA4_fPA4_fPA4_f
+int PMidasShieldRings::CreateRingTriStrip(int arg0, float arg1, float arg2, int arg3, int arg4, float (*arg5)[4], float (*arg6)[4], float (*arg7)[4]) {
+    int count = arg0 * 2 + 2;
+    int i;
+    float angle = 0.0f;
+    float step = 360.0f / (float)arg0;
+    for (i = 0; i < count; i += 2) {
+        float s = FastMath_Sin180__Ff(angle - 180.0f);
+        float c = FastMath_Cos180__Ff(angle - 180.0f);
+        arg5[i][1] = arg1 * c;
+        arg5[i][2] = arg1 * s;
+        arg5[i][0] = 0.0f;
+        arg5[i][3] = 1.0f;
+        angle += step;
+        float half = 0.5f * (arg1 / arg2);
+        arg6[i][0] = 0.5f + c * half;
+        arg6[i][1] = 0.5f + s * half;
+        int (*ci)[4] = (int (*)[4])arg7;
+        ci[i][0] = 0x80;
+        ci[i][1] = 0x80;
+        ci[i][2] = 0x80;
+        ci[i][3] = arg3;
+        int (*cn)[4] = ci + (i + 1);
+        cn[0][0] = 0x80;
+        cn[0][1] = 0x80;
+        cn[0][2] = 0x80;
+        cn[0][3] = arg4;
+        arg5[i + 1][1] = arg2 * c;
+        arg5[i + 1][2] = arg2 * s;
+        arg5[i + 1][0] = 0.0f;
+        arg5[i + 1][3] = 1.0f;
+        arg6[i + 1][0] = 0.5f + 0.5f * c;
+        arg6[i + 1][1] = 0.5f + 0.5f * s;
     }
-    return nCount;
+    return count;
 }
 
 // FUNCTION: 0x001F8D10 FindFreeRing__17PMidasShieldRingsFv

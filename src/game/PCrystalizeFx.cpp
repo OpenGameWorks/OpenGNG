@@ -49,7 +49,7 @@ struct PCrystalizeFxBlock {
 // here (its eBoxIntersect placeholder clashes with PGfxEngine.h).
 // Child list embedded at +0x14 of a node: count, walk index, node array.
 struct PCrystalizeFxChild {
-    int nCount;
+    unsigned int nCount;
     int nIndex;
     PMNode **pNodes;
 };
@@ -135,8 +135,7 @@ void PCrystalizeFx::UpdateInstances() {
     }
 }
 
-// DRAFT: 0x001FE700 GetValidNodes__13PCrystalizeFxFP6PMNodePP6PMNode
-// note: 7 words differ. Original keeps the incremented index in a0 and uses sltu; ours reloads nIndex and uses slt, and the branch order around the loop tail differs. Tried: child struct, explicit pChild != 0, ternary first-child load, unsigned index (no change), local index variable (20 words).
+// FUNCTION: 0x001FE700 GetValidNodes__13PCrystalizeFxFP6PMNodePP6PMNode
 void PCrystalizeFx::GetValidNodes(PMNode *pNode, PMNode **pOut) {
     PCrystalizeFxNodeView *pView = (PCrystalizeFxNodeView *)pNode;
     if (pView->m_unk10 != 0) {
@@ -146,16 +145,15 @@ void PCrystalizeFx::GetValidNodes(PMNode *pNode, PMNode **pOut) {
         pOut[m_unk1E4] = pNode;
         m_unk1E4++;
     }
-    PCrystalizeFxChild *pChild = (PCrystalizeFxChild *)((char *)pNode + 0x14);
-    if (pChild != 0) {
-        pChild->nIndex = 0;
-        PMNode *pChildNode = (pChild->nCount != 0) ? pChild->pNodes[0] : 0;
-        if (pChildNode != 0) {
-            do {
-                GetValidNodes(pChildNode, pOut);
-                pChild->nIndex++;
-                pChildNode = (pChild->nIndex < pChild->nCount) ? pChild->pNodes[pChild->nIndex] : 0;
-            } while (pChildNode != 0);
+    PCrystalizeFxChild *pList = &pView->m_child;
+    if (pList != 0) {
+        pList->nIndex = 0;
+        PMNode *pChild = (pList->nCount != 0) ? pList->pNodes[0] : 0;
+        while (pChild != 0) {
+            GetValidNodes(pChild, pOut);
+            int nIdx = pList->nIndex + 1;
+            pList->nIndex = nIdx;
+            pChild = (nIdx < pList->nCount) ? pList->pNodes[pList->nIndex] : 0;
         }
     }
 }

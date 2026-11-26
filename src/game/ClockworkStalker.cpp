@@ -336,32 +336,33 @@ void ClockworkStalker::CheckBlockAttack() {
     }
 }
 
-// DRAFT: 0x001E2F70 FaceHit__16ClockworkStalkerFv
-// note: 22 differing lines; original loads f0 with lui+mtc1 per case and subtracts once in a shared delay slot, ours loads the switch scrutinee and constant in different registers (tried f0 constant variable: 44 lines, per-case f1 subtract: 22)
+// FUNCTION: 0x001E2F70 FaceHit__16ClockworkStalkerFv
 void ClockworkStalker::FaceHit() {
-    float sp30[4];
-    MathAPI *mgr = mpEntMgr__15EntityBaseClass->m_unk505C;
-    GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(mgr, sp30);
-    char *ptr = mgr->m_unk3C != 0 ? mgr->m_unk3C + 0x90 : (char *)mgr + 0x1A0;
-    float f1 = *(float *)(ptr + 4);
-    switch (mpEntMgr__15EntityBaseClass->m_unk505C->m_unk154) {
+    float vFwd[4];
+    EntityBaseClass *pPlayer = *(EntityBaseClass **)((char *)mpEntMgr__15EntityBaseClass + 0x505C);
+    GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(pPlayer, vFwd);
+    char *pSrc = *(char **)((char *)pPlayer + 0x3C);
+    pSrc = pSrc ? pSrc + 0x90 : (char *)pPlayer + 0x1A0;
+    float fDelta = *(float *)(pSrc + 4);
+    int nState = *(int *)((char *)*(EntityBaseClass **)((char *)mpEntMgr__15EntityBaseClass + 0x505C) + 0x154);
+    switch (nState) {
+    case 0x82000007:
+        fDelta = fDelta - (-150.0f);
+        break;
+    case 0x8200000E:
+        fDelta = fDelta - 150.0f;
+        break;
     case 0x82000010:
         return;
-    case 0x8200000E:
-        f1 = f1 - 150.0f;
-        break;
-    case 0x82000007:
-        f1 = f1 - -150.0f;
-        break;
     default:
-        f1 = f1 - 180.0f;
+        fDelta = fDelta - 180.0f;
         break;
     }
-    char *dst = m_unk3C != 0 ? m_unk3C + 0x90 : (char *)this + 0x1A0;
-    *(float *)(dst + 4) = f1;
-    char *s0 = m_unk38;
-    char *src = m_unk3C != 0 ? m_unk3C + 0x90 : (char *)this + 0x1A0;
-    *(float *)(s0 + 0x11C) = Round180__Ff(*(float *)(src + 4));
+    char *pDst = m_unk3C ? (char *)m_unk3C + 0x90 : (char *)this + 0x1A0;
+    *(float *)(pDst + 4) = fDelta;
+    char *pDst2 = m_unk3C ? (char *)m_unk3C + 0x90 : (char *)this + 0x1A0;
+    char *pObj = (char *)m_unk38;
+    *(float *)(pObj + 0x11C) = Round180__Ff(*(float *)(pDst2 + 4));
 }
 
 // FUNCTION: 0x001E3080 IsStalled__16ClockworkStalkerFfPA4_f
