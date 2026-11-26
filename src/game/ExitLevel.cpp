@@ -58,7 +58,7 @@ void ExitLevel::OutputDebug()
     gDebug.DebugDisp(buf);
 }
 
-void DisplayTime0(int nTime, float fTime);
+static void DisplayTime0(int nTime, float fTime);
 
 // DRAFT: 0x001C4D20 Execute__9ExitLevelFv
 // note: 373 words; size 0x79c vs 0x7dc (missing block), epilogue delay slot (ld ra vs nop), jump-table lui/addiu placeholders, frame layout, branches at 0x140/0x164/0x190, SetState reloc at 0x7b4; tried ternary assert, FLAGS readonly, colour ternary, if/else pSrc, case order 3 then 0 (kept), default break (375, worse)
@@ -279,7 +279,7 @@ block_67:
 }
 
 // FUNCTION: 0x001C5500 DisplayTime0__Fif
-void DisplayTime0(int nTime, float fTime)
+static void DisplayTime0(int nTime, float fTime)
 {
     char buf[0x40];
     FontManager *pFont = (FontManager *)(gInterface + 0x80);

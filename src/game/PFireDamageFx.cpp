@@ -37,7 +37,7 @@ public:
 };
 
 // FUNCTION: 0x00202FC0 GetCharacterType__FUi
-int GetCharacterType(unsigned int uType) {
+static int GetCharacterType(unsigned int uType) {
     int nType = 0;
     switch (uType) {
     case 0x3:

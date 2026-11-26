@@ -1,6 +1,8 @@
 #include "types.h"
 #include "Peddler.h"
 
+static unsigned int GetItemID(unsigned int arg0);
+
 // TODO(header): foreign declarations
 extern "C" void FillItems__6PlayerFPib(void *pThis, int *pItems, bool bArg);
 extern "C" tagWaypointGroup *GetWaypointGroupInfo__15WaypointManagerFUi(void *pThis, unsigned int iGroupId);
@@ -1083,7 +1085,7 @@ Peddler::Peddler() : EntityBaseClass((LoadClass)6, 0) {
 }
 
 // FUNCTION: 0x001D39F0 GetItemID__FUi
-unsigned int GetItemID(unsigned int arg0) {
+static unsigned int GetItemID(unsigned int arg0) {
     unsigned int i = 0;
     ItemEntry *p = ItemTable;
 

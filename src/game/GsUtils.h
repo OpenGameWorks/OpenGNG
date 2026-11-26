@@ -99,7 +99,6 @@ typedef struct tagTexturedFogSpritePacket {
 } tagTexturedFogSpritePacket;   // size >= 0x290
 
 void GsInitClut256(tagGsClut256 *pClut);
-void FudgeBytesToBMPFormat(char *pBuf, int nWidth, int nHeight, float fA, float fB);
 int GsSwapDBuff(sceGsDBuff *pDBuff, int nIdx);
 void GsSetFrameBufferCopyInfo(tagGsFrameBufferCopy *pInfo, int nX, int nY);
 void GsSetTCC(tagGsTextureEnvironment *pTexEnv, bool bFlag);

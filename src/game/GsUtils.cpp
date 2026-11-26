@@ -37,7 +37,7 @@ extern "C" int printf(const char *pFmt, ...);
 extern "C" int sceOpen(const char *pName, int nFlags);
 extern "C" int sceWrite(int nFd, void *pBuf, int nSize);
 extern "C" int sceClose(int nFd);
-void Vif1DmaFrameBuffer(u_long128 *pBuf, short nA, short nB, short nC, short nD, short nE, short nF, short nG);
+static void Vif1DmaFrameBuffer(u_long128 *pBuf, short nA, short nB, short nC, short nD, short nE, short nF, short nG);
 extern int guGrabFrameNumber;
 extern int SCREEN_WIDTH;
 extern u_long128 *gpFrameGrabBuf1;
@@ -210,7 +210,7 @@ void GsClearVRAM(unsigned char nR, unsigned char nG, unsigned char nB, unsigned 
 
 // DRAFT: 0x0017DE30 Vif1DmaFrameBuffer__FP1sssssss
 // note: 105 differing words, size 0x458 vs 0x450; nQwc>=0x8000 compare uses v0 not at, hardware-address base reloaded per store (lui v1); variants tried: switch, if-chain, shift folded, volatile MMIO, base+offset MMIO
-void Vif1DmaFrameBuffer(u_long128 *pBuf, short nA, short nB, short nC, short nD, short nE, short nF, short nG) {
+static void Vif1DmaFrameBuffer(u_long128 *pBuf, short nA, short nB, short nC, short nD, short nE, short nF, short nG) {
     static u_long128 enable_path3;
     char spA0[0x20];
     u_long128 spC0[0xA];
@@ -291,7 +291,7 @@ void Vif1DmaFrameBuffer(u_long128 *pBuf, short nA, short nB, short nC, short nD,
 }
 
 // FUNCTION: 0x0017E280 FudgeBytesToBMPFormat__FPciiff
-void FudgeBytesToBMPFormat(char *pBuf, int nWidth, int nHeight, float fA, float fB) {
+static void FudgeBytesToBMPFormat(char *pBuf, int nWidth, int nHeight, float fA, float fB) {
     for (int i = 0; i < nWidth * nHeight; i += nHeight) {
         char *p = pBuf + i;
         char c = p[0];
@@ -321,8 +321,7 @@ struct BmpInfoHeader {
     unsigned int m_unk18[4];
 };
 
-// DRAFT: 0x0017E2C0 GsDumpFrameBuffersAsBmp__Fii
-// note: DIFF 6 words: the second FudgeBytesToBMPFormat call reloads a2=3 (original reuses it), and the nOff-branch block at 0x1DC has an extra nop. Tried: loop var before offset (fixed s3/s4 swap), nOff update before printf (fixed delay slot), `!nA == !nB` (broke prologue).
+// FUNCTION: 0x0017E2C0 GsDumpFrameBuffersAsBmp__Fii
 void GsDumpFrameBuffersAsBmp(int nA, int nB) {
     BmpInfoHeader ih;
     char szName[0x80];

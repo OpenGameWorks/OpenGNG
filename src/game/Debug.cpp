@@ -317,7 +317,7 @@ void Debug::DebugClear() {
 }
 
 // FUNCTION: 0x16AE40 SoundEdit__Fv
-void SoundEdit() {
+static void SoundEdit() {
     if (mSound != 0) {
         gSound.SoundEditEnter();
     loop:
@@ -333,7 +333,7 @@ void SoundEdit() {
 }
 
 // FUNCTION: 0x16AEE0 PlayerPosDisplay__Fv
-void PlayerPosDisplay() {
+static void PlayerPosDisplay() {
     char buf[0x80];
     float *pPos;
 
@@ -369,7 +369,7 @@ void RenderAnimation() {
 
 // DRAFT: 0x0016B010 ApparitionDisplay__Fv
 // note: DIFF 13 words: gbApparition read as lbu from gp (-0x7C28) in the original, ours uses 0x0($gp) with a reloc; gPad lhu uses -0x40F0 in the original, ours 0x110 from $at; nA in a2 (original) vs a0 and bDirty in a3 vs a1. Tried decl orders (bDirty first 66, bDirty before nA 69, nB before nA 63, nRep first 13); kept nA, nB, nRep, bDirty.
-void ApparitionDisplay() {
+static void ApparitionDisplay() {
     float *pPos;
     unsigned int nA;
     unsigned int nB;
@@ -426,7 +426,7 @@ void ApparitionDisplay() {
 }
 
 // FUNCTION: 0x16B210 CameraDisplay__Fv
-void CameraDisplay() {
+static void CameraDisplay() {
     Camera *p = (Camera *)(gEng + 0x19760);
     if (p == 0) {
         CdsAssert("Debug.cpp", 0x89, "pGameCam");

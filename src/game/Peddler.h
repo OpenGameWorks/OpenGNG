@@ -105,6 +105,5 @@ public:
     float m_unk20[4];               // 0x020 second AnimateVector target (m_unk20[2] = Animate arg1)
 };
 
-unsigned int GetItemID(unsigned int arg0);
 
 #endif

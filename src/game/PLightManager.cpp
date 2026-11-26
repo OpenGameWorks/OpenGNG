@@ -36,7 +36,7 @@ struct PLightNode {
 };
 
 // FUNCTION: 0x0018E880 LightCompareBrightness__FPvPv
-bool LightCompareBrightness(void *pA, void *pB) {
+static bool LightCompareBrightness(void *pA, void *pB) {
     return *(float *)((char *)pA + 0x50) < *(float *)((char *)pB + 0x50);
 }
 

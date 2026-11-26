@@ -178,7 +178,7 @@ public:
 };
 
 // FUNCTION: 0x00184640 ComputeDistanceSq__FPfPfPA4_A4_fPA4_A4_fPfPf
-void ComputeDistanceSq(float *pA, float *pB, float (*pMatA)[4][4], float (*pMatB)[4][4], float *pSrc, float *pDst)
+static void ComputeDistanceSq(float *pA, float *pB, float (*pMatA)[4][4], float (*pMatB)[4][4], float *pSrc, float *pDst)
 {
     asm {
         .set noreorder
@@ -251,7 +251,7 @@ int ZCompareFragments(void *pIdx0, void *pIdx1)
 
 // DRAFT: 0x184800 VBlankEndInterruptHandler__Fi
 // note: 2 words differ: the original places daddu v1,zero,zero before sd ra; ours emits sd ra first. Tried: scalar/array counter, consolidated/split COP0 asm, lui/sync as .word, nop, daddu in its own asm, unused and used zero local (X2: 29 words; X3 asm block with zero local: 5 words), mfpc reads with named local (10 lines, wrong v0/a0 allocation).
-int VBlankEndInterruptHandler(int nIrq) {
+static int VBlankEndInterruptHandler(int nIrq) {
     asm { .word 0x0000182D }
     gCDSVBlankCount[0]++;
     asm {

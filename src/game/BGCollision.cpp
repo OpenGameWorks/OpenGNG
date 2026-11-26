@@ -25,9 +25,9 @@ struct STCollisionPoly {
     float m_unk10[4];
 };
 struct STCollisionNode;
-float SphereIntersect(STCollisionPoly *pPoly, float (*pSph)[4], float fRadius);
-int FindGroundPos(STCollisionPoly *pPoly, float (*pOut)[4]);
-int BoxLineCheck(float (*pBox)[2][4]);
+static float SphereIntersect(STCollisionPoly *pPoly, float (*pSph)[4], float fRadius);
+static int FindGroundPos(STCollisionPoly *pPoly, float (*pOut)[4]);
+static int BoxLineCheck(float (*pBox)[2][4]);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0ApplyMatrix(float *, float *, float *);
 extern "C" void sceVu0InversMatrix(float *, float *);
@@ -642,7 +642,7 @@ void BGCollision::BGDetectionST(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo *p
 
 // DRAFT: 0x0016E670 SphereIntersect__FP15STCollisionPolyPA4_ff
 // note: 423 words; |det| Fabs call at 0x170 (orig 0x15c), size 0x5fc vs 0x72c; fused mula/madd chains and region branch order differ.
-float SphereIntersect(STCollisionPoly *pPoly, float (*pSph)[4], float fRadius) {
+static float SphereIntersect(STCollisionPoly *pPoly, float (*pSph)[4], float fRadius) {
     u_long128 sp60;
     u_long128 sp70;
     u_long128 sp80;
@@ -872,7 +872,7 @@ int BGCollision::GridCheck(float (*pArr)[2][4], PMat4 *pMat, STCollisionNode **p
 #undef GC_NEIGHBOUR
 
 // FUNCTION: 0x0016F340 FindGroundPos__FP15STCollisionPolyPA4_f
-int FindGroundPos(STCollisionPoly *pPoly, float (*pOut)[4])
+static int FindGroundPos(STCollisionPoly *pPoly, float (*pOut)[4])
 {
     asm {
         .set noreorder
@@ -1419,7 +1419,7 @@ int BGCollision::CheckIntersect(float (&pA)[4], float (&pB)[4], float (*pC)[4], 
 }
 
 // FUNCTION: 0x00170910 BoxLineCheck__FPA2_A4_f
-int BoxLineCheck(float (*pBox)[2][4])
+static int BoxLineCheck(float (*pBox)[2][4])
 {
     asm {
         .set noreorder
