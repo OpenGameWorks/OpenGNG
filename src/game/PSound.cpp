@@ -409,7 +409,7 @@ void PSound::WaitOnVSync() {
 }
 
 // DRAFT: 0x001A4200 PlayMultipleAtOnce__6PSoundFUi
-// note: 7 words differ: pEnd lands in s2 and nPlayed in s1 (original s1/s2 swapped); tried declaration order (7), unsigned nEnd cursor (12), pEnd from m_unk2EB4 (9), pointer compares with >= break (7), signed nPlayed (7), unsigned pEnd and nPlayed scoped in the guard (7).
+// note: 7 words differ: pEnd lands in s2 and nPlayed in s1 (original s1/s2 swapped); tried declaration order (7), unsigned nEnd cursor (12), pEnd from m_unk2EB4 (9), pointer compares with >= break (7), signed nPlayed (7), unsigned pEnd and nPlayed scoped in the guard (7), nPlayed declared before pSpot (12), pEnd declared before nPlayed (7, same registers).
 int PSound::PlayMultipleAtOnce(unsigned int nSound) {
     SpotInfo *pSpot = (SpotInfo *)m_unk2EB4;
     unsigned int nPlayed = 0;
@@ -1057,7 +1057,7 @@ void PSound::ErrorRecovery() {
 }
 
 // DRAFT: 0x001A5960 OneFrameHasElapsed_R__6PSoundFPffRiRi
-// note: DIFF 6 words; rA/rB global order fixed (8 to 6); m_unk68 reload lands in v1 and t in v0 (original v0/v1); tried int t split, base local, if/else split, != 0 vs truthiness (no change)
+// note: DIFF 6 words; rA/rB global order fixed (8 to 6); m_unk68 reload lands in v1 and t in v0 (original v0/v1); tried int t split, base local, if/else split, != 0 vs truthiness, t declared then assigned, 0 != m_unk68, unsigned t, t declared at function top (all 6, reloaded m_unk68 still lands in v1)
 int PSound::OneFrameHasElapsed_R(float *pElapsed, float fFrame, int &rA, int &rB) {
     m_unk68 = *(int *)(gEng + 0x1883C);
     m_unk6C = *(int *)(gEng + 0x19B74);
