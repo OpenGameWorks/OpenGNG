@@ -38,7 +38,7 @@ ROUTES = {"/": ROOT / "tools/live.html", "/index.html": ROOT / "tools/live.html"
           "/progress.json": MIRROR / "build/progress.json", "/status.json": BUILD / "live_status.json",
           "/workers.json": BUILD / "queue/active.json"}
 # Untracked build inputs the mirror borrows from the main tree.
-LINKS = ["original", ".venv", "build/info", "ext"] + [
+LINKS = ["original", ".venv", "build/info", "build/ccq", "ext"] + [
     str(p.relative_to(ROOT)) for p in sorted((ROOT / "tools/compilers").glob("*")) if p.is_dir()]
 
 

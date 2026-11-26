@@ -127,7 +127,13 @@ def main() -> int:
     elif box := os.environ.get("MWCC_CONTAINER"):
         cmd = [docker(), "exec", "-w", cwd, *env, box, "wine", exe, *argv]
     else:
-        cmd = [docker(), "run", "--rm", "--platform", "linux/386", "-v", f"{ROOT}:{ROOT}", "-w", cwd, *env,
+        mounts = ["-v", f"{ROOT}:{ROOT}"]
+        # A mirror checkout (tools/live.py) symlinks the compiler packages into the main
+        # tree; the container sees only mounted paths, so the real package joins them.
+        real = Path(exe).resolve().parent
+        if not real.is_relative_to(ROOT.resolve()):
+            mounts += ["-v", f"{real}:{real}:ro"]
+        cmd = [docker(), "run", "--rm", "--platform", "linux/386", *mounts, "-w", cwd, *env,
                IMAGE, "wine", exe, *argv]
     for _ in range(3):
         p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
