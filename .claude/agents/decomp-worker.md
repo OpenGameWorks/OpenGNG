@@ -27,6 +27,7 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 
 - Saves are `sd ra` plus `sq s0..`; `lq`/`sq` pairs are a 128-bit copy (`*(u_long128 *)dst = *(u_long128 *)src`).
 - `lui at,1; addu at,base,at` is a member past offset 0x8000 of a large class.
+- A by-value class parameter the original uses in place (no byte-copy loop into the frame) belongs to a non-POD class: give a placeholder class `T() {}` and `T(const T &);` declarations.
 - A single `abs.s` comes from the MW intrinsic `__s_abs(f)` (no declaration needed); `fabsf` and a `f < 0 ? -f : f` ternary compile to a call or a branch.
 - A short string literal (7 bytes or less) lands in `.sdata` (`addiu v0,gp,…`); `// FLAGS: -str readonly` on line 1 of the source puts literals in the original's read-only section (`lui`/`addiu`).
 - Store order and local declaration order set instruction order; separate early returns or a duplicated tail replace a shared exit.
