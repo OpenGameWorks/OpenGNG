@@ -196,23 +196,20 @@ void PTextureManager::PrepareImageXferInfo(tagGsImageXferInfo *pInfo, int nWidth
     pInfo->unk40 = 0;
 }
 
-// DRAFT: 0x001898C0 PrepareImageDmaPacket__15PTextureManagerFP17tagImageDmaPacketPviiiii
-// note: 49 lines differ, all from parameter copy order: original copies this->s6, pPacket->s5 ... nPsm->s0 in declaration order, mine puts nPsm in s6 and this in s5; tried reassigning pPacket (50), if/else store (49), pDma local with nVal (49, kept)
+// FUNCTION: 0x001898C0 PrepareImageDmaPacket__15PTextureManagerFP17tagImageDmaPacketPviiiii
 void PTextureManager::PrepareImageDmaPacket(tagImageDmaPacket *pPacket, void *pData, int nSize, int nWidth, int nHeight, int nPsm, int nBase) {
-    tagImageDmaPacket *pDma;
-    long long nVal;
-
     if (pPacket == 0) {
         CdsAssert__FPciPc("PTextureManager.cpp", 0x6B7, "pPacket");
     }
-    pDma = (tagImageDmaPacket *)((unsigned int)pPacket | 0x20000000);
-    pDma->unk0 = 0x10000005;
-    PrepareImageXferInfo(&pDma->xfer, nWidth, nHeight, nPsm, nBase);
-    nVal = 0x30000000;
+    pPacket = (tagImageDmaPacket *)((unsigned int)pPacket | 0x20000000);
+    pPacket->unk0 = 0x10000005;
+    PrepareImageXferInfo(&pPacket->xfer, nWidth, nHeight, nPsm, nBase);
     if (pData != 0) {
-        nVal = ((long long)(unsigned int)pData << 32) | 0x30000000 | (long long)(nSize >> 4);
+        long long nVal = ((long long)(unsigned int)pData << 32) | 0x30000000 | (long long)(nSize >> 4);
+        pPacket->unk60 = nVal;
+    } else {
+        pPacket->unk60 = 0x30000000;
     }
-    pDma->unk60 = nVal;
     asm { sync }
 }
 
@@ -254,8 +251,7 @@ int PTextureManager::LoadTexture(PPakFile *poFile, tagPs2TexDataHeader *pTexHead
     return 1;
 }
 
-// DRAFT: 0x00189BF0 AddTexture__15PTextureManagerFP8PTextureP6PArray
-// note: 54 differing lines; loop guard is slt/beqz with count in a0 but entry delay slot and b to bottom test differ; tried while (55), comma init (55), i++ placement (54)
+// FUNCTION: 0x00189BF0 AddTexture__15PTextureManagerFP8PTextureP6PArray
 int PTextureManager::AddTexture(PTexture *pTex, PArray *pArray) {
     int nOff;
     int nCount;
@@ -269,20 +265,23 @@ int PTextureManager::AddTexture(PTexture *pTex, PArray *pArray) {
         CdsAssert__FPciPc("PTextureManager.cpp", 0x661, "poTextureArray");
     }
     nCount = pArray->m_nCount;
-    nOff = 0;
-    for (i = 0; (int)i < nCount;) {
-        pEntry = 0;
-        if (i < (unsigned int)nCount) {
-            pEntry = *(PTexture **)((char *)pArray->m_apItems + nOff);
-        }
-        if (pEntry == 0) {
-            if (i < pArray->m_nCapacity) {
-                pArray->m_apItems[i] = pTex;
+    i = 0;
+    if ((int)i < nCount) {
+        nOff = 0;
+        do {
+            pEntry = 0;
+            if (i < (unsigned int)nCount) {
+                pEntry = *(PTexture **)((char *)pArray->m_apItems + nOff);
             }
-            return EncodeTextureHandle(0, (PTexture::eTextureType)pTex->m_unkA4, i);
-        }
-        i++;
-        nOff += 4;
+            if (pEntry == 0) {
+                if (i < pArray->m_nCapacity) {
+                    pArray->m_apItems[i] = pTex;
+                }
+                return EncodeTextureHandle(0, (PTexture::eTextureType)pTex->m_unkA4, i);
+            }
+            i++;
+            nOff += 4;
+        } while ((int)i < nCount);
     }
     if (pArray->m_nCapacity < (unsigned int)nCount) {
         CdsAssert__FPciPc("PTextureManager.cpp", 0x66F, "poTextureArray->GetCount() <= poTextureArray->GetSize()");
@@ -625,8 +624,7 @@ void PTextureManager::UnloadAllDynamicTextures() {
     }
 }
 
-// DRAFT: 0x0018AC90 UnloadDynamicTextures__15PTextureManagerF13eTextureGroup
-// note: 16 lines differ: one missing nop after the jalr and a nop at the loop-tail join (original has both, ours does not); tried 0<nCount guard (25), VFunc2 before dtor (24), operand swap on eGroup compare (24, reverted), m_unk1E8 > i (24, reverted), removing inner null check (24, reverted)
+// FUNCTION: 0x0018AC90 UnloadDynamicTextures__15PTextureManagerF13eTextureGroup
 void PTextureManager::UnloadDynamicTextures(eTextureGroup eGroup) {
     int nCount;
     int nOff;
@@ -642,12 +640,12 @@ void PTextureManager::UnloadDynamicTextures(eTextureGroup eGroup) {
             if (i < (unsigned int)m_nDynCount) {
                 pEntry = *(PTexture **)((char *)m_apDyn + nOff);
             }
-            if (pEntry != 0 && pEntry->m_unkA0 == (int)eGroup) {
-                if (pEntry != 0) {
+            if (pEntry != 0) {
+                if ((int)eGroup == pEntry->m_unkA0) {
                     delete pEntry;
-                }
-                if (i < m_unk1E8) {
-                    *(PTexture **)((char *)m_apDyn + nOff) = 0;
+                    if (i < m_unk1E8) {
+                        *(PTexture **)((char *)m_apDyn + nOff) = 0;
+                    }
                 }
             }
             i++;

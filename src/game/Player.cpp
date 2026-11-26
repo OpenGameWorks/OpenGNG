@@ -3747,13 +3747,14 @@ extern "C" void *__dt__10PAnimFrameFv(void *pThis, short nFlag) {
 }
 
 // DRAFT: 0x00160D30 UpdateKey__6PlayerFv
-// note: 40 words differ: early-exit branch target, register choice (res/mesh/offset temp), epilogue placement; tried split locals, m2 rename, sel split, dropping i reset (91)
+// note: 2 words differ: mesh->m_unkE = 0 store lands in the beqz delay slot instead of before slti; tried 3 > i, hoisting n (no gain)
 void Player::UpdateKey() {
     int i = 0;
     int n;
     PMNode *res;
-    PMesh *mesh;
     PMNode *pk;
+    PMNode *node;
+    PMesh *mesh;
     if (m_unk298[0] != 0) {
         i = 0;
         if (m_unk1F4 != 0) {
@@ -3780,11 +3781,10 @@ void Player::UpdateKey() {
         if (i < 3) {
             n = m_unk1F0;
             do {
-                PMNode *node = m_unk298[i];
-                PMesh *sel = (n > 0) ? mesh : 0;
-                node->m_unk10 = sel;
+                node = m_unk298[i];
+                node->m_unk10 = (n > 0) ? mesh : 0;
                 node->m_unk3E &= 0xEF;
-                if (sel != 0 && sel->m_unkC != 0) {
+                if (((n > 0) ? mesh : 0) != 0 && ((n > 0) ? mesh : 0)->m_unkC != 0) {
                     node->m_unk3E |= 0x10;
                 }
                 i++;
