@@ -2764,13 +2764,14 @@ void Interface::DisplayLevelName(int arg0, int arg1) {
 }
 
 // DRAFT: 0x00145450 Render__9InterfaceFi
-// note: 12 words differ: gs register constants 8/0x1B/0x44 land in swapped v0/v1 at 0x70..0x88; StartTimer gDebug address and the sb store are scheduled differently at 0x398..0x3AC.
+// note: 6 words after permuter (spelling from build/permuter/00145450/best.cpp). Earlier: 12 words differ: gs register constants 8/0x1B/0x44 land in swapped v0/v1 at 0x70..0x88; StartTimer gDebug address and the sb store are scheduled differently at 0x398..0x3AC.
 int Interface::Render(int arg0) {
     unsigned long long gs[6];
     float vec[4];
     int ret = 0;
-    int diff = m_unk414 - m_unk416;
     bool flag;
+    int diff;
+    diff = m_unk414 - m_unk416;
     if (diff != 0) {
         m_unk416 += (diff > 0) ? 1 : -1;
     }
@@ -2787,7 +2788,7 @@ int Interface::Render(int arg0) {
             q[0] = 0x44;
             q[1] = 0x42;
         }
-        PDisplayList *pd = *(PDisplayList **)(gGfxEng + 0x154C80);
+        PDisplayList *pd = *(PDisplayList **)(0x154C80 + gGfxEng);
         pd->SetGsRegisters((u_long128 *)gs, 3);
         pd = *(PDisplayList **)(gGfxEng + 0x154C80);
         pd->ClearFrameBuffer(0x800, (short)(SCREEN_OFFSET_Y - 0x14 + m_unk416), SCREEN_WIDTH, 0x14, 0, 0, 0, -0x80, 0);
@@ -2841,8 +2842,8 @@ int Interface::Render(int arg0) {
             }
         }
     }
-    StopTimer__5DebugFUi(gDebug, 0xB);
     gGfxEng[0x158F01] = 0;
+    StopTimer__5DebugFUi(gDebug, 0xB);
     return ret;
 }
 

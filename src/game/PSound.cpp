@@ -2419,10 +2419,10 @@ void PSound::SetMainMusicRelVolume(unsigned int nVolume) {
 }
 
 // DRAFT: 0x001A9470 StopMusic__6PSoundFv
-// note: DIFF 12; the second loop increment (addiu s1) lands in the bnez delay slot, original keeps slti/bnez/nop. Tried for-loop, offset-bounded while, reordered increments, unsigned counters; none closed the gap.
+// note: 3 words after permuter (spelling from build/permuter/001A9470/best.cpp). Earlier: DIFF 12; the second loop increment (addiu s1) lands in the bnez delay slot, original keeps slti/bnez/nop. Tried for-loop, offset-bounded while, reordered increments, unsigned counters; none closed the gap.
 void PSound::StopMusic() {
     SOUND_StopAllMusic();
-    int i = 0;
+    unsigned char i = 0;
     int off = 0;
     do {
         ((MusicStreamState *)((char *)this + off + 0x70))->ReInit();

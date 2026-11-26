@@ -1974,11 +1974,11 @@ void EntityBaseClass::AddToBGAnimList() {
 }
 
 // DRAFT: 0x0014DAA0 WriteApparitionData__15EntityBaseClassFicUi
-// note: DIFF 8 words; 0x59A0 store folds arg2 first (addiu a0,s0) and the tally tail sign-extends arg1 before the arg1==0 test (orig beqz s1 raw). Gate as goto-check matches. Tried pointer temp for store (worse), wrapped tail (worse), !arg1 (same), printf-first (same).
+// note: 2 words after permuter (spelling from build/permuter/0014DAA0/best.cpp). Earlier: DIFF 8 words; 0x59A0 store folds arg2 first (addiu a0,s0) and the tally tail sign-extends arg1 before the arg1==0 test (orig beqz s1 raw). Gate as goto-check matches. Tried pointer temp for store (worse), wrapped tail (worse), !arg1 (same), printf-first (same).
 void EntityBaseClass::WriteApparitionData(int arg0, char arg1, unsigned int arg2) {
     char *slot;
-    if (m_unk18 == 0 && arg2 == 0) {
-        if (arg0 != 0) {
+    if (m_unk18 == 0 && 0 == arg2) {
+        if (0 != arg0) {
             return;
         }
         if (m_unk10 == 3) {
@@ -2008,7 +2008,7 @@ check:
     if (arg0 != 0) {
         return;
     }
-    if (arg1 == 0) {
+    if (!arg1) {
         return;
     }
     {

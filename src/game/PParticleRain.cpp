@@ -152,12 +152,11 @@ void PParticleRain::InitParticles() {
     }
 }
 
-// DRAFT: 0x001CC5F0 SetNumRainParticles__13PParticleRainFUi
-// note: 7 words differ, all in the loop: ours keeps the stride offset in t0 and nMax in a3, original keeps offset in a3 and nMax in t0 (declaration order and loop forms tried).
+// FUNCTION: 0x001CC5F0 SetNumRainParticles__13PParticleRainFUi
 void PParticleRain::SetNumRainParticles(unsigned int nNum) {
     unsigned int nRem;
     unsigned int k;
-    unsigned int nMax;
+    int nMax;
 
     nNum = (nNum < 4) ? 4 : nNum;
     if (nNum > 0x28) {
