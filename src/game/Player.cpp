@@ -547,12 +547,11 @@ void Player::DetachJoint(int arg0) {
     }
 }
 
-// DRAFT: 0x00159150 FreeJoint__6PlayerFi
-// note: 10 words differ: f0/f1 swapped for fTimer and zero (lwc1 first load lands in f0), a0=1 hoisted into bc1f delay slot, v0/v1 swapped in flag compare. Tried: flag temp, store reorder, reload of AttachedTimer.
+// FUNCTION: 0x00159150 FreeJoint__6PlayerFi
 void Player::FreeJoint(int arg0) {
     int idx = m_unk23D4 + arg0;
     m_unk23D1 = (unsigned int)idx < 4U;
-    if ((unsigned int)idx >= 6U) {
+    if ((unsigned int)idx > 5U) {
         idx = 5;
     }
     float fTimer = AttachedTimer[5 - idx];
