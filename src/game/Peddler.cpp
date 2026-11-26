@@ -713,7 +713,7 @@ int Peddler::AnimateItems() {
 }
 
 // DRAFT: 0x001D18A0 HideItems__7PeddlerFv
-// note: 6 diff lines; this and slot pointer swap s3/s4 (orig this=s4, slot=s3). Tried 4 local orders (ppSlot-first best at 6), bool bAll (23), block-scoped ppSlot (13), signed nOff (6), char* base local (6), int bAll=true (6).
+// note: 6 diff lines; this and slot pointer swap s3/s4 (orig this=s4, slot=s3); prologue copies a0 after sq s2 in ours. Tried 10 local orders (best 6: ppSlot,bAll,i,nOff; others 11-13), bool bAll (23), Peddler *pSelf = this copy (6, pSelf takes s3), block-scoped ppSlot (13), signed nOff (6), char* base local (6), int bAll=true (6).
 int Peddler::HideItems() {
     PeddlerItems **ppSlot;
     int bAll;
@@ -925,13 +925,12 @@ unsigned int Peddler::FindItem(int arg0) {
     return 0;
 }
 
-// DRAFT: 0x001D1FE0 ValidateItems__7PeddlerFv
-// note: 6 diff words (was 18); this sits in s1 where the original has s0 and the loop counters swap s2/s4/s5. Local order (pEntry,i,nIndex,pIndex,pPlayer,nCur,nOff,pSlot,nResult) is the best of 30 sampled orders (next 9, 13, 13). Tried earlier: pEntry/pBase split, signed nOff, inline slot pointer.
+// FUNCTION: 0x001D1FE0 ValidateItems__7PeddlerFv
 void Peddler::ValidateItems() {
-    ItemEntry *pEntry;
+    unsigned int *pIndex;
     int i;
     int nIndex;
-    unsigned int *pIndex;
+    ItemEntry *pEntry;
     Player *pPlayer;
     int nCur;
     unsigned int nOff;
