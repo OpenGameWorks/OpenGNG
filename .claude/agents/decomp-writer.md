@@ -48,6 +48,7 @@ You write C++ for Metrowerks CodeWarrior PS2 (`mwccps2` 3.0.3, `-O4,p`) that `to
 - MW inlines builtin `abs()`; where the original calls libc `abs` (`jal 0x122520`), a block-scope `int abs(int);` declaration inside the function keeps the call.
 - A by-value class parameter the original uses in place (no byte-copy loop into the frame) belongs to a non-POD class: give a placeholder class `T() {}` and `T(const T &);` declarations.
 - A single `abs.s` comes from the MW intrinsic `__s_abs(f)` (no declaration needed); `fabsf` and a `f < 0 ? -f : f` ternary compile to a call or a branch.
+- A guard the original compiles as `beqz`/`beq` into the body plus an unthreaded `b` to the epilogue (often `ld ra` in its delay slot) is a `switch` with one case: `switch (m_unk250) { case 0: ...; break; }`. An `if` threads that exit into a single `bnez`. Player::GuardHitMove and AirSliceMove matched this way; the state-machine moves in Player.cpp use it throughout.
 - A class name of 7 bytes or less returned by `GetClassName` lands in `.sdata` (`addiu v0,gp,…`); `// FLAGS: -str readonly` on line 1 of the source puts string literals in the original's read-only section (`lui`/`addiu`).
 - A member whose original returns a value while your header declares it `void` gets the corrected return type in your header (`int NextBatch();`); an `extern "C"` function carrying the mangled name is never a substitute for the member definition.
 - A void callee declaration where the original reads v0 (or the reverse) shifts registers: callee return types follow their own asm.
