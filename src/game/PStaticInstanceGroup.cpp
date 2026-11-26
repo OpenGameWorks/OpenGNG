@@ -113,7 +113,7 @@ unsigned int PStaticInstanceGroup::RenderParticleInstances(bool bFlag) {
 
 
 // DRAFT: 0x001D7160 Render__20PStaticInstanceGroupFv
-// note: DIFF 39; prologue branch layout (beqz at 0x1C/0x28/0x34) and count test (sltu/beqz vs beqz v0) differ, count CSE'd into a0 instead of lw v0,8(v1) at 0x00A8, DrawStaticInstances global base (orig lui 0x46 + lw -0x4D00). Tried: 0< guard, nSize before pData, prologue early return, pMaster across loop (frame 0x50), per-iteration reload (55), flag path 0x45B580 (57).
+// note: DIFF 10 (was 39); guard is `if (nRet < cnt) do {...} while (nRet < cnt)` with nSize ternary before pData (orig loads offset 0 first). Left: second ternary's count not reloaded (ours CSEs a0, orig lw v0,8(v1) at 0x00A8), extra nop in its arm, so exit branch is one word short. Tried: `> 0` guard (folds to beqz), bool guard, while form (57), pMaster in pData ternary (83), operand-flipped pData compare (10).
 unsigned int PStaticInstanceGroup::Render() {
     unsigned int nRet = 0;
     StaticMasterMesh *pMaster = (StaticMasterMesh *)m_unk8;
@@ -122,10 +122,10 @@ unsigned int PStaticInstanceGroup::Render() {
             ((PParticleManager *)((char *)&gGfxEng + 0x154F00))->AddParticleInstanceGroup(this);
         } else {
             pMaster->m_unk0->Render(0x80, false, 0);
-            if (((StaticMasterMesh *)m_unk8)->m_unk8 != 0) {
+            if (nRet < ((StaticMasterMesh *)m_unk8)->m_unk8) {
                 do {
-                    void *pData = (nRet < ((StaticMasterMesh *)m_unk8)->m_unk8) ? ((StaticMasterMesh *)m_unk8)->m_unkC[nRet].pData : 0;
                     int nSize = (nRet < ((StaticMasterMesh *)m_unk8)->m_unk8) ? ((StaticMasterMesh *)m_unk8)->m_unkC[nRet].nSize : 0;
+                    void *pData = (nRet < ((StaticMasterMesh *)m_unk8)->m_unk8) ? ((StaticMasterMesh *)m_unk8)->m_unkC[nRet].pData : 0;
                     gGfxEng.BeginStaticInstances(pData, nSize);
                     gGfxEng.m_unk154C80->DrawStaticInstances(m_unk0, m_unk4, 0x28, 0, 1, false);
                     nRet++;
