@@ -121,8 +121,7 @@ void WoodenChest::OnSleepEvent()
     }
 }
 
-// DRAFT: 0x001A1790 HaveKeys__11WoodenChestFv
-// note: original tests ==8 then ==7 with two branches to a shared body and an i++ in the non-matching b delay slot; ours emits three branches. 17 words differ (for, continue, do-while 8-first, goto, if/else variants tried; 7-first is 19).
+// FUNCTION: 0x001A1790 HaveKeys__11WoodenChestFv
 int WoodenChest::HaveKeys()
 {
     int *p;
@@ -131,7 +130,9 @@ int WoodenChest::HaveKeys()
     i = 0;
     p = &m_unk1B0;
     do {
-        if (p[0] == 8 || p[0] == 7) {
+        switch (p[0]) {
+        case 7:
+        case 8:
             if (p[1] > 0) {
                 return 1;
             }

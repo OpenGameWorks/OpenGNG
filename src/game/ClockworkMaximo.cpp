@@ -761,16 +761,13 @@ int ClockworkMaximo::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int ar
     }
 }
 
-// DRAFT: 0x00211C50 OnAttackEvent__15ClockworkMaximoFP15EntityBaseClassi
-// note: branch layout differs (original uses beq/b to shared exit, ours bne); positive form 15 lines, explicit else-return 17 lines.
+// FUNCTION: 0x00211C50 OnAttackEvent__15ClockworkMaximoFP15EntityBaseClassi
 void ClockworkMaximo::OnAttackEvent(EntityBaseClass *arg0, int arg1) {
-    int t;
-
     if (arg0 != 0) {
-        t = arg0->m_unk8;
-        if (t == 0x48 || t == 3) {
-            t = m_unk20;
-            m_unk27C = (t == 0x18) || (t == 0xE);
+        switch (arg0->m_unk8) {
+        case 3:
+        case 0x48:
+            m_unk27C = (m_unk20 == 0x18) || (m_unk20 == 0xE);
         }
     }
 }

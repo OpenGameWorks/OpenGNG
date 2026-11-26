@@ -31,6 +31,7 @@ public:
     void InitMembers();
     int ConditionCheck(Player *pPlayer);
     void ResetTrigger(PMeshNode *pNode);
+    int TriggerCheck(float (*pMatrix)[4], PMeshNode *pNode, Player *pPlayer);
 
     unsigned short m_unk0;
     short m_unk2;
