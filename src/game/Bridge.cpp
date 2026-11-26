@@ -191,7 +191,7 @@ void Bridge::UpdateBridgeRope() {
 }
 
 // DRAFT: 0x001DCCA0 LeanOnSides__6BridgeFv
-// note: 16 words differ: clamp compare sense (c.le.s/bc1t vs c.lt.s/bc1f), mul.s operand order at 0x17C, slt operand at 0x194, loop-body register and interleave (a0/a1). Tried: negated and reversed clamp ternary (118), swapped product operands (no change), flipped segment ternary (23 to 16).
+// note: 16 words differ: clamp compare sense (c.le.s/bc1t vs c.lt.s/bc1f), mul.s operand order at 0x17C, slt operand at 0x194, loop-body register and interleave (a0/a1). Tried: negated and reversed clamp ternary (118), swapped product operands (no change), flipped segment ternary (23 to 16), clamp ternary with swapped arms and with <= (both worse, call order shifts).
 void Bridge::LeanOnSides() {
     float vec[4];
     void *t = *(void **)((char *)mPlayerAPI__13EntityManager + 0x3C);
@@ -376,17 +376,16 @@ void Bridge::PushPlank(int arg0, float arg1, float arg2) {
 }
 
 // DRAFT: 0x001DD830 Clamp__6BridgeFRf
-// note: original stores arg0 once and reloads it at 0x85C; ours forwards the value (15 words vs 0x54 size). Tried store/reload, volatile pointer reload (18), second compare on arg0 (15 best).
+// note: 9 words: original keeps v in f0 and 1.0f/-1.0f in f1, ours uses f1/f2 and one extra mov.s; volatile reload of arg0 in the second compare is the best form (store/reload, volatile first load, volatile pointer reload 18 all worse).
 void Bridge::Clamp(float &arg0) {
     float v = arg0;
-    if (v > 1.0f) {
+    if (1.0f < v) {
         v = 1.0f;
     }
     arg0 = v;
-    if (!(arg0 >= -1.0f)) {
-        arg0 = -1.0f;
+    if (!(-1.0f <= *(volatile float *)&arg0)) {
+        v = -1.0f;
     }
-    v = arg0;
     arg0 = v;
 }
 

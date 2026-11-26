@@ -235,7 +235,7 @@ void ClockworkSoulsucker::AdjustPhysicsForEweedCheck() {
 }
 
 // DRAFT: 0x002042D0 ScaleSpikes__19ClockworkSoulsuckerFf
-// note: 20 words differ; loop recomputes &aNodes (addiu v1,sp,0x60) each iteration, ours folds sp+0x60 into lw offset (size 0x19C vs 0x1A0). Tried do/while, for, pointer-walk, byte-offset forms.
+// note: 20 words differ; original recomputes &aNodes (addiu v1,sp,0x60) each iteration then adds the byte offset, ours folds sp+0x60 into the lw displacement (size 0x19C vs 0x1A0). Tried do/while, for, pointer-walk, byte-offset, PMNode *aNodes[4] (do/while and for).
 void ClockworkSoulsucker::ScaleSpikes(float fArg) {
     int aNodes[4];
     int i;
@@ -270,7 +270,7 @@ void ClockworkSoulsucker::ScaleSpikes(float fArg) {
 }
 
 // DRAFT: 0x00204470 AttachSmokeEffect__19ClockworkSoulsuckerFv
-// note: 18 lines differ; original reloads miRandom in beqz delay slot at 0x40, ours has nop. Tried truthiness, bit-compare, early-return, zero-first (40), else-if (40).
+// note: 18 words differ; original fills the m_unk3C beqz delay slot with the miRandom reload (lw at 0x40), ours leaves a nop and the else arm's lui in the next slot. Tried truthiness, bit-compare, early-return, zero-first (40), else-if (40), block-scoped nBit, else-first, (x) != 0 spelling, local PMNode pointer.
 void ClockworkSoulsucker::AttachSmokeEffect() {
     int nRand;
 
@@ -449,11 +449,10 @@ int ClockworkSoulsucker::InJuggleAirspace() {
     return 0;
 }
 
-// DRAFT: 0x00204EA0 SoulsInRange__19ClockworkSoulsuckerFv
-// note: 24 lines; register swap (ours i=s0, off=s1), loop-tail order and range-test branch shape differ. Tried: off before i, for-header steps (26), pointer local (37), range test forms (same count).
+// FUNCTION: 0x00204EA0 SoulsInRange__19ClockworkSoulsuckerFv
 int ClockworkSoulsucker::SoulsInRange() {
-    unsigned int i;
     unsigned int off;
+    unsigned int i;
     float (*pBox)[4];
     if (mTempArray__15EntityBaseClass.m_pData != 0) {
         mTempArray__15EntityBaseClass.m_count = 0;
@@ -464,11 +463,10 @@ int ClockworkSoulsucker::SoulsInRange() {
         pBox = (float (*)[4])(m_unk3C + 0x80);
     }
     GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 1, &mTempArray__15EntityBaseClass, pBox, 30.0f, 8, true, false);
-    off = 0;
-    for (i = 0; i < (unsigned int)mTempArray__15EntityBaseClass.m_count; i++) {
+    for (i = 0, off = 0; i < (unsigned int)mTempArray__15EntityBaseClass.m_count; i++) {
         ApparitionState *p = ApparitionIsValid__15EntityBaseClassFUi(i < (unsigned int)mTempArray__15EntityBaseClass.m_count ? *(unsigned int *)((char *)mTempArray__15EntityBaseClass.m_pData + off) : 0);
-        int st = p->m_unk1B0;
-        if (st == 4 || (unsigned int)(st - 0x14) < 2U || st == 0x16) {
+        unsigned int st = p->m_unk1B0;
+        if (st == 4 || (st - 0x14) <= 1U || st == 0x16) {
             return 1;
         }
         off += 4;
