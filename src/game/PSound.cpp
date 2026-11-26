@@ -59,7 +59,7 @@ extern u_long128 gZeroVectorW1;
 extern char gEng[105360];
 extern "C" unsigned int EngGenerateUniqueID__9MaxEngineFv(void *pThis);
 extern unsigned char MODE_PAL;
-extern "C" void SOUND_FadeOutAllMusic(short);
+extern "C" void SOUND_FadeOutAllMusic(int);
 extern "C" void SOUND_MusicAddExciteHits(int);
 extern "C" bool PointInMatrixBoxWSphereCheck__7MathAPIFPfP14tagVuMatrixBoxP10tagFLOAT3D(float *pPos, void *pBox, void *pSphere);
 extern int fst_ByPositionTypeReverbTable[40];
@@ -2009,22 +2009,12 @@ void PSound::SetPositionalRangeOneshot(unsigned int nRange) {
 }
 
 // DRAFT: 0x001A9250 SetDistLinearPercent__6PSoundFUi
-// note: DIFF 28; this/nPercent swapped in s0/s1, 0x3C23D70A loaded before the sign test in original, fPercent in f0 vs f2; tried ternary assert, hoisted fScale, no nSigned local (no drop).
+// note: DIFF 12; nPercent/this swapped (original nPercent=s0, this=s1; ours the reverse), gPSndDbg store and swc1 offsets follow. Tried: ternary assert, hoisted fScale (0x3C23D70A before the sign test, matches), plain cast, store-first order (22), local copy of nPercent (12), local PSound* alias for this (12).
 void PSound::SetDistLinearPercent(unsigned int nPercent) {
-    float fPercent;
-    int nSigned = nPercent;
-
+    float fScale = 0.01f;
     ((nPercent < 0x65) ? (void)0 : CdsAssert("PSound.cpp", 0x100F, "i_distLinearPercent <= 100"));
     gPSndDbg[17] = nPercent;
-    if (nSigned >= 0) {
-        fPercent = (float)nSigned;
-    } else {
-        int nHalf = nPercent >> 1;
-        nHalf |= nPercent & 1;
-        fPercent = (float)nHalf;
-        fPercent = fPercent + fPercent;
-    }
-    m_unk60 = 0.01f * fPercent;
+    m_unk60 = fScale * (float)nPercent;
     m_unk64 = 1.0f - m_unk60;
 }
 
@@ -2142,23 +2132,21 @@ void PSound::FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned
 }
 
 // DRAFT: 0x001A9630 FadeOutAllMusic__6PSoundFUi
-// note: 29 words after plain (float)/(unsigned int) conversion casts; earlier: 60 words; frame is 0x40 with s0/s1/s2 and the 0.8333 literal is built before the sign test in the original (we build it after); negative path add.s form gave 70 words, 2.0f* gives 60; size 0x114 vs 0xe8
+// note: DIFF 10 words; the loop increment `addiu s2,0x20` sits before the slti in the original (with a nop in the bnez slot), ours moves it into the slot. Tried: do-while, for with increment in header or body, while, swapped increment order (all 10). The 0.8333f * (float)n form matches the float path; SOUND_FadeOutAllMusic takes int.
 void PSound::FadeOutAllMusic(unsigned int nArg) {
     unsigned int n = nArg;
     if (MODE_PAL != 0) {
-        float f;
-        f = (float)n;
-        float t = 0.8333333f * f;
+        float t = 0.8333333f * (float)n;
         n = (unsigned int)t;
     }
-    SOUND_FadeOutAllMusic((short)n);
+    SOUND_FadeOutAllMusic(n);
     int i = 0;
     int off = 0;
-    do {
+    while (i < 2) {
         ((MusicStreamState *)((char *)this + off + 0x70))->ReInit();
         i++;
         off += 0x20;
-    } while (i < 2);
+    }
 }
 
 // FUNCTION: 0x001A9720 PlayMusicOnStream__6PSoundFUiUiUi
@@ -2769,23 +2757,22 @@ PSound::OneShotChannelState::OneShotChannelState() {
     Init();
 }
 
-// DRAFT: 0x001AACB0 PossiblyRandomPitch__Q26PSound8SpotInfoFv
-// note: 27 words differ: nLo&0xFFFF hoisted as ori 0xFFFF + and reg (orig andi), nVal kept in v0 not a2, mult/lui order, gPSndDbg lui reloc; tried unsigned short ret/local (30), masked return (28), direct per-branch assignment (29)
+// FUNCTION: 0x001AACB0 PossiblyRandomPitch__Q26PSound8SpotInfoFv
 int PSound::SpotInfo::PossiblyRandomPitch() {
     unsigned int nLo = m_unk08;
     unsigned int nHi = m_unk0A;
-    int nRet = nLo & 0xFFFF;
+    unsigned int nRet = (unsigned short)nLo;
     if (nLo < nHi) {
-        unsigned int nVal;
         if (gPSndDbg[16] != 0) {
             miRandom__7MathAPI = miRandom__7MathAPI * 0x343FD + 0x269EC3;
-            nVal = (nLo + (unsigned int)miRandom__7MathAPI % (nHi - nLo)) & 0xFFFF;
+            nRet = (unsigned short)(nLo + (unsigned int)miRandom__7MathAPI % (nHi - nLo));
         } else {
-            nVal = (nLo + nHi) >> 1;
+            nRet = nLo;
+            nRet += nHi;
+            nRet >>= 1;
         }
-        nRet = nVal & 0xFFFF;
     }
-    return nRet;
+    return (unsigned short)nRet;
 }
 
 // FUNCTION: 0x001AAD30 Init__Q26PSound8SpotInfoFv
