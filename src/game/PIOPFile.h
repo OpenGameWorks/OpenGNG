@@ -6,8 +6,9 @@
 class PIOPFile {
 public:
     PIOPFile();
-    void FrameMaintenacePartA();
-    void FrameMaintenacePartB();
+    // Per-frame upkeep over the static open-file list; no instance is involved.
+    static void FrameMaintenacePartA();
+    static void FrameMaintenacePartB();
     void RemoveFromOpenFilesList();
     int GetSize();
     int RequestNextBuf(unsigned int nBuf);
