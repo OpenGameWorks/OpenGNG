@@ -119,7 +119,7 @@ void Spitter::OnTimerEvent(unsigned int) {
 }
 
 // DRAFT: 0x001DA2B0 Execute__7SpitterFv
-// note: 150 words differ. Original keeps this in s0 with a 0x40 frame; ours spills this to s1 (0x50 frame) and tests case 1 before -2. Tried: label orders (-2,0,-1) 159, (-2,-1,0) 175, case 1 first 167; pUnused as Distance arg 150 (kept); pUnused at top, typed mpEntMgr decl, inline pPlayer: no change.
+// note: 150 words differ. Original keeps this in s0 with a 0x40 frame; ours spills this to s1 (0x50 frame) and tests case 1 before -2. Tried: label orders (-2,0,-1) 159, (-2,-1,0) 175, case 1 first 167; pUnused as Distance arg 150 (kept); pUnused at top, typed mpEntMgr decl, inline pPlayer, mpEntMgr loaded into a local pMgr before the 0x5058 test: no change.
 void Spitter::Execute() {
     float aPos[4];
     float fDist;

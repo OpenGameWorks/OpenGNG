@@ -127,9 +127,51 @@ int HolyGround::OnHitEvent(EntityBaseClass *pAttacker, int nDamage, unsigned int
 }
 
 // DRAFT: 0x001A3770 Execute__10HolyGroundFv
-// note: variant 5 (else-if chain 2,1,0,-1 in source order, pointer local in float tail): 161 words, size 0x2a0 vs 0x2a8; goto/block-order variant also 161
+// note: 51 words differ (was 161). Execute is a switch(-1,0,1,2) with bodies in source order; left: case 1 `if (m_unk160 == 0)` is asm `(x != 0) ^ 1` but that form gives 83; the m_unk1C0 pointer is kept in a0 across the GetRelAngleYToPoint call in the original, ours uses v1 (a `char *` local gives 75); one-word size gap in case 2 region.
 void HolyGround::Execute() {
-    if (m_unk20 == 2) {
+    switch (m_unk20) {
+    case -1:
+        if (ReadApparitionData(3, 0)) {
+            SetState(2);
+        } else {
+            *(unsigned int *)((char *)this + 0x10C) = 0x031F0308;
+            *(float *)((char *)this + 0x104) = 1.0f;
+            *(float *)((char *)this + 0x108) = 5.0f;
+            *((unsigned char *)this + 0x103) = 0xFF;
+            SetState(0);
+            m_unk1C4 = 1;
+            m_unk1C5 = 0;
+        }
+        break;
+    case 0:
+        if (*((unsigned char *)this + 0xE9)) {
+            PlaySequence(HolyGround_IdleSeq);
+            CreateRipplesFx();
+            m_unk1B4 = EntityManager::mTimerAPI.CreateTimer(m_unk04, 120, true);
+            m_unk1BC = PlaySound(0x1C7);
+        }
+        if (m_unk1C4) {
+            PlaySound(0x1C5);
+            m_unk1C4 = 0;
+        }
+        break;
+    case 1:
+        if (*((unsigned char *)this + 0xE9)) {
+            WriteApparitionData(3, 1, 0);
+            SetHolyGround__13EntityManagerFPA4_ffb(mpEntMgr__15EntityBaseClass, &m_unk190, m_unk1A4, true);
+            PlaySequence(HolyGround_ShatterSeq);
+            SpawnPickups__15EntityBaseClassFiiPA4_fb(this, 4, 2, 0, true);
+            m_unk1C0 = ((PMNode *)m_unk3C)->Find(0x6A25E855);
+        }
+        if (m_unk1C0) {
+            *(float *)((char *)m_unk1C0 + 0x94) = GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, gEng);
+            *((unsigned char *)m_unk1C0 + 0x3E) |= 8;
+        }
+        if (m_unk160 == 0) {
+            SetState(2);
+        }
+        break;
+    case 2:
         if (*((unsigned char *)this + 0xE9)) {
             PlaySequence(HolyGround_ActiveSeq);
             m_unk1C0 = ((PMNode *)m_unk3C)->Find(0x6A25E855);
@@ -154,43 +196,6 @@ void HolyGround::Execute() {
                 }
             }
         }
-    } else if (m_unk20 == 1) {
-        if (*((unsigned char *)this + 0xE9)) {
-            WriteApparitionData(3, 1, 0);
-            SetHolyGround__13EntityManagerFPA4_ffb(mpEntMgr__15EntityBaseClass, &m_unk190, m_unk1A4, true);
-            PlaySequence(HolyGround_ShatterSeq);
-            SpawnPickups__15EntityBaseClassFiiPA4_fb(this, 4, 2, 0, true);
-            m_unk1C0 = ((PMNode *)m_unk3C)->Find(0x6A25E855);
-        }
-        if (m_unk1C0) {
-            *(float *)((char *)m_unk1C0 + 0x94) = GetRelAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, gEng);
-            *((unsigned char *)m_unk1C0 + 0x3E) |= 8;
-        }
-        if (m_unk160 == 0) {
-            SetState(2);
-        }
-    } else if (m_unk20 == 0) {
-        if (*((unsigned char *)this + 0xE9)) {
-            PlaySequence(HolyGround_IdleSeq);
-            CreateRipplesFx();
-            m_unk1B4 = EntityManager::mTimerAPI.CreateTimer(m_unk04, 120, true);
-            m_unk1BC = PlaySound(0x1C7);
-        }
-        if (m_unk1C4) {
-            PlaySound(0x1C5);
-            m_unk1C4 = 0;
-        }
-    } else if (m_unk20 == -1) {
-        if (ReadApparitionData(3, 0)) {
-            SetState(2);
-        } else {
-            *(unsigned int *)((char *)this + 0x10C) = 0x031F0308;
-            *(float *)((char *)this + 0x104) = 1.0f;
-            *(float *)((char *)this + 0x108) = 5.0f;
-            *((unsigned char *)this + 0x103) = 0xFF;
-            SetState(0);
-            m_unk1C4 = 1;
-            m_unk1C5 = 0;
-        }
+        break;
     }
 }

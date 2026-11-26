@@ -13,8 +13,8 @@ extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pT
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern char gEng[105360];
-extern unsigned int Fire_IdleSeq;
-extern unsigned int Steam_IdleSeq;
+extern unsigned int Fire_IdleSeq[18];
+extern unsigned int Steam_IdleSeq[18];
 extern "C" int CheckVariable__15EntityBaseClassFii(void *pThis, int a, int b);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern "C" unsigned int PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
@@ -56,26 +56,25 @@ void Fire::OnTimerEvent(unsigned int arg0) {
     }
 }
 
-// DRAFT: 0x001B4090 Execute__4FireFv
-// note: DIFF 118; original dispatch chain and case-0 block layout differ (tried switch orders, local float, if-chain in -2,1,0,-1 order)
+// FUNCTION: 0x001B4090 Execute__4FireFv
 void Fire::Execute() {
-    if (m_unk20 == -2) {
-        return;
-    }
-    if (m_unk20 == 1) {
-        m_unk1C4 = m_unk1C4 - *(float *)&gEng[0x1E8];
-        if (m_unk1C4 <= 0.0f) {
-            SetState__15EntityBaseClassFi(this, 0);
+    switch (m_unk20) {
+    case -1:
+        CheckVariable__15EntityBaseClassFii(this, m_unk1B0, 3);
+        SetState__15EntityBaseClassFi(this, 0);
+        m_unk1BC = 0;
+        m_unk1C0 = 0;
+        if (m_unk1B0 == 1 || m_unk1B0 == 2) {
+            m_unk1C8 = PlaySound__15EntityBaseClassFUi(this, 0x97);
         }
-        return;
-    }
-    if (m_unk20 == 0) {
+        break;
+    case 0:
         if (m_unkE9 != 0) {
             unsigned int *seq;
             if (m_unk1B0 != 0) {
-                seq = &Steam_IdleSeq;
+                seq = Steam_IdleSeq;
             } else {
-                seq = &Fire_IdleSeq;
+                seq = Fire_IdleSeq;
             }
             PlaySequence__15EntityBaseClassFPUi(this, seq);
             if (m_unk1B0 == 1 || m_unk1B0 == 2) {
@@ -94,7 +93,7 @@ void Fire::Execute() {
                     return;
                 }
             }
-        } else if (m_unk160 == 0) {
+        } else if ((m_unk160 != 0) ^ 1) {
             m_unk1C4 = 60.0f * m_unk1B8;
             SetState__15EntityBaseClassFi(this, 1);
             if (m_unk1B0 == 1 || m_unk1B0 == 2) {
@@ -103,16 +102,15 @@ void Fire::Execute() {
                 return;
             }
         }
-        return;
-    }
-    if (m_unk20 == -1) {
-        CheckVariable__15EntityBaseClassFii(this, m_unk1B0, 3);
-        SetState__15EntityBaseClassFi(this, 0);
-        m_unk1BC = 0;
-        m_unk1C0 = 0;
-        if (m_unk1B0 == 1 || m_unk1B0 == 2) {
-            m_unk1C8 = PlaySound__15EntityBaseClassFUi(this, 0x97);
+        break;
+    case 1:
+        m_unk1C4 = m_unk1C4 - *(float *)&gEng[0x1E8];
+        if (m_unk1C4 <= 0.0f) {
+            SetState__15EntityBaseClassFi(this, 0);
         }
+        break;
+    case -2:
+        break;
     }
 }
 

@@ -218,48 +218,23 @@ void EnemyGenerator::GenerateEnemy() {
 }
 
 // DRAFT: 0x0020E380 Execute__14EnemyGeneratorFv
-// note: 123 words differ, size 0x208 vs 0x200; original tests -2, 1, 0, -1 and keeps the -1 init inline, while ours inlines the state-1 body (switch and if-chain variants tried).
+// note: 9 words differ (was 123). switch(-1,0,1,-2) with a pointer walk and pApp loaded before pPos now match the layout; left: CreateTimer's a1/a2 load order (original loads m_unk4 into a1 first) in the -1 and state-1 bodies, and the state-0 pPlayer/pApp registers (original keeps pPlayer in v1).
 void EnemyGenerator::Execute() {
-    if (m_unk20 == 1) {
-        if (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) == 0) {
-            GenerateEnemy();
-            m_unk1C4++;
-            m_unk1B0 = 0;
-            m_unk1B4 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk4, m_unk1C0, 1);
-            SetState__15EntityBaseClassFi(this, 0);
-        }
-        return;
-    }
-    if (m_unk20 == 0) {
-        if (m_unk1B8 != 0) {
-            return;
-        }
-        if (m_unk1B0 != 0 && m_unk1D8 < 3) {
-            char *pPlayer = (char *)mPlayerAPI__13EntityManager;
-            char *pPos = pPlayer + 0x190;
-            char *pApp = *(char **)(pPlayer + 0x3C);
-            if (pApp != 0) {
-                pPos = pApp + 0x80;
-            }
-            float fDist = Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pPos, &m_unk190);
-            if (fDist < m_unk1EC) {
-                SetState__15EntityBaseClassFi(this, 1);
-                return;
-            }
-        }
-        CheckGeneratedEnemies();
-        return;
-    }
-    if (m_unk20 == -1) {
+    switch (m_unk20) {
+    case -1:
         memset(m_unk1C8, 0, 0xC);
         memset(m_unk1DC, 0, 0xC);
         m_unk1D4 = 0;
         m_unk1D8 = 0;
-        for (int i = 0; i < 3; i++) {
-            int v = m_unk1F0[i];
-            if (v >= 0) {
-                m_unk1C8[m_unk1D4] = v;
-                m_unk1D4++;
+        {
+            int *pEntry = m_unk1F0;
+            for (int i = 0; i < 3; i++) {
+                int v = *pEntry;
+                if (v > -1) {
+                    m_unk1C8[m_unk1D4] = v;
+                    m_unk1D4++;
+                }
+                pEntry++;
             }
         }
         if (m_unk1D4 == 0) {
@@ -270,10 +245,40 @@ void EnemyGenerator::Execute() {
             m_unk1B0 = 0;
             m_unk1B4 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk4, m_unk1BC, 1);
             SetState__15EntityBaseClassFi(this, 0);
-            return;
+            break;
         }
         SetState__15EntityBaseClassFi(this, 1);
-        return;
+        break;
+    case 0:
+        if (m_unk1B8 != 0) {
+            break;
+        }
+        if (m_unk1B0 != 0 && m_unk1D8 < 3) {
+            char *pPlayer = (char *)mPlayerAPI__13EntityManager;
+            char *pApp = *(char **)(pPlayer + 0x3C);
+            char *pPos = pPlayer + 0x190;
+            if (pApp != 0) {
+                pPos = pApp + 0x80;
+            }
+            float fDist = Distance__7MathAPIFPA4_fPA4_f((float (*)[4])pPos, &m_unk190);
+            if (fDist < m_unk1EC) {
+                SetState__15EntityBaseClassFi(this, 1);
+                break;
+            }
+        }
+        CheckGeneratedEnemies();
+        break;
+    case 1:
+        if (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) == 0) {
+            GenerateEnemy();
+            m_unk1C4++;
+            m_unk1B0 = 0;
+            m_unk1B4 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk4, m_unk1C0, 1);
+            SetState__15EntityBaseClassFi(this, 0);
+        }
+        break;
+    case -2:
+        break;
     }
 }
 
