@@ -1756,9 +1756,8 @@ void CameraFollow::Reset() {
     m_unk164 = 5.0f;
 }
 
-// DRAFT: 0x00177EA0 __ct__12CameraFollowFP6Camera
-// note: original spills this to 0x2C(sp), keeps pCam in s0, frame 0x30, returns this; ours keeps this in s1 (no spill, no reload), frame 0x20 with s1 saved, size 0xa4 vs 0xc4; member form and extern pThis form (with and without return) tried, all differ the same way.
-extern "C" CameraFollow *__ct__12CameraFollowFP6Camera(CameraFollow *pThis, Camera *pCam) {
+// FUNCTION: 0x00177EA0 __ct__12CameraFollowFP6Camera
+extern "C" CameraFollow *__ct__12CameraFollowFP6Camera(CameraFollow *volatile pThis, Camera *pCam) {
     sceVu0UnitMatrix((float *)((char *)pThis + 0x60));
     sceVu0UnitMatrix((float *)((char *)pThis + 0xA0));
     __construct_array((char *)pThis + 0x230, __ct__5PVec3Fv, __dt__5PVec3Fv, 0x10, 8);
