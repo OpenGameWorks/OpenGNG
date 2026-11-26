@@ -1984,7 +1984,7 @@ void HudInventory::UpdateGroup(int arg0) {
 }
 
 // DRAFT: 0x143510 Reset__12HudInventoryFv
-// note: 8 words differ; the original has an extra nop between the loop's slti and bnez (ours has none; its delay-slot nop matches). Tried: pointer local for this+4, member m_unk4, for-loop (16 words), UpdateGroup(i++) (12), five loop-shape variants, while(i<4) and while(true)+break (8 each).
+// note: 8 words differ; the original has an extra nop between the loop's slti and bnez (a single inserted word, so it matches under mwcps2-3.0-011126 short-loop padding, not this compiler). Tried: pointer local for this+4, member m_unk4, for-loop (16 words), UpdateGroup(i++) (12), five loop-shape variants, while(i<4) and while(true)+break (8 each).
 void HudInventory::Reset() {
     if (m_unk4 != 0) {
         ((PVirtObj *)m_unk4)->Slot05((int)&DefaultLoopAnim);
@@ -2764,7 +2764,7 @@ void Interface::DisplayLevelName(int arg0, int arg1) {
 }
 
 // DRAFT: 0x00145450 Render__9InterfaceFi
-// note: 6 words after permuter (spelling from build/permuter/00145450/best.cpp). Earlier: 12 words differ: gs register constants 8/0x1B/0x44 land in swapped v0/v1 at 0x70..0x88; StartTimer gDebug address and the sb store are scheduled differently at 0x398..0x3AC.
+// note: 6 words after permuter (spelling from build/permuter/00145450/best.cpp). Earlier: 12 words differ: gs register constants 8/0x1B/0x44 land in swapped v0/v1 at 0x70..0x88; StartTimer gDebug address and the sb store are scheduled differently at 0x398..0x3AC. Tried since: direct gs[n] stores (210+ words), block-scoped p/q with each store order, pointer decl hoisted, gs+2, 8ULL literals, separate pointer for gs[1] (all 6 or worse); the remaining 6 are the v0/v1 choice for constant 8 at 0x70.
 int Interface::Render(int arg0) {
     unsigned long long gs[6];
     float vec[4];
