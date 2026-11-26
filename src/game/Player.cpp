@@ -1005,7 +1005,6 @@ void Player::CatchLedgeMove() {
     ((Physics *)m_unk38)->SetPhysicsType(0x800, 0);
 }
 
-// note: 8 words differ: original keeps the loaded value in v1 and the 1 in v0 before the 0x2A compare; compiled code loads into a0 and uses daddiu. Tried bool, ||, nested if/else and unsigned char locals.
 // FUNCTION: 0x0015A4B0 IsHanging__6PlayerFv
 unsigned char Player::IsHanging() {
     int ret;
@@ -1751,7 +1750,6 @@ void Player::UnlockChestMove() {
     }
 }
 
-// note: 2 words differ (0x40/0x48): the gp global mpEntMgr loads into a0 before the m_unk328 load into a1; the original has them reversed, and the m_unk328 load fills the jal delay slot in ours. Tried: hoisted id local (worse), cast local (same), id local after the m_unk250 store (same, copy propagation), separate mgr local (same), nested if form (same).
 // FUNCTION: 0x0015BC20 OpenChestMove__6PlayerFv
 void Player::OpenChestMove() {
     if (m_unk250 == 0 && !(m_unk3C[0xD] <= 8.0f)) {
@@ -1925,7 +1923,6 @@ void Player::ResetShield() {
     }
 }
 
-// note: 2 words differ: SetShield argument is lowered to movn/sltu instead of the original's daddu zero-preload and movz a1,v0,s0. Tried arg0 ? 0 : 1 (33 words), !arg0 (33), (arg0 == 0) ? true : false (movn, no gain), and the empty-then layout (33 words).
 // FUNCTION: 0x0015C0E0 SetFlyingShield__6PlayerFP6Shield
 void Player::SetFlyingShield(Shield *arg0) {
     SetShield(arg0 ? false : true);
@@ -2005,7 +2002,6 @@ void Player::ShieldThrowMove() {
     }
 }
 
-// note: 2 words differ: the zero-set for the return-0 arm lands in the bne delay slot and the nop moves to the b delay slot. Tried ret=0 and return 0 in the != 1 arm (both 2 lines), and the == 1 layout (about 20 lines).
 // FUNCTION: 0x0015C490 IsMidasActive__6PlayerFv
 void *Player::IsMidasActive() {
     switch (m_unk210) {
@@ -3448,7 +3444,6 @@ block_27:
     }
 }
 
-// note: 2 words differ: the move of this into a0 lands in the beq delay slot instead of the jal delay slot. Tried nested ifs, early return, reordered operands and swapped != form (3 lines).
 // FUNCTION: 0x0015F6C0 RollMove__6PlayerFv
 void Player::RollMove() {
     int v = (int)m_unk3C[0xD];
@@ -3758,7 +3753,6 @@ void Player::SetShield(bool arg0) {
     }
 }
 
-// note: 4 words differ: original keeps the loaded pointer in a1 and passes it as a0 for the call; compiled code keeps it in t0. Tried void * and int locals; int does not compile, void * still 4 words.
 // FUNCTION: 0x001601F0 UpdatePlayerFx__6PlayerFv
 void Player::UpdatePlayerFx() {
     PMNode *temp_a1 = (PMNode *)m_unk288;
@@ -4084,30 +4078,25 @@ int Player::GuardCheck(EntityBaseClass *arg0) {
     return 0;
 }
 
-// note: branch shape and 0x27 path match; the original keeps m_unk1BC in v0 and flags in v1, ours uses v1 for m_unk1BC. Tried flags local (fixes lhu slot), early-return tail (worse), nested 0x200 check (same), direct field reads (same).
-// DRAFT: 0x00162010 GetGroundAction__6PlayerFv
+// FUNCTION: 0x00162010 GetGroundAction__6PlayerFv
 int Player::GetGroundAction() {
     unsigned short flags = m_unk1B0;
     if (m_unk1D0 & 8) {
-        int r = 0xB;
         if (m_unk1BC < 0x32) {
-            r = 0xA;
+            return 0xA;
         }
-        return r;
+        return 0xB;
     }
-    if (flags & 0x200) {
-        if (m_unk2A4 == 0) {
-            return 0x27;
-        }
+    if ((flags & 0x200) && m_unk2A4 == 0) {
+        return 0x27;
     }
     if (m_unk1BC < 0x32) {
         return 0;
     }
-    int r2 = 2;
     if (m_unk1BC < 0x64) {
-        r2 = 1;
+        return 1;
     }
-    return r2;
+    return 2;
 }
 
 // DRAFT: 0x00162090 SetShockwave__6PlayerFi
