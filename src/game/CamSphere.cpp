@@ -37,8 +37,7 @@ void CamSphere::SetEditableVars(char *pSrc) {
     memcpy((char *)this + 0x1B0, pSrc, 0x10);
 }
 
-// DRAFT: 0x001A3180 Execute__9CamSphereFv
-// note: 10 words differ, all in the case 0 vPos copy: the original loads m_unk1C0..1CC into f3,f2,f1,f0 before storing to sp+0x30..0x3C, ours interleaves each load with its store through f0. Variants: pBuf local before the copies 52 words; pBuf after the copies 10 (kept); brace-initialised vPos 31 words.
+// FUNCTION: 0x001A3180 Execute__9CamSphereFv
 void CamSphere::Execute() {
     switch (m_unk20) {
     case -1: {
@@ -59,11 +58,7 @@ void CamSphere::Execute() {
     case 0: {
         Camera *pCam = (Camera *)(gEng + 0x19760);
         CDS_ASSERT(0x26, pCam);
-        PVec3 vPos;
-        vPos.m_v[0] = m_unk1C0;
-        vPos.m_v[1] = m_unk1C4;
-        vPos.m_v[2] = m_unk1C8;
-        vPos.m_v[3] = m_unk1CC;
+        PVec3 vPos = *(PVec3 *)&m_unk1C0;
         pCam->CamCollideSphere(vPos, m_unk1D0);
         break;
     }

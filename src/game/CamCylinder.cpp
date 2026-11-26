@@ -48,8 +48,7 @@ void CamCylinder::SetEditableVars(char *pSrc) {
     memcpy((char *)this + 0x1B0, pSrc, 0x14);
 }
 
-// DRAFT: 0x001A3B20 Execute__11CamCylinderFv
-// note: 10 words differ (was 58): the switch shape and the unsigned m_unk3C[0x3E] byte through a local pointer now match. Left: the vPos setup. The original loads the four floats into f3..f0 before forming &vPos in a1, then stores through a1; ours stores each one in turn. Brace init of vPos gave 32 words; float locals loaded first gave 10 (no change).
+// FUNCTION: 0x001A3B20 Execute__11CamCylinderFv
 void CamCylinder::Execute() {
     switch (m_unk20) {
     case -1:
@@ -70,11 +69,7 @@ void CamCylinder::Execute() {
     case 0: {
         Camera *pCam = (Camera *)(gEng + 0x19760);
         CDS_ASSERT(0x27, pCam);
-        PVec3 vPos;
-        vPos.m_v[0] = m_unk1D0;
-        vPos.m_v[1] = m_unk1D4;
-        vPos.m_v[2] = m_unk1D8;
-        vPos.m_v[3] = m_unk1DC;
+        PVec3 vPos = *(PVec3 *)&m_unk1D0;
         pCam->CamCollideCylinder(vPos, m_unk1E0, m_unk1E4);
         break;
     }
