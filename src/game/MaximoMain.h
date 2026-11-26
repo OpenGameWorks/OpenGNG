@@ -57,6 +57,7 @@ public:
     void GameOver();
     void MapscreenPrintInfo(FontManager *arg0, int arg1);
     int TextureViewer(BonusGallery *arg0, int arg1);
+    void BonusScreen(PMNode *arg0);
 
     char _pad000[0xD0];
     int m_unkD0;            // 0x0D0
