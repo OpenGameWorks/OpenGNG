@@ -116,7 +116,7 @@ int PMidasShieldRings::FindFreeRing() {
 }
 
 // DRAFT: 0x001F8D50 Emit__17PMidasShieldRingsFv
-// note: 6 differing lines, constant registers swapped: orig loads -0.015 into f5 first, ours loads 0.03 there; tried local -0.015f (top of function, sinks to the same load), local 0.03f, split product into a temporary, reversed add operands
+// note: 6 differing lines, constant registers swapped: orig loads -0.015 into f5 first, ours loads 0.03 there; tried local -0.015f (top of function, or before the store: same load), local 0.03f, split product into a temporary, reversed add operands, product with 0.03f on the right, -0.015f as right operand (all 6)
 int PMidasShieldRings::Emit() {
     int nIdx = FindFreeRing();
     if (nIdx >= 0) {

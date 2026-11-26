@@ -10,7 +10,7 @@ struct tagAnimationKeyFrameSplineData;
 float GetSpline(float fDt, tagAnimationKeyFrameSplineData *pA, tagAnimationKeyFrameSplineData *pNext);
 
 // DRAFT: 0x0018D4E0 AnimateBox__8PChannelFfRUc
-// note: 6 words differ; the original keeps this+0x10 in a0 and sums unkA*8 before (nIndex-1)<<5, ours loads unkA into v0 and folds +0x10 last. Tried: int nCount (20->7), hoisted base pointer (frame grows), local offset, member array base at 0x10, term reorder (7->6), signed nIndex (worse).
+// note: 4 diff lines; only the v0/v1 register swap of (nIndex-1)<<5 and this+0x10 remains. Kept (unsigned int)this + 0x10 + m_unkA*8 + ((nIndex-1)<<5) (6->4). Tried: int nCount (20->7), hoisted base (46), local offset, member array base, plain term reorders (7), signed int cast (4), unkA<<3 (4), (nIndex-1)*32 (5).
 void *PChannel::AnimateBox(float fTime, unsigned char &ucMask) {
     void *pResult = 0;
     int nCount = m_unk6;
@@ -30,7 +30,7 @@ void *PChannel::AnimateBox(float fTime, unsigned char &ucMask) {
         if (m_unk8 < nIndex) {
             CdsAssert("PChannel.cpp", 0x218, "iMask <= muNumKeyFrames[1]");
         }
-        pResult = (char *)this + 0x10 + ((nIndex - 1) << 5) + m_unkA * 8;
+        pResult = (char *)((unsigned int)this + 0x10 + m_unkA * 8 + ((nIndex - 1) << 5));
     }
     return pResult;
 }

@@ -689,7 +689,7 @@ int Peddler::AnimateItems() {
 }
 
 // DRAFT: 0x001D18A0 HideItems__7PeddlerFv
-// note: 6 diff lines; this and slot pointer swap s3/s4 (orig this=s4, slot=s3). Tried 4 local orders (nOff/i/bAll/ppSlot 11, bAll/i/nOff/ppSlot 13, nOff-first 12, bAll-first 12); ppSlot-first best.
+// note: 6 diff lines; this and slot pointer swap s3/s4 (orig this=s4, slot=s3). Tried 4 local orders (ppSlot-first best at 6), bool bAll (23), block-scoped ppSlot (13), signed nOff (6), char* base local (6), int bAll=true (6).
 int Peddler::HideItems() {
     PeddlerItems **ppSlot;
     int bAll;
