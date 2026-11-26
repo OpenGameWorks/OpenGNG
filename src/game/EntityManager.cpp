@@ -180,6 +180,7 @@ public:
 };
 
 void CdsAssert(char *pFile, int nLine, char *pExpr);
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("EntityManager.cpp", line, #cond))
 extern "C" int printf(const char *fmt, ...);
 extern "C" int sprintf(char *pBuf, const char *fmt, ...);
 
@@ -455,7 +456,7 @@ struct ParticleNode {
 };
 
 // DRAFT: 0x00146180 EnableParticleFx__13EntityManagerFb
-// note: 16 diffs; pNode in a2 vs orig a3 and the m_unk08 load hoisted before the inits; sp+0x4C base hoisted out of the inner loop. Tried bool found (16, kept), declaration-order permutations of the locals (60 orders, best 16)
+// note: 5 words; the key load (orig a2, `lw a2,8(a3)` before the inits) lands after the keys base in ours, and the loop top sits one word later (blez target). Best: `int *pKeys = keys;` in the do body (16 -> 5). Tried nKey local before the inits (7-11), pKeys/nKey placement among the locals (5-11), 12 statement orders (9-11)
 void EntityManager::EnableParticleFx(bool arg0) {
     int keys[1] = { 3 };
     ParticleSubList *pList;
@@ -472,9 +473,10 @@ void EntityManager::EnableParticleFx(bool arg0) {
             pNode = (pList->m_unk00 != 0) ? (ParticleNode *)pList->m_unk08[0] : 0;
             if (pNode != 0) {
                 do {
+                    int *pKeys = keys;
                     found = false;
                     for (i = 0; i < 1; i++) {
-                        if (pNode->m_unk08 == keys[i]) {
+                        if (pNode->m_unk08 == pKeys[i]) {
                             found = true;
                             break;
                         }
@@ -1114,7 +1116,7 @@ int EntityBaseClass::GetHealth() {
 }
 
 // DRAFT: 0x00147AA0 SaveApparitionData__13EntityManagerFi
-// note: 23 diffs; register allocation (pointer, offset, mask, counter), beqz target 0x24 vs 0x23, loop tail order. Tried unsigned char b (25), unsigned int b (23), p declared after i (worse), inner check removed (39).
+// note: 12 words; best of 120 declaration orders of p, b, i, mask, off (`b, i, mask, off` after p). Orig p in t0, ours a2; loop tail order differs. Tried unsigned char b (25), p declared after i (worse), inner check removed (39), all-decls-before-MID (27).
 void EntityManager::SaveApparitionData(int arg0) {
     if (arg0 < 0x15) {
         unsigned char *p = 0;
@@ -1123,8 +1125,8 @@ void EntityManager::SaveApparitionData(int arg0) {
             p = p + 0x2B1;
         }
         unsigned int b = 0x80;
-        unsigned int mask = 0x40;
         int i = 1;
+        unsigned int mask = 0x40;
         int off = 4;
         do {
             if (*(signed char *)((char *)this + 0x53A0 + off) > 0) {
@@ -1759,16 +1761,13 @@ float EntityManager::GetItemCounter(ItemCounterType theType) {
     return *(float *)(idx + base);
 }
 
-// DRAFT: 0x001491C0 CallOnTimerEvent__13EntityManagerFUiUi
-// note: 16 lines, all in the failure branch; the Slot09 call and Lookup match under the current PVirtObj layout. Original tests the string address at runtime (lui/addiu/sltu/xori/bnez over the CdsAssert call, frame 0x30) and ours folds !"..." away; tried local char* pMsg (0x40 frame, worse), early return (more lines), if(!(!"...")) else arm (16 lines, kept).
+// FUNCTION: 0x001491C0 CallOnTimerEvent__13EntityManagerFUiUi
 void EntityManager::CallOnTimerEvent(unsigned int arg0, unsigned int arg1) {
     void *pValue;
     if (((PHashTable *)m_unk5088)->Lookup((void *)arg0, pValue) != 0) {
         ((PVirtObj *)pValue)->Slot09(arg1);
     } else {
-        if (!(!"Invalid Apparition Accessed")) {
-            CdsAssert("EntityManager.cpp", 0x184, "!\"Invalid Apparition Accessed\"");
-        }
+        CDS_ASSERT(0x184, !"Invalid Apparition Accessed");
     }
 }
 
