@@ -7,6 +7,9 @@
 
 // TODO(header): foreign declarations
 void CdsAssert(char *pFile, int nLine, char *pExpr);
+extern "C" float atan2f(float, float);
+extern "C" float Round180__Ff(float);
+extern "C" float sqrtf(float);
 extern "C" void SOUND_PlaySFXRelVol(int, unsigned int, int, int, unsigned int);
 extern "C" void SOUND_SetChannelPitch(unsigned int, int);
 extern "C" void SOUND_SetChanRelVol(unsigned int, int, int);

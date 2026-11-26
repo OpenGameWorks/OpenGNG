@@ -156,6 +156,7 @@ public:
     void CSliceMove();
     void SliceMove();
     void GunDeckMove();
+    void OnAttackEvent(EntityBaseClass *arg0, int arg1);
     int GuardCheck(EntityBaseClass *arg0);
 
     char _pad000[0x20];
@@ -173,7 +174,9 @@ public:
     signed char m_unkD0;    // 0x0D0 set to 1 by Render
     char _padD1[0xD4 - 0xD1];
     void *m_unkD4;          // 0x0D4 shadow object, byte 0 set by EnablePlayerShadow, +0xC holds a sub-object
-    char _padD8[0xEA - 0xD8];
+    char _padD8[0xE8 - 0xD8];
+    signed char m_unkE8;    // 0x0E8 flag byte, OR-ed with 8 by OnAttackEvent
+    char _padE9[0xEA - 0xE9];
     unsigned char m_unkEA;  // 0x0EA read by ComboTarget as the gate for its search
     char _padEB[0x103 - 0xEB];
     unsigned char m_unk103; // 0x103 set to 0xFE by ForceDie
@@ -267,9 +270,12 @@ public:
     char _pad2F4[0x2F8 - 0x2F4];
     int m_unk2F8;           // 0x2F8 cleared by InitAttachableJoints
     float m_unk2FC;         // 0x2FC attached timer value, set by DetachJoint
-    char _pad300[0x308 - 0x300];
+    char _pad300[0x304 - 0x300];
+    float m_unk304;         // 0x304 float, set by OnAttackEvent
     int m_unk308;           // 0x308 cleared by SetDeath
-    char _pad30C[0x31C - 0x30C];
+    char _pad30C[0x314 - 0x30C];
+    int m_unk314;           // 0x314 int, set to 0x42A00000 by OnAttackEvent
+    char _pad318[0x31C - 0x318];
     FontNode *m_unk31C;     // 0x31C font node, passed to FontManager::RemoveText and cleared by ForceDie
     char _pad320[0x324 - 0x320];
     int m_unk324;           // 0x324
@@ -278,7 +284,7 @@ public:
     GunTurret *m_unk330;    // 0x330 gun turret object, Slot58 and SetGunParams called by GunDeckMove
     unsigned char m_unk334; // 0x334 set to 1 or 0 by SetPling when a pling effect is created
     signed char m_unk335;   // 0x335 flag, tested by SetPowerupMotion
-    char _pad336[0x337 - 0x336];
+    signed char m_unk336;   // 0x336 cleared by OnAttackEvent
     signed char m_unk337;   // 0x337 treasure proximity level (1 near, 2 far), set by NotifyTreasure
     char _pad338[0x33B - 0x338];
     unsigned char m_unk33B; // 0x33B set to (arg0 == 0) by ShowPlayer

@@ -118,7 +118,8 @@ public:
         unsigned char m_unk10;  // 0x10
         unsigned char m_unk11;  // 0x11
         unsigned char m_unk12;  // 0x12, Init sets 0x11
-        char _pad13[0x02];
+        unsigned char m_unk13;  // 0x13, CalculatePositionalVolume tests == 2
+        unsigned char m_unk14;  // 0x14, CalculatePositionalVolume scales the attenuation by it
         unsigned char m_unk15;  // 0x15
     };
 
@@ -357,7 +358,9 @@ public:
     char _pad2E84[0x2E90 - 0x2E84];
     char m_unk2E90[0x10];   // 0x2E90, OneFrameHasElapsed_R stores 16 bytes here
     float m_unk2EA0;       // 0x2EA0, RestartAndLoadPrimarySoundBank passes its address to OneFrameHasElapsed_R
-    char _pad2EA4[0x2EB0 - 0x2EA4];
+    float m_unk2EA4;       // 0x2EA4, CalculatePositionalVolume subtracts it from pPos[1]
+    float m_unk2EA8;       // 0x2EA8, CalculatePositionalVolume subtracts it from pPos[2]
+    char _pad2EAC[0x2EB0 - 0x2EAC];
     float m_unk2EB0;        // 0x2EB0, RestartAndLoadPrimarySoundBank passes it as the float argument
     char m_unk2EB4[0x2580]; // 0x2EB4, 400 SpotInfo records of 0x18 bytes, GetSpotInfo scans them
     char m_unk5434;         // 0x5434, RestartSuffix clears it
