@@ -438,12 +438,12 @@ void PSound::WaitOnVSync() {
 }
 
 // DRAFT: 0x001A4200 PlayMultipleAtOnce__6PSoundFUi
-// note: 7 words differ: pEnd lands in s2 and nPlayed in s1 (original s1/s2 swapped); tried declaration order (7), unsigned nEnd cursor (12), pEnd from m_unk2EB4 (9), pointer compares with >= break (7), signed nPlayed (7), unsigned pEnd and nPlayed scoped in the guard (7), nPlayed declared before pSpot (12), pEnd declared before nPlayed (7, same registers).
+// note: 6 words differ (pSpot <= pEnd fixed the $at compares; natural for-loop forms give 11): pEnd lands in s2 and nPlayed in s1 (original s1/s2 swapped); tried declaration order (7), unsigned nEnd cursor (12), pEnd from m_unk2EB4 (9), pointer compares with >= break (7), signed nPlayed (7), unsigned pEnd and nPlayed scoped in the guard (7), nPlayed declared before pSpot (12), pEnd declared before nPlayed (7, same registers).
 int PSound::PlayMultipleAtOnce(unsigned int nSound) {
     SpotInfo *pSpot = (SpotInfo *)m_unk2EB4;
     unsigned int nPlayed = 0;
     SpotInfo *pEnd = (SpotInfo *)((char *)pSpot + 0x2580);
-    if ((unsigned int)pEnd >= (unsigned int)pSpot) {
+    if ((unsigned int)pSpot <= (unsigned int)pEnd) {
         do {
             if (!(pSpot->m_unk0C & 2)) {
                 PlaySoundUbiquitous(pSpot->m_unk00);
@@ -453,7 +453,7 @@ int PSound::PlayMultipleAtOnce(unsigned int nSound) {
                 }
             }
             pSpot++;
-        } while ((unsigned int)pEnd >= (unsigned int)pSpot);
+        } while ((unsigned int)pSpot <= (unsigned int)pEnd);
     }
     return 0;
 }
@@ -1274,25 +1274,22 @@ void PSound::CalculatePositionalVolume(float &fA, float &fB, float &fC, const fl
     fC = 1000.0f * fRight;
 }
 
-// DRAFT: 0x001A6260 AdjustEffectVolumes__6PSoundFRUiRUiRfRf
-// note: 5 words; the three flag compares use $v1/$a0 where the original uses $at. Tried: nested bLowA variant (5), no-local variant (5), ternary clamps (11), bool bLowA (5, diff moves to nB flag), unsigned bLowA (5), ternary-initialised bLowA (20+).
+// FUNCTION: 0x001A6260 AdjustEffectVolumes__6PSoundFRUiRUiRfRf
 void PSound::AdjustEffectVolumes(unsigned int &nOutA, unsigned int &nOutB, float &fInA, float &fInB) {
     unsigned int nA = (unsigned int)fInA;
     unsigned int nB = (unsigned int)fInB;
-    int bLowA = nA < 0x3E9U;
     if (m_unk30 != 0) {
         if (nA < nB) {
             nA = nB;
         } else {
             nB = nA;
         }
-        bLowA = nA < 0x3E9U;
     }
-    if (bLowA == 0) {
-        nA = 0x3E8;
+    if (nA > 1000) {
+        nA = 1000;
     }
-    if (nB >= 0x3E9U) {
-        nB = 0x3E8;
+    if (nB > 1000) {
+        nB = 1000;
     }
     nOutA = nA;
     nOutB = nB;
