@@ -15,7 +15,13 @@ extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExp
 extern "C" int CreateTimer__8TimerAPIFUiUib(void *pThis, unsigned int nArg0, unsigned int nArg1, bool bFlag);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*pA)[4], float (*pB)[4]);
-extern unsigned char mTimerAPI__13EntityManager[0x20];
+class TimerAPI {
+public:
+    char _pad000[0x20];
+    int CreateTimer(unsigned int, unsigned int, bool);
+};
+
+extern TimerAPI mTimerAPI__13EntityManager;
 extern void *mPlayerAPI__13EntityManager;
 extern "C" int RandomIntRange__7MathAPIFii(int nLo, int nHi);
 extern "C" void *InstanceIsValid__15EntityBaseClassFUi(unsigned int nId);
@@ -218,7 +224,7 @@ void EnemyGenerator::GenerateEnemy() {
 }
 
 // DRAFT: 0x0020E380 Execute__14EnemyGeneratorFv
-// note: 9 words differ (was 123). switch(-1,0,1,-2) with a pointer walk and pApp loaded before pPos now match the layout; left: CreateTimer's a1/a2 load order (original loads m_unk4 into a1 first) in the -1 and state-1 bodies, and the state-0 pPlayer/pApp registers (original keeps pPlayer in v1).
+// note: 4 words differ: both CreateTimer calls load m_unk1BC/m_unk1C0 into a2 before m_unk4 into a1 (original loads a1 first). Tried member vs extern call, nID/nTime locals, an inline id accessor, a cast arg (all 4).
 void EnemyGenerator::Execute() {
     switch (m_unk20) {
     case -1:
@@ -243,7 +249,7 @@ void EnemyGenerator::Execute() {
         m_unk1E8 = -1;
         if (m_unk1BC != 0) {
             m_unk1B0 = 0;
-            m_unk1B4 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk4, m_unk1BC, 1);
+            m_unk1B4 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, m_unk1BC, true);
             SetState__15EntityBaseClassFi(this, 0);
             break;
         }
@@ -254,9 +260,12 @@ void EnemyGenerator::Execute() {
             break;
         }
         if (m_unk1B0 != 0 && m_unk1D8 < 3) {
-            char *pPlayer = (char *)mPlayerAPI__13EntityManager;
-            char *pApp = *(char **)(pPlayer + 0x3C);
-            char *pPos = pPlayer + 0x190;
+            char *pApp;
+            char *pPos;
+            char *pPlayer;
+            pPlayer = (char *)mPlayerAPI__13EntityManager;
+            pApp = *(char **)(pPlayer + 0x3C);
+            pPos = pPlayer + 0x190;
             if (pApp != 0) {
                 pPos = pApp + 0x80;
             }
@@ -273,7 +282,7 @@ void EnemyGenerator::Execute() {
             GenerateEnemy();
             m_unk1C4++;
             m_unk1B0 = 0;
-            m_unk1B4 = CreateTimer__8TimerAPIFUiUib(mTimerAPI__13EntityManager, m_unk4, m_unk1C0, 1);
+            m_unk1B4 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, m_unk1C0, true);
             SetState__15EntityBaseClassFi(this, 0);
         }
         break;
