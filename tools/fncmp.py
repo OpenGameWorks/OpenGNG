@@ -118,6 +118,10 @@ def local_data_diffs(obj: Path, name: str, addr: int) -> dict[int, str]:
             continue
         if not (sym["st_info"]["bind"] == "STB_LOCAL" or sym.name.startswith("@")):
             continue
+        if sym["st_info"]["type"] == "STT_FUNC":
+            # A call to a static function is proven by name, as in link.py; the callee's
+            # own bytes are checked when its unit is compared, not at each call site.
+            continue
         oaddr, osize, oname = byindex[r[1]]
         if not link.local_matches(o, sym, oaddr, osize, addr, glob, byindex, orel, image):
             out[off] = f"local {sym.name} data differs from original {oname}"
