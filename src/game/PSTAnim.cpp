@@ -67,8 +67,7 @@ void PSTAnim::Animate(float fTime, bool bFlag) {
     }
 }
 
-// DRAFT: 0x00199DA0 Load__7PSTAnimFP8PPakFile
-// note: 26 words differ: early-return branches (0x58,0x8c,0xe8,0x100) target a different exit; c.le.s/bc1t form and tail srl/mul order still differ; tried >= form, constant-first compare, unsigned shift.
+// FUNCTION: 0x00199DA0 Load__7PSTAnimFP8PPakFile
 int PSTAnim::Load(PPakFile *pFile) {
     unsigned char aHeader[16];
     unsigned int i;
@@ -100,12 +99,7 @@ int PSTAnim::Load(PPakFile *pFile) {
             return 0;
         }
         float fFrames = GetNumFrames__14PSTAnimChannelFv(m_unk4[i]);
-        int nFrames;
-        if (fFrames < 2147483648.0f) {
-            nFrames = (int)fFrames;
-        } else {
-            nFrames = (int)(fFrames - 2147483648.0f) | 0x80000000;
-        }
+        unsigned int nFrames = (unsigned int)fFrames;
         if ((unsigned int)(unsigned short)m_unkA < (unsigned int)nFrames) {
             m_unkA = (short)nFrames;
         }
@@ -114,17 +108,11 @@ int PSTAnim::Load(PPakFile *pFile) {
     m_unk0 = 1;
     m_unk10 = 0.0f;
     unsigned short nMax = (unsigned short)m_unkA;
-    if ((int)nMax >= 0) {
-        m_unk14 = (float)(int)nMax;
-    } else {
-        float fHalf = (float)((nMax >> 1) | (nMax & 1));
-        m_unk14 = fHalf + fHalf;
-    }
+    m_unk14 = (float)nMax;
     return 1;
 }
 
-// DRAFT: 0x00199F90 Clone__7PSTAnimFP7PSTAnim
-// note: 32 words differ: loop back-edge b skips one instruction (+0x3C vs +0x3A); float branch is bc1f to small path where original is bc1t to big path with small fallthrough; cvt/sub/lhu block order differs; tried if/else swap, constant-first compare (kept), negated condition (no change).
+// FUNCTION: 0x00199F90 Clone__7PSTAnimFP7PSTAnim
 void PSTAnim::Clone(PSTAnim *pSrc) {
     if (pSrc == 0) {
         CdsAssert__FPciPc("PSTAnim.cpp", 0x4C, "poSource");
@@ -155,12 +143,7 @@ void PSTAnim::Clone(PSTAnim *pSrc) {
             CdsAssert__FPciPc("PSTAnim.cpp", 0x62, "mpChannelTable[auCount]");
         }
         float fFrames = GetNumFrames__14PSTAnimChannelFv(m_unk4[i]);
-        int nFrames;
-        if (2147483648.0f <= fFrames) {
-            nFrames = (int)(fFrames - 2147483648.0f) | 0x80000000;
-        } else {
-            nFrames = (int)fFrames;
-        }
+        unsigned int nFrames = (unsigned int)fFrames;
         if ((unsigned int)(unsigned short)m_unkA < (unsigned int)nFrames) {
             m_unkA = (short)nFrames;
         }
@@ -169,12 +152,7 @@ void PSTAnim::Clone(PSTAnim *pSrc) {
     m_unk0 = 1;
     m_unk10 = 0.0f;
     unsigned short nMax = (unsigned short)m_unkA;
-    if ((int)nMax >= 0) {
-        m_unk14 = (float)(int)nMax;
-    } else {
-        float fHalf = (float)((nMax >> 1) | (nMax & 1));
-        m_unk14 = fHalf + fHalf;
-    }
+    m_unk14 = (float)nMax;
 }
 
 // FUNCTION: 0x0019A190 __dt__7PSTAnimFv

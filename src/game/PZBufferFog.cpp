@@ -158,11 +158,7 @@ void PZBufferFog::SetClutFogAlpha(float fAlpha) {
     }
     float fScaled = 128.0f * fAlpha;
     int nAlpha;
-    if (!(fScaled >= 2147483648.0f)) {
-        nAlpha = (int)fScaled;
-    } else {
-        nAlpha = (int)(fScaled - 2147483648.0f) | 0x80000000;
-    }
+    nAlpha = (unsigned int)fScaled;
     m_unk17AB = (unsigned char)nAlpha;
 }
 

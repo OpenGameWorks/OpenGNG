@@ -170,18 +170,14 @@ public:
 };
 
 // DRAFT: 0x001E2880 PlaySoundOnFrame__16ClockworkStalkerFUiUi
-// note: 0x34 float lands in f0 (original f1), so sub.s/cvt/c.lt operands swap and branch offsets shift; 59 words differ.
+// note: 48 words after plain (float)/(unsigned int) conversion casts; earlier: 0x34 float lands in f0 (original f1), so sub.s/cvt/c.lt operands swap and branch offsets shift; 59 words differ.
 void ClockworkStalker::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
     int t0 = 0;
     float f1;
     if (m_unk3C != 0) {
         unsigned int t1;
         f1 = *(float *)(m_unk3C + 0x34);
-        if (f1 < 2147483648.0f) {
-            t1 = (unsigned int)(int)f1;
-        } else {
-            t1 = (unsigned int)(int)(f1 - 2147483648.0f) | 0x80000000;
-        }
+        t1 = (unsigned int)f1;
         if (t1 != m_unk2F4) {
             m_unk2F4 = 0xF423F;
             if (t1 == arg1) {
@@ -198,11 +194,7 @@ void ClockworkStalker::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
                 }
                 if (at != 0) {
                     float f0;
-                    if ((int)arg1 >= 0) {
-                        f0 = (float)(int)arg1;
-                    } else {
-                        f0 = 2.0f * (float)(int)((arg1 >> 1) | (arg1 & 1));
-                    }
+                    f0 = (float)arg1;
                     if (f1 < f0) {
                         t0 = 1;
                         *(float *)&m_unk2A8 = -1.0f;

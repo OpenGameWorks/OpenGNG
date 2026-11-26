@@ -5,6 +5,7 @@
 #include "PDynamicSplinePatch.h"
 
 class PMNode;
+class PAnim;
 
 // Grim reaper cape: a PDynamicSplinePatch with no members of its own. Enable writes the
 // base render flag at 0x2011 and the control-node flag at 0x2012. SetAnimation copies a
@@ -32,6 +33,13 @@ public:
     void Enable(bool bEnable, PMNode *pNode);
     void SetAnimation(eGrimCapeTable eTable);
     void SetAnimation(unsigned int nAnimId);
+    void AnimateControlNode(PAnim *pAnim, float fTime);
+    void Init(float *pVec);
+    void Init();
+    // Angle accumulator and step, past the base class end (0x2018).
+    char _pad2018[8];
+    float m_unk2020;                // 0x2020
+    float m_unk2024;                // 0x2024
 };
 
 #endif

@@ -2124,22 +2124,14 @@ void PSound::FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned
 }
 
 // DRAFT: 0x001A9630 FadeOutAllMusic__6PSoundFUi
-// note: 60 words; frame is 0x40 with s0/s1/s2 and the 0.8333 literal is built before the sign test in the original (we build it after); negative path add.s form gave 70 words, 2.0f* gives 60; size 0x114 vs 0xe8
+// note: 29 words after plain (float)/(unsigned int) conversion casts; earlier: 60 words; frame is 0x40 with s0/s1/s2 and the 0.8333 literal is built before the sign test in the original (we build it after); negative path add.s form gave 70 words, 2.0f* gives 60; size 0x114 vs 0xe8
 void PSound::FadeOutAllMusic(unsigned int nArg) {
     unsigned int n = nArg;
     if (MODE_PAL != 0) {
         float f;
-        if ((int)n >= 0) {
-            f = (float)(int)n;
-        } else {
-            f = 2.0f * (float)((n >> 1) | (n & 1));
-        }
+        f = (float)n;
         float t = 0.8333333f * f;
-        if (!(t >= 2147483648.0f)) {
-            n = (unsigned int)(int)t;
-        } else {
-            n = (unsigned int)(int)(t - 2147483648.0f) | 0x80000000;
-        }
+        n = (unsigned int)t;
     }
     SOUND_FadeOutAllMusic((short)n);
     int i = 0;

@@ -844,7 +844,7 @@ int CameraFollow::PlayerIsIdle() {
 }
 
 // DRAFT: 0x001758A0 MoveCameraToNewViewpoint__12CameraFollowFv
-// note: DIFF 22 words. Open: early-return epilogue (b at 0x5C targets 0x6B, ours 0x69); float x/K register order at 0x68-0x78; bc1 sense; cvt/lui/or split layout; blend load order from 0xCC. Tried: `K <= x` (103), `x >= K` (103), local fx (103), `!(x < K)` member form (22), blend operand swap (22), hoisted 0.1f*16C local (90).
+// note: 12 words after plain (float)/(unsigned int) conversion casts; earlier: DIFF 22 words. Open: early-return epilogue (b at 0x5C targets 0x6B, ours 0x69); float x/K register order at 0x68-0x78; bc1 sense; cvt/lui/or split layout; blend load order from 0xCC. Tried: `K <= x` (103), `x >= K` (103), local fx (103), `!(x < K)` member form (22), blend operand swap (22), hoisted 0.1f*16C local (90).
 int CameraFollow::MoveCameraToNewViewpoint() {
     PVec3 sp20;
     unsigned int idx;
@@ -858,11 +858,7 @@ int CameraFollow::MoveCameraToNewViewpoint() {
     } else {
         m_unk6258 = 0;
     }
-    if (!(*(float *)&m_unk6190 < 2147483648.0f)) {
-        idx = (unsigned int)(int)(*(float *)&m_unk6190 - 2147483648.0f) | 0x80000000;
-    } else {
-        idx = (unsigned int)(int)*(float *)&m_unk6190;
-    }
+    idx = (unsigned int)(*(float *)&m_unk6190);
     if (idx < (unsigned int)m_unk2D8) {
         ((CameraSpline *)_pad2D0)->GetPosition(idx, sp20);
         m_unk20[0] = m_unk20[0] + (0.1f * m_unk16C) * (sp20.m_v[0] - m_unk20[0]);

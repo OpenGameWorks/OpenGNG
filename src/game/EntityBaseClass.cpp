@@ -697,7 +697,7 @@ void EntityBaseClass::ShakeScreen(int arg0, int arg1, int arg2, int arg3, float 
 }
 
 // DRAFT: 0x0014AF60 PlaySoundOnFrame__15EntityBaseClassFUiUi
-// note: 55 words differ: float value/constant register (orig value f1, const f0), c.le.s operand order and branch sense, subtract-path regs, missing dsll32/dsra32 flag pair, addiu vs daddiu for inRange=1; tried f>=2^31 first (67), g-before-f with f<2^31 (55), (signed char) flag cast (56).
+// note: 37 words after plain (float)/(unsigned int) conversion casts; earlier: 55 words differ: float value/constant register (orig value f1, const f0), c.le.s operand order and branch sense, subtract-path regs, missing dsll32/dsra32 flag pair, addiu vs daddiu for inRange=1; tried f>=2^31 first (67), g-before-f with f<2^31 (55), (signed char) flag cast (56).
 int EntityBaseClass::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
     int ret;
     int inRange;
@@ -711,11 +711,7 @@ int EntityBaseClass::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
     ret = 0;
     if (p != 0) {
         f = *(float *)(p + 0x34);
-        if (f < 2147483648.0f) {
-            frame = (int)f;
-        } else {
-            frame = (int)(f - 2147483648.0f) | 0x80000000;
-        }
+        frame = (unsigned int)f;
         if (frame != m_unk138) {
             m_unk138 = 0xF423F;
             if (frame == (int)arg1) {
@@ -727,11 +723,7 @@ int EntityBaseClass::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
                     g = -1000000.0f;
                 }
                 if (arg1 < (unsigned int)frame) {
-                    if ((int)arg1 >= 0) {
-                        f = (float)(int)arg1;
-                    } else {
-                        f = 2.0f * (float)((arg1 >> 1) | (arg1 & 1));
-                    }
+                    f = (float)arg1;
                     if (g < f) {
                         inRange = 1;
                     }
