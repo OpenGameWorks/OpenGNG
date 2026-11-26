@@ -8,10 +8,11 @@ Maximo: The Army of Zin (USA, PS2, SLUS-20722) reaches a 100% byte-for-byte C/C+
 - The treemap and match totals count game code alone. Original asm never counts as matched.
 - VU0 and other code that C/C++ cannot express uses inline asm, and only for the instructions the compiler cannot emit.
 
-## Progress (HEAD 6bfe3c7, 2026-11-21)
+## Progress (2026-11-26)
 
-- 1466 / 2830 game functions matched, 234152 bytes (~26.1% of game code).
-- The session started at 1435 functions (24.6%).
+- 1494 / 3018 game functions matched, 238992 / 933240 bytes (25.6%). The total grew from 2830 when class-name evidence moved unattributed runs into game files; 159 functions (25 KB) remain unattributed.
+- SDK: 773 functions (109 KB) verified against original SCE library objects by `tools/sdklink.py` (94/94 members). They count as library-object, never as decompiled C.
+- Fresh checkout: `tools/setup.py IMAGE.iso|.chd`, then `ninja`. Verified on a clean clone from both the ISO and a CHD made from it; the image's SHA-1 is unchanged afterwards.
 - Live treemap: `tools/live.py`, port 8722. It builds HEAD in `build/live/head`, so a half-edited working tree never stalls it. When HEAD fails to build, it reports the compiler's error line.
 
 ## What produces matches
@@ -28,7 +29,7 @@ Maximo: The Army of Zin (USA, PS2, SLUS-20722) reaches a 100% byte-for-byte C/C+
 1. **30-minute hard cap per worker.** Every hand-back checks `started` in `build/queue/active.json`. A worker past 30 minutes is stopped, its compiling state is committed as DRAFT with a note, and the job is closed.
 2. **No function over 0x400 bytes goes to a Haiku writer.** Such a function is split into case-sized chunk jobs, or, if it cannot be split, routed to one Sonnet task (effort medium).
 3. **The queue is filled with small-diff draft jobs first.** `takedraft.py` skips addresses an earlier draft job already left as DRAFT. Those addresses go to the permuter (`tools/permute.py`) or to idiom sweeps (`src/scratch/ternary_sweep.py`).
-4. **Worker limits:** up to 20 concurrent workers, Haiku at effort high (`decomp-worker` / `decomp-writer`), each under 100k context. A worker owns only the files its job names.
+4. **Worker limits:** at most 3 concurrent workers, Haiku at effort high (`decomp-worker` / `decomp-writer`), each under 100k context. A worker owns only the files its job names.
 5. **Coordinator loop:** hand-back → verify the file plus every includer of its header → small commit with explicit staging → `tools/queue.py done ID` → take the next job.
 
 ## Proven MWCC idioms
@@ -42,8 +43,12 @@ Maximo: The Army of Zin (USA, PS2, SLUS-20722) reaches a 100% byte-for-byte C/C+
 - `if (f)` truthiness flips the `c.eq.s` operand order.
 - Function-local `static` arrays match per-function data.
 - Declaration order of locals steers register allocation.
-- An early return matches where an `if` wrapper does not.
+- An early return matches where an `if` wrapper does not; inside a retry loop, `return 0;` rather than `r = 0; goto done;`.
+- A subobject destructor called with `a1 = -1` is a data member (`PArray m_array;`), not a base class (flag 0).
+- A file-local callee or data object in the original (`STB_LOCAL`) is `static` in the source; the linker proves such a call by name.
+- A callee's mangled name is ground truth for its parameter types; when the C++ type adds an extension the original lacks (`unsigned short` into `unsigned int` gives an `andi`), call the mangled symbol through an `extern "C"` declaration.
+- Range tests: `(unsigned)(x - a) <= n` and `< n + 1` compile differently; the original's `sltiu` immediate tells which.
 
 ## Status
 
-Paused by the user after the last workers finished. Every remainder is committed, and `src/ include/ tools/ config/` are clean. Next step: put the worker policy above in place, then resume with draft jobs.
+Running: waves of up to 3 Haiku jobs (`takedraft.py 5` draft jobs, `queue.py take` writer jobs), each retired after `ninja`, `tools/regress.py` and a commit. `tools/draftscan.py` rescoring keeps the draft list fresh; drafts a job left behind go to `tools/permute.py`.
