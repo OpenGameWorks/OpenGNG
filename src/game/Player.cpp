@@ -71,6 +71,30 @@ struct SwordEntry {
 };
 extern SwordEntry SwordTbl[4];
 extern "C" void SetShadowCaster__13PShadowVolumeFP6PMNode(void *pVol, void *pNode);
+class VirtualSlot58Object {
+public:
+    virtual void Slot08();
+    virtual void Slot0C();
+    virtual void Slot10();
+    virtual void Slot14();
+    virtual void Slot18();
+    virtual void Slot1C();
+    virtual void Slot20();
+    virtual void Slot24();
+    virtual void Slot28();
+    virtual void Slot2C();
+    virtual void Slot30();
+    virtual void Slot34();
+    virtual void Slot38();
+    virtual void Slot3C();
+    virtual void Slot40();
+    virtual void Slot44();
+    virtual void Slot48();
+    virtual void Slot4C();
+    virtual void Slot50();
+    virtual void Slot54();
+    virtual int Slot58(void *arg0, int arg1, int arg2, void *arg3);
+};
 class VirtualSlot14Object {
 public:
     virtual void Slot08(int arg0);
@@ -368,6 +392,7 @@ struct AttachableJoint {
 };
 extern AttachableJoint m_AttachableJoints[5];
 extern "C" void *GetPtrToApparition__13EntityManagerFUi(void *, unsigned int);
+extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, bool bA, bool bB);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 extern "C" float FastMath_Fabs__Ff(float fValue);
@@ -4529,6 +4554,104 @@ void Player::ResetPling() {
         }
         m_unk32C = 0;
     }
+}
+
+// FUNCTION: 0x001647C0 PlingCheck__6PlayerFv
+void Player::PlingCheck() {
+    float sp30[4];
+    if (m_unk324 != 0 && (m_unk264 & 0x30) && (m_unk1D0 & 4)) {
+        char *s0 = (char *)GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, *(unsigned int *)((char *)this + 0x328));
+        if (m_unk26C == 0 && m_unk26B == 0 && s0 != 0) {
+            unsigned int a1 = m_unk1B2;
+            switch (m_unk324) {
+            case 1:
+                if (a1 & 0x8000) {
+                    char *pE = *(char **)(s0 + 0x3C);
+                    float *pB = (float *)(pE != 0 ? pE + 0x80 : s0 + 0x190);
+                    float *pA = (float *)(m_unk3C != 0 ? (char *)m_unk3C + 0x80 : (char *)m_unk190);
+                    sceVu0SubVector(sp30, pA, pB);
+                    m_unk1C4 = Round180__Ff(57.295776f * atan2f(sp30[0], sp30[2]));
+                    SetAction(0x2D);
+                }
+                break;
+            case 2:
+                if ((a1 & 0xB000) && m_unk334 != 0) {
+                    char *pE = *(char **)(s0 + 0x3C);
+                    float *pB = (float *)(pE != 0 ? pE + 0x80 : s0 + 0x190);
+                    float *pA = (float *)(m_unk3C != 0 ? (char *)m_unk3C + 0x80 : (char *)m_unk190);
+                    sceVu0SubVector(sp30, pA, pB);
+                    float fAng = Round180__Ff(57.295776f * atan2f(sp30[0], sp30[2]));
+                    m_unk1C4 = fAng;
+                    m_unk3C[37] = fAng;
+                    SetAction(0x3D);
+                    gSound.SetMainMusicSpecialVolume((PSound::EnumMusicSpecialVols)2);
+                }
+                break;
+            case 6:
+                if ((a1 & 0xB000) && m_unk334 != 0 && ((VirtualSlot58Object *)s0)->Slot58(this, -1, 0x1FE, 0) == 1) {
+                    char *pE = *(char **)(s0 + 0x3C);
+                    float *pB = (float *)(pE != 0 ? pE + 0x80 : s0 + 0x190);
+                    float *pA = (float *)(m_unk3C != 0 ? (char *)m_unk3C + 0x80 : (char *)m_unk190);
+                    sceVu0SubVector(sp30, pA, pB);
+                    float fAng = Round180__Ff(57.295776f * atan2f(sp30[0], sp30[2]));
+                    m_unk1C4 = fAng;
+                    m_unk3C[37] = fAng;
+                    char *pD = *(char **)(s0 + 0x3C) + 0x90;
+                    *(float *)(pD + 4) = Round180__Ff(180.0f + m_unk1C4);
+                    SetAction(0x3A);
+                    m_unk335 = 4;
+                    PlingEffect *t = m_unk32C;
+                    if (t != 0) {
+                        mEffectAPI__13EntityManager.DeleteEffect((EffectNode *)t);
+                        m_unk32C = 0;
+                    }
+                    gSound.SetMainMusicSpecialVolume((PSound::EnumMusicSpecialVols)2);
+                }
+                break;
+            case 3:
+                if ((a1 & 0x8000) && m_unk334 != 0) {
+                    char *pE = *(char **)(s0 + 0x3C);
+                    float *pV = (float *)(pE != 0 ? pE + 0x90 : s0 + 0x1A0);
+                    m_unk1C4 = Round180__Ff(180.0f + pV[1]);
+                    SetAction(0x2E);
+                    EnableSleep__15EntityBaseClassFbb(s0, false, false);
+                }
+                break;
+            case 5:
+                if ((a1 & 0x8000) && m_unk334 != 0) {
+                    char *pE = *(char **)(s0 + 0x3C);
+                    float *pV = (float *)(pE != 0 ? pE + 0x90 : s0 + 0x1A0);
+                    m_unk1C4 = Round180__Ff(180.0f + pV[1]);
+                    SetAction(0x2F);
+                }
+                break;
+            case 4:
+                if ((a1 & 0x8000) && m_unk334 != 0) {
+                    char *pE = *(char **)(s0 + 0x3C);
+                    float *pV = (float *)(pE != 0 ? pE + 0x90 : s0 + 0x1A0);
+                    m_unk1C4 = Round180__Ff(180.0f + pV[1]);
+                    SetAction(0x30);
+                }
+                break;
+            case 7:
+                if (a1 & 0x8000) {
+                    char *pE = *(char **)(s0 + 0x3C);
+                    float *pV = (float *)(pE != 0 ? pE + 0x90 : s0 + 0x1A0);
+                    m_unk1C4 = pV[1];
+                    SetAction(0x3E);
+                    m_unk330 = (GunTurret *)s0;
+                }
+                break;
+            }
+        }
+    } else {
+        PlingEffect *t = m_unk32C;
+        if (t != 0) {
+            *(int *)((char *)t + 0x14) = 0x3DCCCCCD;
+            m_unk32C = 0;
+        }
+    }
+    m_unk324 = 0;
 }
 
 // DRAFT: 0x00164BF0 SetPling__6PlayerFQ26Player9PlingTypeP15EntityBaseClassUi

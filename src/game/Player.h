@@ -73,6 +73,7 @@ public:
     enum PlingType { PLING_TYPE_UNUSED = 0 };
     void SetPling(PlingType arg0, EntityBaseClass *arg1, unsigned int arg2);
     void ResetPling();
+    void PlingCheck();
     void ResetShield();
     void InitCutScene();
     void SetFlyingShield(Shield *arg0);
