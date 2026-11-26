@@ -2,6 +2,7 @@
 #include "MaximoMain.h"
 #include "PSlideShow.h"
 #include "PResourceManager.h"
+#include "Camera.h"
 #include "PAnim.h"
 
 // TODO(header): foreign declarations
@@ -140,7 +141,12 @@ extern "C" void SetPause__9InterfaceFv(void *);
 extern "C" void InitSaveGame__10MemoryCardFPQ26Player10PlayerDataib(void *, void *, int, bool);
 extern "C" int SaveGame__10MemoryCardFv(void *);
 // TODO(header): foreign declarations for ScreenAdjust
-struct PMat4 { char _pad00[0x40]; };
+// The copy constructor makes PMat4 non-POD, so a by-value PMat4 parameter arrives by reference without a callee copy.
+struct PMat4 {
+    PMat4() {}
+    PMat4(const PMat4 &);
+    char _pad00[0x40];
+};
 // Four debug lines: start, end, start colour, end colour (x, y, z, w each).
 struct tagVuLineBuf { float m_unk00[64]; };
 extern "C" int ReadNew__3PadFv(void *pThis);
@@ -1982,6 +1988,11 @@ block_55:
     } while (var_s1_4 < 0x15);
     ((FontManager *)(gInterface + 0x80))->InitFrame();
     FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 4.25f, true, 0);
+}
+
+// FUNCTION: 0x0013C700 SetViewMatrix__6CameraF5PMat4
+void Camera::SetViewMatrix(PMat4 mat) {
+    sceVu0CopyMatrix(m_unk30, (float (*)[4])&mat);
 }
 
 // FUNCTION: 0x0013C710 GetEndFrame__5PAnimFv

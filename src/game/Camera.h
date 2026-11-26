@@ -10,6 +10,7 @@ class PMat4;
 
 class Camera {
 public:
+    void SetViewMatrix(PMat4 mat);
     Camera();
     float Distance(CVector3 arg0, CVector3 arg1);
     float Dot(CVector3 arg0, CVector3 arg1);
