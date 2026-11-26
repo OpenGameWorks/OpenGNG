@@ -13,7 +13,7 @@ public:
 };
 
 // DRAFT: 0x0019A2D0 GetNumFrames__14PSTAnimChannelFv
-// note: asserts and branch form match; the m_unk4 and m_unk0 loads swap registers (v0/v1) and the addu operand order differs (5 words). Tried plain pointer, int-cast, int local, indexed m_unk4[m_unk0 - 1].m_unk0, and int nIdx variants; the int local is best.
+// note: 4 words: the m_unk4/m_unk0 loads land in v1/v0 where the original uses v0/v1 (addu order now matches with the shifted count first). Tried indexed, pointer-arithmetic, [-1], unsigned index and declaration-order variants.
 float PSTAnimChannel::GetNumFrames() {
     if (m_unk4 == 0) {
         CdsAssert__FPciPc("PSTAnimChannel.cpp", 0x8E, "mpKeyFrameTable");
@@ -22,7 +22,7 @@ float PSTAnimChannel::GetNumFrames() {
         CdsAssert__FPciPc("PSTAnimChannel.cpp", 0x8F, "muNumKeyFrames");
     }
     int nBase = (int)m_unk4 - 8;
-    return *(float *)(nBase + (m_unk0 << 3));
+    return *(float *)((m_unk0 << 3) + nBase);
 }
 
 // DRAFT: 0x0019A350 EvaluateAnim__14PSTAnimChannelFfRf

@@ -425,13 +425,13 @@ struct ParticleNode {
 };
 
 // DRAFT: 0x00146180 EnableParticleFx__13EntityManagerFb
-// note: 30 diffs, all register/index-reload; orig keeps new index in reg; tried swap found/i (30, kept), inner idx local (56), outer idx local (49)
+// note: 16 diffs; pNode in a2 vs orig a3 and the m_unk08 load hoisted before the inits; sp+0x4C base hoisted out of the inner loop. Tried bool found (16, kept), declaration-order permutations of the locals (60 orders, best 16)
 void EntityManager::EnableParticleFx(bool arg0) {
     int keys[1] = { 3 };
     ParticleSubList *pList;
     ParticleNode *pNode;
     PMNode *pChild;
-    int found;
+    bool found;
     int i;
 
     this->m_unk50A4 = 0;
@@ -442,25 +442,27 @@ void EntityManager::EnableParticleFx(bool arg0) {
             pNode = (pList->m_unk00 != 0) ? (ParticleNode *)pList->m_unk08[0] : 0;
             if (pNode != 0) {
                 do {
-                    found = 0;
+                    found = false;
                     for (i = 0; i < 1; i++) {
                         if (pNode->m_unk08 == keys[i]) {
-                            found = 1;
+                            found = true;
                             break;
                         }
                     }
-                    if (found == 0) {
+                    if (!found) {
                         pChild = pNode->m_unk3C;
                         if (pChild != 0) {
                             EnableFx__6PMNodeFbb(pChild, arg0, 1);
                         }
                     }
-                    pList->m_unk04++;
-                    pNode = (pList->m_unk04 < pList->m_unk00) ? (ParticleNode *)pList->m_unk08[pList->m_unk04] : 0;
+                    unsigned int nIdx = pList->m_unk04 + 1;
+                    pList->m_unk04 = nIdx;
+                    pNode = (nIdx < pList->m_unk00) ? (ParticleNode *)pList->m_unk08[pList->m_unk04] : 0;
                 } while (pNode != 0);
             }
-            this->m_unk50A4++;
-            pList = (this->m_unk50A4 < this->m_unk50A0) ? (ParticleSubList *)this->m_unk50A8[this->m_unk50A4] : 0;
+            unsigned int oIdx = this->m_unk50A4 + 1;
+            this->m_unk50A4 = oIdx;
+            pList = (oIdx < this->m_unk50A0) ? (ParticleSubList *)this->m_unk50A8[this->m_unk50A4] : 0;
         } while (pList != 0);
     }
     EnableFxByType__16PParticleManagerF7ePSTypeb((void *)(gGfxEng + 0x154F00), 0x1A, arg0);
@@ -887,7 +889,7 @@ void EntityManager::ProcessTrigger() {
 }
 
 // DRAFT: 0x001473D0 RestoreHolyGround__13EntityManagerFv
-// note: DIFF 18 against the original; the differing lines were not analysed in this job
+// note: DIFF 18; else-arm placement of `pTrig = 0` and the copy-loop/join nops differ; tried for-form walk (24), six copy-loop shapes (24), kept do-while (18)
 void EntityManager::RestoreHolyGround() {
     PMeshNode *pNode = *(PMeshNode **)gEng;
     if (pNode != 0) {

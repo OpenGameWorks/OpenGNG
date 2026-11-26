@@ -464,7 +464,7 @@ void PWorld::Render() {
 }
 
 // DRAFT: 0x19B130 UpdateAnimate__6PWorldFP6PMNode
-// note: size 0xbc vs 0xd0; pNode/cur in s2/s1 (orig s1/s2); no index reload before array access; 42 lines after variants (pList ptr, decl order).
+// note: 11 diffs; pNode/pCur register roles swapped (orig pNode s1, pCur s2; ours reversed); signed-char flag test and ternary walk applied; decl order of pCur/pList tried (11, no gain)
 void PWorld::UpdateAnimate(PMNode *pNode) {
     PNodeTable *pTable = (PNodeTable *)m_pMeshNode;
     if (pTable != 0) {
@@ -476,16 +476,13 @@ void PWorld::UpdateAnimate(PMNode *pNode) {
             pCur = pList->m_ppNodes[0];
         }
         while (pCur != 0) {
-            if ((pCur->m_3F & 7) == 0 && pCur->Find(pNode) != 0) {
+            if ((signed char)(pCur->m_3F & 7) == 0 && pCur->Find(pNode) != 0) {
                 pCur->m_3F = 2;
                 return;
             }
-            pList->m_nIndex++;
-            if (pList->m_nIndex < pList->m_nCount) {
-                pCur = pList->m_ppNodes[pList->m_nIndex];
-            } else {
-                pCur = 0;
-            }
+            unsigned int nIdx = pList->m_nIndex + 1;
+            pList->m_nIndex = nIdx;
+            pCur = (nIdx < pList->m_nCount) ? pList->m_ppNodes[pList->m_nIndex] : 0;
         }
     }
 }
