@@ -49,7 +49,7 @@ public:
     long long m_unk1FF0;            // 0x1FF0
     char _pad1FF8[8];
     float m_unk2000[4];             // 0x2000
-    unsigned char m_unk2010;        // 0x2010
+    bool m_unk2010;                 // 0x2010
     unsigned char m_unk2011;        // 0x2011, render enable
     unsigned char m_unk2012;        // 0x2012, matrix cache reset request
 };

@@ -15,8 +15,6 @@ extern "C" void Vu0_Compute_Spline_Patch_Pos(void);
 float FastMath_Sin180(float fAngle);
 float FastMath_Cos180(float fAngle);
 void FastMath_VectorFabs(float *pDst, float *pSrc);
-extern u_long128 lit_004C9320;
-extern u_long128 lit_004C9330;
 extern float gfAngleDiff[8];
 
 // A 16-byte .rodata constant as floats; the q member is the quadword copied to the VU0 registers.
@@ -123,11 +121,10 @@ void PDynamicSplinePatch::InitMatrixCache() {
 }
 
 // DRAFT: 0x001F3510 GenerateAndRenderVuSplinePatch__19PDynamicSplinePatchFv
-// note: 98 words differ; frame 0xE0 against 0xD0. Reloc words for @428 (.bss, static litA gives litA$34), @429/@430 (union locals qB/qC) and gGfxEng addend differ by symbol name. Original sets 1.0f (lui/mtc1) before the quad stores to 0xB0/0xC0 and computes the 0x1FB0/0x1FC0 pointers after them; ours does not. Tried: extern-symbol and absolute pool loads (146, 138, 99), pointer-local extern loads (98), key base moved earlier (98), union locals declared at top (134), union locals after sceVu0UnitMatrix (129), union locals plus static litA (98, kept).
+// note: ~100 words differ: frame, literals (@428 all-zero local in .bss, @429/@430 .rodata) and the SetMaterial bool arg match; the 0x70001000 key base lives in s0 and is set before the literal loads in the original, and the inner loop (j counter in v1, qCtl address hoisted) is scheduled differently.
 void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
     u_long128 qCtl;
     float mtx[16];
-    u_long128 qA;
     float fStepS;
     float fStepT;
     int i;
@@ -136,12 +133,9 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
     char *pRow;
 
     sceVu0UnitMatrix(mtx);
+    tagLitF4 qA = {{0.0f, 0.0f, 0.0f, 0.0f}};
     tagLitF4 qB = {{0.0f, 1.0f, 0.0f, 0.0f}};
     tagLitF4 qC = {{0.5f, 0.0f, 0.0f, 0.0f}};
-    {
-        static tagLitF4 litA;
-        qA = litA.q;
-    }
     pKeyBase = (char *)0x70001000;
     fStepT = 1.0f / (float)(m_unk00 - 1);
     fStepS = 1.0f / (float)(m_unk08 - 1);
@@ -204,16 +198,14 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
 }
 
 // DRAFT: 0x001F39C0 InitSplineKeys__19PDynamicSplinePatchFPfPf
-// note: 162 words differ; the lit_004C9320 (@367, .bss) reloc word differs by name, so the copy from it always differs; original copies it after FastMath_VectorFabs (draft order matches). Angle wrap and loop shape differ (gfAngleDiff index 210; size 0x3a0 vs 0x3c0). Tried: 360.0f in a local hoisted after the copy (214, reverted).
+// note: 129 words differ; @367 is the all-zero initializer of scale (.bss). Angle wrap and loop shape differ (gfAngleDiff index 210; size 0x3a0 vs 0x3c0).
 void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {
     float diff[4];
     float cvec[4];
-    float scale[4];
     float vec[4];
     float *pM1F80;
     float *pCvec;
     float *pVec;
-    u_long128 *pLit;
     float fSum;
     float fAngle;
     float fT;
@@ -229,8 +221,7 @@ void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {
 
     sceVu0SubVector(diff, pVecB, pVecA);
     FastMath_VectorFabs(diff, diff);
-    pLit = &lit_004C9320;
-    *(u_long128 *)scale = *pLit;
+    float scale[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     scale[0] = diff[0] / (float)(m_unk00 - 1);
     scale[1] = diff[1] / (float)(m_unk00 - 1);
     scale[2] = diff[2] / (float)(m_unk08 - 1);
