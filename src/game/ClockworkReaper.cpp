@@ -314,43 +314,57 @@ int ClockworkReaper::InBlockableState() {
 }
 
 // DRAFT: 0x001BF9F0 CheckBlockAttack__15ClockworkReaperFv
-// note: 80 words differ: original frame is 0x30 (saves s0,s1 only) with player in s0 and this in s1, no result register; ours keeps result in s0 and this in s2 (0x40 frame). Tried: early-return per exit (82), &&-chain with early return (84), shared exit with result var (80, current).
+// note: 23 words differ; switch reg a0 vs original a1, and case 0/1 store takes `daddu a0,zero` before sb in original. Tried: per-exit early returns (83), grouped 0xF4 guard (87), split guard (51), per-case roll test (47), explicit if/else store (24), ternary return 0x1F:0x22 (23, current), local mode var (23).
 int ClockworkReaper::CheckBlockAttack() {
-    int result = 0;
     MathAPI *player = mPlayerAPI__13EntityManager;
     if (player == 0) {
         CdsAssert("ClockworkReaper.cpp", 0xD25, "pPlayer");
     }
-    if (m_unkF4 == 0 && m_unk208 > 0 && player->m_unk23D2 != 0 && player->m_unk15E != 0xD &&
-        player->m_unk1CC == m_unk4 && InBlockableState() != 0) {
+    if (m_unkF4 != 0) {
+        return 0;
+    }
+    if (m_unk208 > 0 && player->m_unk23D2 != 0 && player->m_unk15E != 0xD && player->m_unk1CC == m_unk4 &&
+        InBlockableState() != 0) {
         char *selfTarget = m_unk3C ? (char *)m_unk3C + 0x80 : (char *)this + 0x190;
         char *playerTarget = player->m_unk3C ? player->m_unk3C + 0x80 : (char *)player + 0x190;
         float dist = Distance__7MathAPIFPA4_fPA4_f((MathAPI *)playerTarget, (float (*)[4])selfTarget);
         if (dist <= 20.0f) {
             int roll = RandomIntRange__7MathAPIFii(1, 100);
-            if (roll < 6) {
-                switch (m_unk1B0) {
-                case 0:
-                    m_unk2C5 = (m_unk20 == 4);
-                    result = 0x1F;
-                    break;
-                case 1:
-                    m_unk2C8 = 0;
-                    result = 0x21;
-                    break;
-                case 2:
-                    m_unk2C5 = (m_unk20 == 4);
-                    result = (m_unk2C5 == 0) ? 0x22 : 0x1F;
-                    break;
+            switch (m_unk1B0) {
+            case 0:
+                if (roll < 6) {
+                    if (m_unk20 == 4) {
+                        m_unk2C5 = 1;
+                    } else {
+                        m_unk2C5 = 0;
+                    }
+                    return 0x1F;
                 }
+                break;
+            case 1:
+                if (roll < 6) {
+                    m_unk2C8 = 0;
+                    return 0x21;
+                }
+                break;
+            case 2:
+                if (roll < 6) {
+                    if (m_unk20 == 4) {
+                        m_unk2C5 = 1;
+                    } else {
+                        m_unk2C5 = 0;
+                    }
+                    return m_unk2C5 ? 0x1F : 0x22;
+                }
+                break;
             }
         }
     }
-    return result;
+    return 0;
 }
 
 // DRAFT: 0x001BFB90 FaceHit__15ClockworkReaperFv
-// note: 39 words; mode-chain blocks inline, original places 4316/C316 out of line with beq (tried switch, if-chain, else-if, 0x10 wrap, 0xE/0x7 inversions).
+// note: 39 words; mode-chain blocks inline, original places 4316/C316 out of line with beq (tried switch with default first, outer if + switch, pExt local, case order 0x07/0x0E/default (40), earlier if-chain, else-if, 0x10 wrap, 0xE/0x7 inversions).
 void ClockworkReaper::FaceHit() {
     float dir[4];
     MathAPI *api = *(MathAPI **)((char *)mpEntMgr__15EntityBaseClass + 0x505C);
@@ -365,14 +379,16 @@ void ClockworkReaper::FaceHit() {
     float f1 = *(float *)(src + 4);
     int mode = (*(MathAPI **)((char *)mpEntMgr__15EntityBaseClass + 0x505C))->m_unk154;
     if (mode != 0x82000010) {
-        if (mode != 0x8200000E) {
-            if (mode != 0x82000007) {
-                f0 = 180.0f;
-            } else {
-                f0 = 150.0f;
-            }
-        } else {
+        switch (mode) {
+        default:
+            f0 = 180.0f;
+            break;
+        case 0x82000007:
+            f0 = 150.0f;
+            break;
+        case 0x8200000E:
             f0 = -150.0f;
+            break;
         }
         char *dst;
         if (m_unk3C != 0) {
@@ -382,14 +398,15 @@ void ClockworkReaper::FaceHit() {
         }
         f1 = f1 - f0;
         *(float *)(dst + 4) = f1;
-        if (m_unk38 != 0) {
+        char *pExt = (char *)m_unk38;
+        if (pExt != 0) {
             char *s2;
             if (m_unk3C != 0) {
                 s2 = (char *)m_unk3C + 0x90;
             } else {
                 s2 = (char *)this + 0x1A0;
             }
-            *(float *)((char *)m_unk38 + 0x11C) = Round180__Ff(*(float *)(s2 + 4));
+            *(float *)(pExt + 0x11C) = Round180__Ff(*(float *)(s2 + 4));
         }
     }
 }
@@ -431,7 +448,7 @@ int ClockworkReaper::Stalled(float arg0) {
 }
 
 // DRAFT: 0x001BFD90 CheckAttackPlayer__15ClockworkReaperFv
-// note: 208 words, size 0x56C vs 0x55C; mode dispatch branch shape, 0x30/0x3C targets, Distance arg branch sense, extra RandomIntRange reloc at 0x41C; tried plain returns (325), dispatch reorder (317), flipped Distance null test (212)
+// note: 208 words, size 0x56C vs 0x55C; original fail block at 0x520 vs ours 0x540, mode2 roll compare hoisted into beq delay slot, 0x33 compare shared by modes 0/1; tried plain returns (325), dispatch reorder (317), flipped Distance null test (212), m_unk1B0 switch (307)
 int ClockworkReaper::CheckAttackPlayer() {
     int pick;
     int roll;
@@ -872,7 +889,7 @@ void ClockworkReaper::OnTimerEvent(unsigned int arg0) {
 }
 
 // DRAFT: 0x001C0B60 OnHitEvent__15ClockworkReaperFP15EntityBaseClassiUiUi
-// note: DIFF 455 words, size 0x73c vs 0x750; frame 0x90 vs 0xA0 with f20 (20.0f, hoisted in original) not spilled; per-path returns and store order differ; tried /2.0f to *0.5f (457 to 455).
+// note: DIFF 455 words, size 0x73c vs 0x750; frame 0x90 vs 0xA0 with f20 (20.0f, hoisted in original) not spilled; per-path returns and store order differ; tried /2.0f to *0.5f (457 to 455). Not revisited in job d2.
 int ClockworkReaper::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3) {
     int ret;
     int state;
