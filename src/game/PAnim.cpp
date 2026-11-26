@@ -64,7 +64,7 @@ void PAnim::SetFrameTime(float) {
 }
 
 // DRAFT: 0x0018C8B0 FindChannel__5PAnimF9eAnimType
-// note: DIFF 7; original shares one epilogue for null and match returns, ours duplicates the return tail. Tried: else-branch (11), single-exit break (16), pointer-walk loop (20).
+// note: DIFF 7; original has two nops after the lw (ours one) and a nop after the loop (011126 loop padding), and its null test branches to the shared `return 0`. Tried: else-branch (11), single-exit break (16), pointer-walk loop (20), `||` guard (16), break in for (16), pFound search (20), while with returns (7), while with break (16), 011126 compiler with draft (7) and with break (15).
 PChannel *PAnim::FindChannel(eAnimType eType)
 {
     int i;
@@ -131,8 +131,7 @@ int PAnim::Load(PPakFile *pFile)
     return this->Load(pFile, (tagMeshNodeAnimationHeader *)buf);
 }
 
-// DRAFT: 0x0018CB20 Load__5PAnimFP8PPakFileP26tagMeshNodeAnimationHeader
-// note: DIFF 12; remaining: lh vs lhu on m_unk0 at 0x4C, loop-exit b offset at 0xA4, return-tail andi/sltu order at 0x180-0x19C. Tried: count test inversion (83 to 16), unsigned loop bound (15), !(tag!=5) tail (14), assert > 5 (12), tag==5 tail (13). m_unk8 = (int)m_unk0 - 1 (12, still lh); unsigned short local (12, still lh).
+// FUNCTION: 0x0018CB20 Load__5PAnimFP8PPakFileP26tagMeshNodeAnimationHeader
 int PAnim::Load(PPakFile *pFile, tagMeshNodeAnimationHeader *pHeader)
 {
     int i;
@@ -140,7 +139,7 @@ int PAnim::Load(PPakFile *pFile, tagMeshNodeAnimationHeader *pHeader)
     if (pHeader->m_unk4 > 5) {
         CdsAssert("PAnim.cpp", 0x38, "pHeader->uNumChannels <= CHANNEL_MAX");
     }
-    m_unk8 = pHeader->m_unk0 - 1;
+    m_unk8 = (unsigned int)pHeader->m_unk0 - 1;
     if (m_unk8 < 0) {
         m_unk8 = 0;
     }
@@ -183,7 +182,7 @@ int PAnim::Load(PPakFile *pFile, tagMeshNodeAnimationHeader *pHeader)
     if (((PCDFile *)pFile)->Read(&tag, 4) != 4) {
         return 0;
     }
-    return !(tag != 5);
+    return (tag != 5) ^ 1;
 }
 
 // FUNCTION: 0x0018CCE0 Cleanup__5PAnimFv
