@@ -42,11 +42,10 @@ void PParticleRain::FrustrumTest(PFrustrum *, float *, float, float) {
 }
 
 // DRAFT: 0x001CC110 RenderQuadrant__13PParticleRainFUi
-// note: 16 words differ; load and float-constant order and the gGfxEng lui/addiu reloc form differ (tried direct offsets, shared offset, PRainQuadrant indexing).
+// note: 14 words differ; this+0x140 is folded into the load offset (original keeps the 0x140 pointer in a register), the a3=1 and float-constant lui/mtc1 are scheduled after the loads, and gGfxEng lui/addiu order differs.
 void PParticleRain::RenderQuadrant(unsigned int nIndex) {
-    char *pBase = (char *)this + 0x140;
     unsigned int nOff = nIndex * 0x50;
-    unsigned int nStart = *(unsigned int *)(pBase + nOff);
+    unsigned int nStart = *(unsigned int *)((char *)this + 0x140 + nOff);
     void *pBuf = m_unk248;
     unsigned int nCount = *(unsigned int *)((char *)this + 0x148 + nOff);
     DrawFxLines__10PGfxEngineFP11tagVuFxLineiffb(gGfxEng, (char *)pBuf + (nStart << 5), nCount, 0.0f, 128.0f, 1);
@@ -89,22 +88,21 @@ void PParticleRain::InitParticles() {
 }
 
 // DRAFT: 0x001CC5F0 SetNumRainParticles__13PParticleRainFUi
-// note: 11 words differ; branch layout around the rem test and the loop stride differ.
+// note: 7 words differ, all in the loop: ours keeps the stride offset in t0 and nMax in a3, original keeps offset in a3 and nMax in t0 (declaration order and loop forms tried).
 void PParticleRain::SetNumRainParticles(unsigned int nNum) {
     unsigned int nRem;
     unsigned int k;
+    unsigned int nMax;
 
-    if (nNum < 4) {
-        nNum = 4;
-    }
-    if (nNum >= 0x29) {
+    nNum = (nNum < 4) ? 4 : nNum;
+    if (nNum > 0x28) {
         nRem = nNum % 0x28;
         if (nRem != 0 && nRem < 4) {
             nNum += 4 - nRem;
         }
     }
     for (k = 0; k < 4; k++) {
-        unsigned int nMax = m_unk04 >> 2;
+        nMax = m_unk04 >> 2;
         *(unsigned int *)(m_unk100 + 0x48 + k * 0x50) = (nNum < nMax) ? nNum : nMax;
     }
 }
@@ -134,7 +132,7 @@ void PParticleRain::SetLightningDensity(float fDensity) {
 }
 
 // DRAFT: 0x001CC850 SetDensity__13PParticleRainFfb
-// note: 23 words differ; the zero clamp is laid out before the 1.0 body and the inner empty then-branch has no second jump (ternary, single if, outer-first and fMin-else forms tried, 23-27 words).
+// note: 23 words differ; the zero clamp is laid out before the 1.0 body and the inner empty then-branch has no second jump (sd_a to sd_i: ternary, single if, outer-first and fMin-else forms; best 23).
 void PParticleRain::SetDensity(float fDensity, bool bFlag) {
     float fMin = 1.0f;
 
