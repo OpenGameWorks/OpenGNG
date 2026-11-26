@@ -1246,7 +1246,7 @@ void HudCombo::ComboFinish() {
 }
 
 // DRAFT: 0x141AB0 ComboNumber__8HudComboFv
-// note: DIFF 125; frame 0x80 vs 0x90, pNew kept in s2 where original spills it to 0x8C(sp); tried int v, pNew from __nw, node stored after block.
+// note: 11 words: ComboLevel address is materialized before the mpPlayerData+0x50 load (original: after), which swaps a1/a3 in the last loop. Tried: hoisted value, for/do forms, reversed compare, int[2] indexing, decl orders.
 void HudCombo::ComboNumber() {
     if (m_unk3C != 0) {
         ((PArray *)((char *)m_unk38 + 0x14))->Remove(m_unk3C);
@@ -1269,25 +1269,25 @@ void HudCombo::ComboNumber() {
     for (int i = 0; i < 2; i++) {
         int digit = v % 10;
         if (digit != 0 || i == 0) {
-            void *node;
-            if ((node = __nw__FUi(0x100)) != 0) {
-                char *volatile pThis = (char *)node;
-                *(unsigned char **)node = __vt__9PResource;
+            PMNode *pNew;
+            if ((pNew = (PMNode *)__nw__FUi(0x100)) != 0) {
+                char *volatile pThis = (char *)pNew;
+                *(unsigned char **)pNew = __vt__9PResource;
                 *(int *)(pThis + 4) = 0;
                 *(unsigned char **)pThis = __vt__6PMNode;
                 __ct__6PArrayFv(pThis + 0x14);
                 sceVu0UnitMatrix(pThis + 0x40);
                 __ct__6PArrayFv(pThis + 0xD8);
                 InitMembers__6PMNodeFv((PMNode *)pThis);
-                node = pThis;
+                pNew = (PMNode *)pThis;
             }
-            PMNode *pNew = (PMNode *)node;
             ((pNew != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x7B7, "pNode"));
             CopyMNode__6PMNodeFR6PMNodeb(pNew, (PMNode *)m_unk10[digit], true);
-            vec[0] -= *(float *)(*(char **)((char *)pNew + 0x10) + 0x20);
+            float fWidth = *(float *)(*(char **)((char *)pNew + 0x10) + 0x20);
+            vec[0] -= fWidth;
             *(u_long128 *)((char *)pNew + 0x80) = *(u_long128 *)vec;
             *(unsigned char *)((char *)pNew + 0x3E) |= 8;
-            vec[0] -= *(float *)(*(char **)((char *)pNew + 0x10) + 0x20);
+            vec[0] -= fWidth;
             ((PArray *)((char *)m_unk38 + 0x14))->Add(pNew);
             *(PMNode **)((char *)this + 0x3C + i * 4) = pNew;
         }
@@ -1302,11 +1302,12 @@ void HudCombo::ComboNumber() {
         }
         count++;
     } while (count < 5);
+    int i;
     PArray *arr = (PArray *)((char *)m_unk48 + 0x14);
-    for (int i = 0; i < 5; i++) {
-        PMNode *el = (i < (int)arr->m_unk0) ? (PMNode *)arr->m_unk8[i] : 0;
+    for (i = 0; i < 5; i++) {
+        PMNode *el = ((unsigned int)i < arr->m_unk0) ? (PMNode *)arr->m_unk8[i] : 0;
         if (el != 0) {
-            *(int *)((char *)el + 0xC) = (i == count);
+            *(int *)((char *)el + 0xC) = (i == count) ? 1 : 0;
         }
     }
 }
