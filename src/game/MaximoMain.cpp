@@ -140,6 +140,31 @@ extern "C" void Resume__6PSoundFv(void *);
 extern "C" void SetPause__9InterfaceFv(void *);
 extern "C" void InitSaveGame__10MemoryCardFPQ26Player10PlayerDataib(void *, void *, int, bool);
 extern "C" int SaveGame__10MemoryCardFv(void *);
+extern "C" void PolyDebug__6CameraFv(void *);
+extern "C" void Animate__13EntityManagerFif(void *, int, float);
+extern "C" void Process__13EntityManagerFv(void *);
+extern "C" void ObjectCollision__13EntityManagerFv(void *);
+extern "C" void RunPhysics__13EntityManagerFf(void *, float);
+extern "C" void Update__6CameraFv(void *);
+extern "C" void ResetFollowCamera__6CameraFv(void *);
+extern "C" void Init__6CameraFv(void *);
+extern "C" void Reset__19EntityAttackManagerFv(void *);
+extern "C" void LoadOverlay__13EntityManagerFPcPc(void *, char *, char *);
+extern "C" void InitWorld__9MaxEngineFPvP16PResourceManager(void *, void *, void *);
+extern "C" void InitSwordBGAnimList__13EntityManagerFP9PMeshNode(void *, void *);
+extern "C" void LoadApparitionData__13EntityManagerFi(void *, int);
+extern "C" void SpawnEditedInstances__13EntityManagerFPcb(void *, char *, bool);
+extern "C" void InitHud__9InterfaceFv(void *);
+extern "C" void scePcStop(void);
+extern "C" void SetLevelParameters__6PSoundFUiUiUiUi(void *, unsigned int, unsigned int, unsigned int, unsigned int);
+extern "C" void EnableLevelProcessing__6PSoundFb(void *, bool);
+extern "C" void PSoundRestart__6PSoundFv(void *);
+extern "C" void CutSceneLeave__6PSoundFUi(void *, unsigned int);
+extern "C" void Abort__15PCutScenePlayerFv(void *);
+extern "C" void EnableParticleFx__13EntityManagerFb(void *, bool);
+extern "C" int MapScreen__10MaximoMainFv(void *);
+extern int mbHard__15EntityBaseClass;
+extern unsigned char mbGlobalSleep__15EntityBaseClass;
 // TODO(header): foreign declarations for ScreenAdjust
 // The copy constructor makes PMat4 non-POD, so a by-value PMat4 parameter arrives by reference without a callee copy.
 struct PMat4 {
@@ -2516,6 +2541,317 @@ unsigned int MaximoMain::FindFirstDialog(LevelFiles const *arg0, bool arg1) {
         }
     }
     return 0;
+}
+
+// DRAFT: 0x0013DD20 Game__10MaximoMainFi
+// note: not yet matching; the goto state machine compiles, but the switch layout and register use still differ.
+int MaximoMain::Game(int arg0) {
+    int nRet = 0;
+    int nPause = 0;
+    int bInit = 0;
+    int nRenderSum = 0;
+    int nS3 = 0;
+    int nCombined;
+    int bCam;
+    int nMovie;
+    int nMusic;
+    char *pLvl;
+    char *pSlot;
+    unsigned char nFlagS1;
+    signed char nHard;
+    float fScale;
+    float fA;
+    float fB;
+    float fT;
+
+loop_2:
+    InitRenderFrame__9MaxEngineFbUi(this, 0, 0U);
+    if (arg0 == 1) {
+        if (MODE_PAL != 0) {
+            fScale = 1.2f;
+        } else {
+            fScale = 1.0f;
+        }
+        *(float *)((char *)this + 0x1E8) = fScale;
+        m_unk19B5C = m_unk19B5C - 1;
+        if (m_unk19B5C <= 0) {
+            return nRet;
+        }
+        if (m_unk19B5C == 0x3C) {
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 4.25f, true, 0);
+            FadeOutAllMusic__6PSoundFUi(gSound, 0x1F4U);
+        } else if ((*(unsigned short *)(gPad + 0x110) & 8) && (m_unk19B5C >= 0x3D)) {
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 8.5f, true, 0);
+            FadeOutAllMusic__6PSoundFUi(gSound, 0x1F4U);
+            nRet = 1;
+            m_unk19B5C = 0x1E;
+        }
+    }
+block_13:
+    nFlagS1 = *(unsigned char *)((char *)this + 0x137D8);
+    pLvl = (char *)LevelTable + (m_unk19A78 << 7);
+    switch (m_unk19A70) {
+    case 0:
+        if ((unsigned int)m_unk19A78 >= 0x15U) {
+            CdsAssert__FPciPc("MaximoMain.cpp", 0x4BF, "miLevelID < sizeof(LevelTable) / sizeof(LevelFiles)");
+        }
+        m_unk19A7C = 0;
+        *((char *)this + 0x19A9D) = 0;
+        RemoveAll__11FontManagerFb(gInterface + 0x80, true);
+        DeleteMeshLayer__9InterfaceFv(gInterface);
+        SoundGainEEControl__9InterfaceFv(gInterface);
+        nMovie = (*(int *)(pLvl + 0x7C) >> 8) & 3;
+        if (nMovie != 0) {
+            PlayMovie__9MaxEngineFiiUi(this, nMovie - 1, 0, 1U);
+        }
+        Load__9InterfaceFPCc(gInterface, "HUD");
+        if (arg0 == 1) {
+            nHard = 0;
+        } else {
+            nHard = (signed char)gMC[0x22F];
+        }
+        mbHard__15EntityBaseClass = (int)nHard;
+        Reset__19EntityAttackManagerFv((char *)this + 0x137E0);
+        *(int *)((char *)this + 0x137F0) = (gMC[0x22F] == 0) ? 1 : 2;
+        LoadOverlay__13EntityManagerFPcPc((char *)this + 0x137E0, *(char **)(pLvl + 8), *(char **)(pLvl + 0xC));
+        *(int *)(MemMgr + 0x18) = 0;
+        InitWorld__9MaxEngineFPvP16PResourceManager(this, pLvl, (char *)this + 0x188A4);
+        InitSwordBGAnimList__13EntityManagerFP9PMeshNode((char *)this + 0x137E0, *(void **)this);
+        *(int *)(MemMgr + 0x18) = 1;
+        scePcStop();
+        *(int *)((char *)this + 0x19A80) = 0;
+        InitGameTimes();
+        LoadApparitionData__13EntityManagerFi((char *)this + 0x137E0, m_unk19A78);
+        SpawnEditedInstances__13EntityManagerFPcb((char *)this + 0x137E0, *(char **)pLvl, true);
+        *(float *)((char *)this + 0x18854) = (float)*(short *)(pLvl + 0x72);
+        mbGlobalSleep__15EntityBaseClass = *(unsigned char *)(pLvl + 0x74);
+        *(int *)(MemMgr + 0x18) = 0;
+        InitHud__9InterfaceFv(gInterface);
+        Init__6CameraFv((char *)this + 0x19760);
+        SetVibrate__3PadFQ23Pad7VibTypeUc(gPad, 0, 0x14U);
+        if (*(int *)(pLvl + 0x20) & 0x10) {
+            void **pObj;
+            m_unk19A70 = 3;
+            m_unk8724 = 0;
+            *((unsigned char *)this + 0x19A9C) = 1;
+            pObj = (void **)m_unk1883C;
+            ((void (*)(void *))((void **)*pObj)[4])(pObj);
+            bInit = 0;
+        } else {
+            m_unk19A70 = 1;
+            *((unsigned char *)this + 0x19A9C) = 0;
+            DisplayLevelName__9InterfaceFii(gInterface, m_unk19A78, 0xF0);
+            bInit = 1;
+        }
+        ReturnControlOfIOPToMjln__6PSoundFv(gSound);
+        FindFirstDialog((LevelFiles const *)pLvl, false);
+        *(unsigned int *)((char *)this + 0x19B4C) = *(unsigned int *)(pLvl + 0x58);
+        SetLevelParameters__6PSoundFUiUiUiUi(gSound, *(unsigned int *)((char *)this + 0x19B4C),
+                                             *(unsigned int *)(pLvl + 0x5C), *(unsigned short *)(pLvl + 0x5E),
+                                             *(unsigned short *)(pLvl + 0x60));
+        nMusic = *(unsigned short *)(pLvl + 0x56);
+        if (nMusic != 0) {
+            m_unk19B48 = nMusic & 0xFFFF;
+            if (gbMusic != 0 && bInit != 0) {
+                PlayMusic__6PSoundFUi(gSound, m_unk19B48);
+            }
+        }
+        EnableLevelProcessing__6PSoundFb(gSound, true);
+        ResetWarning__11FontManagerFv(gInterface + 0x80);
+        /* fall through */
+    default:
+block_80:
+        if (arg0 == 1) {
+            PressStart(-0xD2);
+        }
+        goto loop_2;
+    case 10:
+        Reset__19EntityAttackManagerFv((char *)this + 0x137E0);
+        DeleteMeshLayer__9InterfaceFv(gInterface);
+        Reset__13EntityManagerFb((char *)this + 0x137E0, false);
+        fT = (float)*(short *)(pLvl + 0x68);
+        *(float *)((char *)this + 0xEC) = fT;
+        *(float *)((char *)this + 0x1CC) = fT;
+        PSoundRestart__6PSoundFv(gSound);
+        *(int *)((char *)this + 0x19A80) = 0;
+        InitGameTimes();
+        *(int *)(MemMgr + 0x18) = 1;
+        SpawnEditedInstances__13EntityManagerFPcb((char *)this + 0x137E0, 0, false);
+        *(int *)(MemMgr + 0x18) = 0;
+        FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 4.25f, true, 0);
+        {
+            void *pObj;
+            pObj = *(void **)(gInterface + 0x290);
+            ((void (*)(void *))*(void **)((char *)pObj + 0x18))(gInterface + 0x290);
+        }
+        *(short *)(gInterface + 0x414) = 0;
+        *(int *)(gInterface + 0x1C0) = 0xF;
+        *(unsigned char *)(gInterface + 0x416) = 0;
+        Init__6CameraFv((char *)this + 0x19760);
+        SetVibrate__3PadFQ23Pad7VibTypeUc(gPad, 0, 0x14U);
+        FindFirstDialog((LevelFiles const *)pLvl, false);
+        SetLevelParameters__6PSoundFUiUiUiUi(gSound, *(unsigned int *)((char *)this + 0x19B4C),
+                                             *(unsigned int *)(pLvl + 0x5C), *(unsigned short *)(pLvl + 0x5E),
+                                             *(unsigned short *)(pLvl + 0x60));
+        nMusic = m_unk19B48;
+        if (nMusic != 0 && gbMusic != 0) {
+            PlayMusic__6PSoundFUi(gSound, nMusic);
+        }
+        EnableLevelProcessing__6PSoundFb(gSound, true);
+        ResetWarning__11FontManagerFv(gInterface + 0x80);
+        m_unk19A70 = 1;
+        /* fall through */
+    case 1:
+        nPause = PauseCheck();
+        if (nPause == 0 && nFlagS1 == 0) {
+            if (m_unk19A7C == 0) {
+                *(int *)((char *)this + 0x19A80) = *(int *)((char *)this + 0x19A80) + 1;
+                UpdateGameTimes();
+            }
+        block_38:
+            Update__6CameraFv((char *)this + 0x19760);
+            Process__13EntityManagerFv((char *)this + 0x137E0);
+            m_unk19AD8 = RenderSkybox__9MaxEngineFi(this, m_unk19A7C);
+            RenderWorld__9MaxEngineFib(this, m_unk19A7C, false);
+            PolyDebug__6CameraFv((char *)this + 0x19760);
+            *(int *)(MemMgr + 0x18) = 1;
+            Animate__13EntityManagerFif((char *)this + 0x137E0, m_unk19A7C, *(float *)((char *)this + 0x1E8));
+            m_unk19AD8 = m_unk19AD8 + Render__13EntityManagerFP13PLightManager((char *)this + 0x137E0, (char *)this + 0x1F0);
+            RenderParticleFx__9MaxEngineFP6Camerai8ePSLayer(this, (char *)this + 0x19760, nPause, 2);
+            ObjectCollision__13EntityManagerFv((char *)this + 0x137E0);
+            RunPhysics__13EntityManagerFf((char *)this + 0x137E0, *(float *)((char *)this + 0x1E8));
+            *(int *)(MemMgr + 0x18) = 0;
+            nRenderSum = m_unk19AD8 + Render__9InterfaceFi(gInterface, 0);
+        } else {
+            bCam = (*(int *)(gInterface + 0x2F8) != 0);
+            nCombined = nFlagS1 | nPause;
+            if (bCam != 0) {
+                bCam = (*(int *)(gInterface + 0x1C0) & 0x40) == 0;
+            }
+            if (bCam != 0) {
+                m_unk19AD8 = RenderSkybox__9MaxEngineFi(this, nCombined);
+                RenderWorld__9MaxEngineFib(this, nCombined, false);
+                m_unk19AD8 = m_unk19AD8 + Render__13EntityManagerFP13PLightManager((char *)this + 0x137E0, (char *)this + 0x1F0);
+                RenderParticleFx__9MaxEngineFP6Camerai8ePSLayer(this, (char *)this + 0x19760, nCombined, 2);
+            } else {
+                m_unk19AD8 = 0;
+            }
+            nRenderSum = m_unk19AD8 + Render__9InterfaceFi(gInterface, nCombined);
+        }
+    block_79:
+        m_unk19AD8 = nRenderSum;
+        goto block_80;
+    case 3:
+        pSlot = (char *)this + m_unk8724 * 0x2140 + 0x220;
+        EnableParticleFx__13EntityManagerFb((char *)this + 0x137E0, false);
+        if (pSlot[0x213D] & 8) {
+            m_unk19A70 = 4;
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 8.5f, true, 0);
+        case 4:
+            if (gInterface[0x425] == 0) {
+                FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f,
+                    255.0f / (60.0f * *(float *)((char *)this + m_unk8724 * 0x2140 + 0x2354)), true, 0);
+                InitCutSceneIfDialogReady();
+            } else {
+                Update__6CameraFv((char *)this + 0x19760);
+                Process__13EntityManagerFv((char *)this + 0x137E0);
+                m_unk19AD8 = RenderSkybox__9MaxEngineFi(this, m_unk19A7C);
+                RenderWorld__9MaxEngineFib(this, m_unk19A7C, true);
+                *(int *)(MemMgr + 0x18) = 1;
+                Animate__13EntityManagerFif((char *)this + 0x137E0, m_unk19A7C, *(float *)((char *)this + 0x1E8));
+                m_unk19AD8 = m_unk19AD8 + Render__13EntityManagerFP13PLightManager((char *)this + 0x137E0, (char *)this + 0x1F0);
+                RenderParticleFx__9MaxEngineFP6Camerai8ePSLayer(this, (char *)this + 0x19760, nPause, 2);
+                ObjectCollision__13EntityManagerFv((char *)this + 0x137E0);
+                RunPhysics__13EntityManagerFf((char *)this + 0x137E0, *(float *)((char *)this + 0x1E8));
+                *(int *)(MemMgr + 0x18) = 0;
+                nRenderSum = m_unk19AD8 + Render__9InterfaceFi(gInterface, nPause);
+                goto block_79;
+            }
+        } else {
+            InitCutSceneIfDialogReady();
+        }
+        goto block_80;
+    case 5:
+        nS3 = 0;
+        pSlot = (char *)this + m_unk8724 * 0x2140 + 0x220;
+        if (gInterface[0x425] == 0 && (pSlot[0x213D] & ~0x7F)) {
+            FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f,
+                255.0f / (60.0f * *(float *)(pSlot + 0x2138)), true, 0);
+        }
+        m_unk19AD8 = RenderSkybox__9MaxEngineFi(this, 0);
+        RenderWorld__9MaxEngineFib(this, 0, true);
+        RenderParticleFx__9MaxEngineFP6Camerai8ePSLayer(this, (char *)this + 0x19760, nFlagS1, 2);
+        m_unk19AD8 = m_unk19AD8 + Render__9InterfaceFi(gInterface, 0);
+        if (m_unk8720 == 0) {
+            nS3 = 1;
+        } else if (*(unsigned short *)(gPad + 0x110) & 1) {
+            Abort__15PCutScenePlayerFv(pSlot);
+            nS3 = 2;
+            m_unk8720 = 0;
+        }
+        if (nS3 != 0) {
+            EnableParticleFx__13EntityManagerFb((char *)this + 0x137E0, true);
+            pSlot = (char *)this + m_unk8724 * 0x2140 + 0x220;
+            if (pSlot != 0 && (pSlot[0x213D] & 0x20)) {
+                SetLevelClear();
+                *((unsigned char *)this + 0x19A9D) = 1;
+                FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 0.0f, true, 0);
+            } else {
+                if (pSlot != 0 && (pSlot[0x213D] & 0x10) && gbMusic != 0) {
+                    PlayMusic__6PSoundFUi(gSound, m_unk19B48);
+                }
+                m_unk19A70 = 1;
+            }
+            ResetFollowCamera__6CameraFv((char *)this + 0x19760);
+            Update__6CameraFv((char *)this + 0x19760);
+            Animate__13EntityManagerFif((char *)this + 0x137E0, m_unk19A7C, 0.0f);
+            m_unk19A7C = 0;
+            *(short *)(gInterface + 0x414) = 0;
+            *(int *)(gInterface + 0x1C0) = *(int *)(gInterface + 0x1C0) | 0xE;
+            CutSceneLeave__6PSoundFUi(gSound, *(unsigned int *)((char *)this + 0x19B50));
+            FindFirstDialog((LevelFiles const *)pLvl, true);
+            fA = (float)*(short *)(pLvl + 0x6A);
+            fB = (float)*(short *)(pLvl + 0x6C);
+            *(float *)(gGfxEng + 0x6A0) = fA * fA;
+            *(float *)(gGfxEng + 0x6A4) = fB * fB;
+            if (*((unsigned char *)this + 0x19A9C) != 0) {
+                *((unsigned char *)this + 0x19A9C) = 0;
+                DisplayLevelName__9InterfaceFii(gInterface, m_unk19A78, 0xF0);
+            }
+        }
+        goto block_80;
+    case 2:
+        GameOptions();
+        goto block_80;
+    case 6:
+        if (LevelClearDemo() == 0 || *((unsigned char *)this + 0x19A9D) != 0) {
+            nRenderSum = Render__9InterfaceFi(gInterface, nPause);
+        } else {
+            goto block_38;
+        }
+        goto block_79;
+    case 7:
+        if (MapScreen__10MaximoMainFv(this) != 0) {
+            goto block_80;
+        }
+    block_77:
+        PSoundLevelClear__6PSoundFv(gSound);
+        InitRenderFrame__9MaxEngineFbUi(this, 0, 0U);
+        return 1;
+    case 9:
+        GameOver();
+        return 1;
+    case 8:
+        if (gInterface[0x425] == 0) {
+            goto block_77;
+        }
+        m_unk19AD8 = RenderSkybox__9MaxEngineFi(this, nPause);
+        RenderWorld__9MaxEngineFib(this, nPause, false);
+        m_unk19AD8 = m_unk19AD8 + Render__13EntityManagerFP13PLightManager((char *)this + 0x137E0, (char *)this + 0x1F0);
+        RenderParticleFx__9MaxEngineFP6Camerai8ePSLayer(this, (char *)this + 0x19760, nPause, 2);
+        nRenderSum = m_unk19AD8 + Render__9InterfaceFi(gInterface, 0);
+        goto block_79;
+    }
 }
 
 // FUNCTION: 0x0013ED80 PauseDisplay__10MaximoMainFi
