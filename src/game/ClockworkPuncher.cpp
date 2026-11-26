@@ -274,8 +274,7 @@ void ClockworkPuncher::AttachSparkEffect() {
     }
 }
 
-// DRAFT: 0x001DE5A0 AttachDamageMesh__16ClockworkPuncherFv
-// note: 71 words differ. Original frame is 0x50 with pNew spilled to 0x4C(sp) and this in s1; ours is 0x40 with this in s0. Tried decl swap and a separate new temporary; neither changed the diff.
+// FUNCTION: 0x001DE5A0 AttachDamageMesh__16ClockworkPuncherFv
 void ClockworkPuncher::AttachDamageMesh() {
     char *pNew;
     PMNode *pFound;
@@ -290,15 +289,16 @@ void ClockworkPuncher::AttachDamageMesh() {
         CdsAssert__FPciPc("ClockworkPuncher.cpp", 0xA33, "aNextJoint");
     }
     if (m_unk2B4 != 0) {
-        pNew = (char *)__nw__FUi(0x100);
-        if (pNew != 0) {
-            *(char **)pNew = __vt__9PResource + 0x970;
-            *(int *)(pNew + 4) = 0;
-            *(char **)pNew = __vt__6PMNode + 0xE00;
-            __ct__6PArrayFv(pNew + 0x14);
-            sceVu0UnitMatrix((float (*)[4])(pNew + 0x40));
-            __ct__6PArrayFv(pNew + 0xD8);
-            InitMembers__6PMNodeFv((PMNode *)pNew);
+        if ((pNew = (char *)__nw__FUi(0x100)) != 0) {
+            char *volatile pThis = pNew;
+            *(char **)pNew = __vt__9PResource;
+            *(int *)(pThis + 4) = 0;
+            *(char **)pThis = __vt__6PMNode;
+            __ct__6PArrayFv(pThis + 0x14);
+            sceVu0UnitMatrix((float (*)[4])(pThis + 0x40));
+            __ct__6PArrayFv(pThis + 0xD8);
+            InitMembers__6PMNodeFv((PMNode *)pThis);
+            pNew = pThis;
         }
         if (pNew == 0) {
             CdsAssert__FPciPc("ClockworkPuncher.cpp", 0xA37, "pNew");
