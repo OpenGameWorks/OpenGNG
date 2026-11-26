@@ -224,7 +224,7 @@ int PObjectDisplayList::IsShaderUnique(PShader *pShader) {
 }
 
 // DRAFT: 0x1D4240 FindUniqueShaders__18PObjectDisplayListFP5PMesh
-// note: 50 differing lines; the original guards with sltu (nCount != 0) and uses a b/addu-delay element select and an extra entry branch; unsigned short nCount, 0<nCount, swapped arms gave no gain.
+// note: 22 differing words; guard is `i < nCount` (sltu+beqz form), element select pre-zeroed (`pElem = 0; if (...)`). Left: pElem in a0 in the then-arm, original uses v1 with a b/addu delay slot; ternary, inverted if, unsigned decls gave no gain.
 void PObjectDisplayList::FindUniqueShaders(PMesh *pMesh) {
     unsigned int nCount;
     unsigned int i;
@@ -237,13 +237,12 @@ void PObjectDisplayList::FindUniqueShaders(PMesh *pMesh) {
     }
     nCount = (pMesh->m_unk4 - pMesh->m_unk8) & 0xFFFF;
     i = 0;
-    if (0 < nCount) {
+    if (i < nCount) {
         off = 0;
         do {
+            pElem = 0;
             if (i < pMesh->m_unk4) {
                 pElem = (char *)pMesh->m_unk0 + off;
-            } else {
-                pElem = 0;
             }
             pShader = (PShader *)(pElem + 0xC);
             if (pShader != 0 && IsShaderUnique(pShader)) {
@@ -370,7 +369,7 @@ void PObjectDisplayList::FindUniqueShaders(PMNode *pNode) {
 }
 
 // DRAFT: 0x1D46C0 FindUniqueTextures__18PObjectDisplayListFv
-// note: 54 differing lines; register allocation matches after declaration reorder and unsigned flag array; remaining diffs are outer/inner branch layout, off/i update order, and CdsAssert argument setup (inner for-loop and outer for-loop with off += 4 also 54).
+// note: 62 differing words; declaration orders (4 permutations: 62-67) and the outer-loop form did not reduce it. Remaining diffs: outer/inner branch layout, off/i update order, CdsAssert argument setup.
 void PObjectDisplayList::FindUniqueTextures() {
     int i;
     PShader *pShader;
