@@ -293,26 +293,16 @@ int PMNode::PlaySound(unsigned int arg0) {
     return m_unkEC;
 }
 
-// DRAFT: 0x001918F0 UpdateCameraFade__6PMNodeFb
-// note: 23 words differ: lb vs lbu on m_unk3E, extra andi after ori, nop/epilogue order; int local gives 50, bool-local goto variant is best.
+// FUNCTION: 0x001918F0 UpdateCameraFade__6PMNodeFb
 void PMNode::UpdateCameraFade(bool bFlag) {
-    bool bNext = bFlag;
-    unsigned char bVal;
-    if (bNext) {
-        bVal = m_unk3E | 0x20;
-        goto store;
-    }
-    {
+    if (bFlag) {
+        m_unk3E |= 0x20;
+    } else {
         void *pObj = m_unk24;
-        int nVal = 0;
-        if (pObj != 0) {
-            nVal = ((int *)pObj)[1];
-        }
+        int nVal = (pObj != 0) ? ((int *)pObj)[1] : 0;
         if ((unsigned int)(nVal - 500) < 10) {
-            bNext = true;
-            bVal = m_unk3E | 0x20;
-store:
-            m_unk3E = bVal;
+            bFlag = true;
+            m_unk3E |= 0x20;
         }
     }
     m_unk18 = 0;
@@ -323,7 +313,7 @@ store:
     if (pChild != 0) {
         do {
             unsigned int uNext;
-            pChild->UpdateCameraFade(bNext);
+            pChild->UpdateCameraFade(bFlag);
             uNext = m_unk18 + 1;
             m_unk18 = uNext;
             pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
@@ -1371,16 +1361,18 @@ PMNode *PMNode::FindAnimNode(unsigned int uID) {
 
 
 // DRAFT: 0x00194650 EnableOneRenderPassOnly__6PMNodeFi
-// note: 42 words differ. Args D5..D7 read via bool lvalues to skip sltu normalization; still differs in load order and the D4 store address form (addiu+addu vs addu). Tried: pointer-index store form (same 42).
+// note: 4 words differ (0x3C,0x44,0x4C,0x54): original keeps the D4 pointer in v1 and the constant 1 in a0; ours puts the pointer in a1 and the 1 in v1. Tried: pointer declared before its first assignment, bool local holding true, char* pointer store (all still 4).
 void PMNode::EnableOneRenderPassOnly(int nPass) {
     if (nPass >= 4) {
         CdsAssert__FPciPc("PMNode.cpp", 0x446, "iPassIndex < MAX_PASSES_PER_SHADER");
     }
     m_unkD4 = false;
+    bool *pSel = &m_unkD4;
     m_unkD5 = 0;
     m_unkD6 = 0;
+    pSel += nPass;
     m_unkD7 = 0;
-    (&m_unkD4)[nPass] = true;
+    *pSel = true;
     m_unk3E |= 0x80;
     m_unk18 = 0;
     PMNode *pChild = 0;
@@ -1661,8 +1653,7 @@ int PMNode::LoadBone(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
     return 1;
 }
 
-// DRAFT: 0x00195180 DestroyChildren__6PMNodeFv
-// note: original keeps an inner pChild != 0 guard before the slot-8 call (CW drops it here) and calls through t9 with a nop after jalr; tried cast, local fn pointer, for-break loop; all leave the same diff.
+// FUNCTION: 0x00195180 DestroyChildren__6PMNodeFv
 void PMNode::DestroyChildren() {
     PMNode *pChild;
     m_unk18 = 0;
@@ -1673,17 +1664,10 @@ void PMNode::DestroyChildren() {
     }
     if (pChild != 0) {
         do {
-            if (pChild != 0) {
-                void (*pfn)(PMNode *, int) = *(void (**)(PMNode *, int))(*(int *)pChild + 8);
-                pfn(pChild, 1);
-            }
+            delete pChild;
             unsigned int idx = m_unk18 + 1;
             m_unk18 = idx;
-            if (idx < m_unk14) {
-                pChild = m_unk1C[m_unk18];
-            } else {
-                pChild = 0;
-            }
+            pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
         } while (pChild != 0);
     }
     if (m_unk1C != 0) {
@@ -1883,8 +1867,7 @@ int PMNode::RecurseApplyAnimFlagsByID(unsigned int uID, bool bA, int nB) {
     return m_unk3F;
 }
 
-// DRAFT: 0x00195A40 EnableAnim__6PMNodeFbb
-// note: DIFF 35 words; original stores m_unk3F in the delay slot of the first bB branch (store before the nop-delay second test), ours folds the store into the second branch. Tried split gating (54), bB-less inner test (53), unconditional store (52), if/else first-child load (35).
+// FUNCTION: 0x00195A40 EnableAnim__6PMNodeFbb
 void PMNode::EnableAnim(bool bA, bool bB) {
     PMNode *pChild;
     unsigned int idx;
@@ -1892,22 +1875,23 @@ void PMNode::EnableAnim(bool bA, bool bB) {
     if (pObj != 0) {
         ((PFrameSource *)pObj)->Slot13();
     }
-    if (bB) {
-        m_unk3F = bA;
-        if (bB && m_unk04 == 1) {
-            m_unk18 = 0;
-            pChild = (m_unk14 != 0) ? *m_unk1C : 0;
-            if (pChild != 0) {
-                do {
-                    pChild->EnableAnim(bA, true);
-                    if (m_unk3F == 0 && (pChild->m_unk3F & 7) != 0) {
-                        m_unk3F = 2;
-                    }
-                    idx = m_unk18 + 1;
-                    m_unk18 = idx;
-                    pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
-                } while (pChild != 0);
-            }
+    m_unk3F = bA;
+    if (!bB) {
+        return;
+    }
+    if (bB && m_unk04 == 1) {
+        m_unk18 = 0;
+        pChild = (m_unk14 != 0) ? *m_unk1C : 0;
+        if (pChild != 0) {
+            do {
+                pChild->EnableAnim(bA, true);
+                if (m_unk3F == 0 && (signed char)(pChild->m_unk3F & 7) != 0) {
+                    m_unk3F = 2;
+                }
+                idx = m_unk18 + 1;
+                m_unk18 = idx;
+                pChild = (idx < m_unk14) ? m_unk1C[m_unk18] : 0;
+            } while (pChild != 0);
         }
     }
 }
