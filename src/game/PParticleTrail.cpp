@@ -16,7 +16,171 @@ extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
 float FastMath_Sin180(float fAngle);
 float FastMath_Cos180(float fAngle);
 
-// SKIP: 0x001C5650 AnimateSmoothTrail__14PParticleTrailFv: 0x8B4 bytes (557 instructions) with an LCG random chain on unkD0, FastMath sin/cos and sceVu0ScaleVectorXYZ calls; not drafted in this run.
+// Clamp used by AnimateSmoothTrail: returns fVal clamped into [0, fHi] with the
+// same compare order as the original (fHi is the upper bound).
+static inline float TrailClamp(float fVal, float fHi) {
+    float fOut = fVal;
+    float fT = fHi;
+    if (fVal < fHi) {
+        fT = fVal;
+    }
+    if (!(fT <= 0.0f)) {
+        if (fVal < fHi) {
+        } else {
+            fOut = fHi;
+        }
+    } else {
+        fOut = 0.0f;
+    }
+    return fOut;
+}
+
+// DRAFT: 0x001C5650 AnimateSmoothTrail__14PParticleTrailFv
+// note: 483 words differ; size 0x8C0 vs 0x8B4; prologue keeps f20-f27 live (original f20-f24); the early-return guard, the m17/m18 test and the flag block differ in threading; tried the guard as !a||b and a hoisted fStep.
+void PParticleTrail::AnimateSmoothTrail() {
+    float vec[3];
+    float fStep;
+    float fZ;
+    int nLeft;
+    int nIdx;
+    unsigned int nSeq;
+
+    if (m_unk15 != 0) {
+        if (m_unk16 != 0) {
+            return;
+        }
+        if ((m_unk17 != 0) || (m_unk18 == 0)) {
+            m_unk15 = 0;
+            m_unk16 = m_unk17;
+        }
+        m_unk1B8 += 1;
+        if (m_unk1B8 < (int)m_unk04) {
+        } else {
+            m_unk1B8 = 0;
+        }
+        {
+            float *pHead = (float *)((char *)m_unk08 + (m_unk1B8 << 5));
+            pHead[0] = m_unk190[0];
+            pHead[1] = m_unk190[1];
+            pHead[2] = m_unk190[2];
+        }
+        nLeft = (int)m_unk04;
+        nIdx = m_unk1B8;
+        nSeq = 1;
+        fStep = 0.0f;
+        while (nLeft > 0) {
+            float fDen = (float)m_unk04;
+            float fFrac = fStep / fDen;
+            float *pNode;
+            float fA;
+            float fB;
+            float fFr;
+            float fLerp;
+            if (fFrac >= 0.9999999f) {
+                fFrac = 0.9999999f;
+            }
+            nSeq += 1;
+            pNode = (float *)((char *)m_unk08 + (nIdx << 5));
+            if (nSeq >= (unsigned int)m_unk1B4) {
+                pNode[3] = 0.0f;
+                pNode[7] = 0.0f;
+            } else {
+                if (m_unk15C != 0.0f) {
+                    float fAmp = 0.3f * m_unk15C * fFrac;
+                    float fTwo = 2.0f * fAmp;
+                    float fNeg = -fAmp;
+                    pNode[0] = pNode[0] + (fNeg + (fTwo * ((float)rand() / 2147483648.0f)));
+                    pNode[1] = pNode[1] + (fNeg + (fTwo * ((float)rand() / 2147483648.0f)));
+                    pNode[2] = pNode[2] + (fNeg + (fTwo * ((float)rand() / 2147483648.0f)));
+                }
+                fA = fFrac * m_unk148;
+                fB = 0.75f * m_unk158;
+                m_unkD0 = (m_unkD0 * 0x343FD) + 0x269EC3;
+                fFr = fA - (float)(int)fA;
+                if (fFr <= 0.5f) {
+                    float fLo = m_unk134;
+                    fLerp = fLo + (2.0f * (fFr * (m_unk138 - fLo)));
+                } else {
+                    float fHi = m_unk138;
+                    fLerp = fHi + (2.0f * ((fFr - 0.5f) * (m_unk13C - fHi)));
+                }
+                pNode[3] = fLerp;
+                pNode[3] = pNode[3] * (1.0f + (-fB + (2.0f * fB * (0.000030517578f * (float)(((int)m_unkD0 >> 0x10) & 0x7FFF)))));
+                if (m_unk19 != 0) {
+                    float fK = 30.0f * *(float *)&m_unk2C;
+                    int nA;
+                    int nB;
+                    float fS;
+                    float fT6;
+                    float fT7;
+                    float fT6n;
+                    float fAng;
+                    float fR;
+                    float fR2;
+                    float fSin;
+                    m_unkD0 = (m_unkD0 * 0x343FD) + 0x269EC3;
+                    nA = m_unkD0;
+                    m_unkD0 = (nA * 0x343FD) + 0x269EC3;
+                    nB = m_unkD0;
+                    fS = 0.001f + (0.0139999995f * *(float *)&m_unk28);
+                    fT6 = 0.2f * fS;
+                    fT7 = 2.0f * fT6;
+                    fT6n = -fT6;
+                    m_unkD0 = (nB * 0x343FD) + 0x269EC3;
+                    fAng = 180.0f * (((float)((int)(fStep * (fK + ((0.5f * fK - fK) * (0.000030517578f * (float)((((unsigned int)nA) >> 0x10) & 0x7FFF))))) % 360) / 180.0f) - 1.0f);
+                    fR = fS + (fT6n + (fT7 * (0.000030517578f * (float)((((unsigned int)nB) >> 0x10) & 0x7FFF))));
+                    fR2 = fS + (fT6n + (fT7 * (0.000030517578f * (float)(((int)m_unkD0 >> 0x10) & 0x7FFF))));
+                    fSin = FastMath_Sin180(fAng);
+                    pNode[4] = fR * FastMath_Cos180(fAng);
+                    pNode[5] = fR2 * fSin;
+                } else {
+                    float fC = fFrac * m_unk14C;
+                    float fFr2 = fC - (float)(int)fC;
+                    if (fFr2 <= 0.5f) {
+                        vec[0] = m_unk100 - m_unkF0;
+                        vec[1] = m_unk104 - m_unkF4;
+                        vec[2] = m_unk108 - m_unkF8;
+                        sceVu0ScaleVectorXYZ(vec, vec, 2.0f * fFr2);
+                        vec[0] += m_unkF0;
+                        vec[1] += m_unkF4;
+                        fZ = vec[2] + m_unkF8;
+                    } else {
+                        vec[0] = m_unk110 - m_unk100;
+                        vec[1] = m_unk114 - m_unk104;
+                        vec[2] = m_unk118 - m_unk108;
+                        sceVu0ScaleVectorXYZ(vec, vec, 2.0f * (fFr2 - 0.5f));
+                        vec[0] += m_unk100;
+                        vec[1] += m_unk104;
+                        fZ = vec[2] + m_unk108;
+                    }
+                    vec[2] = fZ;
+                    pNode[4] = TrailClamp(vec[0], 255.0f);
+                    pNode[5] = TrailClamp(vec[1], 255.0f);
+                    pNode[6] = TrailClamp(vec[2], 255.0f);
+                }
+                {
+                    float fD = fFrac * m_unk150;
+                    float fFr3 = fD - (float)(int)fD;
+                    float fV;
+                    if (fFr3 <= 0.5f) {
+                        float fLo = m_unkFC;
+                        fV = ((m_unk10C - fLo) * (2.0f * fFr3)) + fLo;
+                    } else {
+                        float fHi = m_unk10C;
+                        fV = ((m_unk11C - fHi) * (2.0f * (fFr3 - 0.5f))) + fHi;
+                    }
+                    pNode[7] = TrailClamp(fV, 128.0f);
+                }
+            }
+            nIdx -= 1;
+            nLeft -= 1;
+            if (nIdx < 0) {
+                nIdx = (int)m_unk04 - 1;
+            }
+            fStep += 1.0f;
+        }
+    }
+}
 // FUNCTION: 0x001C5F10 Start__14PParticleTrailFv
 void PParticleTrail::Start() {
     m_unk15 = 1;

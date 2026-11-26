@@ -60,7 +60,7 @@ public:
     float m_unk150;             // 0x150
     float m_unk154;             // 0x154
     float m_unk158;             // 0x158
-    char _pad15C[0x04];         // 0x15C
+    float m_unk15C;             // 0x15C
     unsigned char m_unk160;     // 0x160 nonzero selects the 0x10-byte buffer layout
     char _pad161[0x1F];         // 0x161
     void *m_unk180;             // 0x180 owned buffer, released by the destructor
