@@ -603,45 +603,33 @@ void ClockworkSoulsucker::DeleteTimers() {
     m_unk244 = 0;
 }
 
-// DRAFT: 0x00205220 FaceHit__19ClockworkSoulsuckerFv
-// note: 42 lines differ; original E-block is an out-of-line beq, ours inline bne; chain order and tail s0 load differ. Tried: early-return vs single exit, chain orders (E-first 42, 0x82000007-first 43), cached physics pointer (42).
+// FUNCTION: 0x00205220 FaceHit__19ClockworkSoulsuckerFv
 void ClockworkSoulsucker::FaceHit() {
-    float vec[4];
-    void *pMath;
-    float *pVec;
-    float fY;
-    int nMode;
-
-    pMath = *(void **)((char *)mpEntMgr__15EntityBaseClass + 0x505C);
-    GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(pMath, vec);
-    if (*(int *)((char *)pMath + 0x3C) != 0) {
-        pVec = (float *)(*(int *)((char *)pMath + 0x3C) + 0x90);
-    } else {
-        pVec = (float *)((char *)pMath + 0x1A0);
+    float vFwd[4];
+    EntityBaseClass *pPlayer = *(EntityBaseClass **)((char *)mpEntMgr__15EntityBaseClass + 0x505C);
+    GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(pPlayer, &vFwd);
+    char *pSrc = *(char **)((char *)pPlayer + 0x3C);
+    pSrc = pSrc ? pSrc + 0x90 : (char *)pPlayer + 0x1A0;
+    float fDelta = *(float *)(pSrc + 4);
+    int nState = *(int *)((char *)*(EntityBaseClass **)((char *)mpEntMgr__15EntityBaseClass + 0x505C) + 0x154);
+    switch (nState) {
+    case 0x82000007:
+        fDelta = fDelta - 150.0f;
+        break;
+    case 0x8200000E:
+        fDelta = fDelta - (-150.0f);
+        break;
+    case 0x82000010:
+        return;
+    default:
+        fDelta = fDelta - 180.0f;
+        break;
     }
-    fY = pVec[1];
-    nMode = *(int *)((char *)*(void **)((char *)mpEntMgr__15EntityBaseClass + 0x505C) + 0x154);
-    if (nMode != 0x82000010) {
-        if (nMode == 0x8200000E) {
-            fY = fY - (-150.0f);
-        } else if (nMode == 0x82000007) {
-            fY = fY - 150.0f;
-        } else {
-            fY = fY - 180.0f;
-        }
-        if (m_unk3C != 0) {
-            pVec = (float *)(m_unk3C + 0x90);
-        } else {
-            pVec = (float *)((char *)this + 0x1A0);
-        }
-        pVec[1] = fY;
-        if (m_unk3C != 0) {
-            pVec = (float *)(m_unk3C + 0x90);
-        } else {
-            pVec = (float *)((char *)this + 0x1A0);
-        }
-        *(float *)((char *)m_unk38 + 0x11C) = Round180__Ff(pVec[1]);
-    }
+    char *pDst = m_unk3C ? (char *)m_unk3C + 0x90 : (char *)this + 0x1A0;
+    *(float *)(pDst + 4) = fDelta;
+    char *pDst2 = m_unk3C ? (char *)m_unk3C + 0x90 : (char *)this + 0x1A0;
+    char *pObj = (char *)m_unk38;
+    *(float *)(pObj + 0x11C) = Round180__Ff(*(float *)(pDst2 + 4));
 }
 
 // FUNCTION: 0x00205330 GetTarget__19ClockworkSoulsuckerFv

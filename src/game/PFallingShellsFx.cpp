@@ -129,6 +129,11 @@ void PFallingShellsFx::ModifyPosition(PMat4 *pMat) {
     SetDirection(dir);
 }
 
+// FUNCTION: 0x0020CF30 StopShells__16PFallingShellsFxFv
+void PFallingShellsFx::StopShells() {
+    m_unk18 = 0;
+}
+
 // FUNCTION: 0x0020CF40 SetDirection__16PFallingShellsFxFPf
 void PFallingShellsFx::SetDirection(float *pDir) {
     float mat[4][4];

@@ -8,6 +8,7 @@ class PFrustrum;
 
 class PParticleSystem {
 public:
+    void Stop();
     PParticleSystem();
     // Declared so derived constructors spill `this` to the stack and derived
     // destructors call it implicitly, as the original code does.

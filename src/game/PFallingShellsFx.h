@@ -11,6 +11,7 @@ class PMat4;
 // shells of 0x70 bytes each; the flag byte of shell N is at 0x1B2 + N * 0x70.
 class PFallingShellsFx : public PParticleSystem {
 public:
+    void StopShells();
     PFallingShellsFx();
     int FindFreeShell();
     void SpawnShell();

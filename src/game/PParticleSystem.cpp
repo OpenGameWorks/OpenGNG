@@ -22,6 +22,11 @@ extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
 
+// FUNCTION: 0x001B4A80 Stop__15PParticleSystemFv
+void PParticleSystem::Stop() {
+    m_unk18 = 0;
+}
+
 // FUNCTION: 0x001B4A90 UpdateLoopDelay__15PParticleSystemFf
 void PParticleSystem::UpdateLoopDelay(float fDelta) {
     if (m_unkB4 > 0.0f) {
