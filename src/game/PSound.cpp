@@ -44,6 +44,10 @@ extern signed char fst_bCalledByDebug;
 extern "C" void FlushIOPCommand(int, int, int);
 extern "C" void SOUND_CopyIOPBuffer();
 extern "C" void ProcessAmbientChannels__6PSoundFv(PSound *);
+// TODO(header): foreign declarations
+extern "C" int CheckAllChannelsMatch__6PSoundFv(PSound *pThis);
+extern "C" int CheckOneChannelMatch__6PSoundFPQ26PSound19AmbientChannelState(PSound *pThis, void *pState);
+extern "C" void FadeMsecFloatUpdate__14PFadeMsecFloatFUi(void *pThis, unsigned int nArg);
 extern "C" void PlayEffect__6PSoundFUiUi(PSound *, unsigned int, unsigned int);
 extern "C" void SOUND_GetStatusPatient();
 extern "C" void SOUND_ResumeMultipleSounds(unsigned int, unsigned int);
@@ -1301,6 +1305,250 @@ int PSound::ProcessMusic() {
         }
     }
     return 0;
+}
+
+// DRAFT: 0x001A6450 ProcessAmbientChannels__6PSoundFv
+// note: first draft from m2c structure; not yet compared (asm uses a 0x80+ frame and hoisted channel end)
+
+int PSound::ProcessAmbientChannels() {
+    AmbientChannelState *s;
+    AmbientChannelState *s2;
+    AmbientChannelState *pChEnd;
+    AmbientEntry *e;
+    AmbientEntry *eHead;
+    AmbientEntry *eNext;
+    AmbientEntry *eA;
+    AmbientEntry *eB;
+    AmbientEntry *eSel;
+    AmbientEntry *eTmp;
+    unsigned int i;
+    unsigned int nIdx;
+    unsigned int nCnt;
+    unsigned int nCur;
+    unsigned int nLvl;
+    unsigned int nAux;
+    int k;
+    int nHit;
+    int nBest;
+    int nDelta;
+    float fA;
+    float fB;
+    float fC;
+    float fD;
+    float fE;
+    unsigned int spF8;
+    unsigned int spFC;
+    float spF0;
+    float spF4;
+    float spE0;
+    int nState;
+
+    pChEnd = (AmbientChannelState *)((char *)this + 0xF8 + (m_unkE4 << 5));
+    if (CheckAllChannelsMatch__6PSoundFv(this) < 0) {
+        goto fail;
+    }
+
+    i = m_unk2E28;
+    s = (AmbientChannelState *)&m_unkF8[0];
+    while (m_unk2E2C >= i) {
+        if ((unsigned int)s->m_unk00 >= 0x3FFD) {
+            if (s->m_unk08 != 0) {
+                ((s->m_unk08 == 0) ? (void)0 : CdsAssert("PSound.cpp", 0x19A9, "!pState2->mpAmbientEntryHead"));
+            }
+            if (s->m_unk1C != 0) {
+                ((s->m_unk1C == 0) ? (void)0 : CdsAssert("PSound.cpp", 0x19AA, "!pState2->mpAmbientChannelStateNext"));
+            }
+            nIdx = m_unk2E28;
+            s2 = (AmbientChannelState *)&m_unkF8[0];
+            while (m_unk2E2C >= nIdx) {
+                ((s != (AmbientChannelState *)s2->m_unk1C) ? (void)0 : CdsAssert("PSound.cpp", 0x19B0, "0"));
+                nIdx += 1;
+                s2 = (AmbientChannelState *)((char *)s2 + 0x20);
+            }
+        }
+        i += 1;
+        s = (AmbientChannelState *)((char *)s + 0x20);
+    }
+
+    if (CheckAllChannelsMatch__6PSoundFv(this) < 0) {
+        goto fail;
+    }
+
+    e = (AmbientEntry *)((char *)this + 0x380);
+    nCur = 0;
+    do {
+        if (e->m_unk10 != 0x3FFF) {
+            if (e->m_unk48 != 0) {
+                nLvl = ((SpotInfo *)e->m_unk48)->m_unk10;
+                if (nLvl >= 0x65U) {
+                    nLvl = 0x64;
+                }
+            } else {
+                nLvl = 0x64;
+                ((e->m_unk48 != 0) ? (void)0 : CdsAssert("PSound.cpp", 0x19D3, "0"));
+            }
+            if ((*((unsigned char *)e + 0x38) != 0) && (FadeMsecFloatUpdate__14PFadeMsecFloatFUi((void *)((char *)e + 0x20), m_unk6C), (*((unsigned char *)e + 0x38) == 0)) && (e->m_unk44 == 1)) {
+                StopAmbientEntry(e, 0);
+            } else {
+                if (e->m_unk14 & 0x200) {
+                    *(float *)&e->m_unk5C = 0.0f;
+                    nDelta = (nLvl * 10 * m_unk48) / 1000;
+                    *(float *)&e->m_unk64 = (float)nDelta;
+                    *(float *)&e->m_unk60 = (float)nDelta;
+                } else {
+                    nAux = (nLvl * 10 * m_unk44) / 1000;
+                    if (*((unsigned char *)e + 0x38) != 0) {
+                        fA = (float)nAux * *(float *)((char *)e + 0x20);
+                    }
+                    if (GetOriginatorPos(&spE0, e->m_unk14 & 0xFFFF, e->m_unk1C, e->m_unk3C) >= 0) {
+                        CalculatePositionalVolume(*(float *)&e->m_unk5C, *(float *)&e->m_unk60, *(float *)&e->m_unk64, &spE0, e->m_unk14 & 0xFFFF, *((unsigned char *)e + 0x38) != 0, e->m_unk1C, (SpotInfo *)e->m_unk48, e->m_unk3C, e->m_unk40);
+                        if (e->m_unk16 & 3) {
+                            *(float *)&e->m_unk60 = 0.0f;
+                            *(float *)&e->m_unk64 = 0.0f;
+                        }
+                    } else {
+                        StopAmbientEntry(e, 0);
+                    }
+                }
+            }
+        }
+        nCur += 1;
+        e = (AmbientEntry *)((char *)e + 0x70);
+    } while (nCur < 0x47);
+
+    i = m_unk2E28;
+    s = (AmbientChannelState *)&m_unkF8[0];
+    while (m_unk2E2C >= i) {
+        if (SOUND_SPUKeyStatus[i] != 3 && SOUND_SPUKeyStatus[i] == 0) {
+            if (s->m_unk00 != 0x3FFF) {
+                nState = 0;
+                if (s->m_unk00 == 0x3FFE) {
+                    nState = 1;
+                }
+                if (nState != 0) {
+                    AmbientFadeToFree(s);
+                    s2 = (AmbientChannelState *)&m_unkF8[0];
+                    *(int *)((char *)this + 0xEC) -= 1;
+                    *(int *)((char *)this + 0xF0) += 1;
+                    if ((char *)s2 < (char *)pChEnd) {
+                        do {
+                            ((s2 != (AmbientChannelState *)s2->m_unk1C) ? (void)0 : CdsAssert("PSound.cpp", 0x1A2A, "0"));
+                            s2 = (AmbientChannelState *)((char *)s2 + 0x20);
+                        } while ((char *)s2 < (char *)pChEnd);
+                    }
+                }
+            }
+        }
+        i += 1;
+        s = (AmbientChannelState *)((char *)s + 0x20);
+    }
+
+    if (CheckAllChannelsMatch__6PSoundFv(this) < 0) {
+        goto fail;
+    }
+
+    s = (AmbientChannelState *)&m_unkF8[0];
+    while ((char *)s < (char *)pChEnd) {
+        if ((unsigned int)s->m_unk00 >= 0x3FFD) {
+            goto next;
+        }
+        eHead = (AmbientEntry *)s->m_unk08;
+        if (eHead == 0) {
+            goto next;
+        }
+        VerifyAmbientEntryList(eHead);
+        if (CheckOneChannelMatch__6PSoundFPQ26PSound19AmbientChannelState(this, s) < 0) {
+            goto fail;
+        }
+        nCnt = s->m_unk14;
+        nCur = s->m_unk10;
+        if (nCnt == 0) {
+            eSel = eHead;
+            eA = eHead;
+            k = 0;
+            if (eHead != 0) {
+                do {
+                    eNext = eA->m_unk50;
+                    if (eNext != 0) {
+                        if (!(eA->m_unk5C <= eNext->m_unk5C)) {
+                            if (eA == eHead) {
+                                eSel = eNext;
+                            }
+                            if (k == (int)(nCur - 1)) {
+                                nHit = eNext->m_unk18;
+                                eNext->m_unk18 = eA->m_unk18;
+                                eA->m_unk18 = nHit;
+                                eNext->m_unk14 |= 8;
+                                *((char *)eA + 0x6C) = 0;
+                            }
+                            SwapLinksAmbientEntry(eA, eNext);
+                        }
+                        eA = eNext;
+                        k += 1;
+                    }
+                } while (eNext != 0);
+            }
+            s->m_unk08 = (int)eSel;
+            eHead = eSel;
+        } else {
+            k = 0;
+            while (k < (int)nCnt) {
+                eB = eHead;
+                eA = eHead;
+                nBest = 0;
+                while (eA != 0 && nBest < (int)(nCur - 1)) {
+                    eNext = eB->m_unk50;
+                    if (eNext != 0) {
+                        if (!(eB->m_unk5C <= eNext->m_unk5C)) {
+                            if (eB == eHead) {
+                                eA = eNext;
+                            }
+                            SwapLinksAmbientEntry(eB, eNext);
+                            eNext = eB;
+                        }
+                        eB = eNext;
+                        nBest += 1;
+                    } else {
+                        break;
+                    }
+                }
+                s->m_unk08 = (int)eA;
+                eHead = eA;
+                k += 1;
+            }
+        }
+        s->m_unk08 = (int)eHead;
+        VerifyAmbientEntryList(eHead);
+        spF0 = 0.0f;
+        nAux = 1;
+        spF4 = 0.0f;
+        nBest = 0;
+        nHit = 0;
+        nDelta = 0;
+        if ((int)s->m_unk10 == 0) {
+            CdsAssert("PSound.cpp", 0x1AE2, "uNActiveChannelsInChain >= 1");
+        }
+        eA = eHead;
+        while (eA != 0 && nHit == 0) {
+            eB = eA;
+            break;
+        }
+        e = eHead;
+        while (e != 0) {
+            e = e->m_unk50;
+        }
+        VerifyAmbientEntryList(s->m_unk08 != 0 ? (AmbientEntry *)s->m_unk08 : 0);
+        goto next;
+next:
+        s = (AmbientChannelState *)((char *)s + 0x20);
+    }
+
+    if (CheckAllChannelsMatch__6PSoundFv(this) >= 0) {
+        return 0;
+    }
+fail:
+    ErrorRecovery();
+    return -1;
 }
 
 // DRAFT: 0x001A6D40 ProcessSFXChannels__6PSoundFv

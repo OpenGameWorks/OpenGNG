@@ -10,6 +10,8 @@ extern "C" void EnableOneRenderPassOnly__6PMNodeFi(void *pNode, int nPass);
 extern unsigned char gEng[0x1A000];
 extern PResourceManager *mpResMgr__15EntityBaseClass;
 extern char mMaximoData__6Player[380];
+extern float HAMMER_REBOUND_TIME;
+extern float mHitPos__15EntityBaseClass[4];
 extern "C" float sqrtf(float x);
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void *__dt__6ShadowFv(void *pThis, short nFlag);
@@ -651,8 +653,7 @@ void Player::InitAttachableJoints() {
     m_pFreeJoints[4].m_unk00 = 0;
 }
 
-// DRAFT: 0x00159790 AnimationViewer__6PlayerFi
-// note: 4 words differ: the four `addiu $s6,$zero,1` are `daddiu` in the original; pointer, 1LL, bool casts tried, bool flag local (126 lines, frame 0x90 vs 0x80), no gain
+// FUNCTION: 0x00159790 AnimationViewer__6PlayerFi
 int Player::AnimationViewer(int arg0) {
     int nIndex = 0;
     int nOffset = 0;
@@ -667,7 +668,7 @@ int Player::AnimationViewer(int arg0) {
     char *pIdBase = mMaximoData__6Player + 8;
     if (LoadMesh__15EntityBaseClassFUibb(this, *(unsigned int *)(pIdBase + nIndex * 0x4C), false, true)) {
         PMNode *pNode = (PMNode *)m_unk3C;
-        PMNode *pBuilt = 0;
+        bool bBuilt = false;
         PMNode *pEntry = pNode->Find(0xB5714B5AU);
         if (pEntry) {
             PMNode *pRes = mpResMgr__15EntityBaseClass->GetResource(0x81000001, true);
@@ -675,19 +676,19 @@ int Player::AnimationViewer(int arg0) {
             pEntry->m_unk10 = pMesh;
             pEntry->m_unk3E &= 0xEF;
             if (pMesh && ((unsigned char *)pMesh)[0xC]) pEntry->m_unk3E |= 0x10;
-            pBuilt = (PMNode *)1;
+            bBuilt = true;
         }
         pEntry = pNode->Find(0x6499DC24U);
         if (pEntry) {
-            pBuilt = mpResMgr__15EntityBaseClass->GetResource(0x81000002, true);
-            if (!pBuilt) CdsAssert__FPciPc("Player.cpp", 0x2189, "pShield");
-            void *pMesh = pBuilt->GetFirstMesh();
+            PMNode *pShield = mpResMgr__15EntityBaseClass->GetResource(0x81000002, true);
+            if (!pShield) CdsAssert__FPciPc("Player.cpp", 0x2189, "pShield");
+            void *pMesh = pShield->GetFirstMesh();
             pEntry->m_unk10 = pMesh;
             pEntry->m_unk3E &= 0xEF;
             if (pMesh && ((unsigned char *)pMesh)[0xC]) pEntry->m_unk3E |= 0x10;
-            pBuilt = (PMNode *)1;
+            bBuilt = true;
         }
-        if (pBuilt) BuildDispList__9PSkeletonFv(pNode);
+        if (bBuilt) BuildDispList__9PSkeletonFv(pNode);
     }
     SetAbilityAction__6PlayerFP9PSkeletonii(m_unk3C, nIndex, arg0 - nSum);
     int nTotal = 0;

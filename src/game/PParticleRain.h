@@ -17,26 +17,33 @@ struct PRainQuadrant {
     char _pad0C[0x44];
 };
 
+struct tagParticleRainParams;
+struct PFlashScreen;
+
 class PParticleRain : public PParticleSystem {
 public:
     PParticleRain();
     ~PParticleRain();
 
+    void AnimateQuadrant(unsigned int nIndex);
     void RenderQuadrant(unsigned int nIndex);
     void InitParticles();
     void SetNumRainParticles(unsigned int nNum);
     void Render();
+    void Animate(float fDt);
+    int Create(tagParticleRainParams *arg0, float (*arg1)[4], float (*arg2)[4], PFlashScreen *arg3);
     void SetLightningDensity(float fDensity);
     void SetDensity(float fDensity, bool bFlag);
     void SetCameraPosRot(float (*arg0)[4], float (*arg1)[4]);
     void FrustrumTest(PFrustrum *, float *, float, float);
 
-    char m_unkE0[0x20];         // 0x0E0 zeroed by the constructor
+    char m_unkE0[0x1C];         // 0x0E0 velocity vector copied from the params; zeroed by the constructor
+    float m_unkFC;              // 0x0FC scale value copied into the box extents by Create
     char m_unk100[0x140];       // 0x100..0x240 zeroed by the constructor; quadrant entries from 0x140
     unsigned int m_unk240;      // 0x240 quadrant index drawn first by Render
     unsigned int m_unk244;      // 0x244 quadrant index drawn second by Render
     void *m_unk248;             // 0x248 particle buffer, 0x20-byte elements
-    char _pad24C[4];            // 0x24C
+    int m_unk24C;               // 0x24C seed copied into the LCG state (m_unkD0) by Animate
     float m_unk250;             // 0x250 density, current value; SetDensity
     float m_unk254;             // 0x254 density, target value; SetDensity
     float m_unk258;             // 0x258 density step per frame; SetDensity

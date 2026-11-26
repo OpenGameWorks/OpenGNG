@@ -187,6 +187,7 @@ public:
     void FadeAmbientChannel(AmbientChannelState *pState, unsigned int nChan);
     void AdjustEffectVolumes(unsigned int &nOutA, unsigned int &nOutB, float &fInA, float &fInB);
     int ProcessMusic();
+    int ProcessAmbientChannels();
     int PauseAllAmbientSounds();
     int ResumeAllAmbientSounds();
     int StopAllSounds();
