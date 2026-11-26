@@ -40,6 +40,11 @@ extern "C" AnimTriggerOnDeath *__dt__18AnimTriggerOnDeathFv(AnimTriggerOnDeath *
     return pThis;
 }
 
+// FUNCTION: 0x002148F0 GetClassName__18AnimTriggerOnDeathFv
+const char *AnimTriggerOnDeath::GetClassName() {
+    return "AnimTriggerOnDeath";
+}
+
 // FUNCTION: 0x00214900 SetEditableVars__18AnimTriggerOnDeathFPc
 void AnimTriggerOnDeath::SetEditableVars(char *pVars) {
     memcpy(&m_unk1B0, pVars, 0x18);

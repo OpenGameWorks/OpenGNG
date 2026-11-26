@@ -1,6 +1,7 @@
 #include "types.h"
 #include "Fire.h"
 #include "TimerAPI.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 class EntityBaseClass;
@@ -26,6 +27,11 @@ extern "C" void ResetCollisions__15EntityBaseClassFv(void *pThis);
 Fire::~Fire() {
     m_unk0 = __vt__4Fire;
     __dt__15EntityBaseClassFv(this, 0);
+}
+
+// FUNCTION: 0x001B3FE0 SetEditableVars__4FireFPc
+void Fire::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0xC);
 }
 
 // FUNCTION: 0x001B3FF0 OnAttackEvent__4FireFP15EntityBaseClassi

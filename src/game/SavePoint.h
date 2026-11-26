@@ -13,6 +13,8 @@ public:
     const char *GetClassName();
     void SetEditableVars(char *pSrc);
     void Execute();
+    int NeedsToBeWoken();
+    int GetWokenVarPos();
 
     float m_unk190[4];          // 0x190 position passed to SetHolyGround
     char _pad1A0[0x4];

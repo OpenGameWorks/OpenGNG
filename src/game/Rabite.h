@@ -15,6 +15,13 @@ public:
     int OnHitEvent(EntityBaseClass *pAttacker, int nDamage, unsigned int nA, unsigned int nB);
     void SetupHopToPoint();
     void Execute();
+    int GetHealth();
+    const char *GetClassName();
+    int GetTallyType();
+    int GetArenaWaveID();
+    bool IsArenaApparition();
+    int NeedsToBeWoken();
+    int GetWokenVarPos();
 
     void *m_unk0;                   // 0x000 vtable pointer
     char _pad004[0x20 - 0x04];

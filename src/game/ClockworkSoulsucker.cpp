@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "ClockworkSoulsucker.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 class PMNode {
@@ -183,6 +184,46 @@ extern "C" float RandomFloatRange__7MathAPIFff(float fMin, float fMax);
 extern "C" void *TriggerBGAnim__15EntityBaseClassFUiibUi(void *pThis, unsigned int nAnim, int nLoops, bool bFlag, unsigned int nArg);
 extern "C" void SetShellStartAndDest__8ZinShellFRA4_fRA4_f(void *pThis, float (*pStart)[4], float (*pDest)[4]);
 extern "C" void InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(void *pThis, int nType, void *pA, void *pB, void *pC);
+
+// FUNCTION: 0x00204230 GetHealth__19ClockworkSoulsuckerFv
+int ClockworkSoulsucker::GetHealth() {
+    return m_unk22C;
+}
+
+// FUNCTION: 0x00204240 GetClassName__19ClockworkSoulsuckerFv
+const char *ClockworkSoulsucker::GetClassName() {
+    return "ClockworkSoulsucker";
+}
+
+// FUNCTION: 0x00204250 GetTallyType__19ClockworkSoulsuckerFv
+int ClockworkSoulsucker::GetTallyType() {
+    return 1;
+}
+
+// FUNCTION: 0x00204260 GetArenaWaveID__19ClockworkSoulsuckerFv
+int ClockworkSoulsucker::GetArenaWaveID() {
+    return m_unk1D8;
+}
+
+// FUNCTION: 0x00204270 IsArenaApparition__19ClockworkSoulsuckerFv
+bool ClockworkSoulsucker::IsArenaApparition() {
+    return m_unk1D8 ? true : false;
+}
+
+// FUNCTION: 0x00204280 NeedsToBeWoken__19ClockworkSoulsuckerFv
+int ClockworkSoulsucker::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x1DC);
+}
+
+// FUNCTION: 0x00204290 GetWokenVarPos__19ClockworkSoulsuckerFv
+int ClockworkSoulsucker::GetWokenVarPos() {
+    return 5;
+}
+
+// FUNCTION: 0x002042A0 SetInnocentInstanceID__19ClockworkSoulsuckerFUi
+void ClockworkSoulsucker::SetInnocentInstanceID(unsigned int value) {
+    m_unk234 = value;
+}
 
 // FUNCTION: 0x002042B0 AdjustPhysicsForEweedCheck__19ClockworkSoulsuckerFv
 void ClockworkSoulsucker::AdjustPhysicsForEweedCheck() {
@@ -746,6 +787,11 @@ void ClockworkSoulsucker::SetDefaultVars() {
     m_unk1EC = 0;
     m_unk1F4 = 0;
     m_unk1D8 = 0;
+}
+
+// FUNCTION: 0x002056E0 SetEditableVars__19ClockworkSoulsuckerFPc
+void ClockworkSoulsucker::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x48);
 }
 
 // DRAFT: 0x002056F0 OnTimerEvent__19ClockworkSoulsuckerFUi

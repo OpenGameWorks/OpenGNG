@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "CamCylinder.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern unsigned char gEng[0x1A000];
@@ -23,6 +24,11 @@ public:
 CamCylinder::~CamCylinder() {
 }
 
+// FUNCTION: 0x001A3AC0 GetClassName__11CamCylinderFv
+const char *CamCylinder::GetClassName() {
+    return "Camera Collision Cylinder";
+}
+
 // FUNCTION: 0x001A3AD0 SetCylinderParams__11CamCylinderFfffff
 void CamCylinder::SetCylinderParams(float fA, float fB, float fC, float fD, float fE) {
     m_unk1B0 = fA;
@@ -35,6 +41,11 @@ void CamCylinder::SetCylinderParams(float fA, float fB, float fC, float fD, floa
     m_unk1D8 = m_unk1B8;
     m_unk1E0 = m_unk1BC;
     m_unk1E4 = m_unk1C0;
+}
+
+// FUNCTION: 0x001A3B10 SetEditableVars__11CamCylinderFPc
+void CamCylinder::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x14);
 }
 
 // DRAFT: 0x001A3B20 Execute__11CamCylinderFv

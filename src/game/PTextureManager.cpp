@@ -1232,3 +1232,8 @@ PTextureManager::PTextureManager() {
     Allocate__6PArrayFUi(&m_nRenderedCount, 0x40);
     m_unk260 = 1;
 }
+
+// FUNCTION: 0x0018C7F0 InitProcedural__8PTextureFv
+int PTexture::InitProcedural() {
+    return 0;
+}

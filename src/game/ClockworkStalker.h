@@ -29,6 +29,15 @@ public:
     void FaceHit();
     int OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3);
     void Execute();
+    int GetHealth();
+    const char *GetClassName();
+    int GetTallyType();
+    int GetArenaWaveID();
+    bool IsArenaApparition();
+    int NeedsToBeWoken();
+    int GetWokenVarPos();
+    void SetInnocentInstanceID(unsigned int);
+    void OnAttackEvent(EntityBaseClass *, int);
 
     char _pad000[4];
     unsigned int m_unk4;            // 0x004 timer argument

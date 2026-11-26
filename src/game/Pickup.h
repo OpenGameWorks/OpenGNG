@@ -24,6 +24,9 @@ public:
     void Execute();
     static signed char GetVarType(int arg0);
     static void *GetPickupData(int arg0);
+    int GetTallyType();
+    int NeedsToBeWoken();
+    int GetWokenVarPos();
 
     void *m_unk0;                   // 0x000 vtable pointer (inherited from EntityBaseClass)
     char _pad004[0x18 - 0x04];

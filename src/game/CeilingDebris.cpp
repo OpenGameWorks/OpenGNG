@@ -1,5 +1,6 @@
 #include "types.h"
 #include "CeilingDebris.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern "C" void *InstanceIsValid__15EntityBaseClassFUi(void *pThis, unsigned int nId);
@@ -14,6 +15,16 @@ extern unsigned int DeadseaCeilingDebris_FallSeq[16];
 
 // FUNCTION: 0x0020F7C0 __dt__13CeilingDebrisFv
 CeilingDebris::~CeilingDebris() {
+}
+
+// FUNCTION: 0x0020F820 GetClassName__13CeilingDebrisFv
+const char *CeilingDebris::GetClassName() {
+    return "CeilingDebris";
+}
+
+// FUNCTION: 0x0020F830 SetEditableVars__13CeilingDebrisFPc
+void CeilingDebris::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x8);
 }
 
 // DRAFT: 0x0020F840 Execute__13CeilingDebrisFv

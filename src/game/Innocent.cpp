@@ -108,6 +108,31 @@ extern "C" void *__dt__8InnocentFv(void *pThis, short nFlag) {
     return pThis;
 }
 
+// FUNCTION: 0x0019F2C0 GetHealth__8InnocentFv
+int Innocent::GetHealth() {
+    return m_unk1B8;
+}
+
+// FUNCTION: 0x0019F2D0 GetClassName__8InnocentFv
+const char *Innocent::GetClassName() {
+    return "Innocent";
+}
+
+// FUNCTION: 0x0019F2E0 GetTallyType__8InnocentFv
+int Innocent::GetTallyType() {
+    return 3;
+}
+
+// FUNCTION: 0x0019F2F0 NeedsToBeWoken__8InnocentFv
+int Innocent::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x200);
+}
+
+// FUNCTION: 0x0019F300 GetWokenVarPos__8InnocentFv
+int Innocent::GetWokenVarPos() {
+    return 14;
+}
+
 // FUNCTION: 0x0019F310 AnimationViewer__8InnocentFi
 int Innocent::AnimationViewer(int arg0) {
     SequenceViewer__15EntityBaseClassFPPUii(this, (unsigned int **)SequenceTable, arg0);

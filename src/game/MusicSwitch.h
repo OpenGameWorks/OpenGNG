@@ -10,6 +10,9 @@ public:
     MusicSwitch();
     virtual ~MusicSwitch();
     void Execute();
+    const char *GetClassName();
+    void OnHitEvent(EntityBaseClass *, int, unsigned int, unsigned int);
+    void SetEditableVars(char *);
 
     char _pad190[0x20];
     float m_unk1B0;             // 0x1B0

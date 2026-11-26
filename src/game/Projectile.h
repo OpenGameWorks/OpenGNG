@@ -42,6 +42,7 @@ public:
     enum ProjectileType { PROJECTILE_TYPE_COUNT = 31 };
     void InitProjectile(ProjectileType nType, float (*pA)[4], float (*pB)[4], float (*pC)[4]);
     void Execute();
+    const char *GetClassName();
 
     void *m_unk0;                    // 0x000 vtable pointer
     char _pad004[0x1C];

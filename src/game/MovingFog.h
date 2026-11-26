@@ -12,6 +12,7 @@ public:
     const char *GetClassName();
     void SetEditableVars(char *pSrc);
     void Execute();
+    void OutputDebug();
 
     char _pad190[0x20];
     char m_unk1B0[0x44];        // 0x1B0 editable-vars block; SetEditableVars memcpys 0x44 bytes here

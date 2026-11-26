@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "CamBox.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern "C" void CdsAssert__FPciPc(char *file, int line, char *expr);
@@ -99,6 +100,11 @@ int CamBox::PointInsideTriggerArea(float (*pPoint)[4], float (*pOther)[4]) {
 }
 
 #define CAMBOX_PIT(pt, other) PointInsideTriggerArea((float (*)[4])(pt), (float (*)[4])(other))
+
+// FUNCTION: 0x0019C850 SetEditableVars__6CamBoxFPc
+void CamBox::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0xF4);
+}
 
 // DRAFT: 0x0019C860 Execute__6CamBoxFv
 // note: 61 differing words; case 5 constant 0x3F800000 reloaded into a3 for +0x7C in the original (draft reuses v0), arg setup hoisted above the neg.s stores, +0x81 if-form gives a bnez; 4 attempts this session (+0x81 if-form kept, others no gain)

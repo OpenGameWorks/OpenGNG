@@ -70,6 +70,11 @@ struct SpawnedEntityVirtView {
 LiftOperator::~LiftOperator() {
 }
 
+// FUNCTION: 0x0020FAD0 GetClassName__12LiftOperatorFv
+const char *LiftOperator::GetClassName() {
+    return "LiftOperator";
+}
+
 // FUNCTION: 0x0020FAE0 SpawnEnemy__12LiftOperatorFv
 void LiftOperator::SpawnEnemy() {
     int nState = *(int *)(gEng + 0x19A78);

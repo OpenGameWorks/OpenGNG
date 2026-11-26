@@ -21,6 +21,10 @@ public:
     void CheckGeneratedEnemies();
     void Execute();
     void GenerateEnemy();
+    int GetHealth();
+    int GetWokenVarPos();
+    const char *GetClassName();
+    void SetEditableVars(char *);
 
     char _pad000[4];
     unsigned int m_unk4;            // 0x004 timer argument

@@ -20,6 +20,7 @@ public:
     void Animate(float fStep);
     void Render();
     int Create(float fA, float *pA, float *pB, float fC, float fD, float fE);
+    void FrustrumTest(PFrustrum *, float *, float, float);
 
     float m_unkE0[4];           // 0x0E0 source vector read by ModifyPosition
     float m_unkF0[4];           // 0x0F0 vector transformed by ModifyPosition

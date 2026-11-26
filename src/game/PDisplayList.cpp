@@ -1103,6 +1103,10 @@ void PDisplayList::BeginFxLoop(unsigned int nTag) {
     }
 }
 
+// FUNCTION: 0x00183430 EndMesh__12PDisplayListFv
+void PDisplayList::EndMesh() {
+}
+
 // FUNCTION: 0x183440 SetVertexData__12PDisplayListFPA4_fii
 void PDisplayList::SetVertexData(float (*pVerts)[4], int nCount, int nFlags) {
     int nPacket = AllocEntries(nCount + 1);

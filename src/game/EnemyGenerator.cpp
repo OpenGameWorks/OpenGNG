@@ -1,5 +1,6 @@
 #include "types.h"
 #include "EnemyGenerator.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
@@ -63,6 +64,26 @@ extern "C" EnemyGenerator *__dt__14EnemyGeneratorFv(EnemyGenerator *pThis, short
         }
     }
     return pThis;
+}
+
+// FUNCTION: 0x0020DDF0 GetHealth__14EnemyGeneratorFv
+int EnemyGenerator::GetHealth() {
+    return 100;
+}
+
+// FUNCTION: 0x0020DE10 GetWokenVarPos__14EnemyGeneratorFv
+int EnemyGenerator::GetWokenVarPos() {
+    return 4;
+}
+
+// FUNCTION: 0x0020DE20 GetClassName__14EnemyGeneratorFv
+const char *EnemyGenerator::GetClassName() {
+    return "EnemyGenerator";
+}
+
+// FUNCTION: 0x0020DE30 SetEditableVars__14EnemyGeneratorFPc
+void EnemyGenerator::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1EC, pSrc, 0x18);
 }
 
 // FUNCTION: 0x0020DE40 OnTimerEvent__14EnemyGeneratorFUi

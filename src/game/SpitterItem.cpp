@@ -51,6 +51,11 @@ extern "C" SpitterItem *__dt__11SpitterItemFv(SpitterItem *pThis, short nFlag) {
     return pThis;
 }
 
+// FUNCTION: 0x001D94B0 GetClassName__11SpitterItemFv
+const char *SpitterItem::GetClassName() {
+    return "SpitterItem";
+}
+
 // FUNCTION: 0x001D94C0 SpitterItemBounceOff__11SpitterItemFv
 void SpitterItem::SpitterItemBounceOff() {
     u_long128 sp20 = *(u_long128 *)m_unk38;
@@ -82,6 +87,10 @@ int SpitterItem::GetNextPosition(float (&rOut)[4]) {
         }
     }
     return 0;
+}
+
+// FUNCTION: 0x001D9630 OnTimerEvent__11SpitterItemFUi
+void SpitterItem::OnTimerEvent(unsigned int) {
 }
 
 // FUNCTION: 0x001D9640 OnHitEvent__11SpitterItemFP15EntityBaseClassiUiUi

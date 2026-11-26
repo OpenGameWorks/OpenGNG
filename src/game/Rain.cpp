@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "Rain.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern unsigned char __vt__4Rain[];
@@ -11,6 +12,20 @@ extern "C" void SetLightningDensity__16PParticleManagerFf(void *pThis, float fDe
 extern "C" void DestroyRain__16PParticleManagerFv(void *pThis);
 
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Rain.cpp", line, #cond))
+
+// FUNCTION: 0x001CD4B0 OutputDebug__4RainFv
+void Rain::OutputDebug() {
+}
+
+// FUNCTION: 0x001CD4C0 GetClassName__4RainFv
+const char *Rain::GetClassName() {
+    return "Rain";
+}
+
+// FUNCTION: 0x001CD4D0 SetEditableVars__4RainFPc
+void Rain::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x8);
+}
 
 // DRAFT: 0x001CD4E0 Execute__4RainFv
 // note: size 0xC8 vs 0xD0; -1 create block is inline with bne, original has beq to an out-of-line block after a b to epilogue; tried empty-then, early return, return-then-create.

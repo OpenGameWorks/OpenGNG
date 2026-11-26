@@ -1,6 +1,7 @@
 #include "ClockworkFlyer.h"
 #include "MathAPI.h"
 #include "types.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern "C" float FastMath_Fabs__Ff(float f);
@@ -114,6 +115,54 @@ struct tagWaypointGroup {
     char _pad000[4];
     unsigned int nCount;
 };
+
+// FUNCTION: 0x001E8E30 GetHealth__14ClockworkFlyerFv
+int ClockworkFlyer::GetHealth() {
+    return m_unk284;
+}
+
+// FUNCTION: 0x001E8E40 OnStopAttack__14ClockworkFlyerFv
+void ClockworkFlyer::OnStopAttack() {
+}
+
+// FUNCTION: 0x001E8E50 OutputDebug__14ClockworkFlyerFv
+void ClockworkFlyer::OutputDebug() {
+}
+
+// FUNCTION: 0x001E8E60 GetClassName__14ClockworkFlyerFv
+const char *ClockworkFlyer::GetClassName() {
+    return "ClockworkFlyer";
+}
+
+// FUNCTION: 0x001E8E70 GetTallyType__14ClockworkFlyerFv
+int ClockworkFlyer::GetTallyType() {
+    return 1;
+}
+
+// FUNCTION: 0x001E8E80 GetArenaWaveID__14ClockworkFlyerFv
+int ClockworkFlyer::GetArenaWaveID() {
+    return m_unk1DC;
+}
+
+// FUNCTION: 0x001E8E90 IsArenaApparition__14ClockworkFlyerFv
+bool ClockworkFlyer::IsArenaApparition() {
+    return m_unk1DC ? true : false;
+}
+
+// FUNCTION: 0x001E8EA0 NeedsToBeWoken__14ClockworkFlyerFv
+int ClockworkFlyer::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x1E0);
+}
+
+// FUNCTION: 0x001E8EB0 GetWokenVarPos__14ClockworkFlyerFv
+int ClockworkFlyer::GetWokenVarPos() {
+    return 6;
+}
+
+// FUNCTION: 0x001E8EC0 SetInnocentInstanceID__14ClockworkFlyerFUi
+void ClockworkFlyer::SetInnocentInstanceID(unsigned int value) {
+    m_unk248 = (char *)value;
+}
 
 // FUNCTION: 0x001E8ED0 SetSpawnedFromEntity__14ClockworkFlyerFPfPfi
 void ClockworkFlyer::SetSpawnedFromEntity(float *pPos, float *pAlt, int nType) {
@@ -509,6 +558,15 @@ void ClockworkFlyer::SetDefaultVars() {
     m_unk200 = -1;
 }
 
+// FUNCTION: 0x001E9AD0 SetEditableVars__14ClockworkFlyerFPc
+void ClockworkFlyer::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x54);
+}
+
+// FUNCTION: 0x001E9AE0 OnSleepEvent__14ClockworkFlyerFv
+void ClockworkFlyer::OnSleepEvent() {
+}
+
 // FUNCTION: 0x001E9AF0 OnTimerEvent__14ClockworkFlyerFUi
 void ClockworkFlyer::OnTimerEvent(unsigned int nId) {
     if (nId == m_unk230) {
@@ -518,6 +576,10 @@ void ClockworkFlyer::OnTimerEvent(unsigned int nId) {
     } else if (nId == m_unk2A0) {
         m_unk2A0 = 0;
     }
+}
+
+// FUNCTION: 0x001E9B30 OnAttackEvent__14ClockworkFlyerFP15EntityBaseClassi
+void ClockworkFlyer::OnAttackEvent(EntityBaseClass *, int) {
 }
 
 // FUNCTION: 0x001E9B40 OnHitEvent__14ClockworkFlyerFP15EntityBaseClassiUiUi

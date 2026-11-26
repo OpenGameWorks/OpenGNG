@@ -1,5 +1,6 @@
 #include "types.h"
 #include "BlowingLeaves.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int eLoadClass, unsigned int nFlags);
@@ -12,6 +13,25 @@ extern "C" void Destroy__16PParticleManagerFUi(void *pThis, unsigned int hSystem
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" unsigned int CreateBlowingLeaves__16PParticleManagerFPfPfPfifb(void *pThis, float *pA, float *pB, float *pC, int nA, float fB, bool bC);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
+
+// FUNCTION: 0x001FCE40 OutputDebug__13BlowingLeavesFv
+void BlowingLeaves::OutputDebug() {
+}
+
+// FUNCTION: 0x001FCE50 GetClassName__13BlowingLeavesFv
+const char *BlowingLeaves::GetClassName() {
+    return "BlowingLeaves";
+}
+
+// FUNCTION: 0x001FCE60 NeedsToBeWoken__13BlowingLeavesFv
+int BlowingLeaves::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x1EC);
+}
+
+// FUNCTION: 0x001FCE70 SetEditableVars__13BlowingLeavesFPc
+void BlowingLeaves::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x40);
+}
 
 // FUNCTION: 0x001FCE80 Execute__13BlowingLeavesFv
 void BlowingLeaves::Execute() {

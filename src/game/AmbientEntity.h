@@ -7,6 +7,8 @@
 // EntityBaseClass occupies 0x000..0x18F; AmbientEntity adds its fields from 0x190 on.
 class AmbientEntity : public EntityBaseClass {
 public:
+    void OnTouchEvent(EntityBaseClass *);
+    void OnHitEvent(EntityBaseClass *, int, unsigned int, unsigned int);
     void OnTimerEvent(unsigned int nTimer);
     AmbientEntity();
     virtual ~AmbientEntity();

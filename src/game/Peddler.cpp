@@ -195,6 +195,21 @@ public:
 
 extern "C" void OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi(void *pThis, EntityBaseClass *pAttacker, int nDamage);
 
+// FUNCTION: 0x001D04F0 GetHealth__7PeddlerFv
+int Peddler::GetHealth() {
+    return m_unk1CC;
+}
+
+// FUNCTION: 0x001D0510 NeedsToBeWoken__7PeddlerFv
+int Peddler::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x208);
+}
+
+// FUNCTION: 0x001D0520 GetWokenVarPos__7PeddlerFv
+int Peddler::GetWokenVarPos() {
+    return 16;
+}
+
 // FUNCTION: 0x001D0530 EnemiesInCheckRadius__7PeddlerFv
 int Peddler::EnemiesInCheckRadius() {
     int result;
@@ -778,6 +793,11 @@ void Peddler::InitItems() {
         fAngle = fAngle + 72.0f;
     } while (i < 5);
     FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 16.0f, 0.85f, 1, 0);
+}
+
+// FUNCTION: 0x001D1B90 GetTallyType__7PeddlerFv
+int Peddler::GetTallyType() {
+    return 3;
 }
 
 // FUNCTION: 0x001D1BA0 SetEditableVars__7PeddlerFPc

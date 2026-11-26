@@ -35,6 +35,7 @@ public:
     void CreateBlurNodes(PMNode *poSourceObj, PMNode *poBlurObj);
     void SetData(tagMotionBlurParams *pParams);
     void Render();
+    void Enable(bool);
 
     float m_unk0;               // 0x00 ramp start, cleared by Reset (memset 0x80)
     float m_unk4;               // 0x04 ramp end

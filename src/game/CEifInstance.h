@@ -14,6 +14,10 @@ public:
     void GetStartOrientation(float &fX, float &fY, float &fZ);
     void GetStartPosition(float &fX, float &fY, float &fZ);
     int Read(PPakFile *pFile, unsigned int nVersion);
+    int GetInstanceID();
+    int GetFlags();
+    int GetNumEditVars();
+    int GetEntityID();
 
     char _pad000[0x104];                    // 0x000 header block read as one 0x104-byte record
     char _pad104[0x8];                      // 0x104

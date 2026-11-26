@@ -27,6 +27,11 @@ extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" int GetResource__16PParticleManagerFUi(void *pThis, unsigned int nId);
 extern unsigned char __vt__16PFallingShellsFx[];
 
+// FUNCTION: 0x0020CB80 FrustrumTest__16PFallingShellsFxFP9PFrustrumPfff
+void PFallingShellsFx::FrustrumTest(PFrustrum *, float *, float, float) {
+    *(int *)((char *)this + 0xA4) = 1;
+}
+
 // FUNCTION: 0x0020CB90 FindFreeShell__16PFallingShellsFxFv
 int PFallingShellsFx::FindFreeShell() {
     int i;

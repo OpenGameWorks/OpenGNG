@@ -44,6 +44,21 @@ Pickup::~Pickup() {
     __dt__15EntityBaseClassFv(this, 0);
 }
 
+// FUNCTION: 0x0019CFB0 GetTallyType__6PickupFv
+int Pickup::GetTallyType() {
+    return 2;
+}
+
+// FUNCTION: 0x0019CFC0 NeedsToBeWoken__6PickupFv
+int Pickup::NeedsToBeWoken() {
+    return m_unk1BC;
+}
+
+// FUNCTION: 0x0019CFD0 GetWokenVarPos__6PickupFv
+int Pickup::GetWokenVarPos() {
+    return 3;
+}
+
 // FUNCTION: 0x0019CFE0 FlyToApparition__6PickupFUif
 void Pickup::FlyToApparition(unsigned int arg0, float arg1) {
     if (this->m_unk20 == 8) {

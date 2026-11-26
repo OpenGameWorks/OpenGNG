@@ -181,6 +181,46 @@ public:
     virtual int Slot13();
 };
 
+// FUNCTION: 0x00210490 GetHealth__15ClockworkMaximoFv
+int ClockworkMaximo::GetHealth() {
+    return m_unk240;
+}
+
+// FUNCTION: 0x002104A0 GetClassName__15ClockworkMaximoFv
+const char *ClockworkMaximo::GetClassName() {
+    return "ClockworkMaximo";
+}
+
+// FUNCTION: 0x002104B0 GetTallyType__15ClockworkMaximoFv
+int ClockworkMaximo::GetTallyType() {
+    return 1;
+}
+
+// FUNCTION: 0x002104C0 GetArenaWaveID__15ClockworkMaximoFv
+int ClockworkMaximo::GetArenaWaveID() {
+    return m_unk1D8;
+}
+
+// FUNCTION: 0x002104D0 IsArenaApparition__15ClockworkMaximoFv
+bool ClockworkMaximo::IsArenaApparition() {
+    return m_unk1D8 ? true : false;
+}
+
+// FUNCTION: 0x002104E0 NeedsToBeWoken__15ClockworkMaximoFv
+int ClockworkMaximo::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x1DC);
+}
+
+// FUNCTION: 0x002104F0 GetWokenVarPos__15ClockworkMaximoFv
+int ClockworkMaximo::GetWokenVarPos() {
+    return 5;
+}
+
+// FUNCTION: 0x00210500 SetInnocentInstanceID__15ClockworkMaximoFUi
+void ClockworkMaximo::SetInnocentInstanceID(unsigned int value) {
+    m_unk24C = (int)value;
+}
+
 // FUNCTION: 0x00210520 StopMoving__15ClockworkMaximoFv
 bool ClockworkMaximo::StopMoving() {
     bool moving = IsMoving();

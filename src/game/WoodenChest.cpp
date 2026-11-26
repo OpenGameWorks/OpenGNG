@@ -70,6 +70,11 @@ extern unsigned int WoodenChest_RiseSeq[4];
 WoodenChest::~WoodenChest() {
 }
 
+// FUNCTION: 0x001A15F0 GetClassName__11WoodenChestFv
+const char *WoodenChest::GetClassName() {
+    return "Wooden Chest";
+}
+
 // FUNCTION: 0x001A1600 GetTallyType__11WoodenChestFv
 int WoodenChest::GetTallyType()
 {

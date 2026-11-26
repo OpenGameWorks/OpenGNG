@@ -169,6 +169,46 @@ public:
     float m_unk94;
 };
 
+// FUNCTION: 0x001E2800 GetHealth__16ClockworkStalkerFv
+int ClockworkStalker::GetHealth() {
+    return m_unk1FC;
+}
+
+// FUNCTION: 0x001E2810 GetClassName__16ClockworkStalkerFv
+const char *ClockworkStalker::GetClassName() {
+    return "ClockworkStalker";
+}
+
+// FUNCTION: 0x001E2820 GetTallyType__16ClockworkStalkerFv
+int ClockworkStalker::GetTallyType() {
+    return 1;
+}
+
+// FUNCTION: 0x001E2830 GetArenaWaveID__16ClockworkStalkerFv
+int ClockworkStalker::GetArenaWaveID() {
+    return m_unk1D8;
+}
+
+// FUNCTION: 0x001E2840 IsArenaApparition__16ClockworkStalkerFv
+bool ClockworkStalker::IsArenaApparition() {
+    return m_unk1D8 ? true : false;
+}
+
+// FUNCTION: 0x001E2850 NeedsToBeWoken__16ClockworkStalkerFv
+int ClockworkStalker::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x1DC);
+}
+
+// FUNCTION: 0x001E2860 GetWokenVarPos__16ClockworkStalkerFv
+int ClockworkStalker::GetWokenVarPos() {
+    return 5;
+}
+
+// FUNCTION: 0x001E2870 SetInnocentInstanceID__16ClockworkStalkerFUi
+void ClockworkStalker::SetInnocentInstanceID(unsigned int value) {
+    m_unk2DC = (int)value;
+}
+
 // DRAFT: 0x001E2880 PlaySoundOnFrame__16ClockworkStalkerFUiUi
 // note: 48 words after plain (float)/(unsigned int) conversion casts; earlier: 0x34 float lands in f0 (original f1), so sub.s/cvt/c.lt operands swap and branch offsets shift; 59 words differ.
 void ClockworkStalker::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
@@ -618,6 +658,10 @@ void ClockworkStalker::OnStopAttack() {
         return;
     }
     SetState__15EntityBaseClassFi(this, 0xD);
+}
+
+// FUNCTION: 0x001E38D0 OnAttackEvent__16ClockworkStalkerFP15EntityBaseClassi
+void ClockworkStalker::OnAttackEvent(EntityBaseClass *, int) {
 }
 
 // DRAFT: 0x001E38E0 Execute__16ClockworkStalkerFv

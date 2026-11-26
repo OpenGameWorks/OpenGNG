@@ -37,6 +37,15 @@ public:
     int SoulsInRange();
     void SetDrainHit(unsigned int nArg);
     int OnHitEvent(class EntityBaseClass *pAttacker, int nDamage, unsigned int nA, unsigned int nB);
+    int GetHealth();
+    const char *GetClassName();
+    int GetTallyType();
+    int GetArenaWaveID();
+    bool IsArenaApparition();
+    int NeedsToBeWoken();
+    int GetWokenVarPos();
+    void SetInnocentInstanceID(unsigned int);
+    void SetEditableVars(char *);
 
     void *m_unk0;           // 0x000 vtable pointer
     unsigned int m_unk4;    // 0x004 owner id, compared with m_SuckerRef

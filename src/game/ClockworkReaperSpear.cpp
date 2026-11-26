@@ -84,6 +84,11 @@ extern "C" ClockworkReaperSpear *__dt__20ClockworkReaperSpearFv(ClockworkReaperS
     return pThis;
 }
 
+// FUNCTION: 0x001F0710 GetClassName__20ClockworkReaperSpearFv
+const char *ClockworkReaperSpear::GetClassName() {
+    return "ClockworkReaperSpear";
+}
+
 // FUNCTION: 0x001F0720 OrientSpear__20ClockworkReaperSpearFv
 void ClockworkReaperSpear::OrientSpear() {
     float ang[4];

@@ -28,6 +28,16 @@ extern "C" FogTrigger *__dt__10FogTriggerFv(FogTrigger *pThis, short nFlag)
     return pThis;
 }
 
+// FUNCTION: 0x001CEF70 GetClassName__10FogTriggerFv
+const char *FogTrigger::GetClassName() {
+    return "FogTrigger";
+}
+
+// FUNCTION: 0x001CEF80 SetEditableVars__10FogTriggerFPc
+void FogTrigger::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x34);
+}
+
 // DRAFT: 0x001CEF90 Execute__10FogTriggerFv
 // note: 96 words differ; original tests -2 first, reuses one mPlayerAPI load for both 0x3C and +0x190, and has different case 1 store/reload and lbu 0x200 tail layout. Tried case orders 1,0,-1 (99), -1,0,1 (96), if-chain (100), explicit case -2 at top (101) and bottom (101).
 void FogTrigger::Execute()

@@ -26,6 +26,7 @@ public:
     void SetCameraPosRot(float (*arg0)[4], float (*arg1)[4]);
     void SpawnLeaf(tagLeaf *pLeaf);
     void Animate(float fDelta);
+    void FrustrumTest(PFrustrum *, float *, float, float);
 
     void *m_unkE0;
     int m_unkE4;

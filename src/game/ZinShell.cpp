@@ -36,6 +36,11 @@ extern float gUnitMatrix[16];
 ZinShell::~ZinShell() {
 }
 
+// FUNCTION: 0x001AF390 GetClassName__8ZinShellFv
+const char *ZinShell::GetClassName() {
+    return "Zin Shell";
+}
+
 // FUNCTION: 0x001AF3A0 SetEditableVars__8ZinShellFPc
 void ZinShell::SetEditableVars(char *arg0) {
     memcpy(&m_unk1B0, arg0, 0x20);

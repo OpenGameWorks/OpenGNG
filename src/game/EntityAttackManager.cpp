@@ -35,6 +35,10 @@ public:
 };
 
 
+// FUNCTION: 0x00154AE0 DisplayDebug__19EntityAttackManagerFv
+void EntityAttackManager::DisplayDebug() {
+}
+
 // FUNCTION: 0x00154AF0 CallAllOnStopAttack__19EntityAttackManagerFv
 void EntityAttackManager::CallAllOnStopAttack() {
     m_unkC = m_unk4;

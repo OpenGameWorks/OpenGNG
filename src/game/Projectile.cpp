@@ -106,6 +106,11 @@ extern "C" Projectile *__dt__10ProjectileFv(Projectile *pThis, short nFlag) {
     return pThis;
 }
 
+// FUNCTION: 0x00166C10 GetClassName__10ProjectileFv
+const char *Projectile::GetClassName() {
+    return "Projectile";
+}
+
 // FUNCTION: 0x00166C20 Delete__10ProjectileFv
 void Projectile::Delete() {
     PMNode *pNode = m_unk3C;

@@ -21,6 +21,11 @@ void ActionPling::SetEditableVars(char *pSrc) {
     memcpy(m_unk1B0, pSrc, 0x1);
 }
 
+// FUNCTION: 0x001B0970 OnHitEvent__11ActionPlingFP15EntityBaseClassiUiUi
+int ActionPling::OnHitEvent(EntityBaseClass *, int, unsigned int, unsigned int) {
+    return 0;
+}
+
 // FUNCTION: 0x001B0980 Execute__11ActionPlingFv
 void ActionPling::Execute() {
     switch (m_unk20) {

@@ -18,6 +18,7 @@ public:
     void Close(bool bFlag);
     CEifInstanceGroup *GetInstanceGroup(int nIndex);
     int Load(const char *pszFilename);
+    int GetNumInstanceGroups();
 
     CEifInstanceGroup **m_unk0;             // 0x000 instance group pointer array
     int m_unk4;                             // 0x004 instance group count

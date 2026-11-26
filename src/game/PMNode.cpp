@@ -711,6 +711,11 @@ void PMNode::EnableFx(bool bA, bool bB) {
     }
 }
 
+// FUNCTION: 0x00192AB0 Enable__15PParticleSystemFb
+void PParticleSystem::Enable(bool value) {
+    m_unk15 = (unsigned char)value;
+}
+
 // DRAFT: 0x00192AC0 DestroyFxTriggers__6PMNodeFbbb
 // note: DIFF 96 words; the two pTrig null tests (loop entry and loop head) and the ok ternary layout differ. Tried: pTrig!=0 in the if (103), ok as an if statement (96), nested pTrig!=0 guard (103).
 void PMNode::DestroyFxTriggers(bool bA, bool bB, bool bC) {

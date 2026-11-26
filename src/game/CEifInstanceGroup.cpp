@@ -39,6 +39,11 @@ void CEifInstanceGroup::Cleanup()
     }
 }
 
+// FUNCTION: 0x001726F0 GetNumInstances__17CEifInstanceGroupFv
+int CEifInstanceGroup::GetNumInstances() {
+    return m_unk8;
+}
+
 // FUNCTION: 0x172700 GetInstanceData__17CEifInstanceGroupFi
 CEifInstance *CEifInstanceGroup::GetInstanceData(int nIndex)
 {

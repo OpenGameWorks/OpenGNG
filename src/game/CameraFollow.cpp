@@ -138,6 +138,10 @@ void CameraFollow::DrawTextDebug() {
     gDebug.DebugDisp(m_unk639C);
 }
 
+// FUNCTION: 0x00173850 DrawPolyDebug__12CameraFollowFv
+void CameraFollow::DrawPolyDebug() {
+}
+
 // DRAFT: 0x00173860 Create__12CameraSplineFv
 // note: B-spline coefficients and arc length match in shape; accumulator fusion (mula/madd) not reproduced.
 void CameraSpline::Create() {

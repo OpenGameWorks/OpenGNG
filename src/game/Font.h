@@ -71,6 +71,7 @@ public:
     void InitFrame();
     void RemoveAll(bool arg0);
     void Render(bool arg0, bool arg1);
+    void Scroll(float);
 
     int m_unk0;                // 0x000 base PArray: item count
     int m_unk4;                 // 0x004 base PArray: index

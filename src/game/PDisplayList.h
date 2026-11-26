@@ -55,6 +55,7 @@ public:
     void DrawParticles(struct tagVuParticle *pParticles, int nCount, float fA, float fB, bool bFlag, int nChunk);
     void DrawRotatableParticles(struct tagVuRotatableParticle *pParticles, int nCount, float fA, float fB, bool bFlag, int nChunk);
     void SetVu1Microcode(void *pData);
+    void EndMesh();
 
     char _pad000[0xA3340];
     int m_unkA3340;         // 0xA3340 entry count, decremented by DeAllocEntries

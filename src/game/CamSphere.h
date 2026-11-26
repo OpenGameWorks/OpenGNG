@@ -10,6 +10,8 @@ public:
     CamSphere();
     virtual ~CamSphere();
     virtual void Execute();
+    const char *GetClassName();
+    void SetEditableVars(char *);
 
     char _pad190[0x20];
     float m_unk1B0;             // 0x1B0 sphere parameters, copied to 0x1C0 on the -1 state

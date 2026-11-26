@@ -46,6 +46,7 @@ public:
     virtual int InitRendered(tagPs2TexDataHeader *pTexHeader, tagGsTextureEnvironment *pTexEnv, eTextureGroup eGroup); // vtable slot 0x0C
 
     // 0x000 vtable pointer is implicit (virtual dtor).
+    int InitProcedural();
     char m_unk4[0x2C];          // 0x004 copied texture header
     void *m_unk30;              // 0x030
     void *m_unk34;              // 0x034

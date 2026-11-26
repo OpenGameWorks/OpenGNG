@@ -13,6 +13,17 @@ struct ClockworkFlyerPad190 {
 
 class ClockworkFlyer {
 public:
+    void OnAttackEvent(EntityBaseClass *, int);
+    void OnSleepEvent();
+    void SetEditableVars(char *);
+    int GetWokenVarPos();
+    int NeedsToBeWoken();
+    int GetArenaWaveID();
+    int GetTallyType();
+    const char * GetClassName();
+    void OutputDebug();
+    void OnStopAttack();
+    int GetHealth();
     ClockworkFlyer();
     void SetSpawnedFromEntity(float *pPos, float *pAlt, int nType);
     int GetNextPosition(float (&rOut)[4]);
@@ -32,6 +43,8 @@ public:
     int DoDartTasks();
     void PitchLevelOut();
     void Execute();
+    bool IsArenaApparition();
+    void SetInnocentInstanceID(unsigned int);
 
     char _pad000[0x4];                  // 0x000 vtable
     unsigned int m_unk4;                // 0x004 owner id passed to CreateTimer

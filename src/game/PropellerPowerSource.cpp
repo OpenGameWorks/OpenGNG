@@ -46,6 +46,31 @@ public:
 PropellerPowerSource::~PropellerPowerSource() {
 }
 
+// FUNCTION: 0x001F2C50 GetClassName__20PropellerPowerSourceFv
+const char *PropellerPowerSource::GetClassName() {
+    return "PropellerPowerSource";
+}
+
+// FUNCTION: 0x001F2C60 GetHealth__20PropellerPowerSourceFv
+int PropellerPowerSource::GetHealth() {
+    return m_unk1D0;
+}
+
+// FUNCTION: 0x001F2C70 GetTallyType__20PropellerPowerSourceFv
+int PropellerPowerSource::GetTallyType() {
+    return 1;
+}
+
+// FUNCTION: 0x001F2C80 NeedsToBeWoken__20PropellerPowerSourceFv
+int PropellerPowerSource::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x1CC);
+}
+
+// FUNCTION: 0x001F2C90 GetWokenVarPos__20PropellerPowerSourceFv
+int PropellerPowerSource::GetWokenVarPos() {
+    return 7;
+}
+
 // FUNCTION: 0x001F2CA0 SetEditableVars__20PropellerPowerSourceFPc
 void PropellerPowerSource::SetEditableVars(char *pSrc) {
     memcpy(&m_unk1B0, pSrc, 0x20);

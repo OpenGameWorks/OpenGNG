@@ -16,6 +16,7 @@ public:
     int EnemiesInRadius(float (*pBox)[4], float fRadius, bool bFlag);
     void SetEditableVars(char *pSrc);
     void Execute();
+    const char *GetClassName();
 
     char _pad190[0x20];
     char m_unk1B0[0xC];         // 0x1B0 editable-vars block; SetEditableVars memcpys 0x48 bytes from here

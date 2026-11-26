@@ -16,6 +16,39 @@ public:
     int m_unk0;
 };
 
+// FUNCTION: 0x0018C810 IsPAnimFrame__5PAnimFv
+int PAnim::IsPAnimFrame() {
+    return 0;
+}
+
+// FUNCTION: 0x0018C830 SetFrameRate__5PAnimFf
+void PAnim::SetFrameRate(float) {
+}
+
+// FUNCTION: 0x0018C840 SetLoopEndFrame__5PAnimFs
+void PAnim::SetLoopEndFrame(short) {
+}
+
+// FUNCTION: 0x0018C850 SetLoopFrame__5PAnimFs
+void PAnim::SetLoopFrame(short) {
+}
+
+// FUNCTION: 0x0018C860 EnableAnim__5PAnimFb
+void PAnim::EnableAnim(bool) {
+}
+
+// FUNCTION: 0x0018C870 SetAnimLoopCount__5PAnimFi
+void PAnim::SetAnimLoopCount(int) {
+}
+
+// FUNCTION: 0x0018C890 SetEndFrame__5PAnimFs
+void PAnim::SetEndFrame(short) {
+}
+
+// FUNCTION: 0x0018C8A0 SetFrameTime__5PAnimFf
+void PAnim::SetFrameTime(float) {
+}
+
 // DRAFT: 0x0018C8B0 FindChannel__5PAnimF9eAnimType
 // note: DIFF 7; original shares one epilogue for null and match returns, ours duplicates the return tail. Tried: else-branch (14), single-exit break (20), pointer-walk loop (20).
 PChannel *PAnim::FindChannel(eAnimType eType)

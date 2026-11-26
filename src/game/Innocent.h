@@ -31,6 +31,11 @@ public:
     int IsAlive();
     int BuildDialogTable();
     void Execute();
+    int GetHealth();
+    const char *GetClassName();
+    int GetTallyType();
+    int NeedsToBeWoken();
+    int GetWokenVarPos();
 
     void *m_unk0;                   // 0x000 vtable pointer
     unsigned int m_unk4;

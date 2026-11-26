@@ -11,6 +11,8 @@ public:
     virtual ~LockOnTarget();
     const char *GetClassName();
     void Execute();
+    void SetEditableVars(char *);
+    int OnHitEvent(EntityBaseClass *, int, unsigned int, unsigned int);
 
     u_long128 m_unk190;         // 0x190 copy of the 0x70 quadword of m_unk1B0
     char _pad1A0[0x10];

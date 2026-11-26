@@ -18,6 +18,7 @@ public:
     void ModifyPosition(PMat4 *pMat);
     void Animate(float fDelta);
     int Create(tagParticleAuraParams *pParams, float fX, float fY, float fZ);
+    void Render();
 
     float m_unkE0[16];          // 0x0E0 params block (0x40 bytes), offsets 0x0E0..0x11F
     float m_unk120[4];          // 0x120 position vector

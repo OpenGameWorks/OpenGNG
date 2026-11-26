@@ -74,6 +74,41 @@ extern unsigned int Rabite_Mean_Death[17];
 
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Rabite.cpp", line, #cond))
 
+// FUNCTION: 0x001FB910 GetHealth__6RabiteFv
+int Rabite::GetHealth() {
+    return m_unk1E0;
+}
+
+// FUNCTION: 0x001FB920 GetClassName__6RabiteFv
+const char *Rabite::GetClassName() {
+    return "Rabite";
+}
+
+// FUNCTION: 0x001FB930 GetTallyType__6RabiteFv
+int Rabite::GetTallyType() {
+    return 1;
+}
+
+// FUNCTION: 0x001FB940 GetArenaWaveID__6RabiteFv
+int Rabite::GetArenaWaveID() {
+    return m_unk1D0;
+}
+
+// FUNCTION: 0x001FB950 IsArenaApparition__6RabiteFv
+bool Rabite::IsArenaApparition() {
+    return m_unk1D0 ? true : false;
+}
+
+// FUNCTION: 0x001FB960 NeedsToBeWoken__6RabiteFv
+int Rabite::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x1D4);
+}
+
+// FUNCTION: 0x001FB970 GetWokenVarPos__6RabiteFv
+int Rabite::GetWokenVarPos() {
+    return 3;
+}
+
 // FUNCTION: 0x001FB980 LoadCorrectMesh__6RabiteFv
 void Rabite::LoadCorrectMesh() {
     if (m_unk218 != 0) {

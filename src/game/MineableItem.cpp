@@ -55,6 +55,16 @@ extern "C" MineableItem *__dt__12MineableItemFv(MineableItem *pThis, short nFlag
     return pThis;
 }
 
+// FUNCTION: 0x001B4340 GetClassName__12MineableItemFv
+const char *MineableItem::GetClassName() {
+    return "MineableItem";
+}
+
+// FUNCTION: 0x001B4350 GetTallyType__12MineableItemFv
+int MineableItem::GetTallyType() {
+    return 2;
+}
+
 // FUNCTION: 0x001B4360 SetEditableVars__12MineableItemFPc
 void MineableItem::SetEditableVars(char *arg0)
 {

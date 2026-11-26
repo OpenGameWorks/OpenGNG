@@ -19,6 +19,7 @@ public:
     void SetEditableVars(char *arg0);
     void SetShellStartAndDest(float (&arg0)[4], float (&arg1)[4]);
     void Execute();
+    const char *GetClassName();
 
     float m_unk190[8];          // 0x190 fallback vector (position at 0x190, yaw at 0x1A0), used when m_unk3C is null
     int m_unk1B0;               // 0x1B0 editable-vars block, copied by memcpy (0x20 bytes)

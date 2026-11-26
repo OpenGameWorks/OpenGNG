@@ -11,6 +11,8 @@ class PZBufferFog;
 class FogTrigger {
 public:
     void Execute();
+    const char *GetClassName();
+    void SetEditableVars(char *);
 
     void *m_unk0;               // 0x000 vtable pointer (inherited from EntityBaseClass)
     char _pad004[0x20 - 0x04];

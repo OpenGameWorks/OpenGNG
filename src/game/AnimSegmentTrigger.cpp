@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "AnimSegmentTrigger.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern unsigned char __vt__18AnimSegmentTrigger[];
@@ -48,6 +49,16 @@ extern "C" AnimSegmentTrigger *__dt__18AnimSegmentTriggerFv(AnimSegmentTrigger *
     return pThis;
 }
 
+// FUNCTION: 0x0020F090 GetTallyType__18AnimSegmentTriggerFv
+int AnimSegmentTrigger::GetTallyType() {
+    return 0;
+}
+
+// FUNCTION: 0x0020F0A0 GetClassName__18AnimSegmentTriggerFv
+const char *AnimSegmentTrigger::GetClassName() {
+    return "AnimSegmentTrigger";
+}
+
 // DRAFT: 0x0020F0B0 PlayerInsideTriggerVolume__18AnimSegmentTriggerFv
 // note: 20 words differ. The global base register is reversed (orig lw v1,-0x7930(gp) then lw v0,0x3C(v1)), the true-path beqz is 2 words long, and the ?: returns emit movz where the original branches. Tried: if/return on second return (21), swapped local decl order (20), both ?: (20, kept).
 int AnimSegmentTrigger::PlayerInsideTriggerVolume()
@@ -68,6 +79,11 @@ int AnimSegmentTrigger::PlayerInsideTriggerVolume()
     pAlt = *(char **)(pPlayer + 0x3C);
     pOrigin = (pAlt != 0) ? (pAlt + 0x80) : (pPlayer + 0x190);
     return (PointInBoundBox__7MathAPIFPA4_f6tagBOX((float (*)[4])pOrigin, m_unk1B4) != 0) ? 1 : 0;
+}
+
+// FUNCTION: 0x0020F150 SetEditableVars__18AnimSegmentTriggerFPc
+void AnimSegmentTrigger::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x68);
 }
 
 // DRAFT: 0x0020F160 OnHitEvent__18AnimSegmentTriggerFP15EntityBaseClassiUiUi

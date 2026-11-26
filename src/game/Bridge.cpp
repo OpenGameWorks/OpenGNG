@@ -6,6 +6,7 @@
 #include "PMeshNode.h"
 #include "PLightManager.h"
 #include "MathAPI.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int eLoadClass, unsigned int nFlags);
@@ -383,11 +384,24 @@ void Bridge::Clamp(float &arg0) {
     arg0 = v;
 }
 
+// FUNCTION: 0x001DD890 OnHitEvent__6BridgeFP15EntityBaseClassiUiUi
+void Bridge::OnHitEvent(EntityBaseClass *, int, unsigned int, unsigned int) {
+}
+
 // FUNCTION: 0x001DD8A0 OnTimerEvent__6BridgeFUi
 void Bridge::OnTimerEvent(unsigned int arg0) {
     if (arg0 == m_unk344) {
         m_unk344 = 0;
     }
+}
+
+// FUNCTION: 0x001DD8C0 OnTouchEvent__6BridgeFP15EntityBaseClass
+void Bridge::OnTouchEvent(EntityBaseClass *) {
+}
+
+// FUNCTION: 0x001DD8D0 SetEditableVars__6BridgeFPc
+void Bridge::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x10);
 }
 
 // FUNCTION: 0x001DDF70 __dt__6BridgeFv

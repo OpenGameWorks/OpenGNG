@@ -18,6 +18,11 @@ extern "C" void __dla__FPv(void *pBlock);
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 
+// FUNCTION: 0x001CC100 FrustrumTest__13PParticleRainFP9PFrustrumPfff
+void PParticleRain::FrustrumTest(PFrustrum *, float *, float, float) {
+    *(int *)((char *)this + 0xA4) = 1;
+}
+
 // DRAFT: 0x001CC110 RenderQuadrant__13PParticleRainFUi
 // note: 16 words differ; load and float-constant order and the gGfxEng lui/addiu reloc form differ (tried direct offsets, shared offset, PRainQuadrant indexing).
 void PParticleRain::RenderQuadrant(unsigned int nIndex) {

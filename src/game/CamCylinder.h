@@ -11,6 +11,8 @@ public:
     virtual ~CamCylinder();
     virtual void Execute();
     void SetCylinderParams(float fA, float fB, float fC, float fD, float fE);
+    const char *GetClassName();
+    void SetEditableVars(char *);
 
     char _pad190[0x20];
     float m_unk1B0;             // 0x1B0 cylinder parameters, written by SetCylinderParams

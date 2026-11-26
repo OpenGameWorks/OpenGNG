@@ -143,6 +143,21 @@ extern "C" void *__dt__5RavenFv(Raven *pThis, short nFlag) {
     return pThis;
 }
 
+// FUNCTION: 0x001B2640 GetClassName__5RavenFv
+const char *Raven::GetClassName() {
+    return "Raven";
+}
+
+// FUNCTION: 0x001B2650 GetHealth__5RavenFv
+int Raven::GetHealth() {
+    return m_unk244;
+}
+
+// FUNCTION: 0x001B2660 GetTallyType__5RavenFv
+int Raven::GetTallyType() {
+    return 1;
+}
+
 // DRAFT: 0x001B2670 GetSoundID__5RavenFUi
 // note: 44 words differ; case-group label order (3,4,6,5,2) fixed the chain, the 0x10 branch still targets a different body. Tried: label orders 2-6 / 2,5,6,4,3 / 3,4,6,5,2, case 12 before 10, default:, reordered top case (DIFF 50-56).
 int Raven::GetSoundID(unsigned int nId) {

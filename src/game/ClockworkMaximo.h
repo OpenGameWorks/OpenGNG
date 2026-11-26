@@ -57,6 +57,14 @@ public:
     void SetEditableVars(char *arg0);
     ClockworkMaximo();
     int OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int arg2, unsigned int arg3);
+    int GetHealth();
+    const char *GetClassName();
+    int GetTallyType();
+    int GetArenaWaveID();
+    bool IsArenaApparition();
+    int NeedsToBeWoken();
+    int GetWokenVarPos();
+    void SetInnocentInstanceID(unsigned int);
 
     void *m_unk0;                  // 0x000 vtable pointer
     unsigned int m_unk4;            // 0x004 timer argument for CreateTimer

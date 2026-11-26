@@ -27,6 +27,7 @@ public:
     void ComputeTracerAxes();
     void InitTracers();
     void Animate(float fA);
+    void FrustrumTest(PFrustrum *, float *, float, float);
 
     float m_unkE0[4];           // 0x0E0 source vector read by ModifyPosition
     float m_unkF0[4];           // 0x0F0 vector, direction written by SetPosition

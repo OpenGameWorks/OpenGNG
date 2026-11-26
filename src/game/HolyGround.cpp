@@ -39,6 +39,11 @@ public:
 
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("HolyGround.cpp", line, #cond))
 
+// FUNCTION: 0x001A3320 GetClassName__10HolyGroundFv
+const char *HolyGround::GetClassName() {
+    return "Holy Ground";
+}
+
 // FUNCTION: 0x001A3A20 __ct__10HolyGroundFv
 HolyGround::HolyGround() : EntityBaseClass((LoadClass)5, 0U) {}
 

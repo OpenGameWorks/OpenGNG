@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "MusicSwitch.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pMsg);
@@ -14,6 +15,20 @@ extern "C" void MusicSwitchToSecondary__15EntityBaseClassFUiUiUiUi(void *pThis, 
 
 // FUNCTION: 0x001C6E30 __dt__11MusicSwitchFv
 MusicSwitch::~MusicSwitch() {
+}
+
+// FUNCTION: 0x001C6E90 GetClassName__11MusicSwitchFv
+const char *MusicSwitch::GetClassName() {
+    return "MusicSwitch";
+}
+
+// FUNCTION: 0x001C6EA0 OnHitEvent__11MusicSwitchFP15EntityBaseClassiUiUi
+void MusicSwitch::OnHitEvent(EntityBaseClass *, int, unsigned int, unsigned int) {
+}
+
+// FUNCTION: 0x001C6EB0 SetEditableVars__11MusicSwitchFPc
+void MusicSwitch::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x20);
 }
 
 // DRAFT: 0x001C6EC0 Execute__11MusicSwitchFv

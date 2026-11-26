@@ -256,6 +256,16 @@ EffectNode *EffectAPI::FindPling(EntityBaseClass *arg0) {
     return 0;
 }
 
+// FUNCTION: 0x00155D50 GetEntity__11PlingEffectFv
+EntityBaseClass *PlingEffect::GetEntity() {
+    return m_unk10;
+}
+
+// FUNCTION: 0x00155D60 GetType__10EffectNodeFv
+int EffectNode::GetType() {
+    return 0;
+}
+
 // DRAFT: 0x155D70 __ct__11PlingEffectFP15EntityBaseClassPA4_fUiUib
 // note: 2 differing words: mtc1 zero goes to f0 (original f1), and the m_unk20[0] lwc1 goes to f1 (original f0), so c.eq.s operands are swapped. Tried: 0.0f!=x, !(x==0), 0.0f==x form, int 0 compare, float local, ptr local, zero local (3 words), bool intermediate, x>0||x<0 (19 lines); all others 2 words.
 PlingEffect::PlingEffect(EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4) {
@@ -796,6 +806,11 @@ EffectAPI::EffectAPI() {
 PlingEffect::~PlingEffect() {
 }
 
+// FUNCTION: 0x001573F0 GetType__11PlingEffectFv
+int PlingEffect::GetType() {
+    return 3;
+}
+
 // FUNCTION: 0x157400 __dt__11GhostEffectFv
 extern "C" void *__dt__11GhostEffectFv(void *pThis, short nFlag) {
     if (pThis != 0) {
@@ -808,6 +823,11 @@ extern "C" void *__dt__11GhostEffectFv(void *pThis, short nFlag) {
     return pThis;
 }
 
+// FUNCTION: 0x00157460 GetType__11GhostEffectFv
+int GhostEffect::GetType() {
+    return 2;
+}
+
 // FUNCTION: 0x157470 __dt__13OneshotEffectFv
 extern "C" void *__dt__13OneshotEffectFv(void *pThis, short nFlag) {
     if (pThis != 0) {
@@ -818,4 +838,14 @@ extern "C" void *__dt__13OneshotEffectFv(void *pThis, short nFlag) {
         }
     }
     return pThis;
+}
+
+// FUNCTION: 0x001574D0 GetType__13OneshotEffectFv
+int OneshotEffect::GetType() {
+    return 1;
+}
+
+// FUNCTION: 0x001574E0 GetEntity__13OneshotEffectFv
+EntityBaseClass *OneshotEffect::GetEntity() {
+    return m_unk14;
 }

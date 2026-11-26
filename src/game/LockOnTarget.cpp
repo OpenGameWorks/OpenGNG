@@ -14,6 +14,15 @@ const char *LockOnTarget::GetClassName() {
     return "LockOnTarget";
 }
 
+// FUNCTION: 0x001D3AA0 SetEditableVars__12LockOnTargetFPc
+void LockOnTarget::SetEditableVars(char *) {
+}
+
+// FUNCTION: 0x001D3AB0 OnHitEvent__12LockOnTargetFP15EntityBaseClassiUiUi
+int LockOnTarget::OnHitEvent(EntityBaseClass *, int, unsigned int, unsigned int) {
+    return 0;
+}
+
 // FUNCTION: 0x001D3AC0 Execute__12LockOnTargetFv
 void LockOnTarget::Execute() {
     switch (m_unk20) {

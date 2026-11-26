@@ -31,6 +31,14 @@ public:
     PChannel *FindChannel(eAnimType eType);
     virtual float Animate(float fTime, float fUnused, float (*pMatrix)[4], float *pOut, bool bFlag);
     void Cleanup();
+    int IsPAnimFrame();
+    void SetFrameRate(float);
+    void SetLoopEndFrame(short);
+    void SetLoopFrame(short);
+    void EnableAnim(bool);
+    void SetAnimLoopCount(int);
+    void SetEndFrame(short);
+    void SetFrameTime(float);
 
     int m_unk4;                      // 0x04
     short m_unk8;                    // 0x08

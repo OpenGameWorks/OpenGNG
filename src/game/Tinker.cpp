@@ -155,6 +155,26 @@ extern "C" void OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi(void *pT
 // FUNCTION: 0x00208D60 __dt__6TinkerFv
 Tinker::~Tinker() {}
 
+// FUNCTION: 0x00208DD0 GetHealth__6TinkerFv
+int Tinker::GetHealth() {
+    return m_unk1B8;
+}
+
+// FUNCTION: 0x00208DE0 GetClassName__6TinkerFv
+const char *Tinker::GetClassName() {
+    return "Tinker";
+}
+
+// FUNCTION: 0x00208DF0 NeedsToBeWoken__6TinkerFv
+int Tinker::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x208);
+}
+
+// FUNCTION: 0x00208E00 GetWokenVarPos__6TinkerFv
+int Tinker::GetWokenVarPos() {
+    return 16;
+}
+
 // FUNCTION: 0x00208E10 AttackSound__6TinkerFv
 void Tinker::AttackSound() {
     if (m_unk140 == (int)Tinker_AttackSeq) {

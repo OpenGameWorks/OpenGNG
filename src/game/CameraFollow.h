@@ -82,6 +82,7 @@ public:
     void Update();
 
     Camera *m_pCamera;      // 0x000
+    void DrawPolyDebug();
     char _pad004[0x10 - 0x004];
     float m_unk10[4];       // 0x010
     float m_unk20[4];       // 0x020

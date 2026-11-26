@@ -16,6 +16,7 @@ public:
     void SetMaterial(int nIndex, float *pColor, bool bFlag, unsigned long nA, unsigned long nB);
     int InitTextures(int *pData, int nCount);
     int Init(short a, short b, short c);
+    void EndSprites();
 
     PTextureManager *m_unk0;        // 0x00
     PDisplayList *m_unk4;           // 0x04

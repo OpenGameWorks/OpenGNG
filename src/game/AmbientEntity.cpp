@@ -45,6 +45,14 @@ void AmbientEntity::OnTimerEvent(unsigned int nTimer) {
     }
 }
 
+// FUNCTION: 0x001BF280 OnHitEvent__13AmbientEntityFP15EntityBaseClassiUiUi
+void AmbientEntity::OnHitEvent(EntityBaseClass *, int, unsigned int, unsigned int) {
+}
+
+// FUNCTION: 0x001BF290 OnTouchEvent__13AmbientEntityFP15EntityBaseClass
+void AmbientEntity::OnTouchEvent(EntityBaseClass *) {
+}
+
 // FUNCTION: 0x001BF2A0 Execute__13AmbientEntityFv
 void AmbientEntity::Execute() {
     switch (m_unk20) {

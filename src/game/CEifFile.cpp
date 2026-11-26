@@ -43,6 +43,11 @@ void CEifFile::Cleanup()
     m_unk10C = 0;
 }
 
+// FUNCTION: 0x00172F00 GetNumInstanceGroups__8CEifFileFv
+int CEifFile::GetNumInstanceGroups() {
+    return m_unk4;
+}
+
 // FUNCTION: 0x172F10 Load__8CEifFileFPCc
 int CEifFile::Load(const char *pszFilename)
 {

@@ -12,6 +12,9 @@ public:
     int PlayerInsideTriggerVolume();
     int OnHitEvent(EntityBaseClass *pOther, int nArg1, unsigned int nFlags, unsigned int nArg3);
     void Execute();
+    int GetTallyType();
+    const char *GetClassName();
+    void SetEditableVars(char *);
 
     void *m_unk0;               // 0x000 vtable pointer (inherited from EntityBaseClass)
     char _pad004[0x20 - 0x04];

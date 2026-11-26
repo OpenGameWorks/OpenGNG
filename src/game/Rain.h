@@ -10,6 +10,9 @@ public:
     Rain();
     virtual ~Rain();
     void Execute();
+    void OutputDebug();
+    const char *GetClassName();
+    void SetEditableVars(char *);
 
     char _pad190[0x20];
     float m_unk1B0;             // 0x1B0 rain density passed to CreateRain

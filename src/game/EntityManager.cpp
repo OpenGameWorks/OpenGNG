@@ -289,6 +289,30 @@ public:
     int AddToLoad();
     void RestoreOnWake();
     int WantsToWake();
+    int GetHealth();
+    int NeedsToBeWoken();
+    int IsArenaApparition();
+    int GetWokenVarPos();
+    int GetArenaWaveID();
+    void SetArenaRadius(float);
+    void ReceivedSpirit();
+    int AnimationViewer(int);
+    void SetSpawnedFromEntity(float *, float *, int);
+    int IsAlive();
+    void SetInnocentInstanceID(unsigned int);
+    void OnEffectDelete(unsigned int);
+    int GetTallyType();
+    int OnHitEvent(EntityBaseClass *, int, unsigned int, unsigned int);
+    void OnDestroyEvent();
+    void OnWakeEvent();
+    void OnSleepEvent();
+    void SetDefaultVars();
+    void SetEditableVars(char *);
+    void OnAttackEvent(EntityBaseClass *, int);
+    void OnTouchEvent(EntityBaseClass *);
+    void OnStopAttack();
+    void OnTimerEvent(unsigned int);
+    void OutputDebug();
 
     char _pad000[0x04];
     unsigned int m_unk04;       // 0x04
@@ -1078,6 +1102,11 @@ void EntityManager::Add2DependencyList(unsigned int arg0, unsigned int arg1) {
     e->m_unk04 = arg1;
 }
 
+// FUNCTION: 0x00147A90 GetHealth__15EntityBaseClassFv
+int EntityBaseClass::GetHealth() {
+    return 0;
+}
+
 // DRAFT: 0x00147AA0 SaveApparitionData__13EntityManagerFi
 // note: 23 diffs; register allocation (pointer, offset, mask, counter), beqz target 0x24 vs 0x23, loop tail order. Tried unsigned char b (25), unsigned int b (23), p declared after i (worse), inner check removed (39).
 void EntityManager::SaveApparitionData(int arg0) {
@@ -1496,6 +1525,21 @@ block_32:
         CdsAssert("EntityManager.cpp", 0x380, "m_iEditedInstances < MAX_EDITED_INSTANCES");
     }
     AfterSpawnEditedInstances();
+}
+
+// FUNCTION: 0x00148930 NeedsToBeWoken__15EntityBaseClassFv
+int EntityBaseClass::NeedsToBeWoken() {
+    return 0;
+}
+
+// FUNCTION: 0x00148940 IsArenaApparition__15EntityBaseClassFv
+int EntityBaseClass::IsArenaApparition() {
+    return 0;
+}
+
+// FUNCTION: 0x00148950 GetWokenVarPos__15EntityBaseClassFv
+int EntityBaseClass::GetWokenVarPos() {
+    return -1;
 }
 
 // FUNCTION: 0x00148960 GetPtrToInstance__13EntityManagerFUi
@@ -2114,6 +2158,20 @@ EntityManager::EntityManager() {
     printf("Entity Manager v%d\n", 1);
 }
 
+// FUNCTION: 0x00149F30 GetArenaWaveID__15EntityBaseClassFv
+int EntityBaseClass::GetArenaWaveID() {
+    return 0;
+}
+
+// FUNCTION: 0x00149F40 SetArenaRadius__15EntityBaseClassFf
+void EntityBaseClass::SetArenaRadius(float value) {
+    *(float *)((char *)this + 0x18C) = value;
+}
+
+// FUNCTION: 0x00149F50 ReceivedSpirit__15EntityBaseClassFv
+void EntityBaseClass::ReceivedSpirit() {
+}
+
 // DRAFT: 0x00149F60 SequenceViewer__15EntityBaseClassFPPUii
 // note: 28 words differ; s1 init is daddiu not addiu, dispatch chain offsets off by 2 words, case-3 halfword interleave, loop-tail daddu/nop shape. Tried: arm orders, bool flag (size grows to 0x1B8).
 int EntityBaseClass::SequenceViewer(unsigned int **arg0, int arg1) {
@@ -2181,6 +2239,78 @@ int EntityBaseClass::SequenceViewer(unsigned int **arg0, int arg1) {
         }
     } while (s1 != 0);
     return 0;
+}
+
+// FUNCTION: 0x0014A110 AnimationViewer__15EntityBaseClassFi
+int EntityBaseClass::AnimationViewer(int) {
+    return 0;
+}
+
+// FUNCTION: 0x0014A120 SetSpawnedFromEntity__15EntityBaseClassFPfPfi
+void EntityBaseClass::SetSpawnedFromEntity(float *, float *, int) {
+}
+
+// FUNCTION: 0x0014A130 IsAlive__15EntityBaseClassFv
+int EntityBaseClass::IsAlive() {
+    return 1;
+}
+
+// FUNCTION: 0x0014A140 SetInnocentInstanceID__15EntityBaseClassFUi
+void EntityBaseClass::SetInnocentInstanceID(unsigned int) {
+}
+
+// FUNCTION: 0x0014A150 OnEffectDelete__15EntityBaseClassFUi
+void EntityBaseClass::OnEffectDelete(unsigned int) {
+}
+
+// FUNCTION: 0x0014A160 GetTallyType__15EntityBaseClassFv
+int EntityBaseClass::GetTallyType() {
+    return 0;
+}
+
+// FUNCTION: 0x0014A170 OnHitEvent__15EntityBaseClassFP15EntityBaseClassiUiUi
+int EntityBaseClass::OnHitEvent(EntityBaseClass *, int, unsigned int, unsigned int) {
+    return 5;
+}
+
+// FUNCTION: 0x0014A180 OnDestroyEvent__15EntityBaseClassFv
+void EntityBaseClass::OnDestroyEvent() {
+}
+
+// FUNCTION: 0x0014A190 OnWakeEvent__15EntityBaseClassFv
+void EntityBaseClass::OnWakeEvent() {
+}
+
+// FUNCTION: 0x0014A1A0 OnSleepEvent__15EntityBaseClassFv
+void EntityBaseClass::OnSleepEvent() {
+}
+
+// FUNCTION: 0x0014A1B0 SetDefaultVars__15EntityBaseClassFv
+void EntityBaseClass::SetDefaultVars() {
+}
+
+// FUNCTION: 0x0014A1C0 SetEditableVars__15EntityBaseClassFPc
+void EntityBaseClass::SetEditableVars(char *) {
+}
+
+// FUNCTION: 0x0014A1D0 OnAttackEvent__15EntityBaseClassFP15EntityBaseClassi
+void EntityBaseClass::OnAttackEvent(EntityBaseClass *, int) {
+}
+
+// FUNCTION: 0x0014A1E0 OnTouchEvent__15EntityBaseClassFP15EntityBaseClass
+void EntityBaseClass::OnTouchEvent(EntityBaseClass *) {
+}
+
+// FUNCTION: 0x0014A1F0 OnStopAttack__15EntityBaseClassFv
+void EntityBaseClass::OnStopAttack() {
+}
+
+// FUNCTION: 0x0014A200 OnTimerEvent__15EntityBaseClassFUi
+void EntityBaseClass::OnTimerEvent(unsigned int) {
+}
+
+// FUNCTION: 0x0014A210 OutputDebug__15EntityBaseClassFv
+void EntityBaseClass::OutputDebug() {
 }
 
 // DRAFT: 0x0014A220 CameraLookingAtMe__15EntityBaseClassFv

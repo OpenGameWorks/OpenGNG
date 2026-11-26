@@ -110,6 +110,46 @@ extern "C" char __vt__6PMNode[];
 extern unsigned int DamageNames[4];
 extern int mbHard__15EntityBaseClass;
 
+// FUNCTION: 0x001DE040 GetHealth__16ClockworkPuncherFv
+int ClockworkPuncher::GetHealth() {
+    return m_unk1FC;
+}
+
+// FUNCTION: 0x001DE050 GetClassName__16ClockworkPuncherFv
+const char *ClockworkPuncher::GetClassName() {
+    return "ClockworkPuncher";
+}
+
+// FUNCTION: 0x001DE060 GetTallyType__16ClockworkPuncherFv
+int ClockworkPuncher::GetTallyType() {
+    return 1;
+}
+
+// FUNCTION: 0x001DE070 GetArenaWaveID__16ClockworkPuncherFv
+int ClockworkPuncher::GetArenaWaveID() {
+    return m_unk1D8;
+}
+
+// FUNCTION: 0x001DE080 IsArenaApparition__16ClockworkPuncherFv
+bool ClockworkPuncher::IsArenaApparition() {
+    return m_unk1D8 ? true : false;
+}
+
+// FUNCTION: 0x001DE090 NeedsToBeWoken__16ClockworkPuncherFv
+int ClockworkPuncher::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x1DC);
+}
+
+// FUNCTION: 0x001DE0A0 GetWokenVarPos__16ClockworkPuncherFv
+int ClockworkPuncher::GetWokenVarPos() {
+    return 5;
+}
+
+// FUNCTION: 0x001DE0B0 SetInnocentInstanceID__16ClockworkPuncherFUi
+void ClockworkPuncher::SetInnocentInstanceID(unsigned int value) {
+    m_unk280 = (int)value;
+}
+
 // DRAFT: 0x001DE0C0 LoadCorrectMesh__16ClockworkPuncherFv
 // note: 32 words differ; branch layout (outer bnez target, siege block as beq target, normal lui in b delay slot). Tried if==1 siege-first, !=1 normal-first (32), early return (32), literal fixes.
 void ClockworkPuncher::LoadCorrectMesh() {

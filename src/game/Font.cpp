@@ -138,6 +138,11 @@ void FontManager::InitSubTitle(int arg0) {
     m_unk130 = 0xFFFF;
 }
 
+// FUNCTION: 0x00132F60 Scroll__11FontManagerFf
+void FontManager::Scroll(float value) {
+    m_unk128 = value;
+}
+
 // FUNCTION: 0x132F70 Scroll__8FontNodeFf
 int FontNode::Scroll(float arg0) {
     int nIndex = 0;

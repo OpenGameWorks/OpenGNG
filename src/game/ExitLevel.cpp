@@ -3,6 +3,7 @@
 #include "Debug.h"
 #include "Font.h"
 #include "PArray.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern unsigned char __vt__9ExitLevel[];
@@ -49,6 +50,11 @@ extern "C" ExitLevel *__dt__9ExitLevelFv(ExitLevel *pThis, short nFlag)
     return pThis;
 }
 
+// FUNCTION: 0x001C4CC0 GetClassName__9ExitLevelFv
+const char *ExitLevel::GetClassName() {
+    return "Exit Level";
+}
+
 // FUNCTION: 0x001C4CD0 OutputDebug__9ExitLevelFv
 void ExitLevel::OutputDebug()
 {
@@ -59,6 +65,11 @@ void ExitLevel::OutputDebug()
 }
 
 static void DisplayTime0(int nTime, float fTime);
+
+// FUNCTION: 0x001C4D10 SetEditableVars__9ExitLevelFPc
+void ExitLevel::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x10);
+}
 
 // DRAFT: 0x001C4D20 Execute__9ExitLevelFv
 // note: 373 words; size 0x79c vs 0x7dc (missing block), epilogue delay slot (ld ra vs nop), jump-table lui/addiu placeholders, frame layout, branches at 0x140/0x164/0x190, SetState reloc at 0x7b4; tried ternary assert, FLAGS readonly, colour ternary, if/else pSrc, case order 3 then 0 (kept), default break (375, worse)

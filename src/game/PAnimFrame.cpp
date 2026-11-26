@@ -14,6 +14,31 @@ public:
 };
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
+// FUNCTION: 0x0018CE10 SetFrameTime__10PAnimFrameFf
+void PAnimFrame::SetFrameTime(float value) {
+    m_unk2C = value;
+}
+
+// FUNCTION: 0x0018CE40 GetFrameTime__10PAnimFrameFv
+float PAnimFrame::GetFrameTime() {
+    return m_unk2C;
+}
+
+// FUNCTION: 0x0018CE50 SetLoopEndFrame__10PAnimFrameFs
+void PAnimFrame::SetLoopEndFrame(short value) {
+    m_unk28 = value;
+}
+
+// FUNCTION: 0x0018CE60 GetFrameRate__10PAnimFrameFv
+float PAnimFrame::GetFrameRate() {
+    return m_unk30;
+}
+
+// FUNCTION: 0x0018CE70 IsPAnimFrame__10PAnimFrameFv
+int PAnimFrame::IsPAnimFrame() {
+    return 1;
+}
+
 // FUNCTION: 0x0018CE80 RestoreAnim__10PAnimFrameFP10PAnimFrame
 void PAnimFrame::RestoreAnim(PAnimFrame *pSrc) {
     m_unk20 = pSrc->m_unk20;

@@ -29,6 +29,10 @@ public:
     int OnHitEvent(EntityBaseClass *pEntity, int nArg1, unsigned int nEvent, unsigned int nArg2);
     void SetEditableVars(char *pName);
     void Execute();
+    int GetHealth();
+    int NeedsToBeWoken();
+    int GetWokenVarPos();
+    int GetTallyType();
 
     char _pad190[0x1C4 - 0x190];    // 0x190..0x1C3: EntityBaseClass ends at 0x190
     int m_unk1C4;                   // 0x1C4 CheckVariable argument

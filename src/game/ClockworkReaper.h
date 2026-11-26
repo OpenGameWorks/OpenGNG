@@ -34,6 +34,14 @@ public:
     void SetupHealth();
     void SetDefaultVars();
     void SetEditableVars(char *arg0);
+    int GetHealth();
+    const char *GetClassName();
+    int GetTallyType();
+    int GetArenaWaveID();
+    bool IsArenaApparition();
+    int NeedsToBeWoken();
+    int GetWokenVarPos();
+    void SetInnocentInstanceID(unsigned int);
 
     char _pad000[0x4];
     int m_unk4;             // 0x004 compared with the player's 0x1CC by CheckBlockAttack

@@ -24,6 +24,7 @@ public:
     int Create(unsigned int nNum, bool bAlloc);
 
     // 0x000 vtable pointer (__vt__15PParticleSystem), stored by the destructor.
+    void SetPosition(float *, float *);
     char _pad000[4];
     unsigned int m_unk04;       // 0x004 element count walked by ComputeBoundingBox
     void *m_unk08;              // 0x008 buffer released by Cleanup; 0x20-byte elements

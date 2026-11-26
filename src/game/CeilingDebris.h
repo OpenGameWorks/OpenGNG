@@ -20,6 +20,8 @@ public:
     CeilingDebris();
     virtual ~CeilingDebris();
     void Execute();
+    const char *GetClassName();
+    void SetEditableVars(char *);
 
 
     int m_unk20;                // 0x020 state: -2 done, -1 waiting on linked entity, 0 falling

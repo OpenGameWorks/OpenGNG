@@ -2,6 +2,7 @@
 #include "types.h"
 #include "CutCameraSetup.h"
 #include "Camera.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
@@ -12,6 +13,11 @@ class PVec3 { public: float m_v[4]; };
 
 // FUNCTION: 0x001DC2A0 __dt__14CutCameraSetupFv
 CutCameraSetup::~CutCameraSetup() {}
+
+// FUNCTION: 0x001DC310 SetEditableVars__14CutCameraSetupFPc
+void CutCameraSetup::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0xAC);
+}
 
 // DRAFT: 0x001DC320 Execute__14CutCameraSetupFv
 // note: frame is 0x120 vs 0x170, local slots 0x10 apart vs 0x20, mode compare order 1,3,2 vs 3,2,1 (switch lowering not controlled by case order). Tried: explicit -2 return (208->205), hoisted PVec3 locals (205->196).

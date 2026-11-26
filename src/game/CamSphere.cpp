@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #include "types.h"
 #include "CamSphere.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
@@ -24,6 +25,16 @@ public:
 
 // FUNCTION: 0x001A3100 __dt__9CamSphereFv
 CamSphere::~CamSphere() {
+}
+
+// FUNCTION: 0x001A3160 GetClassName__9CamSphereFv
+const char *CamSphere::GetClassName() {
+    return "Camera Collision Sphere";
+}
+
+// FUNCTION: 0x001A3170 SetEditableVars__9CamSphereFPc
+void CamSphere::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x10);
 }
 
 // DRAFT: 0x001A3180 Execute__9CamSphereFv

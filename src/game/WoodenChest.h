@@ -18,6 +18,7 @@ public:
     void OnSleepEvent();
     void OnAttackEvent(class EntityBaseClass *pEntity, int nEvent);
     void Execute();
+    const char *GetClassName();
 
     char _pad190[0x20];
     int m_unk1B0;             // 0x1B0 set to -1 by SetDefaultVars

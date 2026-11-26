@@ -21,6 +21,7 @@ public:
     void ModifyPosition(PMat4 *pMat);
     void Animate(float fDt);
     void SetupBoundingBox();
+    void SetPosition(float *, float *);
 
     void *m_unkE0;              // 0x0E0 owned buffer, released by the destructor
     void *m_unkE4;              // 0x0E4 owned buffer, released by the destructor

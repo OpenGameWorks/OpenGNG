@@ -123,6 +123,10 @@ void PParticleSystem::Cleanup() {
     m_unkA8 = -1;
 }
 
+// FUNCTION: 0x001B4D40 SetPosition__15PParticleSystemFPfPf
+void PParticleSystem::SetPosition(float *, float *) {
+}
+
 // FUNCTION: 0x001B4D50 FadeAndDie__15PParticleSystemFUi
 void PParticleSystem::FadeAndDie(unsigned int nUnused) {
     if (m_unk15 == 0) {

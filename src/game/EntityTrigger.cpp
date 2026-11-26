@@ -1,5 +1,6 @@
 #include "types.h"
 #include "EntityTrigger.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern unsigned char __vt__13EntityTrigger[];
@@ -27,6 +28,16 @@ extern "C" EntityTrigger *__dt__13EntityTriggerFv(EntityTrigger *pThis, short nF
         }
     }
     return pThis;
+}
+
+// FUNCTION: 0x001FB690 GetClassName__13EntityTriggerFv
+const char *EntityTrigger::GetClassName() {
+    return "EntityTrigger";
+}
+
+// FUNCTION: 0x001FB6A0 SetEditableVars__13EntityTriggerFPc
+void EntityTrigger::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x28);
 }
 
 // DRAFT: 0x001FB6B0 Execute__13EntityTriggerFv

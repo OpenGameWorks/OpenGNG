@@ -5,6 +5,7 @@
 // TODO(header): foreign declarations
 #include "MathAPI.h"
 #include "Physics.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 extern "C" void *Spawn__13EntityManagerFUibi(void *, unsigned int, bool, int);
 extern void *mpEntMgr__15EntityBaseClass;
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
@@ -16,6 +17,21 @@ extern void *mPlayerAPI__13EntityManager;
 
 // FUNCTION: 0x001D9F90 __dt__7SpitterFv
 Spitter::~Spitter() {}
+
+// FUNCTION: 0x001D9FF0 GetClassName__7SpitterFv
+char *Spitter::GetClassName() {
+    return "Spitter";
+}
+
+// FUNCTION: 0x001DA000 NeedsToBeWoken__7SpitterFv
+int Spitter::NeedsToBeWoken() {
+    return m_unk1E4;
+}
+
+// FUNCTION: 0x001DA010 GetWokenVarPos__7SpitterFv
+int Spitter::GetWokenVarPos() {
+    return 8;
+}
 
 // FUNCTION: 0x001DA020 SpawnItem__7SpitterFv
 void Spitter::SpawnItem() {
@@ -91,6 +107,15 @@ void Spitter::SpawnItem() {
     *(int *)&pItem->m_unk1BC = *(int *)&m_unk1E0;
     *(int *)&pItem->m_unk1E0 = *(int *)&m_unk1E8;
     pItem->EnableSleep(false, false);
+}
+
+// FUNCTION: 0x001DA290 SetEditableVars__7SpitterFPc
+void Spitter::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x3C);
+}
+
+// FUNCTION: 0x001DA2A0 OnTimerEvent__7SpitterFUi
+void Spitter::OnTimerEvent(unsigned int) {
 }
 
 // DRAFT: 0x001DA2B0 Execute__7SpitterFv

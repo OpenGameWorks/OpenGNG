@@ -22,6 +22,9 @@ public:
     int OnHitEvent(EntityBaseClass *pAttacker, int nDamage, unsigned int nA, unsigned int nB);
     void OnTouchEvent(EntityBaseClass *pArg);
     void Execute();
+    const char *GetClassName();
+    int GetHealth();
+    int GetTallyType();
 
     void *m_unk0;                   // 0x000 vtable pointer (__vt__5Raven)
     int m_unk4;                     // 0x004 editable count, printed by SetEditableVars

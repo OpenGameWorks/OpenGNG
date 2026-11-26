@@ -16,6 +16,11 @@ public:
     void SetEditableVars(char *pSrc);
     int OnHitEvent(EntityBaseClass *pOther, int nA, unsigned int nB, unsigned int nC);
     virtual void Execute();
+    const char *GetClassName();
+    int GetHealth();
+    int GetTallyType();
+    int NeedsToBeWoken();
+    int GetWokenVarPos();
 
     float m_unk190;             // 0x190
     char _pad194[0x1C];         // 0x194..0x1AF

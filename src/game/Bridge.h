@@ -27,6 +27,9 @@ public:
     void PushPlank(int arg0, float arg1, float arg2);
     void RunPhysics();
     void Execute();
+    void OnHitEvent(EntityBaseClass *, int, unsigned int, unsigned int);
+    void OnTouchEvent(EntityBaseClass *);
+    void SetEditableVars(char *);
 
     void *m_unk0;               // 0x000 vtable pointer (inherited from EntityBaseClass)
     int m_unk4;                 // 0x004

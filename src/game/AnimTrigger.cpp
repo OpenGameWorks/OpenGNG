@@ -3,6 +3,7 @@
 #include "AnimTrigger.h"
 #include "PArray.h"
 #include "EntityBaseClass.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 class TriggerSystem {
@@ -33,6 +34,26 @@ extern "C" AnimTrigger *__dt__11AnimTriggerFv(AnimTrigger *pThis, short nFlag)
         }
     }
     return pThis;
+}
+
+// FUNCTION: 0x001B0570 GetClassName__11AnimTriggerFv
+const char *AnimTrigger::GetClassName() {
+    return "Anim Trigger";
+}
+
+// FUNCTION: 0x001B0580 NeedsToBeWoken__11AnimTriggerFv
+int AnimTrigger::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x208);
+}
+
+// FUNCTION: 0x001B0590 GetWokenVarPos__11AnimTriggerFv
+int AnimTrigger::GetWokenVarPos() {
+    return 19;
+}
+
+// FUNCTION: 0x001B05A0 SetEditableVars__11AnimTriggerFPc
+void AnimTrigger::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x5C);
 }
 
 // FUNCTION: 0x001B05B0 Execute__11AnimTriggerFv

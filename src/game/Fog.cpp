@@ -13,6 +13,15 @@ extern "C" void memset(void *, int, unsigned int);
 // with the 2^31 subtraction and bit-31 or for values at or above 2^31, then sb.
 #define FOG_BYTE(x) ((unsigned char)(unsigned int)(x))
 
+// FUNCTION: 0x001CF160 OutputDebug__3FogFv
+void Fog::OutputDebug() {
+}
+
+// FUNCTION: 0x001CF170 GetClassName__3FogFv
+const char *Fog::GetClassName() {
+    return "Fog";
+}
+
 // DRAFT: 0x001CF180 SetEditableVars__3FogFPc
 // note: 488 words differ (of 0xAA0 bytes): the loop-invariant constants (255.0f, 2^31, 0x8000, 128.0f, 32.0f) and tbl/col addresses are hoisted into different registers at 0x258-0x27C; SetClutFogTable call sits 0x10 bytes early (0xA70 vs 0xA80); gEng addend differs (lui 0x2E/addiu -0x7E40 vs lui 0x1/addiu -0x78B0). Tried FOG_BYTE forms (ternary, statement macro, unsigned-int cast = best), operand swap, and p = tbl + i*4 (no change).
 void Fog::SetEditableVars(char *pSrc) {

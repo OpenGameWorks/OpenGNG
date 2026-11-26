@@ -39,6 +39,11 @@ public:
     virtual void SetAllAnimFlags(void *pAnim);
 };
 
+// FUNCTION: 0x001EB520 GetClassName__21ReversibleAnimTriggerFv
+const char *ReversibleAnimTrigger::GetClassName() {
+    return "ReversibleAnimTrigger";
+}
+
 // FUNCTION: 0x001EB530 CheckForSound__21ReversibleAnimTriggerFP6PMNode
 void ReversibleAnimTrigger::CheckForSound(PMNode *pNode) {
     int nState = *(int *)(gEng + 0x19A78);

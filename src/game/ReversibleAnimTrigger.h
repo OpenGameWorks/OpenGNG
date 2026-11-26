@@ -18,6 +18,7 @@ public:
     void OnTimerEvent(unsigned int arg0);
     void SetEditableVars(char *pVars);
     void CheckForSound(PMNode *pNode);
+    const char *GetClassName();
 
     void *m_unk0;               // 0x000 vtable pointer (inherited from EntityBaseClass)
     int m_unk4;                 // 0x004 timer duration argument of CreateTimer

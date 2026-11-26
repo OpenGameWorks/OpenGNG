@@ -60,6 +60,21 @@ public:
     virtual void SetArenaRadius(float fRadius);
 };
 
+// FUNCTION: 0x001C7260 GetClassName__11BattleArenaFv
+const char *BattleArena::GetClassName() {
+    return "BattleArena";
+}
+
+// FUNCTION: 0x001C7270 NeedsToBeWoken__11BattleArenaFv
+int BattleArena::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x1DC);
+}
+
+// FUNCTION: 0x001C7280 GetWokenVarPos__11BattleArenaFv
+int BattleArena::GetWokenVarPos() {
+    return 11;
+}
+
 // FUNCTION: 0x001C7290 OutputDebug__11BattleArenaFv
 void BattleArena::OutputDebug() {
     char buf[0x100];

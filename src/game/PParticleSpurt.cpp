@@ -108,6 +108,10 @@ void PParticleSpurt::SetupBoundingBox() {
     m_unk9C = sqrtf(m_unk90 * m_unk90 + m_unk94 * m_unk94 + m_unk98 * m_unk98);
 }
 
+// FUNCTION: 0x001CB120 SetPosition__14PParticleSpurtFPfPf
+void PParticleSpurt::SetPosition(float *, float *) {
+}
+
 // DRAFT: 0x001CBCD0 Create__14PParticleSpurtFP22tagParticleSpurtParamsfff
 // note: 125 differing words, size 0x340 vs 0x33C; the rand() float-to-int cast spills through the stack (C emits no mfc1); the m_unk1D0 selector store order and early-return epilogue differ. Tried: if/else min tail (126), positive-comparison selector (125).
 int PParticleSpurt::Create(tagParticleSpurtParams *pParams, float fX, float fY, float fZ) {

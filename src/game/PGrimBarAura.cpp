@@ -13,6 +13,11 @@ extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern unsigned char __vt__12PGrimBarAura[];
 extern char gGfxEng[1504384];
 
+// FUNCTION: 0x00213DA0 FrustrumTest__12PGrimBarAuraFP9PFrustrumPfff
+void PGrimBarAura::FrustrumTest(PFrustrum *, float *, float, float) {
+    *(int *)((char *)this + 0xA4) = 1;
+}
+
 // DRAFT: 0x00213DB0 Animate__12PGrimBarAuraFf
 // note: 58 words differ: register allocation (m_unk108/m_unk10C/m_unk100 f-regs swapped), loop off/pOut registers swapped, element-test c.eq.s operand order, clamp branch layout. Tried: if/else clamp (77), ternary clamp (77), swapped i/off declarations (60), 0.0f compare operand order (58), unsigned char pElem (58).
 void PGrimBarAura::Animate(float fDelta) {

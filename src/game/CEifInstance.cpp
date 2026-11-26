@@ -16,6 +16,16 @@ extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("CEifInstance.cpp", line, #cond))
 
+// FUNCTION: 0x00172A30 GetInstanceID__12CEifInstanceFv
+int CEifInstance::GetInstanceID() {
+    return *(int *)((char *)this + 0x108);
+}
+
+// FUNCTION: 0x00172A40 GetFlags__12CEifInstanceFv
+int CEifInstance::GetFlags() {
+    return *(int *)((char *)this + 0x100);
+}
+
 // FUNCTION: 0x172A50 GetEditVarData__12CEifInstanceFi
 tagEditableVariableData *CEifInstance::GetEditVarData(int nIndex)
 {
@@ -23,6 +33,11 @@ tagEditableVariableData *CEifInstance::GetEditVarData(int nIndex)
         CdsAssert__FPciPc("CEifInstance.cpp", 0x104, "iVarIndex < mData.iNumEditVars");
     }
     return (tagEditableVariableData *)((char *)m_unk128 + nIndex * 0x38);
+}
+
+// FUNCTION: 0x00172AC0 GetNumEditVars__12CEifInstanceFv
+int CEifInstance::GetNumEditVars() {
+    return m_unk124;
 }
 
 // FUNCTION: 0x172AD0 GetStartOrientation__12CEifInstanceFRfRfRf
@@ -39,6 +54,11 @@ void CEifInstance::GetStartPosition(float &fX, float &fY, float &fZ)
     fX = m_unk10C;
     fY = m_unk110;
     fZ = m_unk114;
+}
+
+// FUNCTION: 0x00172B20 GetEntityID__12CEifInstanceFv
+int CEifInstance::GetEntityID() {
+    return *(int *)((char *)this + 0x104);
 }
 
 // FUNCTION: 0x172B30 Read__12CEifInstanceFP8PPakFileUi

@@ -29,6 +29,10 @@ struct MovingFogParams {
     float fEdit[5];             // 0x30 editable-vars tail copied from m_unk1B0 + 0x30
 };
 
+// FUNCTION: 0x001D68C0 OutputDebug__9MovingFogFv
+void MovingFog::OutputDebug() {
+}
+
 // FUNCTION: 0x001D68D0 GetClassName__9MovingFogFv
 const char *MovingFog::GetClassName() {
     return "MovingFog";

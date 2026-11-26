@@ -14,6 +14,7 @@ public:
     int OnHitEvent(EntityBaseClass *pAttacker, int nDamage, unsigned int nA, unsigned int nB);
     void Execute();
     void CreateRipplesFx();
+    const char *GetClassName();
 
     float m_unk190[4];          // 0x190
     char _pad1A0[0x4];          // 0x1A0

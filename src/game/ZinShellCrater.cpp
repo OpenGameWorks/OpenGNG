@@ -24,6 +24,11 @@ void ZinShellCrater::SetEditableVars(char *pSrc) {
     memcpy(m_unk1B0, pSrc, 0x1);
 }
 
+// FUNCTION: 0x001C89A0 OnHitEvent__14ZinShellCraterFP15EntityBaseClassiUiUi
+int ZinShellCrater::OnHitEvent(EntityBaseClass *, int, unsigned int, unsigned int) {
+    return 0;
+}
+
 // FUNCTION: 0x001C89B0 Execute__14ZinShellCraterFv
 void ZinShellCrater::Execute() {
     switch (m_unk20) {

@@ -18,6 +18,11 @@ public:
     void SetAllAnimFlags(AnimData *pData);
     virtual float Animate(float fTime, float fUnused, float (*pMatrix)[4], float *pOut, bool bFlag);
     float AnimateFrame(float fTime);
+    void SetFrameTime(float);
+    float GetFrameTime();
+    void SetLoopEndFrame(short);
+    float GetFrameRate();
+    int IsPAnimFrame();
 
     short m_unk20;                   // 0x20
     short m_unk22;                   // 0x22

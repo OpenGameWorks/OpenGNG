@@ -38,6 +38,11 @@ extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void *GetResource__16PParticleManagerFUi(void *pThis, unsigned int nId);
 
+// FUNCTION: 0x00203420 FrustrumTest__16PParticleTracersFP9PFrustrumPfff
+void PParticleTracers::FrustrumTest(PFrustrum *, float *, float, float) {
+    *(int *)((char *)this + 0xA4) = 1;
+}
+
 // FUNCTION: 0x00203430 ComputeTracerAxes__16PParticleTracersFv
 void PParticleTracers::ComputeTracerAxes() {
     sceVu0CopyVector(m_unk1A0, m_unkF0);

@@ -55,6 +55,46 @@ extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 // Target point of a stinger or of the player: the PMNode animation vector at +0x80 when the node exists, else the base's own vector at +0x190.
 #define CS_TARGET(pb) (*(char **)((char *)(pb) + 0x3C) ? *(char **)((char *)(pb) + 0x3C) + 0x80 : (char *)(pb) + 0x190)
 #define CS_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert__FPciPc("ClockworkStinger.cpp", line, msg))
+// FUNCTION: 0x001E6480 GetHealth__16ClockworkStingerFv
+int ClockworkStinger::GetHealth() {
+    return m_unk1FC;
+}
+
+// FUNCTION: 0x001E6490 GetTallyType__16ClockworkStingerFv
+int ClockworkStinger::GetTallyType() {
+    return 1;
+}
+
+// FUNCTION: 0x001E64A0 GetClassName__16ClockworkStingerFv
+const char *ClockworkStinger::GetClassName() {
+    return "ClockworkStinger";
+}
+
+// FUNCTION: 0x001E64B0 GetArenaWaveID__16ClockworkStingerFv
+int ClockworkStinger::GetArenaWaveID() {
+    return m_unk1D8;
+}
+
+// FUNCTION: 0x001E64C0 IsArenaApparition__16ClockworkStingerFv
+bool ClockworkStinger::IsArenaApparition() {
+    return m_unk1D8 ? true : false;
+}
+
+// FUNCTION: 0x001E64D0 NeedsToBeWoken__16ClockworkStingerFv
+int ClockworkStinger::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x1DC);
+}
+
+// FUNCTION: 0x001E64E0 GetWokenVarPos__16ClockworkStingerFv
+int ClockworkStinger::GetWokenVarPos() {
+    return 5;
+}
+
+// FUNCTION: 0x001E64F0 SetInnocentInstanceID__16ClockworkStingerFUi
+void ClockworkStinger::SetInnocentInstanceID(unsigned int value) {
+    m_unk24C = (int)value;
+}
+
 // FUNCTION: 0x001E6500 GetSequenceState__16ClockworkStingerFv
 int ClockworkStinger::GetSequenceState() {
     int result = 0;

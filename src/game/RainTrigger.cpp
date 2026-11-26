@@ -1,5 +1,6 @@
 #include "types.h"
 #include "RainTrigger.h"
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern unsigned char __vt__11RainTrigger[];
@@ -25,6 +26,16 @@ extern "C" RainTrigger *__dt__11RainTriggerFv(RainTrigger *pThis, short nFlag)
         }
     }
     return pThis;
+}
+
+// FUNCTION: 0x001CD700 GetClassName__11RainTriggerFv
+const char *RainTrigger::GetClassName() {
+    return "RainTrigger";
+}
+
+// FUNCTION: 0x001CD710 SetEditableVars__11RainTriggerFPc
+void RainTrigger::SetEditableVars(char *pSrc) {
+    memcpy((char *)this + 0x1B0, pSrc, 0x1C);
 }
 
 // DRAFT: 0x001CD720 Execute__11RainTriggerFv

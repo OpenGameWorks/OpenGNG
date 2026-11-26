@@ -14,6 +14,8 @@ public:
     virtual ~Fog();
     void Execute();
     void SetEditableVars(char *pSrc);
+    void OutputDebug();
+    const char *GetClassName();
 
     char _pad190[0x1B0 - 0x190];
     float m_unk1B0;             // 0x1B0 density; the 0x6C-byte editable block starts here

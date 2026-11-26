@@ -63,6 +63,11 @@ public:
     virtual void SetPosition(float *a, float *b);
 };
 
+// FUNCTION: 0x001681A0 GetClassName__6ShieldFv
+const char *Shield::GetClassName() {
+    return "Shield";
+}
+
 // DRAFT: 0x001681B0 Animate__6ShieldFif
 // note: 43 words differ; clamp arm stores via swc1 $f2 (original mov.s f0,f2 first), epilogue/null-branch shape and the pos-10 arm order differ; tried v>lim, v<=lim, lim>=v, local sys pointer
 void Shield::Animate(int arg0, float arg1) {

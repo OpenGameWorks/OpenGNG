@@ -25,6 +25,15 @@ void PParticleShockwaveRing::Start() {
     m_unk1E0 = 0.0f;
 }
 
+// FUNCTION: 0x001F9870 FrustrumTest__22PParticleShockwaveRingFP9PFrustrumPfff
+void PParticleShockwaveRing::FrustrumTest(PFrustrum *, float *, float, float) {
+    *(int *)((char *)this + 0xA4) = 1;
+}
+
+// FUNCTION: 0x001F9880 Render__22PParticleShockwaveRingFv
+void PParticleShockwaveRing::Render() {
+}
+
 // DRAFT: 0x001F9890 Animate__22PParticleShockwaveRingFf
 // note: 13 words differ, all in `m_unk1E0 += m_unk1E4 * fDelta`: the original loads m_unk1E4 into f2 and m_unk1E0 into f1 and schedules the mul without a nop; ours swaps the registers. Tried +=, operand orders, fStep/fCur/fRate locals, an fT local for the compare.
 void PParticleShockwaveRing::Animate(float fDelta) {

@@ -8,6 +8,10 @@
 class AnimTrigger {
 public:
     void Execute();
+    const char *GetClassName();
+    int NeedsToBeWoken();
+    int GetWokenVarPos();
+    void SetEditableVars(char *);
 
     void *m_unk0;               // 0x000 vtable pointer (inherited from EntityBaseClass)
     int m_unk4;                 // 0x004 passed to the TriggerSystem constructor

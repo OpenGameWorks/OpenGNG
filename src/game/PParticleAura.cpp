@@ -45,6 +45,10 @@ void PParticleAura::ModifyPosition(PMat4 *pMat) {
     }
 }
 
+// FUNCTION: 0x001DB850 Render__13PParticleAuraFv
+void PParticleAura::Render() {
+}
+
 // DRAFT: 0x001DB860 Animate__13PParticleAuraFf
 // note: 51 words vs 134-word original (ours 131 words); branch sense at clamp and compare, m_unk130 cached not reloaded per tail store, add.s and compare operand orders tried (flip worse or equal)
 void PParticleAura::Animate(float fDelta) {

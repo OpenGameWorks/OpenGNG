@@ -48,6 +48,7 @@ public:
     void SendDeleteEvent(int arg0);
     int Update(float arg0);
     int Render(PLightManager *arg0);
+    int GetType();
 
     int m_unk4;                 // 0x004 object whose virtual slot 3 draws the node
     int m_unk8;                 // 0x008 argument forwarded to SendDeleteEvent
@@ -59,6 +60,8 @@ public:
     PlingEffect(EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4);
     virtual ~PlingEffect();
     int Update(float arg0);
+    EntityBaseClass *GetEntity();
+    int GetType();
 
     EntityBaseClass *m_unk10;   // 0x010 owner entity
     int m_unk14;                // 0x014 cleared when an existing pling is reused
@@ -74,6 +77,7 @@ public:
     virtual ~GhostEffect();
     int Update(float arg0);
     int Render(PLightManager *arg0);
+    int GetType();
 
     u_long128 m_unk10[8];       // 0x010 per-slot matrix rows (world translation in row 3)
     unsigned char m_unk90[8];   // 0x090 per-slot visibility flags
@@ -89,6 +93,8 @@ public:
     OneshotEffect(unsigned int arg0, unsigned int arg1, float (*arg2)[4], float (*arg3)[4], EntityBaseClass *arg4, float arg5, bool arg6, int arg7, bool arg8);
     virtual ~OneshotEffect();
     int Update(float arg0);
+    int GetType();
+    EntityBaseClass *GetEntity();
 
     int m_unk10;                // 0x010
     EntityBaseClass *m_unk14;   // 0x014 owner entity

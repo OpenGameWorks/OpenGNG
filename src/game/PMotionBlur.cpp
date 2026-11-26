@@ -124,6 +124,11 @@ void PMotionBlur::Reset() {
     m_unkA5 = 0;
 }
 
+// FUNCTION: 0x001C8DA0 Enable__11PMotionBlurFb
+void PMotionBlur::Enable(bool value) {
+    m_unkA4 = (unsigned char)value;
+}
+
 // DRAFT: 0x001C8DB0 Render__11PMotionBlurFv
 // note: 226 words differ (size 0x3D4 vs 0x404); vScale's {1,1,1,0} initializer is @N at 0x249D40. First element read is sltu/beqz/b in the original: early-return epilogue 16 insns short, assert delay slot (nop vs lui a0), ramp arm order and register use, loop i/j in fp/s7/s6 not matched. Tried: fTime init above m_unkA4 test (238->228), if-form assert (same), m_unk8C operand order (same).
 void PMotionBlur::Render() {

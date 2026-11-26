@@ -257,6 +257,11 @@ void PParticleBlowingLeaves::SetCameraPosRot(float (*arg0)[4], float (*arg1)[4])
     sceVu0AddVector(m_unk9E0, m_unk9D0, (float *)arg0);
 }
 
+// FUNCTION: 0x001FD840 FrustrumTest__22PParticleBlowingLeavesFP9PFrustrumPfff
+void PParticleBlowingLeaves::FrustrumTest(PFrustrum *, float *, float, float) {
+    *(int *)((char *)this + 0xA4) = 1;
+}
+
 // DRAFT: 0x001FD850 Render__22PParticleBlowingLeavesFv
 // note: 158 differing lines; this in s6 (orig s0), c.eq.s operand order and bc1t target at 0x2C-0x34, clamp structure 0x58-0xD8; tried fSum addend swap (159), flipped zero compare (158), char *pSelf (158)
 void PParticleBlowingLeaves::Render() {

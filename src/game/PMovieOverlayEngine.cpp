@@ -44,6 +44,10 @@ void PMovieOverlayEngine::BeginRender(unsigned int nFlags) {
     m_unk4->SetGsRegisters((u_long128 *)&m_unk10, 8);
 }
 
+// FUNCTION: 0x0020DA50 EndSprites__19PMovieOverlayEngineFv
+void PMovieOverlayEngine::EndSprites() {
+}
+
 // FUNCTION: 0x0020DA70 BeginSprites__19PMovieOverlayEngineFv
 void PMovieOverlayEngine::BeginSprites() {
     m_unk4->BeginFxLoop(((unsigned int)(fx_sprite_noclip_init + 0x150)) >> 3);

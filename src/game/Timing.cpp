@@ -126,6 +126,11 @@ void ESubTimer::GenerateString(char *pOut, unsigned int nArg, unsigned int nArg2
     strcat(pOut, aAcc);
 }
 
+// FUNCTION: 0x00169900 GetTime__9ESubTimerFv
+int ESubTimer::GetTime() {
+    return *(int *)((char *)this + 0x4);
+}
+
 // DRAFT: 0x00169930 ZeroTimer__9ESubTimerFv
 // note: 8 differing words; the second loop's tail is `slti; nop; bnez; nop; nop` in the original (ours has no nop before bnez and one nop after it), and the skip branch targets a nop before sb 0x44. Tried unguarded for (12), top-tested while (14), guarded do-while (8, kept), store before increment (8), for-loop form (8), direct offset store (8).
 void ESubTimer::ZeroTimer() {

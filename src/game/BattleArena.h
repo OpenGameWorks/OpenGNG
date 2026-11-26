@@ -15,6 +15,9 @@ public:
     void SpawnEnemyFromCurrentWave(unsigned int nApparitionId);
     void SetEditableVars(char *pSrc);
     void Execute();
+    const char *GetClassName();
+    int NeedsToBeWoken();
+    int GetWokenVarPos();
 
     char _pad190[0x20];
     char m_unk1B0[4];           // 0x1B0 editable-vars block; SetEditableVars memcpys 0x34 bytes here

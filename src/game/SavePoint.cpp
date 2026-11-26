@@ -13,6 +13,16 @@ extern "C" void SetHolyGround__13EntityManagerFPA4_ffb(void *pThis, float (*pPos
 SavePoint::~SavePoint() {
 }
 
+// FUNCTION: 0x0020E650 NeedsToBeWoken__9SavePointFv
+int SavePoint::NeedsToBeWoken() {
+    return m_unk1BC;
+}
+
+// FUNCTION: 0x0020E660 GetWokenVarPos__9SavePointFv
+int SavePoint::GetWokenVarPos() {
+    return 1;
+}
+
 // FUNCTION: 0x0020E670 GetClassName__9SavePointFv
 const char *SavePoint::GetClassName() {
     return "SavePoint";

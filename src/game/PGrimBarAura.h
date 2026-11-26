@@ -14,6 +14,7 @@ public:
     void EnableParticle(int nIndex, bool bEnable);
     void SetParticlePos(int nIndex, float *pPos);
     int Create(int nNum, float fA, float fB, float fC, float *pPos);
+    void FrustrumTest(PFrustrum *, float *, float, float);
 
     char *m_unkE0;              // 0x0E0 particle array, 0x20 bytes per element; freed by the destructor
     char _pad0E4[0xC];          // 0x0E4

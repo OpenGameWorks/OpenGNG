@@ -28,6 +28,7 @@ public:
     void SetLightningDensity(float fDensity);
     void SetDensity(float fDensity, bool bFlag);
     void SetCameraPosRot(float (*arg0)[4], float (*arg1)[4]);
+    void FrustrumTest(PFrustrum *, float *, float, float);
 
     char m_unkE0[0x20];         // 0x0E0 zeroed by the constructor
     char m_unk100[0x140];       // 0x100..0x240 zeroed by the constructor; quadrant entries from 0x140

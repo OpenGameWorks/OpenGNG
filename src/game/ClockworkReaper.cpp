@@ -195,6 +195,46 @@ extern unsigned int ClockworkReaper_InitGruntSeq[4];
 extern unsigned int ClockworkReaper_InitVeteranSeq[4];
 extern unsigned int ClockworkReaper_InitEliteSeq[4];
 
+// FUNCTION: 0x001BF7A0 GetHealth__15ClockworkReaperFv
+int ClockworkReaper::GetHealth() {
+    return m_unk208;
+}
+
+// FUNCTION: 0x001BF7B0 GetClassName__15ClockworkReaperFv
+const char *ClockworkReaper::GetClassName() {
+    return "ClockworkReaper";
+}
+
+// FUNCTION: 0x001BF7C0 GetTallyType__15ClockworkReaperFv
+int ClockworkReaper::GetTallyType() {
+    return 1;
+}
+
+// FUNCTION: 0x001BF7D0 GetArenaWaveID__15ClockworkReaperFv
+int ClockworkReaper::GetArenaWaveID() {
+    return m_unk1D8;
+}
+
+// FUNCTION: 0x001BF7E0 IsArenaApparition__15ClockworkReaperFv
+bool ClockworkReaper::IsArenaApparition() {
+    return m_unk1D8 ? true : false;
+}
+
+// FUNCTION: 0x001BF7F0 NeedsToBeWoken__15ClockworkReaperFv
+int ClockworkReaper::NeedsToBeWoken() {
+    return *(int *)((char *)this + 0x1DC);
+}
+
+// FUNCTION: 0x001BF800 GetWokenVarPos__15ClockworkReaperFv
+int ClockworkReaper::GetWokenVarPos() {
+    return 5;
+}
+
+// FUNCTION: 0x001BF810 SetInnocentInstanceID__15ClockworkReaperFUi
+void ClockworkReaper::SetInnocentInstanceID(unsigned int value) {
+    *(unsigned int *)((char *)this + 0x304) = value;
+}
+
 // FUNCTION: 0x001BF820 SetRiseAndAttack__15ClockworkReaperFPA4_fff
 void ClockworkReaper::SetRiseAndAttack(float (*arg0)[4], float arg1, float arg2) {
     m_unk1B8[0] = arg0[0][0];

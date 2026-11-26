@@ -32,6 +32,10 @@ public:
     void OnTimerEvent(unsigned int arg0);
     int OnHitEvent(EntityBaseClass *pOther, int arg1, unsigned int arg2, unsigned int arg3);
     void Execute();
+    int GetHealth();
+    const char *GetClassName();
+    int NeedsToBeWoken();
+    int GetWokenVarPos();
 
     float m_unk190[4];                  // 0x190
     float m_unk1A0[4];                  // 0x1A0
