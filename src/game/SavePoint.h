@@ -14,11 +14,15 @@ public:
     void SetEditableVars(char *pSrc);
     void Execute();
 
-    char _pad190[0x20];
+    float m_unk190[4];          // 0x190 position passed to SetHolyGround
+    char _pad1A0[0x4];
+    float m_unk1A4;             // 0x1A4 radius passed to SetHolyGround
+    char _pad1A8[0x8];
     unsigned int m_unk1B0;      // 0x1B0 timer id
     unsigned char m_unk1B4;     // 0x1B4 set when the timer fires
     char _pad1B5[0x3];
-    char m_unk1B8[0x8];        // 0x1B8 editable-vars block; SetEditableVars memcpys 0x8 bytes here
+    int m_unk1B8;               // 0x1B8 editable-vars block; SetEditableVars memcpys 0x8 bytes here
+    int m_unk1BC;               // 0x1BC second word of the editable-vars block
 };
 
 #endif

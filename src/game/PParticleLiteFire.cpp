@@ -187,13 +187,12 @@ void PParticleLiteFire::Enable(bool bEnable) {
     m_unk191 = (m_unk191 | !bEnable) != 0;
 }
 
-// DRAFT: 0x001C9EB0 FadeAndDie__17PParticleLiteFireFUi
-// note: 4 words differ at 0x4C-0x58: original uses $v1 for constant 1 and $at for the compare; ours uses $a0 and $v1. Tried negated compare (DIFF 4), store moved after if (DIFF 6), local compare temp (more diffs than 4).
+// FUNCTION: 0x001C9EB0 FadeAndDie__17PParticleLiteFireFUi
 void PParticleLiteFire::FadeAndDie(unsigned int nArg) {
     PParticleSystem::FadeAndDie(nArg);
     m_unk18C = (float)nArg;
     m_unk190 = 1;
-    if (nArg >= 2U) {
+    if (nArg > 1U) {
         m_unk17 = 0;
     }
 }

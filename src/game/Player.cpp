@@ -3327,11 +3327,11 @@ void Player::SetShield(bool arg0) {
 }
 
 // note: 4 words differ: original keeps the loaded pointer in a1 and passes it as a0 for the call; compiled code keeps it in t0. Tried void * and int locals; int does not compile, void * still 4 words.
-// DRAFT: 0x001601F0 UpdatePlayerFx__6PlayerFv
+// FUNCTION: 0x001601F0 UpdatePlayerFx__6PlayerFv
 void Player::UpdatePlayerFx() {
     PMNode *temp_a1 = (PMNode *)m_unk288;
     if (temp_a1 != 0) {
-        temp_a1->ProcessFxTriggers(1.0f, (PMat4 *)(m_unk284 + 0x40), false, false);
+        temp_a1->ProcessFxTriggers(1.0f, (PMat4 *)(*(char **)((char *)this + 0x284) + 0x40), false, false);
     }
 }
 

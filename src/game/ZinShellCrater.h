@@ -13,7 +13,7 @@ public:
     void SetEditableVars(char *pSrc);
     void Execute();
 
-    char _pad190[0x20];
+    char m_unk190[0x20];       // 0x190 MathAPI view (GetGroundPos target); MathAPI itself is too large to embed
     char m_unk1B0[0x1];        // 0x1B0 editable-vars block; SetEditableVars memcpys 0x1 bytes here
 };
 

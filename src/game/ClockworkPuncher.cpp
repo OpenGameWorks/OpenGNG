@@ -303,12 +303,11 @@ void ClockworkPuncher::AttachDamageEffect(PMNode *pNode, unsigned int nId, float
     }
 }
 
-// DRAFT: 0x001DE790 SetEffectsFrameRate__16ClockworkPuncherFf
-// note: 3 lines differ: the first lw reads this from a0 where the original reads s0, and mov.s f20 / lui a0 are swapped. Tried: local handle, API-pointer local, pSelf = this, float and unsigned locals for fRate and the handle, and a one-call-first split; all still 3 lines.
+// FUNCTION: 0x001DE790 SetEffectsFrameRate__16ClockworkPuncherFf
 void ClockworkPuncher::SetEffectsFrameRate(float fRate) {
     void *pFx;
 
-    pFx = EffectValid__9EffectAPIFUi(&mEffectAPI__13EntityManager, m_unk298);
+    pFx = EffectValid__9EffectAPIFUi(&mEffectAPI__13EntityManager, *(unsigned int *)((char *)this + 0x298));
     if (pFx != 0) {
         SetFrameRate__6PMNodeFfb(*(PMNode **)((char *)pFx + 4), fRate, true);
     }
