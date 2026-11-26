@@ -46,7 +46,9 @@ typedef struct tagGsFrameBufferCopy {
 
 typedef struct tagGsTextureEnvironment {
     char _pad000[0x34];
-    unsigned char m_unk34;      // 0x034 TCC bit lives in bit 2
+    unsigned char m_unk34_lo : 2; // 0x034 bits 0-1
+    unsigned char m_bTCC : 1;     // 0x034 bit 2, TEX0 colour-component flag
+    unsigned char m_unk34_hi : 5; // 0x034 bits 3-7
 } tagGsTextureEnvironment;      // size >= 0x35
 
 typedef struct sceGsDBuff {

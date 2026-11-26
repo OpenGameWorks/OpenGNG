@@ -789,11 +789,8 @@ void GsSetFrameBufferCopyInfo(tagGsFrameBufferCopy *pInfo, int nX, int nY) {
     pInfo->m_unk40 |= (long long)nH & 0x3FFF;
 }
 
-// DRAFT: 0x001800A0 GsSetTCC__FP23tagGsTextureEnvironmentb
-// note: DIFF 4 words; byte load (lbu a1) matches, but the bit term and ~4 mask swap registers (a0/v1); tried 8 operand and declaration orders
+// FUNCTION: 0x001800A0 GsSetTCC__FP23tagGsTextureEnvironmentb
 void GsSetTCC(tagGsTextureEnvironment *pTexEnv, bool bFlag) {
     CDS_ASSERT(0x10E, pTexEnv);
-    unsigned int nOld = pTexEnv->m_unk34;
-    unsigned int nBit = ((unsigned int)bFlag & 1u) << 2;
-    pTexEnv->m_unk34 = (nOld & ~4u) | nBit;
+    pTexEnv->m_bTCC = bFlag;
 }

@@ -1389,13 +1389,10 @@ void PGfxEngine::FadeFullScreenMotionBlur(char cTarget, int nFrames) {
     m_unk16D404 = cTarget;
 }
 
-// DRAFT: 0x001876F0 SetTvOffset__10PGfxEngineFii
-// note: 7 words differ, all in the tail; the compiler hoists the lhu of m_unk158BE8 above the mult (original mults first). Tried: /64 and /32 fixups, inline and temp product, mask-then-or, height temp reuse (21 words); every form keeping the product in one expression gives 7.
+// FUNCTION: 0x001876F0 SetTvOffset__10PGfxEngineFii
 void PGfxEngine::SetTvOffset(int nX, int nY) {
-    int nWidth;
-    int nHeight;
-    int nProd;
-
+    // m_unk158BE8 is the DISPFB2 register of the second display environment (sceGsDispfb layout).
+    struct Dispfb { unsigned long FBP : 9; unsigned long FBW : 6; unsigned long PSM : 5; unsigned long p0 : 12; unsigned long DBX : 11; unsigned long DBY : 11; unsigned long p1 : 10; };
     m_unk158DE4 = nX;
     m_unk158DE8 = nY;
     if (MODE_PAL != 0) {
@@ -1404,10 +1401,7 @@ void PGfxEngine::SetTvOffset(int nX, int nY) {
     }
     sceGsSetDefDispEnv(m_unk158BB0, m_unk158DFE, m_unk158E08, m_unk158E0A, m_unk158DE4, m_unk158DE8);
     sceGsSetDefDispEnv(m_unk158BB0 + 0x28, m_unk158DFE, m_unk158E08, m_unk158E0A, m_unk158DE4, m_unk158DE8);
-    nWidth = (m_unk158E08 + 0x3F) / 64;
-    nHeight = (m_unk158E0A + 0x1F) / 32;
-    nProd = (nWidth * nHeight) & 0x1FF;
-    m_unk158BE8 = (m_unk158BE8 & 0xFFFFFE00) | nProd;
+    ((Dispfb *)&m_unk158BE8)->FBP = ((m_unk158E08 + 0x3F) / 64) * ((m_unk158E0A + 0x1F) / 32);
 }
 
 // DRAFT: 0x00187C10 RefreshDisplay__10PGfxEngineFv

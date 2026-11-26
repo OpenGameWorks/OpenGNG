@@ -2358,8 +2358,7 @@ int PSound::TranslateIntoADSR(unsigned int nArg) {
     return fst_ADSR_Translate_Attack[(nArg >> 4) & 0xF] + 0xFF1FC0 + fst_ADSR_Translate_Release[nArg & 0xF];
 }
 
-// DRAFT: 0x001A9E10 RestartSuffix__6PSoundFv
-// note: DIFF 2; constant 1 goes to a0 instead of v0 (addiu at 0x38, sb at 0x4C; schedule otherwise identical). Tried: char/bool/uchar member, `= true`, moving the m_unk00 store, `return m_unkD1 = 1` (DIFF 10), `(char)1` (DIFF 2), int local holding 1 (DIFF 2)
+// FUNCTION: 0x001A9E10 RestartSuffix__6PSoundFv
 int PSound::RestartSuffix() {
     PSoundFlushIOPCommandsWaitFinish();
     WaitOnVSync();
@@ -2373,6 +2372,7 @@ int PSound::RestartSuffix() {
     m_unkD4 = *(int *)(gEng + 0x19A80);
     m_unkD8 = *(int *)(gEng + 0x137A4);
     m_unk00 = 2;
+    return 1;
 }
 
 // FUNCTION: 0x001A9E90 PSoundRestart__6PSoundFv
