@@ -730,7 +730,7 @@ void Camera::SetCamMode(short arg0, bool arg1) {
 }
 
 // DRAFT: 0x0017A070 CamCollideCylinder__6CameraF5PVec3ff
-// note: 18 differing words; original keeps the copied PVec3 address in v0 and has no null recheck before the reload of m_unkBC; ours uses v1 and adds a recheck. Tried a temp local and direct m_unkBC access.
+// note: 18 differing words; original keeps the copied PVec3 address in v0 and has no null recheck before the reload of m_unkBC; ours uses v1 and adds a recheck. Tried a temp local and direct m_unkBC access. Non-POD PVec3 (user ctor) matches this but shifts three other FUNCTIONs in this file, so it is reverted. A non-POD PVec3 with an inline `PVec3(const PVec3 &o) { *this = o; }` matches both CamCollide functions and SetCamMode, but UpdateFromApparition (18) and RestoreFollowCamPos (51) then copy their by-value arguments right-to-left where the original goes left-to-right.
 void Camera::CamCollideCylinder(PVec3 arg0, float arg1, float arg2) {
     if (m_unkBC != 0) {
         ((CameraFollow *)m_unkBC)->CamCollideCylinder(arg0, arg1, arg2);
@@ -738,7 +738,7 @@ void Camera::CamCollideCylinder(PVec3 arg0, float arg1, float arg2) {
 }
 
 // DRAFT: 0x0017A0C0 CamCollideSphere__6CameraF5PVec3f
-// note: 18 differing lines; ours copies the PVec3 param to sp+0x10 at entry and again before the call, original copies once after the null test. Tried plain if, local copy in the if (frame 0x30), early return (copy hoisted, second null test); plain if is the closest.
+// note: 18 differing lines; ours copies the PVec3 param to sp+0x10 at entry and again before the call, original copies once after the null test. Tried plain if, local copy in the if (frame 0x30), early return (copy hoisted, second null test); plain if is the closest. Non-POD PVec3 (user ctor) matches this but shifts three other FUNCTIONs in this file, so it is reverted. A non-POD PVec3 with an inline `PVec3(const PVec3 &o) { *this = o; }` matches both CamCollide functions and SetCamMode, but UpdateFromApparition (18) and RestoreFollowCamPos (51) then copy their by-value arguments right-to-left where the original goes left-to-right.
 void Camera::CamCollideSphere(PVec3 arg0, float arg1) {
     if (m_unkBC != 0) {
         ((CameraFollow *)m_unkBC)->CamCollideSphere(arg0, arg1);
