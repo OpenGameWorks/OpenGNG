@@ -25,11 +25,12 @@ struct tagParticleSplineTrailParams {
     int m_unk34;
     float m_unk38;
     float m_unk3C;
-    char m_unk40[0x20];
+    float m_unk40;
+    float m_unk44;
+    float m_unk48;
+    char m_unk4C[0x14];
 };
 
-// Template parameter block in .rodata at 0x24DD30.
-extern tagParticleSplineTrailParams lit_0024DD30;
 
 // Three handle IDs (12 bytes) in .rodata at 0x24DD10; the last word is a float-typed slot.
 struct tagEyeBeamHandles {
@@ -74,11 +75,10 @@ void PCyclocksFx::StopFx(unsigned int hFx) {
     pMgr->Stop(hFx);
 }
 
-// DRAFT: 0x001F78B0 CreateSplineTrail__11PCyclocksFxFffffff
-// note: all code matches; only the two lui/addiu words for the 0x24DD30 template differ (2 words). The original names it local symbol @388 (main); an extern lit_ or main name, or a file-local static, all still emit a named reloc. Tried 3 forms.
+// FUNCTION: 0x001F78B0 CreateSplineTrail__11PCyclocksFxFffffff
 PParticleSplineTrail *PCyclocksFx::CreateSplineTrail(float p0, float p1, float p2, float p3, float p4, float p5) {
     PParticleManager *pMgr = (PParticleManager *)(gGfxEng + 0x154F00);
-    tagParticleSplineTrailParams sp = lit_0024DD30;
+    tagParticleSplineTrailParams sp = {{0}, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0, 0x14, 0xF, 0.0f, 0.0f, 0.0f, 0.0f, 20.0f};
     sp.m_unk1C = p5;
     sp.m_unk38 = p0;
     sp.m_unk3C = p1;
