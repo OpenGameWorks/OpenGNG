@@ -838,34 +838,34 @@ PWorld::~PWorld() {
     __dt__13PLightManagerFv((char *)this + 0x1F0, -1);
 }
 
-// DRAFT: 0x19C2E0 __ct__6PWorldFv
-// note: DIFF 98; original spills this to 0x1C(sp) with frame 0x20 and reloads it before each call, ours keeps this in s0 with frame 0x30 and s1; the spill needs a member type with a destructor (PFrustrum's __dt__ exists but PFrustrum.h declares none); tried explicit (char *)this casts (99) and a local char *base (98).
-PWorld::PWorld() {
-    char *base = (char *)this;
-    sceVu0UnitMatrix(base + 0x10);
-    sceVu0UnitMatrix(base + 0x50);
-    sceVu0UnitMatrix(base + 0x90);
-    __ct__9PFrustrumFv(base + 0xF0);
-    __ct__13PLightManagerFv(base + 0x1F0);
-    __construct_array(base + 0x220, __ct__15PCutScenePlayerFv, __dt__15PCutScenePlayerFv, 0x2140, 4);
-    __ct__11PZBufferFogFv(base + 0x8750);
-    __ct__6PArrayFv(base + 0x9FB0);
-    __ct__13PWaterTextureFv(base + 0x9FC0);
-    __ct__11PGasTextureFv(base + 0x12690);
-    __ct__12PFireTextureFv(base + 0x12C10);
-    __ct__11PFogTextureFv(base + 0x13210);
-    m_pMeshNode = 0;
-    m_unk004 = 0;
-    m_pSpacePartitionTree = 0;
-    m_bCulled = 0;
-    m_8724 = 0;
-    m_1EC = 0;
-    m_1ED = false;
-    m_1E0 = 0.00333333341f;
-    m_1E4 = 60.0f;
-    m_Persp[0] = 60.0f;
-    m_Persp[1] = 1.4f;
-    m_Persp[2] = 1.0f;
-    m_Persp[3] = 150.0f;
-    Allocate__6PArrayFUi((char *)this + 0x9FB0, 0x40);
+// FUNCTION: 0x19C2E0 __ct__6PWorldFv
+extern "C" PWorld *__ct__6PWorldFv(PWorld *volatile pThis)
+{
+    sceVu0UnitMatrix((char *)pThis + 0x10);
+    sceVu0UnitMatrix((char *)pThis + 0x50);
+    sceVu0UnitMatrix((char *)pThis + 0x90);
+    __ct__9PFrustrumFv((char *)pThis + 0xF0);
+    __ct__13PLightManagerFv((char *)pThis + 0x1F0);
+    __construct_array((char *)pThis + 0x220, __ct__15PCutScenePlayerFv, __dt__15PCutScenePlayerFv, 0x2140, 4);
+    __ct__11PZBufferFogFv((char *)pThis + 0x8750);
+    __ct__6PArrayFv((char *)pThis + 0x9FB0);
+    __ct__13PWaterTextureFv((char *)pThis + 0x9FC0);
+    __ct__11PGasTextureFv((char *)pThis + 0x12690);
+    __ct__12PFireTextureFv((char *)pThis + 0x12C10);
+    __ct__11PFogTextureFv((char *)pThis + 0x13210);
+    pThis->m_pMeshNode = 0;
+    pThis->m_unk004 = 0;
+    pThis->m_pSpacePartitionTree = 0;
+    pThis->m_bCulled = 0;
+    pThis->m_8724 = 0;
+    pThis->m_1EC = 0;
+    pThis->m_1ED = false;
+    pThis->m_1E0 = 0.00333333341f;
+    pThis->m_1E4 = 60.0f;
+    pThis->m_Persp[0] = 60.0f;
+    pThis->m_Persp[1] = 1.4f;
+    pThis->m_Persp[2] = 1.0f;
+    pThis->m_Persp[3] = 150.0f;
+    Allocate__6PArrayFUi((char *)pThis + 0x9FB0, 0x40);
+    return pThis;
 }

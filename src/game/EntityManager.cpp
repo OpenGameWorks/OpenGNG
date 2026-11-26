@@ -2102,58 +2102,53 @@ EntityManager::~EntityManager() {
     }
 }
 
-// DRAFT: 0x00149CE0 __ct__13EntityManagerFv
-// note: DIFF 140; members not embedded as real classes, so this is spilled and reloaded at 0x1C(sp) with a 0x20 frame; original keeps this in s5 with a 0xB0 frame and caches member addresses in s7/fp/s6/s0. Tried: first draft only.
-EntityManager::EntityManager() {
-    __ct__19EntityAttackManagerFv(this);
-    __ct__15WaypointManagerFv((char *)this + 0x30);
-    __ct__6PArrayFv((char *)this + 0x5078);
-    __ct__10PHashTableFv((char *)this + 0x5088);
-    __ct__10PHashTableFv((char *)this + 0x5094);
-    __ct__6PArrayFv((char *)this + 0x50A0);
-    __ct__6PArrayFv((char *)this + 0x50B0);
-    __ct__16PResourceManagerFv((char *)this + 0x50C4);
-    __ct__6PArrayFv((char *)this + 0x5B50);
-    __ct__6PArrayFv((char *)this + 0x5B60);
-    __ct__6PArrayFv((char *)this + 0x5B70);
-    __ct__5PListFv((char *)this + 0x5B80);
-    __ct__5PListFv((char *)this + 0x5F50);
-    __ct__6PArrayFv((char *)this + 0x5F64);
-    m_unk5050 = 1;
-    if (Create__10PHashTableFUi((char *)this + 0x5088, 0x11) == 0) {
-        char *pMsg = "Hash table creation failed";
-        if (pMsg != 0) {
-            CdsAssert("EntityManager.cpp", 0x34, "!\"Hash table creation failed\"");
-        }
+// FUNCTION: 0x00149CE0 __ct__13EntityManagerFv
+extern "C" EntityManager *__ct__13EntityManagerFv(EntityManager *volatile pThis)
+{
+    __ct__19EntityAttackManagerFv(pThis);
+    __ct__15WaypointManagerFv((char *)pThis + 0x30);
+    __ct__6PArrayFv((char *)pThis + 0x5078);
+    __ct__10PHashTableFv((char *)pThis + 0x5088);
+    __ct__10PHashTableFv((char *)pThis + 0x5094);
+    __ct__6PArrayFv((char *)pThis + 0x50A0);
+    __ct__6PArrayFv((char *)pThis + 0x50B0);
+    __ct__16PResourceManagerFv((char *)pThis + 0x50C4);
+    __ct__6PArrayFv((char *)pThis + 0x5B50);
+    __ct__6PArrayFv((char *)pThis + 0x5B60);
+    __ct__6PArrayFv((char *)pThis + 0x5B70);
+    __ct__5PListFv((char *)pThis + 0x5B80);
+    __ct__5PListFv((char *)pThis + 0x5F50);
+    __ct__6PArrayFv((char *)pThis + 0x5F64);
+    pThis->m_unk5050 = 1;
+    if (Create__10PHashTableFUi((char *)pThis + 0x5088, 0x11) == 0) {
+        (!"Hash table creation failed") ? (void)0 : CdsAssert("EntityManager.cpp", 0x34, "!\"Hash table creation failed\"");
     }
-    if (Create__10PHashTableFUi((char *)this + 0x5094, 0x11) == 0) {
-        char *pMsg = "Hash table creation failed";
-        if (pMsg != 0) {
-            CdsAssert("EntityManager.cpp", 0x3A, "!\"Hash table creation failed\"");
-        }
+    if (Create__10PHashTableFUi((char *)pThis + 0x5094, 0x11) == 0) {
+        (!"Hash table creation failed") ? (void)0 : CdsAssert("EntityManager.cpp", 0x3A, "!\"Hash table creation failed\"");
     }
-    ((PArray *)((char *)this + 0x5078))->Allocate(0x180);
-    ((PArray *)((char *)this + 0x50A0))->Allocate(0x20);
-    ((PArray *)((char *)this + 0x50B0))->Allocate(0x180);
-    ((PArray *)((char *)this + 0x5B60))->Allocate(0x20);
-    ((PArray *)((char *)this + 0x5B70))->Allocate(0x20);
-    ((PArray *)((char *)this + 0x5B50))->Allocate(0x20);
-    ((PArray *)((char *)this + 0x5F64))->Allocate(0x180);
+    ((PArray *)((char *)pThis + 0x5078))->Allocate(0x180);
+    ((PArray *)((char *)pThis + 0x50A0))->Allocate(0x20);
+    ((PArray *)((char *)pThis + 0x50B0))->Allocate(0x180);
+    ((PArray *)((char *)pThis + 0x5B60))->Allocate(0x20);
+    ((PArray *)((char *)pThis + 0x5B70))->Allocate(0x20);
+    ((PArray *)((char *)pThis + 0x5B50))->Allocate(0x20);
+    ((PArray *)((char *)pThis + 0x5F64))->Allocate(0x180);
     void *pOverlay = __nw__FUi(0x28);
     if (pOverlay != 0) {
         pOverlay = __ct__14OverlayManagerFUi(pOverlay, 1);
     }
-    m_unk50C0 = pOverlay;
-    if (m_unk50C0 == 0) {
+    pThis->m_unk50C0 = pOverlay;
+    if (pThis->m_unk50C0 == 0) {
         CdsAssert("EntityManager.cpp", 0x48, "WorldOverlays");
     }
     InitLoadSystem__15EntityBaseClassFv();
-    m_unk505C = 0;
-    m_unk5194 = 0;
-    m_unk5B20 = 0;
-    m_unk5B21 = 0;
-    *(int *)((char *)this + 0x5F60) = 1;
+    pThis->m_unk505C = 0;
+    pThis->m_unk5194 = 0;
+    pThis->m_unk5B20 = 0;
+    pThis->m_unk5B21 = 0;
+    *(int *)((char *)pThis + 0x5F60) = 1;
     printf("Entity Manager v%d\n", 1);
+    return pThis;
 }
 
 // FUNCTION: 0x00149F30 GetArenaWaveID__15EntityBaseClassFv

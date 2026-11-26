@@ -2794,19 +2794,19 @@ extern "C" void *__dt__10MaximoMainFv(void *pThis, short nFlag) {
     return pThis;
 }
 
-// DRAFT: 0x0013F730 __ct__10MaximoMainFv
-// note: 47 lines; ours spills this to 0x1C(sp) and never saves s0 (original sq s0 / daddu s0,a0). Tried member, extern "C" with return this, local self before/after first call, register hint; all 47. Size 0xA8 vs 0xCC.
-MaximoMain::MaximoMain() {
-    __ct__9MaxEngineFv(this);
-    MaximoMain *self = this;
-    __ct__13EntityManagerFv((char *)self + 0x137E0);
-    __ct__6CameraFv((char *)self + 0x19760);
-    self->m_unk19AC4 = 0;
-    self->m_unk19A7C = 0;
-    self->m_unk19B54 = 0;
-    self->m_unk19B58 = 0;
-    self->m_unk19B44 = 0;
-    self->m_unk19B48 = 0;
-    self->m_unk19B4C = 0;
-    self->m_unk19AA0 = 0;
+// FUNCTION: 0x0013F730 __ct__10MaximoMainFv
+extern "C" MaximoMain *__ct__10MaximoMainFv(MaximoMain *volatile pThis)
+{
+    __ct__9MaxEngineFv(pThis);
+    __ct__13EntityManagerFv((char *)pThis + 0x137E0);
+    __ct__6CameraFv((char *)pThis + 0x19760);
+    pThis->m_unk19AC4 = 0;
+    pThis->m_unk19A7C = 0;
+    pThis->m_unk19B54 = 0;
+    pThis->m_unk19B58 = 0;
+    pThis->m_unk19B44 = 0;
+    pThis->m_unk19B48 = 0;
+    pThis->m_unk19B4C = 0;
+    pThis->m_unk19AA0 = 0;
+    return pThis;
 }

@@ -971,30 +971,34 @@ void Camera::Init() {
     CleanUpCutCameras();
 }
 
-// DRAFT: 0x0017A880 __ct__6CameraFv
-// note: original spills this to 0x1C(sp) and keeps no s-regs; ours keeps this in s0 (size 0x114 vs 0x11C, DIFF 68); tried a local Camera* copy, same DIFF.
-Camera::Camera() {
-    sceVu0UnitMatrix(m_unk30);
-    sceVu0UnitMatrix(m_unk70);
-    m_unkBC = __nw__FUi(0x64A0);
-    if (m_unkBC != 0) {
-        m_unkBC = __ct__12CameraFollowFP6Camera(m_unkBC, this);
+// FUNCTION: 0x0017A880 __ct__6CameraFv
+extern "C" Camera *__ct__6CameraFv(Camera *volatile pThis)
+{
+    sceVu0UnitMatrix(pThis->m_unk30);
+    sceVu0UnitMatrix(pThis->m_unk70);
+    void *pm_unkBC = __nw__FUi(0x64A0);
+    if (pm_unkBC != 0) {
+        pm_unkBC = __ct__12CameraFollowFP6Camera(pm_unkBC, pThis);
     }
-    if (m_unkBC == 0) {
+    pThis->m_unkBC = pm_unkBC;
+    if (pThis->m_unkBC == 0) {
         CdsAssert__FPciPc("Camera.cpp", 0x18, "m_pFollowCam");
     }
-    m_unkC0 = __nw__FUi(0xD0);
-    if (m_unkC0 != 0) {
-        m_unkC0 = __ct__16CameraCutManagerFP6Camera(m_unkC0, this);
+    void *pm_unkC0 = __nw__FUi(0xD0);
+    if (pm_unkC0 != 0) {
+        pm_unkC0 = __ct__16CameraCutManagerFP6Camera(pm_unkC0, pThis);
     }
-    if (m_unkC0 == 0) {
+    pThis->m_unkC0 = pm_unkC0;
+    if (pThis->m_unkC0 == 0) {
         CdsAssert__FPciPc("Camera.cpp", 0x1B, "m_pCutManager");
     }
-    m_unkC4 = __nw__FUi(0x250);
-    if (m_unkC4 != 0) {
-        m_unkC4 = __ct__11CameraDebugFP6Camera(m_unkC4, this);
+    void *pm_unkC4 = __nw__FUi(0x250);
+    if (pm_unkC4 != 0) {
+        pm_unkC4 = __ct__11CameraDebugFP6Camera(pm_unkC4, pThis);
     }
-    if (m_unkC4 == 0) {
+    pThis->m_unkC4 = pm_unkC4;
+    if (pThis->m_unkC4 == 0) {
         CdsAssert__FPciPc("Camera.cpp", 0x1E, "m_pDebugCam");
     }
+    return pThis;
 }

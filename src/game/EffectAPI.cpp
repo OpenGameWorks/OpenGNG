@@ -407,29 +407,30 @@ int GhostEffect::Update(float arg0) {
     return 1;
 }
 
-// DRAFT: 0x1562B0 __ct__11GhostEffectFP9PMeshNode
-// note: 63 words differ; post-assert reload of m_unk98 and "mpMesh" literal placement (gp-relative here, lui/addiu in original).
-GhostEffect::GhostEffect(PMeshNode *arg0) {
-    *(void **)this = __vt__10EffectNode;
-    m_unk4 = 0;
-    m_unkC = 0;
-    *(void **)this = __vt__11GhostEffect;
-    m_unk4 = (int)arg0;
-    m_unk98 = ((PMNode *)m_unk4)->GetFirstMesh();
-    if (m_unk98 == 0) {
+// FUNCTION: 0x1562B0 __ct__11GhostEffectFP9PMeshNode
+extern "C" GhostEffect *__ct__11GhostEffectFP9PMeshNode(GhostEffect *volatile pThis, PMeshNode *arg0)
+{
+    *(void **)pThis = __vt__10EffectNode;
+    pThis->m_unk4 = 0;
+    *(unsigned char *)&pThis->m_unkC = 0;
+    *(void **)pThis = __vt__11GhostEffect;
+    pThis->m_unk4 = (int)arg0;
+    pThis->m_unk98 = ((PMNode *)arg0)->GetFirstMesh();
+    if (pThis->m_unk98 == 0) {
         CdsAssert("EffectAPI.cpp", 0x14D, "mpMesh");
     }
-    m_unk9C = 0;
-    m_unk9E = 0;
-    m_unk9F = 0;
-    m_unk90[0] = 0;
-    m_unk90[1] = 0;
-    m_unk90[2] = 0;
-    m_unk90[3] = 0;
-    m_unk90[4] = 0;
-    m_unk90[5] = 0;
-    m_unk90[6] = 0;
-    m_unk90[7] = 0;
+    pThis->m_unk9C = 0;
+    pThis->m_unk9E = 0;
+    pThis->m_unk9F = 0;
+    pThis->m_unk90[0] = 0;
+    pThis->m_unk90[1] = 0;
+    pThis->m_unk90[2] = 0;
+    pThis->m_unk90[3] = 0;
+    pThis->m_unk90[4] = 0;
+    pThis->m_unk90[5] = 0;
+    pThis->m_unk90[6] = 0;
+    pThis->m_unk90[7] = 0;
+    return pThis;
 }
 
 // FUNCTION: 0x156390 CreateGhost__9EffectAPIFP9PMeshNode

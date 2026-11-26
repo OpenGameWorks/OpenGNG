@@ -143,7 +143,7 @@ static void ProcessNextSubtitle() {
 }
 
 // DRAFT: 0x001FFBB0 checkAndWaitForDisk__Fv
-// note: 20 words differ; loop layout (do-while back-branch one word early, unfilled delay-slot nops after sceCdGetDiskType, tail call at 0x80 vs 0x88). Tried while(1), loop-scoped diskType, for(;;)+break; none reduced the diff.
+// note: matches under 011126. Under 3.0.3 the original has two padding nops (one before the do-while bnez, one at the while(1) loop head) that ours lacks; 3.0.3 gives 20 words differing. Tried while(1), loop-scoped diskType, for(;;)+break; none reduced the diff.
 static void checkAndWaitForDisk() {
     if (gbMoviesOnDisc != 0) {
         getTrayStatus();
@@ -273,10 +273,9 @@ static int nodataCallback(sceMpeg *arg0, sceMpegCbData *arg1, void *arg2) {
     return 1;
 }
 
-// DRAFT: 0x001FFF50 audioCallback__FP7sceMpegP16sceMpegCbDataStrPv
-// note: 19 words differ; arg1 and size are swapped between s0/s1. Tried local reorder, pointer copy first/last, dropping temp_a2; declaration order does not change register assignment.
+// FUNCTION: 0x001FFF50 audioCallback__FP7sceMpegP16sceMpegCbDataStrPv
 static int audioCallback(sceMpeg *arg0, sceMpegCbDataStr *arg1, void *arg2) {
-    int temp_s1;
+    unsigned int temp_s1;
     char *ptr1;
     char *ptr2;
     int size1;
@@ -289,7 +288,7 @@ static int audioCallback(sceMpeg *arg0, sceMpegCbDataStr *arg1, void *arg2) {
     if ((unsigned int)(size1 + size2) < arg1->m_unkC) {
         return 0;
     }
-    if (temp_s1 > 0) {
+    if ((int)temp_s1 > 0) {
         memcpy(ptr1, (char *)arg1->m_unk8, arg1->m_unkC - temp_s1);
         memcpy(ptr2, (char *)arg1->m_unk8 + (arg1->m_unkC - temp_s1), temp_s1);
     } else {

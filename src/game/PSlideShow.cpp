@@ -363,7 +363,7 @@ asm void PSlideShow::ApplyTileOnGsPoly(tagGsPoly *pPoly, tagTile *pTile)
 }
 
 // DRAFT: 0x00215B10 SetGsPolyPos__10PSlideShowFPQ210PSlideShow9tagGsPolyPQ210PSlideShow7tagTilePfPf
-// note: 13 words; VU0 block and m_unkC store match. Flag updates differ: original keeps 0x80 in a register (daddiu a3) for both `or`s, ours folds it to immediates. Tried: unsigned int pair (13, kept), shift form (13), unsigned char (15), long pair (16), signed mask (worse).
+// note: 4 words; VU0 block and m_unkC store match. Flag updates: `unsigned long long nFlag = 0x80` gives the daddiu a3 load; remaining diff is an extra `andi 0xFF` after the first `and` and the 0x80 folded to `ori` for the second store. Tried: unsigned int pair (13), shift form (13), unsigned char (15), long pair (16), signed mask (worse), ull with (unsigned int) cast on the or (13, folds), ull with (unsigned char) cast store (4), ull with unsigned int temp (4), int nMask (13), ull nMask (22).
 void PSlideShow::SetGsPolyPos(tagGsPoly *pPoly, tagTile *pTile, float *pA, float *pB)
 {
     asm {
@@ -388,7 +388,7 @@ void PSlideShow::SetGsPolyPos(tagGsPoly *pPoly, tagTile *pTile, float *pA, float
         sqc2 vf7, 0x60(a1)
         sqc2 vf8, 0x80(a1)
     }
-    unsigned int nFlag = 0x80;
+    unsigned long long nFlag = 0x80;
     unsigned int nMask = ~nFlag;
     pPoly->m_ucUnk2D = (pPoly->m_ucUnk2D & nMask) | nFlag;
     pPoly->m_ucUnk4D = (pPoly->m_ucUnk4D & nMask) | nFlag;
@@ -524,20 +524,22 @@ void PSlideShow::Render()
     gGfxEng.SetZBufferUpdate(true, (eGsContext)0);
 }
 
-// DRAFT: 0x00216190 Animate__10PSlideShowFf
-// note: 26 differing lines. The original has an early `beq` exit with a duplicated epilogue and a shared epilogue at 0x80, and dispatches the switch with beq; ours shares the epilogue at 0x74 and emits bne compare chains.
+// FUNCTION: 0x00216190 Animate__10PSlideShowFf
 void PSlideShow::Animate(float fTime)
 {
-    if (m_ucUnk40 != 0) {
-        if (m_ucUnk41 != 0) {
-            if (m_nMode == 2) {
-                AnimateVanishingTiles(fTime);
-            } else if (m_nMode == 3) {
-                AnimateFadingTiles(fTime);
-            } else if (m_nMode == 1) {
-                AnimateFallingTiles(fTime);
-            }
-        }
+    if (m_ucUnk40 == 0 || m_ucUnk41 == 0) {
+        return;
+    }
+    switch (m_nMode) {
+    case 1:
+        AnimateFallingTiles(fTime);
+        break;
+    case 3:
+        AnimateFadingTiles(fTime);
+        break;
+    case 2:
+        AnimateVanishingTiles(fTime);
+        break;
     }
 }
 
