@@ -10,15 +10,16 @@ extern "C" void __dl__FPv(void *pMem);
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("WaypointManager.cpp", line, #cond))
 
 // DRAFT: 0x00155020 GetWaypoint__15WaypointManagerFP16tagWaypointGroupUiRUc
-// note: 19 words; original loads m_unk4 before the word, computes the word address as addiu+addu+lw 0, and emits lui 0xF000 after the load, beqz is +0xD vs ours +0xC. Tried: bRef mask form (19), hoisted base (24), word pointer (19), pointer-first m_unk18 (19).
+// note: 15 words; saved-register order differs (original this=s2, iWp=s3, pGroup=s1; ours this=s3, pGroup=s2, iWp=s1), and the word address is one addiu+addu in the original while ours folds the 0x18 into the lw. Best so far: int nBase = m_unk4 hoisted before the word load plus (unsigned int *)((unsigned int)pGroup + 0x18). Tried: bRef mask form (19), hoisted base (24), word pointer (19), pointer-first m_unk18 (19), integer-cast base only (18), typed pointer with integer base (18), pointer-first m_unk18 with hoisted nBase (24).
 int WaypointManager::GetWaypoint(tagWaypointGroup *pGroup, unsigned int iWpNumber, unsigned char &bRef) {
     CDS_ASSERT(0x263, pGroup);
     CDS_ASSERT(0x264, iWpNumber < pGroup->iNWaypoints);
     if (m_unk0 != 0) {
-        unsigned int *pWords = pGroup->m_unk18;
+        int nBase = m_unk4;
+        unsigned int *pWords = (unsigned int *)((unsigned int)pGroup + 0x18);
         unsigned int uWord = pWords[iWpNumber];
         bRef = (uWord & 0xF0000000) >> 28;
-        return m_unk4 + (uWord & 0x0FFFFFFF);
+        return nBase + (uWord & 0x0FFFFFFF);
     }
     return 0;
 }
@@ -36,8 +37,7 @@ tagWaypointGroup *WaypointManager::GetWaypointGroupInfo(unsigned int iGroupId) {
     return 0;
 }
 
-// DRAFT: 0x00155150 LoadWaypoints__15WaypointManagerFP8PPakFileUi
-// note: 21 words; original computes &m_unk20 then adds 0xC in two steps for m_unkC, ours folds to one addiu 0x2C; (char*)&m_unk20+0xC, a local base, and (unsigned int*)&m_unk20+3 all fold the same way.
+// FUNCTION: 0x00155150 LoadWaypoints__15WaypointManagerFP8PPakFileUi
 int WaypointManager::LoadWaypoints(PPakFile *pPak, unsigned int uSizeWpBlock) {
     CDS_ASSERT(0x189, uSizeWpBlock < WAYPOINT_BUFFER_SIZE);
     if (pPak->Read(&m_unk20, uSizeWpBlock) == 0) {
@@ -46,7 +46,7 @@ int WaypointManager::LoadWaypoints(PPakFile *pPak, unsigned int uSizeWpBlock) {
     m_unk10 = m_unk20;
     m_unk8 = (char *)this + m_unk24 + 0x20;
     m_unk4 = (int)(m_unk8 + m_unk28);
-    m_unkC = m_unk2C;
+    m_unkC = (char *)((unsigned int)&m_unk20 + 0xC);
     m_unk0 = 1;
     return 1;
 }
