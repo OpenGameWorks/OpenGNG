@@ -564,8 +564,7 @@ int Tinker::GetClosestWaypoint(float (&pos)[4], bool bFlag) {
     return 0;
 }
 
-// DRAFT: 0x00209760 GetNextPosition__6TinkerFRA4_f
-// note: 13 differing lines; branch layout at 0x18, 0x68, 0x88 and bc1f vs bc1t at 0xD4, bool materialization through v1 at 0xD8-0xF4. Tried early returns (more diffs), nested if with single exit, split scoped bPrimary/bFlag, return compare (14); ternary return kept (13).
+// FUNCTION: 0x00209760 GetNextPosition__6TinkerFRA4_f
 int Tinker::GetNextPosition(float (&pos)[4]) {
     tagWaypointGroup *pGroup = (tagWaypointGroup *)m_unk2A8;
     if (pGroup != 0) {
@@ -590,7 +589,9 @@ int Tinker::GetNextPosition(float (&pos)[4]) {
             } else {
                 pTarget = (float (*)[4])m_unk190;
             }
-            return (DistanceXZ__7MathAPIFPA4_fPA4_f(pTarget, &pos) > 1.0f) ? 1 : 0;
+            if (DistanceXZ__7MathAPIFPA4_fPA4_f(pTarget, &pos) > 1.0f) {
+                return 1;
+            }
         }
     }
     return 0;
@@ -740,28 +741,24 @@ void *Tinker::FindClosestEnemy(float (*pBox)[4], EntityBaseClass::LoadClass eLoa
     return pNearestApparition;
 }
 
-// DRAFT: 0x00209EB0 EnemiesInCheckRadius__6TinkerFv
-// note: 19 differing lines; the original stores f12 once and passes it via mov.s in the jal delay slot, ours reloads 0x1DC from memory. Tried bool return, pointer-to-last-element, and a fRadius local; no improvement.
+// FUNCTION: 0x00209EB0 EnemiesInCheckRadius__6TinkerFv
 int Tinker::EnemiesInCheckRadius() {
     float box[4];
     float *pLast = &box[3];
-    float fRadius;
     box[0] = m_unk1D0[0];
     box[1] = m_unk1D0[1];
     box[2] = m_unk1D0[2];
-    fRadius = m_unk1D0[3];
-    *pLast = fRadius;
-    return GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 3, 0, &box, fRadius, 0, true, false);
+    *pLast = m_unk1D0[3];
+    return GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 3, 0, &box, *pLast, 0, true, false);
 }
 
-// DRAFT: 0x00209F10 ActivateAttackingEnemies__6TinkerFv
-// note: 38 differing lines; original keeps entity in s2, valid in s3, offset in s4, i in s1 (0x70 frame); ours assigns s3/s4/s1/s2 differently (0x60 frame). Tried locals in 3 orders and hoisted pEnt/pValid; count stays 38.
+// FUNCTION: 0x00209F10 ActivateAttackingEnemies__6TinkerFv
 void Tinker::ActivateAttackingEnemies() {
     EntityBaseClass **pSlot = m_unk1E0;
-    int off = 0;
     int i = 0;
     EntityBaseClass *pEnt;
     ApparitionVirtual *pValid;
+    int off = 0;
     do {
         pEnt = *pSlot;
         if (pEnt != 0) {
@@ -1642,17 +1639,17 @@ void Tinker::OnTouchEvent(EntityBaseClass *pOther) {
     }
 }
 
-// DRAFT: 0x0020A660 OnDestroyEvent__6TinkerFv
-// note: 21 differing lines; the original computes both `== 0` and `== 1` as xor/sltiu values and branches on them, MW emits beqz/bne. Tried a local int, unsigned int, and bool first term; none changed the codegen.
+// FUNCTION: 0x0020A660 OnDestroyEvent__6TinkerFv
 void Tinker::OnDestroyEvent() {
-    if (m_unk1B0 == 0 || m_unk1B0 == 1) {
+    bool r = (m_unk1B0 == 0) || (m_unk1B0 == 1);
+    if (r) {
         char *pSub = *(char **)(gInterface + 0x274);
         if (pSub != 0) {
             *(int *)(pSub + 0xC) = 0;
         }
-    }
-    if (m_unk1B0 == 0) {
-        WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0);
+        if (m_unk1B0 == 0) {
+            WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0);
+        }
     }
 }
 
