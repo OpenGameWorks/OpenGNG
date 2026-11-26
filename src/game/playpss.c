@@ -12,7 +12,7 @@ extern "C" int sceGsSyncV(int);
 extern "C" int sceMpegDemuxPss(sceMpeg *, void *, int);
 extern "C" void RemoteChangePCMVolume(int);
 void CdsAssert(char *, int, char *);
-void audioUpdate();
+static void audioUpdate();
 static void getTrayStatus();
 
 extern signed char gbMoviesOnDisc;
@@ -179,7 +179,7 @@ static void getTrayStatus() {
 }
 
 // FUNCTION: 0x001FFCA0 audioUpdate__Fv
-void audioUpdate() {
+static void audioUpdate() {
     audioDecSendToIOP(&audioDec);
 }
 
