@@ -25,7 +25,7 @@ extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" int rand(void);
 
 // DRAFT: 0x001BDDA0 FrustrumTest__12PParticleFogFP9PFrustrumPfffP5PMat4
-// note: 64 words differ, register allocation: original keeps this in s0, pPos in s2, pMat in s1 (ours this=s2, pMat=s0); early-return form and nested form both 64 words.
+// note: 60 words differ; register map is the cause (original saves pPos in s2, pMat in s1, this in s0; ours this=s2, pPos=s1, pMat=s0). Flipping the fDist arm to test fDist > fFar first gave 60 (was 64); pFrustum-first, ternary pMat, and !(fDist<=fFar) variants gave 60-92.
 void PParticleFog::FrustrumTest(PFrustrum *pFrustum, float *pPos, float fNear, float fFar, PMat4 *pMat) {
     if (pFrustum != 0) {
         float vec[4];
@@ -42,9 +42,7 @@ void PParticleFog::FrustrumTest(PFrustrum *pFrustum, float *pPos, float fNear, f
             }
             sceVu0SubVector(vec, pPos, vec);
             float fDist = vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2];
-            if (fDist <= fFar) {
-                m_unk20 = 1.0f;
-            } else {
+            if (fDist > fFar) {
                 float fAlpha = 1.0f - ((fDist - fFar) / (fNear - fFar));
                 m_unk20 = fAlpha;
                 if (fAlpha <= 0.0f) {
@@ -56,13 +54,15 @@ void PParticleFog::FrustrumTest(PFrustrum *pFrustum, float *pPos, float fNear, f
                 if (fAlpha == 0.0f) {
                     m_unk50 = 0;
                 }
+            } else {
+                m_unk20 = 1.0f;
             }
         }
     }
 }
 
 // DRAFT: 0x001BDF40 Render__12PParticleFogFP5PMat4
-// note: 4 words, load order only: original loads a1 (0x54) before the 64-bit t0 (0x58), and a2 before a1 for DrawFogParticles; literal {1,1,1,1} plus w store fixed. Tried nCount local, m_unk58 local (10), PGfxEngine member calls (4).
+// note: 4 words, load order only: original loads a1 (0x54) before the 64-bit t0 (0x58), and a2 before a1 for DrawFogParticles; literal {1,1,1,1} plus w store fixed. Tried nCount local, m_unk58 local (10), PGfxEngine member calls (4), int nTex local (9), float (*pPart)[4] local for DrawFogParticles (4), both (9).
 void PParticleFog::Render(PMat4 *pMat) {
     if (m_unk50 != 0) {
         float vec[4] = {1.0f, 1.0f, 1.0f, 1.0f};
