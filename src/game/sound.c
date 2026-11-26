@@ -161,59 +161,22 @@ void SOUND_MusicAddExciteHits(short arg0) {
 }
 
 // DRAFT: 0x001ADC60 SOUND_LevelRestart
-// note: 19 words; frame and call match, but first-loop base is lui $a0 vs original lui $v1 (+addiu 0x3E50), pointer in $a2 vs $a0, loop test in $v1 vs $at, and second loop stores before addiu with an extra nop before the bnez. Tried indexed stores, p = &arr[i] with mid-block increment, i += 1 ahead of the store, pointer-base first loop (20), and the draft-shape alternates (19).
+// note: short-loop nop padding differs by 3 words; matches under mwcps2-3.0-011126 and 3.0.1-020123, which lose 0x1ADEC0
 void SOUND_LevelRestart(void) {
     int i;
-    char *p;
-    char *base;
     SetIOPCommand(0x24, 0);
-    i = 6;
-    do {
-        base = SOUND_SPUKeyStatus;
-        p = base + i;
-        p[0] = 0;
-        p[1] = 0;
-        p[2] = 0;
-        p[3] = 0;
-        p[4] = 0;
-        p[5] = 0;
-        p[6] = 0;
-        p[7] = 0;
-        i += 8;
-    } while (i < 8);
-    if (i < 0x10) {
-        do {
-            p = &SOUND_SPUKeyStatus[i];
-            i += 1;
-            *p = 0;
-        } while (i < 0x10);
+    for (i = 6; i <= 15; i++) {
+        SOUND_SPUKeyStatus[i] = 0;
     }
 }
 
 // DRAFT: 0x001ADCF0 SOUND_StopAllSounds
-// note: 19 words; same loop shape and register-allocation gap as SOUND_LevelRestart (base in $a0 vs $v1, pointer in $a2 vs $a0). Tried four draft-shape and pointer-form alternates, all 19.
+// note: short-loop nop padding differs by 3 words; matches under mwcps2-3.0-011126 and 3.0.1-020123, which lose 0x1ADEC0
 void SOUND_StopAllSounds(void) {
     int i;
-    char *p;
     SetIOPCommand(0x1E, 0);
-    i = 6;
-    do {
-        SOUND_SPUKeyStatus[i + 0] = 0;
-        SOUND_SPUKeyStatus[i + 1] = 0;
-        SOUND_SPUKeyStatus[i + 2] = 0;
-        SOUND_SPUKeyStatus[i + 3] = 0;
-        SOUND_SPUKeyStatus[i + 4] = 0;
-        SOUND_SPUKeyStatus[i + 5] = 0;
-        SOUND_SPUKeyStatus[i + 6] = 0;
-        SOUND_SPUKeyStatus[i + 7] = 0;
-        i += 8;
-    } while (i < 8);
-    if (i < 0x10) {
-        do {
-            p = &SOUND_SPUKeyStatus[i];
-            i += 1;
-            *p = 0;
-        } while (i < 0x10);
+    for (i = 6; i <= 15; i++) {
+        SOUND_SPUKeyStatus[i] = 0;
     }
 }
 
