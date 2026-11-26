@@ -1079,16 +1079,15 @@ void EntityManager::SetHolyGround(float (*arg0)[4], float arg1, bool arg2) {
     ModifyEifPosition();
 }
 
-// DRAFT: 0x00147760 ValidateDependencyList__13EntityManagerFv
-// note: 7 words; offset and pointer swap registers (original offset a3, pointer t0; ours offset a2, pointer a3); tried scoped counter (9), unsigned offset (9), comma-increment (8), array index (25), offset-first (9), chptr (8), while loop, pointer decl, if-wrap, dropped p (all 7, counter-first kept).
+// FUNCTION: 0x00147760 ValidateDependencyList__13EntityManagerFv
 void EntityManager::ValidateDependencyList() {
     int i = 0;
+    unsigned int v;
     int off = 0;
     for (; i < m_unk519C; i++) {
-        DependencyEntry *p = (DependencyEntry *)((char *)this + off);
-        unsigned int v = p->m_unk04;
+        v = *(unsigned int *)((char *)this + off + 0x51A4);
         if (v < m_unk5054 && (signed char)m_unk53A1[v * 4] >= 0) {
-            m_unk53A1[p->m_unk00 * 4] = 0;
+            m_unk53A1[*(int *)((char *)this + off + 0x51A0) * 4] = 0;
         }
         off += 8;
     }
