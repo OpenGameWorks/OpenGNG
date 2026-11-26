@@ -221,7 +221,7 @@ public:
     int m_unk1F4;           // 0x1F4 flag, UpdateKey takes the first key mesh when set
     int m_unk1F8;           // 0x1F8 remaining-lives counter, decremented by SetDeath
     int m_unk1FC;           // 0x1FC compared with 2 by MightyBlowCheck
-    char _pad200[4];
+    int m_unk200;
     int m_unk204;           // 0x204 read by CheckAbility (ability 8)
     int m_unk208;           // 0x208 read by CheckAbility (abilities 13 and 16)
     int m_unk20C;          // 0x20C compared with the MightyCost value by MightyBlowCheck
@@ -282,9 +282,9 @@ public:
     float m_unk304;         // 0x304 float, set by OnAttackEvent
     int m_unk308;           // 0x308 cleared by SetDeath
     int m_unk30C;           // 0x30C written by Execute
-    char _pad310[0x314 - 0x310];
+    float m_unk310;
     int m_unk314;           // 0x314 int, set to 0x42A00000 by OnAttackEvent
-    char _pad318[0x31C - 0x318];
+    float m_unk318;
     FontNode *m_unk31C;     // 0x31C font node, passed to FontManager::RemoveText and cleared by ForceDie
     char _pad320[0x324 - 0x320];
     int m_unk324;           // 0x324

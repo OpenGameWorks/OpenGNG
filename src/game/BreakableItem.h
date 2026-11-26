@@ -16,7 +16,7 @@ public:
 
     char _pad190[0x1B0 - 0x190];
     int m_unk1B0;               // 0x1B0 editable-vars block (0xC bytes); its first word is the type index
-    int m_unk1B4;               // 0x1B4
+    float m_unk1B4;             // 0x1B4 distance threshold
     int m_unk1B8;               // 0x1B8
     int m_unk1BC;               // 0x1BC hit counter, set to 0x78 by the constructor
     unsigned int m_unk1C0;      // 0x1C0 state, 0..2 after a hit
