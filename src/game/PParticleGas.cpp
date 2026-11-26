@@ -12,8 +12,11 @@ extern "C" void sceVu0SubVector(void *pDst, void *pA, void *pB);
 extern "C" void sceVu0AddVector(void *pDst, void *pA, void *pB);
 extern "C" void sceVu0ScaleVectorXYZ(void *pDst, void *pSrc, float fScale);
 extern "C" float sqrtf(float fValue);
-extern u_long128 lit_0024CCE0;
-extern u_long128 lit_0024CCF0;
+// A 16-byte .rodata constant as floats; the q member is the quadword copied to the VU0 registers.
+union tagLitF4 {
+    float f[4];
+    u_long128 q;
+};
 extern unsigned char __vt__12PParticleGas[];
 extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, int nCount, int nSize);
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
@@ -548,16 +551,12 @@ void PParticleGas::Animate(float fTime) {
 }
 
 // DRAFT: 0x001ED110 Create__12PParticleGasFP20tagParticleGasParamsfff
-// note: 322 words differ; original frame 0xE0 saves s0-s7 with this in s0 and pParams in s1, ours frame 0x90 with this in s2, so the prologue and every line after it shift. Tried: loop base hoisted to pBase (332 -> 322, kept as v2), others not kept.
+// note: 324 words differ; the two .rodata @340/@341 literals are now local tagLitF4 initializers (no lit_ stand-in). Original frame 0x90 saves ra, s0-s2 with this in s2; ours frame 0xB0 saves s0-s4 with this in s0, so the prologue and every line after it shift. Tried: no pBase hoist (328), int i (324/328), pElem declared in loop (324).
 int PParticleGas::Create(tagParticleGasParams *pParams, float fA, float fB, float fC) {
-    u_long128 vLo;
-    u_long128 vHi;
+    tagLitF4 vLo = {{-1.0f, -1.0f, -1.0f, 1.0f}};
+    tagLitF4 vHi = {{1.0f, 1.0f, 1.0f, 1.0f}};
     u_long128 vSub;
     u_long128 vAdd;
-    u_long128 *pLo;
-    u_long128 *pHi;
-    u_long128 *pSub;
-    u_long128 *pAdd;
     void *pV;
     char *pElem;
     char *pBase;
@@ -581,14 +580,8 @@ int PParticleGas::Create(tagParticleGasParams *pParams, float fA, float fB, floa
     if (!m_unk150) {
         return 0;
     }
-    vLo = lit_0024CCE0;
-    vHi = lit_0024CCF0;
     sceVu0SubVector(&vSub, &m_unkE0, &m_unkF0[0]);
     sceVu0AddVector(&vAdd, &m_unkE0, &m_unkF0[0]);
-    pLo = &vLo;
-    pHi = &vHi;
-    pSub = &vSub;
-    pAdd = &vAdd;
     pBase = (char *)m_unk150;
 
     for (i = 0; i < m_unk04; i++) {
@@ -602,6 +595,8 @@ int PParticleGas::Create(tagParticleGasParams *pParams, float fA, float fB, floa
         sceVu0ScaleVectorXYZ(pElem + 0x10, pElem + 0x10, 3.0517578125e-05f);
 
         pV = pElem + 0x10;
+        u_long128 *pLo = &vLo.q;
+        u_long128 *pHi = &vHi.q;
         asm {
             lqc2 vf1, 0x0(pLo)
             lqc2 vf2, 0x0(pHi)
@@ -621,6 +616,8 @@ int PParticleGas::Create(tagParticleGasParams *pParams, float fA, float fB, floa
         sceVu0ScaleVectorXYZ(pElem, pElem, 3.0517578125e-05f);
 
         pV = pElem;
+        u_long128 *pSub = &vSub;
+        u_long128 *pAdd = &vAdd;
         asm {
             lqc2 vf1, 0x0(pSub)
             lqc2 vf2, 0x0(pAdd)
