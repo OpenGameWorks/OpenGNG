@@ -14,6 +14,8 @@ extern "C" float sqrtf(float x);
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void *__dt__6ShadowFv(void *pThis, short nFlag);
 extern "C" void *__dt__15PGrimReaperCapeFv(void *pThis, short nFlag);
+extern "C" void __ct__15PGrimReaperCapeFv(void *pThis);
+extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
 extern int PeddlerItems[14];
 extern int GuardItems[19];
 extern "C" void EnableFullScreenFx__10PGfxEngineFb(void *pThis, bool bEnable);
@@ -93,6 +95,7 @@ public:
     unsigned char m_unk425;
     enum eFadeColor { eFadeColor_Value0 = 0, eFadeColor_Value1 = 1, eFadeColor_Value2 = 2 };
     void FadeScreen(float arg0, float arg1, bool arg2, eFadeColor arg3);
+    void SetPlayerData(Player::PlayerData *arg0);
 };
 extern Interface gInterface;
 extern signed char AbilityTable[];
@@ -116,16 +119,19 @@ public:
     void ResetCollisions();
     void Animate(int arg0, float arg1);
     void StopSoundBySoundRef(unsigned int arg0);
+    void EnableSleep(bool arg0, bool arg1);
 };
 class PAnim;
-class PGrimReaperCape {
+class PShadowVolume;
+class Shadow {
 public:
-    void AnimateControlNode(PAnim *arg0, float arg1);
-};
-class PDynamicSplinePatch {
-public:
-    void Render();
-    void Animate(float arg0);
+    enum ShadowType { eShadowNone = 0, eShadowParticle = 1, eShadowMesh = 2 };
+    Shadow(ShadowType arg0, unsigned int arg1);
+    unsigned char m_unk0;
+    char _pad1[3];
+    void *m_unk4;
+    float m_unk8;
+    PShadowVolume *m_unkC;
 };
 extern signed char MaximoArmor[8];
 extern unsigned int FootSound[8];
@@ -271,11 +277,15 @@ public:
 extern FreeJoint m_pFreeJoints[5];
 class Physics {
 public:
-    char _pad000[0xF8];
+    Physics();
+    char _pad000[0xEC];
+    unsigned int m_unkEC;
+    char _padF0[0xF8 - 0xF0];
     float m_unkF8;
     char _pad0FC[0x100 - 0xFC];
     float m_unk100;
-    char _pad104[0x11C - 0x104];
+    char _pad104[0x118 - 0x104];
+    float m_unk118;
     float m_unk11C;
     void SetPhysicsType(unsigned int arg0, float (*arg1)[4]);
     void SetVelocity(float arg0, float arg1);
@@ -4089,6 +4099,90 @@ extern "C" void *__dt__6PlayerFv(void *pThis, short nFlag) {
     }
     return pThis;
 }
+
+#define PL_AT(T, off) (*(T *)((char *)this + (off)))
+
+// DRAFT: 0x00166830 __ct__6PlayerFv
+// note: not yet compiled
+Player::Player() {
+    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(this, 5, 1);
+    *(unsigned char **)this = __vt__6Player;
+    __ct__15PGrimReaperCapeFv((char *)this + 0x390);
+    PL_AT(unsigned char, 0xE8) = 0x13;
+    ((EntityBaseClass *)this)->EnableSleep(false, false);
+    PL_AT(unsigned char, 0x103) = 0x20;
+    PL_AT(unsigned char, 0xEA) = 1;
+    PL_AT(unsigned char, 0x1B6) = 0;
+    PL_AT(unsigned char, 0x1B7) = 0;
+    PL_AT(unsigned char, 0x1B4) = 0;
+    PL_AT(unsigned char, 0x1B5) = 0;
+    PL_AT(int, 0x25C) = 0;
+    PL_AT(int, 0x260) = 0;
+    PL_AT(unsigned char, 0x33A) = 0;
+    PL_AT(int, 0x2A4) = 0;
+    PL_AT(int, 0x284) = 0;
+    PL_AT(int, 0x28C) = 0;
+    PL_AT(int, 0x2A8) = 0;
+    PL_AT(int, 0x2B0) = 0;
+    PL_AT(int, 0x2AC) = 0;
+    PL_AT(int, 0x2B4) = 0;
+    PL_AT(int, 0x2B8) = 0;
+    PL_AT(int, 0x320) = 0;
+    PL_AT(int, 0x308) = 0;
+    PL_AT(int, 0x314) = 0;
+    PL_AT(int, 0x2F8) = 0;
+    PL_AT(int, 0x324) = 0;
+    PL_AT(int, 0x32C) = 0;
+    PL_AT(signed char, 0x339) = -1;
+    PL_AT(int, 0x330) = 0;
+    PL_AT(unsigned char, 0x335) = 0;
+    PL_AT(unsigned char, 0x337) = 0;
+    PL_AT(int, 0x318) = 0;
+    PL_AT(int, 0x31C) = 0;
+    PL_AT(int, 0x288) = 0;
+    PL_AT(int, 0x1CC) = 0;
+    PL_AT(int, 0x2BC) = 0;
+    PL_AT(unsigned char, 0x338) = 0;
+    PL_AT(int, 0x23C4) = 3;
+    m_unk38 = (int *)(new Physics);
+    if (m_unk38 == 0) {
+        CdsAssert__FPciPc("Player.cpp", 0x358, "mpPhysics");
+    }
+    ((Physics *)m_unk38)->m_unk118 = 0.2f;
+    ((Physics *)m_unk38)->m_unkEC = 0x8019FF55;
+    m_unkD4 = new Shadow(Shadow::eShadowParticle, 0x8700000B);
+    PL_AT(void *, 0x23CC) = new Shadow(Shadow::eShadowParticle, 0x87000009);
+    PL_AT(void *, 0x23C8) = new Shadow(Shadow::eShadowParticle, 0x87000004);
+    if (m_unkD4 == 0) {
+        CdsAssert__FPciPc("Player.cpp", 0x36B, "mpShadow");
+    }
+    if (m_unkD4 != 0) {
+        ((Shadow *)m_unkD4)->m_unk0 = 1;
+        if (((Shadow *)m_unkD4)->m_unkC != 0) {
+            *(int *)((char *)((Shadow *)m_unkD4)->m_unkC + 0x18) = 1;
+        }
+    }
+    PL_AT(float, 0x104) = 1.0f;
+    PL_AT(float, 0x108) = 4.0f;
+    PL_AT(float, 0xE4) = 1.0f;
+    m_unk10C |= 0x071A1E01;
+    PL_AT(int, 0x344) = 0;
+    PL_AT(int, 0x360) = 0;
+    PL_AT(int, 0x368) = 0;
+    PL_AT(int, 0x370) = 0;
+    PL_AT(int, 0x378) = 0;
+    LoadPlayerData((PlayerData *)(gMC + 0x234));
+    gInterface.SetPlayerData((PlayerData *)((char *)this + 0x1D0));
+    PL_AT(float, 0x380) = 128.0f;
+    PL_AT(float, 0x384) = 10.0f;
+    PL_AT(int, 0x388) = 0;
+    PL_AT(int, 0x38C) = 0;
+    PL_AT(float, 0x23C0) = -2.5f;
+    ((PGrimReaperCape *)((char *)this + 0x390))->Init();
+    InitAttachableJoints();
+}
+
+#undef PL_AT
 
 // FUNCTION: 0x00163F80 ShowPlayer__6PlayerFb
 void Player::ShowPlayer(bool arg0) {

@@ -2532,28 +2532,17 @@ void Interface::DeleteMeshLayer(PMNode *node) {
     ((PArray *)((char *)this + 0x404))->Remove(node);
 }
 
-// DRAFT: 0x144D60 DeleteMeshLayer__9InterfaceFv
-// note: 25 differing words; frame (0x20) and s0-only saves match; original has a nop after the Slot00 jalr and reloads m_unk408 for the list index (ours keeps idx in a1), so the loop skip is 0x17 vs ours 0x15. Tried NULL->0, if/else on first list read, m_unk408 header field (37 -> 31 -> 25), if/else in loop tail (27), m_unk408 index in tail (27); last two reverted.
+// FUNCTION: 0x144D60 DeleteMeshLayer__9InterfaceFv
 void Interface::DeleteMeshLayer() {
     PMNode *node;
-    unsigned int idx;
     m_unk408 = 0;
-    if (m_unk404 != 0) {
-        node = (PMNode *)(*(void ***)((char *)this + 0x40C))[0];
-    } else {
-        node = 0;
+    for (node = (PMNode *)(m_unk404 != 0 ? m_unk40C[0] : 0); node != 0;
+         node = (PMNode *)(++m_unk408 < (unsigned int)m_unk404 ? m_unk40C[m_unk408] : 0)) {
+        if (node != 0) {
+            node->Slot00(1);
+        }
     }
-    if (node != 0) {
-        do {
-            if (node != 0) {
-                node->Slot00(1);
-            }
-            idx = m_unk408 + 1;
-            m_unk408 = idx;
-            node = (idx < (unsigned int)m_unk404) ? (PMNode *)(*(void ***)((char *)this + 0x40C))[idx] : 0;
-        } while (node != 0);
-    }
-    if (*(void ***)((char *)this + 0x40C) != 0) {
+    if (m_unk40C != 0) {
         m_unk404 = 0;
         m_unk408 = 0;
     }

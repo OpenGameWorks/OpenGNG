@@ -2,6 +2,7 @@
 #define PLAYER_H
 
 #include "types.h"
+#include "PGrimReaperCape.h"
 
 class Shield;
 class PlingEffect;
@@ -288,8 +289,9 @@ public:
         float r2;           // 0x04 squared radius
     } m_unk360[4];          // 0x360 bounding spheres set by SetBoundingSphere
     float m_unk380[4];      // 0x380 vector; [0] is advanced by m_unk23C0 in Render
-    char _pad390[0x23C0 - 0x390];
-    float m_unk23C0;        // 0x23C0 float step added to m_unk380 in Render
+    char _pad390[0x23B8 - 0x390];   // 0x390 grim reaper cape (PGrimReaperCape, size 0x2028), constructed by hand
+    char _pad23B8[0x23C0 - 0x23B8];
+    float m_unk23C0;       // 0x23C0 float step added to m_unk380 in Render
     char _pad23C4[0x23C8 - 0x23C4];
     void *m_unk23C8;        // 0x23C8 shadow object, cleared or set by EnablePlayerShadow
     void *m_unk23CC;        // 0x23CC shadow object, cleared or set by EnablePlayerShadow
@@ -306,6 +308,7 @@ public:
     void SphereCheck();
     void OnTriggerCheck();
     int Render(PLightManager *pLightMgr);
+    Player();
     ~Player();
 };
 
