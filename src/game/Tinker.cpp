@@ -1635,22 +1635,22 @@ int Tinker::OnHitEvent(EntityBaseClass *pOther, int arg1, unsigned int arg2, uns
     return 1;
 }
 
-// DRAFT: 0x0020A5A0 OnTouchEvent__6TinkerFP15EntityBaseClass
-// note: 27 differing lines; the vtable call matches. The original tests the 0x5058 and 0x1B4 loads as `beqz cont; b exit` (exit in a delay-slot-filled b), MW emits bnez to the epilogue. Tried early-return guards (about 30), a merged || (about 30), a flat && chain (28), nested ifs (28), split returns with the 0x5058 test as bnez (28), else-return arms (27, kept), mixed arms (30).
+// FUNCTION: 0x0020A5A0 OnTouchEvent__6TinkerFP15EntityBaseClass
 void Tinker::OnTouchEvent(EntityBaseClass *pOther) {
     if (((TinkerVirtual *)this)->Slot13() == 0) {
         return;
     }
-    if (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) == 0) {
-        if (m_unk1B4 == 0) {
+    switch (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058)) {
+    case 0:
+        switch (m_unk1B4) {
+        case 0:
             if (pOther != 0 && (*(unsigned int *)((char *)pOther + 0x10C) & 1) == 0 && m_unk2E4 != *(unsigned int *)((char *)pOther + 0x4) && m_unk20 != 8) {
                 SetState__15EntityBaseClassFi(this, 7);
+                return;
             }
-        } else {
-            return;
+            break;
         }
-    } else {
-        return;
+        break;
     }
 }
 
