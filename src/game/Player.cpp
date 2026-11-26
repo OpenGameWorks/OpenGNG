@@ -3918,6 +3918,208 @@ void Player::ResetEye(bool arg0) {
     }
 }
 
+// TODO(header): foreign declarations (SetMaximo)
+extern "C" void *__ct__10PAnimFrameFs(void *pThis, short nId);
+extern "C" void RestoreAnim__10PAnimFrameFP10PAnimFrame(void *pDst, void *pSrc);
+extern "C" void *Create__16PParticleManagerFUifffP6PMNodeb(void *pThis, unsigned int nId, float fX, float fY, float fZ, void *pNode, bool bFlag);
+extern "C" int IsValid__16PParticleManagerFP15PParticleSystem(void *pThis, void *pSys);
+extern "C" void Enable__15PGrimReaperCapeFbP6PMNode(void *pCape, bool bOn, void *pNode);
+extern "C" unsigned int CreateMotionBlurEffect__9EffectAPIFP6PMNodeUii(void *pThis, void *pNode, unsigned int nId, int nCount);
+class VDel {
+public:
+    virtual ~VDel();
+};
+class PSysVirt {
+public:
+    virtual void Slot00();
+    virtual void Slot04();
+    virtual void Slot08();
+    virtual void Slot0C();
+    virtual void Slot10();
+    virtual void Slot14();
+    virtual void Slot18();
+    virtual void Slot1C(int arg0);
+    virtual void Slot20();
+};
+
+// DRAFT: 0x00160660 SetMaximo__6PlayerFcb
+// note: 346 words differ; nIdx lands in s0 not s3, frame/saved-reg set differs (original keeps arg2 in fp), static init flag not reproduced; tried m_unk2BC member and VDel virtual delete
+void Player::SetMaximo(char arg0, bool arg1) {
+    static char st_lastMaximo = 0;
+    char spC0[0x40];
+    bool bSkip = arg1;
+    int nIdx = arg0;
+    if (nIdx >= 5) {
+        CdsAssert__FPciPc("Player.cpp", 0xEFF, "iMaximo < MAXIMO_NO");
+    }
+    if (m_unk2BC != 0) {
+        mEffectAPI__13EntityManager.DeleteEffect(m_unk2BC);
+        m_unk2BC = 0;
+    }
+    if (m_unk288 != 0) {
+        delete (VDel *)m_unk288;
+        m_unk288 = 0;
+    }
+    bool bFresh = false;
+    __ct__10PAnimFrameFs(spC0, 0);
+    int *pData = (int *)(mMaximoData__6Player + nIdx * 0x4C);
+    if (m_unk25C == 0 || *pData != *(int *)m_unk25C) {
+        bFresh = true;
+    } else {
+        memcpy(spC0, *(void **)((char *)m_unk3C + 0x24), 0x34);
+    }
+    unsigned char nShadow = *(unsigned char *)m_unkD4;
+    unsigned int nMesh = pData[2];
+    if (nIdx == 2) {
+        if (m_unk218 == 4) {
+            nMesh = 0x81000424;
+        }
+    }
+    LoadMesh__15EntityBaseClassFUibb(this, nMesh, true, true);
+    *(unsigned char *)m_unkD4 = nShadow;
+    void *pSub = *(void **)((char *)m_unkD4 + 0xC);
+    if (pSub != 0) {
+        *(unsigned char *)((char *)pSub + 0x18) = nShadow;
+    }
+    PMNode *pSkel = (PMNode *)m_unk3C;
+    if (pData[3] != 0) {
+        PMNode *pEye = pSkel->Find(0x72799E69U);
+        void *pRes = *(void **)((char *)mpResMgr__15EntityBaseClass->GetResource(pData[3], true) + 0x10);
+        pEye->m_unk10 = pRes;
+        pEye->m_unk3E &= 0xEF;
+        if (pRes != 0) {
+            if (*(int *)((char *)pRes + 0xC) != 0) {
+                pEye->m_unk3E |= 0x10;
+            }
+        }
+        BuildDispList__9PSkeletonFv(pSkel);
+    }
+    ResetEye(true);
+    m_unk310 = 0;
+    bool bBlur = true;
+    unsigned int nHash = 0xB5714B5A;
+    switch (nIdx) {
+    case 4:
+        bBlur = false;
+        m_unk310 = 1.0f;
+        m_unk2F8 = 0;
+        nHash = 0xA1EDEE90;
+        m_unk23D1 = 0;
+        m_unk268 = 2;
+        break;
+    case 2:
+        if (m_unk218 < 4) {
+            EnableOneRenderPassOnly__6PMNodeFi(pSkel, m_unk218);
+        }
+        break;
+    case 3:
+        break;
+    }
+    m_unk284 = (int)pSkel->Find(nHash);
+    *(PMNode **)((char *)this + 0x290) = pSkel->Find(0x8EA3DD30U);
+    *(PMNode **)((char *)this + 0x294) = pSkel->Find(0x294D6F4FU);
+    m_unk28C = pSkel->Find(0x6499DC24U);
+    m_unk298[0] = pSkel->Find(0xC4DC9D1EU);
+    m_unk298[1] = pSkel->Find(0xE263A967U);
+    m_unk298[2] = pSkel->Find(0xFFF6BAB0U);
+    BuildDispList__9PSkeletonFv(pSkel);
+    Add__6PArrayFPv((char *)pSkel + 0x150, (void *)m_unk284);
+    char *pInit = *(char **)(pData + 5);
+    if (bFresh) {
+        int nAct = 0;
+        if (m_unk25C != 0) {
+            void *pFx = 0;
+            u_long128 vPos = *(u_long128 *)((char *)m_unk3C + 0x80);
+            if (nIdx == 4) {
+                if (m_unk2B8 == 0) {
+                    m_unk2B8 = (void *)((EntityBaseClass *)this)->PlaySound(0x1C0U);
+                }
+                nAct = 0x25;
+                EnableFullScreenFx__10PGfxEngineFb(gGfxEng, true);
+                PMNode *pCape = ((PMNode *)m_unk3C)->Find(0x9980D6C3U);
+                if (pCape != 0) {
+                    Enable__15PGrimReaperCapeFbP6PMNode((char *)this + 0x390, true, pCape);
+                    *(void **)((char *)this + 0x2370) = mpResMgr__15EntityBaseClass->GetResource(0x84000010U, false);
+                }
+            } else {
+                if (m_unk2B8 != 0) {
+                    ((EntityBaseClass *)this)->StopSoundBySoundRef((unsigned int)m_unk2B8);
+                    m_unk2B8 = 0;
+                }
+                m_unkD0 = 0;
+                EnableFullScreenFx__10PGfxEngineFb(gGfxEng, false);
+                if (!bSkip) {
+                    float *pv = (float *)&vPos;
+                    pv[1] = pv[1] + 2.5f;
+                    pFx = Create__16PParticleManagerFUifffP6PMNodeb(gGfxEng + 0x154F00, 0x8300034BU, pv[0], pv[1], pv[2], 0, true);
+                }
+                Enable__15PGrimReaperCapeFbP6PMNode((char *)this + 0x390, false, 0);
+                float *pPhys = (float *)m_unk38;
+                if (!(pPhys[0xF8 / 4] <= 0.0f)) {
+                    nAct = 5;
+                    m_unk38[1] = 0xB8D1B717;
+                } else {
+                    m_unk268 = 0;
+                }
+            }
+            if (!bSkip) {
+                if (pFx != 0 && IsValid__16PParticleManagerFP15PParticleSystem(gGfxEng + 0x154F00, pFx)) {
+                    ((PSysVirt *)pFx)->Slot20();
+                }
+                if (pFx != 0 && IsValid__16PParticleManagerFP15PParticleSystem(gGfxEng + 0x154F00, pFx)) {
+                    ((PSysVirt *)pFx)->Slot1C(0);
+                }
+            }
+        }
+        char *pPh = (char *)m_unk38;
+        *(u_long128 *)(pPh + 0x80) = *(u_long128 *)pInit;
+        *(u_long128 *)(pPh + 0x90) = *(u_long128 *)(pInit + 0x10);
+        m_unk25C = pData;
+        m_unk229 = arg0;
+        SetAction(nAct);
+    } else {
+        char *pPh = (char *)m_unk38;
+        *(float *)(pPh + 0x90) = *(float *)(pInit + 0x10);
+        *(float *)(pPh + 0x98) = *(float *)(pInit + 0x18);
+        LoadAnim__15EntityBaseClassFUib(this, **(unsigned int **)&m_unk254, true);
+        pSkel->m_unk14.m_unk4 = 0;
+        char *pNode;
+        if (pSkel->m_unk14.m_unk0 != 0) {
+            pNode = (char *)pSkel->m_unk14.m_unk8[0];
+        } else {
+            pNode = 0;
+        }
+        pNode[0x3D] = *((unsigned char *)m_unk254 + 7);
+        *(float *)(pNode + 0x34) = *(float *)(spC0 + 0x2C);
+        *(float *)(pNode + 0x38) = *(float *)(spC0 + 0x2C);
+        RestoreAnim__10PAnimFrameFP10PAnimFrame(pSkel->m_unk24, spC0);
+        unsigned int nEff = *(unsigned int *)((char *)this + 0x2AC);
+        if (nEff != 0) {
+            void *pE = mEffectAPI__13EntityManager.EffectValid(nEff);
+            if (pE != 0) {
+                *(char **)((char *)pE + 0x10) = (char *)m_unk28C + 0x40;
+            }
+        }
+    }
+    m_unk1C4 = *(float *)((char *)m_unk38 + 0x11C);
+    *(u_long128 *)((char *)pSkel + 0x110) = *(u_long128 *)pInit;
+    *(u_long128 *)((char *)pSkel + 0x120) = *(u_long128 *)(pInit + 0x10);
+    m_unk25C = pData;
+    m_unk229 = arg0;
+    UpdateKey();
+    SetSword();
+    SetShield(m_unk2A4 == 0 ? true : false);
+    if (bBlur) {
+        m_unk2BC = (EffectNode *)CreateMotionBlurEffect__9EffectAPIFP6PMNodeUii(&mEffectAPI__13EntityManager, pSkel, 0x81000053U, 0xC);
+    }
+    pSkel->Animate(0.0f, 0.0f, 0, 0, false);
+    RefreshAttachableJoints();
+    *(unsigned char **)spC0 = __vt__10PAnimFrame;
+    st_lastMaximo = arg0;
+    __dt__5PAnimFv(spC0, 0);
+}
+
+
 // FUNCTION: 0x00160CD0 __dt__10PAnimFrameFv
 extern "C" void *__dt__10PAnimFrameFv(void *pThis, short nFlag) {
     if (pThis != 0) {
@@ -4214,6 +4416,171 @@ void Player::OnTriggerCheck() {
             pNode = list->m_unk8[list->m_unk4];
         }
     }
+}
+
+// TODO(header): foreign declarations
+struct LedgeSurf {
+    float *m_pVert[3];
+    unsigned int m_nFlags;
+    float m_normal[4];
+};
+class SurfaceInfo {
+public:
+    char _pad[0x40];
+    void *m_unk40;
+    LedgeSurf *m_unk44;
+};
+extern "C" void InversMatrix__FPA4_A4_fPA4_A4_f(float (*)[4][4], float (*)[4][4]);
+extern "C" void sceVu0InversMatrix(float *, void *);
+extern "C" void RotateY__5PMat4Ff(float *, float);
+// DRAFT: 0x001630A0 LedgeCheck__6PlayerFP11SurfaceInfo
+// note: 295 words differ; fMin/fMax land in f21/f20 swapped, loop induction regs differ, 0x20 bytes larger; tried decl reorders and nOff spelling
+int Player::LedgeCheck(SurfaceInfo *pSurf) {
+    float spC0[3][4];
+    float spF0[4];
+    float sp100[4];
+    float sp110[4];
+    float sp120[16];
+    float sp160[16];
+    if (m_unk229 >= 4) {
+        return 0;
+    }
+    int nMin = 0;
+    switch (m_unk260) {
+    case 3:
+        nMin = 0xC;
+        break;
+    case 4:
+        nMin = 0x1E;
+        break;
+    case 0x2C:
+        nMin = 0x26;
+        break;
+    }
+    PMNode *pNode = (PMNode *)m_unk3C;
+    float *pPhys = (float *)m_unk38;
+    if ((int)pNode->m_unk34 < nMin || !(pPhys[1] < 0.0f) || ((Physics *)m_unk38)->m_unkF8 < 2.0f) {
+        return 0;
+    }
+    float fMin = 1000.0f;
+    int nMaxIdx;
+    float fMax = -1000.0f;
+    LedgeSurf *pData = pSurf->m_unk44;
+    float **ppVert = pData->m_pVert;
+    int i = 0;
+    *(u_long128 *)spC0[0] = *(u_long128 *)((char *)pNode + 0x60);
+    *(u_long128 *)spF0 = *(u_long128 *)pData->m_normal;
+    if (pSurf->m_unk40 != 0) {
+        float *pMat = (float *)((char *)pSurf->m_unk40 + 0x40);
+        spF0[3] = 0.0f;
+        sceVu0ApplyMatrix(spF0, pMat, spF0);
+        if (sceVu0InnerProduct(spF0, spC0[0]) < 0.5f) {
+            return 0;
+        }
+        for (i = 0; i < 3; i++) {
+            float *pV = spC0[i];
+            sceVu0ApplyMatrix(pV, pMat, *ppVert++);
+            float f = pV[1];
+            if (f < fMin) {
+                fMin = f;
+            }
+            if (!(f <= fMax)) {
+                fMax = f;
+                nMaxIdx = i;
+            }
+        }
+    } else {
+        if (sceVu0InnerProduct(spF0, spC0[0]) < 0.5f) {
+            return 0;
+        }
+        for (i = 0; i < 3; i++) {
+            float *pV = spC0[i];
+            *(u_long128 *)pV = *(u_long128 *)*ppVert++;
+            float f = pV[1];
+            if (f < fMin) {
+                fMin = f;
+            }
+            if (!(f <= fMax)) {
+                fMax = f;
+                nMaxIdx = i;
+            }
+        }
+    }
+    float *pPos = (float *)((char *)pNode + 0x80);
+    if (pData->m_nFlags & 0x20000) {
+        int j;
+        for (j = 0; j < 3; j++) {
+            if (j != nMaxIdx) {
+                float *pB = spC0[nMaxIdx];
+                float *pA = spC0[j];
+                float t;
+                sceVu0SubVector(sp110, pA, pB);
+                if (FastMath_Fabs__Ff(sp110[0]) > FastMath_Fabs__Ff(sp110[2])) {
+                    t = (pPos[0] - pB[0]) / sp110[0];
+                } else {
+                    t = (pPos[2] - pB[2]) / sp110[2];
+                }
+                if (!(t < 0.0f)) {
+                    float y = t * sp110[1] + pB[1];
+                    if (!(y < pA[1])) {
+                        fMax = (y - pPos[1]) - 6.0f;
+                        break;
+                    }
+                }
+            }
+        }
+        if (j >= 3) {
+            return 0;
+        }
+    } else {
+        fMax = fMax - (6.0f + pPos[1]);
+    }
+    if (!(FastMath_Fabs__Ff(fMax) < 2.0f)) {
+        return 0;
+    }
+    float fAng = Round180__Ff(57.295776f * atan2f(spF0[0], spF0[2]));
+    sceVu0UnitMatrix((float (*)[4])sp120);
+    RotateY__5PMat4Ff(sp120, -fAng);
+    float fLo = 10000.0f;
+    float fHi = -fLo;
+    for (int n = 0; n < 3; n++) {
+        sceVu0ApplyMatrix(sp100, sp120, spC0[n]);
+        float x = sp100[0];
+        if (x < fLo) {
+            fLo = x;
+        }
+        if (!(x <= fHi)) {
+            fHi = x;
+        }
+    }
+    sceVu0ApplyMatrix(sp100, sp120, pPos);
+    float xp = sp100[0];
+    if (xp < fLo || !(xp <= fHi)) {
+        return 0;
+    }
+    pPos[1] += fMax;
+    *(u_long128 *)m_unk2E0 = *(u_long128 *)pData->m_normal;
+    m_unk2F0 = (int)pSurf->m_unk40;
+    if (m_unk2F0 != 0) {
+        *(int *)&m_unk2E0[3] = 0;
+        *(u_long128 *)sp100 = *(u_long128 *)pPos;
+        sp100[1] += 6.0f;
+        PMNode *pM = (PMNode *)m_unk2F0;
+        if (pM->m_unk3E & 4) {
+            InversMatrix__FPA4_A4_fPA4_A4_f((float (*)[4][4])sp160, (float (*)[4][4])((char *)pM + 0x40));
+        } else {
+            sceVu0InversMatrix(sp160, (char *)pM + 0x40);
+        }
+        sceVu0ApplyMatrix(m_unk2D0, sp160, sp100);
+    }
+    m_unk1C4 = fAng;
+    pNode->m_unk94 = fAng;
+    SetAction(0x2A);
+    pNode->m_unk3E |= 8;
+    ((EntityBaseClass *)this)->PlaySound(m_unk2F4);
+    m_unk268 = 1;
+    *(int *)((char *)m_unk38 + 0x110) = 0;
+    return 1;
 }
 
 // FUNCTION: 0x00163660 IsPlayerOnNode__6PlayerFP9PMeshNodeb

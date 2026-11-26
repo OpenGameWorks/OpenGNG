@@ -5,6 +5,8 @@
 #include "PGrimReaperCape.h"
 
 class Shield;
+class EffectNode;
+class SurfaceInfo;
 class PlingEffect;
 class FontNode;
 class PMNode;
@@ -93,6 +95,7 @@ public:
     int GetGroundAction();
     int SetAction(int arg0);
     void SetMaximo(char arg0, bool arg1);
+    int LedgeCheck(SurfaceInfo *arg0);
     void EnablePlayerShadow(bool arg0);
     void GetShieldPass(bool *arg0);
     void ShieldThrowMove();
@@ -267,7 +270,7 @@ public:
     unsigned int m_unk2B0;  // 0x2B0 apparition id, GetPtrToApparition and Projectile::Delete by InitCutScene
     unsigned int m_unk2B4;  // 0x2B4 sound ref, StopSoundBySoundRef by InitCutScene
     void *m_unk2B8;         // 0x2B8 sound ref, StopSoundBySoundRef by ~Player
-    char _pad2BC[4];
+    EffectNode *m_unk2BC;
     unsigned int m_unk2C0;  // 0x2C0 apparition id passed to GetPtrToApparition by ReleaseCheck
     int m_unk2C4;           // 0x2C4 hit counter, incremented and passed to OnHitEvent by ReleaseCheck
     int m_unk2C8;           // 0x2C8 countdown, reset to CAUGHT_TIME by ReleaseCheck
