@@ -12,6 +12,7 @@ struct tagWaypointGroup;
 
 class Innocent {
 public:
+    void OnAttackEvent(EntityBaseClass *pAttacker, int nDamage);
     Innocent();
     int AnimationViewer(int arg0);
     void OnWakeEvent();

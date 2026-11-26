@@ -237,6 +237,11 @@ int PSkeleton::RecurseAttachAnim(PMeshNodeAnimDataTable *pTable) {
     return 1;
 }
 
+// FUNCTION: 0x001979B0 ComputeBoundingBox__9PSkeletonFv
+void PSkeleton::ComputeBoundingBox() {
+    UpdateBoundBox();
+}
+
 // DRAFT: 0x001979C0 UpdateBoundBox__9PSkeletonFv
 // note: DIFF 57 words; float regs min in f7/f2/f3 and max in f8/f4/f5 (original min f3/f2/f4, max f5/f6/f7), pNode in v1 vs a0. Literal-zero first pick took 120 to 57; max-first 66; fCentre/pInfo/pNode decl orders 57.
 void PSkeleton::UpdateBoundBox()

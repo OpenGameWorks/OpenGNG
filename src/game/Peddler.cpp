@@ -193,6 +193,8 @@ public:
     unsigned char m_unk1A;          // 0x1A
 };
 
+extern "C" void OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi(void *pThis, EntityBaseClass *pAttacker, int nDamage);
+
 // FUNCTION: 0x001D0530 EnemiesInCheckRadius__7PeddlerFv
 int Peddler::EnemiesInCheckRadius() {
     int result;
@@ -824,6 +826,11 @@ void Peddler::OnTimerEvent(unsigned int arg0) {
     if (arg0 == (unsigned int)m_unk2D4) {
         m_unk2D8 = 1;
     }
+}
+
+// FUNCTION: 0x001D1DF0 OnAttackEvent__7PeddlerFP15EntityBaseClassi
+void Peddler::OnAttackEvent(EntityBaseClass *pAttacker, int nDamage) {
+    OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi(this, pAttacker, nDamage);
 }
 
 // DRAFT: 0x001D1E00 OnHitEvent__7PeddlerFP15EntityBaseClassiUiUi

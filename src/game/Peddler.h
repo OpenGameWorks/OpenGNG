@@ -8,6 +8,7 @@ struct tagWaypointGroup;
 
 class Peddler : public EntityBaseClass {
 public:
+    void OnAttackEvent(EntityBaseClass *pAttacker, int nDamage);
     Peddler();
     virtual ~Peddler();
     bool TrappedEntityRemoved();

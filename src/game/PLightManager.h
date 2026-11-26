@@ -17,6 +17,7 @@ enum eLightType { eLightType_Unknown = 0 };
 
 class PLightManager {
 public:
+    void DestroyLight(unsigned int nID);
     PLightManager();
     ~PLightManager();
     bool Load(PPakFile *pFile);

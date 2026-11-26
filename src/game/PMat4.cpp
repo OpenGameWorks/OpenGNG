@@ -43,6 +43,8 @@ void PMat4::MakeProjectionMatrix(float (*arg0)[4], float arg1, float arg2, int a
     arg0[3][3] = 1.0f;
 }
 
+extern "C" void sceVu0CameraMatrix(float (*m)[4], float *p, float *zd, float *yd);
+
 // FUNCTION: 0x001307D0 MakePerspectiveMatrix__5PMat4Fffff
 void PMat4::MakePerspectiveMatrix(float arg0, float arg1, float arg2, float arg3) {
     float cot = 1.0f / tanf(0.017453292f * (arg0 / 2.0f));
@@ -190,6 +192,11 @@ void PMat4::MakeScreenMatrix(float arg0, float arg1, float arg2, float arg3, flo
     tmp[2][2] = (arg8 * arg7 * (-arg5 + arg6)) / (-arg7 + arg8);
     tmp[3][2] = (-arg6 * arg7 + arg5 * arg8) / (-arg7 + arg8);
     sceVu0MulMatrix((float (*)[4])this, tmp, (float (*)[4])this);
+}
+
+// FUNCTION: 0x001310D0 MakeViewMatrix__5PMat4FPfPfPf
+void PMat4::MakeViewMatrix(float *pEye, float *pAt, float *pUp) {
+    sceVu0CameraMatrix((float (*)[4])this, pEye, pAt, pUp);
 }
 
 // DRAFT: 0x001310F0 InverseByRT__5PMat4FPfPf

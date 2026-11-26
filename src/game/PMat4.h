@@ -5,6 +5,7 @@
 
 class PMat4 {
 public:
+    void MakeViewMatrix(float *pEye, float *pAt, float *pUp);
     ~PMat4();
     void Inverse(PMat4 *arg0);
     int Inverse();

@@ -14,6 +14,7 @@ class PPakFile;
 
 class PSkeleton {
 public:
+    void ComputeBoundingBox();
     // Slots 0-2 are not yet identified; VSlot3 sits at vtable offset 0x14.
     virtual void VSlot0();
     virtual void VSlot1();

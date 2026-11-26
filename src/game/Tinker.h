@@ -7,6 +7,7 @@
 // EntityBaseClass occupies 0x000..0x18F; Tinker fields start at 0x190.
 class Tinker : public EntityBaseClass {
 public:
+    void OnAttackEvent(EntityBaseClass *pAttacker, int nDamage);
     Tinker();
     virtual ~Tinker();
     void AttackSound();

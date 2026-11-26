@@ -988,6 +988,16 @@ void PSound::SetProposedReverbParams(unsigned int p0, unsigned int p1, unsigned 
     m_unk5438 = p0;
 }
 
+// FUNCTION: 0x001A57B0 CheckOneChannelMatch__6PSoundFPQ26PSound19AmbientChannelState
+void PSound::CheckOneChannelMatch(AmbientChannelState *pState) {
+    CheckOneChannelMatchSub(pState);
+}
+
+// FUNCTION: 0x001A57C0 CheckAllChannelsMatch__6PSoundFv
+void PSound::CheckAllChannelsMatch() {
+    CheckAllChannelsMatchSub();
+}
+
 // DRAFT: 0x001A57D0 CheckAllChannelsMatchSub__6PSoundFv
 // note: DIFF 12; top-tested while inner walks best (do-while DIFF 21/18); extra nop after inner-loop lw and outer-loop branch targets differ.
 int PSound::CheckAllChannelsMatchSub() {
@@ -1307,6 +1317,16 @@ int PSound::GetOriginatorPos(float *pOut, unsigned int nFlags, unsigned int nOri
         return -1;
     }
     return -1;
+}
+
+// FUNCTION: 0x001A7190 PlayEffect__6PSoundFUiUi
+void PSound::PlayEffect(unsigned int nID, unsigned int nFlags) {
+    PlaySoundApparition(nID, nFlags);
+}
+
+// FUNCTION: 0x001A71A0 PlaySoundNonPositional__6PSoundFUi
+void PSound::PlaySoundNonPositional(unsigned int nID) {
+    PlaySoundUbiquitous(nID);
 }
 
 // FUNCTION: 0x001A71B0 PlaySoundUbiquitous__6PSoundFUi
@@ -2247,6 +2267,11 @@ int PSound::LoadPrimarySoundBank(unsigned int nArg) {
     return 1;
 }
 
+// FUNCTION: 0x001A9AE0 EnableLevelProcessing__6PSoundFb
+void PSound::EnableLevelProcessing(bool bEnable) {
+    EnableProcessTriglets(bEnable);
+}
+
 // FUNCTION: 0x001A9B10 GetEEControlStatus__6PSoundFv
 int PSound::GetEEControlStatus() {
     int nStatus = 3;
@@ -2368,6 +2393,11 @@ void PSound::PSoundReInitSubWSoundCalls() {
     PSoundReInitSub(0);
     InternalUpdateRelVolumes();
     PSoundFlushIOPCommandsWaitFinish();
+}
+
+// FUNCTION: 0x001AA070 PSoundDestroyLevel__6PSoundFv
+void PSound::PSoundDestroyLevel() {
+    PSoundLevelClear();
 }
 
 // FUNCTION: 0x001AA080 PSoundLevelClear__6PSoundFv

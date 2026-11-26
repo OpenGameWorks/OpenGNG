@@ -150,6 +150,8 @@ public:
     virtual int Slot17();
 };
 
+extern "C" void OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi(void *pThis, EntityBaseClass *pAttacker, int nDamage);
+
 // FUNCTION: 0x00208D60 __dt__6TinkerFv
 Tinker::~Tinker() {}
 
@@ -881,6 +883,11 @@ void Tinker::OnTimerEvent(unsigned int arg0) {
     } else if (arg0 == m_unk294) {
         m_unk294 = 0;
     }
+}
+
+// FUNCTION: 0x0020A3D0 OnAttackEvent__6TinkerFP15EntityBaseClassi
+void Tinker::OnAttackEvent(EntityBaseClass *pAttacker, int nDamage) {
+    OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi(this, pAttacker, nDamage);
 }
 
 // DRAFT: 0x0020A6C0 Execute__6TinkerFv

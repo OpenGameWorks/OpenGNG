@@ -19,6 +19,9 @@ enum EnumSoundTrigletPawnType {
 
 class PSound {
 public:
+    void PSoundDestroyLevel();
+    void PlaySoundNonPositional(unsigned int nID);
+    void PlayEffect(unsigned int nID, unsigned int nFlags);
     PSound();
     ~PSound();
 
@@ -142,6 +145,7 @@ public:
     void SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol);
     int PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType);
     int CheckAllChannelsMatchSub();
+    void CheckOneChannelMatch(AmbientChannelState *pState);
     void CheckAllChannelsMatch();
     int CheckOneChannelMatchSub(AmbientChannelState *pState);
     int PlayMusicOnStream(unsigned int p0, unsigned int p1, unsigned int p2);
@@ -217,6 +221,7 @@ public:
     int PlaySoundTriglet(unsigned int p0, unsigned int p1, const GameSoundTrigletPawn *pPawn);
     int PlayMultipleAtOnce(unsigned int nSound);
     int PlaySoundUbiquitous(unsigned int nSound);
+    int PlaySoundApparition(unsigned int nSound, unsigned int nOriginator);
     int PlaySoundPMNode(unsigned int p0, unsigned int p1, const PMNode *pNode);
     int StopAllRegularSounds();
     void StopStreamsAndRequestEEControl();

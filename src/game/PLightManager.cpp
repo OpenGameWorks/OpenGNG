@@ -140,6 +140,11 @@ void PLightManager::SetLightColor(unsigned int nId, float *pColor) {
     }
 }
 
+// FUNCTION: 0x0018ED10 DestroyLight__13PLightManagerFUi
+void PLightManager::DestroyLight(unsigned int nID) {
+    RemoveDynamicLight((PLight *)nID);
+}
+
 // FUNCTION: 0x0018ED20 CreateDirectionLight__13PLightManagerFPfPf
 PLight *PLightManager::CreateDirectionLight(float *pPos, float *pDir) {
     PLight *pLight = (PLight *)__nw__FUi(0x70U);

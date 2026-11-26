@@ -94,6 +94,8 @@ public:
     virtual int IsArenaApparition();
 };
 
+extern "C" void OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi(void *pThis, EntityBaseClass *pAttacker, int nDamage);
+
 // FUNCTION: 0x0019F260 __dt__8InnocentFv
 extern "C" void *__dt__8InnocentFv(void *pThis, short nFlag) {
     if (pThis != 0) {
@@ -288,6 +290,11 @@ void Innocent::OnTimerEvent(unsigned int nTimer) {
     if (nTimer == m_unk288) {
         m_unk288 = 0;
     }
+}
+
+// FUNCTION: 0x0019F9E0 OnAttackEvent__8InnocentFP15EntityBaseClassi
+void Innocent::OnAttackEvent(EntityBaseClass *pAttacker, int nDamage) {
+    OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi(this, pAttacker, nDamage);
 }
 
 // DRAFT: 0x0019F9F0 OnHitEvent__8InnocentFP15EntityBaseClassiUiUi
