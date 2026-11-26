@@ -173,6 +173,23 @@ def main() -> int:
         for k in range(i, j):
             label[k] = lab
         i = j
+    # 5. An unnamed run whose every function is a method of one class takes that
+    # class's name: 156 of the 163 files named by __FILE__ strings are named after
+    # their dominant class, and the rest differ only by a prefix or suffix
+    # (Timing.cpp/ETiming, Font.cpp/FontManager). Runs mixing classes or free
+    # functions stay unattributed, and so does a lone function: an out-of-line inline
+    # (PVec3, WAVE_TABLE_ELEMENT) belongs to a neighbouring object.
+    i = 0
+    while i < nf:
+        j = i + 1
+        while j < nf and label[j][1] == label[i][1]:
+            j += 1
+        if label[i][1].startswith("unk_"):
+            cls = {owner_class(fs[k][2]) for k in range(i, j)}
+            if j - i > 1 and len(cls) == 1 and None not in cls and f"{(c := cls.pop())}.cpp" not in filenames:
+                for k in range(i, j):
+                    label[k] = ("game", f"{c}.cpp", "class-name")
+        i = j
 
     rows = []
     for (a, s, n), (cat, f, ev) in zip(fs, label):
