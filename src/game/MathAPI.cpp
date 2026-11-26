@@ -164,12 +164,14 @@ void MathAPI::MakeVertexList(tagBOX *arg0, float (*arg1)[4]) {
 }
 
 // DRAFT: 0x157900 SetE_BOX_Radius__7MathAPIFP6tagBOX
-// note: 16 differing lines: literal 0x358637BD pooled via $gp (orig inline lui/ori/mtc1 into f1); load order f0/f3/f4 vs f2/f1/f3; beqz target off by one. Tried eps local, reversed add, -sdatathreshold 0: all 17.
+// note: 7 differing words (was 16): x/y/z named locals. Left: x load in f1 and eps const in f0 (orig f0/f1), so the mtc1 has no nop after it. Tried: load-order permutations (7-12), sum/eps as separate locals, zero as separate local, reversed eps add: none lower.
 float MathAPI::SetE_BOX_Radius(tagBOX *arg0) {
     float r = 0.0f;
     if (this != 0) {
-        float sum = m_unk10[0] * m_unk10[0] + m_unk10[1] * m_unk10[1] + m_unk10[2] * m_unk10[2];
-        r = sqrtf(sum) + 0.000001f;
+        float x = m_unk10[0];
+        float y = m_unk10[1];
+        float z = m_unk10[2];
+        r = sqrtf(x * x + y * y + z * z) + 0.000001f;
         m_unk10[3] = r;
     }
     return r;
@@ -207,13 +209,13 @@ void MathAPI::QuatSlerp(tag_EQuat *arg0, tag_EQuat *arg1, float arg2, tag_EQuat 
 }
 
 // DRAFT: 0x157B00 GetAngleBetweenVectors__7MathAPIFPfPf
-// note: 23 differing lines: hoisted -1.0f local with one || clamp (two separate ifs give 35; lo declared after the norms also 23); original loads a0[2],a1[2],a0[0],a1[0] into f2,f3,f5,f1 and branch layout around bc1t/bc1f differs.
+// note: 12 differing words (was 23): sqrtf of each norm in its own local; the remaining diff is the load order around bc1t/bc1f.
 float MathAPI::GetAngleBetweenVectors(float *arg0, float *arg1) {
     float lo = -1.0f;
     float dot = arg0[2] * arg1[2] + arg0[0] * arg1[0];
-    float na = arg0[0] * arg0[0] + arg0[2] * arg0[2];
-    float nb = arg1[0] * arg1[0] + arg1[2] * arg1[2];
-    float c = dot / (sqrtf(na) * sqrtf(nb));
+    float na = sqrtf(arg0[0] * arg0[0] + arg0[2] * arg0[2]);
+    float nb = sqrtf(arg1[0] * arg1[0] + arg1[2] * arg1[2]);
+    float c = dot / (na * nb);
     if (c < lo || c > 1.0f) {
         return 0.0f;
     }
@@ -252,14 +254,14 @@ void MathAPI::GetForwardVector(EntityBaseClass *arg0, float (&arg1)[4]) {
 }
 
 // DRAFT: 0x157CA0 VectorRotateY__7MathAPIFPA4_ff
-// note: 19 differing lines: rad = 0.017453292f * arg1 (19; arg1 * K gave 27); orig copies arg1 to f20 with mov.s before the mul and the madd/msub results land in f0/f1 swapped; copy-then-scale form also 19.
+// note: 18 differing words (was 19): x*c + z*s order in the first store; orig copies arg1 to f20 with mov.s before the mul, and the madd/msub results land in f0/f1 swapped.
 void MathAPI::VectorRotateY(float (*arg0)[4], float arg1) {
     float rad = 0.017453292f * arg1;
     float s = sinf(rad);
     float c = cosf(rad);
     float x = (*arg0)[0];
     float z = (*arg0)[2];
-    (*arg0)[0] = z * s + x * c;
+    (*arg0)[0] = x * c + z * s;
     (*arg0)[2] = z * c - x * s;
 }
 
