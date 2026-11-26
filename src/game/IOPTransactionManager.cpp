@@ -1,3 +1,4 @@
+// COMPILER: mwcps2-3.0-011126
 // FLAGS: -str readonly
 #include "types.h"
 #include "IOPTransactionManager.h"
@@ -108,8 +109,7 @@ extern "C" IOPTransactionManager *__dt__21IOPTransactionManagerFv(IOPTransaction
     return pThis;
 }
 
-// DRAFT: 0x001DA960 __ct__21IOPTransactionManagerFv
-// note: one extra nop after loop sltu (orig size 0x58, ours 0x54); tried 6 loop/pointer variants, best is 11 differing words.
+// FUNCTION: 0x001DA960 __ct__21IOPTransactionManagerFv
 extern "C" IOPTransactionManager *__ct__21IOPTransactionManagerFv(IOPTransactionManager *pThis) {
     IOP_Tran *p = pThis->m_unk8;
     do {

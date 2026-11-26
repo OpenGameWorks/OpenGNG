@@ -1,3 +1,4 @@
+// COMPILER: mwcps2-3.0-011126
 #include "types.h"
 #include "PDynamicSplinePatch.h"
 #include "PGfxEngine.h"
@@ -399,8 +400,7 @@ extern "C" void *__dt__19PDynamicSplinePatchFv(PDynamicSplinePatch *pThis, short
     return pThis;
 }
 
-// DRAFT: 0x001F4030 __ct__19PDynamicSplinePatchFv
-// note: 5 words differ in loop B: original has addiu a0,a0,4 between the two sw, and its exit beqz is +0xA vs our +0x9. Tried: while form, swapped store order (6 words), walking pointers (19 words); for form with original order is best at 5.
+// FUNCTION: 0x001F4030 __ct__19PDynamicSplinePatchFv
 PDynamicSplinePatch::PDynamicSplinePatch() {
     m_unk00 = 0;
     m_unk04 = 0;

@@ -64,6 +64,16 @@ def main() -> int:
             "build build/sdk_link.tsv: sdklink | config/sdk.tsv tools/sdklink.py tools/sdkmatch.py",
         ]
         default.append("build/sdk_link.tsv")
+    # Compiler and flags come from each source's `// COMPILER:` / `// FLAGS:` header, so an
+    # edited source regenerates build.ninja before ninja compiles it with stale arguments.
+    lines += [
+        "rule configure",
+        "  command = $py tools/configure.py",
+        "  description = CONFIGURE",
+        "  generator = 1",
+        "build build.ninja: configure | tools/configure.py tools/srcmeta.py "
+        + " ".join(str(s.relative_to(ROOT)) for s in srcs),
+    ]
     lines.append("default " + " ".join(default))
     (ROOT / "build.ninja").write_text("\n".join(lines) + "\n")
     print(f"configure: {len(srcs)} sources")

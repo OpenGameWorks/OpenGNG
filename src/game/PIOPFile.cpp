@@ -1,3 +1,4 @@
+// COMPILER: mwcps2-3.0-011126
 // FLAGS: -str readonly
 #include "PIOPFile.h"
 #include "Interface.h"
@@ -323,8 +324,7 @@ PIOPFile::~PIOPFile() {
     m_unk10300 = 0;
 }
 
-// DRAFT: 0x001DB770 __ct__8PIOPFileFv
-// note: loop bottom lacks the nop after sltu (ours 0x54 bytes, original 0x58); tried unsigned, char*, int compares and a for loop, none fixed it
+// FUNCTION: 0x001DB770 __ct__8PIOPFileFv
 PIOPFile::PIOPFile() {
     IOP_Tran *pTran = (IOP_Tran *)m_unk174;
     do {
