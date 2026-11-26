@@ -463,21 +463,22 @@ void PeddlerItems::Reset(float fAngle) {
 }
 
 // DRAFT: 0x001D0E10 AnimateFloat__12PeddlerItemsFRfff
-// note: 33 diff lines; original keeps fDelta in f13 (fStep's register) and uses addiu flags, the -1.0f negate is mul.s with f0 as first operand, and the branch layout differs. Tried: int/unsigned char/bool flags (33 each), operand swap (33), fDelta declared first (33).
+// note: 30 diff words; fDelta folded into the fStep parameter, if/else bUp. Left: bUp=1 placement before the gEng load (orig addiu at 0x04), -1.0f negate operand order, tail branch layout. Tried: negate forms and int/uc/bool flags (30-43).
 int PeddlerItems::AnimateFloat(float &fVal, float fTarget, float fStep) {
-    float fDelta;
     bool bUp;
     bool bDone;
 
     bUp = 1;
-    fDelta = fStep * gEng.m_unk1E8;
-    if (!(fVal < fTarget)) {
+    fStep = fStep * gEng.m_unk1E8;
+    if (fVal < fTarget) {
+        bUp = 1;
+    } else {
         bUp = 0;
     }
     if (bUp == 0) {
-        fDelta *= -1.0f;
+        fStep *= -1.0f;
     }
-    fVal += fDelta;
+    fVal += fStep;
     bDone = 1;
     if (bUp != 0) {
         if (fVal <= fTarget) {
@@ -622,7 +623,7 @@ PeddlerItems::PeddlerItems(int nIndex) {
 }
 
 // DRAFT: 0x001D1550 LookAtPeddler__7PeddlerFv
-// note: 55 differing lines; 57.295776f is pooled (lwc1 gp) where the original uses lui/ori/mtc1; 12-byte size gap. Tried: s0 reuse for m_unk38 (56), split atan2 into a local (55), constant in a local (55).
+// note: 38 diff words; 57.295776f is pooled (lwc1 gp) where the original uses lui/ori/mtc1; 12-byte size gap. Tried: s0 reuse for m_unk38 (56), split atan2 into a local (55), constant in a local (55).
 void Peddler::LookAtPeddler() {
     float afPos[4];
     float afVec[4];
