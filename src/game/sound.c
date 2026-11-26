@@ -138,13 +138,12 @@ void SOUND_SetMasterRegisterVolumeAbs(short arg0) {
     SetIOPCommand(0x2C, 1);
 }
 
-// DRAFT: 0x001ADBE0 SOUND_EnableFeatures
-// note: 11 differing lines; compiler stores index 1 from $a0 before index 0 and drops the original's and/ori 0xFFFF; tried unsigned int args, no (short) cast on index 1, hi local.
+// FUNCTION: 0x001ADBE0 SOUND_EnableFeatures
 void SOUND_EnableFeatures(unsigned int arg0, unsigned int arg1) {
     IOPCommandData[3] = arg1;
     IOPCommandData[0] = (short)(arg0 >> 16);
-    IOPCommandData[1] = (short)(arg0 & 0xFFFF);
-    IOPCommandData[2] = (short)(arg1 >> 16);
+    IOPCommandData[1] = arg0 & 0xFFFF;
+    IOPCommandData[2] = (arg1 >> 16) & 0xFFFF;
     SetIOPCommand(0x2A, 4);
 }
 
@@ -243,13 +242,12 @@ void SOUND_ChangeReverbMasterVolume(short arg0, short arg1, short arg2) {
     SetIOPCommand(0x4E, 3);
 }
 
-// DRAFT: 0x001ADE20 SOUND_ReverbSetAdrs
-// note: same 11-line diff as SOUND_EnableFeatures (store order and dropped and/ori 0xFFFF); no variant reduced it.
+// FUNCTION: 0x001ADE20 SOUND_ReverbSetAdrs
 void SOUND_ReverbSetAdrs(unsigned int arg0, unsigned int arg1) {
     IOPCommandData[3] = arg1;
     IOPCommandData[0] = (short)(arg0 >> 16);
-    IOPCommandData[1] = (short)(arg0 & 0xFFFF);
-    IOPCommandData[2] = (short)(arg1 >> 16);
+    IOPCommandData[1] = arg0 & 0xFFFF;
+    IOPCommandData[2] = (arg1 >> 16) & 0xFFFF;
     SetIOPCommand(0x4A, 4);
 }
 
@@ -537,33 +535,30 @@ int SOUND_PlaySFXRelVol(short arg0, unsigned int arg1, short arg2, short arg3, u
     return 0;
 }
 
-// DRAFT: 0x001AE4B0 SOUND_ResumeMultipleSounds
-// note: 12 differing words; compiler drops the original's ori $v1,0xFFFF + and mask on index 1 (sh truncates) and the stored size is 0x34 vs 0x3c. Tried signed int, unsigned short cast, mask local, unsigned long args; 12 best.
+// FUNCTION: 0x001AE4B0 SOUND_ResumeMultipleSounds
 void SOUND_ResumeMultipleSounds(unsigned int arg0, unsigned int arg1) {
     IOPCommandData[3] = arg1;
     IOPCommandData[0] = (short)(arg0 >> 16);
-    IOPCommandData[1] = (short)(arg0 & 0xFFFF);
-    IOPCommandData[2] = (short)(arg1 >> 16);
+    IOPCommandData[1] = arg0 & 0xFFFF;
+    IOPCommandData[2] = (arg1 >> 16) & 0xFFFF;
     SetIOPCommand(0x45, 4);
 }
 
-// DRAFT: 0x001AE4F0 SOUND_PauseMultipleSounds
-// note: 12 words; the original keeps ori 0xFFFF + and on index 1, ours folds it. No change from 0xFFFFLL/UL, (unsigned long long) arg, (unsigned short)-1, ~0xFFFF0000, static const mask, uncast stores, or compilers 3.0-011126/3.0.1-020123; (arg0 << 16) >> 16 gives 7 (adds dsll32/dsrl32).
+// FUNCTION: 0x001AE4F0 SOUND_PauseMultipleSounds
 void SOUND_PauseMultipleSounds(unsigned int arg0, unsigned int arg1) {
     IOPCommandData[3] = arg1;
     IOPCommandData[0] = (short)(arg0 >> 16);
-    IOPCommandData[1] = (short)(arg0 & 0xFFFF);
-    IOPCommandData[2] = (short)(arg1 >> 16);
+    IOPCommandData[1] = arg0 & 0xFFFF;
+    IOPCommandData[2] = (arg1 >> 16) & 0xFFFF;
     SetIOPCommand(0x44, 4);
 }
 
-// DRAFT: 0x001AE530 SOUND_StopMultipleSounds
-// note: 12 words; the original keeps ori 0xFFFF + and on index 1, ours folds it. No change from 0xFFFFLL/UL, (unsigned long long) arg, (unsigned short)-1, ~0xFFFF0000, static const mask, uncast stores, or compilers 3.0-011126/3.0.1-020123; (arg0 << 16) >> 16 gives 7 (adds dsll32/dsrl32).
+// FUNCTION: 0x001AE530 SOUND_StopMultipleSounds
 void SOUND_StopMultipleSounds(unsigned int arg0, unsigned int arg1) {
     IOPCommandData[3] = arg1;
     IOPCommandData[0] = (short)(arg0 >> 16);
-    IOPCommandData[1] = (short)(arg0 & 0xFFFF);
-    IOPCommandData[2] = (short)(arg1 >> 16);
+    IOPCommandData[1] = arg0 & 0xFFFF;
+    IOPCommandData[2] = (arg1 >> 16) & 0xFFFF;
     SetIOPCommand(0x1F, 4);
 }
 
@@ -577,8 +572,7 @@ int SOUND_StopStream(unsigned int arg0) {
     return 0;
 }
 
-// DRAFT: 0x001AE700 SOUND_DataDestEEBuffered
-// note: 41 words differ (orig 0xEC bytes, ours 0xE4): orig loads lui at,0x4B before most stores and has a different early-return branch and jal delay slot; tried short arg0, reordered stores, masked arg2 inline or via local, positive-if form (53 words).
+// FUNCTION: 0x001AE700 SOUND_DataDestEEBuffered
 int SOUND_DataDestEEBuffered(unsigned int arg0, short arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4, unsigned int arg5, unsigned int arg6, short arg7, unsigned short arg8, unsigned int arg9) {
     unsigned int lo2;
     if (arg0 >= 4U) {
@@ -587,9 +581,9 @@ int SOUND_DataDestEEBuffered(unsigned int arg0, short arg1, unsigned int arg2, u
     IOPCommandData[12] = arg7;
     IOPCommandData[2] = (short)(arg2 >> 16);
     IOPCommandData[0] = (short)arg0;
-    lo2 = arg2 & 0xFFFFU;
+    lo2 = arg2 & 0xFFFF;
     IOPCommandData[3] = (short)lo2;
-    IOPCommandData[4] = (short)(arg3 >> 16);
+    IOPCommandData[4] = (arg3 >> 16) & 0xFFFF;
     IOPCommandData[5] = (short)arg3;
     IOPCommandData[6] = (short)(arg4 >> 16);
     IOPCommandData[7] = (short)arg4;
@@ -605,8 +599,7 @@ int SOUND_DataDestEEBuffered(unsigned int arg0, short arg1, unsigned int arg2, u
     return arg2;
 }
 
-// DRAFT: 0x001AE7F0 SOUND_DataDestEEDirect
-// note: 30 lines differ: arg2&0xFFFF (ori/and in orig) folded to plain sh, epilogue branch target off by one instr; (unsigned short) cast gives same count.
+// FUNCTION: 0x001AE7F0 SOUND_DataDestEEDirect
 unsigned int SOUND_DataDestEEDirect(unsigned int arg0, short arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4, unsigned int arg5, unsigned int arg6) {
     if (arg0 >= 4U) {
         return -1U;
@@ -614,8 +607,8 @@ unsigned int SOUND_DataDestEEDirect(unsigned int arg0, short arg1, unsigned int 
     IOPCommandData[0] = arg0;
     IOPCommandData[2] = (short)(arg2 >> 16);
     IOPCommandData[1] = arg1;
-    IOPCommandData[3] = arg2 & 0xFFFFU;
-    IOPCommandData[4] = (short)(arg3 >> 16);
+    IOPCommandData[3] = arg2 & 0xFFFF;
+    IOPCommandData[4] = (arg3 >> 16) & 0xFFFF;
     IOPCommandData[5] = arg3;
     IOPCommandData[6] = (short)(arg4 >> 16);
     IOPCommandData[7] = arg4;
@@ -627,15 +620,14 @@ unsigned int SOUND_DataDestEEDirect(unsigned int arg0, short arg1, unsigned int 
     return arg2;
 }
 
-// DRAFT: 0x001AE8B0 SOUND_StreamAfterFlags
-// note: 25 differing words; size 0x94 vs 0x9c. Original keeps ori $v0,0xFFFF + and on arg1 & 0xFFFF (the two missing words); ours folds it to a plain sh of a1. Tried arg1 & 0xFFFFU direct and in a block-scoped unsigned int local; both fold to sh (25).
+// FUNCTION: 0x001AE8B0 SOUND_StreamAfterFlags
 void SOUND_StreamAfterFlags(unsigned int arg0, unsigned int arg1, unsigned int arg2, unsigned int arg3, unsigned int arg4, unsigned int arg5) {
     if (arg0 < 4U) {
         IOPCommandData[0] = arg0;
-        IOPCommandData[1] = (short)(arg1 >> 16);
+        IOPCommandData[1] = arg1 >> 16;
         IOPCommandData[4] = arg2;
-        IOPCommandData[2] = (short)(arg1 & 0xFFFF);
-        IOPCommandData[3] = (short)(arg2 >> 16);
+        IOPCommandData[2] = arg1 & 0xFFFF;
+        IOPCommandData[3] = (arg2 >> 16) & 0xFFFF;
         IOPCommandData[5] = (short)(arg3 >> 16);
         IOPCommandData[6] = arg3;
         IOPCommandData[7] = (short)(arg4 >> 16);
@@ -646,17 +638,16 @@ void SOUND_StreamAfterFlags(unsigned int arg0, unsigned int arg1, unsigned int a
     }
 }
 
-// DRAFT: 0x001AE950 SOUND_PlayDialogRelVol
-// note: 26 differing words; size 0x98 vs 0xa0. The original's ori $a2,0xFFFF + and on arg2 & 0xFFFF (the two missing words) is folded to a plain sh, which shifts the b target and epilogue by 2 words. Tried (unsigned short) cast and (arg2 & 0xFFFFU) + 0U; both fold (26).
+// FUNCTION: 0x001AE950 SOUND_PlayDialogRelVol
 unsigned int SOUND_PlayDialogRelVol(unsigned int arg0, short arg1, unsigned int arg2, short arg3, unsigned int arg4) {
     if (arg0 >= 4U) {
         return -1;
     }
     SOUND_SPUKeyStatus[arg0 * 2] = 3;
     IOPCommandData[2] = (short)(arg2 >> 16);
-    IOPCommandData[3] = arg2 & 0xFFFFU;
+    IOPCommandData[3] = arg2 & 0xFFFF;
     IOPCommandData[4] = arg3;
-    IOPCommandData[5] = (short)(arg4 >> 16);
+    IOPCommandData[5] = (arg4 >> 16) & 0xFFFF;
     IOPCommandData[6] = (short)arg4;
     IOPCommandData[0] = (short)arg0;
     IOPCommandData[1] = arg1;
@@ -664,17 +655,16 @@ unsigned int SOUND_PlayDialogRelVol(unsigned int arg0, short arg1, unsigned int 
     return arg2;
 }
 
-// DRAFT: 0x001AE9F0 SOUND_PlayMusicRelVol
-// note: 26 differing words; size 0x98 vs 0xa0. Same shape as SOUND_PlayDialogRelVol: the ori $a2,0xFFFF + and mask on arg2 & 0xFFFF is folded to a plain sh, shifting the b target and epilogue by 2 words. The original's SetIOPCommand code is 0x3E, not 0x41.
+// FUNCTION: 0x001AE9F0 SOUND_PlayMusicRelVol
 unsigned int SOUND_PlayMusicRelVol(unsigned int arg0, short arg1, unsigned int arg2, short arg3, unsigned int arg4) {
     if (arg0 >= 4U) {
         return -1;
     }
     SOUND_SPUKeyStatus[arg0 * 2] = 3;
     IOPCommandData[2] = (short)(arg2 >> 16);
-    IOPCommandData[3] = arg2 & 0xFFFFU;
+    IOPCommandData[3] = arg2 & 0xFFFF;
     IOPCommandData[4] = arg3;
-    IOPCommandData[5] = (short)(arg4 >> 16);
+    IOPCommandData[5] = (arg4 >> 16) & 0xFFFF;
     IOPCommandData[6] = (short)arg4;
     IOPCommandData[0] = (short)arg0;
     IOPCommandData[1] = arg1;
@@ -682,15 +672,14 @@ unsigned int SOUND_PlayMusicRelVol(unsigned int arg0, short arg1, unsigned int a
     return arg2;
 }
 
-// DRAFT: 0x001AEA90 SOUND_TransferSFX
-// note: 8 differing words; compiler folds arg2 & 0xFFFF into a plain sh, dropping the original's ori $v0,0xFFFF + and. Tried store reorder (9 words), hoisted masked local (9 words), in-place unsigned int lo local with &=, (int)arg2 & 0xFFFF (all 8).
+// FUNCTION: 0x001AEA90 SOUND_TransferSFX
 void SOUND_TransferSFX(short arg0, short arg1, unsigned int arg2, unsigned int arg3) {
     IOPCommandData[0] = arg0;
     IOPCommandData[1] = arg1;
     IOPCommandData[2] = (short)(arg2 >> 16);
     IOPCommandData[5] = (short)arg3;
-    IOPCommandData[3] = arg2 & 0xFFFFU;
-    IOPCommandData[4] = (short)(arg3 >> 16);
+    IOPCommandData[3] = arg2 & 0xFFFF;
+    IOPCommandData[4] = (arg3 >> 16) & 0xFFFF;
     SetIOPCommand(6, 6);
 }
 

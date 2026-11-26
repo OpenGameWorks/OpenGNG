@@ -298,7 +298,7 @@ int PWorld::LoadEditedInstanceData(PPakFile *pFile) {
 }
 
 // DRAFT: 0x19AA20 AttachFxTriggersToNodes__6PWorldFP9PMeshNodeP24tagParticleFxTriggerDataUi
-// note: frame 0x70 and saves match; 33 lines remain, all in loop shape. Original has offset in s0 and counter in s1 with a pre-loop nCount guard; for-loop, while, do-while (40), body-add and inverted-branch variants all stay at 33 or worse.
+// note: DIFF 2 words, both in the loop-guard delay slot: original fills it with i = 0 (counter in s0, offset in s1), ours with nOffset = 0. Tried for/while, do-while, combined and swapped declarations (6), comma-init (5).
 void PWorld::AttachFxTriggersToNodes(PMeshNode *pNode, tagParticleFxTriggerData *pData, unsigned int nCount) {
     if (pData == 0) {
         CdsAssert("PWorld.cpp", 0x341, "pTriggerTable");
@@ -309,14 +309,15 @@ void PWorld::AttachFxTriggersToNodes(PMeshNode *pNode, tagParticleFxTriggerData 
     if (pNode == 0) {
         CdsAssert("PWorld.cpp", 0x343, "poRootNode");
     }
+    unsigned int i = 0;
     unsigned int nOffset = 0;
-    for (unsigned int i = 0; i < nCount; i++) {
+    for (; i < nCount; i++) {
         tagParticleFxTriggerData *pEntry = (tagParticleFxTriggerData *)((char *)pData + nOffset);
         PMNode *pTarget = ((PMNode *)pNode)->Find(pEntry->m_nId);
-        if (pTarget == 0) {
-            ((PMNode *)pNode)->AddFxTrigger((tagParticleFxTrigger *)pEntry->m_Trigger, false);
-        } else {
+        if (pTarget != 0) {
             pTarget->AddFxTrigger((tagParticleFxTrigger *)pEntry->m_Trigger, false);
+        } else {
+            ((PMNode *)pNode)->AddFxTrigger((tagParticleFxTrigger *)pEntry->m_Trigger, false);
         }
         nOffset += 0x2C;
     }
@@ -464,7 +465,7 @@ void PWorld::Render() {
 }
 
 // DRAFT: 0x19B130 UpdateAnimate__6PWorldFP6PMNode
-// note: 11 diffs; pNode/pCur register roles swapped (orig pNode s1, pCur s2; ours reversed); signed-char flag test and ternary walk applied; decl order of pCur/pList tried (11, no gain)
+// note: DIFF 11 words; pNode/pCur saved registers swapped (original pNode s1, pCur s2, pList s0; ours pCur s1, pNode s2). Tried pCur/pList declaration orders and a merged pList init (11 each).
 void PWorld::UpdateAnimate(PMNode *pNode) {
     PNodeTable *pTable = (PNodeTable *)m_pMeshNode;
     if (pTable != 0) {
@@ -789,7 +790,7 @@ void PWorld::UpdateTimer() {
 }
 
 // DRAFT: 0x19BFA0 InitRenderFrame__6PWorldFv
-// note: 19 lines with FLAGS (XY_ASPECT gp access, float literal load order, m_8748 store order); 41 without FLAGS; -sdatathreshold 4 gives 41.
+// note: DIFF 12 words; float constant load order differs (original loads 0.1f into v1 first, then 1000.0f into f19, then m_13794 into f12, 128.0f into f16). Tried named 0.1f/1000.0f locals (12).
 void PWorld::InitRenderFrame() {
     gGfxEng.RefreshDisplay();
     UpdateTimer();
@@ -800,9 +801,10 @@ void PWorld::InitRenderFrame() {
 }
 
 // DRAFT: 0x19C060 InitMatrices__6PWorldFv
-// note: FOV_Y, XY_ASPECT and Y_ASPECT must be gp-relative in the original, but the file-wide -sdatathreshold 0 (needed by the string placement of LoadEditedInstanceData and LoadFxTriggerData) makes them lui; 50 lines with FLAGS, 41 without.
+// note: DIFF 4 words; float constants 128.0f and 1000.0f are loaded in swapped order (original 128 into v1 first, 1000 into v0). Holding FOV_Y in a local fixed the early order; 128.0f or 1000.0f as locals gave 16 and 10.
 void PWorld::InitMatrices() {
-    m_13794 = FOV_Y;
+    float fFov = FOV_Y;
+    m_13794 = fFov;
     ((PMat4 *)m_Screen)->MakeScreenMatrix2(m_13794, XY_ASPECT, 2048.0f, 2048.0f, 128.0f, 16777216.0f, 0.1f, 1000.0f);
     m_50 = 0xC5000000;
     m_54 = 0xC5000000;

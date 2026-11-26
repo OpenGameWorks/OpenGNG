@@ -473,19 +473,17 @@ int Player::IsPauseDisabled() {
 }
 
 // DRAFT: 0x00159080 DetachJoint__6PlayerFi
-// note: 30 words differ. Ours hoists lui a0 into the bgez delay slot (original has nop); f0/f1 allocation swapped (original zero in f0, timer in f1). Tried direct store, local fTimer, fZero, reversed compare.
+// note: 30 words differ. Ours hoists lui a0 into the bgez delay slot of the assert (original has nop), which shifts the assert block and every later branch. The tail is fixed by `if (!fTimer)`. Tried the if/else and !(...) assert forms (30, no gain), direct store, local fTimer, fZero, reversed compare.
 void Player::DetachJoint(int arg0) {
     if (m_pFreeJoints[arg0].m_unk04 == 0) {
         m_pFreeJoints[arg0].m_unk00 = 0;
         m_pFreeJoints[arg0].m_unk04 = 1;
         m_unk23D4 += 1;
-        if (m_unk23D4 < 0) {
-            CdsAssert__FPciPc("Player.cpp", 0x2260, "m_iNumFreeJoints >= 0");
-        }
+        ((m_unk23D4 >= 0) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x2260, "m_iNumFreeJoints >= 0"));
         m_unk23D1 = (unsigned int)m_unk23D4 < 4U;
         float fTimer = AttachedTimer[5 - m_unk23D4];
         m_unk2FC = fTimer;
-        if (fTimer == 0.0f) {
+        if (!fTimer) {
             *(float *)&m_unk2F8 = 0.0f;
         }
     }
@@ -1345,7 +1343,7 @@ signed char Player::GetAbility() {
 }
 
 // DRAFT: 0x0015AE60 SetPowerupMotion__6PlayerFi
-// note: original keeps 0x3D in v0 and uses a shared jr-ra exit (size 0x80); ours uses v1/a2 and separate epilogues (size 0x6c). Tried separate returns (28 words), goto exit (27), nested with result (27), reversed compare (27).
+// note: original keeps 0x3D in v0 and uses a shared jr-ra exit (size 0x80); ours uses v1/a2 and separate epilogues (size 0x6c). Tried separate returns (28 words), goto exit (27), nested with result (27), reversed compare (27), switch-form nesting (27).
 int Player::SetPowerupMotion(int arg0) {
     int result = 0;
     if (m_unk260 != 0x3D && m_unk229 < 4) {
@@ -1767,6 +1765,7 @@ void Player::CyclockDamageMove() {
 
 // note: 27 words differ: the bool lives in a1 instead of v1 and the original's andi v1,v1,0xFF truncation is missing. Tried unsigned char flag (27), implicit int-to-bool assignment (27), int flag with if/else (42), and bool with pAnim == 0 || !IsAnimate (44).
 // DRAFT: 0x0015BE80 DieMove__6PlayerFv
+// note: 27 words differ: the bool lives in a1 instead of v1 and the original's andi v1,v1,0xFF truncation is missing. Tried a bool outside the switch (34), an unsigned char flag with a cast (no andi, still a1), and == 0 (andi added, a1 kept).
 void Player::DieMove() {
     switch (m_unk250) {
     case 0: {
@@ -2935,7 +2934,7 @@ void Player::GrimSliceMove() {
 }
 
 // DRAFT: 0x0015E650 GrimThrowMove__6PlayerFv
-// note: 30 words differ, size 0x1A8 vs 0x1AC; index/frame registers swapped at 0x0A8-0x0CC, else-if delay slot nop missing, 100.0f loaded after -1.0f, GrimThrowAttack$2267 reloc shifted; tried inline frame in delta and index local (both worse or same)
+// note: 30 words differ, size 0x1A8 vs 0x1AC; index/frame registers swapped at 0x0A8-0x0CC, else-if delay slot nop missing, 100.0f loaded after -1.0f, GrimThrowAttack$2267 reloc shifted; tried inline frame in delta, index local, named 100.0f local, split delta computation and frame-first delta (all 30, no gain)
 void Player::GrimThrowMove() {
     static int GrimThrowFrames[3] = {52, 91, 4095};
     static unsigned short GrimThrowAttack[23] = {0x1F, 0x26, 0x2D, 0x26, 0x37, 0x26, 0x41, 0x27, 0x4B, 0x27, 0x55, 0x27, 0x5F, 0x27, 0x69, 0x27, 0x73, 0x27, 0x7D, 0x27, 0x87, 0x27, 0xFFFF};
