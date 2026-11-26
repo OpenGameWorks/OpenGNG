@@ -3279,8 +3279,7 @@ int PSound::DebugFindFirstID(unsigned int *pValue, unsigned int *pIndex) {
     return nRet;
 }
 
-// DRAFT: 0x001ACD00 DebugChangeParam__6PSoundFUiiUiUiUib
-// note: DIFF 10; wrap-return branches one word short, and the clamp return copies nHi into t0 instead of keeping the shared epilogue. Tried: ternary return, else form, nClamp local (best), inverted nClamp select.
+// FUNCTION: 0x001ACD00 DebugChangeParam__6PSoundFUiiUiUiUib
 unsigned int PSound::DebugChangeParam(unsigned int nValue, int nStep, unsigned int nRate, unsigned int nLo, unsigned int nHi, bool bWrap) {
     unsigned int nQ = (nValue * nRate) / 1000;
     unsigned int nVal = nValue + nStep;
@@ -3296,12 +3295,13 @@ unsigned int PSound::DebugChangeParam(unsigned int nValue, int nStep, unsigned i
             if (nVal < nValue) return nHi;
         }
     }
-    if (nLo > nVal || nVal > nHi) {
-        unsigned int nClamp = nLo;
-        if (nStep < 0) nClamp = nHi;
-        return nClamp;
+    if (nLo <= nVal && nVal <= nHi) {
+        return nVal;
     }
-    return nVal;
+    if (nStep < 0) {
+        return nHi;
+    }
+    return nLo;
 }
 
 // FUNCTION: 0x001A9F10 PSoundInit__6PSoundFUi
