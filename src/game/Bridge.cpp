@@ -190,8 +190,7 @@ void Bridge::UpdateBridgeRope() {
     ((PMNode *)m_unk34C)->m_unk3E |= 8;
 }
 
-// DRAFT: 0x001DCCA0 LeanOnSides__6BridgeFv
-// note: 16 words differ: clamp compare sense (c.le.s/bc1t vs c.lt.s/bc1f), mul.s operand order at 0x17C, slt operand at 0x194, loop-body register and interleave (a0/a1). Tried: negated and reversed clamp ternary (118), swapped product operands (no change), flipped segment ternary (23 to 16), clamp ternary with swapped arms and with <= (both worse, call order shifts).
+// FUNCTION: 0x001DCCA0 LeanOnSides__6BridgeFv
 void Bridge::LeanOnSides() {
     float vec[4];
     void *t = *(void **)((char *)mPlayerAPI__13EntityManager + 0x3C);
@@ -201,14 +200,14 @@ void Bridge::LeanOnSides() {
     float *src = m_unk3C ? (float *)((char *)m_unk3C + 0x90) : (float *)((char *)this + 0x1A0);
     MathAPI::VectorRotateY((float (*)[4])vec, -src[1]);
     float f20 = vec[0];
-    float d = (FastMath_Fabs__Ff(vec[2]) < 1.0f) ? 1.0f : FastMath_Fabs__Ff(vec[2]);
+    float d = (1.0f > FastMath_Fabs__Ff(vec[2])) ? 1.0f : FastMath_Fabs__Ff(vec[2]);
     float f21 = 40.0f / sqrtf(sqrtf(d)) / (float)(m_unk330 / 2);
-    for (int i = 0, off = 0; i < m_unk330; i++, off += 4) {
+    for (int i = 0, off = 0; i < m_unk330; off += 4, i++) {
         float f3 = (aBridgeHalfLength < FastMath_Fabs__Ff(f20)) ? aBridgeHalfLength : FastMath_Fabs__Ff(f20);
         if (f20 > 0.0f) {
-            f3 = f3 * -1.0f;
+            f3 *= -1.0f;
         }
-        float x = ((m_unk330 / 2) >= i) ? (float)i * f21 : f21 * (float)(m_unk330 - i);
+        float x = (i <= (m_unk330 / 2)) ? (float)i * f21 : f21 * (float)(m_unk330 - i);
         f3 = f3 * (x / aBridgeHalfLength);
         if (f3 < -180.0f) {
             f3 += 360.0f;
@@ -216,12 +215,12 @@ void Bridge::LeanOnSides() {
             f3 -= 360.0f;
         }
         float tmp[4];
-        void *node = *(void **)((char *)this + off + 0x1E4);
-        tmp[0] = *(float *)((char *)node + 0x90);
-        tmp[1] = *(float *)((char *)node + 0x94);
+        tmp[0] = *(float *)((char *)*(void **)((char *)this + off + 0x1E4) + 0x90);
+        tmp[1] = *(float *)((char *)*(void **)((char *)this + off + 0x1E4) + 0x94);
         tmp[2] = f3;
-        *(u_long128 *)((char *)*(void **)((char *)this + off + 0x1E4) + 0x90) = *(u_long128 *)tmp;
-        ((PMNode *)*(void **)((char *)this + off + 0x1E4))->m_unk3E |= 8;
+        PMNode *pNode = (PMNode *)*(void **)((char *)this + off + 0x1E4);
+        *(u_long128 *)((char *)pNode + 0x90) = *(u_long128 *)tmp;
+        pNode->m_unk3E |= 8;
     }
 }
 
