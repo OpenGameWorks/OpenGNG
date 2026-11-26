@@ -86,6 +86,7 @@ public:
     void ModifyBossCamera(float, float, float);
     void SetCamBoxValue_FollowHeight(float);
     void ResetAfterReposition();
+    void SetBossPosition(float (*)[4]);
     char _pad004[0x10 - 0x004];
     float m_unk10[4];       // 0x010
     float m_unk20[4];       // 0x020

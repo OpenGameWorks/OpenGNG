@@ -14,6 +14,11 @@ class PVec3 { public: float m_v[4]; };
 // FUNCTION: 0x001DC2A0 __dt__14CutCameraSetupFv
 CutCameraSetup::~CutCameraSetup() {}
 
+// FUNCTION: 0x001DC300 GetClassName__14CutCameraSetupFv
+const char *CutCameraSetup::GetClassName() {
+    return "CutCameraSetup";
+}
+
 // FUNCTION: 0x001DC310 SetEditableVars__14CutCameraSetupFPc
 void CutCameraSetup::SetEditableVars(char *pSrc) {
     memcpy((char *)this + 0x1B0, pSrc, 0xAC);

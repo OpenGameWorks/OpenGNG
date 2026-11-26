@@ -1,6 +1,7 @@
 #include "types.h"
 #include "PParticleLiteExplosion.h"
 #include "PMat4.h"
+extern "C" void sceVu0CopyVector(float *pDst, float *pSrc);
 
 // TODO(header): foreign declarations
 extern "C" void *__ct__15PParticleSystemFv(void *);
@@ -21,6 +22,11 @@ void PParticleLiteExplosion::Start(float fScale) {
     m_unk98 = m_unk160;
     m_unk9C = sqrtf(m_unk90 * m_unk90 + m_unk94 * m_unk94 + m_unk98 * m_unk98);
     ((PParticleLiteExplosionView *)this)->Start();
+}
+
+// FUNCTION: 0x001F6D40 SetPosition__22PParticleLiteExplosionFPfPf
+void PParticleLiteExplosion::SetPosition(float *pA, float *pB) {
+    sceVu0CopyVector(m_unk1B0, pA);
 }
 
 // FUNCTION: 0x001F6D50 ModifyPosition__22PParticleLiteExplosionFP5PMat4

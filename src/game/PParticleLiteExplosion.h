@@ -29,6 +29,7 @@ public:
     void ModifyPosition(PMat4 *pMat);
     void AnimateRotatableParticles(float fDt);
 
+    void SetPosition(float *, float *);
     float m_unkE0[4];           // 0x0E0 position, offset by Create's fA/fB/fC
     float m_unkF0[4];           // 0x0F0 vector used by Create
     float m_unk100[4];          // 0x100 vector used by Create

@@ -6,6 +6,7 @@ class PMNode;
 class PMeshFragment;
 struct tagGsClut256;
 struct tagVuFxLine;
+struct tagVuSprite;
 struct tagVuParticle;
 struct tagVuRotatableParticle;
 struct tagVuLightingInfo;
@@ -76,6 +77,8 @@ public:
     void BeginDebugRender();
     void DrawBox(float (*pBox)[2][4], float arg1, float arg2, float arg3);
     void DrawLines(struct tagVuLine *pLines, int nCount);
+    void DrawFogParticles(float (*pVerts)[4], int nCount, float fA, float fB, float fC, float *pColor);
+    void DrawSprites(struct tagVuSprite *pSprite, int nCount, bool bFlag);
     void RenderRefractionMappedFragments();
     void UpdateLights(struct tagVuLightingInfo *pInfo);
     void UpdateLights(PMat4 *pDirMat, PMat4 *pColorMat, float (*pAmbient)[4]);

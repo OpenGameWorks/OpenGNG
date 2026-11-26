@@ -12,7 +12,7 @@ public:
     CutCameraSetup();
     virtual ~CutCameraSetup();
     virtual void Execute();
-    virtual void GetClassName();
+    virtual const char *GetClassName();
     virtual void SetEditableVars(char *pSrc);
 
     char _pad190[0x20];

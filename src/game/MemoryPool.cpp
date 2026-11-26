@@ -92,6 +92,11 @@ void MemoryPool::AddToLength(Block *block, unsigned int len) {
     SetLength(block, cur);
 }
 
+// FUNCTION: 0x0012B3B0 GetLength__10MemoryPoolFPQ210MemoryPool5Block
+int MemoryPool::GetLength(MemoryPool::Block *value) {
+    return value->m_unk4 & 0x7FFFFFFF;
+}
+
 // FUNCTION: 0x0012B3C0 SetLength__10MemoryPoolFPQ210MemoryPool5BlockUi
 void MemoryPool::SetLength(Block *block, unsigned int len) {
     block->m_unk4 = len | (block->m_unk4 & 0x80000000);

@@ -3,6 +3,7 @@
 #include "PMat4.h"
 #include "PDisplayList.h"
 #include "PParticleExplosion.h"
+extern "C" void sceVu0CopyVector(float *pDst, float *pSrc);
 
 // TODO(header): foreign declarations
 extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
@@ -25,6 +26,11 @@ extern unsigned char __vt__18PParticleExplosion[];
 // FUNCTION: 0x001B5390 ModifyPosition__18PParticleExplosionFP5PMat4
 void PParticleExplosion::ModifyPosition(PMat4 *pMat) {
     pMat->MulVector(m_unk1C0, m_unkE0);
+}
+
+// FUNCTION: 0x001B53B0 SetPosition__18PParticleExplosionFPfPf
+void PParticleExplosion::SetPosition(float *pA, float *pB) {
+    sceVu0CopyVector(m_unk1C0, pA);
 }
 
 // FUNCTION: 0x001B53C0 Start__18PParticleExplosionFv

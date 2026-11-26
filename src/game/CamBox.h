@@ -10,7 +10,7 @@ public:
     CamBox();
     virtual ~CamBox();
     virtual void Execute();
-    virtual void GetClassName();
+    virtual const char *GetClassName();
     virtual void SetEditableVars(char *pSrc);
     void OnSleepEvent();
     int PointInsideTriggerArea(float (*pPoint)[4], float (*pOther)[4]);

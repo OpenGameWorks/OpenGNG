@@ -5,6 +5,8 @@
 // TODO(header): foreign declarations
 struct tagGsTextureEnvironment;
 struct tagGsMaterial;
+struct tagVuSprite;
+class PMat4;
 
 class PTextureManager {
 public:
@@ -20,6 +22,10 @@ public:
     void SetVu1Microcode(void *pMicrocode);
     void SetMaterials(tagGsMaterial *pMat, int nIndex, bool bA, bool bB, float *pF, unsigned long *pC, unsigned long *pD);
     void BeginFxLoop(unsigned int nAddr);
+    void DrawSprites(struct tagVuSprite *pSprite, int nCount, bool bFlag);
+    void SetViewMatrix(PMat4 *pMat);
+    void SetWorldMatrix(PMat4 *pMat);
+    void SetScreenMatrix(PMat4 *pMat);
     char _padA0000[0xA3348];
     int m_unkA3348;             // 0xA3348
 };
@@ -38,6 +44,11 @@ struct PMovieOverlayRenderBits {
     unsigned short nHigh : 7;
 };
 
+// FUNCTION: 0x0020DA10 EndRender__19PMovieOverlayEngineFv
+void PMovieOverlayEngine::EndRender() {
+    m_unk4->KickVifDmaChain(true);
+}
+
 // FUNCTION: 0x0020DA20 BeginRender__19PMovieOverlayEngineFUi
 void PMovieOverlayEngine::BeginRender(unsigned int nFlags) {
     ((PMovieOverlayRenderBits *)&m_unk10)->nLow = nFlags;
@@ -46,6 +57,11 @@ void PMovieOverlayEngine::BeginRender(unsigned int nFlags) {
 
 // FUNCTION: 0x0020DA50 EndSprites__19PMovieOverlayEngineFv
 void PMovieOverlayEngine::EndSprites() {
+}
+
+// FUNCTION: 0x0020DA60 DrawSprites__19PMovieOverlayEngineFP11tagVuSpriteib
+void PMovieOverlayEngine::DrawSprites(struct tagVuSprite *pSprite, int nCount, bool bFlag) {
+    m_unk4->DrawSprites(pSprite, nCount, bFlag);
 }
 
 // FUNCTION: 0x0020DA70 BeginSprites__19PMovieOverlayEngineFv
@@ -92,6 +108,21 @@ void PMovieOverlayEngine::SetMaterial(int nIndex, float *pColor, bool bFlag, uns
     *(u_long128 *)p.aColor = *(u_long128 *)pColor;
     p.pTexEnv = m_unk0->GetTexEnv(nIndex);
     m_unk4->SetMaterials((tagGsMaterial *)&p, 1, false, false, 0, 0, 0);
+}
+
+// FUNCTION: 0x0020DBB0 SetViewMatrix__19PMovieOverlayEngineFP5PMat4
+void PMovieOverlayEngine::SetViewMatrix(PMat4 *pMat) {
+    m_unk4->SetViewMatrix(pMat);
+}
+
+// FUNCTION: 0x0020DBC0 SetWorldMatrix__19PMovieOverlayEngineFP5PMat4
+void PMovieOverlayEngine::SetWorldMatrix(PMat4 *pMat) {
+    m_unk4->SetWorldMatrix(pMat);
+}
+
+// FUNCTION: 0x0020DBD0 SetScreenMatrix__19PMovieOverlayEngineFP5PMat4
+void PMovieOverlayEngine::SetScreenMatrix(PMat4 *pMat) {
+    m_unk4->SetScreenMatrix(pMat);
 }
 
 // FUNCTION: 0x0020DBE0 InitTextures__19PMovieOverlayEngineFPii

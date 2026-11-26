@@ -5,7 +5,9 @@
 
 class PTextureManager;
 class PDisplayList;
+class PMat4;
 struct tagGsMaterial;
+struct tagVuSprite;
 
 class PMovieOverlayEngine {
 public:
@@ -17,6 +19,11 @@ public:
     int InitTextures(int *pData, int nCount);
     int Init(short a, short b, short c);
     void EndSprites();
+    void EndRender();
+    void DrawSprites(struct tagVuSprite *pSprite, int nCount, bool bFlag);
+    void SetViewMatrix(PMat4 *pMat);
+    void SetWorldMatrix(PMat4 *pMat);
+    void SetScreenMatrix(PMat4 *pMat);
 
     PTextureManager *m_unk0;        // 0x00
     PDisplayList *m_unk4;           // 0x04

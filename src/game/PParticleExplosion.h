@@ -21,6 +21,7 @@ public:
     void Start();
     void Animate(float fDelta);
 
+    void SetPosition(float *, float *);
     float m_unkE0[4];           // 0x0E0 position, copied from the parameter block
     float m_unkF0[4];           // 0x0F0 offset vector written by PMat4::MulVector in ModifyPosition
     float m_unk100[4];          // 0x100 vector used by Create

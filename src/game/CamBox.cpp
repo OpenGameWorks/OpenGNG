@@ -43,6 +43,11 @@ extern "C" void RotateZ__5PMat4Ff(float *pMat, float angle);
 // FUNCTION: 0x0019C530 __dt__6CamBoxFv
 CamBox::~CamBox() {}
 
+// FUNCTION: 0x0019C590 GetClassName__6CamBoxFv
+const char *CamBox::GetClassName() {
+    return "Camera Box";
+}
+
 // DRAFT: 0x0019C5A0 PointInsideTriggerArea__6CamBoxFPA4_fPA4_f
 // note: this/pPoint registers inverted (orig this=s1, pPoint=s0; draft saves s3/s2), frame 0xC0 vs 0xB0 (extra 16-byte local), gEng reloc; tried py/pz pointer, struct-copy, and py/pz declaration-order variants, 4 attempts.
 int CamBox::PointInsideTriggerArea(float (*pPoint)[4], float (*pOther)[4]) {

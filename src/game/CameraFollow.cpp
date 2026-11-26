@@ -260,6 +260,11 @@ void CameraFollow::ModifyBossCamera(float fA, float fB, float fC) {
     m_unk635C = fB;
 }
 
+// FUNCTION: 0x00173EC0 SetBossPosition__12CameraFollowFPA4_f
+void CameraFollow::SetBossPosition(float (*value)[4]) {
+    sceVu0CopyVector(m_unk6330, value[0]);
+}
+
 // FUNCTION: 0x00173ED0 SetBossArenaValues__12CameraFollowFPA4_fffbbffb
 void CameraFollow::SetBossArenaValues(float (*arg0)[4], float arg1, float arg2, bool arg3, bool arg4, float arg5, float arg6, bool arg7) {
     m_unk6324 = arg5;

@@ -556,6 +556,11 @@ void PGfxEngine::SetGlowSizeAndColor(float fA, float fB, float *pColor) {
 void PGfxEngine::EndFogParticles() {
 }
 
+// FUNCTION: 0x00185360 DrawFogParticles__10PGfxEngineFPA4_fifffPf
+void PGfxEngine::DrawFogParticles(float (*pVerts)[4], int nCount, float fA, float fB, float fC, float *pColor) {
+    m_unk154C80->DrawFogParticles(pVerts, nCount, fA, fB, fC, pColor);
+}
+
 // FUNCTION: 0x185370 BeginFogParticles__10PGfxEngineF13eBoxIntersect
 void PGfxEngine::BeginFogParticles(eBoxIntersect eBox) {
     m_unk154C80->BeginFxLoop(((unsigned int)(fx_fog_particle_clip_init + 0x1030)) >> 3);
@@ -587,6 +592,11 @@ void PGfxEngine::BeginParticles(eBoxIntersect eBox) {
 
 // FUNCTION: 0x00185420 EndSprites__10PGfxEngineFv
 void PGfxEngine::EndSprites() {
+}
+
+// FUNCTION: 0x00185430 DrawSprites__10PGfxEngineFP11tagVuSpriteib
+void PGfxEngine::DrawSprites(struct tagVuSprite *pSprite, int nCount, bool bFlag) {
+    m_unk154C80->DrawSprites(pSprite, nCount, bFlag);
 }
 
 // FUNCTION: 0x185440 BeginSprites__10PGfxEngineFv
@@ -667,6 +677,11 @@ void PGfxEngine::DrawBox(float (*pBox)[2][4], float arg1, float arg2, float arg3
         (*row)[3][3] = 128.0f;
     }
     DrawLines((struct tagVuLine *)lines, 12);
+}
+
+// FUNCTION: 0x001857B0 DrawLines__10PGfxEngineFP9tagVuLinei
+void PGfxEngine::DrawLines(struct tagVuLine *pLines, int nCount) {
+    m_unk154C80->DrawLines(pLines, nCount);
 }
 
 // FUNCTION: 0x1857C0 BeginDebugRender__10PGfxEngineFv
