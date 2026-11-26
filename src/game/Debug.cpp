@@ -139,7 +139,7 @@ void Debug::RenderPerformanceMeters() {
 }
 
 // DRAFT: 0x16A760 DispDebugTimer__5DebugFv
-// note: 31 differing words: frame and buf size match with buf[0x40]; the compiler evaluates the 1C, 14, 18 float conversions in the order 14, 18, 1C while the original does 1C, 14, 18; local-temporary and early-nSub orders tried (33 and 112 words).
+// note: 31 differing words: frame and buf size match with buf[0x40]; the compiler evaluates the 1C, 14, 18 float conversions in the order 14, 18, 1C while the original does 1C, 14, 18. All six statement orders, uA/uB/uC declaration orders, a shared float constant local, and float product locals each stay at 31 (local-temporary and early-nSub orders gave 33 and 112).
 void Debug::DispDebugTimer() {
     char buf[0x40];
     static int test;
@@ -374,13 +374,13 @@ void RenderAnimation() {
 }
 
 // DRAFT: 0x0016B010 ApparitionDisplay__Fv
-// note: DIFF 13 words: gbApparition read as lbu from gp (-0x7C28) in the original, ours uses 0x0($gp) with a reloc; gPad lhu uses -0x40F0 in the original, ours 0x110 from $at; nA in a2 (original) vs a0 and bDirty in a3 vs a1. Tried decl orders (bDirty first 66, bDirty before nA 69, nB before nA 63, nRep first 13); kept nA, nB, nRep, bDirty.
+// note: 13 differing words: gbApparition read as lbu from gp (-0x7C28) in the original, ours uses 0x0($gp) with a reloc; gPad lhu uses -0x40F0 in the original, ours 0x110 from $at; nA in a2 (original) vs a0 and bDirty in a3 vs a1. bool bDirty matches the daddiu flag but does not change the count. Tried decl orders (bDirty first 66, bDirty before nA 69, nB before nA 63, nRep first 13); kept nA, nB, nRep, bDirty.
 static void ApparitionDisplay() {
     float *pPos;
     unsigned int nA;
     unsigned int nB;
     int nRep;
-    int bDirty;
+    bool bDirty;
     char aBuf[0x40];
 
     if (gpApparition == 0) {
@@ -407,7 +407,7 @@ static void ApparitionDisplay() {
     if (nRep == 0) {
         nA |= nB;
     }
-    bDirty = 0;
+    bDirty = false;
     if (nA & 0x50) {
         giRep = 4;
         if (nB & 0x100) {
@@ -415,12 +415,12 @@ static void ApparitionDisplay() {
         } else {
             pPos[2] += (nA & 0x10) ? 0.1f : -0.1f;
         }
-        bDirty = 1;
+        bDirty = true;
     }
     if (nA & 0xA0) {
         giRep = 4;
         pPos[0] += (nA & 0x20) ? 0.1f : -0.1f;
-        bDirty = 1;
+        bDirty = true;
     }
     if (bDirty) {
         if (gpApparition->m_unk3C) {
