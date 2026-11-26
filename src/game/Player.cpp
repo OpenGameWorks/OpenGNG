@@ -22,7 +22,18 @@ extern int PeddlerItems[14];
 extern int GuardItems[19];
 extern "C" void EnableFullScreenFx__10PGfxEngineFb(void *pThis, bool bEnable);
 extern unsigned char __vt__6Player[124];
-extern unsigned char gMC[0x1000];
+extern unsigned char gMC[0x3FC0];
+extern "C" void ComboFinish__8HudComboFv(void *pCombo);
+extern "C" int Find__6PArrayFPv(void *pArray, void *pItem);
+extern "C" int IsTreasureOK__9InterfaceFv(void *pInterface);
+extern "C" void FlashTexture__15EntityBaseClassFUii(void *pEnt, unsigned int nTex, int nMode);
+extern "C" void UpdateSulphurFx__15EntityBaseClassFf(void *pEnt, float fDt);
+extern "C" void SetHeadCamera__6PlayerFb(void *pPlayer, bool bOn);
+extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *pPhysics, unsigned int nType, float *pMat);
+extern "C" void *DisplayString__11FontManagerFiiib(void *pFont, int nStr, int nX, int nY, bool bFlag);
+extern "C" void RemoveText__11FontManagerFP8FontNode(void *pFont, void *pNode);
+extern float GRIM_TIME;
+extern float SULFUR_TIME;
 extern char gGfxEng[1504384];
 extern int miRandom__7MathAPI;
 extern "C" int rand();
@@ -4912,6 +4923,139 @@ void Player::UpdateBodyBox() {
 static int PadTimer;
 static signed char StickDir[2];
 static signed char stick_tbl[32];
+
+// DRAFT: 0x00165050 TimerUpdate__6PlayerFv
+// note: DIFF 282; size 0x4DC vs 0x518 (prologue frame 0x30 vs 0x40, no f20/s1 spill match); m_unk314 bc1t delay slot filled by andi; m_unk20 early return layout; gEng gate addend 0x194F0 (asm lui 0x2F + lw -0x6B10) unverified; tried one-case switch on m_unk26B (288->282), pFont hoist (316->288), one-case switch on m_unk20 (285, reverted), flag-first test order (286, reverted)
+void Player::TimerUpdate() {
+    float fDt = *(float *)(gEng + 0x1E8);
+    if (m_unk304) {
+        m_unk304 = m_unk304 - fDt;
+        if (m_unk304 <= 0.0f) {
+            m_unk304 = 0.0f;
+            *(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) = 0;
+            m_unkE8 = 0x13;
+        }
+    }
+    int nFlags = m_unk264;
+    if (!(nFlags & 0x400)) {
+        switch (m_unk26B) {
+        case 0:
+        if (*(float *)&m_unk314 && !(nFlags & 0x401)) {
+            *(float *)&m_unk314 = *(float *)&m_unk314 - fDt;
+            if (*(float *)&m_unk314 <= 0.0f) {
+                *(float *)&m_unk314 = 0.0f;
+                m_unk220 = 0;
+                m_unk21C = 0;
+                ComboFinish__8HudComboFv((char *)&gInterface + 0x19A0);
+            }
+        }
+        if (m_unk1D0 & 1) {
+            if (m_unk20 != 0) {
+                return;
+            }
+            *(float *)&m_unk300 = *(float *)&m_unk300 - fDt;
+            if (*(float *)&m_unk300 <= 0.0f) {
+                *(float *)&m_unk300 = 60.0f;
+                *(int *)(gMC + 0x26F0) = *(int *)(gMC + 0x26F0) + 1;
+            }
+            if (m_unk229 == 4) {
+                *(float *)&m_unk310 = *(float *)&m_unk310 - fDt;
+                if (*(float *)&m_unk308) {
+                    *(float *)&m_unk310 = *(float *)&m_unk310 - fDt;
+                }
+                if (*(float *)&m_unk310 <= 0.0f) {
+                    if (m_unk200 >= 2 || (m_unk264 & 0x30)) {
+                        GameVarSub(0xB, 1);
+                        *(float *)&m_unk310 = GRIM_TIME;
+                    }
+                }
+            } else {
+                if (*(float *)&m_unk308 && !(m_unk264 & 0x1000)) {
+                    *(float *)&m_unk308 = *(float *)&m_unk308 - fDt;
+                    if (*(float *)&m_unk308 <= 0.0f) {
+                        if (m_unk26C != 0) {
+                            SetHeadCamera(false);
+                        }
+                        if (GameVarSub(1, m_unk30C) == 0) {
+                            SetAction(0x18);
+                            SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x800U, 0);
+                            return;
+                        }
+                        *(float *)&m_unk308 = SULFUR_TIME;
+                        FlashTexture__15EntityBaseClassFUii(this, 0x84000008U, 10);
+                        if ((*(int *)((char *)m_unk38 + 0xE8) & 0x100001) == 0x100000) {
+                            UpdateSulphurFx__15EntityBaseClassFf(this, *(float *)((char *)m_unk38 + 0xC4));
+                        }
+                    }
+                }
+            }
+            if (*(float *)&m_unk2F8) {
+                *(float *)&m_unk2F8 = *(float *)&m_unk2F8 - fDt;
+                if (*(float *)&m_unk2F8 <= 0.0f) {
+                    *(float *)&m_unk2F8 = m_unk2FC;
+                    if (GameVarSub(1, 0x19) == 0) {
+                        SetAction(0x16);
+                        return;
+                    }
+                    FlashTexture__15EntityBaseClassFUii(this, 0x84000008U, 10);
+                }
+            }
+            if (*(float *)&m_unk318) {
+                *(float *)&m_unk318 = *(float *)&m_unk318 - fDt;
+                if (*(float *)&m_unk318 < 0.0f) {
+                    *(float *)&m_unk318 = 0.0f;
+                }
+            }
+            char *pFont = (char *)&gInterface + 0x1790;
+            if (m_unk337 != 0) {
+                if (*(float *)&m_unk318 == 0.0f) {
+                    *(float *)&m_unk318 = 60.0f;
+                    int nVib = 4;
+                    if (m_unk337 == 1) {
+                        nVib = 8;
+                    }
+                    gPad.SetVibrate((Pad::VibType)4, nVib & 0xFF);
+                }
+                if (*((unsigned char *)&gPad + 0x16F) == 0) {
+                    FontNode *pText = m_unk31C;
+                    if (pText != 0 && Find__6PArrayFPv(pFont, pText) < 0) {
+                        m_unk31C = 0;
+                    }
+                    if (m_unk31C == 0 && IsTreasureOK__9InterfaceFv((char *)&gInterface + 0x1710) != 0) {
+                        m_unk31C = (FontNode *)DisplayString__11FontManagerFiiib(pFont, 0x9D, 0, 0, false);
+                    }
+                    FontNode *pCur = m_unk31C;
+                    if (pCur != 0) {
+                        float fStep;
+                        if (m_unk337 == 1) {
+                            fStep = 0.05f;
+                        } else {
+                            fStep = 0.03f;
+                        }
+                        float fNew = *(float *)((char *)pCur + 8) - fStep;
+                        if (fNew < 0.0f) {
+                            fNew = 1.0f;
+                        }
+                        *(float *)((char *)pCur + 8) = fNew;
+                    }
+                }
+                m_unk337 = 0;
+            } else {
+                *(float *)&m_unk318 = 0.0f;
+                FontNode *pRem = m_unk31C;
+                if (pRem != 0) {
+                    RemoveText__11FontManagerFP8FontNode(pFont, pRem);
+                    m_unk31C = 0;
+                }
+            }
+            if (m_unk229 == 2 && m_unk218 == 3 && (gEng[0x194F0] & 1)) {
+                GameVarAdd(0xE, 1, 0);
+            }
+        }
+        break;
+        }
+    }
+}
 
 // DRAFT: 0x00165570 PadUpdate__6PlayerFb
 // note: DIFF 197, size 0x3DC vs 0x3A4; flag-chain order, branch layout, 0x3D pointer walk, stick_tbl bytes, gEng/gPad addends differ; tried nested and flat 0x26B guard (197), pointer-walk variant (202)
