@@ -52,7 +52,7 @@ public:
     void KeepUpWithPlayer();
     void ProcessRightAnalogue();
     void ResetFromCamBox();
-    int PlayerIsIdle();
+    bool PlayerIsIdle();
     void FollowPlayer();
     int CanDoHeadcam();
     void CalcNewCameraOffsets();

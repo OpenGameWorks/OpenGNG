@@ -759,22 +759,24 @@ void EntityManager::WakeUpApparitions() {
 }
 
 // DRAFT: 0x00146D80 CompareDistToCam__FPvPv
-// note: string literals fixed by -str readonly; still differs in register allocation (pA lands in s2 with pCam in s0, original pCam s2/pA s0/pB s1), f20 prologue save order, and pB copy placement; tried pA used directly, pCam as float*.
+// note: 21 words differ; pCam/pA/pB registers now match after char* copies of pA/pB declared first. Left: one fewer nop before and after each sqrt.s, andi 0xFF on the bool-like return. Tried: pCam declared first (no change), CDS_ASSERT ternary (23), split dot temporaries (21), int ret set in arms (24-25), bool return with bool declaration (25).
 int CompareDistToCam(void *pA, void *pB) {
-    float sp50[4];
+    char *cA = (char *)pA;
+    char *cB = (char *)pB;
     float *pCam = (float *)(gEng + 0x19760);
     if (pCam == 0) {
         CdsAssert("EntityManager.cpp", 0x740, "pCam");
     }
-    char *srcA = *(char **)((char *)pA + 0x3C);
-    float *pTargetA = (float *)((char *)pA + 0x190);
+    float sp50[4];
+    char *srcA = *(char **)(cA + 0x3C);
+    float *pTargetA = (float *)(cA + 0x190);
     if (srcA != 0) {
         pTargetA = (float *)(srcA + 0x80);
     }
     sceVu0SubVector(sp50, pCam, pTargetA);
     float d0 = sqrtf(sceVu0InnerProduct(sp50, sp50));
-    char *srcB = *(char **)((char *)pB + 0x3C);
-    float *pTargetB = (float *)((char *)pB + 0x190);
+    char *srcB = *(char **)(cB + 0x3C);
+    float *pTargetB = (float *)(cB + 0x190);
     if (srcB != 0) {
         pTargetB = (float *)(srcB + 0x80);
     }
@@ -2169,7 +2171,7 @@ void EntityBaseClass::ReceivedSpirit() {
 }
 
 // DRAFT: 0x00149F60 SequenceViewer__15EntityBaseClassFPPUii
-// note: 28 words differ; s1 init is daddiu not addiu, dispatch chain offsets off by 2 words, case-3 halfword interleave, loop-tail daddu/nop shape. Tried: arm orders, bool flag (size grows to 0x1B8).
+// note: 28 words differ; chain test order already matches, the diff is body layout: original shares the case-3 tail with case 0xFF (`s1 = 0; b tail`), ours keeps separate blocks; s1 init is daddiu not addiu; case 4/group/case 7 bodies shifted by 2 words. Tried: arm orders, bool flag (size grows to 0x1B8), case-0xFF move (61 words).
 int EntityBaseClass::SequenceViewer(unsigned int **arg0, int arg1) {
     struct SeqAnimData {
         unsigned short m_unk00;

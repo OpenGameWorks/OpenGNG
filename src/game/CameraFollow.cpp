@@ -872,12 +872,9 @@ float CameraFollow::GetAngleBetweenCamAndPlayer(float &arg0) {
 }
 
 // DRAFT: 0x00175830 PlayerIsIdle__12CameraFollowFv
-// note: 11 words differ; && of the two abs tests and the 0.01f compare with block-scope int abs(int) decl. Remaining diff is branch layout: original is c.le.s; bc1t exit with addiu v0,1 in the delay slot and a shared daddu v0,0 fallthrough, ours is bc1f with the return-0 block before the epilogue. Tried: int ret local (30), if/else returns (12), !(x > y) bool (13), bool return (13); abs(signed char) and dont_inline did not stop abs inlining.
-int CameraFollow::PlayerIsIdle() {
-    if (abs(m_unk1B8) < 0x33 && abs(m_unk1B9) < 0x33 && m_unk1A0 <= 0.01f) {
-        return 1;
-    }
-    return 0;
+// note: 6 words differ; bool return of the && chain gives the original tail (bc1t with addiu v0,1 in the slot). Left: the abs tests use v0 instead of $at, so the first beqz chains through the second (original branches straight to the shared daddu v0,0). Tried if-form (11), nested if with bool return (12), || early return (18), bool local (30).
+bool CameraFollow::PlayerIsIdle() {
+    return abs(m_unk1B8) < 0x33 && abs(m_unk1B9) < 0x33 && m_unk1A0 <= 0.01f;
 }
 
 // FUNCTION: 0x001758A0 MoveCameraToNewViewpoint__12CameraFollowFv
