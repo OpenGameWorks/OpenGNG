@@ -7,7 +7,6 @@ public:
     float m_v[4];
 };
 extern "C" void __dl__FPv(void *);
-extern float vUp_1253[4];
 extern float vGDown[4];
 extern "C" void sceVu0SubVector(float *, float *, float *);
 extern "C" float sceVu0InnerProduct(float *, float *);
@@ -45,11 +44,12 @@ extern "C" void FlushCache(int);
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("BGCollision.cpp", line, #cond))
 
-// DRAFT: 0x0016C8A0 CheckCeiling__11BGCollisionFPA4_f
-// note: only the two lui/addiu words differ; the reloc target is vUp$1253, which C++ cannot name (vUp_1253 emitted).
+// FUNCTION: 0x0016C8A0 CheckCeiling__11BGCollisionFPA4_f
 int BGCollision::CheckCeiling(float (*pVec)[4])
 {
-    return CheckIntersectAnim(pVec, &vUp_1253, 0, 0x40) != 0;
+    // Function-local static of CheckCeiling in the original (vUp$1253 at 0x244CF0, 16 bytes).
+    static float vUp[4] = {0.0f, 100.0f, 0.0f, 1.0f};
+    return CheckIntersectAnim(pVec, &vUp, 0, 0x40) != 0;
 }
 
 #define CDS_ASSERT_TXT(line, cond, txt) ((cond) ? (void)0 : CdsAssert__FPciPc("BGCollision.cpp", line, txt))
@@ -794,8 +794,7 @@ float SphereIntersect(STCollisionPoly *pPoly, float (*pSph)[4], float fRadius) {
     return fRet;
 }
 
-// DRAFT: 0x0016EDA0 BGDetection__11BGCollisionFPA2_A4_fP5PMat4fR11SurfaceInfoiP9PMeshNode
-// note: 1 differing line: fLen compare at 0x24 emits c.eq.s f0,f12 (original f12,f0); tried !(fLen==0), 0.0f!=fLen, empty-then, all same.
+// FUNCTION: 0x0016EDA0 BGDetection__11BGCollisionFPA2_A4_fP5PMat4fR11SurfaceInfoiP9PMeshNode
 void BGCollision::BGDetection(float (*pArr)[2][4], PMat4 *pMat, float fLen, SurfaceInfo &rSurf, int nFlag, PMeshNode *pMesh)
 {
     char *pS = (char *)&rSurf;
@@ -808,7 +807,7 @@ void BGCollision::BGDetection(float (*pArr)[2][4], PMat4 *pMat, float fLen, Surf
     *(float *)(pS + 0x28) = 1000.0f;
     *(int *)(pS + 0x2C) = 0;
     *(int *)(pS + 0x40) = 0;
-    if (fLen != 0.0f) {
+    if (fLen) {
         float t = 0.5f * fLen;
         pArr[0][0][1] -= t;
         pArr[0][1][1] += FastMath_Fabs(t);

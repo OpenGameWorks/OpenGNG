@@ -209,8 +209,7 @@ void ClockworkPuncher::ChooseAttack() {
     }
 }
 
-// DRAFT: 0x001DE4A0 AttachSparkEffect__16ClockworkPuncherFv
-// note: 1.56f is pooled (lwc1 from gp) but the original builds 0x3FC7AE14 with lui/ori/mtc1; the bit-cast variant spills to the stack; RandomFloatRange argument registers are swapped (v0/v1 order); 31 differing lines.
+// FUNCTION: 0x001DE4A0 AttachSparkEffect__16ClockworkPuncherFv
 void ClockworkPuncher::AttachSparkEffect() {
     float vec[4];
 
@@ -226,7 +225,9 @@ void ClockworkPuncher::AttachSparkEffect() {
     sceVu0SubVector(vec, (float *)(pPlayerAlt != 0 ? pPlayerAlt + 0x80 : pPlayer + 0x190), (float *)pSelf);
     sceVu0Normalize(vec, vec);
     sceVu0ScaleVector(vec, vec, 1.56f);
-    MathAPI::VectorRotateY((float (*)[4])vec, MathAPI::RandomFloatRange(-90.0f, 90.0f));
+    float fLo = -90.0f;
+    float fHi = 90.0f;
+    MathAPI::VectorRotateY((float (*)[4])vec, MathAPI::RandomFloatRange(fLo, fHi));
     if (m_unk2B4 != 0) {
         AttachDamageEffect(m_unk2B4, 0x8300015A, vec[0], vec[1], vec[2]);
         PlaySound__15EntityBaseClassFUi((void *)this, 0x100);
@@ -303,7 +304,7 @@ void ClockworkPuncher::AttachDamageEffect(PMNode *pNode, unsigned int nId, float
 }
 
 // DRAFT: 0x001DE790 SetEffectsFrameRate__16ClockworkPuncherFf
-// note: the first load uses a0 where the original uses s0, and mov.s f20 / lui a0 are swapped (3 lines); local handle and API-pointer variants did not change it.
+// note: 3 lines differ: the first lw reads this from a0 where the original reads s0, and mov.s f20 / lui a0 are swapped. Tried: local handle, API-pointer local, pSelf = this, float and unsigned locals for fRate and the handle, and a one-call-first split; all still 3 lines.
 void ClockworkPuncher::SetEffectsFrameRate(float fRate) {
     void *pFx;
 
@@ -548,7 +549,7 @@ void ClockworkPuncher::SetEditableVars(char *arg0) {
 }
 
 // DRAFT: 0x001DEF60 OnTimerEvent__16ClockworkPuncherFUi
-// note: 5 lines differ; original hoists mtc1 $zero,$f12 above the m_unk38 null test (delay slot mov.s). Tried local pointer, local float zero, literal zeros: all 5 lines.
+// note: 5 lines differ; original hoists mtc1 $zero,$f12 and mov.s f13 above the m_unk38 null test (mov.s in the beqz delay slot), ours keeps them in the body. Tried local pointer, local float zero, literal zeros, if (m_unk38) truthiness: all 5 lines.
 void ClockworkPuncher::OnTimerEvent(unsigned int nHandle) {
     if (nHandle == m_unk214) {
         m_unk272 = 1;

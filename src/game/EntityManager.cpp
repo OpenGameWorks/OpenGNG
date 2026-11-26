@@ -118,7 +118,7 @@ public:
 };
 
 extern "C" void sceVu0ApplyMatrix(float *, float (*)[4], float *);
-int BoxSphereCheck(float (*pBox)[4][4], float (*pSphere)[2][4], float fRadius);
+static int BoxSphereCheck(float (*pBox)[4][4], float (*pSphere)[2][4], float fRadius);
 
 class OverlayManager {
 public:
@@ -467,8 +467,7 @@ void EntityManager::EnableParticleFx(bool arg0) {
     EnableParticleFx__9EffectAPIFb(&mEffectAPI__13EntityManager, arg0);
 }
 
-// DRAFT: 0x00146310 UpdateSwordBGAnim__13EntityManagerFv
-// note: 22 diffs; counter lives in a1 not a0 (orig reuses a0), extra nop after RemoveCurrent call shifts branch offsets; unsigned counter tried, no change
+// FUNCTION: 0x00146310 UpdateSwordBGAnim__13EntityManagerFv
 void EntityManager::UpdateSwordBGAnim() {
     m_unk5B54 = 0;
     PMNode *node;
@@ -484,10 +483,7 @@ void EntityManager::UpdateSwordBGAnim() {
             }
             unsigned int idx = m_unk5B54 + 1;
             m_unk5B54 = idx;
-            node = 0;
-            if (idx < (unsigned int)m_unk5B50) {
-                node = m_unk5B58[m_unk5B54];
-            }
+            node = (idx < (unsigned int)m_unk5B50) ? m_unk5B58[m_unk5B54] : 0;
         } while (node != 0);
     }
 }
@@ -516,46 +512,43 @@ void EntityManager::ResetSwordBGAnim() {
     }
 }
 
-// DRAFT: 0x00146470 CheckSwordBGAnim__13EntityManagerFP6PMNode
-// note: DIFF 25; frame size 0x118 vs 0x120. Original has a join-point nop after the UpdateAnimate call (branch target of the BoxSphereCheck if). Tried nested-if (no gain) and reordered the && operands (DIFF 68, reverted).
+// FUNCTION: 0x00146470 CheckSwordBGAnim__13EntityManagerFP6PMNode
 void EntityManager::CheckSwordBGAnim(PMNode *pNode) {
-    if (pNode->m_unk3C & 0x80) {
-        float vec[4];
-        sceVu0ApplyMatrix(vec, pNode->m_unk40, (float *)pNode->m_unk28);
-        float f20 = pNode->m_unk28[0][1][3];
-        m_unk5B54 = 0;
-        PMNode *node;
-        if (m_unk5B50 != 0) {
-            node = *m_unk5B58;
-        } else {
-            node = 0;
-        }
-        if (node != 0) {
-            do {
-                if (node->CheckAnimated() == 0) {
-                    float (*box)[2][4] = node->m_unk28;
-                    if (box == 0) {
-                        box = &node->m_unk110;
-                    }
-                    if (box != 0 && BoxSphereCheck(&node->m_unk40, box, f20) != 0) {
-                        node->SetAllAnimFlags(0);
-                        ((PWorld *)gEng)->UpdateAnimate(node);
-                    }
+    if ((pNode->m_unk3C & 0x80) == 0) {
+        return;
+    }
+    float vec[4];
+    sceVu0ApplyMatrix(vec, pNode->m_unk40, (float *)pNode->m_unk28);
+    float f20 = pNode->m_unk28[0][1][3];
+    m_unk5B54 = 0;
+    PMNode *node;
+    if (m_unk5B50 != 0) {
+        node = *m_unk5B58;
+    } else {
+        node = 0;
+    }
+    if (node != 0) {
+        do {
+            if (node->CheckAnimated() == 0) {
+                float (*box)[2][4] = node->m_unk28;
+                if (box == 0) {
+                    box = &node->m_unk110;
                 }
-                unsigned int idx = m_unk5B54 + 1;
-                m_unk5B54 = idx;
-                node = 0;
-                if (idx < (unsigned int)m_unk5B50) {
-                    node = m_unk5B58[m_unk5B54];
+                if (box != 0 && BoxSphereCheck(&node->m_unk40, box, f20) != 0) {
+                    node->SetAllAnimFlags(0);
+                    ((PWorld *)gEng)->UpdateAnimate(node);
                 }
-            } while (node != 0);
-        }
+            }
+            unsigned int idx = m_unk5B54 + 1;
+            m_unk5B54 = idx;
+            node = (idx < (unsigned int)m_unk5B50) ? m_unk5B58[m_unk5B54] : 0;
+        } while (node != 0);
     }
 }
 
 // DRAFT: 0x00146590 BoxSphereCheck__FPA4_A4_fPA2_A4_ff
 // note: DIFF 62 with the placeholder; VU0 run (lqc2..vmul, qmfc2 of vf6) now in asm, MMI lane shuffles (pcpyud, prot3w, pextlw, pcgtw) still unmatched
-int BoxSphereCheck(float (*pBox)[4][4], float (*pSphere)[2][4], float fRadius) {
+static int BoxSphereCheck(float (*pBox)[4][4], float (*pSphere)[2][4], float fRadius) {
     u_long128 q6;
     float dist2;
     float s;
@@ -1599,16 +1592,18 @@ void EntityManager::ObjectCollision() {
     gDebug.StopTimer(3);
 }
 
-// DRAFT: 0x00148CC0 RunPhysics__13EntityManagerFf
-// note: 20 diffs; original enters the loop with b to a bottom test (ours tests beqz a0 at the top), and reloads m_unk50B4 from memory after the store (ours reuses the addiu result); tried nested while (worse), increment in the update clause (same 20 plus shifted tail).
+// FUNCTION: 0x00148CC0 RunPhysics__13EntityManagerFf
 void EntityManager::RunPhysics(float arg0) {
     gDebug.StartTimer(2);
     m_unk50B4 = 0;
-    for (EntityBaseClass *pEntity = (m_unk50B0 != 0) ? (EntityBaseClass *)m_unk50B8[0] : 0;
-         pEntity != 0;
-         pEntity = (m_unk50B4 < m_unk50B0) ? (EntityBaseClass *)m_unk50B8[m_unk50B4] : 0) {
-        pEntity->ProcessPhysics(arg0, m_unk5058);
-        m_unk50B4++;
+    EntityBaseClass *pEntity = (m_unk50B0 != 0) ? (EntityBaseClass *)m_unk50B8[0] : 0;
+    if (pEntity != 0) {
+        do {
+            pEntity->ProcessPhysics(arg0, m_unk5058);
+            unsigned int idx = m_unk50B4 + 1;
+            m_unk50B4 = idx;
+            pEntity = (idx < (unsigned int)m_unk50B0) ? (EntityBaseClass *)m_unk50B8[m_unk50B4] : 0;
+        } while (pEntity != 0);
     }
     gDebug.StopTimer(2);
 }
@@ -1707,7 +1702,7 @@ void EntityManager::SetItemCounter(ItemCounterType theType, float value) {
 }
 
 // DRAFT: 0x00149160 GetItemCounter__13EntityManagerFQ213EntityManager15ItemCounterType
-// note: original keeps this+0x5F74 as a separate addiu (lwc1 0(v0)); ours folds 0x5F74 into lwc1 and is 0x58 bytes vs 0x5C; tried m_unk5F74[i], local float*, (float*)(this+0x5F74)[i], char* index-then-offset, constant-first sum.
+// note: 8 words; original keeps this+0x5F74 as a separate addiu (lwc1 0(v0)) and is 0x5C bytes, ours folds 0x5F74 into lwc1 and is 0x58; tried m_unk5F74[i], local float*, (float*)(this+0x5F74)[i], char* index-then-offset, constant-first sum, char* base += 0x5F74, theType*4 index.
 float EntityManager::GetItemCounter(ItemCounterType theType) {
     if (theType >= ITEM_COUNTER_MAX) {
         CdsAssert("EntityManager.cpp", 0x18A, "theType < ITEM_COUNTER_MAX");

@@ -644,24 +644,22 @@ void FontManager::RenderWarning(int arg0) {
     EndFxRender__10PGfxEngineFv(gGfxEng);
 }
 
-// DRAFT: 0x1340E0 AdvanceText__8FontNodeFv
-// note: original loads m_unkC into v1 before m_unk4 into v0 (slt at,v1,v0); ours loads m_unk4 first; 3 differing lines after about 9 variants.
+// FUNCTION: 0x1340E0 AdvanceText__8FontNodeFv
 int FontNode::AdvanceText() {
-    int ret = 0;
-    if (m_unk4 > m_unkC) {
-        ret = 1;
-        m_unkC = m_unkC + 1;
+    unsigned short nVis = m_unkC;
+    if (nVis < m_unk4) {
+        m_unkC = nVis + 1;
+        return 1;
     }
-    return ret;
+    return 0;
 }
 
-// DRAFT: 0x134110 RenderFMV__8FontNodeFiP9FontTableb
-// note: 1 word differs, the c.eq.s operand order ($f1,$f0 in original); tried shared epilogue, 0x3048D constant, swapped compare operands, !(m_unk8 == 0.0f); all still 1 word.
+// FUNCTION: 0x134110 RenderFMV__8FontNodeFiP9FontTableb
 int FontNode::RenderFMV(int nId, FontTable *pTable, bool bUnused) {
     float afColor[4];
 
     if (m_unkC >= 2) {
-        if (!(m_unk8 == 0.0f)) {
+        if (m_unk8) {
             afColor[0] = m_unk8;
             afColor[1] = m_unk8;
             afColor[2] = m_unk8;
@@ -677,8 +675,7 @@ int FontNode::RenderFMV(int nId, FontTable *pTable, bool bUnused) {
     return nId;
 }
 
-// DRAFT: 0x134200 Render__8FontNodeFiP9FontTableb
-// note: 1 word differs, c.eq.s operand order (orig $f1,$f0). Tried: 0.0f!=m_unk8, m_unk8!=0.0f, hoisted alpha local, early return (worse), combined outer condition.
+// FUNCTION: 0x134200 Render__8FontNodeFiP9FontTableb
 int FontNode::Render(int nId, FontTable *pTable, bool bUnused) {
     float afColor[4];
 
@@ -690,7 +687,7 @@ int FontNode::Render(int nId, FontTable *pTable, bool bUnused) {
             mbFadeOut__8FontNode = 1;
         }
     }
-    if (m_unkC >= 2 && m_unk8 != 0.0f) {
+    if (m_unkC >= 2 && m_unk8) {
         afColor[0] = m_unk8;
         afColor[1] = m_unk8;
         afColor[2] = m_unk8;

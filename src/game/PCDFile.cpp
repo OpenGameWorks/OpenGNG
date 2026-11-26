@@ -189,8 +189,7 @@ int PCDFile::ReadEx(void *buf, unsigned int size) {
     return done;
 }
 
-// DRAFT: 0x0012C7B0 Read__7PCDFileFPvUi
-// note: 8 words differ; original has an extra nop before the shared epilogue and a b-to-epilogue delay shape; do-while, early-return and label variants tried, none closer.
+// FUNCTION: 0x0012C7B0 Read__7PCDFileFPvUi
 int PCDFile::Read(void *buf, unsigned int size) {
     int r;
 
@@ -200,13 +199,10 @@ int PCDFile::Read(void *buf, unsigned int size) {
         do {
             r = ReadEx(buf, size);
             if (r == 0) {
-                r = 0;
-                goto done;
+                return 0;
             }
         } while (r != size);
     }
-done:
-    ;
     return r;
 }
 
