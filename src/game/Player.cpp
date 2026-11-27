@@ -1061,7 +1061,7 @@ int Player::ReleaseCheck() {
 }
 
 // DRAFT: 0x0015A1A0 CatchUpMove__6PlayerFv
-// note: 42 words (one shifted word); beqz after the m_unk3F test has nop in the slot where the original has addiu a1,a0,0x40; tried hoisted pMat, nested ifs, ptr-arith, ternary pos, bitfield forms
+// note: 42 words (one shifted word); beqz after the m_unk3F test has nop in the slot where the original has addiu a1,a0,0x40; tried hoisted pMat, nested ifs, ptr-arith, ternary pos, bitfield forms, inline AnimFlags accessor (signed char/bool/int), signed char local, PMNode m_unk40 member arg (direct/local/row)
 void Player::CatchUpMove() {
     switch (m_unk250) {
     case 0:
