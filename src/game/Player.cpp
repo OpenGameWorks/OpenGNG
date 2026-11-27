@@ -1721,7 +1721,7 @@ void Player::UnlockGateMove() {
 }
 
 // DRAFT: 0x0015BAB0 UnlockChestMove__6PlayerFv
-// note: 2 words differ; the m_unk328 load must precede the mpEntMgr gp load (delay slot), tried hoisting id, mgr copy, pre-declared pApparition, Player *self
+// note: 2 words differ; the m_unk328 load must precede the mpEntMgr gp load (delay slot), tried hoisting id, mgr copy, pre-declared pApparition, Player *self, *(unsigned int *)(this+0x328), id local, inline helper with swapped args, member call via EntityManager cast
 void Player::UnlockChestMove() {
     int state = m_unk250;
     int h = (int)m_unk3C[13];
@@ -2246,8 +2246,7 @@ void Player::SpinSlashMove() {
     }
 }
 
-// DRAFT: 0x0015CC30 CSliceMove__6PlayerFv
-// note: DIFF 4 words, the ComboTarget float constants: original builds 100.0f into $v1 first and -1.0f second; tried locals in both orders, direct literals, and a nested tail, all still build -1.0f first
+// FUNCTION: 0x0015CC30 CSliceMove__6PlayerFv
 void Player::CSliceMove() {
     if (m_unk250 == 0) {
         m_unk250 = 1;
@@ -2265,14 +2264,15 @@ void Player::CSliceMove() {
     }
     if (m_unk250 & 4) {
         if (t >= 0x20) {
-            ComboTarget(-1.0f, 100.0f, true);
+            float fR = 100.0f;
+            ComboTarget(-1.0f, fR, true);
             SetAction(0x74);
         }
     }
 }
 
 // DRAFT: 0x0015CD50 SliceMove__6PlayerFv
-// note: 9 words differ: CancelAttack branch form (inverted test gives 27, a v1-first else gives 32), the ComboTarget literal order (a local float gives 9), and the t!=0 block placement.
+// note: 5 words differ (since CSliceMove matched): CancelAttack branch form; also tried fR local with -1.0f literal (9) and one-case switch guards (42-46); earlier: (inverted test gives 27, a v1-first else gives 32), the ComboTarget literal order (a local float gives 9), and the t!=0 block placement.
 void Player::SliceMove() {
     static unsigned char SliceMoves[2] = {0x00, 0x73};
     int v1;
@@ -4145,8 +4145,7 @@ extern "C" void *__dt__10PAnimFrameFv(void *pThis, short nFlag) {
     return pThis;
 }
 
-// DRAFT: 0x00160D30 UpdateKey__6PlayerFv
-// note: 2 words differ: mesh->m_unkE = 0 store lands in the beqz delay slot instead of before slti; tried 3 > i, hoisting n (no gain)
+// FUNCTION: 0x00160D30 UpdateKey__6PlayerFv
 void Player::UpdateKey() {
     int i = 0;
     int n;
@@ -4177,18 +4176,14 @@ void Player::UpdateKey() {
         }
         mesh = (PMesh *)res->m_unk10;
         mesh->m_unkE = 0;
-        if (i < 3) {
-            n = m_unk1F0;
-            do {
+        n = m_unk1F0;
+        for (; i < 3; i++, n--) {
                 node = m_unk298[i];
                 node->m_unk10 = (n > 0) ? mesh : 0;
                 node->m_unk3E &= 0xEF;
                 if (((n > 0) ? mesh : 0) != 0 && ((n > 0) ? mesh : 0)->m_unkC != 0) {
                     node->m_unk3E |= 0x10;
                 }
-                i++;
-                n--;
-            } while (i < 3);
         }
     }
 }
