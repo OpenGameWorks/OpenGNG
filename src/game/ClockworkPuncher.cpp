@@ -109,6 +109,53 @@ extern "C" char __vt__9PResource[];
 extern "C" char __vt__6PMNode[];
 extern unsigned int DamageNames[4];
 extern int mbHard__15EntityBaseClass;
+extern "C" int printf(const char *, ...);
+extern "C" float cosf(float);
+extern "C" float sinf(float);
+extern "C" void sceVu0AddVector(float *, float *, float *);
+extern "C" void FacePlayer__15EntityBaseClassFf(void *, float);
+extern "C" void EnableSleep__15EntityBaseClassFbb(void *, bool, bool);
+extern "C" int ProcessHitBack__15EntityBaseClassFv(void *);
+extern "C" void ResetCollisions__15EntityBaseClassFv(void *);
+extern "C" void RotateTo__15EntityBaseClassFff(void *, float, float);
+extern "C" int PlaySoundOnFrame__15EntityBaseClassFUiUi(void *, unsigned int, unsigned int);
+extern "C" void *Spawn__13EntityManagerFUibi(EntityManager *, unsigned int, bool, int);
+extern "C" int GetResource__16PResourceManagerFUib(void *, unsigned int, bool);
+extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, float (*)[4]);
+extern "C" void InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(void *, int, float (*)[4], float (*)[4], float (*)[4]);
+extern "C" int CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(void *, unsigned int, unsigned int, float (*)[4], float (*)[4], void *, float, bool, int, bool);
+extern "C" int GetGroundPos__7MathAPIFPA4_f(float (*)[4]);
+extern "C" void Remove__6PArrayFPv(void *, void *);
+extern "C" void TriggerBGAnim__15EntityBaseClassFUiibUi(void *, unsigned int, int, bool, unsigned int);
+extern "C" void WriteApparitionData__15EntityBaseClassFicUi(void *, int, char, unsigned int);
+extern "C" void *GetPtrToApparition__13EntityManagerFUi(EntityManager *, unsigned int);
+extern "C" void SetShellStartAndDest__8ZinShellFRA4_fRA4_f(void *, float (*)[4], float (*)[4]);
+extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *, unsigned int, float (*)[4]);
+extern "C" void SpawnBonus__15EntityBaseClassFPfii(void *, float *, int, int);
+extern "C" void *__ct__7PhysicsFv(void *);
+extern "C" void *__ct__6ShadowFQ26Shadow10ShadowTypeUi(void *, int, unsigned int);
+extern void *mpResMgr__15EntityBaseClass;
+extern float m_vBonusSpawnOffset[4];
+extern float m_vDefaultSpawnVelocity[4];
+extern float PuncherBox[8];
+extern unsigned int ClockworkPuncher_AirStrikeSeq;
+extern unsigned int ClockworkPuncher_AssembleSeq;
+extern unsigned int ClockworkPuncher_BackHitSeq;
+extern unsigned int ClockworkPuncher_BlockSeq;
+extern unsigned int ClockworkPuncher_CrossHitSeq;
+extern unsigned int ClockworkPuncher_DeathSeq;
+extern unsigned int ClockworkPuncher_ExplosionSeq;
+extern unsigned int ClockworkPuncher_HitSeq;
+extern unsigned int ClockworkPuncher_IdleSeq;
+extern unsigned int ClockworkPuncher_JumpFromShellSeq;
+extern unsigned int ClockworkPuncher_KnockBackSeq;
+extern unsigned int ClockworkPuncher_OneTwoHitSeq;
+extern unsigned int ClockworkPuncher_RocketFistSeq;
+extern unsigned int ClockworkPuncher_RunSeq;
+extern unsigned int ClockworkPuncher_SiegeDeathSeq;
+extern unsigned int ClockworkPuncher_SiegeExplosionSeq;
+extern unsigned int ClockworkPuncher_Taunt2Seq;
+extern unsigned int ClockworkPuncher_TauntSeq;
 
 // FUNCTION: 0x001DE040 GetHealth__16ClockworkPuncherFv
 int ClockworkPuncher::GetHealth() {
@@ -863,6 +910,879 @@ void ClockworkPuncher::OnStopAttack() {
         }
     }
 }
+
+#define CP_I(o) (*(int *)((char *)this + (o)))
+#define CP_F(o) (*(float *)((char *)this + (o)))
+#define CP_B(o) (*(unsigned char *)((char *)this + (o)))
+#define CP_S(o) (*(short *)((char *)this + (o)))
+#define CP_P(o) ((float (*)[4])((char *)this + (o)))
+#define CP_PTR(o) (*(char **)((char *)this + (o)))
+#define CP_PICK_SIDE() \
+    if (!(Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)this), PosOf((char *)mPlayerAPI__13EntityManager)) <= Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)this), CP_P(0x240)))) { \
+        CP_B(0x276) = 1; \
+    } else { \
+        CP_B(0x276) = 0; \
+    }
+
+static inline float (*PosOf(char *pObj))[4] {
+    char *p = *(char **)(pObj + 0x3C);
+    return (float (*)[4])(p != 0 ? p + 0x80 : pObj + 0x190);
+}
+
+// DRAFT: 0x001DF9E0 Execute__16ClockworkPuncherFv
+// note: 2804 words; frame 0x130 vs 0x110, this in s4 with extra s5/s6 (orig s0..s4); offsets via CP_* macros; tried dropping nState/pScale locals, PosOf as macro (worse)
+void ClockworkPuncher::Execute() {
+    if (CP_PTR(0x3C) != 0) {
+        if (CP_I(0x1B4) == 1 && *(float *)(CP_PTR(0x3C) + 0xA0) != 1.4f) {
+            ScaleSet__6PMNodeFffff((PMNode *)CP_PTR(0x3C), 1.4f, 1.4f, 1.4f, 1.0f);
+        }
+        if (CP_I(0x1B4) == 0) {
+            if (*(float *)(CP_PTR(0x3C) + 0xA0) != 1.15f) {
+                ScaleSet__6PMNodeFffff((PMNode *)CP_PTR(0x3C), 1.15f, 1.15f, 1.15f, 1.0f);
+            }
+        }
+    }
+    if (CP_I(0x288) != 0) {
+        if (m_unk2B4 != 0) {
+            if (m_unk2B4 == 0) {
+                CdsAssert("ClockworkPuncher.cpp", 0x13F, "m_pBackjoint");
+            }
+            *(float *)((char *)m_unk2B4 + 0x90) += CP_F(0x294);
+            float fNew = CP_F(0x294) - 7.0f;
+            CP_F(0x294) = fNew;
+            if (fNew <= -14.0f) {
+                CP_F(0x294) = 7.0f;
+            }
+        }
+    }
+    if (ProcessHitBack__15EntityBaseClassFv(this) != 0) {
+        char *pPhys = CP_PTR(0x38);
+        if (FastMath_Fabs__Ff(*(float *)pPhys) < 0.05f && FastMath_Fabs__Ff(*(float *)(pPhys + 4)) < 0.05f && FastMath_Fabs__Ff(*(float *)(pPhys + 8)) < 0.05f) {
+            float vZero[4];
+            vZero[0] = 0.0f;
+            vZero[1] = 0.0f;
+            vZero[2] = 0.0f;
+            *(u_long128 *)CP_PTR(0x38) = *(u_long128 *)vZero;
+            CP_I(0xDC) = 0;
+            if (CP_PTR(0x38) != 0) {
+                SetVelocity__7PhysicsFff(CP_PTR(0x38), 0.0f, 0.0f);
+            }
+        }
+    }
+    if (CP_B(0x2BC) != 0 && CP_I(0xF4) == 0) {
+        int nV = CP_I(0x2C8);
+        if (nV == 0) {
+            AttachSparkEffect();
+            CP_I(0x2C8) = RandomIntRange__7MathAPIFii(5, 0xF);
+        } else {
+            CP_I(0x2C8) = nV - 1;
+        }
+        nV = CP_I(0x2D0);
+        if (nV == 0) {
+            if (m_unk2B4 != 0) {
+                void **pFound = (void **)Find__6PMNodeFUi(m_unk2B4, DamageNames[CP_I(0x2B8)]);
+                if (pFound != 0) {
+                    Remove__6PArrayFPv((char *)m_unk2B4 + 0x14, pFound);
+                    if (pFound != 0) {
+                        ((void (*)(void *, int))(*(void ***)pFound)[2])(pFound, 1);
+                    }
+                }
+            }
+            if (CP_PTR(0x3C) == 0) {
+                CdsAssert("ClockworkPuncher.cpp", 0x175, "pSkeleton");
+            }
+            BuildDispList__9PSkeletonFv(CP_PTR(0x3C));
+            CP_I(0x2CC) = RandomIntRange__7MathAPIFii(0xF, 0x1E);
+            CP_I(0x2D0) = -1;
+        } else if (nV > 0) {
+            CP_I(0x2D0) = nV - 1;
+        }
+        nV = CP_I(0x2CC);
+        if (nV == 0) {
+            AttachDamageMesh();
+            CP_I(0x2D0) = RandomIntRange__7MathAPIFii(3, 5);
+            CP_I(0x2CC) = -1;
+        } else if (nV > 0) {
+            CP_I(0x2CC) = nV - 1;
+        }
+    }
+    switch (m_unk20) {
+    case -1:
+        if (CP_B(0xE9) != 0) {
+            CP_F(0x200) = CP_F(0x1C8);
+            CP_F(0x204) = CP_F(0x1CC);
+            CP_F(0x208) = CP_F(0x1D0);
+            if (!(Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)this), CP_P(0x200)) <= CP_F(0x1D4))) {
+                printf("ERROR - Clockwork Puncher shutdown as initial position wasn't inside attack radius\n");
+                SetState__15EntityBaseClassFi(this, -2);
+                return;
+            }
+            CP_I(0x10C) &= 0xF8FFFFFF;
+            CP_I(0x10C) |= 0x071B1902;
+            CP_B(0x103) = 0x40;
+            CP_B(0x272) = 1;
+            CP_I(0x28C) = 0;
+            CP_I(0x288) = 0;
+            CP_B(0x275) = 0;
+            CP_B(0x276) = 1;
+            CP_B(0x277) = 1;
+            CP_B(0x270) = 0;
+            CP_I(0x298) = 0;
+            CP_I(0x29C) = 0;
+            CP_I(0x2A0) = 0;
+            CP_I(0x2A4) = 0;
+            CP_I(0x2A8) = 0;
+            CP_I(0x2B0) = 0;
+            CP_I(0x2AC) = 0;
+            CP_B(0x2BC) = 0;
+            CP_I(0x2CC) = 0;
+            CP_I(0x2D0) = 0;
+            CP_I(0x210) = CP_I(0x1FC);
+            CP_I(0x2C0) = GetResource__16PResourceManagerFUib(mpResMgr__15EntityBaseClass, 0x010001B9U, true);
+            if (CP_I(0x2C0) == 0) {
+                CdsAssert("ClockworkPuncher.cpp", 0x1BF, "m_pDamageMesh");
+            }
+            if (CP_F(0x1B8) == 0.0f) {
+                if (CP_F(0x1BC) == 0.0f && CP_F(0x1C0) == 0.0f) {
+                    CP_F(0x1B8) = (*PosOf((char *)this))[0];
+                    CP_F(0x1BC) = (*PosOf((char *)this))[1];
+                    CP_F(0x1C0) = (*PosOf((char *)this))[2];
+                }
+            }
+            CP_S(0x15C) = 0x32;
+            CP_S(0x15E) = 0;
+            CP_I(0x104) = 0x40000000;
+            CP_I(0x108) = 0x40800000;
+            if ((unsigned int)CP_I(0x1B4) >= 2U) {
+                CdsAssert("ClockworkPuncher.cpp", 0x1CD, "mEVars.m_iDifficulty < 2");
+            }
+            if (CP_I(0x1D8) != 0) {
+                CP_F(0x1C4) = CP_F(0x18C);
+                CP_F(0x1D4) = CP_F(0x18C);
+            }
+            if (CP_I(0x1E0) != 2 && CP_I(0x1E0) != 7) {
+                char *pRot = CP_PTR(0x3C) != 0 ? CP_PTR(0x3C) + 0x90 : (char *)this + 0x1A0;
+                *(float *)(pRot + 4) = GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, PosOf((char *)mPlayerAPI__13EntityManager));
+            }
+            CP_F(0x230) = CP_F(0x1B8);
+            CP_F(0x234) = CP_F(0x1BC);
+            CP_F(0x238) = CP_F(0x1C0);
+        }
+        if (Distance__7MathAPIFPA4_fPA4_f(CP_P(0x230), PosOf((char *)mPlayerAPI__13EntityManager)) <= CP_F(0x1C4)) {
+            if (CP_PTR(0x38) == 0) {
+                void *pPhys = __nw__FUi(0x120U);
+                if (pPhys != 0) {
+                    pPhys = __ct__7PhysicsFv(pPhys);
+                }
+                CP_PTR(0x38) = (char *)pPhys;
+                if (CP_PTR(0x38) == 0) {
+                    CdsAssert("ClockworkPuncher.cpp", 0x1EF, "mpPhysics");
+                }
+            }
+            SetPhysicsType__7PhysicsFUiPA4_f(CP_PTR(0x38), 0x12U, 0);
+            if (CP_PTR(0xD4) == 0) {
+                void *pShadow = __nw__FUi(0x10U);
+                if (pShadow != 0) {
+                    pShadow = __ct__6ShadowFQ26Shadow10ShadowTypeUi(pShadow, 1, 0x87000008U);
+                }
+                CP_PTR(0xD4) = (char *)pShadow;
+                if (CP_PTR(0xD4) == 0) {
+                    CdsAssert("ClockworkPuncher.cpp", 0x1F7, "mpShadow");
+                }
+            }
+            if (CP_I(0x1E0) != 0) {
+                SetState__15EntityBaseClassFi(this, 0xA);
+            } else {
+                SetState__15EntityBaseClassFi(this, 0);
+            }
+        }
+        break;
+    case 10:
+        if (CP_B(0xE9) != 0) {
+            switch (CP_I(0x1E0)) {
+            case 1:
+            case 3: {
+                char *pShell = (char *)Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0xFU, 0, 0);
+                if (pShell == 0) {
+                    CdsAssert("ClockworkPuncher.cpp", 0x210, "pContainerEnt");
+                }
+                CP_I(0x224) = *(int *)(pShell + 4);
+                EnableSleep__15EntityBaseClassFbb(this, false, false);
+                if (CP_I(0x1E0) == 3) {
+                    *(int *)(pShell + 0x22C) = 1;
+                }
+                float (*pPos)[4] = PosOf((char *)this);
+                float vA[4];
+                float vB[4];
+                float fX = CP_F(0x1E4);
+                if (fX == (*pPos)[0] && CP_F(0x1E8) == (*pPos)[1] && CP_F(0x1EC) == (*pPos)[2]) {
+                    vA[0] = (*pPos)[0];
+                    vA[1] = 50.0f + (*pPos)[1];
+                    vA[2] = (*pPos)[2];
+                } else if (fX == 0.0f && CP_F(0x1E8) == 0.0f && CP_F(0x1EC) == 0.0f) {
+                    vA[0] = (*pPos)[0];
+                    vA[1] = 50.0f + (*pPos)[1];
+                    vA[2] = (*pPos)[2];
+                } else {
+                    vA[0] = fX;
+                    vA[1] = CP_F(0x1E8);
+                    vA[2] = CP_F(0x1EC);
+                }
+                vB[0] = (*pPos)[0];
+                vB[1] = (*pPos)[1];
+                vB[2] = (*pPos)[2];
+                SetShellStartAndDest__8ZinShellFRA4_fRA4_f(pShell, (float (*)[4])vA, (float (*)[4])vB);
+                if (CP_I(0x1F4) != 0) {
+                    *(int *)(pShell + 0x224) = CP_I(0x1F4);
+                    *(int *)(pShell + 0x228) = m_unk4;
+                }
+                goto block132;
+            }
+            case 2:
+                if (CP_I(0x1F4) != 0) {
+                    TriggerBGAnim__15EntityBaseClassFUiibUi(this, CP_I(0x1F4), -1, false, 0);
+                }
+                SetState__15EntityBaseClassFi(this, 0xD);
+                return;
+            case 4:
+                SetState__15EntityBaseClassFi(this, 0);
+                return;
+            case 7:
+                if (CP_I(0x1F4) != 0) {
+                    TriggerBGAnim__15EntityBaseClassFUiibUi(this, CP_I(0x1F4), -1, false, 0);
+                }
+                SetState__15EntityBaseClassFi(this, 0xD);
+                PlaySound__15EntityBaseClassFUi(this, 0x1F9U);
+                return;
+            default:
+                CdsAssert("ClockworkPuncher.cpp", 0x25C, "0");
+                goto block132;
+            }
+        } else {
+        block132:
+            if (CP_I(0x1E0) != 1) {
+                CdsAssert("ClockworkPuncher.cpp", 0x273, "0");
+            } else {
+                char *pApp = (char *)GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, CP_I(0x224));
+                if (pApp == 0 || pApp[0x22D] != 0) {
+                    SetState__15EntityBaseClassFi(this, 7);
+                    if (CP_B(0x2BD) == 0) {
+                        EnableSleep__15EntityBaseClassFbb(this, true, false);
+                    }
+                }
+            }
+        }
+        break;
+    case 13:
+        if (CP_B(0xE9) != 0) {
+            float vFwd[4];
+            *(int *)(CP_PTR(0x38) + 0x10C) = 0x3E4CCCCD;
+            GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f((EntityBaseClass *)this, (float (*)[4])vFwd);
+            sceVu0Normalize(vFwd, vFwd);
+            sceVu0ScaleVector(vFwd, vFwd, CP_F(0x1F8));
+            *(u_long128 *)CP_PTR(0x38) = *(u_long128 *)vFwd;
+            LoadCorrectMesh();
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_JumpFromShellSeq);
+        }
+        {
+            float *pV = (float *)CP_PTR(0x38);
+            if (pV[0] == 0.0f && pV[1] == 0.0f && pV[2] == 0.0f) {
+                SetState__15EntityBaseClassFi(this, 8);
+            }
+        }
+        break;
+    case 7:
+        if (CP_B(0xE9) != 0) {
+            float vVel[4];
+            float fAng = 0.017453292f * MathAPI::RandomFloatRange(0.0f, 360.0f);
+            float fCos = cosf(fAng);
+            float fSin = sinf(fAng);
+            *(int *)(CP_PTR(0x38) + 0x10C) = 0x3E4CCCCD;
+            vVel[0] = m_vDefaultSpawnVelocity[0] * fCos + m_vDefaultSpawnVelocity[2] * fSin;
+            vVel[2] = m_vDefaultSpawnVelocity[2] * fCos - m_vDefaultSpawnVelocity[0] * fSin;
+            vVel[1] = m_vDefaultSpawnVelocity[1];
+            *(u_long128 *)CP_PTR(0x38) = *(u_long128 *)vVel;
+            LoadCorrectMesh();
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_JumpFromShellSeq);
+        }
+        {
+            float *pV = (float *)CP_PTR(0x38);
+            if (pV[0] == 0.0f && pV[1] == 0.0f && pV[2] == 0.0f) {
+                SetState__15EntityBaseClassFi(this, 8);
+            }
+        }
+        break;
+    case 8:
+        if (CP_B(0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_AssembleSeq);
+        }
+        FacePlayer__15EntityBaseClassFf(this, 0.04f);
+        if (CP_I(0x1E0) == 7 && CP_B(0x2D4) == 0 && (*(int *)(CP_PTR(0x38) + 0x108) & 1)) {
+            CP_B(0x2D4) = 1;
+            PlaySound__15EntityBaseClassFUi(this, 0xF1U);
+        }
+        if (CP_B(0x160) == 0) {
+            SetState__15EntityBaseClassFi(this, 0);
+        }
+        break;
+    case 0:
+        if (CP_B(0xE9) != 0) {
+            char *pSh = CP_PTR(0xD4);
+            if (pSh != 0) {
+                *(int *)pSh = 1;
+                char *pSh2 = *(char **)(pSh + 0xC);
+                if (pSh2 != 0) {
+                    *(int *)(pSh2 + 0x18) = 1;
+                }
+            }
+            RemoveFromAttackSystem__15EntityBaseClassFv(this);
+            if (CP_B(0x2BD) == 0) {
+                EnableSleep__15EntityBaseClassFbb(this, true, false);
+            }
+            LoadCorrectMesh();
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_IdleSeq);
+            char *pBox = CP_PTR(0x38);
+            *(u_long128 *)(pBox + 0x80) = *(u_long128 *)&PuncherBox[0];
+            *(u_long128 *)(pBox + 0x90) = *(u_long128 *)&PuncherBox[4];
+            if (CP_I(0x280) != 0 && InstanceIsValid__15EntityBaseClassFUi(CP_I(0x280)) != 0) {
+                SetState__15EntityBaseClassFi(this, 4);
+                return;
+            }
+        }
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E2BU, 0xFU);
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E2BU, 0x2DU);
+        FacePlayer__15EntityBaseClassFf(this, 0.04f);
+        SetBoundBoxW(13.0f);
+        if (Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)mPlayerAPI__13EntityManager), CP_P(0x200)) < CP_F(0x1D4)) {
+            ChooseNextState();
+            return;
+        }
+        if (CP_B(0x160) == 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_IdleSeq);
+        }
+        break;
+    case 15:
+        if (CP_B(0xE9) != 0) {
+            *(u_long128 *)CP_P(0x250) = *(u_long128 *)PosOf((char *)this);
+            CP_I(0x264) = 0;
+            CP_I(0x268) = 1;
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_RunSeq);
+        }
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E2BU, 0xAU);
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E2BU, 0x24U);
+        FacePlayer__15EntityBaseClassFf(this, 0.04f);
+        if (CanAttackPlayer() != 0) {
+            ChooseAttack();
+            return;
+        }
+        if (!(Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)mPlayerAPI__13EntityManager), CP_P(0x200)) <= CP_F(0x1D4))) {
+            SetState__15EntityBaseClassFi(this, 0);
+            return;
+        }
+        if (Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)this), PosOf((char *)mPlayerAPI__13EntityManager)) < 4.0f) {
+            CP_B(0x276) = 1;
+            SetState__15EntityBaseClassFi(this, 0x10);
+            return;
+        }
+        if (CP_PTR(0x3C)[0x3F] & 4) {
+            if (Stalled(2.0f) != 0) {
+                if (RandomIntRange__7MathAPIFii(1, 0x64) & 1) {
+                    SetState__15EntityBaseClassFi(this, 0x13);
+                } else {
+                    SetState__15EntityBaseClassFi(this, 0x10);
+                }
+                return;
+            }
+            *(u_long128 *)CP_P(0x250) = *(u_long128 *)PosOf((char *)this);
+            CP_I(0x264) += 1;
+            if (CP_I(0x264) == CP_I(0x268)) {
+                ChooseNextState();
+            }
+        }
+        break;
+    case 19:
+        if (CP_B(0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_IdleSeq);
+        }
+        if (CP_B(0x160) == 0) {
+            ChooseNextState();
+        }
+        break;
+    case 16:
+        if (CP_B(0xE9) != 0) {
+            miRandom__7MathAPI = miRandom__7MathAPI * 0x343FD + 0x269EC3;
+            if (miRandom__7MathAPI & 1) {
+                PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_Taunt2Seq);
+                CP_I(0x2A4) = CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(&mEffectAPI__13EntityManager, 0x01000152U, 0x020002A8U, 0, 0, 0, 0.5f, false, 0, false);
+            } else {
+                PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_TauntSeq);
+            }
+            *(u_long128 *)CP_P(0x240) = *(u_long128 *)PosOf((char *)mPlayerAPI__13EntityManager);
+        }
+        if (CP_I(0x140) == (int)&ClockworkPuncher_TauntSeq) {
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x26DU, 0x19U);
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x26DU, 0x20U);
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x26DU, 0x26U);
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x26DU, 0x2CU);
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x26DU, 0x32U);
+        } else if (CP_I(0x140) == (int)&ClockworkPuncher_Taunt2Seq) {
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x59U, 0x17U);
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x59U, 0x2BU);
+        }
+        FacePlayer__15EntityBaseClassFf(this, 0.04f);
+        if (CanAttackPlayer() != 0) {
+            DeleteEffects();
+            ChooseAttack();
+            return;
+        }
+        if (CP_B(0x160) == 0) {
+            float fD1 = Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)this), PosOf((char *)mPlayerAPI__13EntityManager));
+            if (!(fD1 <= Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)this), CP_P(0x240)))) {
+                CP_B(0x276) = 1;
+            } else {
+                CP_B(0x276) = 0;
+            }
+            ChooseNextState();
+        }
+        break;
+    case 2:
+        if (CP_B(0xE9) != 0) {
+            *(u_long128 *)CP_P(0x250) = *(u_long128 *)PosOf((char *)this);
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_RunSeq);
+        }
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E2BU, 0xAU);
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E2BU, 0x24U);
+        FacePlayer__15EntityBaseClassFf(this, 0.04f);
+        if (!(Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)mPlayerAPI__13EntityManager), CP_P(0x200)) <= CP_F(0x1D4))) {
+            SetState__15EntityBaseClassFi(this, 0);
+            return;
+        }
+        if (Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)this), PosOf((char *)mPlayerAPI__13EntityManager)) < 4.0f) {
+            CP_B(0x276) = 1;
+            SetState__15EntityBaseClassFi(this, 0x10);
+            return;
+        }
+        if (CanAttackPlayer() != 0) {
+            ChooseAttack();
+        }
+        if (Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)this), PosOf((char *)mPlayerAPI__13EntityManager)) <= 9.0f) {
+            ChooseNextState();
+        }
+        if (CP_PTR(0x3C)[0x3F] & 4) {
+            if (Stalled(2.0f) != 0) {
+                if (RandomIntRange__7MathAPIFii(1, 0x64) & 1) {
+                    SetState__15EntityBaseClassFi(this, 0x13);
+                } else {
+                    SetState__15EntityBaseClassFi(this, 0x10);
+                }
+                return;
+            }
+            *(u_long128 *)CP_P(0x250) = *(u_long128 *)PosOf((char *)this);
+        }
+        break;
+    case 22:
+        if (CP_B(0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_OneTwoHitSeq);
+            static signed char init;
+            static float aOneTwoWindUpFrameRate;
+            if (init == 0) {
+                init = 1;
+                aOneTwoWindUpFrameRate = 0.3f;
+            }
+            CP_I(0x29C) = CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(&mEffectAPI__13EntityManager, 0x0100014FU, 0x020002A9U, 0, 0, 0, 0.5f, false, 0, false);
+            CP_S(0x15C) = 0x32;
+            CP_S(0x15E) = 0;
+            *(u_long128 *)CP_P(0x240) = *(u_long128 *)PosOf((char *)mPlayerAPI__13EntityManager);
+            CP_B(0x275) = 0;
+        }
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0xABU, 0x15U);
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0xABU, 0x1EU);
+        if (!(GetFrameTime__6PMNodeFv((PMNode *)CP_PTR(0x3C)) < 20.0f) && CP_I(0x288) == 0) {
+            GetFrameRate__6PMNodeFv((PMNode *)CP_PTR(0x3C));
+        }
+        if (!(GetFrameTime__6PMNodeFv((PMNode *)CP_PTR(0x3C)) < 35.0f) && CP_B(0x275) == 0) {
+            ResetCollisions__15EntityBaseClassFv(this);
+            FacePlayer__15EntityBaseClassFf(this, 0.04f);
+            CP_S(0x15C) = 0x32;
+            CP_S(0x15E) = 0x1007;
+            CP_B(0x275) = 1;
+        }
+        if (CP_B(0x160) == 0) {
+            CP_PICK_SIDE();
+            ChooseNextState();
+        }
+        break;
+    case 24:
+        if (CP_B(0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_CrossHitSeq);
+            CP_I(0x2A0) = CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(&mEffectAPI__13EntityManager, 0x010001B3U, 0x0200034DU, 0, 0, 0, 0.5f, false, 0, false);
+            *(u_long128 *)CP_P(0x240) = *(u_long128 *)PosOf((char *)mPlayerAPI__13EntityManager);
+            PlaySound__15EntityBaseClassFUi(this, 0x109U);
+        }
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0xABU, 0x1AU);
+        if (GetFrameTime__6PMNodeFv((PMNode *)CP_PTR(0x3C)) <= 20.0f) {
+            FacePlayer__15EntityBaseClassFf(this, 0.04f);
+        }
+        if (CP_B(0x160) == 0) {
+            CP_PICK_SIDE();
+            ChooseNextState();
+        }
+        break;
+    case 21:
+        if (CP_B(0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_RocketFistSeq);
+            CP_I(0x298) = CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(&mEffectAPI__13EntityManager, 0x01000150U, 0x020002A6U, 0, 0, 0, 0.5f, false, 0, false);
+            *(u_long128 *)CP_P(0x240) = *(u_long128 *)PosOf((char *)mPlayerAPI__13EntityManager);
+            CP_B(0x277) = 1;
+            PlaySound__15EntityBaseClassFUi(this, 0x57U);
+        }
+        if (GetFrameTime__6PMNodeFv((PMNode *)CP_PTR(0x3C)) < 32.0f) {
+            FacePlayer__15EntityBaseClassFf(this, 0.04f);
+        } else if (CP_B(0x277) != 0 && !(GetFrameTime__6PMNodeFv((PMNode *)CP_PTR(0x3C)) < 32.0f) && CP_I(0x288) == 0) {
+            CP_B(0x277) = 0;
+            int nI = 0;
+            do {
+                char *pPrj = (char *)Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x2DU, 0, 0);
+                if (pPrj == 0) {
+                    CdsAssert("ClockworkPuncher.cpp", 0x4B0, "pPrj");
+                }
+                float vD[4] = {0.0f, 4.5f, -3.8f, 0.0f};
+                vD[0] = -2.0f + 4.0f * (float)nI;
+                MathAPI::VectorRotateY((float (*)[4])vD, CP_PTR(0x3C) != 0 ? *(float *)(CP_PTR(0x3C) + 0x94) : *(float *)((char *)this + 0x1A4));
+                vD[0] += (*PosOf((char *)this))[0];
+                vD[1] += (*PosOf((char *)this))[1];
+                vD[2] += (*PosOf((char *)this))[2];
+                InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(pPrj, nI == 0 ? 2 : 3, (float (*)[4])vD, (float (*)[4])(CP_PTR(0x3C) != 0 ? CP_PTR(0x3C) + 0x90 : (char *)this + 0x1A0), 0);
+                *(int *)(pPrj + 0x1EC) = m_unk4;
+                char *pPN = *(char **)(pPrj + 0x3C);
+                if (pPN != 0) {
+                    ScaleSet__6PMNodeFffff((PMNode *)pPN, 1.15f, 1.15f, 1.15f, 1.0f);
+                }
+                nI += 1;
+                vD[0] = (*PosOf((char *)this))[0];
+                vD[1] = (*PosOf((char *)this))[1];
+                vD[2] = (*PosOf((char *)this))[2];
+                *(u_long128 *)(*(char **)(pPrj + 0x38) + 0xA0) = *(u_long128 *)vD;
+            } while (nI < 2);
+        }
+        if (CP_B(0x160) == 0) {
+            CP_PICK_SIDE();
+            ChooseNextState();
+        }
+        break;
+    case 25:
+        if (CP_B(0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_AirStrikeSeq);
+            CP_I(0x2AC) = CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(&mEffectAPI__13EntityManager, 0x010003BBU, 0x02000676U, 0, 0, 0, 0.5f, false, 0, false);
+            CP_B(0x277) = 1;
+            CP_B(0x272) = 0;
+            mTimerAPI__13EntityManager.KillTimer(m_unk214);
+            m_unk214 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, 3U, false);
+        }
+        if (CP_B(0x277) != 0 && !(GetFrameTime__6PMNodeFv((PMNode *)CP_PTR(0x3C)) < 32.0f)) {
+            CP_B(0x277) = 0;
+            PlaySound__15EntityBaseClassFUi(this, 0x1AAU);
+            int nHit = 0;
+            int nK = 0;
+            float vE[4];
+            float vF[4];
+            float vG[4];
+            if (Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)this), PosOf((char *)mPlayerAPI__13EntityManager)) < 9.0f) {
+                nHit = 1;
+                sceVu0SubVector(vE, (float *)PosOf((char *)mPlayerAPI__13EntityManager), (float *)PosOf((char *)this));
+                sceVu0Normalize(vE, vE);
+                sceVu0ScaleVector(vE, vE, 15.0f);
+                sceVu0AddVector(vE, vE, (float *)PosOf((char *)this));
+                nK = 0;
+            }
+            do {
+                char *pPrj = (char *)Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x2DU, 0, 0);
+                if (pPrj == 0) {
+                    CdsAssert("ClockworkPuncher.cpp", 0x513, "pPrj");
+                }
+                GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(mpEntMgr__15EntityBaseClass->m_unk505C, (float (*)[4])vF);
+                sceVu0Normalize(vF, vF);
+                MathAPI::VectorRotateY((float (*)[4])vF, 90.0f * (float)nK + MathAPI::RandomFloatRange(0.0f, 90.0f));
+                static signed char init2;
+                static float aTargetDst;
+                if (init2 == 0) {
+                    aTargetDst = 5.0f;
+                    init2 = 1;
+                }
+                sceVu0ScaleVector(vF, vF, MathAPI::RandomFloatRange(1.0f, 5.0f));
+                if (nHit != 0) {
+                    sceVu0AddVector(vF, vF, vE);
+                } else {
+                    sceVu0AddVector(vF, vF, (float *)PosOf((char *)mPlayerAPI__13EntityManager));
+                }
+                *(u_long128 *)vG = *(u_long128 *)vF;
+                vG[1] += 10.0f;
+                if (GetGroundPos__7MathAPIFPA4_f((float (*)[4])vG) != 0) {
+                    *(u_long128 *)vF = *(u_long128 *)vG;
+                }
+                *(u_long128 *)(pPrj + 0x1C0) = *(u_long128 *)vF;
+                sceVu0SubVector(vF, vF, (float *)PosOf((char *)this));
+                sceVu0Normalize(vF, vF);
+                static signed char init3;
+                static float aTargetSpeed;
+                if (init3 == 0) {
+                    aTargetSpeed = 0.25f;
+                    init3 = 1;
+                }
+                sceVu0ScaleVector(vF, vF, aTargetSpeed);
+                InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(pPrj, 8, PosOf((char *)this), (float (*)[4])(CP_PTR(0x3C) != 0 ? CP_PTR(0x3C) + 0x90 : (char *)this + 0x1A0), 0);
+                nK += 1;
+                *(int *)(pPrj + 0x1EC) = m_unk4;
+            } while (nK < 4);
+            CP_PICK_SIDE();
+        }
+        if (CP_B(0x160) == 0) {
+            ChooseNextState();
+        }
+        break;
+    case 20:
+        if (CP_B(0xE9) != 0) {
+            if (CP_I(0x140) != (int)&ClockworkPuncher_RunSeq) {
+                PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_RunSeq);
+            }
+            *(u_long128 *)CP_P(0x250) = *(u_long128 *)PosOf((char *)this);
+            CP_I(0x264) = 0;
+            CP_I(0x268) = 1;
+        }
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E2BU, 0xAU);
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E2BU, 0x24U);
+        FacePlayer__15EntityBaseClassFf(this, 0.04f);
+        if (!(Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)mPlayerAPI__13EntityManager), CP_P(0x200)) <= CP_F(0x1D4))) {
+            SetState__15EntityBaseClassFi(this, 0);
+            return;
+        }
+        if (Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)this), PosOf((char *)mPlayerAPI__13EntityManager)) < 4.0f) {
+            ChooseAttack();
+            return;
+        }
+        if (CP_PTR(0x3C)[0x3F] & 4) {
+            if (Stalled(2.0f) != 0) {
+                if (RandomIntRange__7MathAPIFii(1, 0x64) & 1) {
+                    SetState__15EntityBaseClassFi(this, 0x13);
+                } else {
+                    SetState__15EntityBaseClassFi(this, 0x10);
+                }
+                return;
+            }
+            *(u_long128 *)CP_P(0x250) = *(u_long128 *)PosOf((char *)this);
+            CP_I(0x264) += 1;
+            if (CP_I(0x264) == CP_I(0x268)) {
+                ChooseNextState();
+            }
+        }
+        if (Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)this), PosOf((char *)mPlayerAPI__13EntityManager)) <= 4.0f) {
+            ChooseAttack();
+        }
+        break;
+    case 3:
+        if (CP_B(0xE9) != 0) {
+            if (CP_B(0x274) != 0) {
+                PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_BackHitSeq);
+            } else {
+                int nFl = CP_I(0x21C) & ~0x5C0;
+                if (nFl != 8 && nFl != 0x2D && nFl != 0xB && nFl != 0xA && nFl != 9 && nFl != 6) {
+                    PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_HitSeq);
+                } else if (CP_I(0x140) != (int)&ClockworkPuncher_KnockBackSeq) {
+                    PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_KnockBackSeq);
+                }
+            }
+        }
+        if (CP_I(0x140) == (int)&ClockworkPuncher_KnockBackSeq) {
+            PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x5DU, 0x1EU);
+        }
+        if (CP_B(0x160) == 0) {
+            ChooseNextState();
+            CP_I(0xDC) = 0;
+            if (CP_PTR(0x38) != 0) {
+                SetVelocity__7PhysicsFff(CP_PTR(0x38), 0.0f, 0.0f);
+            }
+        }
+        break;
+    case 12:
+        if (CP_B(0xE9) != 0) {
+            DeleteEffects();
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_BlockSeq);
+            CP_B(0x275) = 1;
+        }
+        if (CP_I(0x2A8) == 0 && !(GetFrameTime__6PMNodeFv((PMNode *)CP_PTR(0x3C)) < 81.0f) && CP_I(0x288) == 0 && CP_B(0x275) != 0) {
+            CP_I(0x2A8) = CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(&mEffectAPI__13EntityManager, 0x01000153U, 0x020002A5U, 0, 0, 0, 0.5f, false, 0, false);
+            CP_B(0x275) = 0;
+        }
+        if (CP_B(0x160) == 0) {
+            SetState__15EntityBaseClassFi(this, 0);
+        }
+        break;
+    case 4:
+        if (CP_B(0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_RunSeq);
+        }
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E2BU, 0xAU);
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0x4E2BU, 0x24U);
+        {
+            char *pInst = (char *)InstanceIsValid__15EntityBaseClassFUi(CP_I(0x280));
+            if (pInst != 0) {
+                if (((EntityVirtualSlots *)pInst)->Slot13() == 0) {
+                    *(u_long128 *)CP_P(0x200) = *(u_long128 *)PosOf((char *)this);
+                    CP_I(0x280) = 0;
+                    SetState__15EntityBaseClassFi(this, 0);
+                    return;
+                }
+                RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, PosOf(pInst)), 0.04f);
+                if (Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)this), PosOf(pInst)) <= 5.0f && (int)(unsigned char)pInst[0x163] < 2) {
+                    SetState__15EntityBaseClassFi(this, 5);
+                }
+                break;
+            }
+            *(u_long128 *)CP_P(0x200) = *(u_long128 *)PosOf((char *)this);
+            CP_I(0x280) = 0;
+            SetState__15EntityBaseClassFi(this, 0);
+            return;
+        }
+        break;
+    case 5:
+        if (CP_B(0xE9) != 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_OneTwoHitSeq);
+            CP_I(0x29C) = CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(&mEffectAPI__13EntityManager, 0x0100014FU, 0x020002A9U, 0, 0, 0, 0.5f, false, 0, false);
+        }
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0xABU, 0x15U);
+        PlaySoundOnFrame__15EntityBaseClassFUiUi(this, 0xABU, 0x1EU);
+        {
+            char *pInst = (char *)InstanceIsValid__15EntityBaseClassFUi(CP_I(0x280));
+            if (pInst == 0) {
+                *(u_long128 *)CP_P(0x200) = *(u_long128 *)PosOf((char *)this);
+                CP_I(0x280) = 0;
+                SetState__15EntityBaseClassFi(this, 0);
+                return;
+            }
+            RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, PosOf(pInst)), 0.04f);
+        }
+        if (CP_B(0x160) == 0) {
+            PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_IdleSeq);
+            SetState__15EntityBaseClassFi(this, 6);
+        }
+        break;
+    case 6:
+        if (CP_B(0xE9) != 0) {
+            mTimerAPI__13EntityManager.KillTimer(m_unk27C);
+            CP_B(0x278) = 0;
+            m_unk27C = mTimerAPI__13EntityManager.CreateTimer(m_unk4, 1U, false);
+        }
+        {
+            char *pInst = (char *)InstanceIsValid__15EntityBaseClassFUi(CP_I(0x280));
+            if (pInst != 0) {
+                if (((EntityVirtualSlots *)pInst)->Slot13() == 0) {
+                    *(u_long128 *)CP_P(0x200) = *(u_long128 *)PosOf((char *)this);
+                    CP_I(0x280) = 0;
+                    SetState__15EntityBaseClassFi(this, 0);
+                    return;
+                }
+                RotateTo__15EntityBaseClassFff(this, GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(this, PosOf(pInst)), 0.04f);
+                if (CP_B(0x278) != 0) {
+                    if (Distance__7MathAPIFPA4_fPA4_f(PosOf((char *)this), PosOf(pInst)) <= 4.0f) {
+                        SetState__15EntityBaseClassFi(this, 5);
+                    } else {
+                        SetState__15EntityBaseClassFi(this, 4);
+                    }
+                }
+                break;
+            }
+            *(u_long128 *)CP_P(0x200) = *(u_long128 *)PosOf((char *)this);
+            SetState__15EntityBaseClassFi(this, 0);
+            return;
+        }
+    case 9:
+        if (CP_B(0xE9) != 0) {
+            DestroyDamageFx__15EntityBaseClassFUi(this, CP_I(0x2C4));
+            CP_I(0x2C4) = 0;
+            CP_I(0xDC) = 0;
+            if (CP_PTR(0x38) != 0) {
+                SetVelocity__7PhysicsFff(CP_PTR(0x38), 0.0f, 0.0f);
+            }
+            CP_I(0x10C) &= 0xF8FFFFFF;
+            char *pSh = CP_PTR(0xD4);
+            if (pSh != 0) {
+                *(int *)pSh = 0;
+                char *pSh2 = *(char **)(pSh + 0xC);
+                if (pSh2 != 0) {
+                    *(int *)(pSh2 + 0x18) = 0;
+                }
+            }
+            RemoveFromAttackSystem__15EntityBaseClassFv(this);
+            EnableSleep__15EntityBaseClassFbb(this, false, false);
+            WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0U);
+            WriteApparitionData__15EntityBaseClassFicUi(this, 0, 1, 0U);
+            switch (CP_I(0x218)) {
+            case 0xD:
+            case 0x220:
+            case 0x201:
+            case 0x1:
+            case 0x20:
+                PlaySound__15EntityBaseClassFUi(this, 0x58U);
+                if (CP_I(0x1B4) == 1) {
+                    PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_SiegeExplosionSeq);
+                } else {
+                    PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_ExplosionSeq);
+                }
+                break;
+            default:
+                PlaySound__15EntityBaseClassFUi(this, 0x5CU);
+                if (CP_I(0x1B4) == 1) {
+                    PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_SiegeDeathSeq);
+                } else {
+                    PlaySequence__15EntityBaseClassFPUi(this, &ClockworkPuncher_DeathSeq);
+                }
+                break;
+            }
+            int nBonus;
+            if (CP_I(0x1B4) == 1) {
+                ScaleSet__6PMNodeFffff((PMNode *)CP_PTR(0x3C), 1.4f, 1.4f, 1.4f, 1.0f);
+                nBonus = 8;
+            } else {
+                ScaleSet__6PMNodeFffff((PMNode *)CP_PTR(0x3C), 1.15f, 1.15f, 1.15f, 1.0f);
+                nBonus = 5;
+            }
+            SpawnBonus__15EntityBaseClassFPfii(this, m_vBonusSpawnOffset, 5, nBonus);
+        }
+        if (CP_B(0x160) == 0) {
+            CP_I(0x10C) &= 0xF8FFFFFF;
+            SetState__15EntityBaseClassFi(this, -2);
+        }
+        break;
+    }
+    if (m_unk20 >= 0) {
+        CheckBlockAttack();
+    }
+    if (CP_PTR(0x38) != 0 && (*(int *)(CP_PTR(0x38) + 0x108) & 0x400)) {
+        WriteApparitionData__15EntityBaseClassFicUi(this, 0, 1, 0U);
+        if (CP_PTR(0x38) != 0) {
+            __dl__FPv(CP_PTR(0x38));
+        }
+        CP_PTR(0x38) = 0;
+        CP_I(0x10C) &= 0xFDFFFFFF;
+        EnableSleep__15EntityBaseClassFbb(this, false, false);
+        CP_I(0x1FC) = 0;
+        SetState__15EntityBaseClassFi(this, 9);
+        CP_I(0x218) = 1;
+        DeleteEffects();
+        DeleteTimers();
+        CP_B(0x2BC) = 0;
+        if (m_unk2B4 != 0) {
+            m_unk2B4->DestroyFxTriggers(false, true, false);
+        }
+    }
+}
+#undef CP_I
+#undef CP_F
+#undef CP_B
+#undef CP_S
+#undef CP_P
+#undef CP_PTR
+#undef CP_PICK_SIDE
 
 // FUNCTION: 0x001E26C0 __dt__16ClockworkPuncherFv
 extern "C" ClockworkPuncher *__dt__16ClockworkPuncherFv(ClockworkPuncher *pThis, short nFlag) {

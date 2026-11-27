@@ -26,6 +26,7 @@ public:
     void OnSleepEvent();
     void OnEffectDelete(unsigned int nHandle);
     void OnStopAttack();
+    void Execute();
     void OnAttackEvent(class EntityBaseClass *pEntity, int nEvent);
     int OnHitEvent(class EntityBaseClass *pEntity, int nArg, unsigned int nFlags, unsigned int nFlags2);
     void DeleteEffects();
