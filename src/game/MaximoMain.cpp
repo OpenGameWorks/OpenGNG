@@ -2494,7 +2494,7 @@ void MaximoMain::InitCutScene() {
 }
 
 // DRAFT: 0x0013DB50 StartCutScene__10MaximoMainFi
-// note: 24 differing lines. Index chain operand order differs (original base in v0, product in v1). Camera arg: original builds the 0x19760 constant first (lui v0,1; ori v1,v0,0x9760) then gEng's address (lui 0x2D; addiu -0x590), addu a0,v0,v1; ours folds gEng+0x19760. The bare test `if (f())` drops the andi (needed to match) but gives 28-31 words; `(unsigned int)gEng + 0x19760` gives 28 bare, 33 with `!= 0`; single-exit ret-local form 41-42. Tried: index variants (base ptr, int addr, operand order), camera spellings, both truth tests, single-exit form.
+// note: 18 differing lines, register numbering only: in the index chain and in the runtime gEng+0x19760 camera argument the original puts the first operand in v0 and the second in v1, ours swaps them. Uses the runtime (int)gEng + 0x19760 argument, a bare truth test and one shared return 0. Tried: (int)&gEng, (unsigned int) casts, offset-first sum, one-line index, split += index, && merged guard (all 18-39).
 int MaximoMain::StartCutScene(int arg0) {
     int ok;
     DisplayLevelName__9InterfaceFii(gInterface, -1, 0xF0);
@@ -2508,16 +2508,14 @@ int MaximoMain::StartCutScene(int arg0) {
         if (!(*(int *)((char *)m_unk1883C + 0x264) & 8)) {
             m_unk19A70 = 3;
             *(int *)((char *)this + 0x8724) = arg0;
-            if (PlayingCutCamera__6CameraFv(gEng + 0x19760) != 0) {
+            if (PlayingCutCamera__6CameraFv((char *)((int)gEng + 0x19760))) {
                 gEng[0x19A18] = 0;
             }
             return 1;
         }
-        return 0;
     }
     return 0;
 }
-
 // FUNCTION: 0x0013DC30 FindFirstDialog__10MaximoMainFPC10LevelFilesb
 unsigned int MaximoMain::FindFirstDialog(LevelFiles const *arg0, bool arg1) {
     int s1;
