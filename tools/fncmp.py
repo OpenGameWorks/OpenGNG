@@ -43,8 +43,11 @@ MASK = {4: 0xFC000000, 5: 0xFFFF0000, 6: 0xFFFF0000, 7: 0xFFFF0000, 2: 0}
 GP = 0x2CBF70  # .reginfo ri_gp_value
 
 
-def addend_ok(typ: int, have: int, want: int, s: int) -> bool:
-    """The compiled in-place addend, applied to the original target, gives the original field."""
+def addend_ok(typ: int, have: int, want: int, s: int, lo_partner: int | None = None) -> bool:
+    """The compiled in-place addend, applied to the original target, gives the original field.
+
+    A HI16 addend spans its own field and its LO16 partner's (`lo_partner`, the
+    compiled LO16 word), so an offset wrong by a multiple of 0x10000 shows only here."""
     lo = ((have & 0xFFFF) ^ 0x8000) - 0x8000
     if typ == 6:
         return (s + lo) & 0xFFFF == want & 0xFFFF
@@ -52,8 +55,22 @@ def addend_ok(typ: int, have: int, want: int, s: int) -> bool:
         return (s + lo - GP) & 0xFFFF == want & 0xFFFF
     if typ == 4:
         return (((have & 0x3FFFFFF) << 2) + s) >> 2 & 0x3FFFFFF == want & 0x3FFFFFF
-    # A HI16 addend depends on its LO16 partner, which the LO16 check covers.
+    if typ == 5 and lo_partner is not None:
+        ahl = ((have & 0xFFFF) << 16) + ((lo_partner & 0xFFFF) ^ 0x8000) - 0x8000
+        return ((s + ahl + 0x8000) >> 16) & 0xFFFF == want & 0xFFFF
     return True
+
+
+def lo_partner(off: int, have: int, code: bytes, rels) -> int | None:
+    """The compiled LO16 word a HI16 at off pairs with, as link.py pairs them."""
+    rt = (have >> 16) & 0x1F
+    sym = rels[off][1]
+    for o in sorted(k for k in rels if k > off):
+        if rels[o] == (6, sym):
+            w = int.from_bytes(code[o:o + 4], "little")
+            if (w >> 21) & 0x1F == rt:
+                return w
+    return None
 
 
 def original_offset(a: int, want: int, ofull, symaddr) -> int | None:
@@ -218,7 +235,9 @@ def compare(src: Path, key: str, obj: Path | None, quiet: bool, real: Path | Non
                   and not ("$" in r[1] and LOCAL_STATIC.sub("", r[1]) == LOCAL_STATIC.sub("", o[1]))):
                 ok = False
                 notes.append(f"{i * 4:#06x}: {r[1]} is not the original target {o[1]}")
-            elif ok and have is not None and not r[1].startswith(".") and not addend_ok(r[0], have, want, symaddr[ofull[a][1]]):
+            elif ok and have is not None and not r[1].startswith(".") and not addend_ok(
+                    r[0], have, want, symaddr[ofull[a][1]],
+                    lo_partner(i * 4, have, code, rels) if r[0] == 5 else None):
                 # Same symbol, different offset into it (a member of a global, an array element).
                 ok = False
                 off = original_offset(a, want, ofull, symaddr)
