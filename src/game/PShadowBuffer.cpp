@@ -134,7 +134,7 @@ void PShadowBuffer::EndRender() {
 }
 
 // DRAFT: 0x001D8110 BeginRender__13PShadowBufferFv
-// note: compiles; PAL/non-PAL alloc paths and the 16-entry GS packet build are written, but the 64-bit packet ops and gGfxEng address order differ
+// note: 82 words. Self base, runtime gGfxEng store on the first write and nPageA before nPages helped. Still differs: the original batches the constant pkt[] stack stores at the end (ours interleaves them), and the register choice for the pkt[0] short and nPageB terms. Tried: pkt[0] operand reorder, hoisted short (83).
 void PShadowBuffer::BeginRender() {
     char *self = (char *)this;
     *(int *)(self + 0x28) = *(int *)(gGfxEng + 0x158DF0);
