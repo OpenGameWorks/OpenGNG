@@ -136,47 +136,49 @@ void PShadowBuffer::EndRender() {
 // DRAFT: 0x001D8110 BeginRender__13PShadowBufferFv
 // note: compiles; PAL/non-PAL alloc paths and the 16-entry GS packet build are written, but the 64-bit packet ops and gGfxEng address order differ
 void PShadowBuffer::BeginRender() {
+    char *self = (char *)this;
+    *(int *)(self + 0x28) = *(int *)(gGfxEng + 0x158DF0);
     bool bRendered = false;
-    *(int *)((char *)this + 0x28) = *(int *)(gGfxEng + 0x158DF0);
     if (MODE_PAL != 0) {
-        gGfxEng[0x154EF0] = 0;
-        *(int *)((char *)this + 0x14) = AllocRenderedTexture__15PTextureManagerFiiRbb(gGfxEng + 0x154C90, m_unk34, 0x2000, &bRendered, true);
+        *(char *)((int)gGfxEng + 0x154EF0) = 0;
+        *(int *)(self + 0x14) = AllocRenderedTexture__15PTextureManagerFiiRbb(gGfxEng + 0x154C90, m_unk34, 0x2000, &bRendered, true);
         SetVifCodes__12PDisplayListFUiUi(*(void **)(gGfxEng + 0x154C80), 0x13000000U, 0x13000000U);
         gGfxEng[0x154EF0] = 1;
     } else {
-        *(int *)((char *)this + 0x14) = AllocRenderedTexture__15PTextureManagerFiiRbb(gGfxEng + 0x154C90, m_unk34, 0x2000, &bRendered, true);
+        *(int *)(self + 0x14) = AllocRenderedTexture__15PTextureManagerFiiRbb(gGfxEng + 0x154C90, m_unk34, 0x2000, &bRendered, true);
         if (bRendered) {
             NextBatch__16PTextureDmaChainFv((char *)*(void **)(gGfxEng + 0x154C80) + 0xA3380);
             SetTexSyncPacket__12PDisplayListFv(*(void **)(gGfxEng + 0x154C80));
         }
     }
-    int nPages = *(int *)((char *)this + 0x14);
-    int nPageA = nPages >> 13;
+    int nPageA;
+    int nPages = *(int *)(self + 0x14);
+    nPageA = nPages >> 13;
     if (nPages < 0) {
         nPageA = (nPages + 0x1FFF) >> 13;
     }
-    *(long long *)((char *)this + 0x80) = (long long)nPageA | ((long long)*(short *)((char *)this + 0x30) << 24);
-    SendGsPacket__12PDisplayListFPvib(*(void **)(gGfxEng + 0x154C80), (char *)this + 0x40, 0x6F0, 1);
+    *(long long *)(self + 0x80) = (long long)nPageA | ((long long)*(short *)(self + 0x30) << 24);
+    SendGsPacket__12PDisplayListFPvib(*(void **)(gGfxEng + 0x154C80), self + 0x40, 0x6F0, 1);
 
     long long pkt[16];
-    int nPagesB = *(int *)((char *)this + 0x14);
+    int nPagesB = *(int *)(self + 0x14);
     int nPageB = nPagesB >> 13;
     if (nPagesB < 0) {
         nPageB = (nPagesB + 0x1FFF) >> 13;
     }
-    pkt[0] = ((long long)*(short *)((char *)this + 0x30) << 24)
-           | (long long)nPageB
-           | ((long long)((*(int *)((char *)this + 0x18) + 0x3F) >> 6) << 16)
+    pkt[0] = (long long)nPageB
+           | ((long long)*(short *)(self + 0x30) << 24)
+           | ((long long)((*(int *)(self + 0x18) + 0x3F) >> 6) << 16)
            | (long long)0xFF00000000000000ULL;
     pkt[1] = 0x4C;
 
-    int nPagesC = *(int *)((char *)this + 0x2C);
+    int nPagesC = *(int *)(self + 0x2C);
     int nPageC = nPagesC >> 13;
     if (nPagesC < 0) {
         nPageC = (nPagesC + 0x1FFF) >> 13;
     }
     pkt[2] = (long long)nPageC
-           | ((long long)*(short *)((char *)this + 0x32) << 24)
+           | ((long long)*(short *)(self + 0x32) << 24)
            | (1LL << 32);
     pkt[3] = 0x4E;
     pkt[4] = 0x68LL | (0x80LL << 32);
