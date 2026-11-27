@@ -15,7 +15,13 @@ void SOUND_CopyIOPBuffer(void);
 int sceSifCheckStatRpc(void *cd);
 void FlushCache(int nMode);
 void SOUND_GetStatus(int arg0, int arg1);
-void SOUND_SIFTransfer(int arg0, unsigned int arg1, int arg2);
+int SOUND_SIFTransfer(int arg0, unsigned int arg1, int arg2);
+int sceSifCallRpc(void *cd, unsigned int fno, unsigned int mode, void *send, int ssize, void *recv, int rsize, void (*end)(void *), void *efarg);
+void JP__FPv(void *);
+extern int gSOUND_EETransferStart[16];
+extern int gSOUND_EETransferFinish[16];
+extern int fst_bUseStatusCheck;
+extern unsigned int gSOUND_usecsTotalTransfer;
 void memcpy(void *dst, const void *src, unsigned int size);
 extern unsigned short senddata[0x400];
 extern short senddataPrevDbg[0x400];
@@ -658,6 +664,49 @@ void SOUND_TransferSFX(short arg0, short arg1, unsigned int arg2, unsigned int a
     IOPCommandData[3] = arg2 & 0xFFFF;
     IOPCommandData[4] = (arg3 >> 16) & 0xFFFF;
     SetIOPCommand(6, 6);
+}
+
+// DRAFT: 0x001AEAE0 SOUND_SIFTransfer
+// note: DIFF 94; ours keeps the two uncached flag addresses in s3/s4 (one extra saved register) where the original rebuilds lui/addiu/or at each read, and the delay loop pads differently. Tried: C++-style guard spelled out (124 to 101), asm nop in the delay loop (94), volatile counter (108), operand order of the uncached or (101).
+int SOUND_SIFTransfer(int nFunc, unsigned int nData, int nMode) {
+    static signed char init;
+    static unsigned int st_uDelay;
+    unsigned int nEnd = 0;
+    unsigned int nStart = 0;
+    int bFinished = 0;
+    int bStarted = 0;
+    int nPolls = 0;
+    unsigned int i;
+
+    if (!init) {
+        st_uDelay = 2000;
+        init = 1;
+    }
+    *(volatile int *)((unsigned int)gSOUND_EETransferStart | 0x20000000) = 0;
+    *(volatile int *)((unsigned int)gSOUND_EETransferFinish | 0x20000000) = 0;
+    if (nMode == 0 && fst_bUseStatusCheck != 0) {
+        sceSifCallRpc(gCd, nFunc, 1, (void *)nData, 0x800, sbuff2, 0x200, JP__FPv, 0);
+        while (sceSifCheckStatRpc(gCd) != 0) {
+            if (!bStarted && *(volatile int *)((unsigned int)gSOUND_EETransferStart | 0x20000000) != 0) {
+                bStarted = 1;
+                asm { mfc0 nStart, $9 }
+            }
+            if (!bFinished && *(volatile int *)((unsigned int)gSOUND_EETransferFinish | 0x20000000) != 0) {
+                bFinished = 1;
+                asm { mfc0 nEnd, $9 }
+            }
+            nPolls++;
+            for (i = 0; i < st_uDelay; i++) {
+                asm { nop }
+            }
+        }
+        if (bStarted && bFinished) {
+            gSOUND_usecsTotalTransfer += (unsigned int)((double)(int)(nEnd - nStart) * 0.003333);
+        }
+    } else {
+        sceSifCallRpc(gCd, nFunc, nMode, (void *)nData, 0x800, sbuff2, 0x200, JP__FPv, 0);
+    }
+    return sbuff2[0];
 }
 
 #pragma cplusplus on
