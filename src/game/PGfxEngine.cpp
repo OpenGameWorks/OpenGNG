@@ -1362,14 +1362,14 @@ void PGfxEngine::EnableFullScreenFx(bool bEnable) {
 }
 
 // DRAFT: 0x1878F0 RenderFullScreenMotionBlur__10PGfxEngineFf
-// note: 132 words differ; size 0x2A0 vs 0x2C0. Sprite-buffer/GS packet stack layout (sp+0x30..0x6D0), rate-byte register (a0 vs v0), and nSum in v1 not matched. Tried: goto vs ternary reset test (152/157), local order, sum operand order (all 132 or worse).
+// note: 92 words. aSprites-first local layout, goto reset guard and the clamp recomputed in the store helped. Still differs: the original stores the GS pairs through an a0=sp+0x6C0 base and a v1=sp+0x6D0 base and keeps 0x44/0x42 in separate registers. Tried: SetGsRegPair on aRegs1[2..5] (92), helper plus a pointer to aRegs1[1] (97).
 void PGfxEngine::RenderFullScreenMotionBlur(float fParam) {
+    char aSprites[0x680];
     unsigned long long aRegs1[6];
     unsigned long long aRegs2[6];
-    char aSprites[0x680];
     if (m_unk16D406 <= 0 || m_unk16D404 < m_unk16D405) {
         if (m_unk16D406 < 0) {
-            if (m_unk16D405 >= m_unk16D404) {
+            if (m_unk16D404 <= m_unk16D405) {
                 goto reset_fade;
             }
         }
@@ -1378,8 +1378,10 @@ void PGfxEngine::RenderFullScreenMotionBlur(float fParam) {
         m_unk16D406 = 0;
         m_unk16D404 = m_unk16D405;
     }
-    int nSum = m_unk16D404 + m_unk16D406;
-    m_unk16D404 = (nSum > 0) ? ((nSum < 0x80) ? nSum : 0x80) : 0;
+    int nSum = m_unk16D404;
+    nSum += m_unk16D406;
+    int nClamp = (nSum < 0x80) ? nSum : 0x80;
+    m_unk16D404 = (nClamp > 0) ? ((nSum < 0x80) ? nSum : 0x80) : 0;
     if (m_unk16D404 != 0) {
         GsSetFullScreenSprites__FP22tagGsFullScreenSpritesccccbbb(aSprites, -0x80, -0x80, -0x80, m_unk16D404, true, true, false);
         SetPrevFrameBufferAsTexture();
