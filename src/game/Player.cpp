@@ -1929,8 +1929,7 @@ void Player::UnlockGateMove() {
     }
 }
 
-// DRAFT: 0x0015BAB0 UnlockChestMove__6PlayerFv
-// note: 2 words differ; the m_unk328 load must precede the mpEntMgr gp load (delay slot), tried hoisting id, mgr copy, pre-declared pApparition, Player *self, *(unsigned int *)(this+0x328), id local, inline helper with swapped args, member call via EntityManager cast
+// FUNCTION: 0x0015BAB0 UnlockChestMove__6PlayerFv
 void Player::UnlockChestMove() {
     int state = m_unk250;
     int h = (int)m_unk3C[13];
@@ -1955,7 +1954,7 @@ void Player::UnlockChestMove() {
         }
         break;
     case 3: {
-        void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk328);
+        void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, *(unsigned int *)((char *)this + 0x328));
         if (pApparition == 0) {
             m_unk250 = 4;
             break;
@@ -3710,12 +3709,12 @@ void Player::RollMove() {
     }
 }
 
-// note: 2 words differ: ours hoists `this` (daddu a0,s0,zero) into the beq delay slot at 0x34; the original has nop there and the move in the jal delay slot at 0x3C. Tried early-return split (13), nested if (2), swapped operands (3), guard return (13).
-// DRAFT: 0x0015F770 LandingMove__6PlayerFv
+// FUNCTION: 0x0015F770 LandingMove__6PlayerFv
 void Player::LandingMove() {
     int action = GetGroundAction();
     if (action != 0xA && action != 0 && action != m_unk260) {
         SetAction(action);
+        return;
     }
 }
 
