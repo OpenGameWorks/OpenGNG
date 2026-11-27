@@ -3,6 +3,9 @@
 
 class ETiming;
 
+// Reports a failed assertion: the source file, its line and the failed expression text.
+void CdsAssert(char *pFile, int nLine, char *pExpr);
+
 class Debug {
 public:
     Debug();

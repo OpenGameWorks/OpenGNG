@@ -1,10 +1,10 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Timing.h"
 
 // TODO(header): foreign declarations
 extern "C" void __dl__FPv(void *pMem);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
 class PProgressBar {
 public:
@@ -35,12 +35,6 @@ extern "C" void *__ct__9ESubTimerFv(void *pThis);
 extern "C" void *__ct__12PProgressBarFv(void *pThis);
 extern "C" void *__construct_array(void *pBlock, void *(*pCtor)(void *), void *(*pDtor)(void *, short), int nSize, int nCount);
 extern int SCREEN_HEIGHT;
-class Debug {
-public:
-    void DebugDisp(char *pText);
-    // Debug size is unknown; the placeholder keeps gDebug out of small data (threshold 8 bytes).
-    char _pad000[0x10];
-};
 extern Debug gDebug;
 // Engine size is unknown; the placeholder keeps gEng out of small data (threshold 8 bytes).
 class Engine { public: char _pad000[0x1E8]; float m_unk1E8; char _pad1EC[0x10]; };
@@ -91,7 +85,7 @@ void ESubTimer::GenerateString(char *pOut, unsigned int nArg, unsigned int nArg2
                 nTime = m_unk014;
                 nMask &= -9;
             }
-            ((nPrev != nMask) ? (void)0 : CdsAssert__FPciPc("Timing.cpp", 0x356, "uDurationStylePre != uDurationStyle"));
+            ((nPrev != nMask) ? (void)0 : CdsAssert("Timing.cpp", 0x356, "uDurationStylePre != uDurationStyle"));
             if (nCount > 0) {
                 strcat(aAcc, ", ");
             }

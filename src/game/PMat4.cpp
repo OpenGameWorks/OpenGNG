@@ -1,9 +1,9 @@
 // FLAGS: -str readonly
 #include "PMat4.h"
+#include "Debug.h"
 extern "C" void sceVu0ApplyMatrix(float *pDst, float (*pMat)[4], float *pSrc);
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void sceVu0InversMatrix(float (*)[4], float (*)[4]);
 extern "C" void sceVu0MulMatrix(float (*)[4], float (*)[4], float (*)[4]);
@@ -230,7 +230,7 @@ void PMat4::InverseByRT(float *arg0, float *arg1) {
 // FUNCTION: 0x001311B0 Inverse__5PMat4FP5PMat4
 void PMat4::Inverse(PMat4 *arg0) {
     if (arg0 == 0) {
-        CdsAssert__FPciPc("PMat4.cpp", 0x118, "pMatResult");
+        CdsAssert("PMat4.cpp", 0x118, "pMatResult");
     }
     sceVu0InversMatrix((float (*)[4])arg0, (float (*)[4])this);
 }
@@ -277,7 +277,7 @@ extern "C" int Mul__5PMat4FP5PMat4(PMat4 *pThis, PMat4 *pA, PMat4 *pB) {
 
     sceVu0UnitMatrix(&tmp[0][0]);
     if (pB == 0) {
-        CdsAssert__FPciPc("PMat4.cpp", 0x5F, "pMat");
+        CdsAssert("PMat4.cpp", 0x5F, "pMat");
     }
     sceVu0MulMatrix(tmp, (float (*)[4])pA, (float (*)[4])pB);
     sceVu0CopyMatrix((float (*)[4])pThis, tmp);

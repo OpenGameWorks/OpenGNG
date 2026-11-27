@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Shield.h"
 #include "EntityBaseClass.h"
 #include "PArray.h"
@@ -9,7 +10,6 @@ extern "C" void SetState__15EntityBaseClassFi(void *pThis, int state);
 extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *pThis, unsigned int type, float (*matrix)[4]);
 // Static EntityBaseClass::ApparitionIsValid(unsigned int): one argument, a0 only.
 extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(unsigned int nId);
-extern "C" void CdsAssert__FPciPc(char *file, int line, char *expr);
 extern "C" void sceVu0SubVector(float (*dst)[4], float (*a)[4], void *b);
 extern "C" float sceVu0InnerProduct(float (*a)[4], float (*b)[4]);
 extern "C" void StopSoundBySoundRef__15EntityBaseClassFUi(void *pThis, unsigned int handle);
@@ -81,13 +81,13 @@ void Shield::Animate(int arg0, float arg1) {
     if (m_unk1C8 != 0) {
         src = m_unk3C + 0x40;
         if (src == 0) {
-            CdsAssert__FPciPc("Shield.cpp", 0x21F, "apWorldMat");
+            CdsAssert("Shield.cpp", 0x21F, "apWorldMat");
         }
         u_long128 q = *(u_long128 *)(src + 0x30);
         *(u_long128 *)pos = q;
         *(u_long128 *)tmp = q;
         if (m_unk38 == 0) {
-            CdsAssert__FPciPc("Shield.cpp", 0x224, "mpPhysics");
+            CdsAssert("Shield.cpp", 0x224, "mpPhysics");
         }
         sub = (char *)m_unk38 + 0xA0;
         if (sub != 0) {
@@ -111,7 +111,7 @@ void Shield::Animate(int arg0, float arg1) {
         }
         dst = (char *)m_unk1CC + 0x40;
         if (dst == 0) {
-            CdsAssert__FPciPc("Shield.cpp", 0x239, "apWorldMat");
+            CdsAssert("Shield.cpp", 0x239, "apWorldMat");
         }
         *(u_long128 *)(dst + 0x30) = *(u_long128 *)tmp;
     }
@@ -253,14 +253,14 @@ float Shield::ShieldDistance(float (*arg0)[4]) {
         *(u_long128 *)arg0 = *(u_long128 *)(var_v0 + 0x70);
     } else {
         if (m_unk1BC == 0) {
-            CdsAssert__FPciPc("Shield.cpp", 0x193, "mParentRef");
+            CdsAssert("Shield.cpp", 0x193, "mParentRef");
         }
         temp_v0 = ApparitionIsValid__15EntityBaseClassFUi((unsigned int)m_unk1BC);
         if (temp_v0 == 0) {
             return 0.0f;
         }
         if (m_unk1B8 != temp_v0) {
-            CdsAssert__FPciPc("Shield.cpp", 0x19C, "mpParent == apParent");
+            CdsAssert("Shield.cpp", 0x19C, "mpParent == apParent");
         }
         *(u_long128 *)arg0 = *(u_long128 *)(*(char **)((char *)m_unk1B8 + 0x3C) + 0x80);
         arg0[0][1] += 2.0f;

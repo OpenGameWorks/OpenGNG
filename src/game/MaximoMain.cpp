@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "MaximoMain.h"
+#include "Debug.h"
 #include "PSlideShow.h"
 #include "PResourceManager.h"
 #include "Camera.h"
@@ -73,7 +74,6 @@ struct LevelFiles {
     char _pad00[0x10];
     int m_unk10;            // 0x10, zero when the level lists no dialog files
 };
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void *__dt__6CameraFv(void *, short);
 extern "C" void *__dt__13EntityManagerFv(void *, short);
 extern "C" void *__dt__9MaxEngineFv(void *, short);
@@ -300,7 +300,7 @@ void MaximoMain::Controls() {
     float f17 = 17.0f;
     PMNode *pNode = GetResource__16PResourceManagerFUib((char *)this + 0x188A4, 0x8100003DU, false);
     if (pNode == 0) {
-        CdsAssert__FPciPc("MaximoMain.cpp", 0x1734, "pMeshNode");
+        CdsAssert("MaximoMain.cpp", 0x1734, "pMeshNode");
     }
     AddMeshLayer__9InterfaceFP6PMNode(gInterface, pNode);
     ((FontManager *)(gInterface + 0x80))->DisplayString(0x25C, 0, 0, false);
@@ -366,7 +366,7 @@ void MaximoMain::TVAdjust() {
     }
     pNode = GetResource__16PResourceManagerFUib((char *)this + 0x188A4, 0x81000036U, false);
     if (pNode == 0) {
-        CdsAssert__FPciPc("MaximoMain.cpp", 0x16F0, "pMeshNode");
+        CdsAssert("MaximoMain.cpp", 0x16F0, "pMeshNode");
     }
     AddMeshLayer__9InterfaceFP6PMNode(gInterface, pNode);
     ((FontManager *)(gInterface + 0x80))->DisplayString(0x25A, 0, 0, false);
@@ -585,7 +585,7 @@ int MaximoMain::Options() {
             int n;
             pMesh = GetResource__16PResourceManagerFUib((char *)this + 0x188A4, 0x81000037U, false);
             if (pMesh == 0) {
-                CdsAssert__FPciPc("MaximoMain.cpp", 0x14FB, "pMeshNode");
+                CdsAssert("MaximoMain.cpp", 0x14FB, "pMeshNode");
             }
             pList = (TVList *)((char *)pMesh + 0x14);
             m_unk19B3C = (PMNode *)((pList->m_unk0 >= 2) ? pList->m_unk8[1] : 0);
@@ -593,7 +593,7 @@ int MaximoMain::Options() {
             ScaleSet__6PMNodeFffff(m_unk19B3C, (float)set.m_unk4 / 100.0f, 1.0f, 1.0f, 1.0f);
             ScaleSet__6PMNodeFffff(m_unk19B40, (float)set.m_unk5 / 100.0f, 1.0f, 1.0f, 1.0f);
             if (!(m_unk19B3C && m_unk19B40)) {
-                CdsAssert__FPciPc("MaximoMain.cpp", 0x1504, "mpMusicSlider && mpEffectSlider");
+                CdsAssert("MaximoMain.cpp", 0x1504, "mpMusicSlider && mpEffectSlider");
             }
             AddMeshLayer__9InterfaceFP6PMNode(gInterface, pMesh);
             FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 17.0f, true, 0);
@@ -743,7 +743,7 @@ int MaximoMain::Options() {
                 }
                 break;
             default:
-                ((0) ? (void)0 : CdsAssert__FPciPc("MaximoMain.cpp", 0x15CD, "This is not an option yet"));
+                ((0) ? (void)0 : CdsAssert("MaximoMain.cpp", 0x15CD, "This is not an option yet"));
                 break;
             }
             break;
@@ -1258,7 +1258,7 @@ void MaximoMain::PressStart(int arg0) {
         m_unk19AD4 = 0;
         char *pText = **(char ***)(pFont + 0x100);
         m_unk19AC4 = DisplayString__11FontManagerFPcffi9FontColor9FontAlign(pFont, pText, 0.0f, (float)arg0, 0, 4, 1);
-        if (m_unk19AC4 == 0) CdsAssert__FPciPc("MaximoMain.cpp", 0x122E, "mpPress");
+        if (m_unk19AC4 == 0) CdsAssert("MaximoMain.cpp", 0x122E, "mpPress");
         *(int *)((char *)m_unk19AC4 + 8) = 0;
     }
     float fAlpha = *(float *)((char *)m_unk19AC4 + 8);
@@ -1367,7 +1367,7 @@ int MaximoMain::GameSelect() {
                     void *pNode2;
                     PlaySoundUbiquitous__6PSoundFUi(gSound, 0x40);
                     pNode = (s2 < *(int *)fm) ? ((void **)*(void ***)((char *)fm + 8))[s2] : 0;
-                    ((pNode) ? (void)0 : CdsAssert__FPciPc("MaximoMain.cpp", 0x119B, "pNode"));
+                    ((pNode) ? (void)0 : CdsAssert("MaximoMain.cpp", 0x119B, "pNode"));
                     SetColor__8FontNodeF9FontColor(pNode, 7);
                     s2 += (s4 & 0x40) ? 1 : -1;
                     if (!(s2 < 3)) {
@@ -1375,7 +1375,7 @@ int MaximoMain::GameSelect() {
                         if (!(s4 & 0x40)) s2 = 2;
                     }
                     pNode2 = (s2 < *(int *)fm) ? ((void **)*(void ***)((char *)fm + 8))[s2] : 0;
-                    ((pNode2) ? (void)0 : CdsAssert__FPciPc("MaximoMain.cpp", 0x11A2, "pNode"));
+                    ((pNode2) ? (void)0 : CdsAssert("MaximoMain.cpp", 0x11A2, "pNode"));
                     SetColor__8FontNodeF9FontColor(pNode2, 4);
                     t = 10 * (int)GAME_FPS;
                     if (s1 < t) s1 = t;
@@ -1569,9 +1569,9 @@ int MaximoMain::TextureViewer(MaximoMain::BonusGallery *arg0, int arg1)
                 sprintf(sp1F0, "PSXDATA\\GAME\\BONUS%d.PAK", var_s2 + 1);
                 temp_s0 = *(int *)(MemMgr + 0x18);
                 *(int *)(MemMgr + 0x18) = 1;
-                ((LoadGlobalResource__16PResourceManagerFPCcb(&sp120, sp1F0, false) != 0) ? (void)0 : CdsAssert__FPciPc("MaximoMain.cpp", 0xF00, "0"));
+                ((LoadGlobalResource__16PResourceManagerFPCcb(&sp120, sp1F0, false) != 0) ? (void)0 : CdsAssert("MaximoMain.cpp", 0xF00, "0"));
                 *(int *)(MemMgr + 0x18) = temp_s0;
-                ((sp120.GetNumResourcesOfType((eResourceTypes)4, true) != 0) ? (void)0 : CdsAssert__FPciPc("MaximoMain.cpp", 0xF04, "mBonusResource.GetNumResourcesOfType( RES_TEXTURE, true )"));
+                ((sp120.GetNumResourcesOfType((eResourceTypes)4, true) != 0) ? (void)0 : CdsAssert("MaximoMain.cpp", 0xF04, "mBonusResource.GetNumResourcesOfType( RES_TEXTURE, true )"));
                 if (var_s1 < 0) {
                     var_s1 = sp120.GetNumResourcesOfType((eResourceTypes)4, true) - 1;
                 } else {
@@ -1763,7 +1763,7 @@ block_7:
         pBonusScreen = Load__6PWorldFPCcb13eTextureGroup(this, BONUSSCREEN_FILE, false, 0x65);
         ReturnControlOfIOPToMjln__6PSoundFv(gSound);
         ResetWarning__11FontManagerFv(gInterface + 0x80);
-        ((pBonusScreen != 0) ? (void)0 : CdsAssert__FPciPc("MaximoMain.cpp", 0xD8F, "pBonusScreen"));
+        ((pBonusScreen != 0) ? (void)0 : CdsAssert("MaximoMain.cpp", 0xD8F, "pBonusScreen"));
         *(float *)((char *)pBonusScreen + 0x2C) = 1.0f;
         *(int *)((char *)pBonusScreen + 0x0C) = 1;
         ((void (*)(void *, int, int, int, int, int))(*(void ***)pBonusScreen)[6])(pBonusScreen, 0, 0, 0, 0, 0x3F800000);
@@ -2105,7 +2105,7 @@ void MaximoMain::SetMarkerAsMastered(PMNode *arg0, PMNode *arg1) {
     if (arg1 != 0) {
         PMNode *found = arg0->Find(0xA5D4D353U);
         if (found == 0) {
-            CdsAssert__FPciPc((char *)"MaximoMain.cpp", 0x7F1, (char *)"aMastery");
+            CdsAssert((char *)"MaximoMain.cpp", 0x7F1, (char *)"aMastery");
         }
         PMNode *node;
         if ((node = (PMNode *)__nw__FUi(0x140)) != 0) {
@@ -2442,7 +2442,7 @@ int MaximoMain::InitCutSceneIfDialogReady() {
         if (readiness != 0) {
             start = false;
             if (readiness < 0) {
-                CdsAssert__FPciPc((char *)"MaximoMain.cpp", 0x65C, (char *)"0");
+                CdsAssert((char *)"MaximoMain.cpp", 0x65C, (char *)"0");
                 start = true;
                 m_unk19AA4 = 0;
             }
@@ -2591,7 +2591,7 @@ block_13:
     switch (m_unk19A70) {
     case 0:
         if ((unsigned int)m_unk19A78 >= 0x15U) {
-            CdsAssert__FPciPc("MaximoMain.cpp", 0x4BF, "miLevelID < sizeof(LevelTable) / sizeof(LevelFiles)");
+            CdsAssert("MaximoMain.cpp", 0x4BF, "miLevelID < sizeof(LevelTable) / sizeof(LevelFiles)");
         }
         m_unk19A7C = 0;
         *((char *)this + 0x19A9D) = 0;

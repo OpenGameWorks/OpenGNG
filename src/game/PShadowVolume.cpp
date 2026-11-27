@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PShadowVolume.h"
 #include "PMNode.h"
 #include "PCDFile.h"
@@ -9,7 +10,6 @@ void operator delete(void *pMem);
 void operator delete[](void *pMem);
 extern "C" void *__nw__FUi(unsigned int);
 extern "C" void *__nwa__FUi(unsigned int);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void sceVu0UnitMatrix(float (*)[4]);
 extern "C" void sceVu0CopyVector(float *, float *);
@@ -64,7 +64,7 @@ void PShadowVolume::Render(float *arg0, float *arg1, float *arg2, float *arg3, f
                 if (pNode != 0 && pNode->m_unk1C != 0 && pNode->m_unk20 != 0) {
                     if (pNode->m_unk0 == 0x2AF72F02) {
                         if (*(int *)((char *)pNode->m_unk20 + 4) == 0) {
-                            CdsAssert__FPciPc("PShadowVolume.cpp", 0xFD, "pNode->m_unk20->m_unk4");
+                            CdsAssert("PShadowVolume.cpp", 0xFD, "pNode->m_unk20->m_unk4");
                         }
                         if (*(int *)((char *)pNode->m_unk20 + 0xC) != 0) {
                             sceVu0CopyVector(vSel, (float *)((char *)pNode->m_unk1C + 0x30));
@@ -170,7 +170,7 @@ int PShadowVolume::Load(PPakFile *pFile) {
     unsigned int size;
     unsigned int i;
     if (pFile == 0) {
-        CdsAssert__FPciPc("PShadowVolume.cpp", 0x5C, "poFile");
+        CdsAssert("PShadowVolume.cpp", 0x5C, "poFile");
     }
     if (((PCDFile *)pFile)->Read(header, 0x20) != 0x20) {
         return 0;
@@ -192,7 +192,7 @@ int PShadowVolume::Load(PPakFile *pFile) {
         }
         PShadowVolumeNode *pNode = (PShadowVolumeNode *)__nw__FUi(0x28);
         if (pNode == 0) {
-            CdsAssert__FPciPc("PShadowVolume.cpp", 0x78, "apNode");
+            CdsAssert("PShadowVolume.cpp", 0x78, "apNode");
         }
         pNode->m_unk0 = *(int *)entry;
         memcpy(pNode->m_unkC, entry + 4, 0x10);
@@ -200,7 +200,7 @@ int PShadowVolume::Load(PPakFile *pFile) {
         pNode->m_unk1C = 0;
         pNode->m_unk4 = __nwa__FUi(size);
         if (pNode->m_unk4 == 0) {
-            CdsAssert__FPciPc("PShadowVolume.cpp", 0x7F, "apNode->pvVertexData");
+            CdsAssert("PShadowVolume.cpp", 0x7F, "apNode->pvVertexData");
         }
         if (((PCDFile *)pFile)->Read(pNode->m_unk4, size) != size) {
             operator delete[](pNode->m_unk4);
@@ -240,7 +240,7 @@ PShadowVolume::~PShadowVolume() {
 // FUNCTION: 0x001D92D0 __ct__13PShadowVolumeFP13PShadowVolume
 PShadowVolume::PShadowVolume(PShadowVolume *pSource) {
     if (pSource == 0) {
-        CdsAssert__FPciPc("PShadowVolume.cpp", 0x19, "apNodeArray");
+        CdsAssert("PShadowVolume.cpp", 0x19, "apNodeArray");
     }
     int count = (int)pSource->m_array.m_unk0;
     if (0 < count) {
@@ -253,7 +253,7 @@ PShadowVolume::PShadowVolume(PShadowVolume *pSource) {
             if (pNode != 0) {
                 PShadowVolumeNode *pCopy = (PShadowVolumeNode *)__nw__FUi(0x28);
                 if (pCopy == 0) {
-                    CdsAssert__FPciPc("PShadowVolume.cpp", 0x22, "apNewNode");
+                    CdsAssert("PShadowVolume.cpp", 0x22, "apNewNode");
                 }
                 memcpy(pCopy, pNode, 0x28);
                 pCopy->m_unk24 = 0;
@@ -265,7 +265,7 @@ PShadowVolume::PShadowVolume(PShadowVolume *pSource) {
         } while ((int)i < count);
     }
     if (m_array.m_unk0 != pSource->m_array.m_unk0) {
-        CdsAssert__FPciPc("PShadowVolume.cpp", 0x2B, "moShadowVolumeNodes.GetCount() == apNodeArray->GetCount()");
+        CdsAssert("PShadowVolume.cpp", 0x2B, "moShadowVolumeNodes.GetCount() == apNodeArray->GetCount()");
     }
     m_unk18 = 0;
 }

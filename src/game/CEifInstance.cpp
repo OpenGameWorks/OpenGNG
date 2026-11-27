@@ -1,11 +1,11 @@
 // FLAGS: -str readonly
 #include "CEifInstance.h"
+#include "Debug.h"
 #include "types.h"
 
 // TODO(header): foreign declarations
 class PPakFile;
 class tagEditableVariableData;
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" int Read__7PCDFileFPvUi(void *pThis, void *pBuffer, unsigned int nSize);
 extern "C" void __ct__23tagEditableVariableDataFv(void *pThis);
 extern "C" void __dla__FPv(void *pBlock);
@@ -14,7 +14,7 @@ extern "C" void *__construct_new_array(void *pArray, void (*pCtor)(void *), void
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("CEifInstance.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("CEifInstance.cpp", line, #cond))
 
 // FUNCTION: 0x00172A20 SetStartPosition__12CEifInstanceFfff
 void CEifInstance::SetStartPosition(float fA, float fB, float fC) {
@@ -37,7 +37,7 @@ int CEifInstance::GetFlags() {
 tagEditableVariableData *CEifInstance::GetEditVarData(int nIndex)
 {
     if (nIndex >= m_unk124) {
-        CdsAssert__FPciPc("CEifInstance.cpp", 0x104, "iVarIndex < mData.iNumEditVars");
+        CdsAssert("CEifInstance.cpp", 0x104, "iVarIndex < mData.iNumEditVars");
     }
     return (tagEditableVariableData *)((char *)m_unk128 + nIndex * 0x38);
 }
@@ -79,7 +79,7 @@ int CEifInstance::Read(PPakFile *pFile, unsigned int nVersion)
     int nCount;
 
     if (pFile == 0) {
-        CdsAssert__FPciPc("CEifInstance.cpp", 0x2B, "pFile");
+        CdsAssert("CEifInstance.cpp", 0x2B, "pFile");
     }
     if (m_unk128 != 0) {
         if (m_unk128 != 0) {
@@ -98,7 +98,7 @@ int CEifInstance::Read(PPakFile *pFile, unsigned int nVersion)
         m_unk128 = (tagEditableVariableData *)__construct_new_array(
             __nwa__FUi(nCount * 0x38 + 0x10), __ct__23tagEditableVariableDataFv, 0, 0x38, nCount);
         if (m_unk128 == 0) {
-            CdsAssert__FPciPc("CEifInstance.cpp", 0x6F, "mpEditVarsData");
+            CdsAssert("CEifInstance.cpp", 0x6F, "mpEditVarsData");
         }
         memset(m_unk128, 0, m_unk124 * 0x38);
         if (nVersion < 0x10003) {

@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PTextureManager.h"
 #include "PPakFile.h"
 #include "PTextureDmaChain.h"
@@ -11,13 +12,12 @@ extern "C" void sceDmaSend(int nChannel, void *pBuf);
 extern "C" void DmaWaitForCompletion__Fib(int nChannel, bool bFlag);
 extern "C" void __dla__FPv(void *pMem);
 extern "C" void __dt__6PArrayFv(void *pThis, short nFlag);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void SetTexSyncPacket__12PDisplayListFv(PDisplayList *pThis);
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PTextureManager.cpp", line, #cond))
-#define CDS_ASSERT_TEX(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PTexture.h", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PTextureManager.cpp", line, #cond))
+#define CDS_ASSERT_TEX(line, cond) ((cond) ? (void)0 : CdsAssert("PTexture.h", line, #cond))
 // Assert whose message text is not the stringified condition.
-#define CDS_ASSERT_MSG(line, cond, msg) ((cond) ? (void)0 : CdsAssert__FPciPc("PTextureManager.cpp", line, msg))
+#define CDS_ASSERT_MSG(line, cond, msg) ((cond) ? (void)0 : CdsAssert("PTextureManager.cpp", line, msg))
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void memset(void *, int, unsigned int);
 extern "C" void __ct__6PArrayFv(void *pThis);
@@ -78,7 +78,7 @@ PTexture *PTextureManager::GetTexture(bool bFlag, PTexture::eTextureType eType, 
     PTexture *pTex = 0;
 
     if (nIndex < 0) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x750, "iIndex >= 0");
+        CdsAssert("PTextureManager.cpp", 0x750, "iIndex >= 0");
     }
     if (bFlag) {
         return 0;
@@ -86,21 +86,21 @@ PTexture *PTextureManager::GetTexture(bool bFlag, PTexture::eTextureType eType, 
     switch ((int)eType) {
     case 1:
         if (!((unsigned int)nIndex < (unsigned int)m_nDynCount)) {
-            CdsAssert__FPciPc("PTextureManager.cpp", 0x75B, "iIndex < moDynamicImageTextures.GetCount()");
+            CdsAssert("PTextureManager.cpp", 0x75B, "iIndex < moDynamicImageTextures.GetCount()");
         }
         pTex = ((unsigned int)nIndex < (unsigned int)m_nDynCount) ? m_apDyn[nIndex] : 0;
         break;
     case 2:
         if (!((unsigned int)nIndex < (unsigned int)m_nRenderedCount)) {
-            CdsAssert__FPciPc("PTextureManager.cpp", 0x760, "iIndex < moRenderedTextures.GetCount()");
+            CdsAssert("PTextureManager.cpp", 0x760, "iIndex < moRenderedTextures.GetCount()");
         }
         pTex = ((unsigned int)nIndex < (unsigned int)m_nRenderedCount) ? m_apRendered[nIndex] : 0;
         break;
     case 3:
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x766, "0");
+        CdsAssert("PTextureManager.cpp", 0x766, "0");
         break;
     default:
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x76A, "0");
+        CdsAssert("PTextureManager.cpp", 0x76A, "0");
         break;
     }
     return pTex;
@@ -199,7 +199,7 @@ void PTextureManager::PrepareImageXferInfo(tagGsImageXferInfo *pInfo, int nWidth
 // FUNCTION: 0x001898C0 PrepareImageDmaPacket__15PTextureManagerFP17tagImageDmaPacketPviiiii
 void PTextureManager::PrepareImageDmaPacket(tagImageDmaPacket *pPacket, void *pData, int nSize, int nWidth, int nHeight, int nPsm, int nBase) {
     if (pPacket == 0) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x6B7, "pPacket");
+        CdsAssert("PTextureManager.cpp", 0x6B7, "pPacket");
     }
     pPacket = (tagImageDmaPacket *)((unsigned int)pPacket | 0x20000000);
     pPacket->unk0 = 0x10000005;
@@ -259,10 +259,10 @@ int PTextureManager::AddTexture(PTexture *pTex, PArray *pArray) {
     PTexture *pEntry;
 
     if (pTex == 0) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x660, "poTexture");
+        CdsAssert("PTextureManager.cpp", 0x660, "poTexture");
     }
     if (pArray == 0) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x661, "poTextureArray");
+        CdsAssert("PTextureManager.cpp", 0x661, "poTextureArray");
     }
     nCount = pArray->m_nCount;
     i = 0;
@@ -284,7 +284,7 @@ int PTextureManager::AddTexture(PTexture *pTex, PArray *pArray) {
         } while ((int)i < nCount);
     }
     if (pArray->m_nCapacity < (unsigned int)nCount) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x66F, "poTextureArray->GetCount() <= poTextureArray->GetSize()");
+        CdsAssert("PTextureManager.cpp", 0x66F, "poTextureArray->GetCount() <= poTextureArray->GetSize()");
     }
     Add__6PArrayFPv(pArray, pTex);
     return EncodeTextureHandle(0, (PTexture::eTextureType)pTex->m_unkA4, pArray->m_nCount - 1);
@@ -296,9 +296,9 @@ int PTextureManager::AllocDynamicVramForTexture(tagPs2TexDataHeader *pHeader, in
     int nShift5;
     PTextureBuffer *pBuf;
 
-    ((pHeader != 0) ? (void)0 : CdsAssert__FPciPc("PTextureManager.cpp", 0x60C, "pTexInfo"));
-    ((m_aBuf0.m_unk4 == m_aBuf1.m_unk4) ? (void)0 : CdsAssert__FPciPc("PTextureManager.cpp", 0x60D, "mDynamicBuffer1.ImageBuffer.iSize == mDynamicBuffer2.ImageBuffer.iSize"));
-    ((m_aBuf0.m_unk10 == m_aBuf1.m_unk10) ? (void)0 : CdsAssert__FPciPc("PTextureManager.cpp", 0x60E, "mDynamicBuffer1.ClutBuffer.iSize == mDynamicBuffer2.ClutBuffer.iSize"));
+    ((pHeader != 0) ? (void)0 : CdsAssert("PTextureManager.cpp", 0x60C, "pTexInfo"));
+    ((m_aBuf0.m_unk4 == m_aBuf1.m_unk4) ? (void)0 : CdsAssert("PTextureManager.cpp", 0x60D, "mDynamicBuffer1.ImageBuffer.iSize == mDynamicBuffer2.ImageBuffer.iSize"));
+    ((m_aBuf0.m_unk10 == m_aBuf1.m_unk10) ? (void)0 : CdsAssert("PTextureManager.cpp", 0x60E, "mDynamicBuffer1.ClutBuffer.iSize == mDynamicBuffer2.ClutBuffer.iSize"));
 
     bOut = false;
     nTmp = -1;
@@ -436,15 +436,15 @@ int PTextureManager::AllocRenderedTexture(int nHandle, int nSecond, bool &bOut, 
 
     DecodeTextureHandle(nHandle, bDecFlag, eType, nIndex);
     if (nIndex < 0) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x505, "aiIndex >= 0");
+        CdsAssert("PTextureManager.cpp", 0x505, "aiIndex >= 0");
     }
     if (!bDecFlag && eType == 2) {
         pTex = GetTexture(bDecFlag, eType, nIndex);
         if (pTex == 0) {
-            CdsAssert__FPciPc("PTextureManager.cpp", 0x50B, "apoTexture");
+            CdsAssert("PTextureManager.cpp", 0x50B, "apoTexture");
         }
         if (AllocDynamicVramForTexture((tagPs2TexDataHeader *)pTex->m_unk4, nSecond, nVram, nTmp, bOut, bFlag) == 0) {
-            CdsAssert__FPciPc("PTextureManager.cpp", 0x513, "0");
+            CdsAssert("PTextureManager.cpp", 0x513, "0");
         }
         pTex->m_unkA8 = 1;
         PTexture **ppSlot = m_pCurBuf->m_apTex;
@@ -452,7 +452,7 @@ int PTextureManager::AllocRenderedTexture(int nHandle, int nSecond, bool &bOut, 
         *ppSlot = pTex;
         m_pCurBuf->m_unkD8++;
         if (m_pCurBuf->m_unkD8 >= 0x30) {
-            CdsAssert__FPciPc("PTextureManager.cpp", 0x520, "mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH");
+            CdsAssert("PTextureManager.cpp", 0x520, "mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH");
         }
         GsSetTexBaseAddr((tagGsTextureEnvironment *)pTex->m_unk40, nVram);
     }
@@ -677,7 +677,7 @@ int PTextureManager::LoadDynamicTextures(PPakFile *poFile, eTextureGroup eGroup,
     CDS_ASSERT_MSG(0x433, poFile, "pMemFile");
     CDS_ASSERT_MSG(0x434, pArray, "pTextureHandles");
     if (Read__7PCDFileFPvUi((void *)poFile, &aFileHeader, 0x20) != 0x20) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x43A, "0");
+        CdsAssert("PTextureManager.cpp", 0x43A, "0");
         return 0;
     }
     if (aFileHeader.iMagic == 0x13246879) {
@@ -844,20 +844,20 @@ void PTextureManager::PrepareDynamicClutPacket(tagGsClut256 *pClut, tagGsTexture
     int nVram = 0;
     int nTmp = 0;
     if (pClut == 0) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x349, "pClut");
+        CdsAssert("PTextureManager.cpp", 0x349, "pClut");
     }
     if (pTexEnv == 0) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x34A, "pTexEnv");
+        CdsAssert("PTextureManager.cpp", 0x34A, "pTexEnv");
     }
     if (pDisplayList == 0) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x34B, "pDisplayList");
+        CdsAssert("PTextureManager.cpp", 0x34B, "pDisplayList");
     }
     memset(header, 0, 0x2C);
     *(signed char *)(header + 5) = 4;
     *(short *)(header + 0x26) = *(signed char *)(header + 5);
     bFlag = false;
     if (AllocDynamicVramForTexture((tagPs2TexDataHeader *)header, 0, nVram, nTmp, bFlag, false) == 0) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x358, "0");
+        CdsAssert("PTextureManager.cpp", 0x358, "0");
     }
     PrepareImageXferInfo((tagGsImageXferInfo *)pClut, 0x10, 0x10, 0, nTmp / 256);
     GsSetClutBaseAddr(pTexEnv, nTmp);
@@ -1144,11 +1144,11 @@ tagGsTextureEnvironment *PTextureManager::GetTexEnv(int nHandle) {
     }
     DecodeTextureHandle(nHandle, bFlag, eType, nIndex);
     if (nIndex < 0) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x9F, "aiIndex >= 0");
+        CdsAssert("PTextureManager.cpp", 0x9F, "aiIndex >= 0");
     }
     if (bFlag) {
         if (nIndex >= m_unk1D4) {
-            CdsAssert__FPciPc("PTextureManager.cpp", 0xA3, "aiIndex < miNumStaticTextures");
+            CdsAssert("PTextureManager.cpp", 0xA3, "aiIndex < miNumStaticTextures");
         }
         return (tagGsTextureEnvironment *)((char *)m_unk1D0 + nIndex * 0x60);
     }
@@ -1198,7 +1198,7 @@ int PTextureManager::Init(int nTexMemStart, int nStaticSize, int nDynamicSize) {
     m_unk1D8 = 0;
     m_unk0 = sceDmaGetChan(2);
     if (m_unk0 == 0) {
-        CdsAssert__FPciPc("PTextureManager.cpp", 0x7A, "mpDmaGif");
+        CdsAssert("PTextureManager.cpp", 0x7A, "mpDmaGif");
     }
     GsInitTexEnv((tagGsTextureEnvironment *)m_unk1F0, 0, 0, 0, false, (eGsContext)0);
     return 1;

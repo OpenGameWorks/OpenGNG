@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PSlideShow.h"
 #include "PGfxEngine.h"
 #include "PDisplayList.h"
@@ -12,7 +13,6 @@ struct tagGdlGlobal { PDisplayList *m_pdl; char _pad004[0x10]; };
 extern tagGdlGlobal gUnk45B300;
 extern "C" void FastMath_ComputeMatrixLite__FPA4_A4_fPA4_fPA4_fPA4_fPA4_A4_f(void);
 extern "C" void *__nwa__FUi(unsigned int nSize);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, char *pExpr);
 extern "C" int rand(void);
 extern "C" float FastMath_Sin180__Ff(float fAngle);
 extern "C" float FastMath_Cos180__Ff(float fAngle);
@@ -432,7 +432,7 @@ void *PSlideShow::CreateImagePacket(int &nOffset, tagTile *pTile)
     int nQwc = (m_unk14 * m_unk18) * 9 + 1;
     unsigned char *pPacket = (unsigned char *)__nwa__FUi(nQwc * 0x10);
     if (pPacket == 0) {
-        CdsAssert__FPciPc("PSlideShow.cpp", 0xC4, "apPacket");
+        CdsAssert("PSlideShow.cpp", 0xC4, "apPacket");
     }
     *(u_long128 *)pPacket = 0;
     *(u_long128 *)pPacket = (u_long128)((unsigned long long)(long long)(m_unk14 * m_unk18) | 0x8000ULL | (0x900E4000ULL << 32));
@@ -575,12 +575,12 @@ int PSlideShow::Create(int nWidth, int nHeight)
     m_unk20 = nHeight;
     m_unkC = __nwa__FUi(m_unk14 * m_unk18 * 0x30);
     if (m_unkC == 0) {
-        CdsAssert__FPciPc("PSlideShow.cpp", 0x4E, "mpImage1Tiles");
+        CdsAssert("PSlideShow.cpp", 0x4E, "mpImage1Tiles");
     }
     InitTiles((tagTile *)m_unkC);
     m_unk10 = __nwa__FUi(m_unk14 * m_unk18 * 0x30);
     if (m_unk10 == 0) {
-        CdsAssert__FPciPc("PSlideShow.cpp", 0x52, "mpImage2Tiles");
+        CdsAssert("PSlideShow.cpp", 0x52, "mpImage2Tiles");
     }
     InitTiles((tagTile *)m_unk10);
     m_unk24 = CreateImagePacket(m_unk2C, (tagTile *)m_unkC);

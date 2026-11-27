@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "PParticleLiteFire.h"
 #include "PMat4.h"
 
@@ -16,7 +17,6 @@ extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
 extern "C" void Vu0_SinCos(void);
 extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, int nCount, int nSize);
 extern "C" void DmaScratchPadToMainMem__FPvPvsbb(void *pSpad, void *pMain, short nSize, bool bFlagA, bool bFlagB);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pMsg);
 
 // Advances the LCG seed and returns the sampled value scaled to [0, 1).
 static inline float NextRandom(int *pSeed) {
@@ -87,13 +87,13 @@ void PParticleLiteFire::AnimateRotatableParticles(float fDt) {
     }
     pOut = AllocParticles__12PDisplayListFii(gGfxEng + 0x154C80, m_unk04, 3);
     if (pOut == 0) {
-        CdsAssert__FPciPc("PParticleLiteFire.cpp", 0x26C, "apVuParticles");
+        CdsAssert("PParticleLiteFire.cpp", 0x26C, "apVuParticles");
     }
     m_unk08 = pOut;
     if (m_unk04 < 0xABU) {
         pOut = (void *)0x70001000;
         if ((m_unk04 * 0x30) >= 0x2001U) {
-            CdsAssert__FPciPc("PParticleLiteFire.cpp", 0x274, "(sizeof(VuRotatableParticle) * muNumParticles) <= SPAD_TEMP_BUFFER_SIZE");
+            CdsAssert("PParticleLiteFire.cpp", 0x274, "(sizeof(VuRotatableParticle) * muNumParticles) <= SPAD_TEMP_BUFFER_SIZE");
         }
     }
     if (m_unk18 == 0 || m_unk17 != 0) {
@@ -310,13 +310,13 @@ void PParticleLiteFire::Animate(float fDt) {
     spC0[3] = 0.75f * m_unk14C;
     pOut = AllocParticles__12PDisplayListFii(gGfxEng + 0x154C80, m_unk04, 2);
     if (pOut == 0) {
-        CdsAssert__FPciPc("PParticleLiteFire.cpp", 0xD3, "apVuParticles");
+        CdsAssert("PParticleLiteFire.cpp", 0xD3, "apVuParticles");
     }
     m_unk08 = pOut;
     if (m_unk04 < 0x101U) {
         pOut = (void *)0x70001000;
         if ((m_unk04 << 5) >= 0x2001U) {
-            CdsAssert__FPciPc("PParticleLiteFire.cpp", 0xDB, "(sizeof(VuParticle) * muNumParticles) <= SPAD_TEMP_BUFFER_SIZE");
+            CdsAssert("PParticleLiteFire.cpp", 0xDB, "(sizeof(VuParticle) * muNumParticles) <= SPAD_TEMP_BUFFER_SIZE");
         }
     }
     if (m_unk18 == 0 || m_unk17 != 0) {

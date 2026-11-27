@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "PParticleGas.h"
 
 // TODO(header): foreign declarations
@@ -19,7 +20,6 @@ union tagLitF4 {
 };
 extern unsigned char __vt__12PParticleGas[];
 extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, int nCount, int nSize);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void DmaScratchPadToMainMem__FPvPvsbb(void *pDst, void *pSrc, short nSize, bool bA, bool bB);
 extern "C" void sceVu0MulVector(void *pDst, void *pA, void *pB);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
@@ -139,12 +139,12 @@ void PParticleGas::AnimateRotatableParticles(float fTime) {
     }
 
     pBase = (VuRotatableParticle *)AllocParticles__12PDisplayListFii(gGfxEng + 0x154C80, m_unk04, 3);
-    ((pBase != 0) ? (void)0 : CdsAssert__FPciPc("PParticleGas.cpp", 0x19F, "apVuParticles"));
+    ((pBase != 0) ? (void)0 : CdsAssert("PParticleGas.cpp", 0x19F, "apVuParticles"));
     m_unk08 = pBase;
     nCount = m_unk04;
     if (nCount < 0xAB) {
         pBase = (VuRotatableParticle *)0x70001000;
-        ((nCount * 0x30 < 0x2001) ? (void)0 : CdsAssert__FPciPc("PParticleGas.cpp", 0x1AA, "(sizeof(VuRotatableParticle) * muNumParticles) <= SPAD_TEMP_BUFFER_SIZE"));
+        ((nCount * 0x30 < 0x2001) ? (void)0 : CdsAssert("PParticleGas.cpp", 0x1AA, "(sizeof(VuRotatableParticle) * muNumParticles) <= SPAD_TEMP_BUFFER_SIZE"));
     }
 
     sceVu0SubVector(vMin, &m_unkE0, m_unkF0);
@@ -405,12 +405,12 @@ void PParticleGas::Animate(float fTime) {
     }
 
     pOut = AllocParticles__12PDisplayListFii((char *)gGfxEng + 0x154C80, m_unk04, 2);
-    ((pOut) ? (void)0 : CdsAssert__FPciPc("PParticleGas.cpp", 0xAA, "apVuParticles"));
+    ((pOut) ? (void)0 : CdsAssert("PParticleGas.cpp", 0xAA, "apVuParticles"));
     m_unk08 = pOut;
     nCount = m_unk04;
     if (nCount < 0x101) {
         pOut = (void *)0x70001000;
-        ((((nCount << 5) < 0x2001)) ? (void)0 : CdsAssert__FPciPc("PParticleGas.cpp", 0xB5, "(sizeof(VuParticle) * muNumParticles) <= SPAD_TEMP_BUFFER_SIZE"));
+        ((((nCount << 5) < 0x2001)) ? (void)0 : CdsAssert("PParticleGas.cpp", 0xB5, "(sizeof(VuParticle) * muNumParticles) <= SPAD_TEMP_BUFFER_SIZE"));
     }
 
     sceVu0SubVector(vMin, &m_unkE0, &m_unkF0[0]);

@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "CEifFile.h"
+#include "Debug.h"
 #include "types.h"
 
 // TODO(header): foreign declarations
@@ -7,7 +8,6 @@ class CEifInstanceGroup;
 class PPakFile;
 extern PCDFile gPFile;
 extern char gEng[105360];
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void __dla__FPv(void *pBlock);
 extern "C" void __dt__17CEifInstanceGroupFv(void *pThis, short nDestroyFlag);
 extern "C" void *__ct__17CEifInstanceGroupFv(void *pThis);
@@ -62,13 +62,13 @@ int CEifFile::Load(const char *pszFilename)
     } hdr;
 
     if (m_unk10C != 0) {
-        CdsAssert__FPciPc("CEifFile.cpp", 0xED, "meMode == EIF_INVALID");
+        CdsAssert("CEifFile.cpp", 0xED, "meMode == EIF_INVALID");
     }
     if (pszFilename == 0) {
-        CdsAssert__FPciPc("CEifFile.cpp", 0xEE, "pszFilename");
+        CdsAssert("CEifFile.cpp", 0xEE, "pszFilename");
     }
     if (m_unk0 != 0) {
-        CdsAssert__FPciPc("CEifFile.cpp", 0xEF, "mpInstanceGroups == NULL");
+        CdsAssert("CEifFile.cpp", 0xEF, "mpInstanceGroups == NULL");
     }
     if (gPFile.Open(pszFilename, OPEN_READ) == 0) {
         return 0;
@@ -96,7 +96,7 @@ int CEifFile::Load(const char *pszFilename)
     }
     m_unk0 = (CEifInstanceGroup **)__nwa__FUi(m_unk4 * 4);
     if (m_unk0 == 0) {
-        CdsAssert__FPciPc("CEifFile.cpp", 0x140, "mpInstanceGroups");
+        CdsAssert("CEifFile.cpp", 0x140, "mpInstanceGroups");
     }
     memset(m_unk0, 0, m_unk4 * 4);
     for (int i = 0; i < m_unk4; i++) {
@@ -105,7 +105,7 @@ int CEifFile::Load(const char *pszFilename)
             pGroup = (CEifInstanceGroup *)__ct__17CEifInstanceGroupFv(pGroup);
         }
         if (pGroup == 0) {
-            CdsAssert__FPciPc("CEifFile.cpp", 0x147, "apoData");
+            CdsAssert("CEifFile.cpp", 0x147, "apoData");
         }
         if (Read__17CEifInstanceGroupFP8PPakFileUi(pGroup, (PPakFile *)m_unk110, hdr.nGroupSize) == 0) {
             m_unk110->Close();
@@ -118,7 +118,7 @@ int CEifFile::Load(const char *pszFilename)
     if (hdr.nWaypointSize != 0) {
         m_unk32C = (WaypointManager *)(gEng + 0x13810);
         if (m_unk32C == 0) {
-            CdsAssert__FPciPc("CEifFile.cpp", 0x163, "m_pWpMgr");
+            CdsAssert("CEifFile.cpp", 0x163, "m_pWpMgr");
         }
         if (m_unk32C->LoadWaypoints((PPakFile *)m_unk110, hdr.nWaypointSize) == 0) {
             m_unk110->Close();
@@ -136,7 +136,7 @@ int CEifFile::Load(const char *pszFilename)
 CEifInstanceGroup *CEifFile::GetInstanceGroup(int nIndex)
 {
     if (nIndex >= m_unk4) {
-        CdsAssert__FPciPc("CEifFile.cpp", 0xE2, "iIndex < miNumInstanceGroups");
+        CdsAssert("CEifFile.cpp", 0xE2, "iIndex < miNumInstanceGroups");
     }
     return m_unk0[nIndex];
 }

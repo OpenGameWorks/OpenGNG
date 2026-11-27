@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Innocent.h"
 
 // TODO(header): foreign declarations
@@ -17,12 +18,6 @@ extern "C" EntityBaseClass *InstanceIsValid__15EntityBaseClassFUi(EntityBaseClas
 extern "C" void ScaleSet__6PMNodeFffff(PMNode *pThis, float a, float b, float c, float d);
 extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, bool bA, bool bB);
 extern "C" int ReadApparitionData__15EntityBaseClassFiUi(void *pThis, int nMode, unsigned int nId);
-class Debug {
-public:
-    void DebugDisp(char *pText);
-    // Debug size is unknown; the placeholder keeps gDebug out of small data (threshold 8 bytes).
-    char _pad000[0x10];
-};
 extern Debug gDebug;
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 // Engine size is unknown; the placeholder keeps gEng out of small data (threshold 8 bytes).
@@ -48,8 +43,7 @@ extern "C" void *GetPtrToApparition__13EntityManagerFUi(EntityManager *pThis, un
 extern "C" void Add2DependencyList__13EntityManagerFUiUi(EntityManager *pThis, unsigned int nFrom, unsigned int nTo);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Innocent.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("Innocent.cpp", line, #cond))
 extern "C" void *memcpy(void *, const void *, unsigned int);
 extern "C" int printf(const char *, ...);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
@@ -271,7 +265,7 @@ void Innocent::SetEditableVars(char *pText) {
     ((int *)m_unk294)[1] = m_unk1E4;
     ((int *)m_unk294)[2] = m_unk1E8;
     if ((unsigned int)m_unk1B0 >= 10) {
-        CdsAssert__FPciPc("Innocent.cpp", 0x687, "mEVars.m_iInnocentType < MAX_INNOCENT_TYPES");
+        CdsAssert("Innocent.cpp", 0x687, "mEVars.m_iInnocentType < MAX_INNOCENT_TYPES");
     }
     if (*(int *)(InnocentSeqData + m_unk1B0 * 0x4C) == 0) {
         printf("ERROR - Bad Innocent type found - shutting down\n", m_unk1B0);
@@ -494,7 +488,7 @@ void Innocent::Execute() {
             }
             m_unk38 = (Physics *)pNew;
             if (m_unk38 == 0) {
-                CdsAssert__FPciPc("Innocent.cpp", 0x2C9, "mpPhysics");
+                CdsAssert("Innocent.cpp", 0x2C9, "mpPhysics");
             }
         }
         SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12, 0);
@@ -505,7 +499,7 @@ void Innocent::Execute() {
             }
             m_unkD4 = (Shadow *)pNew;
             if (m_unkD4 == 0) {
-                CdsAssert__FPciPc("Innocent.cpp", 0x2CF, "mpShadow");
+                CdsAssert("Innocent.cpp", 0x2CF, "mpShadow");
             }
         }
         if (m_unkD4 != 0) {
@@ -531,7 +525,7 @@ void Innocent::Execute() {
             m_unk290 = GetWaypointGroupInfo__15WaypointManagerFUi((char *)mpEntMgr__15EntityBaseClass + 0x30, m_unk1BC);
             if (m_unk290 == 0) {
                 sprintf(sMsg, "Innocent refers to bad waypoint group ( group id = %d )", m_unk1BC);
-                CdsAssert__FPciPc("Innocent.cpp", 0x2ED, sMsg);
+                CdsAssert("Innocent.cpp", 0x2ED, sMsg);
             }
         }
         m_unk269 = 0;
@@ -584,7 +578,7 @@ void Innocent::Execute() {
                 PlaySequence__15EntityBaseClassFPUi(this, &pSeq[12]);
                 break;
             default:
-                CdsAssert__FPciPc("Innocent.cpp", 0x32C, "Invalid Innocent AI mode");
+                CdsAssert("Innocent.cpp", 0x32C, "Invalid Innocent AI mode");
                 break;
             }
         }
@@ -633,7 +627,7 @@ int Innocent::BuildDialogTable() {
         pSlot++;
     }
     if (pTbl > &InnocentDialogID[256]) {
-        CdsAssert__FPciPc("Innocent.cpp", 0x53, "pTbl <= &InnocentDialogID[MAX_DIALOG]");
+        CdsAssert("Innocent.cpp", 0x53, "pTbl <= &InnocentDialogID[MAX_DIALOG]");
     }
     return nID;
 }

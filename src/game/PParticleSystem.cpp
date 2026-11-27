@@ -1,4 +1,5 @@
 #include "PParticleSystem.h"
+#include "Debug.h"
 #include "PGfxEngine.h"
 #include "types.h"
 
@@ -20,7 +21,6 @@ extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" void sceVu0UnitMatrix(void *pMat);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *__nwa__FUi(unsigned int nSize);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
 
 // FUNCTION: 0x001B4A80 Stop__15PParticleSystemFv
 void PParticleSystem::Stop() {
@@ -216,10 +216,10 @@ void PParticleSystem::Render() {
 // FUNCTION: 0x001B50F0 Create__15PParticleSystemFUib
 int PParticleSystem::Create(unsigned int nNum, bool bAlloc) {
     if (nNum == 0) {
-        CdsAssert__FPciPc("PParticleSystem.cpp", 0x45, "uNumParticles");
+        CdsAssert("PParticleSystem.cpp", 0x45, "uNumParticles");
     }
     if (m_unk08 != 0) {
-        CdsAssert__FPciPc("PParticleSystem.cpp", 0x46, "mpVuParticles == NULL");
+        CdsAssert("PParticleSystem.cpp", 0x46, "mpVuParticles == NULL");
     }
     if (bAlloc) {
         m_unk08 = __nwa__FUi(nNum << 5);

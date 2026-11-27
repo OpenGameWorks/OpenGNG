@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "RainTrigger.h"
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
@@ -7,7 +8,6 @@ extern unsigned char __vt__11RainTrigger[];
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
 extern "C" void __dl__FPv(void *pMem);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*pA)[4], float (*pB)[4]);
 extern "C" void SetRainDensity__16PParticleManagerFfb(void *pThis, float fDensity, bool bFlag);
@@ -89,7 +89,7 @@ void RainTrigger::Execute()
     case 1: {
         mgr = gGfxEng + 0x154F00;
         if (mgr == 0) {
-            CdsAssert__FPciPc("RainTrigger.cpp", 0x2D, "apParticleMgr");
+            CdsAssert("RainTrigger.cpp", 0x2D, "apParticleMgr");
         }
         SetRainDensity__16PParticleManagerFfb(mgr, m_unk1B0, m_unk1B4 != 0);
         SetLightningDensity__16PParticleManagerFf(mgr, m_unk1B8);

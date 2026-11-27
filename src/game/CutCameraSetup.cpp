@@ -1,15 +1,15 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "CutCameraSetup.h"
 #include "Camera.h"
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern unsigned char gEng[0x1A000];
 class PVec3 { public: float m_v[4]; };
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("CutCameraSetup.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("CutCameraSetup.cpp", line, #cond))
 
 // FUNCTION: 0x001DC2A0 __dt__14CutCameraSetupFv
 CutCameraSetup::~CutCameraSetup() {}
@@ -67,7 +67,7 @@ void CutCameraSetup::Execute() {
             break;
         }
         default:
-            CdsAssert__FPciPc("CutCameraSetup.cpp", 0x8F, "Invalid Cut Camera type from layout tool");
+            CdsAssert("CutCameraSetup.cpp", 0x8F, "Invalid Cut Camera type from layout tool");
             break;
         }
         SetState(-2);

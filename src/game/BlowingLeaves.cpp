@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "BlowingLeaves.h"
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
@@ -10,7 +11,6 @@ extern "C" void __dl__FPv(void *);
 extern unsigned char __vt__13BlowingLeaves[];
 extern char gGfxEng[1504384];
 extern "C" void Destroy__16PParticleManagerFUi(void *pThis, unsigned int hSystem);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" unsigned int CreateBlowingLeaves__16PParticleManagerFPfPfPfifb(void *pThis, float *pA, float *pB, float *pC, int nA, float fB, bool bC);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 
@@ -39,7 +39,7 @@ void BlowingLeaves::Execute() {
     case -1: {
         void *mgr = (char *)gGfxEng + 0x154F00;
         if (mgr == 0) {
-            CdsAssert__FPciPc("BlowingLeaves.cpp", 0x25, "apParticleMgr");
+            CdsAssert("BlowingLeaves.cpp", 0x25, "apParticleMgr");
         }
         float vecA[4] = {0.0f, 5.0f, 0.0f, 1.0f};
         float vecB[3];
@@ -67,7 +67,7 @@ void BlowingLeaves::Execute() {
     case -2: {
         void *mgr = (char *)gGfxEng + 0x154F00;
         if (mgr == 0) {
-            CdsAssert__FPciPc("BlowingLeaves.cpp", 0x42, "apParticleMgr");
+            CdsAssert("BlowingLeaves.cpp", 0x42, "apParticleMgr");
         }
         Destroy__16PParticleManagerFUi(mgr, m_unk1F0);
         m_unk1F0 = 0;
@@ -82,7 +82,7 @@ BlowingLeaves::~BlowingLeaves() {
     if (m_unk1F0 != 0) {
         void *mgr = gGfxEng + 0x154F00;
         if (mgr == 0) {
-            CdsAssert__FPciPc("BlowingLeaves.cpp", 0x14, "apParticleMgr");
+            CdsAssert("BlowingLeaves.cpp", 0x14, "apParticleMgr");
         }
         Destroy__16PParticleManagerFUi(mgr, m_unk1F0);
         m_unk1F0 = 0;

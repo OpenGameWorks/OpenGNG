@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "PFireTexture.h"
+#include "Debug.h"
 #include "PArray.h"
 #include "PParticleManager.h"
 #include "PParticleTexture.h"
@@ -10,7 +11,6 @@ extern "C" void Reset__16PParticleTextureFv(void *pThis);
 extern "C" void Update__16PParticleTextureFf(void *pThis, float fStep);
 extern "C" void __ct__16PParticleTextureFv(void *pThis);
 extern "C" void __dt__16PParticleTextureFv(void *pThis, short nFlags);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0UnitMatrix(float (*pMatrix)[4]);
 
 // Leading virtuals of PParticleSystem's vtable (__vt__15PParticleSystem). Slot 0x20
@@ -55,10 +55,10 @@ int PFireTexture::Init(struct tagProceduralTextureData *pData, PArray *pArray)
     int nSlot;
 
     if (pData == 0) {
-        CdsAssert__FPciPc("PFireTexture.cpp", 0x2B, "pData");
+        CdsAssert("PFireTexture.cpp", 0x2B, "pData");
     }
     if (pArray == 0) {
-        CdsAssert__FPciPc("PFireTexture.cpp", 0x2C, "poTextureHandles");
+        CdsAssert("PFireTexture.cpp", 0x2C, "poTextureHandles");
     }
     nSlot = *(int *)((char *)pData + 0x24);
     nResult = 1;
@@ -80,7 +80,7 @@ int PFireTexture::Init(int nIndex)
         PParticleManager *pMgr = (PParticleManager *)(gGfxEng + 0x154F00);
         m_unk5F0 = (PFireTextureHandle *)pMgr->Create(0x83000144U, 0.0f, -4.0f, 0.0f, 0, false);
         if (m_unk5F0 == 0) {
-            CdsAssert__FPciPc("PFireTexture.cpp", 0x1F, "mpFireFx");
+            CdsAssert("PFireTexture.cpp", 0x1F, "mpFireFx");
         }
         ((PParticleSystemVirtuals *)m_unk5F0)->Start();
         ((PParticleTexture *)m_unk10)->Init(m_unk0, (PParticleSystem *)m_unk5F0, 0, false);

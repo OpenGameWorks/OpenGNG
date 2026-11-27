@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PParticleEnergyStream.h"
 
 // TODO(header): foreign declarations
@@ -15,7 +16,6 @@ extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" float sqrtf(float x);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern unsigned char __vt__21PParticleEnergyStream[];
 // TODO(header): gGfxEng is the PGfxEngine global; only m_unk154C80 (display list pointer) is used here.
 struct PGfxEngineRef {
@@ -84,7 +84,7 @@ void PParticleEnergyStream::SetPosition(float *pFrom, float *pTo) {
     m_unk128 = sqrtf(sceVu0InnerProduct(m_unk110, m_unk110));
     sceVu0Normalize(m_unk110, m_unk110);
     if (m_unk08 == 0) {
-        CdsAssert__FPciPc("PParticleEnergyStream.cpp", 0x12A, "mpVuParticles");
+        CdsAssert("PParticleEnergyStream.cpp", 0x12A, "mpVuParticles");
     }
     sceVu0CopyVector((char *)m_unk08 + ((m_unk04 - 1) << 5), m_unk180);
     sceVu0CopyVector(m_unk08, m_unkE0);

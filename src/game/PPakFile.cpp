@@ -1,12 +1,12 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PPakFile.h"
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PPakFile.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PPakFile.cpp", line, #cond))
 
 // FUNCTION: 0x001D5ED0 GetFileType__8PPakFileFv
 int PPakFile::GetFileType() {

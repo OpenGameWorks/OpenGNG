@@ -1,11 +1,11 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PList.h"
 
 // TODO(header): foreign declarations
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void *__nw__FUi(unsigned int nSize);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
 // DRAFT: 0x00131990 RemoveAll__5PListFv
 // note: 7 words differ; original keeps head in s0 and loads next into s0 in the jal delay slot, ours keeps node in a0. Tried pDead temp (14), while loop (14), pNext outside if (7), pNext in block (7).
@@ -47,7 +47,7 @@ int PList::Remove(void *pItem) {
 void PList::RemoveAt(void *pNode) {
     PListNode *node = (PListNode *)pNode;
     if (node == 0) {
-        CdsAssert__FPciPc("PList.cpp", 0x8C, "pNode");
+        CdsAssert("PList.cpp", 0x8C, "pNode");
     }
     PListNode *prev = node->m_unk8;
     PListNode *next = node->m_unk4;
@@ -64,14 +64,14 @@ void PList::RemoveAt(void *pNode) {
     __dl__FPv(node);
     m_unk0 -= 1;
     if (m_unk0 < 0) {
-        CdsAssert__FPciPc("PList.cpp", 0x9E, "(int)muNumNodes >= 0");
+        CdsAssert("PList.cpp", 0x9E, "(int)muNumNodes >= 0");
     }
 }
 
 // FUNCTION: 0x00131B20 RemoveCurrent__5PListFv
 void PList::RemoveCurrent() {
     if (m_unkC == 0) {
-        CdsAssert__FPciPc("PList.cpp", 0x76, "mpCur");
+        CdsAssert("PList.cpp", 0x76, "mpCur");
     }
     PListNode *prev = m_unkC->m_unk8;
     PListNode *next = m_unkC->m_unk4;
@@ -93,14 +93,14 @@ void PList::RemoveCurrent() {
 // FUNCTION: 0x00131BB0 InsertBefore__5PListFPv
 void PList::InsertBefore(void *pItem) {
     if (m_unk4 == 0) {
-        CdsAssert__FPciPc("PList.cpp", 0x5D, "mpList");
+        CdsAssert("PList.cpp", 0x5D, "mpList");
     }
     if (m_unkC == 0) {
-        CdsAssert__FPciPc("PList.cpp", 0x5E, "mpCur");
+        CdsAssert("PList.cpp", 0x5E, "mpCur");
     }
     PListNode *pNode = (PListNode *)__nw__FUi(0xC);
     if (pNode == 0) {
-        CdsAssert__FPciPc("PList.cpp", 0x61, "pNode");
+        CdsAssert("PList.cpp", 0x61, "pNode");
     }
     pNode->m_unk0 = pItem;
     pNode->m_unk4 = m_unkC;
@@ -119,7 +119,7 @@ void PList::InsertBefore(void *pItem) {
 int PList::Add(void *pItem) {
     PListNode *pNode = (PListNode *)__nw__FUi(0xC);
     if (pNode == 0) {
-        CdsAssert__FPciPc("PList.cpp", 0x33, "apNode");
+        CdsAssert("PList.cpp", 0x33, "apNode");
     }
     if (pNode == 0) {
         return 0;
@@ -132,7 +132,7 @@ int PList::Add(void *pItem) {
         m_unk8 = m_unk4;
     } else {
         if (m_unk8 == 0) {
-            CdsAssert__FPciPc("PList.cpp", 0x48, "mpTail");
+            CdsAssert("PList.cpp", 0x48, "mpTail");
         }
         pNode->m_unk8 = m_unk8;
         m_unk8->m_unk4 = pNode;

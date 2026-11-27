@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PScreenBlurFx.h"
 
 // GIF PACKED-mode ST and XYZ2 entries (eestruct.h sceGifPackSt / sceGifPackXyz); a strip step writes a top and a bottom vertex.
@@ -12,7 +13,6 @@ extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void __dl__FPv(void *);
 extern int SCREEN_WIDTH;
 extern int SCREEN_HEIGHT;
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" float FastMath_IntCos180__Fi(int);
 extern "C" float FastMath_IntSin180__Fi(int);
 extern char gGfxEng[1504384];
@@ -88,7 +88,7 @@ void PScreenBlurFx::WobbleSTGrids(tagGsScreenBlurPacket *pPacket, float fAngle) 
 // note: 42 words differ; packed ST/XYZ form matches the instruction sequence, but loop counters and hoisted Y values take swapped temporaries (original i/offset in v1/a0, ours t3/t4). Declaration-order permutations all 42.
 void PScreenBlurFx::InitBlurStrip(tagBlurStrip *pStrip, char cA, short sA, short sB, short sC, short sD, float fA, bool bFlag, float fB, float fC) {
     if (pStrip == 0) {
-        CdsAssert__FPciPc("PScreenBlurFx.cpp", 0xF7, "pStrip");
+        CdsAssert("PScreenBlurFx.cpp", 0xF7, "pStrip");
     }
     int nX = sA << 4;
     int nStep = sC << 4;

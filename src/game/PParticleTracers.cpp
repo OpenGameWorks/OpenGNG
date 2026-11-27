@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PParticleTracers.h"
 #include "PMat4.h"
 
@@ -16,8 +17,7 @@ extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
 extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PParticleTracers.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PParticleTracers.cpp", line, #cond))
 extern "C" void sceVu0OuterProduct(float *pDst, float *pA, float *pB);
 extern "C" float FastMath_Fabs__Ff(float f);
 extern "C" float sqrtf(float x);
@@ -80,7 +80,7 @@ void PParticleTracers::InitTracers() {
     for (int i = 0; i < m_unk120; i++) {
         float *pT = (float *)((char *)m_unk174 + (i << 5));
         if (pT == 0) {
-            CdsAssert__FPciPc("PParticleTracers.cpp", 0x135, "apTracer");
+            CdsAssert("PParticleTracers.cpp", 0x135, "apTracer");
         }
         *(int *)((char *)this + 0xD0) = *(int *)((char *)this + 0xD0) * 0x343FD + 0x269EC3;
         pT[0] = (float)((*(int *)((char *)this + 0xD0) >> 16) & 0x7FFF);

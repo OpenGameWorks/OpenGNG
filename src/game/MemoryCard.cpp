@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "MemoryCard.h"
 
 // TODO(header): foreign declarations
@@ -12,7 +13,6 @@ extern "C" int DisplayString__11FontManagerFiiib(void *pThis, int nX, int nY, in
 extern "C" FontNode *DisplayString__11FontManagerFPcffi9FontColor9FontAlign(void *pThis, char *pStr, float fX, float fY, int nZ, int nColor, int nAlign);
 extern char gEng[105360];
 extern "C" void *GetResource__16PResourceManagerFUib(void *pThis, unsigned int nId, bool bFlag);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void AddMeshLayer__9InterfaceFP6PMNode(void *pThis, void *pNode);
 extern "C" void *Find__6PMNodeFUi(void *pThis, unsigned int nId);
 extern "C" void ScaleSet__6PMNodeFffff(void *pThis, float fX, float fY, float fZ, float fW);
@@ -68,7 +68,7 @@ struct SlotPosition {
 };
 extern SlotPosition SlotPos[6];
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("MemoryCard.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("MemoryCard.cpp", line, #cond))
 
 // Virtual interface at 0x3F6C; slot 0x18 is virtual index 4, slot 0x08 is the destructor.
 class MemoryCardView {
@@ -730,7 +730,7 @@ block_90:
     goto loop_93;
 block_92:
     printf("Unknown MC command %d\n", sp9C, 1, -1);
-    CdsAssert__FPciPc("MemoryCard.cpp", 0x302, "0");
+    CdsAssert("MemoryCard.cpp", 0x302, "0");
 loop_93:
     temp_v0_12 = this->m_unk1E0;
     temp_v1_9 = (char *)this->m_unk1DC + temp_v0_12;
@@ -844,7 +844,7 @@ block_126:
     if (sp50 == 0) {
         goto block_128;
     }
-    CdsAssert__FPciPc("MemoryCard.cpp", 0x32A, "!name");
+    CdsAssert("MemoryCard.cpp", 0x32A, "!name");
 block_128:
     temp_v1_10 = this->m_unk1E0;
     var_s3 = ((unsigned char *)this->m_unk1DC + temp_v1_10)[1];
@@ -873,7 +873,7 @@ block_136:
     if (this->m_unk1CC >= 0) {
         goto block_138;
     }
-    CdsAssert__FPciPc("MemoryCard.cpp", 0x33E, "miFd >= 0");
+    CdsAssert("MemoryCard.cpp", 0x33E, "miFd >= 0");
 block_138:
     if (sceMcClose(this->m_unk1CC) == 0) {
         goto block_248;
@@ -884,7 +884,7 @@ block_140:
     if (this->m_unk1CC >= 0) {
         goto block_142;
     }
-    CdsAssert__FPciPc("MemoryCard.cpp", 0x344, "miFd >= 0");
+    CdsAssert("MemoryCard.cpp", 0x344, "miFd >= 0");
 block_142:
     this->m_unk1E8 = 0x1C48;
     memset((char *)this + 0x2320, 0, 0x1C48);
@@ -897,7 +897,7 @@ block_144:
     if (this->m_unk1CC >= 0) {
         goto block_146;
     }
-    CdsAssert__FPciPc("MemoryCard.cpp", 0x34D, "miFd >= 0");
+    CdsAssert("MemoryCard.cpp", 0x34D, "miFd >= 0");
 block_146:
     temp_v0_13 = ((signed char *)this->m_unk1DC)[1 + this->m_unk1E0];
     var_s2_2 = 0;
@@ -928,7 +928,7 @@ block_146:
         goto block_154;
     }
 block_153:
-    CdsAssert__FPciPc("MemoryCard.cpp", 0x368, "0");
+    CdsAssert("MemoryCard.cpp", 0x368, "0");
 block_154:
     if (sceMcWrite(this->m_unk1CC, var_s2_2, this->m_unk1E8) == 0) {
         goto block_248;
@@ -1244,11 +1244,11 @@ block_245:
     goto block_176;
 block_246:
     printf("Unknown MC command %d\n", (int)temp_a1);
-    CdsAssert__FPciPc("MemoryCard.cpp", 0x47B, "0");
+    CdsAssert("MemoryCard.cpp", 0x47B, "0");
     goto block_248;
 block_247:
     printf("sceMcSync() error %d\n", temp_v0_3, 1, -1);
-    CdsAssert__FPciPc("MemoryCard.cpp", 0x483, "0");
+    CdsAssert("MemoryCard.cpp", 0x483, "0");
 block_248:
     temp_v1_12 = this->m_unk1EC;
     if (temp_v1_12 == -0x14) {
@@ -1557,7 +1557,7 @@ void MemoryCard::InitScreen() {
     char *pEng = gEng + 0x188A4;
     m_unk3F6C = (MemoryCardView *)GetResource__16PResourceManagerFUib(pEng, 0x810003E5, 0);
     if (m_unk3F6C == 0) {
-        CdsAssert__FPciPc("MemoryCard.cpp", 0x15A, "mpSaveNode");
+        CdsAssert("MemoryCard.cpp", 0x15A, "mpSaveNode");
     }
     void *pNode = GetResource__16PResourceManagerFUib(pEng, 0x820006AE, 0);
     ((PMNodeView *)m_unk3F6C)->Slot20(pNode);

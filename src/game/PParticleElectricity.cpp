@@ -1,10 +1,10 @@
 #include "types.h"
+#include "Debug.h"
 #include "PParticleElectricity.h"
 
 // TODO(header): foreign declarations
 extern "C" void *__dt__15PParticleSystemFv(void *, short);
 extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, int nCount, int nSize);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void __dla__FPv(void *);
 extern "C" void __dl__FPv(void *);
 extern unsigned char __vt__20PParticleElectricity[];
@@ -34,7 +34,7 @@ extern "C" void EndParticles__10PGfxEngineFv(void *pThis);
 void PParticleElectricity::CreateBranch(tagElectricityBranch *pBranch) {
     void *pBuf = AllocParticles__12PDisplayListFii(*(void **)&gGfxEng[0x154C80], pBranch->m_unk34, 2);
     if (pBuf == 0) {
-        CdsAssert__FPciPc("PParticleElectricity.cpp", 0xEB, "apVuParticles");
+        CdsAssert("PParticleElectricity.cpp", 0xEB, "apVuParticles");
     }
     pBranch->m_unk00 = pBuf;
     float fSeg = pBranch->m_unk30 / (float)pBranch->m_unk34;
@@ -99,7 +99,7 @@ void PParticleElectricity::CreateBranch(tagElectricityBranch *pBranch) {
 void PParticleElectricity::SetupGlowParticles(tagElectricityBranch *pBranch) {
     void *pBuf = AllocParticles__12PDisplayListFii(*(void **)&gGfxEng[0x154C80], m_unk04, 2);
     if (pBuf == 0) {
-        CdsAssert__FPciPc("PParticleElectricity.cpp", 0xCA, "apVuParticles");
+        CdsAssert("PParticleElectricity.cpp", 0xCA, "apVuParticles");
     }
     pBranch->m_unk04 = pBuf;
     for (unsigned int i = 0, off = 0; i < pBranch->m_unk34; i++, off += 0x20) {
@@ -169,7 +169,7 @@ int PParticleElectricity::Create(tagParticleElectricityParams *pParams, float fA
     m_unkCC = m_unk11C / 128.0f;
     m_unkE0 = __nwa__FUi(m_unk130 << 6);
     if (m_unkE0 == 0) {
-        CdsAssert__FPciPc("PParticleElectricity.cpp", 0x2F, "mpBranches");
+        CdsAssert("PParticleElectricity.cpp", 0x2F, "mpBranches");
     }
     memset(m_unkE0, 0, m_unk130 << 6);
     m_unk18C = 2;

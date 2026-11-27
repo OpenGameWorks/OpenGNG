@@ -1,5 +1,6 @@
 // FLAGS: -sdatathreshold 0
 #include "BGCollision.h"
+#include "Debug.h"
 
 // TODO(header): foreign declarations
 class PVec3 {
@@ -28,7 +29,6 @@ struct STCollisionNode;
 static float SphereIntersect(STCollisionPoly *pPoly, float (*pSph)[4], float fRadius);
 static int FindGroundPos(STCollisionPoly *pPoly, float (*pOut)[4]);
 static int BoxLineCheck(float (*pBox)[2][4]);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0ApplyMatrix(float *, float *, float *);
 extern "C" void sceVu0InversMatrix(float *, float *);
 void InversMatrix(float (*)[4][4], float (*)[4][4]);
@@ -42,7 +42,7 @@ extern "C" void *__nwa__FUi(unsigned int);
 extern "C" void FlushCache(int);
 
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("BGCollision.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("BGCollision.cpp", line, #cond))
 
 // FUNCTION: 0x0016C8A0 CheckCeiling__11BGCollisionFPA4_f
 int BGCollision::CheckCeiling(float (*pVec)[4])
@@ -52,7 +52,7 @@ int BGCollision::CheckCeiling(float (*pVec)[4])
     return CheckIntersectAnim(pVec, &vUp, 0, 0x40) != 0;
 }
 
-#define CDS_ASSERT_TXT(line, cond, txt) ((cond) ? (void)0 : CdsAssert__FPciPc("BGCollision.cpp", line, txt))
+#define CDS_ASSERT_TXT(line, cond, txt) ((cond) ? (void)0 : CdsAssert("BGCollision.cpp", line, txt))
 #define BGS_H(p, off) (*(unsigned short *)((char *)(p) + (off)))
 #define BGS_B(p, off) (*(unsigned char *)((char *)(p) + (off)))
 #define BGS_F(p, off) (*(float *)((char *)(p) + (off)))
@@ -1062,7 +1062,7 @@ STCollisionPoly *BGCollision::FindIntersectAnim(float (*pA)[4], float (*pB)[4], 
             unsigned int nType = (pObj != 0) ? pObj->m_unk4 : 0;
             if (nType == 0x207) {
                 if (pNode->m_unk104 == 0) {
-                    CdsAssert__FPciPc("BGCollision.cpp", 0x2DB, "pNode->GetCollisionMap()");
+                    CdsAssert("BGCollision.cpp", 0x2DB, "pNode->GetCollisionMap()");
                 }
                 if (!(nFlags & 0x40000000) || pNode->m_unk100 == 0) {
                     if (pNode->m_unk3E & 4) {
@@ -1308,7 +1308,7 @@ int BGCollision::CheckIntersectAnim(float (*pA)[4], float (*pB)[4], float (*pC)[
     outer_top:
     {
         if (pNode->m_unk104 == 0) {
-            CdsAssert__FPciPc("BGCollision.cpp", 0x1C4, "pNode->GetCollisionMap()");
+            CdsAssert("BGCollision.cpp", 0x1C4, "pNode->GetCollisionMap()");
         }
         float *pM = (float *)pNode->m_unk40;
         if (pNode->m_unk3E & 4) {

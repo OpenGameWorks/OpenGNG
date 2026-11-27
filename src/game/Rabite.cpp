@@ -1,12 +1,12 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Rabite.h"
 
 // TODO(header): foreign declarations
 // Only the calls made by Rabite functions are declared; EntityBaseClass is partial here.
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" int RandomIntRange__7MathAPIFii(int nMin, int nMax);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 class EntityBaseClass { public: char _pad000[0x8]; int m_unk8; char _pad00C[0x229 - 0x0C]; signed char m_unk229; };
 extern "C" void PlaySequence__15EntityBaseClassFPUi(void *pThis, unsigned int *pSequence);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
@@ -72,7 +72,7 @@ extern "C" void SpawnBonus__15EntityBaseClassFPfii(void *pThis, float *pPos, int
 extern "C" void WriteApparitionData__15EntityBaseClassFicUi(void *pThis, int nA, char nB, unsigned int nC);
 extern unsigned int Rabite_Mean_Death[17];
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Rabite.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("Rabite.cpp", line, #cond))
 
 // FUNCTION: 0x001FB910 GetHealth__6RabiteFv
 int Rabite::GetHealth() {
@@ -339,7 +339,7 @@ void Rabite::Execute() {
                     }
                     m_unkD4 = pShadow;
                     if (m_unkD4 == 0) {
-                        CdsAssert__FPciPc("Rabite.cpp", 0x157, "mpShadow");
+                        CdsAssert("Rabite.cpp", 0x157, "mpShadow");
                     }
                 }
                 {
@@ -359,7 +359,7 @@ void Rabite::Execute() {
                     }
                     m_unk38 = pPhys;
                     if (m_unk38 == 0) {
-                        CdsAssert__FPciPc("Rabite.cpp", 0x15E, "mpPhysics");
+                        CdsAssert("Rabite.cpp", 0x15E, "mpPhysics");
                     }
                     SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12, 0);
                 }

@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #pragma opt_strength_reduction off
 #include "types.h"
+#include "Debug.h"
 #include "PFrozenFx.h"
 #include "PMNode.h"
 #include "PArray.h"
@@ -9,7 +10,6 @@
 #include "PShader.h"
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *__dt__15PParticleSystemFv(void *, short);
 extern "C" void __dl__FPv(void *);
 extern "C" void __dla__FPv(void *);
@@ -65,11 +65,11 @@ void PFrozenFx::UpdateFxInstances() {
     for (i = 0; i < m_unk1F8; i++) {
         pDst = (char *)m_unk1F4 + nDst;
         if (!(nSrc < m_unk1E8)) {
-            CdsAssert__FPciPc("PFrozenFx.cpp", 0x16A, "aiNode < miNumInstances");
+            CdsAssert("PFrozenFx.cpp", 0x16A, "aiNode < miNumInstances");
         }
         pNode = (char *)m_unkE0[nSrc];
         if (pNode == 0) {
-            CdsAssert__FPciPc("PFrozenFx.cpp", 0x16D, "apNode");
+            CdsAssert("PFrozenFx.cpp", 0x16D, "apNode");
         }
         nDst += 0x50;
         nSrc += 4;
@@ -185,7 +185,7 @@ void PFrozenFx::Render() {
 void PFrozenFx::Animate(float fArg) {
     float fStep = fArg;
     if (m_unk1F0 == 0) {
-        CdsAssert__FPciPc("PFrozenFx.cpp", 0x96, "mpMasterFx");
+        CdsAssert("PFrozenFx.cpp", 0x96, "mpMasterFx");
     }
     m_unk16 = ((PFrozenFx *)m_unk1F0)->m_unk16;
     m_unk15 = m_unk18;
@@ -204,7 +204,7 @@ void PFrozenFx::Animate(float fArg) {
 // note: DIFF 283 words; this/pNode/pVec get s6/s5/s4 (original s0/s6/s5), extra s7 CSE of this+0xE0, 0xA0 frame vs 0x90; &m_unkE0 args, inline pFirst and loop-1 base variants gave no change
 int PFrozenFx::Create(PMNode *pNode, float *pVec, float fA, float fB, float fC) {
     if (pNode == 0) {
-        CdsAssert__FPciPc("PFrozenFx.cpp", 0x35, "poModel");
+        CdsAssert("PFrozenFx.cpp", 0x35, "poModel");
     }
     m_unkD0 = (int)(0.5f + (13254.0f + 30258.0f * ((float)rand() / 2.1474836e9f)));
     m_unk0C = 0x14;
@@ -212,7 +212,7 @@ int PFrozenFx::Create(PMNode *pNode, float *pVec, float fA, float fB, float fC) 
     if (pNode->m_unk04 == 2) {
         PArray *pList = (PArray *)&pNode->m_unk14;
         if (pList == 0) {
-            CdsAssert__FPciPc("PFrozenFx.cpp", 0x3F, "apChildList");
+            CdsAssert("PFrozenFx.cpp", 0x3F, "apChildList");
         }
         pList->m_unk4 = 0;
         PMNode *pChild = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[0] : 0;
@@ -227,7 +227,7 @@ int PFrozenFx::Create(PMNode *pNode, float *pVec, float fA, float fB, float fC) 
     }
     m_unk1E0 = __nwa__FUi(m_unk1E8 * 0x60);
     if (m_unk1E0 == 0) {
-        CdsAssert__FPciPc("PFrozenFx.cpp", 0x54, "mpInstanceData");
+        CdsAssert("PFrozenFx.cpp", 0x54, "mpInstanceData");
     }
     m_unk1E4 = 0;
     m_unk1FC = fB;
@@ -237,7 +237,7 @@ int PFrozenFx::Create(PMNode *pNode, float *pVec, float fA, float fB, float fC) 
     for (int i = 0; i < m_unk1E8; i++) {
         char *pDst = (char *)m_unk1E0 + nDst;
         if (*(void **)((char *)this + 0xE0 + nSrc) == 0) {
-            CdsAssert__FPciPc("PFrozenFx.cpp", 0x60, "apNode");
+            CdsAssert("PFrozenFx.cpp", 0x60, "apNode");
         }
         m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
         float fScale = 1.0f + (-fA + (fA + fA) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
@@ -259,24 +259,24 @@ int PFrozenFx::Create(PMNode *pNode, float *pVec, float fA, float fB, float fC) 
     }
     m_unk1F0 = Create__16PParticleManagerFUifffP6PMNodeb(gInterface + 0x4F0, 0x830001D8, 0.0f, 0.0f, 0.0f, 0, false);
     if (m_unk1F0 == 0) {
-        CdsAssert__FPciPc("PFrozenFx.cpp", 0x73, "mpMasterFx");
+        CdsAssert("PFrozenFx.cpp", 0x73, "mpMasterFx");
     }
     int n = m_unk1E8 / 4;
     m_unk1F8 = (n < 2) ? 1 : n;
     m_unk1F4 = __nwa__FUi(m_unk1F8 * 0x50);
     if (m_unk1F4 == 0) {
-        CdsAssert__FPciPc("PFrozenFx.cpp", 0x77, "mpFxInstanceData");
+        CdsAssert("PFrozenFx.cpp", 0x77, "mpFxInstanceData");
     }
     nDst = 0;
     nSrc = 0;
     for (int i = 0; i < m_unk1F8; i++) {
         char *pDst = (char *)m_unk1F4 + nDst;
         if (!(nSrc < m_unk1E8)) {
-            CdsAssert__FPciPc("PFrozenFx.cpp", 0x7E, "aiNode < miNumInstances");
+            CdsAssert("PFrozenFx.cpp", 0x7E, "aiNode < miNumInstances");
         }
         char *pNodeE = ((char **)((char *)this + 0xE0))[nSrc];
         if (pNodeE == 0) {
-            CdsAssert__FPciPc("PFrozenFx.cpp", 0x81, "apNode");
+            CdsAssert("PFrozenFx.cpp", 0x81, "apNode");
         }
         nDst += 0x50;
         nSrc += 4;

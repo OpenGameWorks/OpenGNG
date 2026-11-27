@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PScrollingTrees.h"
 #include "PResourceManager.h"
 #include "PShader.h"
@@ -11,7 +12,6 @@
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void __dla__FPv(void *pMem);
 extern "C" void __dl__FPv(void *pMem);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
 extern "C" void sceVu0CopyVector(float *pDst, float *pSrc);
 extern "C" void sceVu0UnitMatrix(void *pMat);
 extern char gGfxEng[1504384];
@@ -93,7 +93,7 @@ int PScrollingTrees::Create(int nA, int nB, int nType) {
     PScrollingTreeQuad pos;
     PScrollingTreeQuad rot = (PScrollingTreeQuad){{0.0f, 0.0f, 0.0f, 1.0f}};
     if (m_unk670 == 0) {
-        CdsAssert__FPciPc("PScrollingTrees.cpp", 0x6D, "mpResMgr");
+        CdsAssert("PScrollingTrees.cpp", 0x6D, "mpResMgr");
     }
     float fSpanX = m_unk20[0] - m_unk10[0];
     float fStepX = fSpanX / (float)nB;
@@ -110,11 +110,11 @@ int PScrollingTrees::Create(int nA, int nB, int nType) {
     pEnt->m_unk8 = nCount;
     pEnt->m_unk0 = (int)m_unk670->GetResource(*(unsigned int *)((char *)&ids + nType * 4), false);
     if (pEnt->m_unk0 == 0) {
-        CdsAssert__FPciPc("PScrollingTrees.cpp", 0x7D, "mInstanceData[iType].pMasterMesh");
+        CdsAssert("PScrollingTrees.cpp", 0x7D, "mInstanceData[iType].pMasterMesh");
     }
     pEnt->m_unk4 = __nwa__FUi(nCount * 0x50);
     if (pEnt->m_unk4 == 0) {
-        CdsAssert__FPciPc("PScrollingTrees.cpp", 0x80, "mInstanceData[iType].pInstanceData");
+        CdsAssert("PScrollingTrees.cpp", 0x80, "mInstanceData[iType].pInstanceData");
     }
     char *pNodes = (char *)pEnt->m_unk4;
     int nRow = 0;
@@ -166,7 +166,7 @@ int PScrollingTrees::CreateFloor() {
         char *rec = m_unk70 + nRec;
         *(PMNode **)rec = m_unk670->GetResource(*(unsigned int *)((char *)&ids + nOff), false);
         if (*(PMNode **)rec == 0) {
-            CdsAssert__FPciPc("PScrollingTrees.cpp", 0x50, "apGroup->pMasterMesh");
+            CdsAssert("PScrollingTrees.cpp", 0x50, "apGroup->pMasterMesh");
         }
         char *pMat = rec + 0x10;
         *(int *)(rec + 0xB0) = 2;
@@ -201,7 +201,7 @@ int PScrollingTrees::CreateFloor() {
 // FUNCTION: 0x1FB4A0 Init__15PScrollingTreesFPfPffP16PResourceManager
 void PScrollingTrees::Init(float *pVecA, float *pVecB, float fScale, PResourceManager *pResMgr) {
     if (pResMgr == 0) {
-        CdsAssert__FPciPc("PScrollingTrees.cpp", 0x31, "pResMgr");
+        CdsAssert("PScrollingTrees.cpp", 0x31, "pResMgr");
     }
     sceVu0CopyVector(m_unk10, pVecA);
     sceVu0CopyVector(m_unk20, pVecB);

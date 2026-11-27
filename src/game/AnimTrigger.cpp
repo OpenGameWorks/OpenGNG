@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "AnimTrigger.h"
 #include "PArray.h"
 #include "EntityBaseClass.h"
@@ -17,11 +18,10 @@ extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void __dl__FPv(void *pMem);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern "C" TriggerSystem *__ct__13TriggerSystemFiPA4_fUisbsfbUiUiUiUiUiUiUiUiUiUibb(TriggerSystem *pThis, int nAnim, float *pPos, unsigned int nFlags, short sA, bool bA, short sB, float fScale, bool bB, unsigned int u0, unsigned int u1, unsigned int u2, unsigned int u3, unsigned int u4, unsigned int u5, unsigned int u6, unsigned int u7, unsigned int u8, unsigned int u9, bool bC, bool bD);
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("AnimTrigger.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("AnimTrigger.cpp", line, #cond))
 
 // FUNCTION: 0x001B0510 __dt__11AnimTriggerFv
 extern "C" AnimTrigger *__dt__11AnimTriggerFv(AnimTrigger *pThis, short nFlag)

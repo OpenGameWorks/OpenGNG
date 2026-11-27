@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PRenderPass.h"
 #include "PArray.h"
 
@@ -11,7 +12,6 @@ extern "C" int Read__7PCDFileFPvUi(void *pThis, void *pBuf, unsigned int nSize);
 extern "C" int Load__7PSTAnimFP8PPakFile(void *pThis, void *pFile);
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" PSTAnim *__ct__7PSTAnimFv(PSTAnim *pThis);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern char gGfxEng[1504384];
 extern char st1_anim_start[0x10];
 extern char st1_copy_anim_start[0x10];
@@ -29,7 +29,7 @@ extern char restore_st1_start[0x10];
 extern char restore_st2_start[0x10];
 extern char restore_st3_start[0x10];
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PRenderPass.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PRenderPass.cpp", line, #cond))
 
 struct RenderPassU64Table {
     long long v[5];

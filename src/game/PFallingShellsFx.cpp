@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "PFallingShellsFx.h"
 #include "PMat4.h"
 #include "PGfxEngine.h"
@@ -15,7 +16,6 @@ extern float gUnitMatrix[16];
 extern PGfxEngine gGfxEng;
 extern "C" void *__dt__15PParticleSystemFv(void *, short);
 extern "C" void __dl__FPv(void *);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
@@ -121,7 +121,7 @@ void PFallingShellsFx::ModifyPosition(PMat4 *pMat) {
     float dir[4];
 
     if (pMat == 0) {
-        CdsAssert__FPciPc("PFallingShellsFx.cpp", 0x113, "pMat");
+        CdsAssert("PFallingShellsFx.cpp", 0x113, "pMat");
     }
     pMat->MulVector(m_unkF0, m_unkE0);
     *(u_long128 *)vec = *(u_long128 *)kUnitW;
@@ -180,7 +180,7 @@ void PFallingShellsFx::Render() {
                              (((FxResource *)m_unk148)->nCount) ? ((FxResource *)m_unk148)->pEntries[0] : 0, false);
 
     if (m_unk1D50 * 96 >= 0x2000) {
-        CdsAssert__FPciPc("PFallingShellsFx.cpp", 0xC5, "miNumInstances * sizeof(VuFxInstance) < SPAD_TEMP_BUFFER_SIZE");
+        CdsAssert("PFallingShellsFx.cpp", 0xC5, "miNumInstances * sizeof(VuFxInstance) < SPAD_TEMP_BUFFER_SIZE");
     }
 
     rec = 0;

@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PParticleShockwaveRing.h"
 
 // TODO(header): foreign declarations
@@ -16,7 +17,6 @@ extern "C" void *__ct__15PParticleSystemFv(void *);
 extern "C" void *__dt__15PParticleSystemFv(void *, short);
 extern "C" void __dl__FPv(void *);
 extern unsigned char __vt__22PParticleShockwaveRing[0x40];
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
 // FUNCTION: 0x001F9850 Start__22PParticleShockwaveRingFv
 void PParticleShockwaveRing::Start() {
@@ -80,7 +80,7 @@ void PParticleShockwaveRing::Animate(float fDelta) {
 // FUNCTION: 0x001F9A90 Create__22PParticleShockwaveRingFP30tagParticleShockwaveRingParamsfff
 int PParticleShockwaveRing::Create(tagParticleShockwaveRingParams *pParams, float fA, float fB, float fC) {
     if (pParams == 0) {
-        CdsAssert__FPciPc("PParticleShockwaveRing.cpp", 0x1B, "pParams");
+        CdsAssert("PParticleShockwaveRing.cpp", 0x1B, "pParams");
     }
     PParticleSystem::Create(1, false);
     memcpy(&m_unk140, pParams, 0xA0);

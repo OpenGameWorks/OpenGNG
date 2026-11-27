@@ -1,11 +1,11 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PCyclocksFx.h"
 #include "PParticleManager.h"
 
 // TODO(header): foreign declarations
 extern char gGfxEng[1504384];
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void __dl__FPv(void *);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void *__nw__FUi(unsigned int nSize);
@@ -70,7 +70,7 @@ public:
 void PCyclocksFx::StopFx(unsigned int hFx) {
     PParticleManager *pMgr = (PParticleManager *)(gGfxEng + 0x154F00);
     if (pMgr == 0) {
-        CdsAssert__FPciPc("PCyclocksFx.cpp", 0x95, "apFxMgr");
+        CdsAssert("PCyclocksFx.cpp", 0x95, "apFxMgr");
     }
     pMgr->Stop(hFx);
 }
@@ -89,11 +89,11 @@ PParticleSplineTrail *PCyclocksFx::CreateSplineTrail(float p0, float p1, float p
     sp.m_unk18 = p4;
     sp.m_unk28 = p4;
     if (pMgr == 0) {
-        CdsAssert__FPciPc("PCyclocksFx.cpp", 0x83, "apFxMgr");
+        CdsAssert("PCyclocksFx.cpp", 0x83, "apFxMgr");
     }
     PParticleSplineTrail *trail = new PParticleSplineTrail;
     if (trail == 0) {
-        CdsAssert__FPciPc("PCyclocksFx.cpp", 0x86, "apFx");
+        CdsAssert("PCyclocksFx.cpp", 0x86, "apFx");
     }
     trail->Create(&sp, 0.0f, 0.0f, 0.0f);
     trail->m_unk30 = 0x48;

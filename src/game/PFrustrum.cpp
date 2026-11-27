@@ -1,12 +1,12 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PFrustrum.h"
 
 // TODO(header): foreign declarations
 extern float gUnitMatrix[16];
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0ApplyMatrix(u_long128 *pOut, PMat4 *pMat, float (*pIn)[2][4]);
 extern "C" void sceVu0SubVector(u_long128 *pOut, u_long128 *pA, u_long128 *pB);
 extern "C" float sceVu0InnerProduct(u_long128 *pA, u_long128 *pB);
@@ -20,7 +20,7 @@ extern "C" float tanf(float fX);
 // note: 26 words differ. Frame, saves and assert branch match; the compiler folds +0x80..+0x8C into load displacements, and the original recomputes this+N before each add. Tried: separate char* base pointers (same 26). Size 0xA4 vs 0xC0.
 void PFrustrum::GetPlaneEquation(eFrustumPlane ePlane, float &fA, float &fB, float &fC, float &fD) {
     if (!(ePlane < FRUSTUM_MAX_PLANES)) {
-        CdsAssert__FPciPc((char *)"PFrustrum.cpp", 0x133, (char *)"ePlane < FRUSTUM_MAX_PLANES");
+        CdsAssert((char *)"PFrustrum.cpp", 0x133, (char *)"ePlane < FRUSTUM_MAX_PLANES");
     }
     int nOff = (int)ePlane << 4;
     char *p0 = (char *)this + 0x80;

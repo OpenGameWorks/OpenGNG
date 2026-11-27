@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "PMidasShieldRings.h"
 
 // TODO(header): foreign declarations
@@ -16,7 +17,6 @@ extern unsigned char gGfxEng[0x10];
 extern unsigned char gDisplayListPtr[0x10];
 extern "C" float FastMath_Sin180__Ff(float);
 extern "C" float FastMath_Cos180__Ff(float);
-extern "C" void CdsAssert__FPciPc(const char *, int, const char *);
 extern "C" void *__nwa__FUi(unsigned int);
 extern "C" void QwordCopy__FP1P1Ui(u_long128 *, u_long128 *, unsigned int);
 extern "C" void *memset(void *, int, unsigned int);
@@ -47,11 +47,11 @@ void *PMidasShieldRings::InitRingMeshPacket(int &nCount, int nSegs, bool bFlag) 
     ((int *)sA[nA])[3] |= 0x8000;
     ((int *)sA[nA + 1])[3] |= 0x8000;
     if (nTotal >= 50) {
-        CdsAssert__FPciPc("PMidasShieldRings.cpp", 0x184, "iNumVerts < fx_i_instance_max_vertices");
+        CdsAssert("PMidasShieldRings.cpp", 0x184, "iNumVerts < fx_i_instance_max_vertices");
     }
     int *pHdr = (int *)__nwa__FUi(0x970);
     if (pHdr == 0) {
-        CdsAssert__FPciPc("PMidasShieldRings.cpp", 0x18C, "apPacket");
+        CdsAssert("PMidasShieldRings.cpp", 0x18C, "apPacket");
     }
     pHdr[0] = nTotal;
     pHdr[1] = 0;
@@ -216,7 +216,7 @@ void PMidasShieldRings::Animate(float fA) {
     }
     m_unk1FC = AllocParticles__12PDisplayListFii((void *)(gGfxEng + 0x154C80), m_unk1EC, 6);
     if (m_unk1FC == 0) {
-        CdsAssert__FPciPc("PMidasShieldRings.cpp", 0x93, "mpFxInstances");
+        CdsAssert("PMidasShieldRings.cpp", 0x93, "mpFxInstances");
     }
     m_unk200 = 0;
     if (m_unk19 != 0) {
@@ -367,7 +367,7 @@ void PMidasShieldRings::Create(float fA, float fB, float fC, float *pA, float *p
     }
     m_unk1F4 = InitRingMeshPacket(m_unk1F8, nB, bA);
     if (m_unk1F4 == 0) {
-        CdsAssert__FPciPc("PMidasShieldRings.cpp", 0x46, "mpRingMeshPacket");
+        CdsAssert("PMidasShieldRings.cpp", 0x46, "mpRingMeshPacket");
     }
     memset((char *)this + 0x14C, 0, 0xA0);
     m_unk1EC = 0;

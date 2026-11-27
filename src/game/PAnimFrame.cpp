@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "PAnimFrame.h"
 
 // TODO(header): foreign declarations
@@ -12,7 +13,6 @@ public:
     char _pad0A[0x2];
     float unkC;
 };
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
 // FUNCTION: 0x0018CE10 SetFrameTime__10PAnimFrameFf
 void PAnimFrame::SetFrameTime(float value) {
@@ -157,7 +157,7 @@ float PAnimFrame::AnimateFrame(float fTime) {
     if (m_unk2A != 0) {
         m_unk2A = m_unk2A & ~4;
         if (m_unk24 == -1) {
-            CdsAssert__FPciPc("PAnimFrame.cpp", 0x38, "miEndFrame != -1");
+            CdsAssert("PAnimFrame.cpp", 0x38, "miEndFrame != -1");
         }
         if (!(m_unk30 < 0.0f)) {
             if (!(fResult < (float)m_unk28)) {
@@ -183,7 +183,7 @@ float PAnimFrame::AnimateFrame(float fTime) {
                     fResult = fResult - (float)hi;
                     float r = (float)(hi - m_unk26);
                     if (r < 0.0f) {
-                        CdsAssert__FPciPc("PAnimFrame.cpp", 0x57, "loop >= 0");
+                        CdsAssert("PAnimFrame.cpp", 0x57, "loop >= 0");
                     }
                     if (!(r <= 0.0f)) {
                         if (!(fResult < r)) {

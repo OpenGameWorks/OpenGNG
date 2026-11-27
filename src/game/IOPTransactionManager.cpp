@@ -1,9 +1,10 @@
 // COMPILER: mwcps2-3.0-011126
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "IOPTransactionManager.h"
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("IOPTransactionManager.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("IOPTransactionManager.cpp", line, #cond))
 
 // TODO(header): foreign declarations
 extern "C" void __ct__8IOP_TranFv(IOP_Tran *pThis);
@@ -14,7 +15,6 @@ extern "C" void SOUND_TranCancels(int nId, void *pBuf);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" void SOUND_TranAdd(int a0, int a1, int a2, int a3, int a4, int a5);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
 // DRAFT: 0x001DA610 FrameMaintenacePartB__21IOPTransactionManagerFv
 // note: 46 differing words; original keeps global base in a2 and uses i*5*8 index multiplies, ours uses running offsets; tried multiplied indices, running char pointers, running offsets with this base.

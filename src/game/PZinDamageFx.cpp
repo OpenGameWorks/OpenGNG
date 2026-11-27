@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PZinDamageFx.h"
 #include "EntityBaseClass.h"
 #include "PParticleManager.h"
@@ -10,7 +11,6 @@ class PMat4;
 class PFrustrum;
 extern "C" void *__dt__15PParticleSystemFv(void *, short);
 extern "C" void __dl__FPv(void *);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" int rand(void);
 extern "C" void sceVu0CopyVector(float *pDst, float *pSrc);
 extern unsigned char __vt__12PZinDamageFx[];
@@ -74,8 +74,8 @@ void PZinDamageFx::Animate(float fArg) {
     float fTimer;
     float fBase;
 
-    ((m_unkE4) ? (void)0 : CdsAssert__FPciPc("PZinDamageFx.cpp", 0x41, "mpMasterFx"));
-    ((m_unkE0) ? (void)0 : CdsAssert__FPciPc("PZinDamageFx.cpp", 0x42, "mpObj"));
+    ((m_unkE4) ? (void)0 : CdsAssert("PZinDamageFx.cpp", 0x41, "mpMasterFx"));
+    ((m_unkE0) ? (void)0 : CdsAssert("PZinDamageFx.cpp", 0x42, "mpObj"));
     if (!m_unk15) {
         return;
     }
@@ -95,7 +95,7 @@ void PZinDamageFx::Animate(float fArg) {
     fCount = (float)(pArr->m_unk0 - 1);
     nIdx = (int)(0.5f + fRand * fCount);
     pPick = ((unsigned int)nIdx < pArr->m_unk0) ? (char *)pArr->m_unk8[nIdx] : 0;
-    ((pPick) ? (void)0 : CdsAssert__FPciPc("PZinDamageFx.cpp", 0x56, "apNode"));
+    ((pPick) ? (void)0 : CdsAssert("PZinDamageFx.cpp", 0x56, "apNode"));
     sceVu0CopyVector(vec, (float *)(pPick + 0x70));
     pPick = (char *)1;
 
@@ -128,7 +128,7 @@ int PZinDamageFx::Create(EntityBaseClass *pOwner, float fArg, unsigned int nArg)
     m_unkE8 = fArg;
     m_unkEC = fArg;
     m_unkE4 = (PParticleSystem *)((PParticleManager *)(gGfxEng + 0x154F00))->Create(nArg, 0.0f, 0.0f, 0.0f, 0, false);
-    ((m_unkE4) ? (void)0 : CdsAssert__FPciPc("PZinDamageFx.cpp", 0x36, "mpMasterFx"));
+    ((m_unkE4) ? (void)0 : CdsAssert("PZinDamageFx.cpp", 0x36, "mpMasterFx"));
     PParticleSystem::Create(1, false);
     m_unk0C = 0x1A;
     return 1;

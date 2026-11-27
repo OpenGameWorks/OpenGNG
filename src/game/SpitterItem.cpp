@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "SpitterItem.h"
 #include "EntityBaseClass.h"
 #include "Physics.h"
@@ -12,7 +13,6 @@ extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" Physics *__ct__7PhysicsFv(Physics *pThis);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
 extern "C" float *GetWaypoint__15WaypointManagerFP16tagWaypointGroupUiRUc(void *pThis, struct tagWaypointGroup *pGroup, unsigned int nIndex, unsigned char &rbFlag);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern void *mpEntMgr__15EntityBaseClass;
@@ -176,7 +176,7 @@ void SpitterItem::Execute() {
                 if (m_unk204 == 0) {
                     char buf[0x40];
                     sprintf(buf, "Innocent refers to bad waypoint group ( group id = %d )", m_unk1E0);
-                    CdsAssert__FPciPc("SpitterItem.cpp", 0x7B, buf);
+                    CdsAssert("SpitterItem.cpp", 0x7B, buf);
                 }
             }
             GetNextPosition(*(float (*)[4])((char *)this + 0x1F0));
@@ -365,7 +365,7 @@ SpitterItem::SpitterItem() {
     }
     m_unk38 = pPhysics;
     if (m_unk38 == 0) {
-        CdsAssert__FPciPc("SpitterItem.cpp", 0x4C, "mpPhysics");
+        CdsAssert("SpitterItem.cpp", 0x4C, "mpPhysics");
     }
     m_unk1E0 = -1;
 }

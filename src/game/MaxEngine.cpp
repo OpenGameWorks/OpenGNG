@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "MaxEngine.h"
 
 // TODO(header): foreign declarations
@@ -96,13 +97,6 @@ public:
     PMNode *Load(const char *pName, bool bFlag, eTextureGroup eGroup);
 };
 // Debug size is unknown; the placeholder member only keeps gDebug a complete object.
-class Debug {
-public:
-    void StartTimer(unsigned int nId);
-    void StopTimer(unsigned int nId);
-    void DebugClear();
-    char _pad000[0x10];
-};
 extern Debug gDebug;
 // Pad size is unknown; the placeholder member only keeps gPad and gPad2 complete objects.
 class Pad {
@@ -181,7 +175,6 @@ extern "C" void scePcStop(void);
 extern "C" void __dt__15PScrollingTreesFv(void *pThis, short nFlag);
 extern "C" PScrollingTrees *__ct__15PScrollingTreesFv(void *pThis);
 extern "C" void *__nw__FUi(unsigned int nSize);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" int printf(const char *fmt, ...);
 extern "C" void __dt__6PWorldFv(void *pThis, short nFlag);
 extern "C" void __ct__6PWorldFv(void *pThis);
@@ -321,7 +314,7 @@ void MaxEngine::CreateScrollingTrees() {
         }
         m_unk137DC = pTrees;
         if (m_unk137DC == 0) {
-            CdsAssert__FPciPc("MaxEngine.cpp", 0x1B6, "mpScrollingTrees");
+            CdsAssert("MaxEngine.cpp", 0x1B6, "mpScrollingTrees");
         }
         {
             float afA[4] = {-300.0f, -135.0f, -600.0f, 1.0f};
@@ -406,7 +399,7 @@ void MaxEngine::InitWorld(void *arg0, PResourceManager *arg1) {
         if (pName != 0) {
             strcpy(&m_unk137AC, pName);
             m_unk137A8 = (MaxEngineSlot *)((PWorld *)this)->Load(pArg->m_unk4, false, (eTextureGroup)0x66);
-            ((m_unk137A8 != 0) ? (void)0 : CdsAssert__FPciPc("MaxEngine.cpp", 0x16B, "mpSkybox"));
+            ((m_unk137A8 != 0) ? (void)0 : CdsAssert("MaxEngine.cpp", 0x16B, "mpSkybox"));
             ((PMNode *)m_unk137A8)->SetAllFrustrumTest((eBoxIntersect)4);
         }
     }

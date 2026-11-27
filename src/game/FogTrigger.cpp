@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "FogTrigger.h"
 
 // TODO(header): foreign declarations
@@ -6,7 +7,6 @@ extern unsigned char __vt__10FogTrigger[];
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
 extern "C" void __dl__FPv(void *pMem);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*pA)[4], float (*pB)[4]);
 extern "C" void SetColor__11PZBufferFogFPfbf(void *pThis, float *pColor, bool bFlag, float fTime);
@@ -78,7 +78,7 @@ void FogTrigger::Execute()
     case 1:
         m_unk204 = (PZBufferFog *)(gEng + 0x8750);
         if (m_unk204 == 0) {
-            CdsAssert__FPciPc("FogTrigger.cpp", 0x2F, "m_FogObj");
+            CdsAssert("FogTrigger.cpp", 0x2F, "m_FogObj");
         }
         fColor[0] = 255.0f * m_unk1BC;
         fColor[1] = 255.0f * m_unk1C0;

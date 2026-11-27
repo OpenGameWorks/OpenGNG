@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PMotionBlur.h"
 #include "PMNode.h"
 
@@ -13,7 +14,6 @@ extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern char gGfxEng[1504384];
 extern "C" void BeginFxRender__10PGfxEngineFv(void *pThis);
 extern "C" void BeginMesh__10PGfxEngineF13eBoxIntersect(void *pThis, int eBox);
@@ -62,11 +62,11 @@ void PMotionBlur::CreateBlurNodes(PMNode *poSourceObj, PMNode *poBlurObj) {
         if (pFound != 0 && nCount != 0) {
             pEntry = (PMotionBlurEntry *)__nw__FUi(0xC);
             if (pEntry == 0) {
-                CdsAssert__FPciPc("PMotionBlur.cpp", 0x12F, "apData");
+                CdsAssert("PMotionBlur.cpp", 0x12F, "apData");
             }
             pEntry->m_pMatrices = __construct_new_array(__nwa__FUi((m_unk88 << 6) + 0x10), __ct__5PMat4Fv, __dt__5PMat4Fv, 0x40, m_unk88);
             if (pEntry->m_pMatrices == 0) {
-                CdsAssert__FPciPc("PMotionBlur.cpp", 0x132, "apData->pMatCache");
+                CdsAssert("PMotionBlur.cpp", 0x132, "apData->pMatCache");
             }
             pEntry->m_unk4 = nCount;
             pEntry->m_pSource = poSourceObj;
@@ -74,7 +74,7 @@ void PMotionBlur::CreateBlurNodes(PMNode *poSourceObj, PMNode *poBlurObj) {
         }
         pList = (PMNodeChildList *)&poSourceObj->m_unk14;
         if (pList == 0) {
-            CdsAssert__FPciPc("PMotionBlur.cpp", 0x13C, "apoSourceChildList");
+            CdsAssert("PMotionBlur.cpp", 0x13C, "apoSourceChildList");
         }
         pList->m_unk4 = 0;
         pChild = 0;
@@ -146,7 +146,7 @@ void PMotionBlur::Render() {
         FadeFullScreenMotionBlur__10PGfxEngineFci(gGfxEng, 0, 0);
         return;
     }
-    ((m_unk90.m_unk0) ? (void)0 : CdsAssert__FPciPc("PMotionBlur.cpp", 0x91, "moBlurNodes.GetCount()"));
+    ((m_unk90.m_unk0) ? (void)0 : CdsAssert("PMotionBlur.cpp", 0x91, "moBlurNodes.GetCount()"));
     pEntry = (m_unk90.m_unk0 != 0) ? (PMotionBlurEntry *)m_unk90.m_unk8[0] : 0;
     if (pEntry != 0) {
         fTime = ((PMNode *)pEntry->m_pSource)->GetFrameTime();
@@ -236,10 +236,10 @@ void PMotionBlur::Update() {
 // FUNCTION: 0x001C9280 Create__11PMotionBlurFP6PMNodeP6PMNodei
 bool PMotionBlur::Create(PMNode *poSourceObj, PMNode *poBlurObj, int nCount) {
     if (poSourceObj == 0) {
-        CdsAssert__FPciPc("PMotionBlur.cpp", 0x49, "poSourceObj");
+        CdsAssert("PMotionBlur.cpp", 0x49, "poSourceObj");
     }
     if (poBlurObj == 0) {
-        CdsAssert__FPciPc("PMotionBlur.cpp", 0x4A, "poBlurObj");
+        CdsAssert("PMotionBlur.cpp", 0x4A, "poBlurObj");
     }
     Reset();
     m_unk80 = poSourceObj;
@@ -263,10 +263,10 @@ void PMotionBlur::SetData(tagMotionBlurParams *pParams) {
     char *pDst;
 
     if (pParams == 0) {
-        CdsAssert__FPciPc("PMotionBlur.cpp", 0x27, "pData");
+        CdsAssert("PMotionBlur.cpp", 0x27, "pData");
     }
     if (pParams->m_unk8 >= 4) {
-        CdsAssert__FPciPc("PMotionBlur.cpp", 0x28, "pData->iNumBlurObjects < MAX_BLUR_OBJECTS");
+        CdsAssert("PMotionBlur.cpp", 0x28, "pData->iNumBlurObjects < MAX_BLUR_OBJECTS");
     }
     memcpy(this, pParams, 0x80);
     m_unkA0 = 0;

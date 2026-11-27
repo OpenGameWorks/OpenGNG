@@ -1,9 +1,9 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PZBufferFog.h"
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
@@ -121,10 +121,10 @@ void PZBufferFog::SetClutFogTable(tagClutFogData *pData) {
 // FUNCTION: 0x1CE1B0 TweenClutFog__11PZBufferFogFP14tagClutFogDataP14tagClutFogDataf
 void PZBufferFog::TweenClutFog(tagClutFogData *pStart, tagClutFogData *pEnd, float fTime) {
     if (pStart == 0) {
-        CdsAssert__FPciPc("PZBufferFog.cpp", 0x139, "pStart");
+        CdsAssert("PZBufferFog.cpp", 0x139, "pStart");
     }
     if (pEnd == 0) {
-        CdsAssert__FPciPc("PZBufferFog.cpp", 0x13A, "pEnd");
+        CdsAssert("PZBufferFog.cpp", 0x13A, "pEnd");
     }
     memcpy(m_unk17B0, pStart, 0x50);
     memcpy(m_unk1800, pEnd, 0x50);
@@ -136,7 +136,7 @@ void PZBufferFog::TweenClutFog(tagClutFogData *pStart, tagClutFogData *pEnd, flo
 // FUNCTION: 0x1CE280 SetClutFogTable__11PZBufferFogFP6GsRGBA
 void PZBufferFog::SetClutFogTable(GsRGBA *pClut) {
     if (pClut == 0) {
-        CdsAssert__FPciPc("PZBufferFog.cpp", 0x130, "pClut");
+        CdsAssert("PZBufferFog.cpp", 0x130, "pClut");
     }
     memcpy(m_unk1350, pClut, 0x400);
     GsSwizzleClut((tagGsClut256 *)m_unk12F0);

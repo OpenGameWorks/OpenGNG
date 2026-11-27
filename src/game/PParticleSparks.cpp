@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PParticleSparks.h"
 
 // TODO(header): foreign declarations
@@ -22,7 +23,6 @@ extern "C" float sqrtf(float x);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
 extern "C" void *__nwa__FUi(unsigned int nSize);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, unsigned int nCount, int nType);
 extern "C" void sceVu0Normalize(float *dst, float *src);
 extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
@@ -34,7 +34,7 @@ void PParticleSparks::InitSparkDirections() {
     float vec[4];
     int nBits;
     int bRandom = 0;
-    if (m_unk140 == 0) CdsAssert__FPciPc("PParticleSparks.cpp", 0xE2, "mpDirections");
+    if (m_unk140 == 0) CdsAssert("PParticleSparks.cpp", 0xE2, "mpDirections");
     if (m_unkF0 == 0.0f) {
         if (m_unkF4 == 0.0f) {
             if (m_unkF8 == 0.0f) bRandom = 1;
@@ -141,7 +141,7 @@ void PParticleSparks::Animate(float fDelta) {
     }
     m_unkD0 = m_unk170;
     m_unk08 = AllocParticles__12PDisplayListFii(*(void **)(gGfxEng + 0x154C80), m_unk04, 2);
-    if (m_unk08 == 0) CdsAssert__FPciPc("PParticleSparks.cpp", 0x70, "apLines");
+    if (m_unk08 == 0) CdsAssert("PParticleSparks.cpp", 0x70, "apLines");
     m_unk148 = m_unk148 + fDelta;
     for (int j = 0; j < m_unk04; j++) {
         float *pP = (float *)((char *)m_unk08 + (j << 5));
@@ -210,7 +210,7 @@ void PParticleSparks::Animate(float fDelta) {
 
 // FUNCTION: 0x001F86B0 Create__15PParticleSparksFP23tagParticleSparksParamsfff
 int PParticleSparks::Create(tagParticleSparksParams *pParams, float fA, float fB, float fC) {
-    if (pParams == 0) CdsAssert__FPciPc("PParticleSparks.cpp", 0x26, "pParams");
+    if (pParams == 0) CdsAssert("PParticleSparks.cpp", 0x26, "pParams");
     if (!PParticleSystem::Create(pParams->m_unk38, false)) {
         return 0;
     }

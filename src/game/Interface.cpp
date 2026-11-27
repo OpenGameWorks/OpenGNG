@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Interface.h"
 #include "PTextureManager.h"
 #include "PArray.h"
@@ -311,7 +312,6 @@ public:
 // MemMgr is 908 bytes; the field at offset 0x18 is saved and cleared around AddIcon.
 extern char MemMgr[908];
 
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern Interface gInterface;
 // HintTable is 120 bytes (symbols.tsv); element size taken from the lw/sll 2 indexing.
 extern int HintTable[30];
@@ -578,7 +578,7 @@ void HudGrim::Reset() {
     if (m_unk20 == 0) {
         m_unk20 = new PGrimBarAura;
     }
-    ((m_unk20 != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0xA94, "mpFx"));
+    ((m_unk20 != 0) ? (void)0 : CdsAssert("Interface.cpp", 0xA94, "mpFx"));
     *(u_long128 *)aSpawn = *(u_long128 *)GrimFxSpawn;
     ((PGrimBarAura *)m_unk20)->Create(40, 1.5f, 0.5f, 120.0f, aSpawn);
     aPos[2] = 10.0f;
@@ -656,12 +656,12 @@ void HudSuper::UpdateMaxSuper() {
 
     nTarget = *(unsigned int *)((char *)mpPlayerData__7GameHud + 0x38);
     pList = (PArray *)((char *)m_unk4 + 0x14);
-    ((nTarget != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0xA07, "iMeter"));
+    ((nTarget != 0) ? (void)0 : CdsAssert("Interface.cpp", 0xA07, "iMeter"));
     if (pList->m_unk0 < nTarget) {
         pLast = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[pList->m_unk0 - 1] : 0;
-        ((pLast != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0xA0A, "pLast"));
+        ((pLast != 0) ? (void)0 : CdsAssert("Interface.cpp", 0xA0A, "pLast"));
         pCap = pLast->Find(0x8CF87F7E);
-        ((pCap != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0xA0C, "pCap"));
+        ((pCap != 0) ? (void)0 : CdsAssert("Interface.cpp", 0xA0C, "pCap"));
         ((PArray *)((char *)pLast + 0x14))->Remove(pCap);
         fStep = pLast->m_unk80;
         while (pList->m_unk0 < nTarget) {
@@ -680,13 +680,13 @@ void HudSuper::UpdateMaxSuper() {
                 node = pThis;
             }
             pNew = (PMNode *)node;
-            ((pNew != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0xA11, "pTmp"));
+            ((pNew != 0) ? (void)0 : CdsAssert("Interface.cpp", 0xA11, "pTmp"));
             CopyMNode__6PMNodeFR6PMNodeb(pNew, pLast, true);
             fStep += 3.3f;
             pNew->m_unk80 = fStep;
             pList->Add(pNew);
             pTmp = pNew->Find(0x136CC35A);
-            ((pTmp != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0xA17, "pTmp"));
+            ((pTmp != 0) ? (void)0 : CdsAssert("Interface.cpp", 0xA17, "pTmp"));
             pTmp->ScaleSet(0.0f, 1.0f, 1.0f, 1.0f);
         }
         pLast = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[pList->m_unk0 - 1] : 0;
@@ -707,7 +707,7 @@ void HudSuper::UpdateBar(int arg0) {
         do {
             PMNode *pBlock = pNode->Find(0x136CC35A);
             if (pBlock == 0) {
-                CdsAssert__FPciPc("Interface.cpp", 0x9F9, "pBlock");
+                CdsAssert("Interface.cpp", 0x9F9, "pBlock");
             }
             float fScale = 1.0f;
             int bLess = arg0 < 640;
@@ -740,11 +740,11 @@ void HudSuper::Reset() {
 
     pList = (PArray *)((char *)m_unk4 + 0x14);
     pLast = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[pList->m_unk0 - 1] : 0;
-    ((pLast != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x9CE, "pLast"));
+    ((pLast != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x9CE, "pLast"));
     pCap = pLast->Find(0x8CF87F7E);
-    ((pCap != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x9D0, "pCap"));
+    ((pCap != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x9D0, "pCap"));
     nTarget = *(unsigned int *)((char *)mpPlayerData__7GameHud + 0x38);
-    ((nTarget != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x9D3, "iMeter"));
+    ((nTarget != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x9D3, "iMeter"));
     if (nTarget < pList->m_unk0) {
         ((PArray *)((char *)pLast + 0x14))->Remove(pCap);
         while (nTarget < pList->m_unk0) {
@@ -770,7 +770,7 @@ void HudSuper::Reset() {
                 node = pThis;
             }
             pNew = (PMNode *)node;
-            ((pNew != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x9E4, "pTmp"));
+            ((pNew != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x9E4, "pTmp"));
             CopyMNode__6PMNodeFR6PMNodeb(pNew, pLast, true);
             fStep += 3.3f;
             pNew->m_unk80 = fStep;
@@ -818,7 +818,7 @@ void HudHealth::Update(int arg0) {
             }
             if (nCount * 200 < m_unkC) {
                 pCap = pCur->Find(0x851A08AB);
-                ((pCap != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x980, "pCap"));
+                ((pCap != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x980, "pCap"));
                 ((PArray *)((char *)pCur + 0x14))->Remove(pCap);
                 void *node;
                 if ((node = __nw__FUi(0x100)) != 0) {
@@ -866,7 +866,7 @@ void HudHealth::Update(int arg0) {
         }
         if (bRemove) {
             pCap = pCur->Find(0x851A08AB);
-            ((pCap != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x9A4, "pCap"));
+            ((pCap != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x9A4, "pCap"));
             ((PArray *)((char *)pCur + 0x14))->Remove(pCap);
             pList->Remove(pCur);
             delete (PDeletable *)pCur;
@@ -877,7 +877,7 @@ void HudHealth::Update(int arg0) {
             m_unk8 = pCur->m_unk80;
         }
         pBar = pCur->Find(0x3F379B9F);
-        ((pBar != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x9B0, "pBar"));
+        ((pBar != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x9B0, "pBar"));
         bDirty = true;
         *(float *)((char *)pBar + 0xA0) = 0.145f + ((0.77f * (float)nRem) / 200.0f);
     }
@@ -913,11 +913,11 @@ void HudHealth::Reset() {
     pList = (PArray *)((char *)m_unk4 + 0x14);
     nCount = pList->m_unk0;
     pLast = (nCount != 0) ? (PMNode *)pList->m_unk8[nCount - 1] : 0;
-    ((pLast != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x8F1, "pLast"));
+    ((pLast != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x8F1, "pLast"));
     pCap = pLast->Find(0x851A08AB);
-    ((pCap != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x8F3, "pCap"));
+    ((pCap != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x8F3, "pCap"));
     nWanted = *(unsigned int *)((char *)mpPlayerData__7GameHud + 0xC);
-    ((nWanted != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x8FA, "iMeter"));
+    ((nWanted != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x8FA, "iMeter"));
     m_unkC = *(short *)((char *)mpPlayerData__7GameHud + 8);
     if (nWanted < nCount) {
         ((PArray *)((char *)pLast + 0x14))->Remove(pCap);
@@ -949,7 +949,7 @@ void HudHealth::Reset() {
                 node = pThis;
             }
             pNew = (PMNode *)node;
-            ((pNew != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x90C, "pTmp"));
+            ((pNew != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x90C, "pTmp"));
             CopyMNode__6PMNodeFR6PMNodeb(pNew, pLast, true);
             fLevel += 3.3f;
             pNew->m_unk80 = fLevel;
@@ -967,7 +967,7 @@ void HudHealth::Reset() {
     if (nWanted != 0) {
         do {
             pBar = pNode->Find(0x3F379B9F);
-            ((pBar != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x91D, "pBar"));
+            ((pBar != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x91D, "pBar"));
             if (nStep >= 200) {
                 fRatio = 0.915f;
             } else if (nStep > 0) {
@@ -1264,7 +1264,7 @@ void HudCombo::ComboNumber() {
     vec[1] = m_unk54;
     vec[2] = 0.0f;
     vec[3] = 1.0f;
-    ((m_unkC < 100) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x7B1, "miValue < 100"));
+    ((m_unkC < 100) ? (void)0 : CdsAssert("Interface.cpp", 0x7B1, "miValue < 100"));
     int v = m_unkC;
     for (int i = 0; i < 2; i++) {
         int digit = v % 10;
@@ -1281,7 +1281,7 @@ void HudCombo::ComboNumber() {
                 InitMembers__6PMNodeFv((PMNode *)pThis);
                 pNew = (PMNode *)pThis;
             }
-            ((pNew != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x7B7, "pNode"));
+            ((pNew != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x7B7, "pNode"));
             CopyMNode__6PMNodeFR6PMNodeb(pNew, (PMNode *)m_unk10[digit], true);
             float fWidth = *(float *)(*(char **)((char *)pNew + 0x10) + 0x20);
             vec[0] -= fWidth;
@@ -1344,7 +1344,7 @@ void HudCombo::InitCombo(PMeshNode *arg0, HudData *arg1, PMNode *arg2) {
     m_unk4C = Find__6PMNodeFUi((PMNode *)arg0, 0x2BE31146U);
     PMNode *temp_v0 = Find__6PMNodeFUi((PMNode *)arg0, 0x4F83EE74U);
     if (temp_v0 == 0) {
-        CdsAssert__FPciPc("Interface.cpp", 0x781, "pNumber");
+        CdsAssert("Interface.cpp", 0x781, "pNumber");
     }
     for (int i = 0; i < 10; i++) {
         ((void **)((char *)this + 0x10))[i] = Find__6PMNodeFUi(temp_v0, ComboNumber_1169[i]);
@@ -1366,7 +1366,7 @@ void HudCombo::InitCombo(PMeshNode *arg0, HudData *arg1, PMNode *arg2) {
     }
     m_unk38 = node;
     if (m_unk38 == 0) {
-        CdsAssert__FPciPc("Interface.cpp", 0x78B, "mpNumberBase");
+        CdsAssert("Interface.cpp", 0x78B, "mpNumberBase");
     }
     CopyMNode__6PMNodeFR6PMNodeb((PMNode *)m_unk38, temp_v0, false);
     ((PArray *)((char *)m_unk4 + 0x14))->Add(m_unk38);
@@ -1443,7 +1443,7 @@ void GameHud::SetNumber() {
     vec[0] += pPos[0];
     vec[1] += pPos[1];
     if (m_unkC >= 0x2710) {
-        CdsAssert__FPciPc("Interface.cpp", 0x717, "miValue < 10000");
+        CdsAssert("Interface.cpp", 0x717, "miValue < 10000");
     }
     int cur = m_unkC;
     bool first = false;
@@ -1466,7 +1466,7 @@ void GameHud::SetNumber() {
                 node = pThis;
             }
             if (node == 0) {
-                CdsAssert__FPciPc("Interface.cpp", 0x720, "pNode");
+                CdsAssert("Interface.cpp", 0x720, "pNode");
             }
             CopyMNode__6PMNodeFR6PMNodeb((PMNode *)node, mpNumbers__7GameHud[digit], true);
             float f1 = *(float *)((char *)*(void **)((char *)node + 0x10) + 0x20);
@@ -2038,7 +2038,7 @@ void HudInventory::Init(PMeshNode *arg0, HudData *arg1) {
     }
     m_unk38 = ((PMNode *)arg0)->Find(0x2C87C156);
     if (m_unk38 == 0) {
-        CdsAssert__FPciPc("Interface.cpp", 0x4DB, "mpCursor");
+        CdsAssert("Interface.cpp", 0x4DB, "mpCursor");
     }
     m_unk38->m_unkC = 0;
 }
@@ -2294,7 +2294,7 @@ void HudHint::Init(unsigned int arg0) {
 void HudHint::InitNode(PMeshNode *node) {
     m_unkB4 = ((PMNode *)node)->Find(0xFBD2D937U);
     if (m_unkB4 == 0) {
-        CdsAssert__FPciPc("Interface.cpp", 0x3A0, "mpBG");
+        CdsAssert("Interface.cpp", 0x3A0, "mpBG");
     }
     m_unkB4->m_unkC = 0;
     float *pBox = (float *)(BoxSize + *(signed char *)((char *)&gInterface + 0x93) * 0xC);
@@ -2357,8 +2357,8 @@ void Interface::InitHud() {
     int i;
     char *table;
 
-    ((m_unk1C4 != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x35B, "mpInterface"));
-    ((mpPlayerData__7GameHud != 0) ? (void)0 : CdsAssert__FPciPc("Interface.cpp", 0x35C, "GameHud::mpPlayerData"));
+    ((m_unk1C4 != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x35B, "mpInterface"));
+    ((mpPlayerData__7GameHud != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x35C, "GameHud::mpPlayerData"));
     if (((PMNode *)m_unk1C4)->m_unk8 != 0xCF9EDC06) {
         pNode = (((PMNode *)m_unk1C4)->m_unk14 < 2) ? 0 : ((PMNode *)m_unk1C4)->m_unk1C[1];
         pNew = pNode->Find(0xCF9EDC06);
@@ -2576,7 +2576,7 @@ void Interface::LoadingDisplay(unsigned int arg0, int arg1) {
 // FUNCTION: 0x144CA0 AddMeshLayer__9InterfaceFP6PMNode
 void Interface::AddMeshLayer(PMNode *node) {
     if ((unsigned int)m_unk404 >= 8) {
-        CdsAssert__FPciPc("Interface.cpp", 0x1ED, "mMeshLayerList.GetCount() < MAX_MESHLAYER");
+        CdsAssert("Interface.cpp", 0x1ED, "mMeshLayerList.GetCount() < MAX_MESHLAYER");
     }
     ((PArray *)&m_unk404)->Add(node);
     m_unk1C0 |= 8;
@@ -2646,14 +2646,14 @@ PMNode *Interface::Load(const char *arg0) {
         m_unk1C8 = 0;
     }
     if (strlen(arg0) >= 0x20U) {
-        CdsAssert__FPciPc("Interface.cpp", 0x1AD, "strlen(pName) < sizeof(mName)");
+        CdsAssert("Interface.cpp", 0x1AD, "strlen(pName) < sizeof(mName)");
     }
     strcpy(mName, arg0);
     SoundGainEEControl();
     m_unk1C4 = Load__6PWorldFPCcb13eTextureGroup(gEng, arg0, false, (eTextureGroup)0x6A);
     if (m_unk1C4 == 0) {
         printf("%s Load Error\n", arg0);
-        CdsAssert__FPciPc("Interface.cpp", 0x1B4, "0");
+        CdsAssert("Interface.cpp", 0x1B4, "0");
     }
     RemoveNullAnimation__6PMNodeFv((PMNode *)m_unk1C4);
     ((PMNode *)m_unk1C4)->SetAllFrustrumTest((eBoxIntersect)1);
@@ -2712,7 +2712,7 @@ void Interface::DisplayFadeRectangle() {
 void Interface::FadeScreen(float arg0, float arg1, bool arg2, eFadeColor arg3) {
     float var_f20 = arg1;
     if ((int)arg3 >= 2) {
-        CdsAssert__FPciPc("Interface.cpp", 0x14E, "eColor < FADE_COLOR_MAX");
+        CdsAssert("Interface.cpp", 0x14E, "eColor < FADE_COLOR_MAX");
     }
     m_unk426 = (signed char)arg3;
     m_unk424 = arg2;

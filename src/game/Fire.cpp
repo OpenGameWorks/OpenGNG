@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Fire.h"
 #include "TimerAPI.h"
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
@@ -11,7 +12,6 @@ extern TimerAPI mTimerAPI__13EntityManager;
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
 extern "C" void __dl__FPv(void *pMem);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern char gEng[105360];
 extern unsigned int Fire_IdleSeq[18];
 extern unsigned int Steam_IdleSeq[18];
@@ -87,7 +87,7 @@ void Fire::Execute() {
                 if (m_unk1B0 == 2) {
                     void *found = Find__6PMNodeFUi(node, 0xA4293D97);
                     if (found == 0) {
-                        CdsAssert__FPciPc("Fire.cpp", 0x4F, "pConeNode");
+                        CdsAssert("Fire.cpp", 0x4F, "pConeNode");
                     }
                     *(int *)((char *)found + 0x2C) = 0;
                     return;

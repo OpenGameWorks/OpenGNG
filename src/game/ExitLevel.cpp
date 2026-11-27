@@ -13,7 +13,6 @@ extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern "C" void EnableSleep__15EntityBaseClassFbb(void *pThis, bool bA, bool bB);
 extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(unsigned int nId);
@@ -95,7 +94,7 @@ void ExitLevel::Execute()
     case -1:
         SetState__15EntityBaseClassFi(this, 0);
         EnableSleep__15EntityBaseClassFbb(this, false, false);
-        ((m_unk1B8 < 4) ? (void)0 : CdsAssert__FPciPc("ExitLevel.cpp", 0x2F, "mEVars.miExitType < EXIT_MAX"));
+        ((m_unk1B8 < 4) ? (void)0 : CdsAssert("ExitLevel.cpp", 0x2F, "mEVars.miExitType < EXIT_MAX"));
         m_unk1C0 = m_unk190;
         m_unk1B4 = 0;
         m_unk1D4 = 0;

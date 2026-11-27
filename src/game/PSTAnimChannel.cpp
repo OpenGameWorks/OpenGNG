@@ -1,9 +1,9 @@
 // FLAGS: -str readonly
 #include "PSTAnimChannel.h"
+#include "Debug.h"
 #include "types.h"
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *memcpy(void *, const void *, unsigned int);
 class PCDFile {
 public:
@@ -14,10 +14,10 @@ public:
 // note: 3 words: mpKeyFrameTable[muNumKeyFrames - 1] with an unsigned index local; the original folds the -1 into the table base (addiu -8 on the table) where ours subtracts 1 from the count. Tried direct, pointer, base-minus-one and int-arithmetic indexing (5-8), raw member reads (4-5).
 float PSTAnimChannel::GetNumFrames() {
     if (mpKeyFrameTable == 0) {
-        CdsAssert__FPciPc("PSTAnimChannel.cpp", 0x8E, "mpKeyFrameTable");
+        CdsAssert("PSTAnimChannel.cpp", 0x8E, "mpKeyFrameTable");
     }
     if (muNumKeyFrames == 0) {
-        CdsAssert__FPciPc("PSTAnimChannel.cpp", 0x8F, "muNumKeyFrames");
+        CdsAssert("PSTAnimChannel.cpp", 0x8F, "muNumKeyFrames");
     }
     unsigned int nIdx = muNumKeyFrames - 1;
     return mpKeyFrameTable[nIdx].mfTime;
@@ -27,10 +27,10 @@ float PSTAnimChannel::GetNumFrames() {
 // note: DIFF 53 words; the original's 2-keyframe branch (count == 2 jumps into the lerp) and its loop register layout are missing, and the first branch differs at 0x60.
 void PSTAnimChannel::EvaluateAnim(float fTime, float &fOut) {
     if (mpKeyFrameTable == 0) {
-        CdsAssert__FPciPc("PSTAnimChannel.cpp", 0x53, "mpKeyFrameTable");
+        CdsAssert("PSTAnimChannel.cpp", 0x53, "mpKeyFrameTable");
     }
     if (muNumKeyFrames == 0) {
-        CdsAssert__FPciPc("PSTAnimChannel.cpp", 0x54, "muNumKeyFrames");
+        CdsAssert("PSTAnimChannel.cpp", 0x54, "muNumKeyFrames");
     }
     PSTAnimKeyFrame *pNext = mpKeyFrameTable;
     int nIdx = 0;
@@ -54,7 +54,7 @@ void PSTAnimChannel::EvaluateAnim(float fTime, float &fOut) {
 // FUNCTION: 0x0019A490 Load__14PSTAnimChannelFP8PPakFile
 int PSTAnimChannel::Load(PPakFile *poFile) {
     if (poFile == 0) {
-        CdsAssert__FPciPc("PSTAnimChannel.cpp", 0x2B, "poFile");
+        CdsAssert("PSTAnimChannel.cpp", 0x2B, "poFile");
     }
     int aHeader[4];
     if (((PCDFile *)poFile)->Read(aHeader, 0x10) != 0x10) {
@@ -84,7 +84,7 @@ PSTAnimChannel::PSTAnimChannel(PSTAnimChannel &other) {
     m_unk8 = other.m_unk8;
     mpKeyFrameTable = new PSTAnimKeyFrame[muNumKeyFrames];
     if (mpKeyFrameTable == 0) {
-        CdsAssert__FPciPc("PSTAnimChannel.cpp", 0x20, "mpKeyFrameTable");
+        CdsAssert("PSTAnimChannel.cpp", 0x20, "mpKeyFrameTable");
     }
     memcpy(mpKeyFrameTable, other.mpKeyFrameTable, muNumKeyFrames * 8);
 }

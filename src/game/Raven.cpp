@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "Raven.h"
+#include "Debug.h"
 #include "types.h"
 
 // TODO(header): foreign declarations
@@ -63,13 +64,6 @@ extern EntityManager *mPlayerAPI__13EntityManager;
 extern EntityBaseClass *mpEntMgr__15EntityBaseClass;
 extern "C" int IsPauseDisabled__6PlayerFv(Player *pPlayer);
 
-class Debug {
-public:
-    void DebugDisp(char *pText);
-
-    // Debug size is unknown; the placeholder keeps gDebug out of small data (threshold 8 bytes).
-    char _pad000[0x10];
-};
 extern Debug gDebug;
 
 class PMNode;
@@ -81,7 +75,6 @@ extern "C" void SetState__15EntityBaseClassFi(void *, int);
 extern "C" void __dl__FPv(void *pMem);
 extern unsigned char __vt__5Raven[0x80];
 
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 extern "C" long long fptodp(float arg0);
 extern "C" void PlaySequence__15EntityBaseClassFPUi(void *pThis, unsigned int *pSeq);
@@ -129,7 +122,7 @@ extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void *__ct__7PhysicsFv(void *pThis);
 
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Raven.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("Raven.cpp", line, #cond))
 
 // FUNCTION: 0x001B25E0 __dt__5RavenFv
 extern "C" void *__dt__5RavenFv(Raven *pThis, short nFlag) {
@@ -193,7 +186,7 @@ int Raven::GetSoundID(unsigned int nId) {
         break;
     }
     if (snd == 0) {
-        CdsAssert__FPciPc("Raven.cpp", 0x41C, "aSndId");
+        CdsAssert("Raven.cpp", 0x41C, "aSndId");
     }
     return snd;
 }
@@ -214,7 +207,7 @@ int Raven::CanAttack() {
     if (bCan != 0) {
         Player *pPlayer = mpEntMgr__15EntityBaseClass->m_unk505C;
         if (pPlayer == 0) {
-            CdsAssert__FPciPc("Raven.cpp", 0x3DA, "apPlayer");
+            CdsAssert("Raven.cpp", 0x3DA, "apPlayer");
         }
         if (pPlayer->m_unk163 == 3 || pPlayer->m_unk229 == 4 || IsPauseDisabled__6PlayerFv(pPlayer) != 0) {
             bCan = 0;
@@ -239,7 +232,7 @@ void Raven::FlyAway() {
                 PlaySequence__15EntityBaseClassFPUi(this, SeaGull_Init);
                 break;
             default:
-                CdsAssert__FPciPc("Raven.cpp", 0x3B9, "false");
+                CdsAssert("Raven.cpp", 0x3B9, "false");
                 break;
             }
         }
@@ -351,7 +344,7 @@ void Raven::OnTouchEvent(EntityBaseClass *pArg) {
             m_unk10C &= 0xFBFFFFFF;
             Player *pPlayer = mpEntMgr__15EntityBaseClass->m_unk505C;
             if (pPlayer == 0) {
-                CdsAssert__FPciPc("Raven.cpp", 0x314, "apPlayer");
+                CdsAssert("Raven.cpp", 0x314, "apPlayer");
             }
             if (pPlayer->m_unk163 == 2 && pPlayer->m_unk1CC == m_unk4) {
                 return;

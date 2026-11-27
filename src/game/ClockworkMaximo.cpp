@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "ClockworkMaximo.h"
+#include "Debug.h"
 #include "types.h"
 
 // TODO(header): foreign declarations
@@ -40,9 +41,8 @@ extern "C" void SetState__15EntityBaseClassFi(void *, int);
 extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *, void *);
 extern "C" int RequestAttack__15EntityBaseClassFP15EntityBaseClassUi(void *, void *, unsigned int);
 extern "C" int FacingPoint__7MathAPIFP15EntityBaseClassPA4_ff(void *, void *, float);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("ClockworkMaximo.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("ClockworkMaximo.cpp", line, #cond))
 extern "C" void RotateTo__15EntityBaseClassFff(void *, float, float);
 extern "C" float Round180__Ff(float);
 extern char CMaximo_RunSeq[0x40];
@@ -316,26 +316,26 @@ void ClockworkMaximo::UpdateShieldStatus(Shield *arg0) {
 // 5 words: tail copy at 0x1D8-0x1F8 has the shield and skeleton pointers in v1/a1 and a0; original has the shield in a0 and the skeleton in v1.
 void ClockworkMaximo::ThrowShield() {
     if (m_unk280 != 0) {
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA69, "mpShield == NULL");
+        CdsAssert("ClockworkMaximo.cpp", 0xA69, "mpShield == NULL");
     }
     m_unk280 = (Shield *)Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 5, false, 0);
     if (m_unk280 == 0) {
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA6C, "mpShield");
+        CdsAssert("ClockworkMaximo.cpp", 0xA6C, "mpShield");
     }
     void *pSkel = (void *)m_unk3C;
     if (pSkel == 0) {
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA76, "apSkeleton");
+        CdsAssert("ClockworkMaximo.cpp", 0xA76, "apSkeleton");
     }
     void *pBone = Find__6PMNodeFUi(pSkel, 0x6499DC24);
     if (pBone == 0) {
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA79, "apBone");
+        CdsAssert("ClockworkMaximo.cpp", 0xA79, "apBone");
     }
     float sp30[4];
     float sp40[4];
     *(u_long128 *)sp40 = *(u_long128 *)((char *)pBone + 0x70);
     ClockworkMaximo *pTarget = GetTarget();
     if (pTarget == 0) {
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA7E, "pTarget");
+        CdsAssert("ClockworkMaximo.cpp", 0xA7E, "pTarget");
     }
     float *pSrc;
     if (pTarget->m_unk3C != 0) {
@@ -371,14 +371,14 @@ void ClockworkMaximo::ThrowShield() {
 void ClockworkMaximo::SetShockwave() {
     int pNode = m_unk3C;
     if (pNode == 0) {
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA59, "pNode");
+        CdsAssert("ClockworkMaximo.cpp", 0xA59, "pNode");
     }
     void *pPrj;
     float (*pVel)[4] = (float (*)[4])(pNode + 0x80);
     float (*pPos)[4] = (float (*)[4])(pNode + 0x90);
     pPrj = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x2D, false, 0);
     if (pPrj == 0) {
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA5F, "pPrj");
+        CdsAssert("ClockworkMaximo.cpp", 0xA5F, "pPrj");
     }
     InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(pPrj, 0x1E, pVel, pPos, 0);
 }
@@ -388,7 +388,7 @@ void ClockworkMaximo::DetachWeapon(WEAPON_TYPE arg0) {
     int pNode = m_unk3C;
     unsigned int var;
     if (pNode == 0) {
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA36, "apSkeleton");
+        CdsAssert("ClockworkMaximo.cpp", 0xA36, "apSkeleton");
     }
     switch (arg0) {
     case WEAPON_TYPE_0:
@@ -401,12 +401,12 @@ void ClockworkMaximo::DetachWeapon(WEAPON_TYPE arg0) {
         var = 0x6499DC24;
         break;
     default:
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA47, "FALSE");
+        CdsAssert("ClockworkMaximo.cpp", 0xA47, "FALSE");
         break;
     }
     void *pBone = Find__6PMNodeFUi((void *)pNode, var);
     if (pBone == 0) {
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0xA4F, "apBone");
+        CdsAssert("ClockworkMaximo.cpp", 0xA4F, "apBone");
     }
     *(int *)((char *)pBone + 0x10) = 0;
     *(unsigned char *)((char *)pBone + 0x3E) &= 0xEF;
@@ -417,7 +417,7 @@ void ClockworkMaximo::DetachWeapon(WEAPON_TYPE arg0) {
 bool ClockworkMaximo::TargetFacingUs() {
     ClockworkMaximo *target = GetTarget();
     if (target == 0) {
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x9F3, "apTarget");
+        CdsAssert("ClockworkMaximo.cpp", 0x9F3, "apTarget");
     }
     int m3C = m_unk3C;
     void *a1 = (char *)this + 0x190;
@@ -433,7 +433,7 @@ bool ClockworkMaximo::TargetFacingUs() {
 // FUNCTION: 0x00210DF0 FacingTarget__15ClockworkMaximoFP15EntityBaseClass
 bool ClockworkMaximo::FacingTarget(EntityBaseClass *arg0) {
     if (arg0 == 0) {
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x9E3, "thepTarget");
+        CdsAssert("ClockworkMaximo.cpp", 0x9E3, "thepTarget");
     }
     int m3C = *(int *)((char *)arg0 + 0x3C);
     void *a1 = (char *)arg0 + 0x190;
@@ -459,7 +459,7 @@ void ClockworkMaximo::FaceHit(EntityBaseClass *arg0) {
     unsigned int type;
     int m3C;
     if (arg0 == 0) {
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x9B3, "aPlayer");
+        CdsAssert("ClockworkMaximo.cpp", 0x9B3, "aPlayer");
     }
     GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(arg0, sp30);
     m3C = *(int *)((char *)arg0 + 0x3C);
@@ -576,7 +576,7 @@ bool ClockworkMaximo::InBlockableState() {
 void ClockworkMaximo::CheckBlockAttack() {
     EntityBaseClass *target = (EntityBaseClass *)mPlayerAPI__13EntityManager;
     if (target == 0) {
-        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x924, "pPlayer");
+        CdsAssert("ClockworkMaximo.cpp", 0x924, "pPlayer");
     }
     if (m_unk240 > 0 && m_unk1E8 != 0 && *((unsigned char *)target + 0x23D2) != 0 &&
         *(unsigned short *)((char *)target + 0x15E) != 0xD &&
@@ -610,7 +610,7 @@ ClockworkMaximo *ClockworkMaximo::GetTarget() {
     if (target == 0) {
         target = (VirtualSlots *)mPlayerAPI__13EntityManager;
         if (target == 0) {
-            CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x91A, "apTarget");
+            CdsAssert("ClockworkMaximo.cpp", 0x91A, "apTarget");
         }
     }
     return (ClockworkMaximo *)target;
@@ -723,7 +723,7 @@ int ClockworkMaximo::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned int ar
         return 2;
     }
     if (temp_s1 == 6) {
-        ((m_unk1E8 != 0) ? (void)0 : CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x7A1, "mEVars.m_bHasShield"));
+        ((m_unk1E8 != 0) ? (void)0 : CdsAssert("ClockworkMaximo.cpp", 0x7A1, "mEVars.m_bHasShield"));
         SetState__15EntityBaseClassFi(this,7);
         return 4;
     }
@@ -835,7 +835,7 @@ void ClockworkMaximo::Execute() {
             if (m_unkE9 != 0 && m_unk1E0 != 0) {
                 char *pSpawn = (char *)Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 8, false, 0);
                 if (pSpawn == 0) {
-                    CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x740, "apKey");
+                    CdsAssert("ClockworkMaximo.cpp", 0x740, "apKey");
                 }
                 char *pSrc = ((char *)m_unk3C != 0) ? (char *)m_unk3C + 0x80 : (char *)this + 0x190;
                 u_long128 spB0;
@@ -917,14 +917,14 @@ void ClockworkMaximo::Execute() {
                 if (m_unk38 == 0) {
                     m_unk38 = (ClockworkMaximoState *)new Physics;
                     if (m_unk38 == 0) {
-                        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x2AD, "mpPhysics");
+                        CdsAssert("ClockworkMaximo.cpp", 0x2AD, "mpPhysics");
                     }
                     SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12, 0);
                 }
                 if (m_unkD4 == 0) {
                     m_unkD4 = new Shadow(Shadow::SHADOW_TYPE_1, 0x87000006);
                     if (m_unkD4 == 0) {
-                        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x2B6, "mpShadow");
+                        CdsAssert("ClockworkMaximo.cpp", 0x2B6, "mpShadow");
                     }
                     Shadow *s = m_unkD4;
                     if (s != 0) {
@@ -936,7 +936,7 @@ void ClockworkMaximo::Execute() {
                 }
                 PlaySequence__15EntityBaseClassFPUi(this, CMaximo_LoadMeshSeq);
                 if (m_unk3C == 0) {
-                    CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x2BF, "GetMeshNode()");
+                    CdsAssert("ClockworkMaximo.cpp", 0x2BF, "GetMeshNode()");
                 }
                 ScaleSet__6PMNodeFffff((void *)m_unk3C, 1.15f, 1.15f, 1.15f, 1.0f);
                 sceVu0SubVector((float *)&m_unk210, (float *)&m_unk210, (float *)&m_unk210);
@@ -1235,7 +1235,7 @@ block_231:
                     char *var_v1_2;
                     temp_v0_21 = Find__6PMNodeFUi((void *)m_unk3C, 0x72C7C29BU);
                     if (temp_v0_21 == 0) {
-                        CdsAssert__FPciPc("ClockworkMaximo.cpp", 0x6F7, "pNode");
+                        CdsAssert("ClockworkMaximo.cpp", 0x6F7, "pNode");
                     }
                     if (m_unk3C != 0) {
                         var_v1_2 = (char *)(m_unk3C + 0x80);

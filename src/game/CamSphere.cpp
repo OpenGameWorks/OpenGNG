@@ -1,10 +1,10 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "CamSphere.h"
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void __dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern unsigned char __vt__9CamSphere[0x7C];
 extern unsigned char gEng[0x1A000];
@@ -21,7 +21,7 @@ public:
 };
 
 // The game's assert evaluates the condition at runtime, so the literal-address test is kept.
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("CamSphere.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("CamSphere.cpp", line, #cond))
 
 // FUNCTION: 0x001A3100 __dt__9CamSphereFv
 CamSphere::~CamSphere() {

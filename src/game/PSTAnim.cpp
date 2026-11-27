@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "PSTAnim.h"
+#include "Debug.h"
 #include "types.h"
 
 // TODO(header): foreign declarations
@@ -7,7 +8,6 @@ extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void *__dt__14PSTAnimChannelFv(void *pThis, short nFlag);
 extern "C" void __dla__FPv(void *pBlock);
 extern "C" void __dl__FPv(void *pBlock);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" int Read__7PCDFileFPvUi(void *pThis, void *pBuffer, unsigned int nSize);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void *__nw__FUi(unsigned int nSize);
@@ -24,10 +24,10 @@ void PSTAnim::Animate(float fTime, bool bFlag) {
     float fValue;
 
     if (m_unk4 == 0) {
-        CdsAssert__FPciPc("PSTAnim.cpp", 0xBF, "mpChannelTable");
+        CdsAssert("PSTAnim.cpp", 0xBF, "mpChannelTable");
     }
     if (m_unk8 == 0) {
-        CdsAssert__FPciPc("PSTAnim.cpp", 0xC0, "muNumChannels");
+        CdsAssert("PSTAnim.cpp", 0xC0, "muNumChannels");
     }
     if (m_unk0 != 0) {
         if (m_unk2 != 0) {
@@ -53,7 +53,7 @@ void PSTAnim::Animate(float fTime, bool bFlag) {
             for (unsigned int i = 0; i < (unsigned char)m_unk8; i++) {
                 PSTAnimChannel *pChannel = m_unk4[i];
                 if (pChannel == 0) {
-                    CdsAssert__FPciPc("PSTAnim.cpp", 0xE5, "apChannel");
+                    CdsAssert("PSTAnim.cpp", 0xE5, "apChannel");
                 }
                 EvaluateAnim__14PSTAnimChannelFfRf(pChannel, m_unkC, &fValue);
                 int nType = *(int *)((char *)pChannel + 8);
@@ -73,7 +73,7 @@ int PSTAnim::Load(PPakFile *pFile) {
     unsigned int i;
 
     if (pFile == 0) {
-        CdsAssert__FPciPc("PSTAnim.cpp", 0x79, "poFile");
+        CdsAssert("PSTAnim.cpp", 0x79, "poFile");
     }
     if (Read__7PCDFileFPvUi(pFile, aHeader, 0x10) != 0x10) {
         return 0;
@@ -115,7 +115,7 @@ int PSTAnim::Load(PPakFile *pFile) {
 // FUNCTION: 0x00199F90 Clone__7PSTAnimFP7PSTAnim
 void PSTAnim::Clone(PSTAnim *pSrc) {
     if (pSrc == 0) {
-        CdsAssert__FPciPc("PSTAnim.cpp", 0x4C, "poSource");
+        CdsAssert("PSTAnim.cpp", 0x4C, "poSource");
     }
     m_unkC = 0.0f;
     m_unk18 = -1;
@@ -126,13 +126,13 @@ void PSTAnim::Clone(PSTAnim *pSrc) {
     m_unk4 = (PSTAnimChannel **)__nwa__FUi(m_unk8 * 4);
     unsigned int i = 0;
     if (m_unk4 == 0) {
-        CdsAssert__FPciPc("PSTAnim.cpp", 0x58, "mpChannelTable");
+        CdsAssert("PSTAnim.cpp", 0x58, "mpChannelTable");
         i = 0;
     }
     for (i = 0; i < (unsigned char)m_unk8; i++) {
         PSTAnimChannel *pSrcChannel = pSrc->m_unk4[i];
         if (pSrcChannel == 0) {
-            CdsAssert__FPciPc("PSTAnim.cpp", 0x5F, "apSrcChannel");
+            CdsAssert("PSTAnim.cpp", 0x5F, "apSrcChannel");
         }
         PSTAnimChannel *pChannel = (PSTAnimChannel *)__nw__FUi(0xC);
         if (pChannel != 0) {
@@ -140,7 +140,7 @@ void PSTAnim::Clone(PSTAnim *pSrc) {
         }
         m_unk4[i] = pChannel;
         if (m_unk4[i] == 0) {
-            CdsAssert__FPciPc("PSTAnim.cpp", 0x62, "mpChannelTable[auCount]");
+            CdsAssert("PSTAnim.cpp", 0x62, "mpChannelTable[auCount]");
         }
         float fFrames = GetNumFrames__14PSTAnimChannelFv(m_unk4[i]);
         unsigned int nFrames = (unsigned int)fFrames;

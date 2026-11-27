@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Tinker.h"
 
 // TODO(header): foreign declarations
@@ -13,9 +14,8 @@ struct TempApparitionArray { int m_count; int m_unk04; unsigned int *m_pData; ch
 extern TempApparitionArray mTempArray__15EntityBaseClass;
 // The second argument is not set by the caller; the original leaves a1 untouched.
 extern "C" void *InstanceIsValid__15EntityBaseClassFUi(EntityBaseClass *pEntity);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Tinker.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("Tinker.cpp", line, #cond))
 extern EntityManager *mpEntMgr__15EntityBaseClass;
 extern "C" void *GetPtrToApparition__13EntityManagerFUi(EntityManager *pThis, unsigned int arg0);
 extern "C" int GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(EntityManager *pThis, int eLoadClass, PArray *pArray, float (*pBox)[4], float fRadius, int nFlags, bool bFlagA, bool bFlagB);
@@ -290,7 +290,7 @@ void *Tinker::GetAnimSequence(unsigned int arg0) {
             }
             break;
         default:
-            CdsAssert__FPciPc("Tinker.cpp", 0xB3F, "false");
+            CdsAssert("Tinker.cpp", 0xB3F, "false");
             break;
         }
     } else if (m_unk1B0 == 1) {
@@ -342,7 +342,7 @@ void *Tinker::GetAnimSequence(unsigned int arg0) {
             var_s0 = &Baron_TransitionToIdleSeq;
             break;
         default:
-            CdsAssert__FPciPc("Tinker.cpp", 0xB96, "false");
+            CdsAssert("Tinker.cpp", 0xB96, "false");
             break;
         }
     } else if (m_unk1B0 == 2) {
@@ -389,7 +389,7 @@ void *Tinker::GetAnimSequence(unsigned int arg0) {
             var_s0 = &Manda_TransitionToIdleSeq;
             break;
         default:
-            CdsAssert__FPciPc("Tinker.cpp", 0xBD4, "false");
+            CdsAssert("Tinker.cpp", 0xBD4, "false");
             break;
         }
     } else if (m_unk1B0 == 3) {
@@ -436,12 +436,12 @@ void *Tinker::GetAnimSequence(unsigned int arg0) {
             var_s0 = &BGuard_TransitionToIdleSeq;
             break;
         default:
-            CdsAssert__FPciPc("Tinker.cpp", 0xC12, "false");
+            CdsAssert("Tinker.cpp", 0xC12, "false");
             break;
         }
     }
     if (var_s0 == 0) {
-        CdsAssert__FPciPc("Tinker.cpp", 0xC17, "aiRet");
+        CdsAssert("Tinker.cpp", 0xC17, "aiRet");
     }
     return var_s0;
 }
@@ -451,7 +451,7 @@ void Tinker::SetAsActivatedEnemyTarget() {
     int i;
     int off;
     if (m_unk280 != 0) {
-        CdsAssert__FPciPc("Tinker.cpp", 0xACD, "m_bTrapped == false");
+        CdsAssert("Tinker.cpp", 0xACD, "m_bTrapped == false");
     }
     for (i = 0, off = 0; i < 4; off += 4, i++) {
         EntityBaseClass *pEnt = *(EntityBaseClass **)((char *)this + off + 0x2AC);
@@ -958,7 +958,7 @@ void Tinker::Execute() {
             }
             m_unk38 = (Physics *)pPhys;
             if (m_unk38 == 0) {
-                CdsAssert__FPciPc("Tinker.cpp", 0x2F5, "mpPhysics");
+                CdsAssert("Tinker.cpp", 0x2F5, "mpPhysics");
             }
         }
         SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12, 0);
@@ -969,7 +969,7 @@ void Tinker::Execute() {
             }
             m_unkD4 = (char *)pShadow;
             if (m_unkD4 == 0) {
-                CdsAssert__FPciPc("Tinker.cpp", 0x2FD, "mpShadow");
+                CdsAssert("Tinker.cpp", 0x2FD, "mpShadow");
             }
         }
         if (m_unkD4 != 0) {
@@ -1002,7 +1002,7 @@ void Tinker::Execute() {
             if (m_unk2A8 == 0) {
                 char sMsg[0x40];
                 sprintf(sMsg, "Tinker refers to bad waypoint group ( group id = %d )", m_unk1BC);
-                CdsAssert__FPciPc("Tinker.cpp", 0x32E, sMsg);
+                CdsAssert("Tinker.cpp", 0x32E, sMsg);
             }
         }
         if (m_unk2D0.m_unk8 != 0) {
@@ -1030,14 +1030,14 @@ void Tinker::Execute() {
             int nMode = m_unk1B4;
             if (nMode != 2 && nMode != 0) {
                 if (nMode != 1) {
-                    CdsAssert__FPciPc("Tinker.cpp", 0x37B, "Invalid Tinker AI mode");
+                    CdsAssert("Tinker.cpp", 0x37B, "Invalid Tinker AI mode");
                 } else {
                     if ((int)m_unk2CC < 0) {
                         m_unk2C0 = 0;
                         m_unk2CC = 0;
                     }
                     if (m_unk2BC != 0 && ActivatedEnemiesDead() != 0 && TrappedEntityRemoved() != 0) {
-                        CdsAssert__FPciPc("Tinker.cpp", 0x358, "false");
+                        CdsAssert("Tinker.cpp", 0x358, "false");
                     }
                 }
             }
@@ -1049,7 +1049,7 @@ void Tinker::Execute() {
         if (*(unsigned char *)((char *)this + 0xE9) != 0) {
             m_unkE8 = 3;
             if (m_unk1B4 != 2 && m_unk1B4 != 0 && m_unk1B4 != 1) {
-                CdsAssert__FPciPc("Tinker.cpp", 0x3A5, "Invalid Tinker AI mode");
+                CdsAssert("Tinker.cpp", 0x3A5, "Invalid Tinker AI mode");
             } else {
                 PlaySequence__15EntityBaseClassFPUi(this, GetAnimSequence(m_unk20));
             }
@@ -1140,7 +1140,7 @@ void Tinker::Execute() {
             }
             if ((m_unk3C[0x3F] & 4) && m_unk294 == 0) {
                 if (m_unk1B0 != 2 && m_unk1B0 != 3) {
-                    CdsAssert__FPciPc("Tinker.cpp", 0x445, "(mEVars.m_iType == TYPE_MANDA) || (mEVars.m_iType == TYPE_RANDY)");
+                    CdsAssert("Tinker.cpp", 0x445, "(mEVars.m_iType == TYPE_MANDA) || (mEVars.m_iType == TYPE_RANDY)");
                 }
                 unsigned int nSound = 0x4E67;
                 if (m_unk1B0 == 2) {

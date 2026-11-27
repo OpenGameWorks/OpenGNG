@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PParticleRipples.h"
 
 // TODO(header): foreign declarations
@@ -13,7 +14,6 @@ extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void sceVu0UnitMatrix(void *pMat);
 extern "C" void sceVu0CopyVector(void *pDst, float *pSrc);
 extern "C" int rand(void);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 void QwordCopy(u_long128 *pDst, u_long128 *pSrc, unsigned int nQwords);
 extern unsigned char __vt__16PParticleRipples[];
@@ -51,13 +51,13 @@ void *PParticleRipples::InitRingMeshPacket(int &nOut, int nArg1, bool bArg2) {
     }
     nCount = nFirst + nSecond;
     if (nCount >= 0x32) {
-        CdsAssert__FPciPc("PParticleRipples.cpp", 0x16E, "iNumVerts < fx_i_instance_max_vertices");
+        CdsAssert("PParticleRipples.cpp", 0x16E, "iNumVerts < fx_i_instance_max_vertices");
     }
     ((unsigned int *)aTop[nCount])[3] |= 0x8000;
     ((unsigned int *)aTop[nCount + 1])[3] |= 0x8000;
     void *pPacket = __nwa__FUi(0x970);
     if (pPacket == 0) {
-        CdsAssert__FPciPc("PParticleRipples.cpp", 0x176, "apPacket");
+        CdsAssert("PParticleRipples.cpp", 0x176, "apPacket");
     }
     ((int *)pPacket)[0] = nCount;
     ((int *)pPacket)[1] = 0;
@@ -178,7 +178,7 @@ void PParticleRipples::Animate(float fArg) {
     }
     m_unk8A8 = (char *)AllocParticles__12PDisplayListFii(*(void **)((char *)&gGfxEng + 0x154C80), m_unk860, 6);
     if (m_unk8A8 == 0) {
-        CdsAssert__FPciPc("PParticleRipples.cpp", 0xA4, "mpFxInstances");
+        CdsAssert("PParticleRipples.cpp", 0xA4, "mpFxInstances");
     }
     m_unk8AC = 0;
     if (m_unk8B0 != 0) {
@@ -279,7 +279,7 @@ void PParticleRipples::Init(int nArg0, bool bArg1, bool bArg2) {
     }
     m_unk890 = InitRingMeshPacket(m_unk894, nArg0, bArg1);
     if (m_unk890 == 0) {
-        CdsAssert__FPciPc("PParticleRipples.cpp", 0x39, "mpRippleMeshPacket");
+        CdsAssert("PParticleRipples.cpp", 0x39, "mpRippleMeshPacket");
     }
     memset(m_unk0E0, 0, 0x780);
     m_unk860 = 0;

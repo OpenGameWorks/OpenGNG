@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PStaticInstanceMesh.h"
 #include "PPakFile.h"
 #include "PShader.h"
@@ -15,10 +16,9 @@ extern "C" void *__dt__7PShaderFv(void *pThis, short nFlag);
 extern "C" void __dla__FPv(void *pBlock);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" int Load__7PShaderFP8PPakFileP6PArrayb(PShader *pThis, PPakFile *pFile, PArray *pArray, bool bFlag);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern char gGfxEng[1504384];
 
-#define CDS_ASSERT(line, cond, expr) ((cond) ? (void)0 : CdsAssert__FPciPc("PStaticInstanceMesh.cpp", line, expr))
+#define CDS_ASSERT(line, cond, expr) ((cond) ? (void)0 : CdsAssert("PStaticInstanceMesh.cpp", line, expr))
 
 // Virtual slot 0x08 is the destructor (virtual #0); slot 0x20 is Slot06.
 class PParticleOneShot {

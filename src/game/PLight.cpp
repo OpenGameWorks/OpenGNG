@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "PLight.h"
+#include "Debug.h"
 #include "PCDFile.h"
 #include "PMeshNode.h"
 
@@ -9,7 +10,6 @@ extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
 extern "C" float sceVu0InnerProduct(float *a, float *b);
 extern "C" void sceVu0ScaleVectorXYZ(float *dst, float *src, float scale);
 extern "C" float sqrtf(float x);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void memcpy(void *dst, const void *src, unsigned int n);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void __dl__FPv(void *pMem);
@@ -53,7 +53,7 @@ int PLight::Load(PPakFile *pFile) {
     char buf[0x40];
 
     if (pFile == 0) {
-        CdsAssert__FPciPc("PLight.cpp", 0x2E, "poFile");
+        CdsAssert("PLight.cpp", 0x2E, "poFile");
     }
     if (((PCDFile *)pFile)->Read(buf, 0x40) != 0x40) {
         return 0;

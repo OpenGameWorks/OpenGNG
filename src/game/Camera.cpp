@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "Camera.h"
+#include "Debug.h"
 #include "PMat4.h"
 #include "MathAPI.h"
 #include "pad.h"
@@ -24,7 +25,6 @@ extern "C" void *__ct__16CameraCutManagerFP6Camera(void *pThis, Camera *pCamera)
 extern "C" void *__ct__11CameraDebugFP6Camera(void *pThis, Camera *pCamera);
 extern "C" void sceVu0UnitMatrix(float (*pMatrix)[4]);
 extern "C" void InitFrustrum__6PWorldFP5PMat4PA4_f(void *pWorld, PMat4 *pMat, float (*pVec)[4]);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" int sprintf(char *buf, const char *fmt, ...);
 extern unsigned char gEng[0x1A000];
 extern float GAME_FPS;
@@ -73,12 +73,6 @@ public:
     float m_v[4];
 };
 
-class Debug {
-public:
-    void StartTimer(unsigned int arg0);
-    void StopTimer(unsigned int arg0);
-    char _pad000[0x10];
-};
 
 extern Debug gDebug;
 
@@ -261,7 +255,7 @@ void Camera::StartCutCamera(unsigned int arg0, bool arg1) {
         }
         char buf[0x100];
         sprintf(buf, "Cut camera with ID = %d doesn't exist\n", arg0);
-        CdsAssert__FPciPc("Camera.cpp", 0x51B, buf);
+        CdsAssert("Camera.cpp", 0x51B, buf);
     }
 }
 
@@ -402,7 +396,7 @@ int Camera::UpdateFromCamBox() {
         return 1;
     }
     pPlayer = *(char **)&gEng[0x1883C];
-    ((pPlayer != 0) ? (void)0 : CdsAssert__FPciPc("Camera.cpp", 0x2D0, "pPlayer"));
+    ((pPlayer != 0) ? (void)0 : CdsAssert("Camera.cpp", 0x2D0, "pPlayer"));
     pTarget = pPlayer + 0x190;
     if (*(char **)(pPlayer + 0x3C) != 0) {
         pTarget = *(char **)(pPlayer + 0x3C) + 0x80;
@@ -497,7 +491,7 @@ int Camera::UpdateFromCamBox() {
         ret = 0;
         break;
     default:
-        CdsAssert__FPciPc("Camera.cpp", 0x41F, "0");
+        CdsAssert("Camera.cpp", 0x41F, "0");
         break;
     }
     sp150 = *(PVec3 *)m_unk00;
@@ -554,7 +548,7 @@ void Camera::SetupShakeScreen(float arg0, float arg1, float arg2, int arg3, int 
     m_unk148 = arg3;
     if (m_unk148 == 1) {
         if (idx >= 3) {
-            CdsAssert__FPciPc("Camera.cpp", 0x289, "iTableIdx < CAMERA_SHAKE_TABLE_MAX");
+            CdsAssert("Camera.cpp", 0x289, "iTableIdx < CAMERA_SHAKE_TABLE_MAX");
         }
         int *base = (int *)((char *)this + 0x17C);
         m_unk14C = base[idx];
@@ -577,7 +571,7 @@ struct CameraShakeEntry {
 // FUNCTION: 0x00179A00 ShakeScreenTable__6CameraFR5PVec3R5PVec3b
 int Camera::ShakeScreenTable(PVec3 &arg0, PVec3 &arg1, bool arg2) {
     if (m_unk14C == 0) {
-        CdsAssert__FPciPc("Camera.cpp", 0x242, "m_pCurrentShakeTable");
+        CdsAssert("Camera.cpp", 0x242, "m_pCurrentShakeTable");
     }
     if (m_unk128 != 0) {
         CameraShakeEntry *pEntry = (CameraShakeEntry *)m_unk14C + m_unk144;
@@ -725,7 +719,7 @@ void Camera::SetCamMode(short arg0, bool arg1) {
         m_unkB4 = 0;
         return;
     default:
-        CdsAssert__FPciPc("Camera.cpp", 0x19B, "0");
+        CdsAssert("Camera.cpp", 0x19B, "0");
     }
 }
 
@@ -867,7 +861,7 @@ void Camera::CreateViewMatrix(PMat4 &arg0, PVec3 arg1, PVec3 arg2) {
 void Camera::Update() {
     gDebug.StartTimer(4);
     if (!((unsigned int)m_unkB4 < 5)) {
-        CdsAssert__FPciPc("Camera.cpp", 0x5C, "m_iCameraMode < MAX_MODE");
+        CdsAssert("Camera.cpp", 0x5C, "m_iCameraMode < MAX_MODE");
     }
     switch (m_unkB4) {
     case 0:
@@ -880,11 +874,11 @@ void Camera::Update() {
         } else {
             char *pMgr = (char *)gEng + 0x137E0;
             if (pMgr == 0) {
-                CdsAssert__FPciPc("Camera.cpp", 0x72, "pEntityMgr");
+                CdsAssert("Camera.cpp", 0x72, "pEntityMgr");
             }
             char *pPlayer = *(char **)(pMgr + 0x505C);
             if (pPlayer == 0) {
-                CdsAssert__FPciPc("Camera.cpp", 0x75, "pPlayer");
+                CdsAssert("Camera.cpp", 0x75, "pPlayer");
             }
             if (*(int *)(pPlayer + 0x3C) != 0) {
                 if (m_unkCC == 0) {
@@ -994,7 +988,7 @@ extern "C" Camera *__ct__6CameraFv(Camera *volatile pThis)
     }
     pThis->m_unkBC = pm_unkBC;
     if (pThis->m_unkBC == 0) {
-        CdsAssert__FPciPc("Camera.cpp", 0x18, "m_pFollowCam");
+        CdsAssert("Camera.cpp", 0x18, "m_pFollowCam");
     }
     void *pm_unkC0 = __nw__FUi(0xD0);
     if (pm_unkC0 != 0) {
@@ -1002,7 +996,7 @@ extern "C" Camera *__ct__6CameraFv(Camera *volatile pThis)
     }
     pThis->m_unkC0 = pm_unkC0;
     if (pThis->m_unkC0 == 0) {
-        CdsAssert__FPciPc("Camera.cpp", 0x1B, "m_pCutManager");
+        CdsAssert("Camera.cpp", 0x1B, "m_pCutManager");
     }
     void *pm_unkC4 = __nw__FUi(0x250);
     if (pm_unkC4 != 0) {
@@ -1010,7 +1004,7 @@ extern "C" Camera *__ct__6CameraFv(Camera *volatile pThis)
     }
     pThis->m_unkC4 = pm_unkC4;
     if (pThis->m_unkC4 == 0) {
-        CdsAssert__FPciPc("Camera.cpp", 0x1E, "m_pDebugCam");
+        CdsAssert("Camera.cpp", 0x1E, "m_pDebugCam");
     }
     return pThis;
 }

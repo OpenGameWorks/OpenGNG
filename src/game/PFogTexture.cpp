@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "PFogTexture.h"
+#include "Debug.h"
 #include "PArray.h"
 #include "PParticleSystem.h"
 
@@ -8,7 +9,6 @@ extern "C" void Reset__16PParticleTextureFv(void *pThis);
 extern "C" void Update__16PParticleTextureFf(void *pThis, float fStep);
 extern "C" void __ct__16PParticleTextureFv(void *pThis);
 extern "C" void __dt__16PParticleTextureFv(void *pThis, short nFlags);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void __ct__12PParticleGasFv(void *pThis);
@@ -82,10 +82,10 @@ int PFogTexture::Init(struct tagProceduralTextureData *pData, PArray *pArray)
     int nSlot;
 
     if (pData == 0) {
-        CdsAssert__FPciPc("PFogTexture.cpp", 0x45, "pData");
+        CdsAssert("PFogTexture.cpp", 0x45, "pData");
     }
     if (pArray == 0) {
-        CdsAssert__FPciPc("PFogTexture.cpp", 0x46, "poTextureHandles");
+        CdsAssert("PFogTexture.cpp", 0x46, "poTextureHandles");
     }
     nResult = 1;
     nSlot = *(int *)((char *)pData + 0x28);
@@ -126,7 +126,7 @@ int PFogTexture::Init(int nIndex)
         __ct__12PParticleGasFv(m_unk570);
     }
     if (m_unk570 == 0) {
-        CdsAssert__FPciPc("PFogTexture.cpp", 0x37, "mpFogFx");
+        CdsAssert("PFogTexture.cpp", 0x37, "mpFogFx");
     }
     Create__12PParticleGasFP20tagParticleGasParamsfff(m_unk570, &params, 0.0f, 0.0f, 0.0f);
     ((PParticleSystem *)m_unk570)->m_unk10 = hTexture;

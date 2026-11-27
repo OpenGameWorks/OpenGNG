@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PObjectDisplayList.h"
 
 #include "PArray.h"
@@ -65,8 +66,6 @@ public:
     char _pad01C[0x74];     // entry size 0x90
 };
 
-void CdsAssert(char *pFile, int nLine, char *pExpr);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void UploadTextures__15PTextureManagerFPiiP12PDisplayList(void *pThis, int *pTextures, int nCount, void *pDisplayList);
 extern "C" void *GetTexEnv__15PTextureManagerFi(void *pThis, int nHandle);
 extern "C" void AddVifDmaPacket__12PDisplayListFP1i(void *pThis, void *pPacket, int nNumQW);
@@ -82,7 +81,7 @@ extern "C" void __ct__6PArrayFv(void *pThis);
 extern "C" void __dl__FPv(void *);
 extern "C" void *__nw__FUi(unsigned int nSize);
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PObjectDisplayList.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PObjectDisplayList.cpp", line, #cond))
 
 // DRAFT: 0x001D3B80 CreateDisplayList__18PObjectDisplayListFv
 // note: compiles, 225 words differ: frame 0x49C vs 0x4C4 size, loop s-register allocation and i*4/i*0x10 strength reduction differ; 6 variants tried

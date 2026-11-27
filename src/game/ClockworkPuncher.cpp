@@ -1,9 +1,9 @@
 // FLAGS: -str readonly
 #include "ClockworkPuncher.h"
+#include "Debug.h"
 
 // TODO(header): foreign declarations
 extern "C" void memcpy(void *, const void *, unsigned int);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void sceVu0SubVector(float *, float *, float *);
 extern "C" void sceVu0Normalize(float *, float *);
 extern "C" void sceVu0ScaleVector(float *, float *, float);
@@ -255,7 +255,7 @@ void ClockworkPuncher::AttachSparkEffect() {
 
     if (m_unk2B4 != 0) {
         if (m_unk2B4 == 0) {
-            CdsAssert__FPciPc("ClockworkPuncher.cpp", 0xA46, "m_pBackjoint");
+            CdsAssert("ClockworkPuncher.cpp", 0xA46, "m_pBackjoint");
         }
         m_unk2B4->DestroyFxTriggers(false, true, false);
     }
@@ -286,7 +286,7 @@ void ClockworkPuncher::AttachDamageMesh() {
     }
     pFound = Find__6PMNodeFUi((PMNode *)m_unk2C0, DamageNames[m_unk2B8]);
     if (pFound == 0) {
-        CdsAssert__FPciPc("ClockworkPuncher.cpp", 0xA33, "aNextJoint");
+        CdsAssert("ClockworkPuncher.cpp", 0xA33, "aNextJoint");
     }
     if (m_unk2B4 != 0) {
         if ((pNew = (char *)__nw__FUi(0x100)) != 0) {
@@ -301,14 +301,14 @@ void ClockworkPuncher::AttachDamageMesh() {
             pNew = pThis;
         }
         if (pNew == 0) {
-            CdsAssert__FPciPc("ClockworkPuncher.cpp", 0xA37, "pNew");
+            CdsAssert("ClockworkPuncher.cpp", 0xA37, "pNew");
         }
         CopyMNode__6PMNodeFR6PMNodeb((PMNode *)pNew, pFound, true);
         Add__6PArrayFPv((char *)m_unk2B4 + 0x14, pNew);
     }
     pSkeleton = m_unk3C;
     if (pSkeleton == 0) {
-        CdsAssert__FPciPc("ClockworkPuncher.cpp", 0xA3F, "pSkeleton");
+        CdsAssert("ClockworkPuncher.cpp", 0xA3F, "pSkeleton");
     }
     BuildDispList__9PSkeletonFv(pSkeleton);
 }
@@ -486,7 +486,7 @@ int ClockworkPuncher::InBlockableState() {
 void ClockworkPuncher::CheckBlockAttack() {
     char *pPlayer = (char *)mPlayerAPI__13EntityManager;
     if (pPlayer == 0) {
-        CdsAssert__FPciPc("ClockworkPuncher.cpp", 0x93E, "pPlayer");
+        CdsAssert("ClockworkPuncher.cpp", 0x93E, "pPlayer");
     }
     if (m_unk1FC > 0 && *(unsigned char *)(pPlayer + 0x23D2) != 0 &&
         *(unsigned short *)(pPlayer + 0x15E) != 0xD && *(int *)(pPlayer + 0x1CC) == m_unk4) {
@@ -610,7 +610,7 @@ void ClockworkPuncher::OnTimerEvent(unsigned int nHandle) {
         }
         if (m_unk2B4 != 0) {
             if (m_unk2B4 == 0) {
-                CdsAssert__FPciPc("ClockworkPuncher.cpp", 0x882, "m_pBackjoint");
+                CdsAssert("ClockworkPuncher.cpp", 0x882, "m_pBackjoint");
             }
             *(float *)((char *)m_unk2B4 + 0x90) = m_unk290;
         }
@@ -638,7 +638,7 @@ void ClockworkPuncher::OnWakeEvent() {
     if (m_unk3C != 0) {
         m_unk2B4 = Find__6PMNodeFUi((PMNode *)m_unk3C, 0xAB4BE7B1);
         if (m_unk2B4 == 0) {
-            CdsAssert__FPciPc("ClockworkPuncher.cpp", 0x862, "m_pBackjoint");
+            CdsAssert("ClockworkPuncher.cpp", 0x862, "m_pBackjoint");
         }
     }
     if (m_unk2BC != 0) {
@@ -828,7 +828,7 @@ int ClockworkPuncher::OnHitEvent(EntityBaseClass *pEntity, int nArg, unsigned in
     }
     m_unk288 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, aPauseFrames, true);
 
-    ((m_unk2B4 != 0) ? (void)0 : CdsAssert__FPciPc("ClockworkPuncher.cpp", 0x7FD, "m_pBackjoint"));
+    ((m_unk2B4 != 0) ? (void)0 : CdsAssert("ClockworkPuncher.cpp", 0x7FD, "m_pBackjoint"));
     m_unk290 = *(float *)((char *)m_unk2B4 + 0x90);
 
     if (nFlags & 0x20) {

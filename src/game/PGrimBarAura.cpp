@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "PGrimBarAura.h"
 #include "PParticleManager.h"
 #include "PDisplayList.h"
@@ -8,7 +9,6 @@ extern "C" void *__dt__15PParticleSystemFv(void *, short);
 extern "C" void __dl__FPv(void *);
 extern "C" void __dla__FPv(void *);
 extern "C" void *__nwa__FUi(unsigned int size);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern unsigned char __vt__12PGrimBarAura[];
 extern char gGfxEng[1504384];
@@ -24,7 +24,7 @@ void PGrimBarAura::Animate(float fDelta) {
     if (m_unk15 != 0) {
         m_unk08 = ((PDisplayList *)*(char **)(gGfxEng + 0x154C80))->AllocParticles(m_unk04, 2);
         if (m_unk08 == 0) {
-            CdsAssert__FPciPc("PGrimBarAura.cpp", 0x63, "mpVuParticles");
+            CdsAssert("PGrimBarAura.cpp", 0x63, "mpVuParticles");
         }
         if (m_unk100 != 0.0f) {
             float fT = m_unk10C + (fDelta * m_unk108);
@@ -84,7 +84,7 @@ int PGrimBarAura::Create(int nNum, float fA, float fB, float fC, float *pPos) {
         }
         m_unkE0 = (char *)__nwa__FUi(nNum << 5);
         if (m_unkE0 == 0) {
-            CdsAssert__FPciPc("PGrimBarAura.cpp", 0x2D, "mpAuraParticles");
+            CdsAssert("PGrimBarAura.cpp", 0x2D, "mpAuraParticles");
         }
         memset(m_unkE0, 0, nNum << 5);
         m_unk100 = fB;

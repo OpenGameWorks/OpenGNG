@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Bridge.h"
 #include "EntityBaseClass.h"
 #include "Physics.h"
@@ -22,7 +23,6 @@ extern void *mpResMgr__15EntityBaseClass;
 extern unsigned int BridgeRopeName[9];
 extern unsigned int BridgeName[9];
 extern "C" void *GetResource__16PResourceManagerFUib(void *pThis, unsigned int nId, bool bFlag);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern float aBridgeHalfLength;
 extern char *mPlayerAPI__13EntityManager;
 extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
@@ -113,7 +113,7 @@ void Bridge::LoadBridgeRope() {
         }
         m_unk34C = (BridgeView *)GetResource__16PResourceManagerFUib(mpResMgr__15EntityBaseClass, 0x010002C4, 0);
         if (!m_unk34C) {
-            CdsAssert__FPciPc("Bridge.cpp", 0x299, "m_pBridgeRope");
+            CdsAssert("Bridge.cpp", 0x299, "m_pBridgeRope");
         }
     }
     u_long128 *src = m_unk3C ? (u_long128 *)((char *)m_unk3C + 0x80) : (u_long128 *)m_unk190;
@@ -139,7 +139,7 @@ void Bridge::LoadBridgeRope() {
 // note: 69 words differ; frame, saves and loop registers match. Remaining: branch layout of the ternaries (original beqz/b/nop placement), beqz offset 0x3F vs 0x3B, and the v[] load order (0x84,0x88,0x80 in original; reordering did not change the count).
 void Bridge::LoadBridgeParts() {
     if (m_unk3C == 0) {
-        CdsAssert__FPciPc("Bridge.cpp", 0x262, "GetMeshNode()");
+        CdsAssert("Bridge.cpp", 0x262, "GetMeshNode()");
     }
     m_unk330 = 9;
     int i = 1;

@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 
 // TODO(header): foreign declarations
 extern "C" int sceDevConsPrintf(const char *pFmt, ...);
@@ -9,7 +10,6 @@ extern "C" void sceDevConsLocate(char *pCons, unsigned int nX, unsigned int nY);
 extern "C" unsigned int strlen(const char *pStr);
 extern "C" char *strcpy(char *pDst, const char *pSrc);
 extern "C" char *strcat(char *pDst, const char *pSrc);
-void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern char gEng[105360];
 extern short mPerformanceBars;
 extern short mDisplayListStatusBar;

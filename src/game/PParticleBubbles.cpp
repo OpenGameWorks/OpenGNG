@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PParticleBubbles.h"
 
 // TODO(header): foreign declarations
@@ -11,7 +12,6 @@ extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" int rand();
 extern "C" float sqrtf(float x);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0CopyVector(float *pDst, float *pSrc);
 extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
@@ -53,7 +53,7 @@ void PParticleBubbles::Render() {
         for (int fp = 0; fp < nBatches; fp++) {
             unsigned int nCount = (nRemain < 0x50) ? nRemain : 0x50;
             nRemain -= nCount;
-            ((nCount * 0x60 < 0x2000) ? (void)0 : CdsAssert__FPciPc("PParticleBubbles.cpp", 0xC3, "aiNumBubblesPerBatch * sizeof(VuFxInstance) < SPAD_TEMP_BUFFER_SIZE"));
+            ((nCount * 0x60 < 0x2000) ? (void)0 : CdsAssert("PParticleBubbles.cpp", 0xC3, "aiNumBubblesPerBatch * sizeof(VuFxInstance) < SPAD_TEMP_BUFFER_SIZE"));
             int nScratch = 0;
             if (nCount > 0) {
                 for (unsigned int i = 0; i < nCount; i++) {
@@ -81,7 +81,7 @@ void PParticleBubbles::Render() {
 
 // FUNCTION: 0x00202520 Create__16PParticleBubblesFP24tagParticleBubblesParamsfff
 int PParticleBubbles::Create(tagParticleBubblesParams *pParams, float fX, float fY, float fZ) {
-    ((pParams != 0) ? (void)0 : CdsAssert__FPciPc("PParticleBubbles.cpp", 0x27, "pParams"));
+    ((pParams != 0) ? (void)0 : CdsAssert("PParticleBubbles.cpp", 0x27, "pParams"));
     if (PParticleSystem::Create(pParams->m_unk30, 0) == 0) {
         return 0;
     }

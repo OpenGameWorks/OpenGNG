@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "PSkeleton.h"
+#include "Debug.h"
 #include "types.h"
 
 // TODO(header): foreign declarations
@@ -14,7 +15,6 @@ extern "C" void Allocate__6PArrayFUi(void *pThis, unsigned int nCount);
 extern "C" void BuildDispList__6PMNodeFP6PArray(void *pThis, void *pArr);
 extern "C" int Create__18PObjectDisplayListFP6PArrayP6PMNodeP5PMeshPb(void *pThis, void *pArr, void *pNode, void *pMesh, bool *pFlag);
 extern "C" void *__nw__FUi(unsigned int nSize);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 extern "C" float sqrtf(float fValue);
 extern "C" PObjectDisplayList *__ct__18PObjectDisplayListFv(PObjectDisplayList *pThis);
@@ -83,7 +83,7 @@ int PSkeleton::CreateObjectDisplayList() {
     }
     m_unkF8 = p;
     if (m_unkF8 == 0) {
-        CdsAssert__FPciPc("PSkeleton.cpp", 0x2EC, "mpObjDisplayList");
+        CdsAssert("PSkeleton.cpp", 0x2EC, "mpObjDisplayList");
     }
     m_unk18 = 0;
     void *pNode = 0;
@@ -114,7 +114,7 @@ void PSkeleton::EnableBone(unsigned int *pIds, bool bEnable) {
 // note: frame and register set differ; the loop-invariant pMesh+4 is CSE'd into a pointer (addiu s7) and nId lands in fp. Tried decl order, pointer cast, and byte-offset loads; all DIFF 77.
 void PSkeleton::SetSharedBonePtr(PMesh *pMesh) {
     if (pMesh == 0) {
-        CdsAssert__FPciPc("PSkeleton.cpp", 0x2BF, "pSharedMesh");
+        CdsAssert("PSkeleton.cpp", 0x2BF, "pSharedMesh");
     }
     unsigned int i = 0;
     unsigned int nCount = *(unsigned int *)((unsigned char *)pMesh + 4);
@@ -128,7 +128,7 @@ void PSkeleton::SetSharedBonePtr(PMesh *pMesh) {
                 pFrag = 0;
             }
             if (pFrag == 0) {
-                CdsAssert__FPciPc("PSkeleton.cpp", 0x2C8, "apFragment");
+                CdsAssert("PSkeleton.cpp", 0x2C8, "apFragment");
             }
             unsigned int nId = *(unsigned int *)(pFrag + 0x64);
             m_unk18 = 0;
@@ -137,7 +137,7 @@ void PSkeleton::SetSharedBonePtr(PMesh *pMesh) {
                 pNode = m_unk1C[0];
             }
             if (pNode == 0) {
-                CdsAssert__FPciPc("PSkeleton.cpp", 0x2CC, "apRootBone");
+                CdsAssert("PSkeleton.cpp", 0x2CC, "apRootBone");
             }
             i++;
             *(void **)(pFrag + 0x64) = FindBone__6PMNodeFUi(pNode, nId);
@@ -179,7 +179,7 @@ int PSkeleton::RecurseAttachAnim(PMeshNodeAnimDataTable *pTable) {
     };
 
     if (pTable == 0) {
-        CdsAssert__FPciPc("PSkeleton.cpp", 0x266, "pAnimDataTable");
+        CdsAssert("PSkeleton.cpp", 0x266, "pAnimDataTable");
     }
     m_unk18 = 0;
     void *pNode = 0;
@@ -195,7 +195,7 @@ int PSkeleton::RecurseAttachAnim(PMeshNodeAnimDataTable *pTable) {
 
     char *pEntries = *(char **)((char *)pTable + 0xC);
     if (pEntries == 0) {
-        CdsAssert__FPciPc("PSkeleton.cpp", 0x272, "apAnimTable");
+        CdsAssert("PSkeleton.cpp", 0x272, "apAnimTable");
     }
     unsigned int nCount = *(unsigned int *)((char *)pTable + 0x8);
     unsigned int i = 0;
@@ -220,7 +220,7 @@ int PSkeleton::RecurseAttachAnim(PMeshNodeAnimDataTable *pTable) {
         }
         m_unk24 = p;
         if (m_unk24 == 0) {
-            CdsAssert__FPciPc("PSkeleton.cpp", 0x28E, "mpAnim");
+            CdsAssert("PSkeleton.cpp", 0x28E, "mpAnim");
         }
     }
     *(short *)((char *)m_unk24 + 8) = (short)nMax;
@@ -456,7 +456,7 @@ int PSkeleton::Animate(float fTime, float fDelta, PMat4 *pMat, int nFlag, bool b
         pChild = 0;
     }
     if (pChild == 0) {
-        CdsAssert__FPciPc("PSkeleton.cpp", 0xE7, "pHip");
+        CdsAssert("PSkeleton.cpp", 0xE7, "pHip");
     }
     if (GetDeltaMove__6PMNodeFP10PAnimFramePA4_f(pChild, m_unk24, (float (*)[4])m_unk140) != 0) {
         sceVu0ApplyMatrix(m_unk80, m_unk40, m_unk140);
@@ -480,10 +480,10 @@ int PSkeleton::Load(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
     int n;
     void *node;
     if (pFile == 0) {
-        CdsAssert__FPciPc("PSkeleton.cpp", 0x4D, "poFile");
+        CdsAssert("PSkeleton.cpp", 0x4D, "poFile");
     }
     if (pArr == 0) {
-        CdsAssert__FPciPc("PSkeleton.cpp", 0x4E, "poTextureHandles");
+        CdsAssert("PSkeleton.cpp", 0x4E, "poTextureHandles");
     }
     if (Read__7PCDFileFPvUi(pFile, hdr16, 0x10) != 0x10) {
         return 0;
@@ -512,7 +512,7 @@ int PSkeleton::Load(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
         node = pThis;
     }
     if (node == 0) {
-        CdsAssert__FPciPc("PSkeleton.cpp", 0x70, "pRootBone");
+        CdsAssert("PSkeleton.cpp", 0x70, "pRootBone");
     }
     if (LoadBone__6PMNodeFP8PPakFileP6PArray16ePsx2FileVersion(node, pFile, pArr, eVersion) == 0) {
         return 0;
@@ -585,7 +585,7 @@ extern "C" PSkeleton *__ct__9PSkeletonFR9PSkeleton(PSkeleton *volatile pThis, PS
     }
     pThis->m_unk24 = pAnim;
     if (pThis->m_unk24 == 0) {
-        CdsAssert__FPciPc("PSkeleton.cpp", 0x3B, "mpAnim");
+        CdsAssert("PSkeleton.cpp", 0x3B, "mpAnim");
     }
     pThis->m_unk3E |= 2;
     pThis->m_unk4 = 2;

@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PProjectileRipples.h"
 
 // TODO(header): foreign declarations
@@ -21,7 +22,6 @@ extern "C" void sceVu0Normalize(float *dst, float *src);
 extern "C" float FastMath_Fabs__Ff(float f);
 extern "C" float FastMath_Sin180__Ff(float f);
 extern "C" float FastMath_Cos180__Ff(float f);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void *__nwa__FUi(unsigned int);
 extern "C" void QwordCopy__FP1P1Ui(u_long128 *, u_long128 *, unsigned int);
 extern "C" void memcpy(void *, const void *, unsigned int);
@@ -130,7 +130,7 @@ void *PProjectileRipples::InitRingMeshPacket(int &arg0, int arg1, bool arg2) {
         s1 = s0;
     }
     if (s1 >= 0x32) {
-        CdsAssert__FPciPc("PProjectileRipples.cpp", 0x18A, "iNumVerts < fx_i_instance_max_vertices");
+        CdsAssert("PProjectileRipples.cpp", 0x18A, "iNumVerts < fx_i_instance_max_vertices");
     }
     unsigned int *p0 = (unsigned int *)sp40[s0];
     unsigned int *p1 = (unsigned int *)sp40[s0 + 1];
@@ -138,7 +138,7 @@ void *PProjectileRipples::InitRingMeshPacket(int &arg0, int arg1, bool arg2) {
     p1[3] |= 0x8000;
     int *pkt = (int *)__nwa__FUi(0x970);
     if (pkt == 0) {
-        CdsAssert__FPciPc("PProjectileRipples.cpp", 0x192, "apPacket");
+        CdsAssert("PProjectileRipples.cpp", 0x192, "apPacket");
     }
     pkt[0] = s1;
     pkt[1] = 0;
@@ -224,7 +224,7 @@ void PProjectileRipples::Animate(float arg0) {
     }
     m_unk134 = AllocParticles__12PDisplayListFii(*(void **)gGfxEng, m_unk124, 6);
     if (m_unk134 == 0) {
-        CdsAssert__FPciPc("PProjectileRipples.cpp", 0x6B, "mpFxInstances");
+        CdsAssert("PProjectileRipples.cpp", 0x6B, "mpFxInstances");
     }
     m_unk138 = 0;
     if (m_unk19 != 0) {
@@ -301,19 +301,19 @@ void PProjectileRipples::FrustrumTest(PFrustrum *, float *, float, float) {
 // FUNCTION: 0x00217E90 Create__18PProjectileRipplesFP25tagProjectileRippesParams
 void PProjectileRipples::Create(tagProjectileRippesParams *pParams) {
     if (pParams == 0) {
-        CdsAssert__FPciPc("PProjectileRipples.cpp", 0x2D, "pParams");
+        CdsAssert("PProjectileRipples.cpp", 0x2D, "pParams");
     }
     if (m_unk12C != 0) {
-        CdsAssert__FPciPc("PProjectileRipples.cpp", 0x2E, "mpRingMeshPacket == NULL");
+        CdsAssert("PProjectileRipples.cpp", 0x2E, "mpRingMeshPacket == NULL");
     }
     memcpy((char *)this + 0xE0, pParams, 0x40);
     m_unk12C = InitRingMeshPacket(m_unk130, 8, true);
     if (m_unk12C == 0) {
-        CdsAssert__FPciPc("PProjectileRipples.cpp", 0x33, "mpRingMeshPacket");
+        CdsAssert("PProjectileRipples.cpp", 0x33, "mpRingMeshPacket");
     }
     m_unk120 = (PProjectileRing *)__nwa__FUi(m_unk10C * 0x60);
     if (m_unk120 == 0) {
-        CdsAssert__FPciPc("PProjectileRipples.cpp", 0x36, "mpRings");
+        CdsAssert("PProjectileRipples.cpp", 0x36, "mpRings");
     }
     memset(m_unk120, 0, m_unk10C * 0x60);
     m_unk124 = 0;

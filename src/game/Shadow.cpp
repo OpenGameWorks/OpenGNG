@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Shadow.h"
 #include "PShadowBuffer.h"
 
@@ -7,7 +8,6 @@
 extern char gGfxEng[1504384];
 extern "C" void *__dt__13PShadowVolumeFv(PShadowVolume *pThis, short nFlag);
 extern "C" void __dl__FPv(void *pMem);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" PShadowVolume *GetResource__16PParticleManagerFUi(void *pThis, unsigned int nId);
 
 // TODO(header): foreign declarations (Render)
@@ -84,7 +84,7 @@ extern "C" Shadow *__ct__6ShadowFQ26Shadow10ShadowTypeUi(Shadow *pThis, int eTyp
     case Shadow::eShadowParticle:
         pThis->m_unkC = GetResource__16PParticleManagerFUi(gGfxEng + 0x154F00, nId);
         if (pThis->m_unkC == 0) {
-            CdsAssert__FPciPc("Shadow.cpp", 0x27, "mpShadowVolume");
+            CdsAssert("Shadow.cpp", 0x27, "mpShadowVolume");
         }
         ((PShadowBuffer *)(gGfxEng + 0x157000))->AddShadowVolume(pThis->m_unkC);
         return pThis;
@@ -110,7 +110,7 @@ extern "C" Shadow *__ct__6ShadowFQ26Shadow10ShadowTypef(Shadow *pThis, int eType
     }
     void *pNode = GetResource__16PResourceManagerFUib(mpResMgr__15EntityBaseClass, 0x81000004, true);
     if (pNode == 0) {
-        CdsAssert__FPciPc("Shadow.cpp", 0x14, "pNode");
+        CdsAssert("Shadow.cpp", 0x14, "pNode");
     }
     pThis->m_unk4 = GetFirstMesh__6PMNodeFv(pNode);
     pThis->m_unk8 = fValue;

@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PParticleSplineTrail.h"
 #include "PMat4.h"
 
@@ -29,9 +30,8 @@ extern "C" void SetBlurHazeSourcePoint__10PGfxEngineFPff(void *, float *, float)
 extern "C" void SetMaterial__10PGfxEngineFPfbUlUl(void *, float *, bool, unsigned long, unsigned long);
 extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *, int, float *, bool, unsigned long, unsigned long);
 extern "C" void SetWorldMatrix__10PGfxEngineFP5PMat4(void *, void *);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" float sqrtf(float);
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PParticleSplineTrail.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PParticleSplineTrail.cpp", line, #cond))
 
 // DRAFT: 0x001F0E20 Start__20PParticleSplineTrailFv
 // note: 7 words differ; the nOffset and nVal registers still swap (orig offset a3, const a1). Tried (8 attempts): nOffset-before-nVal, unsigned nVal, unsigned nOffset, nOffset/i/nVal order, split nVal assignment, nVal in the for-init (7), inline literal (7).

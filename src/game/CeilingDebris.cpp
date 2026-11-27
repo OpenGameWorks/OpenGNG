@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "CeilingDebris.h"
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
@@ -6,12 +7,11 @@ extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 extern "C" void *InstanceIsValid__15EntityBaseClassFUi(void *pThis, unsigned int nId);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern "C" void PlaySequence__15EntityBaseClassFPUi(void *pThis, unsigned int *pSeq);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void __dl__FPv(void *pMem);
 extern unsigned int ChurchCeilingDebris_FallSeq[16];
 extern unsigned int DeadseaCeilingDebris_FallSeq[16];
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("CeilingDebris.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("CeilingDebris.cpp", line, #cond))
 
 // FUNCTION: 0x0020F7C0 __dt__13CeilingDebrisFv
 CeilingDebris::~CeilingDebris() {

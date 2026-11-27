@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PMeshNode.h"
 
 // TODO(header): foreign declarations
@@ -59,7 +60,6 @@ extern "C" void __dt__6PMNodeFv(void *pThis, short flags);
 extern "C" void __dla__FPv(void *pMem);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int line, const char *pExpr);
 extern "C" void *__nwa__FUi(unsigned int size);
 extern "C" void FlushCache(int mode, unsigned int addr, void *pTable, int count);
 extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
@@ -163,7 +163,7 @@ void PMeshNode::DetachAllLights() {
 // FUNCTION: 0x00190490 DetachLight__9PMeshNodeFP6PLight
 void PMeshNode::DetachLight(PLight *pLight) {
     if (pLight == 0) {
-        CdsAssert__FPciPc("PMeshNode.cpp", 0x256, "pLight");
+        CdsAssert("PMeshNode.cpp", 0x256, "pLight");
     }
     int idx = ((PArray *)&m_unk130)->Find(pLight);
     if (idx >= 0) {
@@ -200,7 +200,7 @@ bool PMeshNode::BuildCollisionArray(PArray *pArr, unsigned int flag) {
     bool result = false;
     if (m_unk104 != 0) {
         if (pArr->size <= pArr->count) {
-            CdsAssert__FPciPc("PMeshNode.cpp", 0x202, "pArray->GetSize() > pArray->GetCount()");
+            CdsAssert("PMeshNode.cpp", 0x202, "pArray->GetSize() > pArray->GetCount()");
         }
         pArr->Add(this);
         m_unk100 = (short)flag;
@@ -231,7 +231,7 @@ void PMeshNode::LoadCollision(PPakFile *pPak) {
     if (((PCDFile *)pPak)->Read(&size, 4) == 4) {
         int *block = (int *)__nwa__FUi(size);
         if (block == 0) {
-            CdsAssert__FPciPc("PMeshNode.cpp", 0x1E0, "p");
+            CdsAssert("PMeshNode.cpp", 0x1E0, "p");
         }
         if (size != (unsigned int)((PCDFile *)pPak)->Read(block, size)) {
             __dla__FPv(block);
@@ -266,7 +266,7 @@ void PMeshNode::LoadCollision(PPakFile *pPak) {
 
 // FUNCTION: 0x00190840 Load__9PMeshNodeFP8PPakFileP6PArray16ePsx2FileVersion
 int PMeshNode::Load(PPakFile *pPak, PArray *pArr, ePsx2FileVersion ver) {
-    ((pPak) ? (void)0 : CdsAssert__FPciPc("PMeshNode.cpp", 0x148, "poFile"));
+    ((pPak) ? (void)0 : CdsAssert("PMeshNode.cpp", 0x148, "poFile"));
     unsigned char rec0[0xD0];
     unsigned char rec1[0xB4];
     int tag;
@@ -426,12 +426,12 @@ struct AnimTableEntry {
 // note: 76 words differ; the frame is 0x80 not 0x90 and the original keeps this in s6, entries in s7, pAnimDataTable in s0. Tried a do-while, a for loop over entries[i], and a for loop with an offset.
 int PMeshNode::RecurseAttachAnim(PMeshNodeAnimDataTable *pAnimDataTable) {
     if (pAnimDataTable == 0) {
-        CdsAssert__FPciPc("PMeshNode.cpp", 0x50, "pAnimDataTable");
+        CdsAssert("PMeshNode.cpp", 0x50, "pAnimDataTable");
     }
     ((PMNode *)this)->RecurseDetachAnim();
     AnimTableEntry *entries = (AnimTableEntry *)pAnimDataTable->m_unk0C;
     if (entries == 0) {
-        CdsAssert__FPciPc("PMeshNode.cpp", 0x56, "apAnimTable");
+        CdsAssert("PMeshNode.cpp", 0x56, "apAnimTable");
     }
     unsigned int count = pAnimDataTable->m_unk08;
     unsigned int off = 0;

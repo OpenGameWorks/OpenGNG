@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "ClockworkStalker.h"
 
 // TODO(header): foreign declarations
@@ -99,7 +100,6 @@ public:
     unsigned char unk18;
 };
 extern "C" void VectorRotateY__7MathAPIFPA4_ff(float *, float);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float s);
@@ -258,7 +258,7 @@ void ClockworkStalker::CircleAround(float *arg0, float arg1) {
     float v60[4];
     float f20;
     if (m_unk268 != 1 && m_unk268 != 2) {
-        CdsAssert__FPciPc("ClockworkStalker.cpp", 0x9D5, "m_iSideStepDir == SIDESTEP_RIGHT || m_iSideStepDir == SIDESTEP_LEFT");
+        CdsAssert("ClockworkStalker.cpp", 0x9D5, "m_iSideStepDir == SIDESTEP_RIGHT || m_iSideStepDir == SIDESTEP_LEFT");
     }
     sceVu0SubVector(v40, arg0, (float *)(m_unk3C ? m_unk3C + 0x80 : &m_unk190));
     sceVu0Normalize(v40, v40);
@@ -319,7 +319,7 @@ void ClockworkStalker::LoadCorrectMesh(bool arg0) {
             PlaySequence__15EntityBaseClassFPUi(this, (unsigned int *)ClockworkStalker_CamouflageMesh);
             break;
         default:
-            CdsAssert__FPciPc("ClockworkStalker.cpp", 0x994, "false");
+            CdsAssert("ClockworkStalker.cpp", 0x994, "false");
             break;
         }
         if (m_unk2E4 != 0) {
@@ -359,7 +359,7 @@ int ClockworkStalker::InBlockableState() {
 void ClockworkStalker::CheckBlockAttack() {
     MathAPI *player = mPlayerAPI__13EntityManager;
     if (player == 0) {
-        CdsAssert__FPciPc("ClockworkStalker.cpp", 0x920, "pPlayer");
+        CdsAssert("ClockworkStalker.cpp", 0x920, "pPlayer");
     }
     if (m_unk1FC > 0 && m_unkF4 == 0 && *(unsigned char *)((char *)player + 0x23D2) != 0) {
         unsigned short state = *(unsigned short *)((char *)player + 0x15E);
@@ -704,7 +704,7 @@ void ClockworkStalker::Execute() {
                 }
                 m_unkD4 = p;
                 if (m_unkD4 == 0) {
-                    CdsAssert__FPciPc(lit_0026C030, 0x14B, lit_0026C108);
+                    CdsAssert(lit_0026C030, 0x14B, lit_0026C108);
                 }
             }
             if (m_unk38 == 0) {
@@ -714,7 +714,7 @@ void ClockworkStalker::Execute() {
                 }
                 m_unk38 = (char *)p2;
                 if (m_unk38 == 0) {
-                    CdsAssert__FPciPc(lit_0026C030, 0x150, lit_0026C118);
+                    CdsAssert(lit_0026C030, 0x150, lit_0026C118);
                 }
             }
             SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x12, 0);
@@ -734,7 +734,7 @@ void ClockworkStalker::Execute() {
             m_unk104 = 0x40400000;
             m_unk108 = 0x40000000;
             if (m_unk1B4 >= 2) {
-                CdsAssert__FPciPc(lit_0026C030, 0x166, lit_0026C130);
+                CdsAssert(lit_0026C030, 0x166, lit_0026C130);
             }
             if (m_unk1D8 != 0) {
                 m_unk1C4 = m_unk18C;
@@ -770,7 +770,7 @@ void ClockworkStalker::Execute() {
             case 3:
                 temp_v0_9 = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0xF, 0, 0);
                 if (temp_v0_9 == 0) {
-                    CdsAssert__FPciPc(lit_0026C030, 0x1A0, lit_0026C150);
+                    CdsAssert(lit_0026C030, 0x1A0, lit_0026C150);
                 }
                 m_unk228 = temp_v0_9->m_unk4;
                 EnableSleep__15EntityBaseClassFbb(this, 0, 0);
@@ -820,13 +820,13 @@ void ClockworkStalker::Execute() {
                 SetState__15EntityBaseClassFi(this, 0x19);
                 return;
             default:
-                CdsAssert__FPciPc(lit_0026C030, 0x1E6, lit_0026C160);
+                CdsAssert(lit_0026C030, 0x1E6, lit_0026C160);
                 goto block_99;
             }
         } else {
 block_99:
             if (m_unk1E0 != 1) {
-                CdsAssert__FPciPc(lit_0026C030, 0x1FD, lit_0026C160);
+                CdsAssert(lit_0026C030, 0x1FD, lit_0026C160);
             } else {
                 temp_v0_11 = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk228);
                 if (temp_v0_11 == 0 || temp_v0_11->m_unk22D != 0) {
@@ -1517,7 +1517,7 @@ block_365:
                 m_unk2E4 = (unsigned int *)ClockworkStalker_KnockDownSeq;
                 break;
             default:
-                CdsAssert__FPciPc(lit_0026C030, 0x609, lit_0026C160);
+                CdsAssert(lit_0026C030, 0x609, lit_0026C160);
                 break;
             }
         }

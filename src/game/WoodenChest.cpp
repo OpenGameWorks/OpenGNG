@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "WoodenChest.h"
 
 // TODO(header): foreign declarations
@@ -10,7 +11,6 @@ extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern "C" void GetGroundPos__7MathAPIFPA4_f(void *pVec);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" int printf(const char *pFmt, ...);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
 extern "C" void RotateTo__15EntityBaseClassFff(void *pThis, float fA, float fB);
 extern "C" float GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f(void *pThis, void *pEnt, float (*pVec)[4]);
@@ -64,7 +64,7 @@ extern unsigned int WoodenChest_OpenSeq[4];
 extern unsigned int WoodenChest_RiseSeq[4];
 
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("WoodenChest.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("WoodenChest.cpp", line, #cond))
 
 // FUNCTION: 0x001A1590 __dt__11WoodenChestFv
 WoodenChest::~WoodenChest() {
@@ -161,7 +161,7 @@ int WoodenChest::HaveKeys()
         } \
         *(char **)((char *)this + 0x38) = pPhys; \
         if (*(char **)((char *)this + 0x38) == 0) { \
-            CdsAssert__FPciPc((char *)"WoodenChest.cpp", LINE, (char *)"mpPhysics"); \
+            CdsAssert((char *)"WoodenChest.cpp", LINE, (char *)"mpPhysics"); \
         } \
     } \
     SetPhysicsType__7PhysicsFUiPA4_f(*(void **)((char *)this + 0x38), 0x1A, 0); \
@@ -273,7 +273,7 @@ void WoodenChest::Execute()
                 }
                 this->m_unk38 = (Physics *)pPhys;
                 if (this->m_unk38 == 0) {
-                    CdsAssert__FPciPc("WoodenChest.cpp", 0x95, "mpPhysics");
+                    CdsAssert("WoodenChest.cpp", 0x95, "mpPhysics");
                 }
             }
             SetPhysicsType__7PhysicsFUiPA4_f(this->m_unk38, 0x40U, (float (*)[4])((char *)this + 0x190));
@@ -377,7 +377,7 @@ void WoodenChest::Execute()
             if ((this->m_unk1DC != 0) && (ApparitionIsValid__15EntityBaseClassFUi(this->m_unk210) == 0)) {
                 void *pSpawn = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x23U, 0, 0);
                 if (pSpawn == 0) {
-                    CdsAssert__FPciPc("WoodenChest.cpp", 0x12B, "pNet");
+                    CdsAssert("WoodenChest.cpp", 0x12B, "pNet");
                 }
                 this->m_unk210 = WCX_U32(pSpawn, 4);
                 WCX_S32(pSpawn, 0x1B4) = (int)WCX_U32(this, 4);
@@ -548,7 +548,7 @@ void WoodenChest::Execute()
                     WCX_S32(this, 0x1F0 + i * 4) = 0;
                     if (pEnt[0] == 8 || pEnt[0] == 7) {
                         if (pPickup == 0) {
-                            CdsAssert__FPciPc("WoodenChest.cpp", 0x1F8, "pPickup");
+                            CdsAssert("WoodenChest.cpp", 0x1F8, "pPickup");
                         }
                         WCX_S32(pPickup, 0x1C4) = (int)WCX_F32(this, 0x4);
                     }
@@ -604,7 +604,7 @@ void WoodenChest::Execute()
                 }
                 this->m_unkD4 = (char *)pShadow;
                 if (this->m_unkD4 == 0) {
-                    CdsAssert__FPciPc("WoodenChest.cpp", 0x243, "mpShadow");
+                    CdsAssert("WoodenChest.cpp", 0x243, "mpShadow");
                 }
             }
             WCX_U32(this, 0x10C) |= 0x031B1902;
@@ -615,7 +615,7 @@ void WoodenChest::Execute()
                 }
                 this->m_unk38 = (Physics *)pPhys;
                 if (this->m_unk38 == 0) {
-                    CdsAssert__FPciPc("WoodenChest.cpp", 0x249, "mpPhysics");
+                    CdsAssert("WoodenChest.cpp", 0x249, "mpPhysics");
                 }
             }
             SetPhysicsType__7PhysicsFUiPA4_f(this->m_unk38, 0x12U, 0);

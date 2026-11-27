@@ -1,13 +1,13 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "WaypointManager.h"
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void __dl__FPv(void *pMem);
 
 #define WAYPOINT_BUFFER_SIZE 0x5000
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("WaypointManager.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("WaypointManager.cpp", line, #cond))
 
 // DRAFT: 0x00155020 GetWaypoint__15WaypointManagerFP16tagWaypointGroupUiRUc
 // note: 15 words; saved-register order differs (original this=s2, iWp=s3, pGroup=s1; ours this=s3, pGroup=s2, iWp=s1), and the word address is one addiu+addu in the original while ours folds the 0x18 into the lw. Best so far: int nBase = m_unk4 hoisted before the word load plus (unsigned int *)((unsigned int)pGroup + 0x18). Tried: bRef mask form (19), hoisted base (24), word pointer (19), pointer-first m_unk18 (19), integer-cast base only (18), typed pointer with integer base (18), pointer-first m_unk18 with hoisted nBase (24).

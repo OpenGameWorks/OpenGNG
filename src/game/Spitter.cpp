@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Spitter.h"
 
 // TODO(header): foreign declarations
@@ -8,12 +9,11 @@
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 extern "C" void *Spawn__13EntityManagerFUibi(void *, unsigned int, bool, int);
 extern void *mpEntMgr__15EntityBaseClass;
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern unsigned char gEng[0x1A000];
 extern void *mPlayerAPI__13EntityManager;
 
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Spitter.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("Spitter.cpp", line, #cond))
 
 // FUNCTION: 0x001D9F90 __dt__7SpitterFv
 Spitter::~Spitter() {}

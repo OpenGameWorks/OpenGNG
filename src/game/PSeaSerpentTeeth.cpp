@@ -1,12 +1,12 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PSeaSerpentTeeth.h"
 #include "PResourceManager.h"
 
 // TODO(header): foreign declarations
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" int rand(void);
 extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
@@ -121,11 +121,11 @@ void PSeaSerpentTeeth::Render() {
 
 // FUNCTION: 0x0020ED40 Create__16PSeaSerpentTeethFP6PMNodeP6PMNodeP6PMNodeP6PMNodeP16PResourceManager
 void PSeaSerpentTeeth::Create(PMNode *pLowerJaw1, PMNode *pLowerJaw2, PMNode *pUpperJaw1, PMNode *pUpperJaw2, PResourceManager *pResMgr) {
-    if (pLowerJaw1 == 0) CdsAssert__FPciPc("PSeaSerpentTeeth.cpp", 0x87, "pLowerJaw1");
-    if (pLowerJaw2 == 0) CdsAssert__FPciPc("PSeaSerpentTeeth.cpp", 0x88, "pLowerJaw2");
-    if (pUpperJaw1 == 0) CdsAssert__FPciPc("PSeaSerpentTeeth.cpp", 0x89, "pUpperJaw1");
-    if (pUpperJaw2 == 0) CdsAssert__FPciPc("PSeaSerpentTeeth.cpp", 0x8A, "pUpperJaw2");
-    if (pResMgr == 0) CdsAssert__FPciPc("PSeaSerpentTeeth.cpp", 0x8B, "pResMgr");
+    if (pLowerJaw1 == 0) CdsAssert("PSeaSerpentTeeth.cpp", 0x87, "pLowerJaw1");
+    if (pLowerJaw2 == 0) CdsAssert("PSeaSerpentTeeth.cpp", 0x88, "pLowerJaw2");
+    if (pUpperJaw1 == 0) CdsAssert("PSeaSerpentTeeth.cpp", 0x89, "pUpperJaw1");
+    if (pUpperJaw2 == 0) CdsAssert("PSeaSerpentTeeth.cpp", 0x8A, "pUpperJaw2");
+    if (pResMgr == 0) CdsAssert("PSeaSerpentTeeth.cpp", 0x8B, "pResMgr");
     m_unk0 = pLowerJaw1;
     m_unk4 = pLowerJaw2;
     m_unk8 = pUpperJaw1;
@@ -164,9 +164,9 @@ void PSeaSerpentTeeth::Create(PMNode *pLowerJaw1, PMNode *pLowerJaw2, PMNode *pU
     } while (i < 0x1E);
 
     m_unk1690 = pResMgr->GetResource(0x06000022U, false);
-    if (m_unk1690 == 0) CdsAssert__FPciPc("PSeaSerpentTeeth.cpp", 0xA8, "mpLowerToothMesh");
+    if (m_unk1690 == 0) CdsAssert("PSeaSerpentTeeth.cpp", 0xA8, "mpLowerToothMesh");
     m_unk1694 = pResMgr->GetResource(0x06000021U, false);
-    if (m_unk1694 == 0) CdsAssert__FPciPc("PSeaSerpentTeeth.cpp", 0xAB, "mpUpperToothMesh");
+    if (m_unk1694 == 0) CdsAssert("PSeaSerpentTeeth.cpp", 0xAB, "mpUpperToothMesh");
     m_unk3C20 = 1;
 }
 

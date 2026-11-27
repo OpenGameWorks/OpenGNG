@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "EntityAttackManager.h"
 #include "Player.h"
 #include "Camera.h"
@@ -11,8 +12,7 @@ public:
 };
 class PLightManager;
 
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("EntityAttackManager.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("EntityAttackManager.cpp", line, #cond))
 extern unsigned char gEng[0x1A000];
 
 // Leading virtuals of EntityBaseClass's vtable (__vt__15EntityBaseClass); a call

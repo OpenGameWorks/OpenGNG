@@ -1,4 +1,5 @@
 #include "ClockworkFlyer.h"
+#include "Debug.h"
 #include "MathAPI.h"
 #include "types.h"
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
@@ -53,7 +54,6 @@ extern "C" float sqrtf(float fX);
 extern "C" unsigned int CreateDamageFx__15EntityBaseClassFfUi(void *pThis, float fInterval, unsigned int nFlag);
 extern "C" void ChangeDamageFxInterval__15EntityBaseClassFUif(void *pThis, unsigned int nFx, float fInterval);
 extern "C" float *GetWaypoint__15WaypointManagerFP16tagWaypointGroupUiRUc(void *pThis, struct tagWaypointGroup *pGroup, unsigned int nIndex, unsigned char &rbFlag);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern void *mpEntMgr__15EntityBaseClass;
 extern void *mPlayerAPI__13EntityManager;
 extern "C" void GetGroundPos__7PhysicsFv(float *pOut, void *pPhysics);
@@ -375,13 +375,13 @@ ClockworkFlyer *ClockworkFlyer::GetTarget() {
         if (m_unk2C8 == 0 || ((EntityBaseVtSlots *)m_unk2C8)->IsValidTarget() == 0) {
             m_unk2C8 = mPlayerAPI__13EntityManager;
             if (m_unk2C8 == 0) {
-                CdsAssert__FPciPc("ClockworkFlyer.cpp", 0x55A, "m_pTarget");
+                CdsAssert("ClockworkFlyer.cpp", 0x55A, "m_pTarget");
             }
         }
     } else {
         m_unk2C8 = mPlayerAPI__13EntityManager;
         if (m_unk2C8 == 0) {
-            CdsAssert__FPciPc("ClockworkFlyer.cpp", 0x561, "m_pTarget");
+            CdsAssert("ClockworkFlyer.cpp", 0x561, "m_pTarget");
         }
     }
     return (ClockworkFlyer *)m_unk2C8;
@@ -712,7 +712,7 @@ void ClockworkFlyer::Execute() {
                 m_unk2A4 = (char *)GetWaypointGroupInfo__15WaypointManagerFUi((char *)mpEntMgr__15EntityBaseClass + 0x30, (unsigned int)m_unk200);
                 if (m_unk2A4 == 0) {
                     sprintf(sp50, "Flyer refers to bad waypoint group ( group id = %d )", m_unk200);
-                    CdsAssert__FPciPc("ClockworkFlyer.cpp", 0x17B, sp50);
+                    CdsAssert("ClockworkFlyer.cpp", 0x17B, sp50);
                 }
             }
             m_unk2A8 = 0;
@@ -747,11 +747,11 @@ void ClockworkFlyer::Execute() {
                     }
                     m_unk38 = (float *)p;
                     if (m_unk38 == 0) {
-                        CdsAssert__FPciPc("ClockworkFlyer.cpp", 0x193, "mpPhysics");
+                        CdsAssert("ClockworkFlyer.cpp", 0x193, "mpPhysics");
                     }
                     if (m_unk1B8 == 0) {
                         if (((char *)m_unk38 + 0xA0) == 0) {
-                            CdsAssert__FPciPc("ClockworkFlyer.cpp", 0x196, "pInfo");
+                            CdsAssert("ClockworkFlyer.cpp", 0x196, "pInfo");
                         }
                         *((unsigned char *)m_unk38 + 0xEC) &= ~0x80;
                     }
@@ -764,7 +764,7 @@ void ClockworkFlyer::Execute() {
                     }
                     m_unkD4 = p;
                     if (m_unkD4 == 0) {
-                        CdsAssert__FPciPc("ClockworkFlyer.cpp", 0x19E, "mpShadow");
+                        CdsAssert("ClockworkFlyer.cpp", 0x19E, "mpShadow");
                     }
                     if (m_unkD4 != 0) {
                         *(unsigned char *)m_unkD4 = 1;
@@ -795,7 +795,7 @@ void ClockworkFlyer::Execute() {
             case 3:
                 temp_v0_11 = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0xFU, 0, 0);
                 if (temp_v0_11 == 0) {
-                    CdsAssert__FPciPc(lit_0026C2B0, 0x1C5, lit_0026C340);
+                    CdsAssert(lit_0026C2B0, 0x1C5, lit_0026C340);
                 }
                 m_unk23C = temp_v0_11->m_unk4;
                 EnableSleep__15EntityBaseClassFbb(this, 0, 0);
@@ -861,13 +861,13 @@ void ClockworkFlyer::Execute() {
             case 0:
             case 6:
             default:
-                CdsAssert__FPciPc(lit_0026C2B0, 0x21C, lit_0026C350);
+                CdsAssert(lit_0026C2B0, 0x21C, lit_0026C350);
                 goto block_95;
             }
         } else {
         block_95:
             if (m_unk1E4 != 1) {
-                CdsAssert__FPciPc(lit_0026C2B0, 0x233, lit_0026C350);
+                CdsAssert(lit_0026C2B0, 0x233, lit_0026C350);
                 return;
             }
             temp_v0_28 = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk23C);

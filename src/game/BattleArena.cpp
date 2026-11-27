@@ -8,7 +8,6 @@ extern Debug gDebug;
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 extern "C" int fptodp(float f);
 extern "C" void memcpy(void *, const void *, unsigned int);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void *InstanceIsValid__15EntityBaseClassFUi(EntityBaseClass *pEntity);
 extern "C" void *ApparitionIsValid__15EntityBaseClassFUi(unsigned int nApparitionId);
 extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoadClass, unsigned int nFlags);
@@ -33,7 +32,7 @@ extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*pA)[4], float (*pB)[4]);
 
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("BattleArena.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("BattleArena.cpp", line, #cond))
 
 // Virtual layout of EntityBaseClass as the vtable exposes it: slot N is virtual (N - 8) / 4.
 // Slot 0x08 is the destructor (virtual 0); slot 0x44 is IsArenaApparition (virtual 15).
@@ -195,7 +194,7 @@ void BattleArena::SetEditableVars(char *pSrc) {
 // note: prologue, gEng assert and switch dispatch are in place; cases 1-5, 7-12 and -2 are empty stubs, so the body is far from the 0x10DC original.
 void BattleArena::Execute() {
     if (gEng.ptr == 0) {
-        CdsAssert__FPciPc("BattleArena.cpp", 0x26, "pRoot");
+        CdsAssert("BattleArena.cpp", 0x26, "pRoot");
     }
     switch (m_unk20) {
     case -2:

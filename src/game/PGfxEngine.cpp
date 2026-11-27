@@ -61,7 +61,6 @@ extern char fx_particle_clip_init[];
 extern char fx_sprite_noclip_init[];
 extern char fx_instance_screen_st_mesh_init[];
 extern char noclip_static_instance_cull_mesh_init[];
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern int gCDSVBlankCount[1];
 extern "C" void Kick__16PTextureDmaChainFb(void *pThis, bool bFlag);
@@ -350,16 +349,16 @@ void PGfxEngine::BeginHeatHazeInstances(struct tagVuParticle *pParticles, int nC
     } sBuf;
 
     if (pParticles == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x881, "pParticles");
+        CdsAssert("PGfxEngine.cpp", 0x881, "pParticles");
     }
     if (nCount == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x882, "iNumParticles");
+        CdsAssert("PGfxEngine.cpp", 0x882, "iNumParticles");
     }
     if (m_unk158E1C != vu_fx_microcode_dma_packet) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x883, "mpvCurVu1CodeBank == FX_MICROCODE_PACKET");
+        CdsAssert("PGfxEngine.cpp", 0x883, "mpvCurVu1CodeBank == FX_MICROCODE_PACKET");
     }
     if (nCount > 0x14) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x884, "iNumParticles <= fx_i_heathaze_instance_max_vertices");
+        CdsAssert("PGfxEngine.cpp", 0x884, "iNumParticles <= fx_i_heathaze_instance_max_vertices");
     }
     sBuf.n = nCount;
     sBuf.z = 0;
@@ -381,16 +380,16 @@ void PGfxEngine::BeginParticleInstances(struct tagVuParticle *pParticles, int nC
     } sBuf;
 
     if (pParticles == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x869, "pParticles");
+        CdsAssert("PGfxEngine.cpp", 0x869, "pParticles");
     }
     if (nCount == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x86A, "iNumParticles");
+        CdsAssert("PGfxEngine.cpp", 0x86A, "iNumParticles");
     }
     if (m_unk158E1C != vu_fx_microcode_dma_packet) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x86B, "mpvCurVu1CodeBank == FX_MICROCODE_PACKET");
+        CdsAssert("PGfxEngine.cpp", 0x86B, "mpvCurVu1CodeBank == FX_MICROCODE_PACKET");
     }
     if (nCount >= 0x29) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x86C, "iNumParticles <= fx_i_particle_instance_max_vertices");
+        CdsAssert("PGfxEngine.cpp", 0x86C, "iNumParticles <= fx_i_particle_instance_max_vertices");
     }
     sBuf.n = nCount;
     sBuf.z = 0;
@@ -404,13 +403,13 @@ void PGfxEngine::BeginParticleInstances(struct tagVuParticle *pParticles, int nC
 // FUNCTION: 0x00184CE0 BeginFxInstances__10PGfxEngineFPvib
 void PGfxEngine::BeginFxInstances(void *pData, int nSize, bool bFlag) {
     if (pData == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x852, "pvMasterMeshPacket");
+        CdsAssert("PGfxEngine.cpp", 0x852, "pvMasterMeshPacket");
     }
     if (nSize == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x853, "iSize");
+        CdsAssert("PGfxEngine.cpp", 0x853, "iSize");
     }
     if (m_unk158E1C != vu_fx_microcode_dma_packet) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x854, "mpvCurVu1CodeBank == FX_MICROCODE_PACKET");
+        CdsAssert("PGfxEngine.cpp", 0x854, "mpvCurVu1CodeBank == FX_MICROCODE_PACKET");
     }
     m_unk154C80->AddVifPacket((u_long128 *)pData, nSize >> 4, 0x11000000, ((unsigned int)((nSize >> 4) << 16)) | 0x6C000207);
     if (bFlag) {
@@ -423,10 +422,10 @@ void PGfxEngine::BeginFxInstances(void *pData, int nSize, bool bFlag) {
 // FUNCTION: 0x00184E10 BeginStaticInstances__10PGfxEngineFPvi
 void PGfxEngine::BeginStaticInstances(void *pData, int nSize) {
     if (pData == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x83D, "pvMasterMeshPacket");
+        CdsAssert("PGfxEngine.cpp", 0x83D, "pvMasterMeshPacket");
     }
     if (nSize == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x83E, "iSize");
+        CdsAssert("PGfxEngine.cpp", 0x83E, "iSize");
     }
     m_unk154C80->AddVifPacket((u_long128 *)pData, nSize >> 4, 0x11000000, ((unsigned int)((nSize >> 4) << 16)) | 0x6C000218);
     if (m_unk158E1C != vu_noclip_microcode_dma_packet) {
@@ -625,7 +624,7 @@ void PGfxEngine::EndDebugRender() {
 // note: 27 words; loop register allocation differs (counter/pointer in a0/a1 vs offset in a2, base not hoisted); index, char-base and pointer-walk loop forms tried
 void PGfxEngine::DrawBox(float (*pBox)[2][4], float arg1, float arg2, float arg3) {
     if (pBox == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x6EF, "pBox");
+        CdsAssert("PGfxEngine.cpp", 0x6EF, "pBox");
     }
     float Xd = pBox[0][0][0] - pBox[0][1][0];
     float Yd = pBox[0][0][1] - pBox[0][1][1];
@@ -711,10 +710,10 @@ void PGfxEngine::UpdateLights(struct tagVuLightingInfo *pInfo) {
 // FUNCTION: 0x185940 CopyVuLightingInfo__10PGfxEngineFP17tagVuLightingInfoP17tagVuLightingInfo
 void PGfxEngine::CopyVuLightingInfo(struct tagVuLightingInfo *pDst, struct tagVuLightingInfo *pSrc) {
     if (pDst == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x6AC, "pDest");
+        CdsAssert("PGfxEngine.cpp", 0x6AC, "pDest");
     }
     if (pSrc == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x6AD, "pSrc");
+        CdsAssert("PGfxEngine.cpp", 0x6AD, "pSrc");
     }
     memcpy(pDst, pSrc, 0x40);
     memcpy((char *)pDst + 0x40, (char *)pSrc + 0x40, 0x40);
@@ -728,13 +727,13 @@ void PGfxEngine::CopyVuLightingInfo(struct tagVuLightingInfo *pDst, struct tagVu
 // FUNCTION: 0x1859F0 GetLightingInfo__10PGfxEngineFP5PMat4P5PMat4PA4_f
 void PGfxEngine::GetLightingInfo(PMat4 *pA, PMat4 *pB, float (*pOut)[4]) {
     if (pA == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x6A0, "pLightDirMat");
+        CdsAssert("PGfxEngine.cpp", 0x6A0, "pLightDirMat");
     }
     if (pB == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x6A1, "pLightColorMat");
+        CdsAssert("PGfxEngine.cpp", 0x6A1, "pLightColorMat");
     }
     if (pOut == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x6A2, "pAmbientLight");
+        CdsAssert("PGfxEngine.cpp", 0x6A2, "pAmbientLight");
     }
     memcpy(pA, m_unk158E30, 0x40);
     memcpy(pB, m_unk158E70, 0x40);
@@ -767,13 +766,13 @@ void PGfxEngine::ResetVuLightingInfo() {
 // FUNCTION: 0x185BF0 UpdateLights__10PGfxEngineFP5PMat4P5PMat4PA4_f
 void PGfxEngine::UpdateLights(PMat4 *pDirMat, PMat4 *pColorMat, float (*pAmbient)[4]) {
     if (pDirMat == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x684, "pLightDirMat");
+        CdsAssert("PGfxEngine.cpp", 0x684, "pLightDirMat");
     }
     if (pColorMat == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x685, "pLightColorMat");
+        CdsAssert("PGfxEngine.cpp", 0x685, "pLightColorMat");
     }
     if (pAmbient == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x686, "pAmbientLight");
+        CdsAssert("PGfxEngine.cpp", 0x686, "pAmbientLight");
     }
     memcpy(m_unk158E30, pDirMat, 0x40);
     memcpy(m_unk158E70, pColorMat, 0x40);
@@ -941,7 +940,7 @@ void PGfxEngine::RenderBlendedFragments(float *pVec) {
 // note: 27 words differ; original is 0x1BC bytes (ours 0x1AC). Table address is (this+0x158F04)+idx*4 (original adds this+0x158F04 first, ours adds idx*4 first) and the original reloads m_unk169310 for the +1 after the table store; return-0 branch targets 0x4A (ours 0x46). Tried: direct member index (30), pointer local with m_unk169310 index (30), re-read counter with nIndex store (30), pointer local with nIndex index (30), m_unk169310 reload +1 (30), pOut loop via pDst pointer (50), hoisted loop bound (51).
 int PGfxEngine::AddBlendedFragment(PMeshFragment *pFrag, int nIdx, bool *pOut, bool bFlag) {
     if (pFrag == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x515, "pFragment");
+        CdsAssert("PGfxEngine.cpp", 0x515, "pFragment");
     }
     int nCount = m_unk169310;
     if (nCount >= 0x100) {
@@ -1000,11 +999,11 @@ void PGfxEngine::ResetBlendedFragmentTable() {
 // note: 37 words differ; frame is 0x70 with s0..s5 vs original 0x60 with s0..s4, and m_unk4C loads fold onto a saved pFrag+0xC. Tried: array/int m_unkC, &-address check, early and late m_unk4C local (37 best, 78 otherwise).
 void PGfxEngine::DrawFragment(PMeshFragment *pFrag, bool bFlag, int nIdx, bool *pOut) {
     if (pFrag == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x4E6, "pFragment");
+        CdsAssert("PGfxEngine.cpp", 0x4E6, "pFragment");
     }
     int nType = pFrag->m_unk4C;
     if (pFrag->m_unkC == 0) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x4E9, "apShader");
+        CdsAssert("PGfxEngine.cpp", 0x4E9, "apShader");
     }
     if (nType == 5 && m_unk16D408 == 0) {
         if (AddBlendedFragment(pFrag, nIdx, pOut, true) != 0) {
@@ -1065,7 +1064,7 @@ void PGfxEngine::SetWorldMatrix(PMat4 *pMat) {
         m_unk16D324 = 0;
     }
     if (m_unk16D320 >= 0x100) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0x4A9, "miCurWorldMatrixIndex < MAX_BLENDED_FRAGMENTS");
+        CdsAssert("PGfxEngine.cpp", 0x4A9, "miCurWorldMatrixIndex < MAX_BLENDED_FRAGMENTS");
     }
     pDst = (u_long128 *)(m_unk169320 + (m_unk16D320 << 6));
     pSrc = (u_long128 *)pMat;
@@ -1075,7 +1074,7 @@ void PGfxEngine::SetWorldMatrix(PMat4 *pMat) {
     pDst[3] = pSrc[3];
 }
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PGfxEngine.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PGfxEngine.cpp", line, #cond))
 
 // DRAFT: 0x186C10 ComputeMicrocodeOffset__10PGfxEngineF13eBoxIntersectRUi
 // note: 141 words differ; case 1 early return keeps nSel in v0 (original keeps it in s1 and tail-merges sw into the delay slot of a b to the return move); variants tried: case 3 before case 2, early return in case 1.
@@ -1638,12 +1637,12 @@ int PGfxEngine::Init(short nA, short nB, short nC, short nD, short nE, short nF,
     }
     *(int *)((char *)this + 0x160000 - 0x720C) = AddIntcHandler(5, Vif1InterruptHandler, 0);
     if (*(int *)((char *)this + 0x160000 - 0x720C) == -1) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0xF0, "miVif1IntcHandle != -1");
+        CdsAssert("PGfxEngine.cpp", 0xF0, "miVif1IntcHandle != -1");
     }
     EnableIntc(5);
     m_unk158DF8 = AddIntcHandler(3, VBlankEndInterruptHandler, 0);
     if (m_unk158DF8 == -1) {
-        CdsAssert__FPciPc("PGfxEngine.cpp", 0xF5, "miVBlankIntcHandle != -1");
+        CdsAssert("PGfxEngine.cpp", 0xF5, "miVBlankIntcHandle != -1");
     }
     EnableIntc(3);
     ResetDisplay(nA, nB, nC, nD, nE, nF, nG, nH);

@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PParticleFog.h"
 
 // TODO(header): foreign declarations
@@ -20,7 +21,6 @@ extern "C" void sceVu0AddVector(float *pDst, float *pA, float *pB);
 extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 extern "C" void sceVu0Normalize(float *pDst, float *pA);
 extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pA, float fScale);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" int rand(void);
 
@@ -78,7 +78,7 @@ void PParticleFog::Render(PMat4 *pMat) {
     }
 }
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PParticleFog.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PParticleFog.cpp", line, #cond))
 
 // DRAFT: 0x001BE020 Create__12PParticleFogFP18tagParticleFogDatai
 // note: 379 words differ, size 0x694 vs 0x6C0; the inline sqrt.s before Normalize (sqrtf + scale form gave 404 words), the count-clamp float order and the missing 0x2C bytes are unresolved.

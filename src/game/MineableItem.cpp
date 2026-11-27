@@ -1,9 +1,10 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "MineableItem.h"
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("MineableItem.cpp", line, #cond))
-#define CDS_ASSERT_TEXT(line, cond, text) ((cond) ? (void)0 : CdsAssert__FPciPc("MineableItem.cpp", line, text))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("MineableItem.cpp", line, #cond))
+#define CDS_ASSERT_TEXT(line, cond, text) ((cond) ? (void)0 : CdsAssert("MineableItem.cpp", line, text))
 #define MIT_ENTRY(off) ((unsigned char *)&MineableItemTable[off] + m_unk1B0 * 24)
 
 // TODO(header): foreign declarations
@@ -24,7 +25,6 @@ extern "C" void UpdateShadowVolume__15EntityBaseClassFv(void *pThis);
 extern "C" void SpawnPickups__15EntityBaseClassFiiPA4_fb(void *pThis, int nArg0, int nArg1, float (*pVelocity)[4], bool bFlag);
 extern "C" void CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(void *pThis, unsigned int nA, unsigned int nB, float (*pC)[4], float (*pD)[4], void *pOwner, float fScale, bool bFlagA, int nCount, bool bFlagB);
 extern "C" int RandomIntRange__7MathAPIFii(int nMin, int nMax);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
 extern unsigned char MineableItemTable[72];
 extern float TreasureVelocity[4][4];
 extern unsigned char mEffectAPI__13EntityManager[20];

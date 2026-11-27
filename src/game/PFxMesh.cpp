@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PFxMesh.h"
 #include "PMNode.h"
 
@@ -8,11 +9,10 @@ extern "C" void SetWorldMatrix__10PGfxEngineFP5PMat4(void *pThis, PMat4 *pMat);
 extern "C" void BeginVertexGlow__10PGfxEngineFv(void *pThis);
 extern "C" void EndVertexGlow__10PGfxEngineFv(void *pThis);
 extern "C" void RenderAllPolys__5PMeshFv(void *pThis);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern char gGfxEng[1504384];
 
 // The game's assert tests the condition at runtime and reports its source text.
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PFxMesh.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PFxMesh.cpp", line, #cond))
 
 // FUNCTION: 0x001BEDE0 Render__7PFxMeshFv
 void PFxMesh::Render() {

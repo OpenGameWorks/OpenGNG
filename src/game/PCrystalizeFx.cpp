@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #pragma opt_strength_reduction off
 #include "types.h"
+#include "Debug.h"
 #include "PCrystalizeFx.h"
 #include "PGfxEngine.h"
 
@@ -22,10 +23,9 @@ extern PGfxEngine gGfxEng;
 extern "C" void Vu0_Set_Identity_Matrix(void);
 extern "C" int rand(void);
 extern "C" void sceVu0ScaleVectorXYZ(void *pDst, void *pSrc, float fScale);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 void FastMath_RotateMatrix(float (*)[4][4], float (*)[4][4], float (*)[4], float (*)[4][4]);
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PCrystalizeFx.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PCrystalizeFx.cpp", line, #cond))
 
 // TODO(header): PShader has no header in the repo; minimal view of its Render entry.
 class PShader {

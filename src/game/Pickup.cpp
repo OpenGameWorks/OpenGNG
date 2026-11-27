@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Pickup.h"
 #include "EntityBaseClass.h"
 #include "PResourceManager.h"
@@ -15,7 +16,6 @@ extern "C" void __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pT
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" int printf(const char *fmt, ...);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern unsigned char __vt__6Pickup[];
 extern void *mpEntMgr__15EntityBaseClass;
 extern PArray mTempArray__15EntityBaseClass;
@@ -217,7 +217,7 @@ void Pickup::Execute() {
                 }
                 this->m_unk38 = (Physics *)pPhys;
                 if (this->m_unk38 == 0) {
-                    CdsAssert__FPciPc("Pickup.cpp", 0x1D0, "mpPhysics");
+                    CdsAssert("Pickup.cpp", 0x1D0, "mpPhysics");
                 }
             }
             SetPhysicsType__7PhysicsFUiPA4_f(this->m_unk38, 0x12U, 0);
@@ -234,7 +234,7 @@ void Pickup::Execute() {
         }
         this->m_unk103 = (this->m_unk18 == 0) ? 0x10 : 0x11;
         if ((unsigned int)this->m_unk1B0 >= 0x27U) {
-            CdsAssert__FPciPc("Pickup.cpp", 0x1E5, "mEVars.m_iPickupType < PICKUP_MAX");
+            CdsAssert("Pickup.cpp", 0x1E5, "mEVars.m_iPickupType < PICKUP_MAX");
         }
         this->m_unk10C |= 0x05000000;
         this->m_unk104 = 0;
@@ -284,14 +284,14 @@ void Pickup::Execute() {
             }
             this->m_unk10C &= 0xF8FFFFFF;
             if (this->m_unk1F8 >= 0x27) {
-                CdsAssert__FPciPc("Pickup.cpp", 0x554, "m_iPickupTypeFromParent < PICKUP_MAX");
+                CdsAssert("Pickup.cpp", 0x554, "m_iPickupTypeFromParent < PICKUP_MAX");
             }
             rec = this->m_unk1F8 * 24;
             *(unsigned int *)((char *)this->m_unk38 + 0x10C) = *(unsigned int *)(PickUpData + rec + 0x10);
             if (this->m_unk1EE != 0) {
                 pPlayer = *(void **)((char *)mpEntMgr__15EntityBaseClass + 0x505C);
                 if (pPlayer == 0) {
-                    CdsAssert__FPciPc("Pickup.cpp", 0x55D, "pPlayer");
+                    CdsAssert("Pickup.cpp", 0x55D, "pPlayer");
                 }
                 GameVarSub__6PlayerFUii(pPlayer, (unsigned int)PickUpData[rec + 1], (int)PickUpData[rec + 2]);
             }
@@ -381,10 +381,10 @@ int Pickup::SetAbilityType(int arg0) {
 // FUNCTION: 0x0019F120 GetPickupData__6PickupFi
 void *Pickup::GetPickupData(int arg0) {
     if (arg0 < 0) {
-        CdsAssert__FPciPc("Pickup.cpp", 0x16E, "iType >= 0");
+        CdsAssert("Pickup.cpp", 0x16E, "iType >= 0");
     }
     if (arg0 >= 0x27) {
-        CdsAssert__FPciPc("Pickup.cpp", 0x16F, "iType < PICKUP_MAX");
+        CdsAssert("Pickup.cpp", 0x16F, "iType < PICKUP_MAX");
     }
     return &PickUpData[arg0 * 24];
 }

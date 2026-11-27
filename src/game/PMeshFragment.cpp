@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PMeshFragment.h"
 
 // TODO(header): foreign declarations
@@ -24,7 +25,6 @@ extern "C" void Render__7PShaderFibPb(void *pThis, int nArg, bool bFlag, bool *p
 extern "C" void Destroy__7PShaderFv(void *pThis);
 extern "C" void *__ct__7PShaderFv(void *pThis);
 extern "C" void __dt__7PShaderFv(void *pThis, short nFlag);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void __dla__FPv(void *pMem);
@@ -47,10 +47,10 @@ int PMeshFragment::Load(PPakFile *pPakFile, PArray *pTextures, ePsx2FileVersion 
     unsigned int *pCount;
 
     if (pPakFile == 0) {
-        CdsAssert__FPciPc("PMeshFragment.cpp", 0x67, "poFile");
+        CdsAssert("PMeshFragment.cpp", 0x67, "poFile");
     }
     if (pTextures == 0) {
-        CdsAssert__FPciPc("PMeshFragment.cpp", 0x68, "poTextureHandles");
+        CdsAssert("PMeshFragment.cpp", 0x68, "poTextureHandles");
     }
     Destroy();
     if (Load__7PShaderFP8PPakFileP6PArrayb(m_unkC, pPakFile, pTextures, bFlag) == 0) {
@@ -89,7 +89,7 @@ int PMeshFragment::Load(PPakFile *pPakFile, PArray *pTextures, ePsx2FileVersion 
 // FUNCTION: 0x00190040 Render__13PMeshFragmentFbiPb
 void PMeshFragment::Render(bool bFlag, int nArg, bool *pbOut) {
     if (m_unk0 == 0) {
-        CdsAssert__FPciPc("PMeshFragment.cpp", 0x57, "mpvVertexData");
+        CdsAssert("PMeshFragment.cpp", 0x57, "mpvVertexData");
     }
     Render__7PShaderFibPb(m_unkC, nArg, bFlag, pbOut);
     ((PDisplayList *)*(void **)(gGfxEng + 0x154C80))->DrawVertices(m_unk0, m_unk4);

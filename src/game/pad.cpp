@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "pad.h"
+#include "Debug.h"
 
 // TODO(header): foreign declarations
 extern "C" void scePad2Init(int);
@@ -13,7 +14,6 @@ extern "C" int sceOpen(const char *, int);
 extern "C" int sceWrite(int, void *, int);
 extern "C" int sceClose(int);
 extern "C" int printf(const char *fmt, ...);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, char *pExpr);
 // Engine size is unknown; the placeholder keeps gEng out of small data (threshold 8 bytes).
 class Engine { public: char _pad000[0x19A80]; int m_unk19A80; };
 extern Engine gEng;
@@ -82,12 +82,12 @@ unsigned short Pad::PlayInputData() {
 // FUNCTION: 0x0012CDC0 SetInputMode__3PadFQ23Pad10eInputModePQ23Pad9InputDatai
 void Pad::SetInputMode(eInputMode mode, InputData *pData, int size) {
     if (mode >= MaxInput) {
-        CdsAssert__FPciPc("pad.cpp", 0x182, "eMode < MaxInput");
+        CdsAssert("pad.cpp", 0x182, "eMode < MaxInput");
     }
     switch (mode) {
     case eInputRecord:
         if (pData == 0) {
-            CdsAssert__FPciPc("pad.cpp", 0x185, "pData");
+            CdsAssert("pad.cpp", 0x185, "pData");
         }
         pData->m_unk0 = 0xFFFF;
         pData->m_unk2 = 0;
@@ -135,7 +135,7 @@ void Pad::SetVibrate(VibType type, unsigned char value) {
         return;
     }
     if ((int)type >= 16) {
-        CdsAssert__FPciPc("pad.cpp", 0x14C, "eType < VibMax");
+        CdsAssert("pad.cpp", 0x14C, "eType < VibMax");
     }
     m_unk16E = (type != 0) ? value : 0;
     unsigned char *p = VibrateTable + type * 2;
@@ -215,7 +215,7 @@ void Pad::UpdatePad() {
             goto input;
         }
         if (n >= 9) {
-            CdsAssert__FPciPc("pad.cpp", 0x7C, "iProfileSize <= sizeof(mProfile)");
+            CdsAssert("pad.cpp", 0x7C, "iProfileSize <= sizeof(mProfile)");
         }
         prof = *(unsigned int *)_pad138;
         if (prof == 0xFFFFFFFF) {
@@ -240,7 +240,7 @@ void Pad::UpdatePad() {
         }
         n = sceVibGetProfile(m_unk100, m_unk140, 0x20);
         if ((unsigned int)n >= 5) {
-            CdsAssert__FPciPc("pad.cpp", 0x9D, "iSize <= sizeof(mVibProfile)");
+            CdsAssert("pad.cpp", 0x9D, "iSize <= sizeof(mVibProfile)");
         }
         idx = (n > 0) ? m_unk140[0] & 3 : 0;
         *(int *)&m_unk140[4] = ActTable[idx * 2];
@@ -251,7 +251,7 @@ void Pad::UpdatePad() {
         printf("Pad2Read error\n");
     } else {
         if (r >= 25) {
-            CdsAssert__FPciPc("pad.cpp", 0xA4, "iButtons <= sizeof(buf)");
+            CdsAssert("pad.cpp", 0xA4, "iButtons <= sizeof(buf)");
         }
         buttons = RemapButton(pad[0]);
         if (m_unk104 == 1) {
@@ -326,7 +326,7 @@ void Pad::InitPad(int arg) {
     params[2] = 0;
     m_unk100 = scePad2CreateSocket(params, this);
     if (m_unk100 < 0) {
-        CdsAssert__FPciPc("pad.cpp", 0x2C, "miSocket >= 0");
+        CdsAssert("pad.cpp", 0x2C, "miSocket >= 0");
     }
     m_unk104 = 0;
     m_unk16F = 1;

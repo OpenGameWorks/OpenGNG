@@ -1,10 +1,10 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "CamBox.h"
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *file, int line, char *expr);
 extern unsigned char gEng[0x1A000];
 extern unsigned char gCamTarget[0x10];
 struct tagBOX;
@@ -38,7 +38,7 @@ extern "C" void RotateX__5PMat4Ff(float *pMat, float angle);
 extern "C" void RotateY__5PMat4Ff(float *pMat, float angle);
 extern "C" void RotateZ__5PMat4Ff(float *pMat, float angle);
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("CamBox.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("CamBox.cpp", line, #cond))
 
 // FUNCTION: 0x0019C530 __dt__6CamBoxFv
 CamBox::~CamBox() {}
@@ -254,7 +254,7 @@ block48:
                     pCam->SetCamMode(4, false);
                     break;
                 default:
-                    CdsAssert__FPciPc("CamBox.cpp", 0xE4, "Illegal Camera BoxMode");
+                    CdsAssert("CamBox.cpp", 0xE4, "Illegal Camera BoxMode");
                     break;
                 }
             }

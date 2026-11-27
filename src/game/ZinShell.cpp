@@ -1,11 +1,11 @@
 #include "types.h"
+#include "Debug.h"
 #include "ZinShell.h"
 #include "PArray.h"
 
 // TODO(header): foreign declarations
 extern "C" void __dl__FPv(void *);
 extern "C" void memcpy(void *, const void *, unsigned int);
-extern "C" void CdsAssert__FPciPc(const char *, int, const char *);
 extern "C" void *__nw__FUi(unsigned int);
 extern "C" void sceVu0SubVector(float *, float *, float *);
 extern "C" void sceVu0AddVector(float *, float *, float *);
@@ -113,7 +113,7 @@ void ZinShell::Execute() {
             }
             void *pSpawn = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x12, 0, 0);
             if (pSpawn == 0) {
-                CdsAssert__FPciPc("ZinShell.cpp", 0x71, "pZinShellShadow");
+                CdsAssert("ZinShell.cpp", 0x71, "pZinShellShadow");
             }
             EntityBaseClass *pEnt = (EntityBaseClass *)pSpawn;
             if (pEnt->m_unk3C != 0) {
@@ -198,7 +198,7 @@ void ZinShell::Execute() {
             DisableAllHitBox__6PMNodeFv(m_unk3C);
             void *pExp = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x11, 0, 0);
             if (pExp == 0) {
-                CdsAssert__FPciPc("ZinShell.cpp", 0xBB, "pExplosion");
+                CdsAssert("ZinShell.cpp", 0xBB, "pExplosion");
             }
             float *pPos = (m_unk3C != 0) ? (float *)(m_unk3C + 0x80) : m_unk190;
             EntityBaseClass *pE = (EntityBaseClass *)pExp;
@@ -238,7 +238,7 @@ void ZinShell::Execute() {
                 if (m_unk22C != 0) {
                     void *pS = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x41, 0, 0);
                     if (pS == 0) {
-                        CdsAssert__FPciPc("ZinShell.cpp", 0xE5, "pZSCrater");
+                        CdsAssert("ZinShell.cpp", 0xE5, "pZSCrater");
                     }
                     float *pP = (m_unk3C != 0) ? (float *)(m_unk3C + 0x80) : m_unk190;
                     EntityBaseClass *pSE = (EntityBaseClass *)pS;
@@ -252,11 +252,11 @@ void ZinShell::Execute() {
                 }
                 while ((int)i < m_unk21C) {
                     if (m_unk214 != 2) {
-                        CdsAssert__FPciPc("ZinShell.cpp", 0x101, "0");
+                        CdsAssert("ZinShell.cpp", 0x101, "0");
                     } else {
                         void *pC = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x17, 0, 0);
                         if (pC == 0) {
-                            CdsAssert__FPciPc("ZinShell.cpp", 0xF2, "pClockworkReaper");
+                            CdsAssert("ZinShell.cpp", 0xF2, "pClockworkReaper");
                         }
                         float *pP = (m_unk3C != 0) ? (float *)(m_unk3C + 0x80) : m_unk190;
                         EntityBaseClass *pCE = (EntityBaseClass *)pC;

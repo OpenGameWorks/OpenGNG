@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "Player.h"
+#include "Debug.h"
 #include "PResourceManager.h"
 #include "PArray.h"
 
@@ -335,11 +336,6 @@ public:
     void SetVelocity(float arg0, float arg1);
     void ResetPhysics(PMeshNode *pNode);
 };
-class Debug {
-public:
-    void DebugDisp(char *pText);
-    char _pad000[0x10];
-};
 extern Debug gDebug;
 class Camera {
 public:
@@ -379,7 +375,6 @@ public:
 extern EffectAPI mEffectAPI__13EntityManager;
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 extern "C" long long fptodp(float arg0);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void __dl__FPv(void *pMem);
 extern unsigned char __vt__10PAnimFrame[];
@@ -537,7 +532,7 @@ void Player::DetachJoint(int arg0) {
         m_pFreeJoints[arg0].m_unk00 = 0;
         m_pFreeJoints[arg0].m_unk04 = 1;
         m_unk23D4 += 1;
-        ((m_unk23D4 >= 0) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x2260, "m_iNumFreeJoints >= 0"));
+        ((m_unk23D4 >= 0) ? (void)0 : CdsAssert("Player.cpp", 0x2260, "m_iNumFreeJoints >= 0"));
         m_unk23D1 = (unsigned int)m_unk23D4 < 4U;
         float fTimer = AttachedTimer[5 - m_unk23D4];
         m_unk2FC = fTimer;
@@ -587,7 +582,7 @@ void Player::GetAttachableJointOffsets(int arg0, float (*arg1)[4]) {
     float fVec[4];
     unsigned int uVal;
     if (m_pFreeJoints[arg0].m_unk00 == 0) {
-        CdsAssert__FPciPc("Player.cpp", 0x2221, "m_pFreeJoints[index].pJoint");
+        CdsAssert("Player.cpp", 0x2221, "m_pFreeJoints[index].pJoint");
     }
     fVec[0] = m_AttachableJoints[arg0].m_unk08;
     fVec[1] = m_AttachableJoints[arg0].m_unk0C;
@@ -637,11 +632,11 @@ void Player::GetAttachableJoint(int *arg0) {
             pJ->m_unk00 = (int)((PMNode *)m_unk3C)->Find(a1);
             pJ->m_unk04 = 0;
             if (pJ->m_unk00 == 0) {
-                CdsAssert__FPciPc("Player.cpp", 0x2200, "m_pFreeJoints[i].pJoint");
+                CdsAssert("Player.cpp", 0x2200, "m_pFreeJoints[i].pJoint");
             }
             m_unk23D4 -= 1;
             if (m_unk23D4 < 0) {
-                CdsAssert__FPciPc("Player.cpp", 0x2204, "m_iNumFreeJoints >= 0");
+                CdsAssert("Player.cpp", 0x2204, "m_iNumFreeJoints >= 0");
             }
             m_unk23D1 = (unsigned int)m_unk23D4 < 4U;
             m_unk2FC = AttachedTimer[5 - m_unk23D4];
@@ -741,7 +736,7 @@ int Player::AnimationViewer(int arg0) {
         pEntry = pNode->Find(0x6499DC24U);
         if (pEntry) {
             PMNode *pShield = mpResMgr__15EntityBaseClass->GetResource(0x81000002, true);
-            if (!pShield) CdsAssert__FPciPc("Player.cpp", 0x2189, "pShield");
+            if (!pShield) CdsAssert("Player.cpp", 0x2189, "pShield");
             void *pMesh = pShield->GetFirstMesh();
             pEntry->m_unk10 = pMesh;
             pEntry->m_unk3E &= 0xEF;
@@ -1138,7 +1133,7 @@ void Player::FillItems(int *arg0, bool arg1) {
     if (s2 < 5) {
         do {
             if (s1_2 < 0) {
-                CdsAssert__FPciPc("Player.cpp", 0x1E9E, "iResItem >= 0");
+                CdsAssert("Player.cpp", 0x1E9E, "iResItem >= 0");
             }
             arg0[s2] = spA0[s1_2];
             s2++;
@@ -1329,7 +1324,7 @@ int Player::FindCurrentItem(int arg0, bool arg1) {
     signed char *pData = &AbilityTable[arg0 * 16];
     signed char group = pData[4];
     if ((unsigned int)pData[5] >= 4) {
-        CdsAssert__FPciPc("Player.cpp", 0x1D8E, "(u_int)pData->iGroup < ICON_GROUP");
+        CdsAssert("Player.cpp", 0x1D8E, "(u_int)pData->iGroup < ICON_GROUP");
     }
     signed char *row = (signed char *)((char *)this + pData[5] * 8 + 0x22B);
     int i = 0;
@@ -1404,7 +1399,7 @@ test:
             j += 2;
         } while (j < (int)i);
     }
-    CdsAssert__FPciPc("Player.cpp", 0x1D82, "0");
+    CdsAssert("Player.cpp", 0x1D82, "0");
     return 0;
 }
 
@@ -1596,7 +1591,7 @@ void Player::GrabObjectMove() {
     gInterface.UpdateStatus(3, true);
     void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, m_unk328);
     if (pApparition == 0) {
-        CdsAssert__FPciPc("Player.cpp", 0x1B7D, "pPling");
+        CdsAssert("Player.cpp", 0x1B7D, "pPling");
     }
     switch (m_unk250) {
     case 0:
@@ -1975,7 +1970,7 @@ void Player::ShieldThrowMove() {
             m_unk23D2 = 1;
             *(float *)((char *)m_unk38 + 0x110) = *(float *)((char *)m_unk25C + 0x38);
             m_unk2A4 = (Shield *)Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 5, false, 0);
-            if (m_unk2A4 == 0) CdsAssert__FPciPc("Player.cpp", 0x1992, "mpShield");
+            if (m_unk2A4 == 0) CdsAssert("Player.cpp", 0x1992, "mpShield");
             f20 = (m_unk1D0 & 0x10) ? 41.0f : 20.5f;
             s0 = m_unk1D0 & 0x30;
             m_unk250 = -1;
@@ -2091,11 +2086,11 @@ void Player::GuardMove() {
                     float fHalf = 0.5f;
                     m_unk2AC = mEffectAPI__13EntityManager.CreateOneshot(e->a, e->b, (PMat4 *)((char *)m_unk28C + 0x40), (EntityBaseClass *)this, fHalf, 0, false);
                     if (m_unk2AC == 0) {
-                        CdsAssert__FPciPc("Player.cpp", 0x1925, "mMidas");
+                        CdsAssert("Player.cpp", 0x1925, "mMidas");
                     }
                     EffectNode *temp = mEffectAPI__13EntityManager.EffectValid(m_unk2AC);
                     if (temp == 0) {
-                        CdsAssert__FPciPc("Player.cpp", 0x1927, "pMidas");
+                        CdsAssert("Player.cpp", 0x1927, "pMidas");
                     }
                     ((PMNode *)temp->m_unk4)->SetAnimLoopCount(0, true);
                     if (m_unk2B4 == 0) {
@@ -2104,14 +2099,14 @@ void Player::GuardMove() {
                     if (m == 1) {
                         PMidasShieldRings *p = new PMidasShieldRings;
                         if (p == 0) {
-                            CdsAssert__FPciPc("Player.cpp", 0x192F, "apFx");
+                            CdsAssert("Player.cpp", 0x192F, "apFx");
                         }
                         p->Create(true);
                         Add__16PParticleManagerFP15PParticleSystem(gGfxEng + 0x154F00, p);
                         ((PMNode *)temp->m_unk4)->AttachFx((unsigned int)p, 0.0f, 0.0f, -1.0f, -1.0f, true);
                         PMidasShieldRings *q = new PMidasShieldRings;
                         if (q == 0) {
-                            CdsAssert__FPciPc("Player.cpp", 0x1935, "apFx");
+                            CdsAssert("Player.cpp", 0x1935, "apFx");
                         }
                         q->Create(false);
                         q->m_unk10 = GetFxTexture__16PParticleManagerFUi(gGfxEng + 0x154F00, 0x8400000D);
@@ -3010,7 +3005,7 @@ void Player::GrimThrowMove() {
     static unsigned short GrimThrowAttack[23] = {0x1F, 0x26, 0x2D, 0x26, 0x37, 0x26, 0x41, 0x27, 0x4B, 0x27, 0x55, 0x27, 0x5F, 0x27, 0x69, 0x27, 0x73, 0x27, 0x7D, 0x27, 0x87, 0x27, 0xFFFF};
     if (m_unk250 == 0) {
         m_unk250 = 1;
-        ((!(m_unk2B4 != 0)) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x1381, "!miSound"));
+        ((!(m_unk2B4 != 0)) ? (void)0 : CdsAssert("Player.cpp", 0x1381, "!miSound"));
         m_unk2B4 = ((EntityBaseClass *)this)->PlaySound(0x110);
         m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(0x810002E3, 0x820004D1, 0, 0, (EntityBaseClass *)this, 1.0f, false, 0, false);
     }
@@ -3622,7 +3617,7 @@ int Player::SetAction(int arg0) {
         }
         fScale = (nFlags & 0x40) ? 1.0f : 0.5f;
         if (pAct[0xC] >= 0x2A) {
-            CdsAssert__FPciPc("Player.cpp", 0x10EB, "pAct->iAttackID < sizeof(AttackTable) / sizeof(AttackData)");
+            CdsAssert("Player.cpp", 0x10EB, "pAct->iAttackID < sizeof(AttackTable) / sizeof(AttackData)");
         }
         nTmp = 0x8019FF55;
         *(unsigned char **)((char *)this + 0x258) = (unsigned char *)AttackTable + (pAct[0xC] * 0xC);
@@ -3748,7 +3743,7 @@ void Player::SetShield(bool arg0) {
             GetShieldPass(pass);
             PMNode *mesh = mpResMgr__15EntityBaseClass->GetResource(0x81000002, true);
             if (mesh == 0) {
-                CdsAssert__FPciPc("Player.cpp", 0x1077, "pShield");
+                CdsAssert("Player.cpp", 0x1077, "pShield");
             }
             void *first = mesh->GetFirstMesh();
             PMNode *shield = (PMNode *)m_unk28C;
@@ -3830,7 +3825,7 @@ void Player::SetSword() {
     m_unk1D0 &= ~2;
     if (m_unk284 != 0 && m_unk229 != 4) {
         unsigned int s0 = m_unk1FC;
-        ((s0 < 4) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x1004, "iSword < SwordPowerupMax"));
+        ((s0 < 4) ? (void)0 : CdsAssert("Player.cpp", 0x1004, "iSword < SwordPowerupMax"));
         if (m_unk288 != 0) {
             if (m_unk288 != 0) {
                 ((VirtualSlot14Object *)m_unk288)->Slot08(1);
@@ -3839,7 +3834,7 @@ void Player::SetSword() {
         }
         SwordEntry *s1 = &SwordTbl[s0];
         PMNode *s2 = mpResMgr__15EntityBaseClass->GetResource(s1->uId, false);
-        ((s2 != 0) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x100C, "pSword"));
+        ((s2 != 0) ? (void)0 : CdsAssert("Player.cpp", 0x100C, "pSword"));
         void *child = s2->m_unk10;
         *((char *)child + 0xE) = 0;
         PMNode *node = (PMNode *)m_unk284;
@@ -3963,7 +3958,7 @@ void Player::SetMaximo(char arg0, bool arg1) {
     bool bSkip = arg1;
     int nIdx = arg0;
     if (nIdx >= 5) {
-        CdsAssert__FPciPc("Player.cpp", 0xEFF, "iMaximo < MAXIMO_NO");
+        CdsAssert("Player.cpp", 0xEFF, "iMaximo < MAXIMO_NO");
     }
     if (m_unk2BC != 0) {
         mEffectAPI__13EntityManager.DeleteEffect(m_unk2BC);
@@ -4158,7 +4153,7 @@ void Player::UpdateKey() {
         if (m_unk1F4 != 0) {
             res = mpResMgr__15EntityBaseClass->GetResource(0x81000024, true);
             if (res == 0) {
-                CdsAssert__FPciPc("Player.cpp", 0xEDF, "pKey");
+                CdsAssert("Player.cpp", 0xEDF, "pKey");
             }
             PMesh *m1 = (PMesh *)res->m_unk10;
             m1->m_unkE = 0;
@@ -4172,7 +4167,7 @@ void Player::UpdateKey() {
         }
         res = mpResMgr__15EntityBaseClass->GetResource(0x81000023, true);
         if (res == 0) {
-            CdsAssert__FPciPc("Player.cpp", 0xEE8, "pKey");
+            CdsAssert("Player.cpp", 0xEE8, "pKey");
         }
         mesh = (PMesh *)res->m_unk10;
         mesh->m_unkE = 0;
@@ -4205,10 +4200,10 @@ void Player::UpdateDisplayList() {
         sword = (char *)m_unk284;
         shield = (char *)m_unk28C;
         if (sword == 0) {
-            CdsAssert__FPciPc("Player.cpp", 0xEAD, "mpSwordBone");
+            CdsAssert("Player.cpp", 0xEAD, "mpSwordBone");
         }
         if (shield == 0) {
-            CdsAssert__FPciPc("Player.cpp", 0xEAE, "mpShieldBone");
+            CdsAssert("Player.cpp", 0xEAE, "mpShieldBone");
         }
         swordD4 = *(int *)(sword + 0xD4);
         shieldD4 = *(int *)(shield + 0xD4);
@@ -4318,7 +4313,7 @@ void Player::SetShockwave(int arg0) {
     float *p90 = (float *)((char *)m_unk3C + 0x90);
     proj = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x2D, false, 0);
     if (proj == 0) {
-        CdsAssert__FPciPc("Player.cpp", 0xC67, "pPrj");
+        CdsAssert("Player.cpp", 0xC67, "pPrj");
     }
     m_unk2B0 = *(unsigned int *)((char *)proj + 4);
     unsigned int v1 = m_unk1D0;
@@ -4708,8 +4703,8 @@ int Player::GameVarAdd(unsigned int arg0, int arg1, int arg2) {
     int nCost;
     bool bAt;
 
-    ((arg0 < 0x14) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x45E, "iVar < GameVarMax"));
-    ((arg1 >= 0) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x45F, "iValue >= 0"));
+    ((arg0 < 0x14) ? (void)0 : CdsAssert("Player.cpp", 0x45E, "iVar < GameVarMax"));
+    ((arg1 >= 0) ? (void)0 : CdsAssert("Player.cpp", 0x45F, "iValue >= 0"));
 
     pTbl = GameVarTbl + arg0 * 6;
     if (pTbl[4] != 0 && !(m_unk1D0 & 1)) {
@@ -4839,8 +4834,8 @@ int Player::GameVarSub(unsigned int arg0, int arg1) {
     FontNode *pFont;
     unsigned char *pTbl;
 
-    ((arg0 < 0x14) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x3FB, "iVar < GameVarMax"));
-    ((arg1 >= 0) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x3FC, "iValue >= 0"));
+    ((arg0 < 0x14) ? (void)0 : CdsAssert("Player.cpp", 0x3FB, "iVar < GameVarMax"));
+    ((arg1 >= 0) ? (void)0 : CdsAssert("Player.cpp", 0x3FC, "iValue >= 0"));
 
     pTbl = GameVarTbl + arg0 * 6;
     pSlot = ((int *)((char *)this + 0x1D0) + 1) + arg0;
@@ -5020,7 +5015,7 @@ extern "C" Player *__ct__6PlayerFv(Player *volatile pThis)
     (*(int *)((char *)pThis + (0x23C4))) = 3;
     pThis->m_unk38 = (int *)(new Physics);
     if (pThis->m_unk38 == 0) {
-        CdsAssert__FPciPc("Player.cpp", 0x358, "mpPhysics");
+        CdsAssert("Player.cpp", 0x358, "mpPhysics");
     }
     ((Physics *)pThis->m_unk38)->m_unk118 = 0.2f;
     ((Physics *)pThis->m_unk38)->m_unkEC = 0x8019FF55;
@@ -5028,7 +5023,7 @@ extern "C" Player *__ct__6PlayerFv(Player *volatile pThis)
     (*(void * *)((char *)pThis + (0x23CC))) = new Shadow(Shadow::eShadowParticle, 0x87000009);
     (*(void * *)((char *)pThis + (0x23C8))) = new Shadow(Shadow::eShadowParticle, 0x87000004);
     if (pThis->m_unkD4 == 0) {
-        CdsAssert__FPciPc("Player.cpp", 0x36B, "mpShadow");
+        CdsAssert("Player.cpp", 0x36B, "mpShadow");
     }
     {
         Shadow *pShadow = (Shadow *)pThis->m_unkD4;
@@ -5391,7 +5386,7 @@ void Player::SetPling(PlingType arg0, EntityBaseClass *arg1, unsigned int arg2) 
         return;
     }
     if (arg0 >= 8) {
-        CdsAssert__FPciPc("Player.cpp", 0x770, "eType < MAX_PLING");
+        CdsAssert("Player.cpp", 0x770, "eType < MAX_PLING");
     }
     m_unk324 = arg0;
     m_unk328 = *(int *)((char *)arg1 + 4);
@@ -5738,7 +5733,7 @@ void Player::PadUpdate(bool arg0) {
 // FUNCTION: 0x00165930 SavePlayerData__6PlayerFPQ26Player10PlayerData
 void Player::SavePlayerData(Player::PlayerData *arg0) {
     if (arg0 == 0) {
-        CdsAssert__FPciPc("Player.cpp", 0x58C, "pData");
+        CdsAssert("Player.cpp", 0x58C, "pData");
     }
     m_unk21C = 0;
     memcpy(arg0, &m_unk1D0, 0x7C);
@@ -5747,7 +5742,7 @@ void Player::SavePlayerData(Player::PlayerData *arg0) {
 // FUNCTION: 0x00165990 LoadPlayerData__6PlayerFPQ26Player10PlayerData
 void Player::LoadPlayerData(Player::PlayerData *arg0) {
     if (arg0 == 0) {
-        CdsAssert__FPciPc("Player.cpp", 0x581, "pData");
+        CdsAssert("Player.cpp", 0x581, "pData");
     }
     memcpy(&m_unk1D0, arg0, 0x7C);
     if (m_unk229 == 4) {
@@ -5763,7 +5758,7 @@ void Player::ResetPlayerData(Player::PlayerData *arg0) {
     int a1;
     int a3;
     if (arg0 == 0) {
-        CdsAssert__FPciPc("Player.cpp", 0x570, "pData");
+        CdsAssert("Player.cpp", 0x570, "pData");
     }
     ((char *)arg0)[0x58] = 0;
     ((char *)arg0)[0x59] = 0;
@@ -5808,8 +5803,8 @@ void Player::Kill() {
 // note: 95 words; returns int (0 on the GameVarTbl gates, 1 otherwise); tried &GameVarTbl[i], (T*)(GameVarTbl+i) pointer forms, no gain.
 int Player::GameVarSet(unsigned int arg0, int arg1) {
     unsigned char *pEntry;
-    ((arg0 < 0x14) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x506, "iVar < GameVarMax"));
-    ((arg1 >= 0) ? (void)0 : CdsAssert__FPciPc("Player.cpp", 0x507, "iValue >= 0"));
+    ((arg0 < 0x14) ? (void)0 : CdsAssert("Player.cpp", 0x506, "iVar < GameVarMax"));
+    ((arg1 >= 0) ? (void)0 : CdsAssert("Player.cpp", 0x507, "iValue >= 0"));
     pEntry = (unsigned char *)GameVarTbl + arg0 * 6;
     if (pEntry[4] != 0 && (m_unk1D0 & 1) == 0) return 0;
     if (pEntry[5] != 0 && m_unk229 >= 4) return 0;

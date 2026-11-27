@@ -1,13 +1,13 @@
 // FLAGS: -str readonly
 #include "Projectile.h"
+#include "Debug.h"
 #include "types.h"
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Projectile.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("Projectile.cpp", line, #cond))
 // The original names some tested members differently from the header; the message is given explicitly.
-#define CDS_ASSERT_NAMED(line, name, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Projectile.cpp", line, name))
+#define CDS_ASSERT_NAMED(line, name, cond) ((cond) ? (void)0 : CdsAssert("Projectile.cpp", line, name))
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" float RandomFloatRange__7MathAPIFff(float fMin, float fMax);
 extern "C" void LoadAnim__15EntityBaseClassFUib(void *pThis, unsigned int nAnim, bool bLoop);
 extern "C" void SetAnimData__15EntityBaseClassFP8AnimData(void *pThis, void *pData);

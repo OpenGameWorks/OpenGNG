@@ -1,5 +1,6 @@
 // FLAGS: -Cpp_exceptions off -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "EntityBaseClass.h"
 #include "CameraAPI.h"
 
@@ -301,7 +302,6 @@ extern float BEHIND_SLEEP;
 extern unsigned char mbGlobalSleep__15EntityBaseClass;
 extern "C" float atan2f(float y, float x);
 extern "C" float FastMath_Fabs__Ff(float fVal);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern unsigned int guHitMarkFxID[7][7];
 extern char gClockworkHitSpark[96];
@@ -311,7 +311,7 @@ public:
     PParticleSparks();
     void Create(tagParticleSparksParams *arg0, float arg1, float arg2, float arg3);
 };
-#define CDS_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert__FPciPc("EntityBaseClass.cpp", line, msg))
+#define CDS_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert("EntityBaseClass.cpp", line, msg))
 // TODO(header): foreign declarations
 // Vtable view for the sequence default case: slot 0x18 is virtual #4 (slot 0x08 is the destructor).
 class SeqSlotView {
@@ -607,7 +607,7 @@ PZinDamageFx *EntityBaseClass::CreateDamageFx(float arg0, unsigned int arg1) {
 
     pFx = new PZinDamageFx();
     if (pFx == 0) {
-        CdsAssert__FPciPc("EntityBaseClass.cpp", 0xAFD, "apFx");
+        CdsAssert("EntityBaseClass.cpp", 0xAFD, "apFx");
     }
     flags = arg1 ? (unsigned long long)arg1 : (((unsigned long long)0x8300 << 16) | 0x206);
     pFx->Create(this, arg0, (unsigned int)flags);
@@ -753,7 +753,7 @@ int EntityBaseClass::PlaySoundOnFrame(unsigned int arg0, unsigned int arg1) {
 // FUNCTION: 0x0014B080 FlashTexture__15EntityBaseClassFUii
 void EntityBaseClass::FlashTexture(unsigned int arg0, int arg1) {
     if (arg0 == 0) {
-        CdsAssert__FPciPc("EntityBaseClass.cpp", 0xA16, "iTextureID");
+        CdsAssert("EntityBaseClass.cpp", 0xA16, "iTextureID");
     }
     this->m_unk30 = mpResMgr__15EntityBaseClass->GetResource(arg0, false);
     this->m_unk34 = arg1;
@@ -767,7 +767,7 @@ void EntityBaseClass::CheckVariable(int arg0, int arg1) {
     if ((unsigned int)arg0 >= (unsigned int)arg1) {
         id = this->m_unk08;
         sprintf(buf, "Invalid variable in %d %s. value %d < %d", id, ((EntityBaseClassVirtuals *)this)->GetName(), arg0, arg1);
-        CdsAssert__FPciPc("EntityBaseClass.cpp", 0xA0C, buf);
+        CdsAssert("EntityBaseClass.cpp", 0xA0C, buf);
     }
 }
 
@@ -1274,7 +1274,7 @@ void EntityBaseClass::SpawnBonus(float *arg0, int arg1, int arg2) {
             if (ability != 0x20) {
                 Pickup *spawned = (Pickup *)((EntityManager *)mpEntMgr__15EntityBaseClass)->Spawn(8, false, 0);
                 if (spawned == 0) {
-                    CdsAssert__FPciPc("EntityBaseClass.cpp", 0x72E, "pBonusEnt");
+                    CdsAssert("EntityBaseClass.cpp", 0x72E, "pBonusEnt");
                 }
                 spawned->SetAbilityType(ability);
                 spawned->SetBonusVelocity((float (*)[4])(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190), arg0, 0.0f);
@@ -1955,7 +1955,7 @@ void EntityBaseClass::AddPhysicsAnimList() {
 void EntityBaseClass::RemoveFromBGAnimList() {
     if (this->m_unk161 != 0) {
         if (this->m_unk3C == 0) {
-            CdsAssert__FPciPc("EntityBaseClass.cpp", 0x430, "mpMeshNode");
+            CdsAssert("EntityBaseClass.cpp", 0x430, "mpMeshNode");
         }
         this->m_unk161 = 0;
         ((PMeshNode *)this->m_unk3C)->RemoveFromCollisionArray((PArray *)((char *)&mBGCollision__15EntityBaseClass + 0x70));
@@ -1966,7 +1966,7 @@ void EntityBaseClass::RemoveFromBGAnimList() {
 void EntityBaseClass::AddToBGAnimList() {
     if (this->m_unk161 == 0) {
         if (this->m_unk3C == 0) {
-            CdsAssert__FPciPc("EntityBaseClass.cpp", 0x41F, "mpMeshNode");
+            CdsAssert("EntityBaseClass.cpp", 0x41F, "mpMeshNode");
         }
         if (((PMeshNode *)this->m_unk3C)->BuildCollisionArray((PArray *)((char *)&mBGCollision__15EntityBaseClass + 0x70), *(unsigned int *)((char *)this + 4)) != 0) {
             this->m_unk161 = 1;
@@ -1994,7 +1994,7 @@ void EntityBaseClass::WriteApparitionData(int arg0, char arg1, unsigned int arg2
         return;
     } else {
         if (!(arg0 < 4)) {
-            CdsAssert__FPciPc("EntityBaseClass.cpp", 0x3AB, "iOffset < STATIC_APPARITION_DATA_SIZE");
+            CdsAssert("EntityBaseClass.cpp", 0x3AB, "iOffset < STATIC_APPARITION_DATA_SIZE");
         }
     }
     if (arg2 == 0) {
@@ -2033,7 +2033,7 @@ char EntityBaseClass::ReadApparitionData(int iOffset, unsigned int uIndex) {
         return 0;
     }
     if (!(iOffset < 4)) {
-        CdsAssert__FPciPc("EntityBaseClass.cpp", 0x398, "iOffset < STATIC_APPARITION_DATA_SIZE");
+        CdsAssert("EntityBaseClass.cpp", 0x398, "iOffset < STATIC_APPARITION_DATA_SIZE");
     }
     if (uIndex == 0) {
         uIndex = m_unk04;
@@ -2076,7 +2076,7 @@ void EntityBaseClass::ProcessSequence() {
                 m_unk158 = 0;
             }
         } else if (m_unk148 != 0) {
-            CdsAssert__FPciPc("EntityBaseClass.cpp", 0x2E7, "0");
+            CdsAssert("EntityBaseClass.cpp", 0x2E7, "0");
         }
         do {
             p = (int *)m_unk13C;
@@ -2212,7 +2212,7 @@ void EntityBaseClass::ProcessSequence() {
                 break;
             default:
                 printf("invalid sequence command %d in %s\n", id, ((SeqSlotView *)this)->SeqSlot4());
-                CdsAssert__FPciPc("EntityBaseClass.cpp", 0x378, "0");
+                CdsAssert("EntityBaseClass.cpp", 0x378, "0");
                 break;
             }
         } while (bLoop && m_unk13C != 0);
@@ -2235,7 +2235,7 @@ void EntityBaseClass::ProcessSequence() {
 // FUNCTION: 0x0014E250 PlaySequence__15EntityBaseClassFPUi
 int EntityBaseClass::PlaySequence(unsigned int *arg0) {
     if (arg0 == 0) {
-        CdsAssert__FPciPc("EntityBaseClass.cpp", 0x28D, "pSeq");
+        CdsAssert("EntityBaseClass.cpp", 0x28D, "pSeq");
     }
     if ((int)arg0 != m_unk13C) {
         m_unk13C = (int)arg0;
@@ -2406,7 +2406,7 @@ int EntityBaseClass::Render(PLightManager *arg0) {
     int ret;
 
     if (this->m_unk3C == 0) {
-        CdsAssert__FPciPc("EntityBaseClass.cpp", 0x1DF, "mpMeshNode");
+        CdsAssert("EntityBaseClass.cpp", 0x1DF, "mpMeshNode");
     }
     if ((this->m_unk30 != 0) && (this->m_unk34 & 2)) {
         ((PGfxEngine *)gGfxEng)->SetOverrideTexture(this->m_unk30);
@@ -2452,7 +2452,7 @@ int EntityBaseClass::LoadAnim(unsigned int arg0, bool arg1) {
             return 0;
         }
         sprintf(buf, "( %s ) Called load anim ( id = %d ) without loading mesh", ((EntityBaseClassVirtuals *)this)->GetName(), arg0 & 0xFFFF);
-        CdsAssert__FPciPc("EntityBaseClass.cpp", 0x1A0, buf);
+        CdsAssert("EntityBaseClass.cpp", 0x1A0, buf);
     }
     this->m_unk138 = 0xF423F;
     res = (char *)mpResMgr__15EntityBaseClass->GetResource(arg0, false);
@@ -2604,7 +2604,7 @@ void EntityBaseClass::FreeActiveLoad() {
         this->m_unk19 = 0;
         mLoadTable__15EntityBaseClass[this->m_unk10].m0 -= this->m_unk14;
         if (mLoadTable__15EntityBaseClass[this->m_unk10].m0 < 0) {
-            CdsAssert__FPciPc("EntityBaseClass.cpp", 0x102, "(int)mLoadTable[meLoadClass][CURRENT_CLASS_LOAD_VALUE] >= 0");
+            CdsAssert("EntityBaseClass.cpp", 0x102, "(int)mLoadTable[meLoadClass][CURRENT_CLASS_LOAD_VALUE] >= 0");
         }
         mLoadTable__15EntityBaseClass[this->m_unk10].m8 -= 1;
     }

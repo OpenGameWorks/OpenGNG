@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "PParticleFire.h"
 #include "PMat4.h"
 
@@ -13,7 +14,6 @@ extern "C" void memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" int rand(void);
 extern "C" float sqrtf(float x);
 extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, unsigned int nCount, int nType);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
 extern "C" float FastMath_Sin180__Ff(float fAngle);
 extern "C" float FastMath_Cos180__Ff(float fAngle);
 extern char gGfxEng[1504384];
@@ -184,7 +184,7 @@ block_6:
             pS->m_unk134 = m_unk28;
             pBuf = (char *)AllocParticles__12PDisplayListFii(*(void **)(gGfxEng + 0x154C80), pS->m_unkF0, 2);
             if (pBuf == 0) {
-                CdsAssert__FPciPc(lit_00269E30, 0x9B, lit_00269E48);
+                CdsAssert(lit_00269E30, 0x9B, lit_00269E48);
             }
             m_unk08 = pBuf;
             pV0 = (float *)((char *)this + 0x10);

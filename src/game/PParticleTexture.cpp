@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PParticleTexture.h"
 
 // TODO(header): foreign declarations
@@ -7,7 +8,6 @@ extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void __dla__FPv(void *pBlock);
 extern "C" void __dl__FPv(void *pBlock);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *GetTexEnv__15PTextureManagerFi(void *pThis, int nHandle);
 extern "C" int GsGetTexByteAddr__FP23tagGsTextureEnvironment(void *pEnv);
 extern "C" int GsInitClearPacket__FP17tagGsClearSpritesiiccccb(void *pPacket, int nW, int nH, char c0, char c1, char c2, char c3, bool bFlag);
@@ -40,12 +40,12 @@ public:
 // note: stores and asserts follow the asm; bit-field expression shapes not yet matched.
 void PParticleTexture::InitGsRegs(int nIndex, bool bFlag) {
     if (nIndex == 0) {
-        CdsAssert__FPciPc("PParticleTexture.cpp", 0xD6, "hTargetTexture");
+        CdsAssert("PParticleTexture.cpp", 0xD6, "hTargetTexture");
     }
     int nHandle = *(int *)(gGfxEng + 0x16D408);
     char *pEnv = (char *)GetTexEnv__15PTextureManagerFi(gGfxEng + 0x154C90, nHandle ? nHandle : nIndex);
     if (pEnv == 0) {
-        CdsAssert__FPciPc("PParticleTexture.cpp", 0xDA, "apTargetTexEnv");
+        CdsAssert("PParticleTexture.cpp", 0xDA, "apTargetTexEnv");
     }
     int nAddr = GsGetTexByteAddr__FP23tagGsTextureEnvironment(pEnv);
     long long nQ = *(long long *)(pEnv + 0x30);
@@ -186,7 +186,7 @@ int PParticleTexture::Init(int nIndex, PParticleSystem *pSystemA, PParticleSyste
     int nTexIndex = m_unk0;
     char *pEnv = (char *)GetTexEnv__15PTextureManagerFi(gGfxEng + 0x154C90, nHandle ? nHandle : nTexIndex);
     if (pEnv == 0) {
-        CdsAssert__FPciPc("PParticleTexture.cpp", 50, "apTexEnv");
+        CdsAssert("PParticleTexture.cpp", 50, "apTexEnv");
     }
     if (!m_unk558) {
         GsSetTCC__FP23tagGsTextureEnvironmentb(pEnv, false);

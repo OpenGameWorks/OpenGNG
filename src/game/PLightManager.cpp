@@ -1,11 +1,11 @@
 // FLAGS: -str readonly
 #include "PLightManager.h"
+#include "Debug.h"
 
 // TODO(header): foreign declarations
 extern "C" void __dt__6PLightFv(void *pThis, short nFlag);
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void *__ct__6PLightFv(void *pThis);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0ApplyMatrix(float *dst, float *mat, float *src);
 extern "C" void sceVu0SubVector(float *dst, float *a, float *b);
 extern "C" void sceVu0Normalize(float *dst, float *src);
@@ -22,7 +22,7 @@ extern "C" int Load__6PLightFP8PPakFile(void *pThis, PPakFile *pFile);
 extern "C" float GetBrightness__6PLightFPf(void *pThis, float *pOut);
 extern "C" void ShellSort__FPFPvPv_bPPvi(bool (*pCompare)(void *, void *), void **ppItems, int nCount);
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PLightManager.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PLightManager.cpp", line, #cond))
 
 // Light node: id at 0x00, next node at 0x04.
 struct PLightNode {
@@ -143,7 +143,7 @@ PLight *PLightManager::CreateDirectionLight(float *pPos, float *pDir) {
     *(float *)((char *)pLight + 0x38) = pDir[2];
     *(unsigned char *)((char *)pLight + 0x48) = 1;
     if (pLight == 0) {
-        CdsAssert__FPciPc("PLightManager.h", 0x67, "pLight");
+        CdsAssert("PLightManager.h", 0x67, "pLight");
     }
     m_unk10.Add(pLight);
     return pLight;
@@ -205,7 +205,7 @@ void PLightManager::ComputeLights(float *pOut, bool bA, bool bB, bool bC, tagCom
     for (int i = 0; i < nCount; i++) {
         PLight *pLight = aLights[i];
         if (pLight == 0) {
-            CdsAssert__FPciPc("PLightManager.cpp", 0x90, "apLight");
+            CdsAssert("PLightManager.cpp", 0x90, "apLight");
         }
         SetDirLight__10PGfxEngineFiPfPf(gGfxEng, i, (float *)((char *)pLight + 0x20), (float *)((char *)pLight + 0x30));
     }
@@ -221,7 +221,7 @@ void PLightManager::ComputeLights(float *pOut, bool bA, bool bB, bool bC, tagCom
             for (int i = 0; i < nFound; i++) {
                 PLight *pLight = aLights[i];
                 if (pLight == 0) {
-                    CdsAssert__FPciPc("PLightManager.cpp", 0xA7, "apLight");
+                    CdsAssert("PLightManager.cpp", 0xA7, "apLight");
                 }
                 sceVu0SubVector(aDir, pOut, (float *)pLight);
                 sceVu0Normalize(aDir, aDir);
@@ -250,7 +250,7 @@ void PLightManager::ComputeLights(float *pOut, bool bA, bool bB, bool bC, tagCom
 void PLightManager::ComputeLights(PMesh *pMesh, PMat4 *pMat, bool bA, bool bB, bool bC, tagComputedLightCache *pCache, float fScale) {
     float aVec[4];
     if (pMesh == 0) {
-        CdsAssert__FPciPc("PLightManager.cpp", 0x6D, "pMesh");
+        CdsAssert("PLightManager.cpp", 0x6D, "pMesh");
     }
     sceVu0ApplyMatrix(aVec, (float *)pMat, (float *)((char *)pMesh + 0x10));
     ComputeLights(aVec, bA, bB, bC, pCache, 0, fScale);
@@ -267,7 +267,7 @@ struct PLightFileHeader {
 bool PLightManager::Load(PPakFile *pFile) {
     PLightFileHeader aHeader;
     if (pFile == 0) {
-        CdsAssert__FPciPc("PLightManager.cpp", 0x39, "poFile");
+        CdsAssert("PLightManager.cpp", 0x39, "poFile");
     }
     if (Read__7PCDFileFPvUi(pFile, &aHeader, 0x20) != 0x20) {
         return false;
@@ -277,10 +277,10 @@ bool PLightManager::Load(PPakFile *pFile) {
         return true;
     }
     if (aHeader.uLightDataSize != aHeader.uNumLights * 0x40) {
-        CdsAssert__FPciPc("PLightManager.cpp", 0x4A, "aHeader.uLightDataSize == sizeof(LIGHT_DATA) * aHeader.uNumLights");
+        CdsAssert("PLightManager.cpp", 0x4A, "aHeader.uLightDataSize == sizeof(LIGHT_DATA) * aHeader.uNumLights");
     }
     if (aHeader.uNumLights >= 0x20) {
-        CdsAssert__FPciPc("PLightManager.cpp", 0x4C, "aHeader.uNumLights < MAX_STATIC_LIGHTS");
+        CdsAssert("PLightManager.cpp", 0x4C, "aHeader.uNumLights < MAX_STATIC_LIGHTS");
     }
     for (unsigned int i = 0; i < aHeader.uNumLights; i++) {
         PLight *pLight = (PLight *)__nw__FUi(0x70);

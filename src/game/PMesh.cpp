@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PMesh.h"
 #include "PMeshFragment.h"
 
@@ -8,7 +9,6 @@ extern "C" void __dt__13PMeshFragmentFv(void);
 extern "C" void __destroy_new_array(void *pArray, void *pDtor);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void PBoundBoxToBoundBox__FPA2_A4_fPA2_A4_f(float (*pSrc)[2][4], float (*pDst)[2][4]);
 extern "C" void MakePBoundBox__FPfPfPA2_A4_f(float *pMin, float *pMax, float (*pBox)[2][4]);
 extern "C" void *__nwa__FUi(unsigned int nSize);
@@ -78,7 +78,7 @@ void PMesh::ComputeBoundingBox() {
     int nJ;
 
     if (m_unk0 == 0) {
-        CdsAssert__FPciPc("PMesh.cpp", 0x13D, "mpMeshFragments");
+        CdsAssert("PMesh.cpp", 0x13D, "mpMeshFragments");
     }
     aMin[0] = aMin[1] = aMin[2] = 32767.0f;
     aMax[0] = aMax[1] = aMax[2] = -32767.0f;
@@ -120,7 +120,7 @@ void PMesh::ComputeBoundingBox() {
 // FUNCTION: 0x0018F820 SetBoundBox__5PMeshFPA2_A4_f
 void PMesh::SetBoundBox(float (*pBox)[2][4]) {
     if (pBox == 0) {
-        CdsAssert__FPciPc("PMesh.cpp", 0x11F, "pBox");
+        CdsAssert("PMesh.cpp", 0x11F, "pBox");
     }
     *(u_long128 *)&m_unk10[0][0] = *(u_long128 *)&(*pBox)[0][0];
     *(u_long128 *)&m_unk10[1][0] = *(u_long128 *)&(*pBox)[1][0];
@@ -134,10 +134,10 @@ int PMesh::Load(PPakFile *pPakFile, PArray *pTextures, unsigned int nCount, unsi
     int nOffset;
 
     if (pPakFile == 0) {
-        CdsAssert__FPciPc("PMesh.cpp", 0xD5, "poFile");
+        CdsAssert("PMesh.cpp", 0xD5, "poFile");
     }
     if (pTextures == 0) {
-        CdsAssert__FPciPc("PMesh.cpp", 0xD6, "poTextureHandles");
+        CdsAssert("PMesh.cpp", 0xD6, "poTextureHandles");
     }
     if (nCount == 0) {
         return 1;
@@ -177,10 +177,10 @@ int PMesh::RenderAllPolys() {
 
     nSum = 0;
     if (m_unk0 == 0) {
-        CdsAssert__FPciPc("PMesh.cpp", 0xC0, "mpMeshFragments");
+        CdsAssert("PMesh.cpp", 0xC0, "mpMeshFragments");
     }
     if (m_unk4 == 0) {
-        CdsAssert__FPciPc("PMesh.cpp", 0xC1, "muNumFragments");
+        CdsAssert("PMesh.cpp", 0xC1, "muNumFragments");
     }
     nIndex = 0;
     nOffset = 0;
@@ -203,10 +203,10 @@ int PMesh::Render(int nArg, bool *pbOut, bool bFlag) {
 
     nSum = 0;
     if (m_unk0 == 0) {
-        CdsAssert__FPciPc("PMesh.cpp", 0x85, "mpMeshFragments");
+        CdsAssert("PMesh.cpp", 0x85, "mpMeshFragments");
     }
     if (m_unk4 == 0) {
-        CdsAssert__FPciPc("PMesh.cpp", 0x86, "muNumFragments");
+        CdsAssert("PMesh.cpp", 0x86, "muNumFragments");
     }
     if (bFlag) {
         nIndex = m_unk4 - m_unk8;

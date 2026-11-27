@@ -1,9 +1,9 @@
 // FLAGS: -str readonly
 #include "PDynamicBuffer.h"
+#include "Debug.h"
 #include "PShader.h"
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern char mBuffer[0x5000];
@@ -18,7 +18,7 @@ struct PDynamicBufferTag {
 // FUNCTION: 0x001D5810 Allocate__14PDynamicBufferFUi
 void *PDynamicBuffer::Allocate(unsigned int nQuadwords) {
     if (m_uCurOffset + nQuadwords > 0x5000) {
-        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0x116, "(muCurOffset + uSize) <= sizeof(mBuffer)");
+        CdsAssert("PDynamicBuffer.cpp", 0x116, "(muCurOffset + uSize) <= sizeof(mBuffer)");
     }
     void *pRet = m_pBuffer + m_uCurOffset;
     m_uCurOffset += nQuadwords;
@@ -39,23 +39,23 @@ int PDynamicBuffer::WriteShader(PShader *pShader, bool *pFlag, int *pOut, bool b
     unsigned int nTagOffset;
     unsigned int nHdrOffset;
     if (pShader == 0) {
-        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0xB1, "pShader");
+        CdsAssert("PDynamicBuffer.cpp", 0xB1, "pShader");
     }
     if (pFlag == 0) {
-        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0xB2, "pbRenderPassStatus");
+        CdsAssert("PDynamicBuffer.cpp", 0xB2, "pbRenderPassStatus");
     }
     if (pOut == 0) {
-        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0xB3, "piTexEnvOffsets");
+        CdsAssert("PDynamicBuffer.cpp", 0xB3, "piTexEnvOffsets");
     }
     memset(pOut, 0, 0x10);
     nTagOffset = m_uCurOffset;
     if (Allocate(1) == 0) {
-        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0xBB, "apTag");
+        CdsAssert("PDynamicBuffer.cpp", 0xBB, "apTag");
     }
     nHdrOffset = m_uCurOffset;
     nQw = 1;
     if (Allocate(1) == 0) {
-        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0xC0, "apHeader");
+        CdsAssert("PDynamicBuffer.cpp", 0xC0, "apHeader");
     }
     nCount = 0;
     for (i = 0; i < pShader->m_unk8; i++) {
@@ -65,13 +65,13 @@ int PDynamicBuffer::WriteShader(PShader *pShader, bool *pFlag, int *pOut, bool b
             nCount++;
             pMat = (i < pShader->m_unk8) ? (char *)pShader->m_unk0 + i * 0xA0 : 0;
             if (pMat == 0) {
-                CdsAssert__FPciPc("PDynamicBuffer.cpp", 0xCF, "apMaterial");
+                CdsAssert("PDynamicBuffer.cpp", 0xCF, "apMaterial");
             }
             nQw += 0x12;
             *(int *)((char *)pOut + nOffset) = m_uCurOffset;
             pPacket = (char *)Allocate(0x12);
             if (pPacket == 0) {
-                CdsAssert__FPciPc("PDynamicBuffer.cpp", 0xDC, "apPacket");
+                CdsAssert("PDynamicBuffer.cpp", 0xDC, "apPacket");
             }
             *(u_long128 *)(pPacket + 0x60) = *(u_long128 *)(pMat + 0x10);
             *(u_long128 *)(pPacket + 0x70) = *(u_long128 *)(pMat + 0x20);
@@ -107,14 +107,14 @@ int PDynamicBuffer::WriteShader(PShader *pShader, bool *pFlag, int *pOut, bool b
 int PDynamicBuffer::WriteMatrix(PMat4 *pMat, unsigned int nMemOffset) {
     int nRet = m_uCurOffset + 1;
     if (pMat == 0) {
-        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0x8D, "pMat");
+        CdsAssert("PDynamicBuffer.cpp", 0x8D, "pMat");
     }
     if (nMemOffset >= 0x400) {
-        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0x8E, "uVu1MemOffset < 1024");
+        CdsAssert("PDynamicBuffer.cpp", 0x8E, "uVu1MemOffset < 1024");
     }
     u_long128 *pBlock = (u_long128 *)Allocate(5);
     if (pBlock == 0) {
-        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0x92, "apMatrix");
+        CdsAssert("PDynamicBuffer.cpp", 0x92, "apMatrix");
     }
     PDynamicBufferTag *pTag = (PDynamicBufferTag *)pBlock;
     pTag->nTag = 0x10000004;
@@ -153,7 +153,7 @@ int PDynamicBuffer::WriteDmaRefTag(void *pAddr, unsigned int nQwCount, bool bFla
 int PDynamicBuffer::WriteGhostData(unsigned int nQuadwords) {
     int nRet = m_uCurOffset;
     if (Allocate(nQuadwords) == 0) {
-        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0x53, "apAddr");
+        CdsAssert("PDynamicBuffer.cpp", 0x53, "apAddr");
     }
     return nRet;
 }
@@ -169,7 +169,7 @@ int PDynamicBuffer::Open() {
     // sltu $zero,size then xori 1 is an unsigned `> 0` test negated into a bool.
     bool b = !(m_uCurSize > 0);
     if (!b) {
-        CdsAssert__FPciPc("PDynamicBuffer.cpp", 0x27, "!muCurSize");
+        CdsAssert("PDynamicBuffer.cpp", 0x27, "!muCurSize");
     }
     m_uCurSize = 0;
     m_uCurOffset = 0;

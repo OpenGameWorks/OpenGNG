@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "EnemyGenerator.h"
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
@@ -11,7 +12,6 @@ extern "C" void EnableSleep__15EntityBaseClassFbb(void *, bool, bool);
 extern void *mpEntMgr__15EntityBaseClass;
 extern "C" void *GetPtrToApparition__13EntityManagerFUi(void *pThis, unsigned int nId);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
 extern "C" int CreateTimer__8TimerAPIFUiUib(void *pThis, unsigned int nArg0, unsigned int nArg1, bool bFlag);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*pA)[4], float (*pB)[4]);
@@ -129,10 +129,10 @@ void EnemyGenerator::CheckGeneratedEnemies() {
 // note: 209 words differ: loop-head compare uses $v1 not original $a0/$at, arm-end b targets and pointer-select layout differ; combined continue, reversed case order (211) and reversed upper-bound compare tried, no gain
 void EnemyGenerator::GenerateEnemy() {
     if (m_unk1D4 == 0) {
-        CdsAssert__FPciPc("EnemyGenerator.cpp", 0x7A, "m_iNumEnemyTypes");
+        CdsAssert("EnemyGenerator.cpp", 0x7A, "m_iNumEnemyTypes");
     }
     if (m_unk1D8 >= 3) {
-        CdsAssert__FPciPc("EnemyGenerator.cpp", 0x7B, "m_iNumEnemies < MAX_GENERATED_ENEMIES");
+        CdsAssert("EnemyGenerator.cpp", 0x7B, "m_iNumEnemies < MAX_GENERATED_ENEMIES");
     }
     int nRoll = RandomIntRange__7MathAPIFii(0, 100);
     int nStep = 100 / m_unk1D4;
@@ -148,7 +148,7 @@ void EnemyGenerator::GenerateEnemy() {
         case 0:
             pEnt = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x17, false, 0);
             if (pEnt == 0) {
-                CdsAssert__FPciPc("EnemyGenerator.cpp", 0x90, "apEntity");
+                CdsAssert("EnemyGenerator.cpp", 0x90, "apEntity");
             }
             if (RandomIntRange__7MathAPIFii(0, 4) == 0) {
                 void *pApp = m_unk3C;
@@ -165,7 +165,7 @@ void EnemyGenerator::GenerateEnemy() {
         case 1:
             pEnt = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x22, false, 0);
             if (pEnt == 0) {
-                CdsAssert__FPciPc("EnemyGenerator.cpp", 0x9E, "apEntity");
+                CdsAssert("EnemyGenerator.cpp", 0x9E, "apEntity");
             }
             if (RandomIntRange__7MathAPIFii(0, 4) == 0) {
                 void *pApp = m_unk3C;
@@ -182,7 +182,7 @@ void EnemyGenerator::GenerateEnemy() {
         case 2:
             pEnt = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, 0x37, false, 0);
             if (pEnt == 0) {
-                CdsAssert__FPciPc("EnemyGenerator.cpp", 0xA7, "apEntity");
+                CdsAssert("EnemyGenerator.cpp", 0xA7, "apEntity");
             }
             if (RandomIntRange__7MathAPIFii(0, 4) == 0) {
                 void *pApp = m_unk3C;
@@ -201,7 +201,7 @@ void EnemyGenerator::GenerateEnemy() {
             break;
         }
         if (pEnt == 0) {
-            CdsAssert__FPciPc("EnemyGenerator.cpp", 0xB4, "apEntity");
+            CdsAssert("EnemyGenerator.cpp", 0xB4, "apEntity");
         }
         EnableSleep__15EntityBaseClassFbb(pEnt, false, false);
         if (m_unk200 != 0 && InstanceIsValid__15EntityBaseClassFUi(m_unk200)) {
@@ -209,12 +209,12 @@ void EnemyGenerator::GenerateEnemy() {
         }
         if (m_unk1E8 == -1) {
             if (m_unk1DC[m_unk1D8] != 0) {
-                CdsAssert__FPciPc("EnemyGenerator.cpp", 0xC3, "m_EnemyRefs[m_iNumEnemies] == 0");
+                CdsAssert("EnemyGenerator.cpp", 0xC3, "m_EnemyRefs[m_iNumEnemies] == 0");
             }
             m_unk1DC[m_unk1D8] = ((EnemyGeneratorVirtuals *)pEnt)->m_unk4;
         } else {
             if (m_unk1DC[m_unk1E8] != 0) {
-                CdsAssert__FPciPc("EnemyGenerator.cpp", 0xC9, "m_EnemyRefs[m_iEmptyEnemySlot] == 0");
+                CdsAssert("EnemyGenerator.cpp", 0xC9, "m_EnemyRefs[m_iEmptyEnemySlot] == 0");
             }
             m_unk1DC[m_unk1E8] = ((EnemyGeneratorVirtuals *)pEnt)->m_unk4;
             m_unk1E8 = -1;
@@ -243,7 +243,7 @@ void EnemyGenerator::Execute() {
             }
         }
         if (m_unk1D4 == 0) {
-            CdsAssert__FPciPc("EnemyGenerator.cpp", 0x34, "m_iNumEnemyTypes");
+            CdsAssert("EnemyGenerator.cpp", 0x34, "m_iNumEnemyTypes");
         }
         m_unk1E8 = -1;
         if (m_unk1BC != 0) {

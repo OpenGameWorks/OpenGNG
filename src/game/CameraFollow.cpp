@@ -4,7 +4,6 @@
 
 // TODO(header): foreign declarations
 extern "C" void sceVu0CopyVector(float *dst, float *src);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" int abs(int);
 // abs is called out of line here, not expanded as an intrinsic.
 #pragma inline_intrinsics off
@@ -160,7 +159,7 @@ void CameraSpline::Create() {
             float b0 = 1.0f + (((-1.0f) * u3 + 3.0f * u2) - 3.0f * u);
             float b1 = 4.0f + (3.0f * u3 - 6.0f * u2);
             float b2 = 1.0f + (3.0f * u + ((-3.0f) * u3 + 3.0f * u2));
-            ((curveIdx < 0x2EE) ? (void)0 : CdsAssert__FPciPc("CameraFollow.cpp", 0x85B, "iIndex < MAX_CURVE_POINTS"));
+            ((curveIdx < 0x2EE) ? (void)0 : CdsAssert("CameraFollow.cpp", 0x85B, "iIndex < MAX_CURVE_POINTS"));
             tag_CurveData *cur = &m_curves[curveIdx];
             for (int c = 0; c < 3; c++) {
                 float t = m_ctrlPts[seg].m_v[c] * b0 + m_ctrlPts[seg + 1].m_v[c] * b1;
@@ -191,7 +190,7 @@ void CameraSpline::Create() {
 // FUNCTION: 0x00173B30 AddControlPoint__12CameraSplineF5PVec3
 void CameraSpline::AddControlPoint(PVec3 arg0) {
     if (m_iNumCtrlPoints >= 0xF) {
-        CdsAssert__FPciPc("CameraFollow.cpp", 0x83F, "m_iNumCtrlPoints < MAX_CONTROL_POINTS");
+        CdsAssert("CameraFollow.cpp", 0x83F, "m_iNumCtrlPoints < MAX_CONTROL_POINTS");
     }
     int idx = m_iNumCtrlPoints;
     m_iNumCtrlPoints = idx + 1;
@@ -1344,7 +1343,7 @@ void CameraFollow::GetPlayerDetails() {
     }
     float *pDetail = *(float **)((char *)m_unk114 + 0x38);
     if (pDetail == 0) {
-        CdsAssert__FPciPc("CameraFollow.cpp", 0x240, "pPlayerPhysics");
+        CdsAssert("CameraFollow.cpp", 0x240, "pPlayerPhysics");
     }
     m_unk188 = pDetail;
     sceVu0CopyMatrix((float (*)[4])m_unkA0, (float (*)[4])(*(char **)((char *)m_unk114 + 0x3C) + 0x40));
@@ -1636,11 +1635,11 @@ void CameraFollow::Init(bool arg0) {
     Reset();
     char *pMgr = gEng + 0x137E0;
     if (pMgr == 0) {
-        CdsAssert__FPciPc("CameraFollow.cpp", 0x8D, "pEntityMgr");
+        CdsAssert("CameraFollow.cpp", 0x8D, "pEntityMgr");
     }
     m_unk114 = *(void **)(pMgr + 0x505C);
     if (m_unk114 == 0) {
-        CdsAssert__FPciPc("CameraFollow.cpp", 0x8F, "m_pPlayer");
+        CdsAssert("CameraFollow.cpp", 0x8F, "m_pPlayer");
     }
     char *pSub = *(char **)((char *)m_unk114 + 0x3C);
     m_unk180 = (float *)(pSub ? pSub + 0x80 : (char *)m_unk114 + 0x190);

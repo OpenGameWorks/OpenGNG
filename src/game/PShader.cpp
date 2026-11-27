@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PShader.h"
 #include "PSTAnim.h"
 #include "PRenderPass.h"
@@ -13,7 +14,6 @@ extern "C" void UnloadDynamicTexture__15PTextureManagerFi(void *pThis, int nId);
 extern "C" void SetTextures__15PTextureManagerFPiiP12PDisplayListRb(void *pThis, int *pIds, int nCount, void *pDisp, bool &bSet);
 extern "C" void SetMaterials__12PDisplayListFP13tagGsMaterialibbPfPUlPUlPb(void *pThis, void *pMat, int nCount, bool bA, bool bB, float *pScale, void *pTagA, void *pTagB, bool *pbOut);
 extern "C" void SetMaterials__12PDisplayListFP13tagGsMaterialibbPfPUlPUl(void *pThis, void *pMat, int nCount, bool bA, bool bB, float *pScale, void *pTagA, void *pTagB);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" int Read__7PCDFileFPvUi(void *pThis, void *pBuf, unsigned int nSize);
 extern unsigned int guNumShadersInCurModel;
@@ -22,8 +22,8 @@ extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" void *GetTexEnv__15PTextureManagerFi(void *pThis, int nHandle);
 extern char gGfxEng[1504384];
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PShader.cpp", line, #cond))
-#define CDS_ASSERT_TXT(line, cond, txt) ((cond) ? (void)0 : CdsAssert__FPciPc("PShader.cpp", line, txt))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PShader.cpp", line, #cond))
+#define CDS_ASSERT_TXT(line, cond, txt) ((cond) ? (void)0 : CdsAssert("PShader.cpp", line, txt))
 
 // DRAFT: 0x00196890 LoadRenderPass__7PShaderFP8PPakFileP6PArrayUib
 // note: DIFF 237; prologue saves s1-s4 under a smaller frame (original saves s0-s7 under 0xE0), size 0x314 vs 0x3FC; bit-31 test variant also 237.

@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PropellerPowerSource.h"
 #include "PMNode.h"
 #include "CameraAPI.h"
@@ -10,7 +11,6 @@ class PParticleSystem;
 extern unsigned char gEng[];
 extern unsigned char gGfxEng[];
 extern char mCameraAPI__13EntityManager;
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void SpawnPickups__15EntityBaseClassFiiPA4_fb(EntityBaseClass *pSelf, int nA, int nB, float (*pTable)[4], bool bFlag);
 extern "C" void *InstanceIsValid__15EntityBaseClassFUi(unsigned int nId);
 extern "C" void HalfDestroy__15PropellerEngineFv(void *pEngine);
@@ -21,7 +21,7 @@ extern "C" void *GetPtrToInstance__13EntityManagerFUi(void *pMgr, unsigned int n
 extern unsigned int Engine_IdleSeq[15];
 extern unsigned int HitSequences[5];
 extern unsigned char gInterface[0xA60];
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PropellerPowerSource.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PropellerPowerSource.cpp", line, #cond))
 
 // Create__16PParticleManagerFUifffP6PMNodeb and IsValid__16PParticleManagerFP15PParticleSystem.
 class PParticleManager {

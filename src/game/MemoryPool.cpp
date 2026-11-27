@@ -6,7 +6,6 @@
 // TODO(header): foreign declarations
 extern "C" int sprintf(char *pBuf, const char *fmt, ...);
 extern "C" int printf(const char *fmt, ...);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" unsigned int fptodp(float);
 extern Debug gDebug;
@@ -130,11 +129,11 @@ void *MemoryPool::Allocate(unsigned int size, int arg1) {
     m_unk11C = 0;
     if (size == 0) {
         sprintf((char *)this, "MemoryPool %d ( Allocate Failed : Can't allocate <%d> bytes )\n", arg1, size);
-        CdsAssert__FPciPc("MemoryPool.cpp", 0x15F, (char *)this);
+        CdsAssert("MemoryPool.cpp", 0x15F, (char *)this);
     }
     if ((m_unk100 << 4) < size) {
         sprintf((char *)this, "MemoryPool %d ( Allocate Failed : Can't allocate <%d> bytes. Max for this pool is <%d> bytes )\n", arg1, size, m_unk100 << 4);
-        CdsAssert__FPciPc("MemoryPool.cpp", 0x165, (char *)this);
+        CdsAssert("MemoryPool.cpp", 0x165, (char *)this);
     }
     unsigned int blocks = (size + 0x1F) >> 4;
     Block *pBlock = m_unk110->m_unk8;
@@ -146,7 +145,7 @@ void *MemoryPool::Allocate(unsigned int size, int arg1) {
     }
     if (pBlock == m_unk110) {
         sprintf((char *)this, "MemoryPool %d ( Allocate Failed on <%d> bytes : Memory full )\n", arg1, size);
-        CdsAssert__FPciPc("MemoryPool.cpp", 0x17F, (char *)this);
+        CdsAssert("MemoryPool.cpp", 0x17F, (char *)this);
     }
     if (blocks < (unsigned int)GetLength(pBlock)) {
         if (GetLength(pBlock) - blocks > 1) {
@@ -174,7 +173,7 @@ void *MemoryPool::AllocateAligned(unsigned int size, int arg1, unsigned int alig
 
     if (align != 0x20 && align != 0x40 && align != 0x80 && align != 0x100) {
         sprintf((char *)this, "MemoryPool %d ( Allocate Failed : Illegal Alignment )\n", arg1);
-        CdsAssert__FPciPc("MemoryPool.cpp", 0x13A, (char *)this);
+        CdsAssert("MemoryPool.cpp", 0x13A, (char *)this);
     }
     size += align;
     ptr = Allocate(size, arg1);
@@ -186,28 +185,28 @@ void *MemoryPool::AllocateAligned(unsigned int size, int arg1, unsigned int alig
 // note: first diff at 0x9C: the two trailing %x varargs of the NextBlockCorrupted sprintf are lq 0xB0/0xE0(sp) (caller-frame reads), ours pass literal 0; not expressible from FPvi params (72 words).
 void MemoryPool::DeAllocate(void *ptr, int arg1) {
     if (ptr == 0) {
-        CdsAssert__FPciPc("MemoryPool.cpp", 0xF2, "pBlock");
+        CdsAssert("MemoryPool.cpp", 0xF2, "pBlock");
     }
     m_unk114++;
     if (m_unk11C != 0) {
-        CdsAssert__FPciPc("MemoryPool.cpp", 0xFB, "0");
+        CdsAssert("MemoryPool.cpp", 0xFB, "0");
     }
     if (m_unk104 == m_unk100) {
-        CdsAssert__FPciPc("MemoryPool.cpp", 0x101, "0");
+        CdsAssert("MemoryPool.cpp", 0x101, "0");
     }
     Block *block = (Block *)((char *)ptr - 0x10);
     if (NextBlockCorrupted(block)) {
         sprintf((char *)this, "MemoryPool %d ( DeAllocate Failed : Deleted by 0x%x or 0x%x )\n", arg1, 0, 0);
-        CdsAssert__FPciPc("MemoryPool.cpp", 0x112, (char *)this);
+        CdsAssert("MemoryPool.cpp", 0x112, (char *)this);
     }
     if ((unsigned int)block < (unsigned int)m_unk108 ||
         (unsigned int)block >= (unsigned int)((char *)m_unk108 + (m_unk100 << 4))) {
         sprintf((char *)this, "MemoryPool %d ( DeAllocate Failed : Invalid Adr. <0x%x> Passed )\n", arg1, block);
-        CdsAssert__FPciPc("MemoryPool.cpp", 0x119, (char *)this);
+        CdsAssert("MemoryPool.cpp", 0x119, (char *)this);
     }
     if (GetStatus(block) != 1) {
         sprintf((char *)this, "MemoryPool %d ( DeAllocate Failed : Block <0x%x> not allocated by %x or %x)\n", arg1, block, 0, 0);
-        CdsAssert__FPciPc("MemoryPool.cpp", 0x122, (char *)this);
+        CdsAssert("MemoryPool.cpp", 0x122, (char *)this);
     }
     m_unk104 += GetLength(block);
     SetStatus(block, eStatus_0);
@@ -217,7 +216,7 @@ void MemoryPool::DeAllocate(void *ptr, int arg1) {
 // FUNCTION: 0x0012B950 Remove__10MemoryPoolFPQ210MemoryPool5Block
 void MemoryPool::Remove(Block *block) {
     if (block == 0) {
-        CdsAssert__FPciPc("MemoryPool.cpp", 0xC8, "pBlock");
+        CdsAssert("MemoryPool.cpp", 0xC8, "pBlock");
     }
     if (GetStatus(block) != 1) {
         if (block->m_unk8 != m_unk110) {
@@ -232,7 +231,7 @@ void MemoryPool::Remove(Block *block) {
         return;
     }
     sprintf((char *)this, "MemoryPool ( Remove failed : Tried to remove a reserved block <0x%x>\n", block);
-    CdsAssert__FPciPc("MemoryPool.cpp", 0xE5, (char *)this);
+    CdsAssert("MemoryPool.cpp", 0xE5, (char *)this);
 }
 
 // DRAFT: 0x0012BA30 MergeBlocks__10MemoryPoolFPQ210MemoryPool5Block

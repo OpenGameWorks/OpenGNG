@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #pragma opt_strength_reduction off
 #include "types.h"
+#include "Debug.h"
 #include "PMNode.h"
 #include "PLightManager.h"
 #include "PArray.h"
@@ -18,7 +19,6 @@ extern "C" void __dt__5PMeshFv(void *, short);
 extern "C" void SetSTAnimOptions__5PMeshFb(void *, bool);
 extern "C" void *__nw__FUi(unsigned int);
 extern "C" void __dl__FPv(void *);
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void sceVu0UnitMatrix(float (*)[4]);
 extern "C" void AddVectorXYZ__FPfPf(float *, float *);
@@ -390,7 +390,7 @@ int PMNode::CreateObjectDisplayList() {
     }
     m_pObjDisplayList = p;
     if (m_pObjDisplayList == 0) {
-        CdsAssert__FPciPc("PMNode.cpp", 0x99E, "mpObjDisplayList");
+        CdsAssert("PMNode.cpp", 0x99E, "mpObjDisplayList");
     }
     if (Create__18PObjectDisplayListFP6PMNodePb(m_pObjDisplayList, this, &m_unkD4) == 0) {
         __dt__18PObjectDisplayListFv(m_pObjDisplayList, 1);
@@ -449,7 +449,7 @@ int PMNode::Render(PLightManager *pLM, int nArg1, int nArg2) {
 // note: size 0x6d4 vs 0x71c, frame 0xC0 vs 0xD0; original asserts on a constant address (s4), not pMgr; 424 words differ; ternary assert form tried, same count.
 void PMNode::ProcessFxTriggers(float fTime, PMat4 *pMat, bool bA, bool bB) {
     PParticleManager *pMgr = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
-    ((pMgr != 0) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0x82D, "apParticleMgr"));
+    ((pMgr != 0) ? (void)0 : CdsAssert("PMNode.cpp", 0x82D, "apParticleMgr"));
     if (fTime != 0.0f && fTime == m_unk38) {
         if (bB) {
             unsigned int nCount = m_unkD8;
@@ -581,7 +581,7 @@ void PMNode::ProcessFxTriggers(float fTime, PMat4 *pMat, bool bA, bool bB) {
 void PMNode::DestroyFxTriggersBySpawnFrame(float fFrame, bool bFlag) {
     PParticleManager *pMgr = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
     if (pMgr == 0) {
-        CdsAssert__FPciPc("PMNode.cpp", 0x80C, "apParticleMgr");
+        CdsAssert("PMNode.cpp", 0x80C, "apParticleMgr");
     }
     tagParticleFxTrigger *pTrig;
     for (unsigned int idx = m_unkD8 - 1; (int)idx >= 0; idx--) {
@@ -608,7 +608,7 @@ void PMNode::DestroyFxTriggersBySpawnFrame(float fFrame, bool bFlag) {
 void PMNode::SetFxColorMultiplier(float *pColor, bool bFlag) {
     PParticleManager *pMgr = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
     if (pMgr == 0) {
-        CdsAssert__FPciPc("PMNode.cpp", 0x7EE, "apParticleMgr");
+        CdsAssert("PMNode.cpp", 0x7EE, "apParticleMgr");
     }
     tagParticleFxTrigger *pTrig;
     for (unsigned int idx = m_unkD8 - 1; (int)idx >= 0; idx--) {
@@ -632,12 +632,12 @@ void *PMNode::AttachFx(unsigned int uID, float fA, float fB, float fC, float fD,
     char *pBlk;
     PParticleManager *pMgr = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
     if (pMgr == 0) {
-        CdsAssert__FPciPc("PMNode.cpp", 0x7B3, "apParticleMgr");
+        CdsAssert("PMNode.cpp", 0x7B3, "apParticleMgr");
     }
     if (pMgr->IsValid((PParticleSystem *)uID) != 0) {
         pBlk = (char *)__nw__FUi(0x28);
         if (pBlk == 0) {
-            CdsAssert__FPciPc("PMNode.cpp", 0x7B8, "apTrigger");
+            CdsAssert("PMNode.cpp", 0x7B8, "apTrigger");
         }
         *(int *)(pBlk + 0xC) = 0;
         *(int *)(pBlk + 0x8) = 0;
@@ -660,7 +660,7 @@ void *PMNode::AttachFx(unsigned int uID, float fA, float fB, float fC, float fD,
 void PMNode::EnableFx(bool bA, bool bB) {
     PParticleManager *pMgr = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
     if (pMgr == 0) {
-        CdsAssert__FPciPc("PMNode.cpp", 0x796, "apParticleMgr");
+        CdsAssert("PMNode.cpp", 0x796, "apParticleMgr");
     }
     unsigned int idx = 0;
     unsigned int cnt = m_unkD8;
@@ -769,7 +769,7 @@ void PMNode::AddFxTriggers(PArray *pArr, bool bFlag) {
     unsigned int count;
     unsigned int idx;
     if (pArr == 0) {
-        CdsAssert__FPciPc("PMNode.cpp", 0x753, "poTriggers");
+        CdsAssert("PMNode.cpp", 0x753, "poTriggers");
     }
     count = pArr->m_unk0;
     idx = 0;
@@ -788,7 +788,7 @@ void PMNode::AddFxTriggers(PArray *pArr, bool bFlag) {
 int PMNode::AddFxTrigger(tagParticleFxTrigger *pTrigger, bool bFlag) {
     char *pBlk = (char *)__nw__FUi(0x28);
     if (pBlk == 0) {
-        CdsAssert__FPciPc("PMNode.cpp", 0x746, "apTrigger");
+        CdsAssert("PMNode.cpp", 0x746, "apTrigger");
     }
     memcpy(pBlk, pTrigger, 0x28);
     *(int *)(pBlk + 0x20) = 0;
@@ -810,7 +810,7 @@ int PMNode::LoadFxTriggers(PPakFile *pFile) {
     while (idx < nCount) {
         pBlk = (char *)__nw__FUi(0x28);
         if (pBlk == 0) {
-            CdsAssert__FPciPc("PMNode.cpp", 0x732, "apTrigger");
+            CdsAssert("PMNode.cpp", 0x732, "apTrigger");
         }
         if (((PCDFile *)pFile)->Read(pBlk, 0x28) != 0x28) {
             return 0;
@@ -1349,7 +1349,7 @@ PMNode *PMNode::FindAnimNode(unsigned int uID) {
 // note: 3 words (0x44, 0x4C, 0x54): the four flags are cleared through a bool* loop over &m_unkD4; the original materializes the constant 1 in a0 before adding nPass, ours adds first and uses a1. A bool m_abPass[4] member may be the cause but m_unkD4..D7 have users in 23 files. Tried: ab[nPass] = 1, *(ab + nPass), ab += nPass, bool local, i outside the for, (&m_unkD4)[i] in the loop (3-4), indexed stores without the loop (4-36).
 void PMNode::EnableOneRenderPassOnly(int nPass) {
     if (nPass >= 4) {
-        CdsAssert__FPciPc("PMNode.cpp", 0x446, "iPassIndex < MAX_PASSES_PER_SHADER");
+        CdsAssert("PMNode.cpp", 0x446, "iPassIndex < MAX_PASSES_PER_SHADER");
     }
     bool *ab = &m_unkD4;
     for (int i = 0; i < 4; i++) {
@@ -1546,11 +1546,11 @@ int PMNode::LoadMesh(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
     }
     if (hdr[0] != 0) {
         if (m_unk10 != 0) {
-            CdsAssert__FPciPc("PMNode.cpp", 0x283, "mpMesh == NULL");
+            CdsAssert("PMNode.cpp", 0x283, "mpMesh == NULL");
         }
         m_unk10 = new PMesh();
         if (m_unk10 == 0) {
-            CdsAssert__FPciPc("PMNode.cpp", 0x287, "mpMesh");
+            CdsAssert("PMNode.cpp", 0x287, "mpMesh");
         }
         m_unk3E |= 1;
         if (((PMesh *)m_unk10)->Load(pFile, pArr, hdr[0], hdr[1], eVersion, true) == 0) {
@@ -1576,8 +1576,8 @@ int PMNode::LoadBone(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
     unsigned int tag;
     PMNode *apCloneChild;
 
-    ((pFile) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0x1F5, "poFile"));
-    ((pArr) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0x1F6, "poTextureHandles"));
+    ((pFile) ? (void)0 : CdsAssert("PMNode.cpp", 0x1F5, "poFile"));
+    ((pArr) ? (void)0 : CdsAssert("PMNode.cpp", 0x1F6, "poTextureHandles"));
 
     if ((int)eVersion >= 0x20000) {
         if (((PCDFile *)pFile)->Read(hdrB, 0x44) != 0x44) { return 0; }
@@ -1603,7 +1603,7 @@ int PMNode::LoadBone(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
 
     if (meshHdr[0] != 0) {
         m_unk10 = new PMesh();
-        if (m_unk10 == 0) { CdsAssert__FPciPc("PMNode.cpp", 0x235, "mpMesh"); }
+        if (m_unk10 == 0) { CdsAssert("PMNode.cpp", 0x235, "mpMesh"); }
         m_unk3E |= 1;
         if (((PMesh *)m_unk10)->Load(pFile, pArr, meshHdr[0], meshHdr[1], eVersion, false) == 0) { return 0; }
         if (((PMesh *)m_unk10)->m_unkC != 0) { m_unk3E |= 0x10; }
@@ -1629,7 +1629,7 @@ int PMNode::LoadBone(PPakFile *pFile, PArray *pArr, ePsx2FileVersion eVersion) {
             ((PMNode *)pThis)->InitMembers();
             apCloneChild = (PMNode *)pThis;
         }
-        ((apCloneChild) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0x25D, "apChildBone"));
+        ((apCloneChild) ? (void)0 : CdsAssert("PMNode.cpp", 0x25D, "apChildBone"));
         Add__6PArrayFPv(&m_unk14, apCloneChild);
         if (!apCloneChild->LoadBone(pFile, pArr, eVersion)) { return 0; }
         tag = 0;
@@ -1886,7 +1886,7 @@ void PMNode::EnableAnim(bool bA, bool bB) {
 void PMNode::AttachAnim(PAnim *pAnim, bool bFlag) {
     PAnimFrame *pFrame;
     if (pAnim == 0) {
-        CdsAssert__FPciPc("PMNode.cpp", 0x10C, "pAnim");
+        CdsAssert("PMNode.cpp", 0x10C, "pAnim");
     }
     DestroyAnim();
     if (bFlag) {
@@ -1896,7 +1896,7 @@ void PMNode::AttachAnim(PAnim *pAnim, bool bFlag) {
         }
         m_unk24 = pFrame;
         if (m_unk24 == 0) {
-            CdsAssert__FPciPc("PMNode.cpp", 0x113, "mpAnim");
+            CdsAssert("PMNode.cpp", 0x113, "mpAnim");
         }
         m_unk3E |= 2;
     } else {
@@ -1922,7 +1922,7 @@ int PMNode::LoadAnim(PPakFile *pFile) {
         return 0;
     }
     if (hdr.uNumChannels > 5) {
-        CdsAssert__FPciPc("PMNode.cpp", 0xFA, "aHeader.uNumChannels <= CHANNEL_MAX");
+        CdsAssert("PMNode.cpp", 0xFA, "aHeader.uNumChannels <= CHANNEL_MAX");
     }
     if (hdr.uFlags == 0 && hdr.uA > 1) {
         pObj = (PAnimFrame *)__nw__FUi(0x34);
@@ -1938,7 +1938,7 @@ int PMNode::LoadAnim(PPakFile *pFile) {
         m_unk24 = pObj;
     }
     if (m_unk24 == 0) {
-        CdsAssert__FPciPc("PMNode.cpp", 0x102, "mpAnim");
+        CdsAssert("PMNode.cpp", 0x102, "mpAnim");
     }
     return ((PAnimFrame *)m_unk24)->LoadHeader(pFile, &hdr);
 }
@@ -2067,14 +2067,14 @@ void PMNode::CopyMNode(PMNode &src, bool bFlag) {
                         apCloneChild = (PMNode *)pThis;
                     }
                 }
-                    ((apCloneChild) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0xA0, "apCloneChild"));
+                    ((apCloneChild) ? (void)0 : CdsAssert("PMNode.cpp", 0xA0, "apCloneChild"));
                     apCloneChild->CopyMNode(*pChild, true);
                     break;
                 default:
-                    ((!"no CopyMNode() for this type\n") ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0xA4, "!\"no CopyMNode() for this type\\n\""));
+                    ((!"no CopyMNode() for this type\n") ? (void)0 : CdsAssert("PMNode.cpp", 0xA4, "!\"no CopyMNode() for this type\\n\""));
                     break;
                 }
-                ((apCloneChild) ? (void)0 : CdsAssert__FPciPc("PMNode.cpp", 0xA7, "apCloneChild"));
+                ((apCloneChild) ? (void)0 : CdsAssert("PMNode.cpp", 0xA7, "apCloneChild"));
                 Add__6PArrayFPv(&m_unk14, apCloneChild);
                 pChild = ((unsigned int)++pSrcArr->m_unk4 < pSrcArr->m_unk0) ? ((PMNode **)pSrcArr->m_unk8)[pSrcArr->m_unk4] : 0;
             } while (pChild);

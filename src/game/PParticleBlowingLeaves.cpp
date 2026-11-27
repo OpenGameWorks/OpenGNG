@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "PParticleBlowingLeaves.h"
 #include "PGfxEngine.h"
 #include "PDisplayList.h"
@@ -14,7 +15,6 @@ extern "C" void *memcpy(void *, const void *, unsigned int);
 extern "C" int rand(void);
 extern unsigned char __vt__22PParticleBlowingLeaves[];
 extern "C" void *__nwa__FUi(unsigned int);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void QwordCopy__FP1P1Ui(u_long128 *pDst, u_long128 *pSrc, unsigned int nQwords);
 extern "C" void sceVu0ApplyMatrix(float *, float (*)[4], float *);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
@@ -48,7 +48,7 @@ void PParticleBlowingLeaves::GenerateLeafMeshData() {
     };
     void *pBuf = __nwa__FUi(0x970);
     if (pBuf == 0) {
-        CdsAssert__FPciPc("PParticleBlowingLeaves.cpp", 0x19D, "apPacket");
+        CdsAssert("PParticleBlowingLeaves.cpp", 0x19D, "apPacket");
     }
     ((int *)pBuf)[0] = 6;
     ((int *)pBuf)[1] = 0;
@@ -299,7 +299,7 @@ void PParticleBlowingLeaves::Render() {
     for (int nBatch = 0; nBatch < nBatches; nBatch++) {
         int nCount = (nRemain < 0x50) ? nRemain : 0x50;
         ((nCount * 0x60) < 0x2000) ? (void)0
-            : CdsAssert__FPciPc("PParticleBlowingLeaves.cpp", 0x105,
+            : CdsAssert("PParticleBlowingLeaves.cpp", 0x105,
                                 "aiNumLeavesPerBatch * sizeof(VuFxInstance) < SPAD_TEMP_BUFFER_SIZE");
         nRemain -= nCount;
         for (int j = 0; j < nCount; j++) {
@@ -360,7 +360,7 @@ void PParticleBlowingLeaves::Animate(float fDelta) {
         for (i = 0; i < 0x14; i++) {
             tagLeaf *pLeaf = (tagLeaf *)(m_unkF0 + i * 0x70);
             if (pLeaf == 0) {
-                CdsAssert__FPciPc("PParticleBlowingLeaves.cpp", 0x8A, "apLeafRot");
+                CdsAssert("PParticleBlowingLeaves.cpp", 0x8A, "apLeafRot");
             }
             sceVu0AddVector((float *)pLeaf, (float *)pLeaf, (float *)pLeaf->_pad10);
             if (pLeaf->m_unk00 > 180.0f) {
@@ -377,7 +377,7 @@ void PParticleBlowingLeaves::Animate(float fDelta) {
     for (i = 0; i < m_unkE4; i++) {
         tagLeaf *pLeaf = (tagLeaf *)((char *)m_unkE0 + (i << 6));
         if (pLeaf == 0) {
-            CdsAssert__FPciPc("PParticleBlowingLeaves.cpp", 0x9F, "apLeaf");
+            CdsAssert("PParticleBlowingLeaves.cpp", 0x9F, "apLeaf");
         }
         if (pLeaf->m_unk30 > 0.0f) {
             float *pA30 = m_unkA30;
@@ -481,7 +481,7 @@ int PParticleBlowingLeaves::Create(float *pA, float *pB, float *pC, int nNum, fl
     m_unk30 = 0x44;
     m_unkE0 = __nwa__FUi(nNum * 0x40);
     if (m_unkE0 == 0) {
-        CdsAssert__FPciPc("PParticleBlowingLeaves.cpp", 0x40, "mpLeaves");
+        CdsAssert("PParticleBlowingLeaves.cpp", 0x40, "mpLeaves");
     }
     m_unk9F4 = fRate;
     memcpy(m_unk9D0, pA, 0x10);
@@ -507,7 +507,7 @@ int PParticleBlowingLeaves::Create(float *pA, float *pB, float *pC, int nNum, fl
     for (int i = 0; i < m_unkE4; i++) {
         char *pLeaf = (char *)m_unkE0 + nOff;
         if (pLeaf == 0) {
-            CdsAssert__FPciPc("PParticleBlowingLeaves.cpp", 0x53, "apLeaf");
+            CdsAssert("PParticleBlowingLeaves.cpp", 0x53, "apLeaf");
         }
         SpawnLeaf((tagLeaf *)pLeaf);
         nOff += 0x40;

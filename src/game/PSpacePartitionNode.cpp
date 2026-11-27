@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PSpacePartitionNode.h"
 #include "PMesh.h"
 #include "PFrustrum.h"
@@ -9,7 +10,6 @@
 // TODO(header): foreign declarations
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *memcpy(void *pDst, void *pSrc, unsigned int nSize);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void __dt__5PMeshFv(void *pThis, short nFlag);
 extern "C" void __destroy_new_array(void *pArray, void *pDtor);
 extern "C" void *__dt__20PStaticInstanceGroupFv(void *pThis, short nFlag);
@@ -20,8 +20,8 @@ extern "C" float sceVu0InnerProduct(float *pA, float *pB);
 extern "C" float sqrtf(float fValue);
 
 #define SPTREE_MAX_VISIBLE_NODES 0x100
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PSpacePartitionNode.cpp", line, #cond))
-#define CDS_ASSERT_MSG(line, cond, msg) ((cond) ? (void)0 : CdsAssert__FPciPc("PSpacePartitionNode.cpp", line, msg))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PSpacePartitionNode.cpp", line, #cond))
+#define CDS_ASSERT_MSG(line, cond, msg) ((cond) ? (void)0 : CdsAssert("PSpacePartitionNode.cpp", line, msg))
 
 class PStaticInstanceGroup {
 public:
@@ -112,19 +112,19 @@ int PSpacePartitionNode::Load(PPakFile *poFile, PArray *poTextures, PArray *poIn
     float vMax[4];
 
     if (poFile == 0) {
-        CdsAssert__FPciPc("PSpacePartitionNode.cpp", 0x44, "poFile");
+        CdsAssert("PSpacePartitionNode.cpp", 0x44, "poFile");
     }
     if (poFile->Read(aHeader, 0x30) != 0x30) {
         return 0;
     }
     if (aHeader[9] != 0) {
         if (aHeader[9] >= 0x10000U) {
-            CdsAssert__FPciPc("PSpacePartitionNode.cpp", 0x4F, "aHeader.uNumStaticInstanceGroups <= 0xffff");
+            CdsAssert("PSpacePartitionNode.cpp", 0x4F, "aHeader.uNumStaticInstanceGroups <= 0xffff");
         }
         m_nGroupCount = (unsigned short)aHeader[9];
         m_pGroup = new PStaticInstanceGroup[m_nGroupCount];
         if (m_pGroup == 0) {
-            CdsAssert__FPciPc("PSpacePartitionNode.cpp", 0x52, "mpStaticInstanceGroupTable");
+            CdsAssert("PSpacePartitionNode.cpp", 0x52, "mpStaticInstanceGroupTable");
         }
         for (int i = 0; i < (int)m_nGroupCount; i++) {
             if (m_pGroup[i].Load(poFile, poInstances, eVersion) == 0) {
@@ -138,7 +138,7 @@ int PSpacePartitionNode::Load(PPakFile *poFile, PArray *poTextures, PArray *poIn
     }
     if (aMeshHeader[0] != 0) {
         if (m_pMesh != 0) {
-            CdsAssert__FPciPc("PSpacePartitionNode.cpp", 0x6B, "mpMesh == NULL");
+            CdsAssert("PSpacePartitionNode.cpp", 0x6B, "mpMesh == NULL");
         }
         m_pMesh = new PMesh;
         if (m_pMesh == 0) {
@@ -166,7 +166,7 @@ int PSpacePartitionNode::Load(PPakFile *poFile, PArray *poTextures, PArray *poIn
             return 0;
         }
         if ((unsigned short)m_nChildCount >= 4U) {
-            CdsAssert__FPciPc("PSpacePartitionNode.cpp", 0x96, "mnChild < sizeof(mChildArray) / 4");
+            CdsAssert("PSpacePartitionNode.cpp", 0x96, "mnChild < sizeof(mChildArray) / 4");
         }
         unsigned int nIdx = m_nChildCount;
         m_nChildCount = nIdx + 1;

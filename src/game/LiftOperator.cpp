@@ -1,12 +1,12 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PArray.h"
 #include "LiftOperator.h"
 #include "PMNode.h"
 
 // TODO(header): foreign declarations
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pMsg);
 extern "C" void *__dt__15EntityBaseClassFv(void *pThis, short nFlag);
 extern "C" void __dl__FPv(void *pMem);
 extern int miSpawnLevel__12LiftOperator;
@@ -155,7 +155,7 @@ void LiftOperator::SpawnEnemyType(unsigned int nApparitionId, int nType) {
         do {
             void *pEnt = Spawn__13EntityManagerFUibi(mpEntMgr__15EntityBaseClass, nApparitionId, false, 0);
             if (pEnt == 0) {
-                CdsAssert__FPciPc("LiftOperator.cpp", 0x14C, "pEnt");
+                CdsAssert("LiftOperator.cpp", 0x14C, "pEnt");
             }
             float vec[4];
             *(u_long128 *)vec = *(u_long128 *)(m_unk3C ? m_unk3C + 0x80 : (char *)this + 0x190);
@@ -203,7 +203,7 @@ void LiftOperator::SetEditableVars(char *pSrc) {
     if (pNode != 0) {
         m_unk1F8 = pNode->FindAnimNode(m_unk1C0);
         if (m_unk1F8 == 0) {
-            CdsAssert__FPciPc("LiftOperator.cpp", 0xED, "m_pAnimNode");
+            CdsAssert("LiftOperator.cpp", 0xED, "m_pAnimNode");
         }
         ((PMNodeVirtView *)m_unk1F8)->SetFrameTime(0.0f);
         ((PMNodeVirtView *)m_unk1F8)->Animate(0.0f, 0.0f, 0, 0, false);

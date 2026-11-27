@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #define PRAINSPLATTER_DEFINE_CTOR
 #include "PRainSplatter.h"
 
@@ -7,7 +8,6 @@ class PMat4;
 struct tagVuParticle;
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void __dla__FPv(void *pBlock);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void sceVu0CopyVector(float *pDst, float *pSrc);
 extern char gGfxEng[1504384];
@@ -40,7 +40,7 @@ void PRainSplatter::Animate(float fDelta) {
     sceVu0SubVector(vec, m_unk20, m_unk10);
     void *pOut = AllocParticles__12PDisplayListFii(*(void **)(gGfxEng + 0x154C80), m_unk04, 2);
     if (pOut == 0) {
-        CdsAssert__FPciPc("PRainSplatter.cpp", 0x49, "apVuParticles");
+        CdsAssert("PRainSplatter.cpp", 0x49, "apVuParticles");
     }
     m_unk00 = pOut;
     for (int i = 0; i < m_unk04; i++) {
@@ -100,7 +100,7 @@ int PRainSplatter::Create(int nCount, float *pPos) {
     m_unk04 = nCount;
     m_unk08 = __nwa__FUi(nCount * 0x10);
     if (m_unk08 == 0) {
-        CdsAssert__FPciPc("PRainSplatter.cpp", 0x20, "mpParticlePosAge");
+        CdsAssert("PRainSplatter.cpp", 0x20, "mpParticlePosAge");
     }
     memset(m_unk08, 0, nCount * 0x10);
     sceVu0CopyVector(m_unk10, pPos);

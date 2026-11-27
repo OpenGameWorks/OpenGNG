@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "PGasTexture.h"
+#include "Debug.h"
 #include "PArray.h"
 #include "PParticleSystem.h"
 
@@ -8,7 +9,6 @@ extern "C" void Reset__16PParticleTextureFv(void *pThis);
 extern "C" void Update__16PParticleTextureFf(void *pThis, float fStep);
 extern "C" void __ct__16PParticleTextureFv(void *pThis);
 extern "C" void __dt__16PParticleTextureFv(void *pThis, short nFlags);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void *__ct__12PParticleGasFv(void *pThis);
@@ -83,10 +83,10 @@ int PGasTexture::Init(struct tagProceduralTextureData *pData, PArray *pArray)
     int nSlot;
 
     if (pData == 0) {
-        CdsAssert__FPciPc("PGasTexture.cpp", 0x5C, "pData");
+        CdsAssert("PGasTexture.cpp", 0x5C, "pData");
     }
     if (pArray == 0) {
-        CdsAssert__FPciPc("PGasTexture.cpp", 0x5D, "poTextureHandles");
+        CdsAssert("PGasTexture.cpp", 0x5D, "poTextureHandles");
     }
     nSlot = *(int *)((char *)pData + 0x20);
     nResult = 1;
@@ -136,7 +136,7 @@ int PGasTexture::Init(int nIndex)
             pGas = __ct__12PParticleGasFv(pGas);
         }
         m_unk570 = (PGasTextureHandle *)pGas;
-        ((void)((m_unk570) ? (void)0 : CdsAssert__FPciPc("PGasTexture.cpp", 0x3A, "mpGasFx1")));
+        ((void)((m_unk570) ? (void)0 : CdsAssert("PGasTexture.cpp", 0x3A, "mpGasFx1")));
         Create__12PParticleGasFP20tagParticleGasParamsfff(m_unk570, &params, 0.0f, 0.0f, 0.0f);
         ((PParticleSystem *)m_unk570)->m_unk10 = hTexture;
         ((PParticleSystem *)m_unk570)->m_unk30 = 0x48;
@@ -167,7 +167,7 @@ int PGasTexture::Init(int nIndex)
             pGas = __ct__12PParticleGasFv(pGas);
         }
         m_unk574 = (PGasTextureHandle *)pGas;
-        ((void)((m_unk574) ? (void)0 : CdsAssert__FPciPc("PGasTexture.cpp", 0x4D, "mpGasFx2")));
+        ((void)((m_unk574) ? (void)0 : CdsAssert("PGasTexture.cpp", 0x4D, "mpGasFx2")));
         Create__12PParticleGasFP20tagParticleGasParamsfff(m_unk574, &params, 0.0f, 0.0f, 0.0f);
         ((PParticleSystem *)m_unk574)->m_unk10 = hTexture;
         ((PParticleSystem *)m_unk574)->m_unk30 = 0x48;

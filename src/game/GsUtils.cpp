@@ -1,10 +1,10 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "GsUtils.h"
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("GsUtils.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("GsUtils.cpp", line, #cond))
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void sceGsPutDispEnv(void *pEnv);

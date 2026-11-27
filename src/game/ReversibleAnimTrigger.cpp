@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "ReversibleAnimTrigger.h"
 #include "EntityBaseClass.h"
 #include "PMNode.h"
@@ -12,7 +13,6 @@ extern unsigned char __vt__21ReversibleAnimTrigger[];
 extern unsigned char gEng[0x19B90];
 extern "C" void StartCutCamera__6CameraFUib(void *pThis, unsigned int arg0, bool bFlag);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int arg0);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void RemoveCollision__15EntityBaseClassFP15EntityBaseClass(void *pThis, void *arg0);
 extern "C" int PlaySound__15EntityBaseClassFUi(void *pThis, unsigned int nSound);
@@ -124,10 +124,10 @@ void ReversibleAnimTrigger::Execute() {
         CheckVariable__15EntityBaseClassFii(this, m_unk1B8, 6);
         CheckVariable__15EntityBaseClassFii(this, m_unk1B0, 5);
         if (m_unk1CC < 0.0f) {
-            CdsAssert__FPciPc("ReversibleAnimTrigger.cpp", 0x84, "mEVars.fEndFrame >= 0");
+            CdsAssert("ReversibleAnimTrigger.cpp", 0x84, "mEVars.fEndFrame >= 0");
         }
         if (m_unk1D0 <= 0.0f) {
-            CdsAssert__FPciPc("ReversibleAnimTrigger.cpp", 0x85, "mEVars.fRiseSpeed > 0");
+            CdsAssert("ReversibleAnimTrigger.cpp", 0x85, "mEVars.fRiseSpeed > 0");
         }
         if (m_unk1D4 == 0) {
             SetState__15EntityBaseClassFi(this, -2);
@@ -276,7 +276,7 @@ void ReversibleAnimTrigger::SetEditableVars(char *pVars) {
     if (*(PMNode **)gEng != 0) {
         m_unk1D4 = (*(PMNode **)gEng)->FindAnimNode(m_unk1BC);
         if (m_unk1D4 == 0) {
-            CdsAssert__FPciPc("ReversibleAnimTrigger.cpp", 0x14C, "m_pLinkedNode");
+            CdsAssert("ReversibleAnimTrigger.cpp", 0x14C, "m_pLinkedNode");
         }
         ((PMNodeVirtuals *)m_unk1D4)->SetFrameTime(0.0f);
         ((PMNodeVirtuals *)m_unk1D4)->Animate(0.0f, 0.0f, 0, 0, false);

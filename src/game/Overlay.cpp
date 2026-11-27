@@ -1,9 +1,9 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Overlay.h"
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" int mwLoadOverlay(char *pPath, int nGroup);
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 extern "C" int strcmp(const char *pA, const char *pB);
@@ -20,7 +20,7 @@ int OverlayManager::LoadOverlay(const char *pName) {
     }
     sprintf(path, "%s%sR.BIN", m_unk24 ? "PSXDATA\\OVERLAY\\" : "..\\PROGRAM\\", pName);
     if (strlen(path) >= 0x40U) {
-        CdsAssert__FPciPc("Overlay.cpp", 0x3A, "strlen( correctFileName ) < 64");
+        CdsAssert("Overlay.cpp", 0x3A, "strlen( correctFileName ) < 64");
     }
     if (mwLoadOverlay(path, m_unk0) != 0) {
         strcpy(m_unk4, pName);
@@ -33,7 +33,7 @@ int OverlayManager::LoadOverlay(const char *pName) {
 OverlayManager::OverlayManager(unsigned int nGroup) {
     m_unk0 = _overlay_group_addresses[nGroup];
     if (m_unk0 == 0) {
-        CdsAssert__FPciPc("Overlay.cpp", 0x11, "pOverlayGroupAddr");
+        CdsAssert("Overlay.cpp", 0x11, "pOverlayGroupAddr");
     }
     m_unk4[0] = 0;
     m_unk24 = 1;

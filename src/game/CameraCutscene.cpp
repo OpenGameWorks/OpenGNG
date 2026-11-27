@@ -1,4 +1,5 @@
 #include "CameraCutscene.h"
+#include "Debug.h"
 
 // TODO(header): foreign declarations
 extern "C" void sceVu0CopyVector(float *dst, float *src);
@@ -24,8 +25,6 @@ extern "C" void FinishCutCamera__6PlayerFPA4_f(void *pThis, void *pMatrix);
 extern "C" void ResetAfterReposition__6CameraFv(void *pThis);
 extern "C" int printf(const char *pFormat, ...);
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
-void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern int InnocentDialogID[0x100];
 extern "C" void *__nw__FUi(unsigned int);
 // MemMgr is 908 bytes; the field at offset 0x18 is saved and cleared around the allocation.
@@ -434,7 +433,7 @@ bool CameraCutManager::ProcessCutCamera() {
         }
         return true;
     } else {
-        CdsAssert__FPciPc("CameraCutscene.cpp", 0x32E, "Invalid cut camera type");
+        CdsAssert("CameraCutscene.cpp", 0x32E, "Invalid cut camera type");
     }
     return true;
 }
@@ -445,7 +444,7 @@ void CameraCutManager::SetSourceTarget(PVec3 arg0, PVec3 arg1) {
     sceVu0CopyVector(m_unk60, arg1.m_v);
 }
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("CameraCutscene.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("CameraCutscene.cpp", line, #cond))
 // The cut camera is re-read from m_pCurrentCamera at each use: it is reassigned by
 // calls, so a local would have to survive them in a saved register.
 #define CUR_CAM ((CutSceneCamera_Generic *)m_pCurrentCamera)

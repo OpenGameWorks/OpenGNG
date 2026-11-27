@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "MathAPI.h"
+#include "Debug.h"
 #include "BGCollision.h"
 
 // TODO(header): foreign declarations
@@ -27,7 +28,6 @@ extern "C" void sceVu0UnitMatrix(PMat4 *m);
 extern BGCollision mBGCollision__15EntityBaseClass;
 extern "C" void Inverse__5PMat4Fv(float *dst, float *src);
 extern "C" void sceVu0ApplyMatrix(tagBOX *dst, float *m, float *src);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, char *pExpr);
 extern "C" void FastMath_ComputeMatrixLite(float (*)[4], float (*)[4], float (*)[4], float (*)[4], int);
 bool FastMath_PointInSingleMatrixBox(float *arg0, tagVuMatrixBox *arg1);
 void FastMath_PointInMatrixBox(tagVuMatrixBox *arg0, int arg1, float *arg2, int *arg3);
@@ -488,7 +488,7 @@ float MathAPI::GetRelAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]) {
 // DRAFT: 0x001584A0 GetAngleYToPoint__7MathAPIFP15EntityBaseClassPA4_f
 // note: 48 words differ. Ternary arms swapped to `(f20 >= f1) ? f20 : f1` (bc1t form, 52 -> 48) and wrap tail duplicated. Remaining: sub result in f0 not f2 for (int)(f2-360), sign-flip tail layout, 0x1F0 vs 0x20C size. Tried: duplicated `f0 = f20+f3` in the >180 arm (55), operand swap in the >180 compare (51), direct `f20 + t` in the wrap arm (48, same).
 float MathAPI::GetAngleYToPoint(EntityBaseClass *arg0, float (*arg1)[4]) {
-    if (arg0 == 0) CdsAssert__FPciPc("MathAPI.cpp", 0x70, "pEnt");
+    if (arg0 == 0) CdsAssert("MathAPI.cpp", 0x70, "pEnt");
     char *self = (char *)arg0;
     float *v0 = (float *)(self + 0x190);
     int obj = *(int *)(self + 0x3C);

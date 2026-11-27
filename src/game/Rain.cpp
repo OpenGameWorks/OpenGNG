@@ -1,17 +1,17 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Rain.h"
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern unsigned char __vt__4Rain[];
 extern char gGfxEng[1504384];
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void CreateRain__16PParticleManagerFf(void *pThis, float fDensity);
 extern "C" void SetLightningDensity__16PParticleManagerFf(void *pThis, float fDensity);
 extern "C" void DestroyRain__16PParticleManagerFv(void *pThis);
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("Rain.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("Rain.cpp", line, #cond))
 
 // FUNCTION: 0x001CD4B0 OutputDebug__4RainFv
 void Rain::OutputDebug() {

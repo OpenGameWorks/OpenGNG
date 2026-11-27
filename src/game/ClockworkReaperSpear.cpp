@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "ClockworkReaperSpear.h"
+#include "Debug.h"
 #include "types.h"
 
 // TODO(header): foreign declarations
@@ -10,7 +11,6 @@ extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" float atan2f(float fY, float fX);
 extern "C" float sqrtf(float fX);
 extern "C" float Round180__Ff(float fAngle);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
 extern u_long128 mHitPos__15EntityBaseClass;
 extern void *mPlayerAPI__13EntityManager;
 extern "C" void *__ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(void *pThis, int nLoad, unsigned int nArg);
@@ -130,7 +130,7 @@ void ClockworkReaperSpear::OnTouchEvent(EntityBaseClass *arg0) {
         case 3: {
             void *pPlayer = mPlayerAPI__13EntityManager;
             if (pPlayer == 0) {
-                CdsAssert__FPciPc("ClockworkReaperSpear.cpp", 0xE7, "pPlayer");
+                CdsAssert("ClockworkReaperSpear.cpp", 0xE7, "pPlayer");
             }
             ((EntityBaseVirtuals *)pPlayer)->OnHitEvent((EntityBaseClass *)this, 0x32, 0x1001, 0);
             break;
@@ -179,7 +179,7 @@ void ClockworkReaperSpear::Execute() {
         OrientSpear();
         void *pMgr = gGfxEng + 0x154F00;
         if (pMgr == 0) {
-            CdsAssert__FPciPc("ClockworkReaperSpear.cpp", 0x70, "apParticleManager");
+            CdsAssert("ClockworkReaperSpear.cpp", 0x70, "apParticleManager");
         }
         float *pB = (m_unk3C != 0) ? (float *)((char *)m_unk3C + 0x80) : (float *)((char *)this + 0x190);
         float *pA = (m_unk3C != 0) ? (float *)((char *)m_unk3C + 0x80) : (float *)((char *)this + 0x190);
@@ -251,11 +251,11 @@ extern "C" ClockworkReaperSpear *__ct__20ClockworkReaperSpearFv(ClockworkReaperS
     }
     pThis->m_unk38 = pPhys;
     if (pThis->m_unk38 == 0) {
-        CdsAssert__FPciPc("ClockworkReaperSpear.cpp", 0x22, "mpPhysics");
+        CdsAssert("ClockworkReaperSpear.cpp", 0x22, "mpPhysics");
     }
     unsigned char *pInfo = (unsigned char *)pThis->m_unk38 + 0xA0;
     if (pInfo == 0) {
-        CdsAssert__FPciPc("ClockworkReaperSpear.cpp", 0x25, "pInfo");
+        CdsAssert("ClockworkReaperSpear.cpp", 0x25, "pInfo");
     }
     *(unsigned int *)(pInfo + 0x4C) &= ~0x80;
     EnableSleep__15EntityBaseClassFbb(pThis, 0, 0);

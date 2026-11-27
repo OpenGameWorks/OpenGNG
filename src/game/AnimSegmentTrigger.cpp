@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "AnimSegmentTrigger.h"
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
@@ -13,7 +14,6 @@ extern "C" void WriteApparitionData__15EntityBaseClassFicUi(void *pThis, int nAr
 extern "C" float Distance__7MathAPIFPA4_fPA4_f(float (*pA)[4], float (*pB)[4]);
 extern "C" int PointInBoundBox__7MathAPIFPA4_f6tagBOX(float (*pM)[4], void *pBox);
 extern char *mPlayerAPI__13EntityManager;
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" int printf(const char *fmt, ...);
 extern "C" void SetState__15EntityBaseClassFi(void *pThis, int nState);
 extern "C" void PlaySequence__15EntityBaseClassFPUi(void *pThis, unsigned int *pSeq);
@@ -34,7 +34,7 @@ extern unsigned int AnimSegmentTriggeredSeqTable[];
 extern unsigned int AnimSegmentTriggerAnimSeqTable[];
 
 // Assert form of PPakFile.cpp: the ternary keeps the runtime literal-address test.
-#define CDS_ASSERT(line, cond, str) ((cond) ? (void)0 : CdsAssert__FPciPc("AnimSegmentTrigger.cpp", line, str))
+#define CDS_ASSERT(line, cond, str) ((cond) ? (void)0 : CdsAssert("AnimSegmentTrigger.cpp", line, str))
 
 // FUNCTION: 0x0020F030 __dt__18AnimSegmentTriggerFv
 extern "C" AnimSegmentTrigger *__dt__18AnimSegmentTriggerFv(AnimSegmentTrigger *pThis, short nFlag)
@@ -123,7 +123,7 @@ void AnimSegmentTrigger::Execute()
 
     pRoot = *(void **)gEng;
     if (pRoot == 0) {
-        CdsAssert__FPciPc("AnimSegmentTrigger.cpp", 0x35, "pRoot");
+        CdsAssert("AnimSegmentTrigger.cpp", 0x35, "pRoot");
     }
     switch (m_unk20) {
     case -2:
@@ -161,7 +161,7 @@ void AnimSegmentTrigger::Execute()
                         m_unk10C |= 0x02000000;
                         *(u_long128 *)(m_unk3C + 0x120) = *(u_long128 *)vHitBoxHalfSize;
                     } else if (m_unk1E8 != 0) {
-                        CdsAssert__FPciPc("AnimSegmentTrigger.cpp", 0x7A, "!mEVars.m_iTriggerType");
+                        CdsAssert("AnimSegmentTrigger.cpp", 0x7A, "!mEVars.m_iTriggerType");
                     }
                 }
                 if (BGAnimIsReset__13EntityManagerFi(gEng + 0x137E0, m_unk1F0) == 0) {

@@ -1,10 +1,10 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "Fog.h"
 #include "PZBufferFog.h"
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern char gEng[105360];
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void memset(void *, int, unsigned int);
@@ -38,7 +38,7 @@ void Fog::SetEditableVars(char *pSrc) {
     memcpy(&m_unk1B0, pSrc, 0x6C);
     m_unk21C = (PZBufferFog *)(gEng + 0x8750);
     if (m_unk21C == 0) {
-        CdsAssert__FPciPc("Fog.cpp", 0x34, "m_FogObj");
+        CdsAssert("Fog.cpp", 0x34, "m_FogObj");
     }
     m_unk21C->m_unk17A9 = 1;
     col[0] = 255.0f * m_unk1B4;
@@ -173,7 +173,7 @@ void Fog::Execute() {
         break;
     case -2:
         if (m_unk21C == 0) {
-            CdsAssert__FPciPc("Fog.cpp", 0x25, "m_FogObj");
+            CdsAssert("Fog.cpp", 0x25, "m_FogObj");
         }
         m_unk21C->m_unk17A9 = 0;
         break;

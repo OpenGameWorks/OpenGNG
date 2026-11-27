@@ -1,12 +1,12 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PMat4.h"
 #include "PDisplayList.h"
 #include "PParticleExplosion.h"
 extern "C" void sceVu0CopyVector(float *pDst, float *pSrc);
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0Normalize(float *pDst, float *pSrc);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
 extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
@@ -100,7 +100,7 @@ void PParticleExplosion::Animate(float fDelta) {
     }
     m_unkD0 = m_unk1D0;
     pBase = (char *)((PDisplayList *)*(void **)(gGfxEng + 0x154C80))->AllocParticles(m_unk04, 2);
-    ((pBase != 0) ? (void)0 : CdsAssert__FPciPc("PParticleExplosion.cpp", 0x62, "apVuParticles"));
+    ((pBase != 0) ? (void)0 : CdsAssert("PParticleExplosion.cpp", 0x62, "apVuParticles"));
     m_unk08 = pBase;
     nIndex = 0;
     nOffset = 0;

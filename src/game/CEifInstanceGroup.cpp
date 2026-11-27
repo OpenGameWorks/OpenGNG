@@ -1,12 +1,12 @@
 // FLAGS: -str readonly
 #include "CEifInstanceGroup.h"
+#include "Debug.h"
 #include "CEifInstance.h"
 #include "CBefEntityData.h"
 #include "types.h"
 
 // TODO(header): foreign declarations
 class PPakFile;
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" int Read__7PCDFileFPvUi(void *pThis, void *pBuffer, unsigned int nSize);
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void *__nwa__FUi(unsigned int nSize);
@@ -18,7 +18,7 @@ extern "C" void *__ct__14CBefEntityDataFv(void *pThis);
 extern "C" void *__dt__14CBefEntityDataFv(void *pThis, short nFlag);
 
 // The game's assert evaluates the condition at runtime, so the message is passed as text.
-#define CDS_ASSERT(line, cond, text) ((cond) ? (void)0 : CdsAssert__FPciPc("CEifInstanceGroup.cpp", line, text))
+#define CDS_ASSERT(line, cond, text) ((cond) ? (void)0 : CdsAssert("CEifInstanceGroup.cpp", line, text))
 
 // FUNCTION: 0x172650 Cleanup__17CEifInstanceGroupFv
 void CEifInstanceGroup::Cleanup()

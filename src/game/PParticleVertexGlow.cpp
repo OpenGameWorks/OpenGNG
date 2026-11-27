@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PParticleVertexGlow.h"
 
 // TODO(header): foreign declarations
@@ -15,7 +16,6 @@ extern "C" void SetGlowSizeAndColor__10PGfxEngineFffPf(void *pThis, float fA, fl
 extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *pThis, int nTexture, float *pColor, bool bFlag, unsigned long nArg4, unsigned long nArg5);
 extern "C" void Render__7PFxMeshFv(void *pThis);
 extern "C" bool Init__7PFxMeshFP6PMNodeP6PMNode(void *pThis, PMNode *poGlowObj, PMNode *poAnimObj);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void sceVu0AddVector(void *pDst, void *pA, void *pB);
 extern "C" void sceVu0SubVector(void *pDst, void *pA, void *pB);
 extern "C" void sceVu0ScaleVector(void *pDst, void *pSrc, float fScale);
@@ -119,9 +119,9 @@ void PParticleVertexGlow::Animate(float fDelta) {
 
 // FUNCTION: 0x001BEBF0 Create__19PParticleVertexGlowFP27tagParticleVertexGlowParamsP6PMNodeP6PMNode
 bool PParticleVertexGlow::Create(tagParticleVertexGlowParams *pParams, PMNode *poGlowObj, PMNode *poAnimObj) {
-    if (pParams == 0) CdsAssert__FPciPc("PParticleVertexGlow.cpp", 0x1C, "pParams");
-    if (poGlowObj == 0) CdsAssert__FPciPc("PParticleVertexGlow.cpp", 0x1D, "poGlowObj");
-    if (poAnimObj == 0) CdsAssert__FPciPc("PParticleVertexGlow.cpp", 0x1E, "poAnimObj");
+    if (pParams == 0) CdsAssert("PParticleVertexGlow.cpp", 0x1C, "pParams");
+    if (poGlowObj == 0) CdsAssert("PParticleVertexGlow.cpp", 0x1D, "poGlowObj");
+    if (poAnimObj == 0) CdsAssert("PParticleVertexGlow.cpp", 0x1E, "poAnimObj");
     memcpy(&m_unkE0, pParams, 0x260);
     bool bResult = Init__7PFxMeshFP6PMNodeP6PMNode(&m_unk340, poGlowObj, poAnimObj);
     m_unk358 = poAnimObj;

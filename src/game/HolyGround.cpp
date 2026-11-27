@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "HolyGround.h"
 #include "EntityManager.h"
 #include "TimerAPI.h"
@@ -21,7 +22,6 @@ extern float gEng[4][4];
 extern unsigned int HolyGround_IdleSeq[0x10];
 extern unsigned int HolyGround_ActiveSeq[0x10];
 extern unsigned int HolyGround_ShatterSeq[0x10];
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void *__ct__16PParticleRipplesFv(void *pThis);
 extern "C" void sceVu0UnitMatrix(float *pOut);
@@ -37,7 +37,7 @@ public:
     virtual void ModifyPosition(PMat4 *pMat);
 };
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("HolyGround.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("HolyGround.cpp", line, #cond))
 
 // FUNCTION: 0x001A3320 GetClassName__10HolyGroundFv
 const char *HolyGround::GetClassName() {

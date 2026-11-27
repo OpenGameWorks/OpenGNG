@@ -1,10 +1,10 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "MusicSwitch.h"
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pMsg);
 extern "C" void __dl__FPv(void *pMem);
 extern char *mpEntMgr__15EntityBaseClass;
 extern "C" void sceVu0CopyVector(float *pDst, float *pSrc);
@@ -56,7 +56,7 @@ void MusicSwitch::Execute() {
     switch (m_unk20) {
     case -1: {
         if (m_unk1C0 < 3 || m_unk1C0 >= 0x21) {
-            CdsAssert__FPciPc("MusicSwitch.cpp", 0x1E, "0");
+            CdsAssert("MusicSwitch.cpp", 0x1E, "0");
             m_unk1C0 = 3;
         }
         char *pBase = (m_unk3C != 0) ? (m_unk3C + 0x80) : ((char *)this + 0x190);

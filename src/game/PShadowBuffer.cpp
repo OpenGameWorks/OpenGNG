@@ -1,9 +1,9 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PShadowBuffer.h"
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *, int, char *);
 extern "C" int Find__6PArrayFPv(void *pThis, void *pItem);
 extern "C" void DestroyRenderedTexture__15PTextureManagerFi(void *pThis, int hTexture);
 extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
@@ -236,11 +236,11 @@ void PShadowBuffer::RemoveShadowVolume(PShadowVolume *pVolume) {
 // FUNCTION: 0x001D84A0 AddShadowVolume__13PShadowBufferFP13PShadowVolume
 void PShadowBuffer::AddShadowVolume(PShadowVolume *pVolume) {
     if (pVolume == 0) {
-        CdsAssert__FPciPc("PShadowBuffer.cpp", 0x89, "poVolume");
+        CdsAssert("PShadowBuffer.cpp", 0x89, "poVolume");
     }
     if (Find__6PArrayFPv(&m_array, pVolume) < 0) {
         if (m_array.m_unk0 >= 0x40U) {
-            CdsAssert__FPciPc("PShadowBuffer.cpp", 0x8D, "moShadowVolumes.GetCount() < MAX_SHADOW_VOLUMES");
+            CdsAssert("PShadowBuffer.cpp", 0x8D, "moShadowVolumes.GetCount() < MAX_SHADOW_VOLUMES");
         }
         m_array.Add(pVolume);
     }

@@ -1,8 +1,8 @@
 // FLAGS: -str readonly
 #include "PArray.h"
+#include "Debug.h"
 
 // TODO(header): foreign declarations
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void __dla__FPv(void *pMem);
 
@@ -10,7 +10,7 @@ extern "C" void __dla__FPv(void *pMem);
 void PArray::RemoveAt(int nIndex) {
     unsigned int nSlot = nIndex;
     if (nSlot >= m_unk0) {
-        CdsAssert__FPciPc("PArray.cpp", 0xCD, "(unsigned int)iPos < muNumArray");
+        CdsAssert("PArray.cpp", 0xCD, "(unsigned int)iPos < muNumArray");
     }
     unsigned int nOff = nSlot * 4;
     m_unk0--;
@@ -29,7 +29,7 @@ void PArray::RemoveCurrent() {
         bOk = m_unk0 != 0;
     }
     if (!bOk) {
-        CdsAssert__FPciPc("PArray.cpp", 0xC3, "miCurrent >= 0 && muNumArray");
+        CdsAssert("PArray.cpp", 0xC3, "miCurrent >= 0 && muNumArray");
     }
     m_unk0--;
     int i = m_unk4;
@@ -73,7 +73,7 @@ int PArray::Remove(void *pItem) {
 // note: 33 words; unsigned grow-copy index (sltu, was slt) fixed one diff. Remaining: a1/a0 temp for m_unkC (original zeroes pFree in the bnez delay slot, ours in the else arm); shift-loop and grow-loop layout differ. Tried: pFree=0 hoisted above the if (63 words, both void** and void*), pFree=0 in else (33), fresh nCap local (33), while-form shift loop (33)
 void PArray::InsertBefore(void *pItem) {
     if (m_unk4 < 0) {
-        CdsAssert__FPciPc("PArray.cpp", 0x87, "miCurrent >= 0");
+        CdsAssert("PArray.cpp", 0x87, "miCurrent >= 0");
     }
     void **pSrc = m_unk8;
     void **pDst = pSrc;
@@ -82,7 +82,7 @@ void PArray::InsertBefore(void *pItem) {
         m_unkC = m_unkC + 4;
         void **pNew = (void **)__nwa__FUi(m_unkC * 4);
         if (pNew == 0) {
-            CdsAssert__FPciPc("PArray.cpp", 0x8F, "pNew");
+            CdsAssert("PArray.cpp", 0x8F, "pNew");
         }
         m_unk8 = pNew;
         pFree = pSrc;
@@ -112,7 +112,7 @@ void PArray::Add(void *pItem) {
         void **pOld = m_unk8;
         void **pNew = (void **)__nwa__FUi(m_unkC * 4);
         if (pNew == 0) {
-            CdsAssert__FPciPc("PArray.cpp", 0x4A, "pNew");
+            CdsAssert("PArray.cpp", 0x4A, "pNew");
         }
         m_unk8 = pNew;
         if (pOld != 0) {
@@ -141,12 +141,12 @@ void PArray::Allocate(unsigned int nSize) {
         nSize = (nSize + 3) & ~3u;
         void **pNew = (void **)__nwa__FUi(nSize * 4);
         if (pNew == 0) {
-            CdsAssert__FPciPc("PArray.cpp", 0x2A, "pNew");
+            CdsAssert("PArray.cpp", 0x2A, "pNew");
         }
         if (m_unk8 != 0) {
             if (m_unk0 != 0) {
                 if (nSize < m_unk0) {
-                    CdsAssert__FPciPc("PArray.cpp", 0x2D, "iSize >= muNumArray");
+                    CdsAssert("PArray.cpp", 0x2D, "iSize >= muNumArray");
                 }
                 unsigned int n = m_unk0;
                 void **src = m_unk8;

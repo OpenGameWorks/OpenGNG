@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "EntityManager.h"
 #include "EntityAllocator.h"
 
@@ -520,7 +521,6 @@ public:
     ZinShellShadow();
     char _pad[0x1C0];
 };
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void *__ct__10BaneObjectFv(void *);
 extern "C" void *__ct__10BoreBeetleFv(void *);
@@ -1251,7 +1251,7 @@ void *EntityManager::SpawnEntity(unsigned int arg0, int arg1) {
         var_s0 = new Triton;
         goto block_621;
     default:
-        CdsAssert__FPciPc("EntityAllocator.cpp", 0x345, "0");
+        CdsAssert("EntityAllocator.cpp", 0x345, "0");
         goto block_621;
     }
 block_621:

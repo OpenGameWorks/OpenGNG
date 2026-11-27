@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "PParticleSpurt.h"
 
 // TODO(header): foreign declarations
@@ -17,7 +18,6 @@ extern "C" void memcpy(void *pDst, const void *pSrc, unsigned int nSize);
 extern "C" int rand(void);
 extern "C" float FastMath_Fabs__Ff(float fValue);
 extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, unsigned int nCount, int nType);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pExpr);
 extern "C" void DmaScratchPadToMainMem__FPvPvsbb(void *pSpad, void *pMain, short nSize, bool bFlagA, bool bFlagB);
 extern "C" float FastMath_Sin180__Ff(float fAngle);
 extern "C" float FastMath_Cos180__Ff(float fAngle);
@@ -269,13 +269,13 @@ void PParticleSpurt::Animate(float fDt) {
             nZero = (m_unk130[0] == 0.0f && m_unk130[1] == 0.0f && m_unk130[2] == 0.0f) ? 1 : 0;
             pBuf = (char *)AllocParticles__12PDisplayListFii(*(void **)(gGfxEng + 0x154C80), m_unk04, 2);
             if (pBuf == 0) {
-                CdsAssert__FPciPc("PParticleSpurt.cpp", 0xB2, "apVuParticles");
+                CdsAssert("PParticleSpurt.cpp", 0xB2, "apVuParticles");
             }
             m_unk08 = pBuf;
             if (m_unk04 < 0x101) {
                 pBuf = (char *)0x70001000;
                 if ((m_unk04 << 5) >= 0x2001) {
-                    CdsAssert__FPciPc("PParticleSpurt.cpp", 0xBA, "(sizeof(VuParticle) * muNumParticles) <= SPAD_TEMP_BUFFER_SIZE");
+                    CdsAssert("PParticleSpurt.cpp", 0xBA, "(sizeof(VuParticle) * muNumParticles) <= SPAD_TEMP_BUFFER_SIZE");
                 }
             }
             spD[0] = 0.0f;

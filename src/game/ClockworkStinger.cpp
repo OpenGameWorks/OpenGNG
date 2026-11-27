@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "ClockworkStinger.h"
 #include "PMNode.h"
 
@@ -50,11 +51,10 @@ extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" void *__ct__6ShadowFQ26Shadow10ShadowTypeUi(void *, int, unsigned int);
 extern "C" void *__ct__7PhysicsFv(void *);
 extern "C" void SetPhysicsType__7PhysicsFUiPA4_f(void *, unsigned int, float (*)[4]);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
 // Target point of a stinger or of the player: the PMNode animation vector at +0x80 when the node exists, else the base's own vector at +0x190.
 #define CS_TARGET(pb) (*(char **)((char *)(pb) + 0x3C) ? *(char **)((char *)(pb) + 0x3C) + 0x80 : (char *)(pb) + 0x190)
-#define CS_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert__FPciPc("ClockworkStinger.cpp", line, msg))
+#define CS_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert("ClockworkStinger.cpp", line, msg))
 // FUNCTION: 0x001E6480 GetHealth__16ClockworkStingerFv
 int ClockworkStinger::GetHealth() {
     return m_unk1FC;

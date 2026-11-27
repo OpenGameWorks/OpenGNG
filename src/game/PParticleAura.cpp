@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PParticleAura.h"
 
 // TODO(header): foreign declarations
@@ -14,7 +15,6 @@ extern "C" void sceVu0UnitMatrix(float (*pMatrix)[4]);
 extern "C" void MulVector__5PMat4FPfPf(PMat4 *pMat, float *pSrc, float *pDst);
 extern "C" void *AllocAuraParticle__16PParticleManagerFv(void *pManager);
 extern "C" void FreeAuraParticle__16PParticleManagerFP13tagVuParticle(void *pManager, void *pParticle);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" float sqrtf(float);
 extern unsigned char __vt__13PParticleAura[];
 extern char gGfxEng[1504384];
@@ -129,7 +129,7 @@ int PParticleAura::Create(tagParticleAuraParams *pParams, float fX, float fY, fl
     m_unk9C = sqrtf(m_unk90 * m_unk90 + m_unk94 * m_unk94 + m_unk98 * m_unk98);
     m_unk130 = AllocAuraParticle__16PParticleManagerFv(gGfxEng);
     if (m_unk130 == 0) {
-        CdsAssert__FPciPc("PParticleAura.cpp", 0x45, "mpParticle");
+        CdsAssert("PParticleAura.cpp", 0x45, "mpParticle");
     }
     ((float *)m_unk130)[0] = m_unkE0[0];
     ((float *)m_unk130)[1] = m_unkE0[1];

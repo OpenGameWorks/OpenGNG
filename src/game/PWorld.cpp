@@ -1,9 +1,10 @@
 // FLAGS: -str readonly
 #pragma opt_strength_reduction off
 #include "PWorld.h"
+#include "Debug.h"
 #include "PArray.h"
 
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("PWorld.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PWorld.cpp", line, #cond))
 
 // TODO(header): foreign declarations
 class PLightManager;
@@ -99,7 +100,6 @@ struct PNodeTable {
     PNodeList m_list;
 };
 
-void CdsAssert(char *pFile, int nLine, char *pExpr);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void __dla__FPv(void *pMem);
 
@@ -196,7 +196,6 @@ extern "C" void __construct_array(void *pBlock, void *(*pCtor)(void *), void *(*
 extern "C" void Allocate__6PArrayFUi(void *pThis, unsigned int nCount);
 extern "C" int Load__19PStaticInstanceMeshFP8PPakFileP6PArray16ePsx2FileVersion(void *pThis, PPakFile *pFile, PArray *pArray, ePsx2FileVersion nVersion);
 extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, char *pExpr);
 extern "C" void AddMasterParticleInstance__16PParticleManagerFP15PParticleSystem(void *pThis, void *pSystem);
 extern char gPFile[0x10080];
 extern int mstuLoadVersion__6PWorld;
@@ -248,8 +247,8 @@ PMeshNode *PWorld::LoadMeshNodeHierarchy(PPakFile *pFile, PArray *pArr, ePsx2Fil
     char *pNode;
     char *pMesh;
 
-    (void)((pFile != 0) ? (void)0 : CdsAssert__FPciPc("PWorld.cpp", 0x390, (char *)"poFile"));
-    (void)((pArr != 0) ? (void)0 : CdsAssert__FPciPc("PWorld.cpp", 0x391, (char *)"poTextureHandles"));
+    (void)((pFile != 0) ? (void)0 : CdsAssert("PWorld.cpp", 0x390, (char *)"poFile"));
+    (void)((pArr != 0) ? (void)0 : CdsAssert("PWorld.cpp", 0x391, (char *)"poTextureHandles"));
     nTop = 1;
     if ((apMeshNode = (PMeshNode *)__nw__FUi(0x140)) != 0) {
         pRaw = (char *)apMeshNode;
@@ -283,7 +282,7 @@ PMeshNode *PWorld::LoadMeshNodeHierarchy(PPakFile *pFile, PArray *pArr, ePsx2Fil
         return 0;
     }
     if (nTop != 3) {
-        (!"There's multiple top node in dbf\n") ? (void)0 : CdsAssert__FPciPc("PWorld.cpp", 0x3A8, (char *)"!\"There's multiple top node in dbf\\n\"");
+        (!"There's multiple top node in dbf\n") ? (void)0 : CdsAssert("PWorld.cpp", 0x3A8, (char *)"!\"There's multiple top node in dbf\\n\"");
     }
     ((PMNodeVirtual *)apMeshNode)->Animate(0.0f, 0.0f, 0, 0, false);
     return apMeshNode;
@@ -402,7 +401,7 @@ int PWorld::LoadStaticInstanceMeshes(PPakFile *pFile, PArray *pArray, ePsx2FileV
             pMesh = (PStaticInstanceMesh *)__ct__19PStaticInstanceMeshFv(pMesh);
         }
         if (!pMesh) {
-            CdsAssert__FPciPc("PWorld.cpp", 0x2F7, (char *)"apMesh");
+            CdsAssert("PWorld.cpp", 0x2F7, (char *)"apMesh");
         }
         if (Load__19PStaticInstanceMeshFP8PPakFileP6PArray16ePsx2FileVersion(pMesh, pFile, pArray, nVersion) == 0) {
             return 0;
@@ -614,11 +613,11 @@ PMNode *PWorld::Load(const char *pFileName, bool bFlag, eTextureGroup eGroup) {
     spF4 = 0;
     spF8 = 0;
     if (pFileName == 0) {
-        CdsAssert__FPciPc("PWorld.cpp", 0xEC, "pszWorldFile");
+        CdsAssert("PWorld.cpp", 0xEC, "pszWorldFile");
     }
     temp_v0 = GetData__8PPakFileFPCc(&gPFile, pFileName);
     if (temp_v0 == 0) {
-        CdsAssert__FPciPc("PWorld.cpp", 0xF1, "aMemFile");
+        CdsAssert("PWorld.cpp", 0xF1, "aMemFile");
     }
     IsValidFileType__8PPakFileFi(temp_v0, 1);
     if (bFlag != 0) {
@@ -675,7 +674,7 @@ block_40:
                     temp_s5 = (char *)&gGfxEng + 0x154F00;
                     if (nHeader[2] & 0x40) {
                         if (temp_s5 == 0) {
-                            CdsAssert__FPciPc("PWorld.cpp", 0x174, "apParticleMgr");
+                            CdsAssert("PWorld.cpp", 0x174, "apParticleMgr");
                         }
                         if (LoadFogObjects__16PParticleManagerFP8PPakFile16ePsx2FileVersion(temp_s5, temp_v0, (ePsx2FileVersion)nHeader[1]) == 0) {
                             CDS_ASSERT(0x177, !"Error loading fog data from world file!");

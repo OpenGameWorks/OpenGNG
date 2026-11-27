@@ -1,11 +1,11 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "CamCylinder.h"
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nBytes);
 
 // TODO(header): foreign declarations
 extern unsigned char gEng[0x1A000];
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 
 class PVec3 {
 public:
@@ -18,7 +18,7 @@ public:
 };
 
 // The game's assert evaluates the condition at runtime, so the literal-address test is kept.
-#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert__FPciPc("CamCylinder.cpp", line, #cond))
+#define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("CamCylinder.cpp", line, #cond))
 
 // FUNCTION: 0x001A3A60 __dt__11CamCylinderFv
 CamCylinder::~CamCylinder() {

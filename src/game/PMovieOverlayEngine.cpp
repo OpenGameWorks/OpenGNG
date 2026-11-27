@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "Debug.h"
 #include "PMovieOverlayEngine.h"
 
 // TODO(header): foreign declarations
@@ -31,7 +32,6 @@ public:
 };
 
 extern "C" void sceGsSetDefDrawEnv(void *pEnv, short nPsm, short nW, short nH, int nA, int nB);
-extern "C" void CdsAssert__FPciPc(char *pFile, int nLine, char *pExpr);
 extern "C" void __dl__FPv(void *pMem);
 extern char gGfxEng[1504384];
 extern char vu_fx_microcode_dma_packet[];
@@ -143,7 +143,7 @@ int PMovieOverlayEngine::Init(short a, short b, short c) {
     m_unk4->SetVu1Microcode(vu_fx_microcode_dma_packet);
     m_unk4->KickVifDmaChain(true);
     if (a != 0) {
-        CdsAssert__FPciPc("PMovieOverlayEngine.cpp", 0x2A, "sPixelFormat == SCE_GS_PSMCT32");
+        CdsAssert("PMovieOverlayEngine.cpp", 0x2A, "sPixelFormat == SCE_GS_PSMCT32");
     }
     m_unk90 = (b * c) << 3;
     return 1;

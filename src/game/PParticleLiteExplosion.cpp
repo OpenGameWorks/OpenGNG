@@ -1,4 +1,5 @@
 #include "types.h"
+#include "Debug.h"
 #include "PParticleLiteExplosion.h"
 #include "PMat4.h"
 extern "C" void sceVu0CopyVector(float *pDst, float *pSrc);
@@ -16,13 +17,12 @@ extern unsigned char __vt__22PParticleLiteExplosion[];
 extern char gGfxEng[1504384];
 extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, int nCount, int nSize);
 extern "C" void DmaScratchPadToMainMem__FPvPvsbb(void *pSpad, void *pMain, short nSize, bool bFlagA, bool bFlagB);
-extern "C" void CdsAssert__FPciPc(const char *pFile, int nLine, const char *pMsg);
 extern "C" void sceVu0ScaleVector(float *pDst, float *pSrc, float fScale);
 extern "C" void Vu0_Normalize_Vector(void);
 extern "C" float FastMath_Sin180__Ff(float fAngle);
 extern "C" float FastMath_Cos180__Ff(float fAngle);
 
-#define LITE_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert__FPciPc("PParticleLiteExplosion.cpp", line, msg))
+#define LITE_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert("PParticleLiteExplosion.cpp", line, msg))
 
 // Advances the LCG seed and returns its 15-bit high half.
 static inline int LiteSeedStep(int *pSeed) {
