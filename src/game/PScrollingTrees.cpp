@@ -113,7 +113,7 @@ void PScrollingTrees::Animate(float fTime) {
 }
 
 // DRAFT: 0x1FAF30 Create__15PScrollingTreesFiii
-// note: 108 words differ: the ids read is built sp+0xD0 then +nType*4 in the original (ours folds the frame offset); fHalfStepX in f28 not f29; the rot reset sq is scheduled later. Entry fields are raw this+K+nType*16 reads because member indexing folds K into the index (207 words). Loop locals declared i, j, pCell, nRow, nOff (best of all 120 orders).
+// note: 73 words differ: the prologue computes fHalfX (0.5 * the fStepX difference) before fCenterX and loads m_unk20[2]/m_unk10[2] into f1/f4 (ours f2/f5; range locals, statement orders and the store placed earlier tried); the outer loop sets nRow after i (nRow = 0, i = 0 and i = 0, nRow = 0 compile the same); fT/fS/fHalfStepX take f27/f28/f29 where ours gives f29/f27/f28 (declaration order and a separate fR temp have no effect).
 int PScrollingTrees::Create(int nA, int nB, int nType) {
     PScrollingTreeTypeIds ids = {{0x0600000A, 0x06000009, 0x06000008, 0x00000000}};
     PScrollingTreeQuad pos;
@@ -132,8 +132,8 @@ int PScrollingTrees::Create(int nA, int nB, int nType) {
     int i;
     int j;
     char *pCell;
-    int nRow;
     int nOff;
+    int nRow;
     if (m_unk670 == 0) {
         CdsAssert("PScrollingTrees.cpp", 0x6D, "mpResMgr");
     }
@@ -147,7 +147,7 @@ int PScrollingTrees::Create(int nA, int nB, int nType) {
     fX = m_unk10[0] + fHalfStepX;
     fZ = m_unk10[2] + 0.5f * fStepZ;
     *(int *)((unsigned int)this + 0x3C + nType * 16) = nCount;
-    *(int *)((unsigned int)this + 0x34 + nType * 16) = (int)m_unk670->GetResource(ids.v[nType], false);
+    *(int *)((unsigned int)this + 0x34 + nType * 16) = (int)m_unk670->GetResource(*(unsigned int *)((unsigned int)&ids + nType * 4), false);
     if (*(int *)((unsigned int)this + 0x34 + nType * 16) == 0) {
         CdsAssert("PScrollingTrees.cpp", 0x7D, "mInstanceData[iType].pMasterMesh");
     }
@@ -156,10 +156,8 @@ int PScrollingTrees::Create(int nA, int nB, int nType) {
         CdsAssert("PScrollingTrees.cpp", 0x80, "mInstanceData[iType].pInstanceData");
     }
     char *pNodes = (char *)*(void * *)((unsigned int)this + 0x38 + nType * 16);
-    nRow = 0;
-    for (i = 0; i < nA; i++) {
-        nOff = nRow;
-        for (j = 0; j < nB; j++) {
+    for (nRow = 0, i = 0; i < nA; i++) {
+        for (j = 0, nOff = nRow; j < nB; j++) {
             pCell = pNodes + nOff;
             fT = 0.3f * fStepX;
             pos.f[0] = fX + (fT + ((0.3f * -fStepX - fT) * ((float)rand() / 2147483648.0f)));
@@ -167,7 +165,7 @@ int PScrollingTrees::Create(int nA, int nB, int nType) {
             fT = 0.3f * fStepZ;
             pos.f[2] = fZ + (fT + ((0.3f * -fStepZ - fT) * ((float)rand() / 2147483648.0f)));
             pos.f[3] = 1.0f;
-            rot.q = (u_long128)0x3F80000000000000ULL;
+            rot.q = (u_long128)0x3F800000000000000000000000000000;
             rot.f[1] = -180.0f + 360.0f * ((float)rand() / 2147483648.0f);
             fT = FastMath_Fabs(pos.f[0] - fCenterX) / fHalfX;
             fS = 1.0f + 0.5f * ((float)rand() / 2147483648.0f);
@@ -176,7 +174,7 @@ int PScrollingTrees::Create(int nA, int nB, int nType) {
             *(float *)(pCell + 0x14) = 1.0f + 0.5f * fT;
             *(float *)(pCell + 0x28) = fS;
             FastMath_RotateMatrix((float (*)[4][4])pCell, (float (*)[4][4])pCell, (float (*)[4])rot.f, 0);
-            *(PScrollingTreeQuad *)(pCell + 0x30) = pos;
+            *(u_long128 *)(pCell + 0x30) = *(u_long128 *)&pos;
             *(float *)(pCell + 0x40) = 1.0f;
             *(float *)(pCell + 0x44) = 1.0f;
             *(float *)(pCell + 0x48) = 1.0f;
