@@ -870,7 +870,7 @@ float CameraFollow::GetAngleBetweenCamAndPlayer(float &arg0) {
 }
 
 // DRAFT: 0x00175830 PlayerIsIdle__12CameraFollowFv
-// note: 6 words differ; bool return of the && chain gives the original tail (bc1t with addiu v0,1 in the slot). Left: abs tests use v0 not $at, and the 0.01f constant loads into v1 not v0. Tried: if-form (11), nested if (12), || early return (25), int locals (31), bool local (30), flipped float compare (8), early-return chain (25).
+// note: 6 words differ; bool return of the && chain gives the original tail (bc1t with addiu v0,1 in the slot). Left: abs tests use v0 not $at, and the 0.01f constant loads into v1 not v0. Tried: if-form (11), nested if (12), || early return (25), int locals (31), bool local (30), flipped float compare (8), early-return chain (25). Also tried: nested ifs returning true (11, gives the $at compares but a two-exit tail), ifs around a returned float compare (12), ternary chain (17), bIdle with || (30).
 bool CameraFollow::PlayerIsIdle() {
     return abs(m_unk1B8) < 0x33 && abs(m_unk1B9) < 0x33 && m_unk1A0 <= 0.01f;
 }
