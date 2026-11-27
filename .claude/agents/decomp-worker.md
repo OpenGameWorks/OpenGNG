@@ -127,6 +127,8 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 - A member pointer read back from the member after it was stored (`sw v0,0x270(s3); lw a0,0x270(s3)`) and then used for the field accesses is `m_x = f(); p = (T *)m_x; p->a = ...; p->b |= 8;`. Keeping the call result in the local and storing it to the member gives the stores through `v0` (`ClockworkStalker::OnHitEvent`).
 - A float converted into `f1` and stored second while the first store's value is converted later comes from a float local: `float fH = (float)(H / 2); m[0] = (float)(W / 2); m[1] = fH;` (`PShadowBuffer::SetZBufferRange`).
 - A pointer reset that the null test also skips (`beqz a0` jumping past `sw $zero,off(this)`) is inside the guard: `if (p != 0) { delete p; p = 0; }`. A non-virtual dtor pair `if (p) { __dt(p,-1); __dl(p); }` repeats its null test even inside an outer `if (p != 0)` (`PCutScenePlayer::Unload`).
+- A global address built at runtime (`lui/ori` offset added to the `%hi/%lo` symbol into a saved register) next to a call that takes the folded `lui/addiu` constant is two expressions: `cam = (char *)((int)&gEng + 0x19760); f((char *)&gEng + 0x19760);` (`EntityBaseClass::WantsToWake`, `CheckSleep`).
+- A guard whose false arm is `beqz` straight to the epilogue with `daddu v0,zero,zero` in the delay slot wraps the rest of the body: `if (a || b) { ...; } return 0;`, not `if (!(a || b)) return 0;`. A flag set with `daddiu sN,zero,1` is a `bool` local. Two stores scheduled before a call (the second in its delay slot) are both written before the call in source (`EntityBaseClass::CheckSleep`).
 
 ## Finishing
 
