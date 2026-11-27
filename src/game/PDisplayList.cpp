@@ -117,7 +117,7 @@ void PDisplayList::BeginShadowVolume(PMat4 *pMat, float *pA, float *pB, float *p
 }
 
 // DRAFT: 0x1807A0 DrawLines__12PDisplayListFP9tagVuLinei
-// note: 106 differing lines (was 108). Ternary batch count and loop pointer write-back with nCount as the running count. Still differs: the register map (nCount, nIdx and pPacket assignments) and the loop-bottom layout. Tried: data pointer inlined (109), for loop (106), scaled index (109).
+// note: 106 differing lines (was 108). Ternary batch count and loop pointer write-back with nCount as the running count. Still differs: the register map (nCount, nIdx and pPacket assignments) and the loop-bottom layout. Tried: goto-entered loop (108), pData/nQw sharing one int (108), opt_strength_reduction off (110), data pointer inlined (109), for loop (106), scaled index (109).
 void PDisplayList::DrawLines(struct tagVuLine *pLines, int nCount) {
     int nBatch;
     int nRem;
@@ -773,7 +773,7 @@ void PDisplayList::DrawStaticInstances(struct tagVuStaticInstance *pInstances, i
 }
 
 // DRAFT: 0x182100 DrawFogParticles__12PDisplayListFPA4_fifffPf
-// note: 101 differing words (was 102); frame 0xC0 vs 0xB0 with pColor spilled, pChunk and nIndex live across AllocEntries. Tried: nCount/pChunk order (102), for-loop shape (102), nIndex declared before nLoops (101, kept).
+// note: 101 differing words (was 102); frame 0xC0 vs 0xB0 with pColor spilled, pChunk and nIndex live across AllocEntries. Tried: goto-entered loop plus opt_strength_reduction off pragma (85 in scratch; pragma is file-wide, needs coordinator scan), nCount/pChunk order (102), for-loop shape (102), nIndex declared before nLoops (101, kept).
 void PDisplayList::DrawFogParticles(float (*pVerts)[4], int nCount, float fA, float fB, float fC, float *pColor) {
     if (pVerts == 0) {
         CdsAssert("PDisplayList.cpp", 0x4A7, "pParticles");
@@ -1123,7 +1123,7 @@ void PDisplayList::SetVertexData(float (*pVerts)[4], int nCount, int nFlags) {
 }
 
 // DRAFT: 0x1834F0 DrawRawVertices__12PDisplayListFPA4_fPA4_fPA4_fPA4_fi
-// note: 67 differing words (was 110; nBatch as a ternary). Register map differs (original nCount s1, nBatch s3, nOffset s2, nPacket s0; ours s3, s2, s0, s1), the original enters the loop by a branch to its bottom test, and its prologue has a dead div/mfhi by 0x1E. Tried: nBatch declared before nOffset, nCount -= after AllocEntries (69), guarded do-while (67), dead nCount % 0x1E (eliminated by the compiler), nPacket declared before nBatch (67).
+// note: 67 differing words (was 110; nBatch as a ternary). Register map differs (original nCount s1, nBatch s3, nOffset s2, nPacket s0; ours s3, s2, s0, s1), the original enters the loop by a branch to its bottom test, and its prologue has a dead div/mfhi by 0x1E. Tried: goto-entered loop (entry matches but 109 words; register map still wrong), all 24 local declaration orders (109), nBatch declared before nOffset, nCount -= after AllocEntries (69), guarded do-while (67), dead nCount % 0x1E (eliminated by the compiler), nPacket declared before nBatch (67).
 void PDisplayList::DrawRawVertices(float (*p0)[4], float (*p1)[4], float (*p2)[4], float (*p3)[4], int nCount) {
     int nOffset = 0;
     while (nCount >= 3) {
