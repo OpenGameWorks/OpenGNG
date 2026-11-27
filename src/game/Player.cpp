@@ -1849,7 +1849,7 @@ void Player::DieMove() {
 }
 
 // DRAFT: 0x0015B5C0 GunDeckMove__6PlayerFv
-// note: DIFF 32 words; original hoists first-arg moves into beqz delay slots (ours nop), and ours sign-extends m_unk3F (dsll32/dsra32). Tried !(m_unk3F&7) (32), local fx ptr (32), int local for m_unk3F (45).
+// note: DIFF 32 words; original hoists first-arg moves into beqz delay slots (ours nop), and ours sign-extends m_unk3F (dsll32/dsra32). Tried !(m_unk3F&7) (32), local fx ptr (32), int local for m_unk3F (45), direct m_unk3C casts without s0 (54), nested if for s1 (32), &0x7 spelling (32).
 void Player::GunDeckMove() {
     PMNode *s0 = (PMNode *)m_unk3C;
     switch (m_unk250) {
@@ -2905,19 +2905,21 @@ void Player::AirOverheadMove() {
 }
 
 // DRAFT: 0x0015E350 JumpMove__6PlayerFv
-// note: 32 words differ (single-case switch on m_unk250; idx chain tested in reverse order). Original branches beqz to the body and b to the tail (ours bnez to tail); guard inversion and explicit goto fold back to bnez. Body loads and index-chain registers also differ (pVel computed after slti in original).
+// note: 24 words differ (idx chain in original test order <0x32, <0x4B, <0x64 gave 32 to 24). Remaining: pVel/25C register choice (ours reloads m_unk25C into v0, original keeps a2), and the out[] stores. Tried: shared char *pBase for 0x25C (24), flipped pVel operands (24).
 void Player::JumpMove() {
     switch (m_unk250) {
     case 0:
             m_unk250 = 1;
             float *pVel = (float *)((char *)m_unk25C + m_unk268 * 8 + 0x3C);
-            int idx = 1;
-            if (m_unk1BC >= 0x64) {
-                idx = 3;
-            } else if (m_unk1BC >= 0x4B) {
-                idx = 2;
-            } else if (m_unk1BC < 0x32) {
+            int idx;
+            if (m_unk1BC < 0x32) {
                 idx = 0;
+            } else if (m_unk1BC < 0x4B) {
+                idx = 1;
+            } else if (m_unk1BC < 0x64) {
+                idx = 2;
+            } else {
+                idx = 3;
             }
             float out[4];
             out[1] = pVel[0];
