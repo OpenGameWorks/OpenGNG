@@ -519,6 +519,9 @@ int BoxBoxCheck(float (*pBoxA)[2][4], float (*pBoxB)[2][4], float (*pMatA)[4][4]
     return 1;
 }
 
+// SKIP: 0x0016DF40 AreaCheckSub__11BGCollisionFPA2_A4_fPA4_A4_fPA2_A4_fPA4_A4_fii
+// note: hand-written VU0/MMI asm in the original: `addi` and `bc1tl` (never MWCC output), branches and FPU compares interleaved with lqc2/qmfc2.ni/pextlw/prot3w/vdiv code, one call to BoxSphereCheck. A C body with asm blocks cannot reproduce it, and a whole-asm copy does not count; the original bytes stay linked.
+
 // DRAFT: 0x0016E1E0 BGDetectionST__11BGCollisionFPA2_A4_fP5PMat4P11SurfaceInfoi
 // note: 270 words; original keeps pArr in fp and spills pMat/nFlag/this at 0xC8/0xC4/0xCC, ours uses fp=pMat and spills 0xBC/0xB8; frame 0x130 vs 0x140; vE0 at 0xE0 vs 0xD0; nCount spilled. Tried node-array-first and node-array-last local order (count unchanged).
 void BGCollision::BGDetectionST(float (*pArr)[2][4], PMat4 *pMat, SurfaceInfo *pSurf, int nFlag)
