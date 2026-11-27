@@ -191,30 +191,29 @@ int PScrollingTrees::Create(int nA, int nB, int nType) {
     return 1;
 }
 
-// DRAFT: 0x1FB320 CreateFloor__15PScrollingTreesFv
-// note: DIFF 56, frame 0xA0 vs 0xB0; the 1.0 quad is a union of two 64-bit halves (75 to 56); original keeps it in a register and splats with pcpyld, ours spills to stack and reloads with lq; reloc positions for GetResource, CdsAssert and sceVu0UnitMatrix sit 4 bytes early; literal names @177/@152 vs @569/@590. Tried: u_long128 shift build (compile error), unsigned long long local splat (56, equal), union hoisted out of loop (87). A 128-bit literal `(u_long128)0x3F8000003F8000003F8000003F800000` gives the original lui/dsll32/or/pcpyld v,v,v and frame 0xA0, and indexing by i (`m_unk70 + i * 0xC0`, `((unsigned int *)&ids)[i]`) puts this in s0; together 69 words because MWCC then folds rec+0x60 into store offsets where the original bumps s2 by 0x60 and keeps pMat in s3 (src/scratch/solo/cf5.py).
+// FUNCTION: 0x1FB320 CreateFloor__15PScrollingTreesFv
 int PScrollingTrees::CreateFloor() {
     PScrollingTreeIds ids = {{0x0600001A, 0x06000014, 0x06000015, 0x06000016, 0x06000017, 0x06000018, 0x06000019, 0x06000013}};
     PScrollingTreeQuad quad = {{0.0f, -140.0f, 170.0f, 1.0f}};
-    int nRec = 0;
-    int nOff = 0;
-    for (int i = 0; i < 8; i++) {
-        char *rec = m_unk70 + nRec;
-        *(PMNode **)rec = m_unk670->GetResource(*(unsigned int *)((char *)&ids + nOff), false);
+    int i;
+    char *rec;
+    char *pMat;
+    int nRec;
+    int nOff;
+    nRec = 0;
+    nOff = 0;
+    for (i = 0; i < 8; i++) {
+        rec = m_unk70 + nRec;
+        *(PMNode **)rec = m_unk670->GetResource(*(unsigned int *)((unsigned int)&ids + nOff), false);
         if (*(PMNode **)rec == 0) {
             CdsAssert("PScrollingTrees.cpp", 0x50, "apGroup->pMasterMesh");
         }
-        char *pMat = rec + 0x10;
         *(int *)(rec + 0xB0) = 2;
+        pMat = rec + 0x10;
         sceVu0UnitMatrix(pMat);
-        *(PScrollingTreeQuad *)(pMat + 0x30) = quad;
-        {
-            union { u_long128 q; unsigned long long d[2]; } one;
-            one.d[0] = 0x3F8000003F800000ULL;
-            one.d[1] = 0x3F8000003F800000ULL;
-            *(u_long128 *)(pMat + 0x40) = one.q;
-        }
-        rec += 0x60;
+        *(u_long128 *)(pMat + 0x30) = *(u_long128 *)&quad;
+        *(u_long128 *)(pMat + 0x40) = (u_long128)0x3F8000003F8000003F8000003F800000;
+        rec = (char *)((unsigned int)rec + 0x60);
         sceVu0UnitMatrix(rec);
         *(float *)(rec + 0x0) = 0.0f;
         *(float *)(rec + 0x14) = 0.0f;
@@ -227,9 +226,9 @@ int PScrollingTrees::CreateFloor() {
         *(float *)(rec + 0x44) = 0.0f;
         *(float *)(rec + 0x48) = 0.0f;
         *(float *)(rec + 0x4C) = 0.0f;
+        quad.f[2] -= 65.0f;
         nRec += 0xC0;
         nOff += 4;
-        quad.f[2] -= 65.0f;
     }
     return 1;
 }
