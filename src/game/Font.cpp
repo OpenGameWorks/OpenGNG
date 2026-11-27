@@ -256,7 +256,7 @@ void FontManager::RemoveText(unsigned short nId) {
 }
 
 // DRAFT: 0x133350 SetColor__8FontNodeF9FontColor
-// note: 6 words; the original pads the short loop with two nops before bnez and one after its delay slot (0x48 bytes vs our 0x44)
+// note: 6 words; the original pads the short loop with two nops before bnez and one after its delay slot (0x48 bytes vs our 0x44); 011126 file-wide matches it but loses 0x132E30/0x133030/0x134110/0x134200/0x1346C0 (pragmascan)
 void FontNode::SetColor(FontColor arg0) {
     char *p = m_unk0;
     u_long128 *c = (u_long128 *)(FontColors + arg0 * 16);
