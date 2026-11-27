@@ -1085,14 +1085,12 @@ void PSound::ErrorRecovery() {
     EnableProcessTriglets(bSaved);
 }
 
-// DRAFT: 0x001A5960 OneFrameHasElapsed_R__6PSoundFPffRiRi
-// note: DIFF 6 words; rA/rB global order fixed (8 to 6); m_unk68 reload lands in v1 and t in v0 (original v0/v1); tried int t split, base local, if/else split, != 0 vs truthiness, t declared then assigned, 0 != m_unk68, unsigned t, t declared at function top (all 6, reloaded m_unk68 still lands in v1)
+// FUNCTION: 0x001A5960 OneFrameHasElapsed_R__6PSoundFPffRiRi
 int PSound::OneFrameHasElapsed_R(float *pElapsed, float fFrame, int &rA, int &rB) {
     m_unk68 = *(int *)(gEng + 0x1883C);
     m_unk6C = *(int *)(gEng + 0x19B74);
     if (m_unk68 != 0) {
-        int t = *(int *)(m_unk68 + 0x3C);
-        *(u_long128 *)&m_unk2E90 = *(u_long128 *)(t ? t + 0x80 : m_unk68 + 0x190);
+        *(u_long128 *)&m_unk2E90 = *(u_long128 *)(*(int *)(m_unk68 + 0x3C) ? *(int *)(m_unk68 + 0x3C) + 0x80 : m_unk68 + 0x190);
     } else {
         *(u_long128 *)&m_unk2E90 = gZeroVectorW1;
     }
