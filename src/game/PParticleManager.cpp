@@ -298,8 +298,12 @@ void PParticleManager::InitHeatHazeBuffer() {
     GsInitFrameBufferCopyInfo__FP20tagGsFrameBufferCopyiiiiiiiiiis((char *)this + 0x50, 0, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0, 0x100, 0x80, 0);
 }
 
-// DRAFT: 0x001B76B0 UpdateHeatHazeBuffer__16PParticleManagerFv
-// note: DIFF 6 words in GS block: 0x18/0x1B load into swapped v0/v1, sp+0x50 base and 1 load order; tried direct aGs[1]/aGs[2] stores (19), pEnt declared before aGs (6), unsigned long long fields (6), flat long long aGs[6] (6), single pEnt walked with ++ (many diffs), variants V0-V5 from perm_hh.py (6 or 18-19)
+inline void SetGsRegPair(void *pEntry, long long data, long long reg) {
+    ((long long *)pEntry)[0] = data;
+    ((long long *)pEntry)[1] = reg;
+}
+
+// FUNCTION: 0x001B76B0 UpdateHeatHazeBuffer__16PParticleManagerFv
 void PParticleManager::UpdateHeatHazeBuffer() {
     bool bFlag = false;
     int nTex = AllocRenderedTexture__15PTextureManagerFiiRbb(gGfxEng + 0x154C90, m_unk670, 0x2000, bFlag, false);
@@ -318,12 +322,8 @@ void PParticleManager::UpdateHeatHazeBuffer() {
     GsEntry aGs[3];
     aGs[0].data = 0;
     aGs[0].reg = 0x1A;
-    GsEntry *pEnt = &aGs[1];
-    pEnt->data = 0x18;
-    pEnt->reg = 0x1B;
-    pEnt = &aGs[2];
-    pEnt->data = 1;
-    pEnt->reg = 0x46;
+    SetGsRegPair(&aGs[1], 0x18, 0x1B);
+    SetGsRegPair(&aGs[2], 1, 0x46);
 
     SetGsRegisters__12PDisplayListFP1i(*(void **)(gGfxEng + 0x154C80), (u_long128 *)aGs, 3);
 }
