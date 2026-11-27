@@ -1969,8 +1969,15 @@ void EntityBaseClass::AddToBGAnimList() {
     }
 }
 
+inline char *GetApparitionSlot(void *pMgr, unsigned int i) {
+    if (i < *(unsigned int *)((char *)pMgr + 0x5054)) {
+        return (char *)pMgr + 0x53A0 + i * 4;
+    }
+    return 0;
+}
+
 // DRAFT: 0x0014DAA0 WriteApparitionData__15EntityBaseClassFicUi
-// note: 2 words after permuter (spelling from build/permuter/0014DAA0/best.cpp). Earlier: DIFF 8 words; 0x59A0 store folds arg2 first (addiu a0,s0) and the tally tail sign-extends arg1 before the arg1==0 test (orig beqz s1 raw). Gate as goto-check matches. Tried pointer temp for store (worse), wrapped tail (worse), !arg1 (same), printf-first (same).
+// note: 2 words after permuter (spelling from build/permuter/0014DAA0/best.cpp). Earlier: DIFF 8 words; 0x59A0 store folds arg2 first (addiu a0,s0) and the tally tail sign-extends arg1 before the arg1==0 test (orig beqz s1 raw). Gate as goto-check matches. Slot ternary now uses GetApparitionSlot (still 2 words: orig adds mgr+0x59A0 then arg2, ours arg2+0x59A0 then mgr; struct-array member, (base)[arg2], setter inline all same or worse). Tried pointer temp for store (worse), wrapped tail (worse), !arg1 (same), printf-first (same).
 void EntityBaseClass::WriteApparitionData(int arg0, char arg1, unsigned int arg2) {
     char *slot;
     if (m_unk18 == 0 && 0 == arg2) {
@@ -1989,7 +1996,7 @@ void EntityBaseClass::WriteApparitionData(int arg0, char arg1, unsigned int arg2
     if (arg2 == 0) {
         arg2 = m_unk04;
     }
-    slot = (arg2 < *(unsigned int *)((char *)mpEntMgr__15EntityBaseClass + 0x5054)) ? (char *)mpEntMgr__15EntityBaseClass + 0x53A0 + arg2 * 4 : 0;
+    slot = GetApparitionSlot(mpEntMgr__15EntityBaseClass, arg2);
     if (slot == 0) {
         return;
     }
@@ -2014,13 +2021,6 @@ check:
         }
         printf("Tally mismatch for entity %d(%d != %d)\n", m_unk08, tally, ((EntityBaseClassVirtuals *)this)->GetTallyType());
     }
-}
-
-inline char *GetApparitionSlot(void *pMgr, unsigned int i) {
-    if (i < *(unsigned int *)((char *)pMgr + 0x5054)) {
-        return (char *)pMgr + 0x53A0 + i * 4;
-    }
-    return 0;
 }
 
 // FUNCTION: 0x0014DC20 ReadApparitionData__15EntityBaseClassFiUi
