@@ -124,7 +124,7 @@ void PDynamicSplinePatch::InitMatrixCache() {
 }
 
 // DRAFT: 0x001F3510 GenerateAndRenderVuSplinePatch__19PDynamicSplinePatchFv
-// note: 22 words differ: SetMaterial loads its two long long arguments before m_unk1FE0/m_unk2010 (raw reads tried); the key copy loads its source before computing pKey (qSrc temp and j + (j << 2) spellings compile the same or worse); i + (i << 3) operand order.
+// note: 2 words differ, both vcallms immediates whose type-119 relocation names the original target: fncmp.py does not mask type 119 and link.py rejects it, so the code itself matches.
 void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
     tagLitF4 qCtl;
     float mtx[16];
@@ -168,9 +168,10 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
             .set reorder
         }
         qCtl.q = 0;
+        j = 0;
         char *pCtl = (char *)&qCtl;
-        pRow = (char *)this + ((((i << 3) + i)) << 5);
-        for (j = 0; j < m_unk04 - 2; j++) {
+        pRow = (char *)this + i * 0x120;
+        for (; j < m_unk04 - 2; j++) {
             if (j <= m_unk08 - 1) {
                 char *pSrc = pRow + (j << 4) + 0x10;
                 asm {
@@ -185,8 +186,8 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
                 }
             }
             {
-                char *pKey = pKeyBase + ((((j << 2) + j)) << 4);
-                *(u_long128 *)pKey = *(u_long128 *)(pRow + (((j + 1) << 4)) + 0x10);
+                *(u_long128 *)(pKeyBase + j * 0x50) = *(u_long128 *)(pRow + (j + 1) * 0x10 + 0x10);
+                char *pKey = pKeyBase + j * 0x50;
                 qCtl.f[0] += fStepS;
                 asm {
                     .set noreorder

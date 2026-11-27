@@ -50,8 +50,8 @@ public:
     char m_unk1FD0[0x10];           // 0x1FD0, quadword copy of node + 0x70
     int m_unk1FE0;                  // 0x1FE0
     char _pad1FE4[4];
-    long long m_unk1FE8;            // 0x1FE8
-    long long m_unk1FF0;            // 0x1FF0
+    unsigned long m_unk1FE8;        // 0x1FE8
+    unsigned long m_unk1FF0;        // 0x1FF0
     char _pad1FF8[8];
     float m_unk2000[4];             // 0x2000
     bool m_unk2010;                 // 0x2010
