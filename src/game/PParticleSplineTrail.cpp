@@ -31,6 +31,7 @@ extern "C" void SetMaterial__10PGfxEngineFPfbUlUl(void *, float *, bool, unsigne
 extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *, int, float *, bool, unsigned long, unsigned long);
 extern "C" void SetWorldMatrix__10PGfxEngineFP5PMat4(void *, void *);
 extern "C" float sqrtf(float);
+extern "C" int rand(void);
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PParticleSplineTrail.cpp", line, #cond))
 
 // DRAFT: 0x001F0E20 Start__20PParticleSplineTrailFv
@@ -94,6 +95,74 @@ void PParticleSplineTrail::ComputeVuSplineKeys(struct tagVuParticle *pParticles,
             nOff += 0x40;
         } while (nI < nCount - 3);
     }
+}
+
+static inline float Jitter(float fR) {
+    return -fR + 2.0f * fR * ((float)rand() / 2.1474836e9f);
+}
+
+// DRAFT: 0x001F1090 UpdateTrailKeys__20PParticleSplineTrailFv
+// note: DIFF ~140 words; 5th float reg (f24) and 0x10 larger frame: 2.0f*fR is CSE'd (original recomputes fR+fR per axis, no hoisted 2.0f); goto entry still becomes blez. Tried inline Jitter helper, (fR+fR), bare if(m_unk120), goto loop, hoisted fFrac.
+void PParticleSplineTrail::UpdateTrailKeys() {
+    m_unk140 += 1;
+    if (m_unk140 >= (int)m_unk04) {
+        m_unk140 = 0;
+    }
+    float fT = 0.0f;
+    float *pKey = (float *)((char *)m_unk08 + (m_unk140 << 5));
+    pKey[0] = m_unk150[0];
+    pKey[1] = m_unk150[1];
+    pKey[2] = m_unk150[2];
+    int nI = (int)m_unk04;
+    int nIdx = m_unk140;
+    float vDiff[4];
+    sceVu0SubVector(vDiff, m_unk100, m_unkF0);
+    float fRange = m_unk11C - m_unk118;
+    float fFrac;
+    goto test;
+loop:
+    {
+        fFrac = fT / (float)(unsigned int)(m_unk04 - 1);
+        pKey = (float *)((char *)m_unk08 + (nIdx << 5));
+        if (pKey[0] == -1000000.0f) {
+            ((int *)pKey)[7] = 0;
+            pKey[3] = 0.0f;
+        } else {
+            if (m_unk120) {
+                float fR = 0.3f * m_unk120 * fFrac;
+                pKey[0] = pKey[0] + Jitter(fR);
+                pKey[1] = pKey[1] + Jitter(fR);
+                pKey[2] = pKey[2] + Jitter(fR);
+            }
+            pKey[3] = m_unk118 + fFrac * fRange;
+            float *pOut = pKey + 4;
+            float *pBase = m_unkF0;
+            float *pDiff = vDiff;
+            asm {
+                lqc2 vf1, 0x0(pDiff)
+                lqc2 vf2, 0x0(pBase)
+                mfc1 t0, fFrac
+                qmtc2.i t0, vf3
+                vmulx.xyzw vf4, vf1, vf3x
+                vnop
+                vnop
+                vnop
+                vadd.xyzw vf5, vf4, vf2
+                vnop
+                vnop
+                vnop
+                sqc2 vf5, 0x0(pOut)
+            }
+        }
+        nIdx -= 1;
+        nI -= 1;
+        if (nIdx < 0) {
+            nIdx = (int)m_unk04 - 1;
+        }
+        fT += 1.0f;
+    }
+test:
+    if (nI > 0) goto loop;
 }
 
 // FUNCTION: 0x001F1340 SetPosition__20PParticleSplineTrailFPfPf
