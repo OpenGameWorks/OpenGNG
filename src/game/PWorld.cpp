@@ -302,8 +302,7 @@ int PWorld::LoadEditedInstanceData(PPakFile *pFile) {
     return 1;
 }
 
-// DRAFT: 0x19AA20 AttachFxTriggersToNodes__6PWorldFP9PMeshNodeP24tagParticleFxTriggerDataUi
-// note: DIFF 2 words, both in the loop-guard delay slot: original fills it with i = 0 (counter in s0, offset in s1), ours with nOffset = 0. Tried for/while, do-while, combined and swapped declarations, comma-init, int nOffset (2 words), for-scoped unsigned i (6), unsigned int i as int (33), swapped decl order (6).
+// FUNCTION: 0x19AA20 AttachFxTriggersToNodes__6PWorldFP9PMeshNodeP24tagParticleFxTriggerDataUi
 void PWorld::AttachFxTriggersToNodes(PMeshNode *pNode, tagParticleFxTriggerData *pData, unsigned int nCount) {
     if (pData == 0) {
         CdsAssert("PWorld.cpp", 0x341, "pTriggerTable");
@@ -315,16 +314,18 @@ void PWorld::AttachFxTriggersToNodes(PMeshNode *pNode, tagParticleFxTriggerData 
         CdsAssert("PWorld.cpp", 0x343, "poRootNode");
     }
     unsigned int i = 0;
-    unsigned int nOffset = 0;
-    for (; i < nCount; i++) {
-        tagParticleFxTriggerData *pEntry = (tagParticleFxTriggerData *)((char *)pData + nOffset);
-        PMNode *pTarget = ((PMNode *)pNode)->Find(pEntry->m_nId);
-        if (pTarget != 0) {
-            pTarget->AddFxTrigger((tagParticleFxTrigger *)pEntry->m_Trigger, false);
-        } else {
-            ((PMNode *)pNode)->AddFxTrigger((tagParticleFxTrigger *)pEntry->m_Trigger, false);
-        }
-        nOffset += 0x2C;
+    if (i < nCount) {
+        unsigned int nOffset = 0;
+        do {
+            tagParticleFxTriggerData *pEntry = (tagParticleFxTriggerData *)((char *)pData + nOffset);
+            PMNode *pTarget = ((PMNode *)pNode)->Find(pEntry->m_nId);
+            if (pTarget != 0) {
+                pTarget->AddFxTrigger((tagParticleFxTrigger *)pEntry->m_Trigger, false);
+            } else {
+                ((PMNode *)pNode)->AddFxTrigger((tagParticleFxTrigger *)pEntry->m_Trigger, false);
+            }
+            nOffset += 0x2C;
+        } while (++i < nCount);
     }
 }
 
