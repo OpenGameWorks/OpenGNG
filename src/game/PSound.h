@@ -144,7 +144,7 @@ public:
     void CutSceneLeave(unsigned int nArg);
     void CutSceneEnter(unsigned int *pOut, unsigned int nArg, unsigned int nFlags, unsigned int nVolume);
     void SetMainMusicSpecialVolume(EnumMusicSpecialVols eVol);
-    int PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType);
+    bool PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType);
     int CheckAllChannelsMatchSub();
     void CheckOneChannelMatch(AmbientChannelState *pState);
     void CheckAllChannelsMatch();

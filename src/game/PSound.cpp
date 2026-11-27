@@ -763,20 +763,19 @@ int PSound::ProcessTriglets() {
 }
 
 // DRAFT: 0x001A4D80 PointInEnclosure__6PSoundFPfP16tagBOX_OR_SPHEREP14tagVuMatrixBox17EnumEnclosureType
-// note: DIFF 3; constant 1 on the sphere path is addiu, original daddiu; argument setup for the matrix call places the this adjust before jal, original in its delay slot. Tried: bool nRet with direct return (DIFF 4), function-scope bool and masked bool (4+), bool bIn inside sphere branch with unmasked else (DIFF 14), bool temporary and local MathAPI receiver (no change).
-int PSound::PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType) {
+// note: DIFF 2; bool return (callers mask it with & 0xFF) fixed the daddiu 1. Argument setup for the matrix call places the this adjust before jal, original in its delay slot. Tried: bool nRet with direct return (DIFF 4), function-scope bool and masked bool (4+), bool bIn inside sphere branch with unmasked else (DIFF 14), bool temporary and local MathAPI receiver (no change). Under bool: member-array, & member, uint this, MathAPI local, arg locals and casts (2), direct return in the else (13).
+bool PSound::PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType) {
     float vDiff[4];
     float vCenter[4];
-    int nRet = 0;
+    bool nRet = false;
     if (eType == ENCLOSURE_SPHERE) {
         memcpy(vCenter, pBox, 0x10);
         sceVu0SubVector(vDiff, pPoint, vCenter);
         if (sceVu0InnerProduct(vDiff, vDiff) <= ((float *)pBox)[3] * ((float *)pBox)[3]) {
-            bool bIn = true;
-            nRet = bIn;
+            nRet = true;
         }
     } else {
-        nRet = ((MathAPI *)((char *)this + 0x2E90))->PointInMatrixBoxWSphereCheck((float *)pMatrix, (tagVuMatrixBox *)pBox, (tagFLOAT3D *)pMatrix) & 0xFF;
+        nRet = ((MathAPI *)((char *)this + 0x2E90))->PointInMatrixBoxWSphereCheck((float *)pMatrix, (tagVuMatrixBox *)pBox, (tagFLOAT3D *)pMatrix);
     }
     return nRet;
 }
