@@ -92,8 +92,7 @@ public:
     virtual void Slot20(void *pNode);
 };
 
-// DRAFT: 0x0014FD40 UpdateHeader__10MemoryCardFUc
-// note: 6 words differ, all in the loop's byte load: original keeps nVal2 in v1 (lb v1 then slti $at and daddu v1,a2 for the clamp), ours puts it in t2 with v1 as the address temp. Tried: pointer walk (16), nSum before header block (18), cached level (67), nVal2 hoisted out of loop (13), char and raw this+0x2B0 address (6), (signed char) cast (6), nOff-first loop (11), while form (6), i<0x15 test first (25), explicit i/nOff decls (6), continue form (6)
+// FUNCTION: 0x0014FD40 UpdateHeader__10MemoryCardFUc
 void MemoryCard::UpdateHeader(unsigned char nVal) {
     if (nVal > m_unk22E) {
         m_unk22E = nVal;
@@ -103,10 +102,11 @@ void MemoryCard::UpdateHeader(unsigned char nVal) {
     for (int i = 0, nOff = 0; i <= m_unk22E && i < 0x15; nOff += 0x31, i++) {
         signed char nVal2 = _pad2B0[nOff];
         if (nVal2 >= 0) {
-            if (nVal2 >= 0x65) {
-                nVal2 = 0x64;
+            signed char nC = nVal2;
+            if (nC > 100) {
+                nC = 100;
             }
-            nSum += nVal2;
+            nSum += nC;
         }
     }
     float fVal = (float)(nSum * 100) / 2100.0f;
