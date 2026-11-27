@@ -904,8 +904,7 @@ int EntityBaseClass::WantsToWake() {
     return 0;
 }
 
-// DRAFT: 0x0014B5E0 CheckSleep__15EntityBaseClassFb
-// note: DIFF 125 words; the mula.s/madd.s dot product of sp+0x80/sp+0x90 has no C form, and the if-body is 3 instructions short; cam/mpEntMgr load order also differs.
+// FUNCTION: 0x0014B5E0 CheckSleep__15EntityBaseClassFb
 int EntityBaseClass::CheckSleep(bool arg0) {
     float sp70[4];
     float sp80[4];
@@ -915,14 +914,14 @@ int EntityBaseClass::CheckSleep(bool arg0) {
     char *cam;
     char *objPos;
     EntityBaseClass *obj;
-    int s0;
+    bool s0;
 
     s0 = 0;
     if (mbGlobalSleep__15EntityBaseClass) {
-        cam = (char *)&gEng + 0x19760;
+        cam = (char *)((int)&gEng + 0x19760);
         obj = mpEntMgr__15EntityBaseClass->m_unk505C;
         objPos = obj->m_unk3C ? obj->m_unk3C + 0x80 : (char *)obj + 0x190;
-        if (PlayingCutCamera__6CameraFv(cam)) {
+        if (PlayingCutCamera__6CameraFv((char *)&gEng + 0x19760)) {
             sceVu0SubVector(sp70, (float *)cam,
                             (float *)(this->m_unk3C ? this->m_unk3C + 0x80 : (char *)this + 0x190));
         } else {
@@ -942,49 +941,49 @@ int EntityBaseClass::CheckSleep(bool arg0) {
         }
     }
 
-    if (!(s0 || arg0)) {
-        return 0;
-    }
+    if (s0 || arg0) {
 
-    SetFreeze(0.0f);
-    if (this->m_unk18 == 0 || *(unsigned char *)((char *)this + 0x1D) != 0) {
-        ((EntityBaseClassVirtuals *)this)->OnSleepEvent();
-        SetState(-3);
-        return 1;
-    }
-    if (CheckDie(true)) {
-        return 1;
-    }
-    if (this->m_unk1F) {
-        this->m_unk2C = this->m_unk20;
-        this->m_unk20 = -1;
-        if (this->m_unk3C) {
-            *(u_long128 *)((char *)this + 0x190) = *(u_long128 *)(this->m_unk3C + 0x80);
-            *(float *)((char *)this + 0x1A4) = *(float *)(this->m_unk3C + 0x94);
+        SetFreeze(0.0f);
+        if (this->m_unk18 == 0 || *(unsigned char *)((char *)this + 0x1D) != 0) {
+            ((EntityBaseClassVirtuals *)this)->OnSleepEvent();
+            SetState(-3);
+            return 1;
         }
-    }
-    *(unsigned char *)((char *)this + 0x1E) = 0;
-    *(unsigned char *)((char *)this + 0x1C) = 1;
-    ((EntityBaseClassVirtuals *)this)->OnSleepEvent();
-    this->m_unk13C = 0;
-    FreeActiveLoad();
-    this->m_unk140 = 0;
-    LoadMesh(0, false, true);
-    if (this->m_unkD4) {
-        *this->m_unkD4 = 0;
-        {
-            char *p = *(char **)(this->m_unkD4 + 0xC);
-            if (p) {
-                p[0x18] = 0;
+        if (CheckDie(true)) {
+            return 1;
+        }
+        if (this->m_unk1F) {
+            this->m_unk2C = this->m_unk20;
+            this->m_unk20 = -1;
+            if (this->m_unk3C) {
+                *(u_long128 *)((char *)this + 0x190) = *(u_long128 *)(this->m_unk3C + 0x80);
+                *(float *)((char *)this + 0x1A4) = *(float *)(this->m_unk3C + 0x94);
             }
         }
+        *(unsigned char *)((char *)this + 0x1E) = 0;
+        *(unsigned char *)((char *)this + 0x1C) = 1;
+        ((EntityBaseClassVirtuals *)this)->OnSleepEvent();
+        this->m_unk13C = 0;
+        this->m_unk140 = 0;
+        FreeActiveLoad();
+        LoadMesh(0, false, true);
+        char *pD4 = this->m_unkD4;
+        if (pD4) {
+            *pD4 = 0;
+            {
+                char *p = *(char **)(pD4 + 0xC);
+                if (p) {
+                    p[0x18] = 0;
+                }
+            }
+        }
+        if (this->m_unk1F) {
+            PauseAmbientSoundsByObject();
+        } else {
+            StopAmbientSoundsByObject();
+        }
+        RemoveFromAttackSystem();
     }
-    if (this->m_unk1F) {
-        PauseAmbientSoundsByObject();
-    } else {
-        StopAmbientSoundsByObject();
-    }
-    RemoveFromAttackSystem();
     return 0;
 }
 
