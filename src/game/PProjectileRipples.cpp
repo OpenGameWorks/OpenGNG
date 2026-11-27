@@ -114,26 +114,31 @@ void PProjectileRipples::ComputeAxes(float *pSrc, float *pAxis0, float *pAxis1, 
 }
 
 // DRAFT: 0x00217410 InitRingMeshPacket__18PProjectileRipplesFRiib
-// note: DIFF 91; literal loads run in the wrong order in both CreateRingTriStrip calls (original loads 0.375f then 0.25f, and 0.5f then 0.375f); the if-branch is 2 words shorter (beqz +0x1D vs +0x1F) because each &sp40[s0] recomputes s0<<4 instead of sharing one sll; tried inline, hi/lo/half locals, pointer-offset locals (sp40 + s0); 8 attempts, no progress
+// note: DIFF 5; head and both CreateRingTriStrip calls match (hoisted fLo/fHi/fEnd locals, int n set to 0 in else, byte-offset pointers); only the p0/p1 base/offset register choice (a0/v1 swapped, addu operand order) differs; tried base-first/offset-first per pointer, char* base local, offset locals
 void *PProjectileRipples::InitRingMeshPacket(int &arg0, int arg1, bool arg2) {
     float sp40[0x32][4];
     float sp360[0x32][4];
     float sp680[0x32][4];
     int s0;
     int s1;
+    int n;
+    float fHi = 0.375f;
+    float fLo = 0.25f;
+    float fEnd = 0.5f;
     if (arg2) {
-        s0 = CreateRingTriStrip(arg1, 0.25f, 0.375f, 0, 0xFF, sp40, sp360, sp680);
-        int v0 = CreateRingTriStrip(arg1, 0.375f, 0.5f, 0xFF, 0, &sp40[s0], &sp360[s0], &sp680[s0]);
-        s1 = s0 + v0;
+        s0 = CreateRingTriStrip(arg1, fLo, fHi, 0, 0xFF, sp40, sp360, sp680);
+        unsigned int off = s0 << 4;
+        n = CreateRingTriStrip(arg1, fHi, fEnd, 0xFF, 0, (float(*)[4])((unsigned int)sp40 + off), (float(*)[4])((unsigned int)sp360 + off), (float(*)[4])((unsigned int)sp680 + off));
     } else {
         s0 = CreateRingTriStrip(arg1, 0.0f, 0.5f, 0x80, 0x80, sp40, sp360, sp680);
-        s1 = s0;
+        n = 0;
     }
+    s1 = s0 + n;
     if (s1 >= 0x32) {
         CdsAssert("PProjectileRipples.cpp", 0x18A, "iNumVerts < fx_i_instance_max_vertices");
     }
-    unsigned int *p0 = (unsigned int *)sp40[s0];
-    unsigned int *p1 = (unsigned int *)sp40[s0 + 1];
+    unsigned int *p0 = (unsigned int *)((s0 << 4) + (unsigned int)sp40);
+    unsigned int *p1 = (unsigned int *)(((s0 + 1) << 4) + (unsigned int)sp40);
     p0[3] |= 0x8000;
     p1[3] |= 0x8000;
     int *pkt = (int *)__nwa__FUi(0x970);
