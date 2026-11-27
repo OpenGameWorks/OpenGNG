@@ -2678,15 +2678,17 @@ void Interface::ProcessScreenFade() {
     }
 }
 
-// DRAFT: 0x001451B0 DisplayFadeRectangle__9InterfaceFv
-// note: 42 words; gs store order and branch shape differ, gGfxEng+0x154C80 load scheduled earlier; size 0xf8 vs 0xe8. Tried gs initializer (56), (int) alpha cast (54), per-use table index (54), gs[3]-first and gs[5]-before-gs[4] store orders (42, asm unchanged; MWCC keeps gs[2] first and addresses it through a1).
+inline void SetGsRegPair(void *pEntry, long long data, long long reg) {
+    ((long long *)pEntry)[0] = data;
+    ((long long *)pEntry)[1] = reg;
+}
+
+// FUNCTION: 0x001451B0 DisplayFadeRectangle__9InterfaceFv
 void Interface::DisplayFadeRectangle() {
     static char vFadeRGB[2][3] = {{0, 0, 0}, {-128, -128, -128}};
     unsigned long long gs[6];
-    gs[2] = 0;
-    gs[3] = 0x1A;
-    gs[4] = 0x48;
-    gs[5] = 0x1B;
+    SetGsRegPair(&gs[2], 0, 0x1A);
+    SetGsRegPair(&gs[4], 0x48, 0x1B);
     if (m_unk426 != 0) {
         gs[0] = 0x48;
         gs[1] = 0x42;
@@ -2699,7 +2701,7 @@ void Interface::DisplayFadeRectangle() {
     pd = *(PDisplayList **)(gGfxEng + 0x154C80);
     char *rgb = vFadeRGB[m_unk426];
     pd->ClearFrameBuffer(0x800, 0x800, 0x800, 0x800, rgb[0], rgb[1],
-                         rgb[2], (char)(int)*(float *)&m_unk41C, 0x3F800000);
+                         rgb[2], *(float *)&m_unk41C, 0x3F800000);
 }
 
 // FUNCTION: 0x1452A0 FadeScreen__9InterfaceFffbQ29Interface10eFadeColor
@@ -2763,8 +2765,7 @@ void Interface::DisplayLevelName(int arg0, int arg1) {
     }
 }
 
-// DRAFT: 0x00145450 Render__9InterfaceFi
-// note: 6 words after permuter (spelling from build/permuter/00145450/best.cpp). Earlier: 12 words differ: gs register constants 8/0x1B/0x44 land in swapped v0/v1 at 0x70..0x88; StartTimer gDebug address and the sb store are scheduled differently at 0x398..0x3AC. Tried since: direct gs[n] stores (210+ words), block-scoped p/q with each store order, pointer decl hoisted, gs+2, 8ULL literals, separate pointer for gs[1] (all 6 or worse); the remaining 6 are the v0/v1 choice for constant 8 at 0x70.
+// FUNCTION: 0x00145450 Render__9InterfaceFi
 int Interface::Render(int arg0) {
     unsigned long long gs[6];
     float vec[4];
@@ -2778,16 +2779,8 @@ int Interface::Render(int arg0) {
     if (m_unk416 != 0) {
         gs[0] = 0;
         gs[1] = 0x1A;
-        {
-            unsigned long long *p = &gs[2];
-            p[0] = 8;
-            p[1] = 0x1B;
-        }
-        {
-            unsigned long long *q = &gs[4];
-            q[0] = 0x44;
-            q[1] = 0x42;
-        }
+        SetGsRegPair(&gs[2], 8, 0x1B);
+        SetGsRegPair(&gs[4], 0x44, 0x42);
         PDisplayList *pd = *(PDisplayList **)(0x154C80 + gGfxEng);
         pd->SetGsRegisters((u_long128 *)gs, 3);
         pd = *(PDisplayList **)(gGfxEng + 0x154C80);
