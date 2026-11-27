@@ -789,12 +789,12 @@ int CompareDistToCam(void *pA, void *pB) {
     return d0 > d1;
 }
 
-// DRAFT: 0x00146E70 PutApparitionsToSleep__13EntityManagerFv
-// note: 2 lines differ (daddu s1,s0 init-order swap); ternary guard in the loop head matches. Tried while form (7), int/unsigned variants (2), separate i/off init (7).
+// FUNCTION: 0x00146E70 PutApparitionsToSleep__13EntityManagerFv
 void EntityManager::PutApparitionsToSleep() {
     if (m_unk5D48 == 0) {
-        unsigned int off = 0;
-        for (unsigned int i = 0; i < m_unk5078; i++) {
+        unsigned int off;
+        unsigned int i;
+        for (i = 0, off = 0; i < m_unk5078; i++) {
             EntityBaseClass *pEntity = (i < m_unk5078) ? *(EntityBaseClass **)((char *)m_unk5080 + off) : 0;
             if (pEntity == 0) {
                 CdsAssert("EntityManager.cpp", 0x721, "pEntity");
@@ -1752,7 +1752,7 @@ void EntityManager::SetItemCounter(ItemCounterType theType, float value) {
 }
 
 // DRAFT: 0x00149160 GetItemCounter__13EntityManagerFQ213EntityManager15ItemCounterType
-// note: 1 word differs: addu operand order (0040 original `addu v0,v0,v1`, ours `addu v0,v1,v0`); the sll-first schedule and the 0x5F74 addiu now match. Tried: m_unk5F74[i], float* and char* bases (8), base-first, constant-first base, pointer index (3 or 1), signed index, multiply index (1 each).
+// note: 1 word differs: addu operand order (0040 original `addu v0,v0,v1`, ours `addu v0,v1,v0`); the sll-first schedule and the 0x5F74 addiu now match. Tried: m_unk5F74[i], float* and char* bases (8), base-first, constant-first base, pointer index (3 or 1), signed index, multiply index (1 each). Also tried: m_unk5F74 + theType, &m_unk5F74[0], a reference, a float* local, a struct with an inline Get (all 8, they fold 0x5F74 into lwc1); int shift-plus-cast sums (1), unsigned pointer sums (3).
 float EntityManager::GetItemCounter(ItemCounterType theType) {
     if (theType >= ITEM_COUNTER_MAX) {
         CdsAssert("EntityManager.cpp", 0x18A, "theType < ITEM_COUNTER_MAX");
