@@ -239,7 +239,7 @@ public:
     virtual int Render(void *);
     virtual void Animate(int, float);
     virtual void Slot10();
-    virtual void Slot11();
+    virtual int Slot11();
     virtual void Slot12();
     virtual void Slot13();
     virtual void Slot14();
@@ -337,7 +337,11 @@ public:
     unsigned char m_unkE9;      // 0xE9 flag set from ChangedState
     char _padEA[0x10C - 0xEA];
     unsigned int m_unk10C;      // 0x10C collision flags, bits 24-26 mark collidable
-    char _pad110[0x182 - 0x110];
+    char _pad110[0x166 - 0x110];
+    unsigned char m_unk166;     // 0x166
+    char _pad167[0x179 - 0x167];
+    unsigned char m_unk179;     // 0x179
+    char _pad17A[0x182 - 0x17A];
     unsigned short m_unk182;    // 0x182 range, compared against DistanceXZ
     unsigned short m_unk184;    // 0x184 camera Y offset applied when in range
     char _pad186[0x190 - 0x186];
@@ -1108,6 +1112,63 @@ void EntityManager::Add2DependencyList(unsigned int arg0, unsigned int arg1) {
     DependencyEntry *e = &m_unk51A0[n];
     e->m_unk00 = arg0;
     e->m_unk04 = arg1;
+}
+
+// DRAFT: 0x00147840 GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb
+// note: DIFF 56; strength-reduced byte offset takes s0 (orig indexes with sll each pass, needs opt_strength_reduction off), switch lowered via bool flag (goto-to-label form scored 92, case-0-in-case--2 form 110); extern "C" because LoadClass enum is not nestable from EntityManager.h
+extern "C" bool GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(EntityManager *pThis, int eClass, PArray *pOut, float (*pPos)[4], float fRadius, int nKey, bool bSkipSleeping, bool bAlive) {
+    bool bFound = false;
+    for (unsigned int i = 0; i < pThis->m_unk5078; i++) {
+        EntityBaseClass *pEntity = 0;
+        if (i < pThis->m_unk5078) {
+            pEntity = (EntityBaseClass *)pThis->m_unk5080[i];
+        }
+        if (pEntity == 0) {
+            CdsAssert("EntityManager.cpp", 0x49D, "pEntity");
+        }
+        int nClass = pEntity->m_unk10;
+        if ((nClass != 6 && nClass != 3) || ((EntityBaseVirtuals *)pEntity)->Slot11() > 0) {
+            if (!bSkipSleeping || pEntity->m_unk1C == 0) {
+                if (nClass == eClass) {
+                    bool bOk = false;
+                    switch (nKey) {
+                    case -2:
+                        if (pEntity->m_unk179 != 0) {
+                            bOk = true;
+                        }
+                        break;
+                    case -1:
+                        if (pEntity->m_unk166 != 0) {
+                            bOk = true;
+                        }
+                        break;
+                    case 0:
+                        bOk = true;
+                        break;
+                    default:
+                        if (nKey == pEntity->m_unk08) {
+                            bOk = true;
+                        }
+                        break;
+                    }
+                    if (bOk) {
+                        float (*pt)[4] = (pEntity->m_unk3C != 0) ? (float (*)[4])(pEntity->m_unk3C + 0x80) : &pEntity->m_unk190;
+                        float vDiff[4];
+                        sceVu0SubVector(vDiff, (float *)pt, (float *)pPos);
+                        if (sqrtf(sceVu0InnerProduct(vDiff, vDiff)) <= fRadius && (!bAlive || pEntity->m_unk20 >= 0)) {
+                            if (pOut != 0) {
+                                pOut->Add((void *)pEntity->m_unk04);
+                                bFound = true;
+                            } else {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return bFound;
 }
 
 // FUNCTION: 0x00147A90 GetHealth__15EntityBaseClassFv
