@@ -312,8 +312,7 @@ void ClockworkMaximo::UpdateShieldStatus(Shield *arg0) {
     m_unk280 = arg0;
 }
 
-// DRAFT: 0x00210830 ThrowShield__15ClockworkMaximoFv
-// 5 words: tail copy at 0x1D8-0x1F8 has the shield and skeleton pointers in v1/a1 and a0; original has the shield in a0 and the skeleton in v1.
+// FUNCTION: 0x00210830 ThrowShield__15ClockworkMaximoFv
 void ClockworkMaximo::ThrowShield() {
     if (m_unk280 != 0) {
         CdsAssert("ClockworkMaximo.cpp", 0xA69, "mpShield == NULL");
@@ -360,11 +359,11 @@ void ClockworkMaximo::ThrowShield() {
     sp30[3] = 1.0f;
     InitShield__6ShieldFP15EntityBaseClassfPA4_fPA4_fUiPbi(m_unk280, this, 22.142857f, (float (*)[4])sp40, (float (*)[4])sp30, 0, (bool *)0, 0);
     Shield *pShield = m_unk280;
-    void *pDst = *(void **)((char *)pShield + 0x38);
-    char *pSk = (char *)m_unk3C;
-    sp40[0] = *(float *)(pSk + 0x80);
-    sp40[2] = *(float *)(pSk + 0x88);
-    *(u_long128 *)((char *)pDst + 0xA0) = *(u_long128 *)sp40;
+    char *pDst = *(char **)((char *)pShield + 0x38);
+    float *pPos = (float *)((char *)m_unk3C + 0x80);
+    sp40[0] = pPos[0];
+    sp40[2] = pPos[2];
+    *(u_long128 *)(pDst + 0xA0) = *(u_long128 *)sp40;
 }
 
 // FUNCTION: 0x00210A40 SetShockwave__15ClockworkMaximoFv
