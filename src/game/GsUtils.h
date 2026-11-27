@@ -35,7 +35,8 @@ typedef char GifTagSizeCheck[sizeof(GifTag) == 0x10 ? 1 : -1];
 typedef struct tagGsClut256 {
     char _pad000[0x50];
     u_long128 m_unk50;          // 0x050 CLUT packet head
-} tagGsClut256;                 // size >= 0x60
+    char m_unk60[0x400];        // 0x060 256 CLUT entries, 4 bytes each
+} tagGsClut256;                 // size 0x460
 
 typedef struct tagGsFrameBufferCopy {
     char _pad000[0x40];

@@ -9,6 +9,9 @@ extern "C" void *memset(void *pDst, int nVal, unsigned int nSize);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void sceGsPutDispEnv(void *pEnv);
 extern "C" void sceGsPutDrawEnv(void *pEnv);
+extern "C" int DIntr(void);
+extern "C" int EIntr(int nArg);
+void DmaMainMemToScratchPad(void *pDst, void *pSrc, short nQwc, bool bA, bool bB);
 extern int SCREEN_OFFSET_X;
 extern int SCREEN_OFFSET_Y;
 extern int SCREEN_HEIGHT;
@@ -51,6 +54,51 @@ extern "C" void FlushCache(int nOp);
 extern "C" void exit(int nCode);
 extern "C" int sceGsGetIMR(void);
 extern "C" int sceGsPutIMR(int nVal);
+
+// DRAFT: 0x0017D630 GsSwizzleClut__FP12tagGsClut256
+// note: ~64 words; scratch 0x70001000 not hoisted to s1 (rematerialised), 9 not held in a0 for EIntr, DIntr/EIntr relocs; tried goto loops, nEnd local, pMap pointer
+void GsSwizzleClut(tagGsClut256 *pClut) {
+    int aMap[32] = {0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15,
+                    16, 18, 17, 19, 20, 22, 21, 23, 24, 26, 25, 27, 28, 30, 29, 31};
+    char *pData = pClut->m_unk60;
+    char *pScratch;
+    char *pLine = (char *)((unsigned int)pData & 0xFFFFFFC0);
+    int nOff = 0;
+    int i;
+    pScratch = (char *)0x70001000;
+    DIntr();
+    i = 0;
+    goto test;
+loop:
+    asm {
+        sync
+        cache 0x18, 0x0(pLine)
+        sync
+        cache 0x18, 0x40(pLine)
+        sync
+    }
+    pLine += 0x80;
+    i++;
+test:
+    if (i < 9) goto loop;
+    EIntr(9);
+    DmaMainMemToScratchPad(pData, pScratch, 0x40, false, true);
+    int *pMap = aMap;
+    i = 0;
+    goto test2;
+loop2:
+    {
+        char *pDst = pData + nOff;
+        char *pSrc;
+        nOff += 0x20;
+        pSrc = pScratch + (pMap[i] << 5);
+        i++;
+        *(u_long128 *)pDst = *(u_long128 *)pSrc;
+        *(u_long128 *)(pDst + 0x10) = *(u_long128 *)(pSrc + 0x10);
+    }
+test2:
+    if (i < 0x20) goto loop2;
+}
 
 // FUNCTION: 0x0017D750 GsInitClut256__FP12tagGsClut256
 void GsInitClut256(tagGsClut256 *pClut) {
