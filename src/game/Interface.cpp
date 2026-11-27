@@ -695,7 +695,7 @@ void HudSuper::UpdateMaxSuper() {
 }
 
 // DRAFT: 0x140550 UpdateBar__8HudSuperFi
-// note: 29 words differ; the outer gate is slti into $v0 and bnez into the body in the original (ours uses $at and beqz), and the original fills the else-branch b's slot with the 1.0f lui; inner arg0 > 0 test falls through to the zero arm in the original (ours branches to it). Tried: nested-if, empty-then, swapped-inner (all worse, earlier); int bLess local for the gate (29, kept); inner arg0 <= 0 zero-first (55).
+// note: 29 words differ; the outer gate is slti into $v0 and bnez into the body in the original (ours uses $at and beqz), and the original fills the else-branch b's slot with the 1.0f lui; inner arg0 > 0 test falls through to the zero arm in the original (ours branches to it). Tried: nested-if, empty-then, swapped-inner (all worse, earlier); int bLess local for the gate (29, kept); inner arg0 <= 0 zero-first (55). Also tried: inverted if/else and else-if chains (53-56; an inner `arg0 <= 0` gives the bgtz layout but the compiler drops an empty outer arm), redundant else fScale = 1.0f (29), bool bLess (56), goto (55), ternary chains (42-56; `bLess ? (...) : fScale` matches the tail from 0xC0), inline fraction helper (57).
 void HudSuper::UpdateBar(int arg0) {
     void *pBase = m_unk4;
     PArray *pWalk;
