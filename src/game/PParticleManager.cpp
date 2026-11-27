@@ -279,17 +279,19 @@ struct tagVuParticle {
     int m_unk1C;                // 0x1C
 };
 
-// DRAFT: 0x001B75D0 InitHeatHazeBuffer__16PParticleManagerFv
-// note: DIFF 33: nHandle branch polarity and block order, m_unk670 reload and tail store order differ; tried m_unk670 ternary, pGfx for both calls (34), pGfx first call only (33)
+inline int PickTextureHandle(int nOverride, int nDefault) {
+    if (nOverride != 0) {
+        return nOverride;
+    }
+    return nDefault;
+}
+
+// FUNCTION: 0x001B75D0 InitHeatHazeBuffer__16PParticleManagerFv
 void PParticleManager::InitHeatHazeBuffer() {
     if (m_unk670 == 0) {
         char *pGfx = gGfxEng;
         m_unk670 = CreateRenderedTexture__15PTextureManagerFsssss13eTextureGroupb(pGfx + 0x154C90, 0x100, 0x80, 8, 7, 0, 0x69, false);
-        int nHandle = *(int *)(gGfxEng + 0x16D408);
-        if (nHandle == 0) {
-            nHandle = m_unk670;
-        }
-        void *pEnv = GetTexEnv__15PTextureManagerFi((char *)gGfxEng + 0x154C90, nHandle);
+        void *pEnv = GetTexEnv__15PTextureManagerFi(gGfxEng + 0x154C90, PickTextureHandle(*(int *)(gGfxEng + 0x16D408), m_unk670));
         if (pEnv != 0) {
             GsSetTCC__FP23tagGsTextureEnvironmentb(pEnv, false);
         }
