@@ -182,6 +182,13 @@ public:
     int StartPreppedDialog(unsigned int nArg);
     int GetDialogStreamReadiness(unsigned int nArg);
     int GetDialogPlayingStatus();
+    unsigned int GetPauseCategories();
+    void SetPauseCategories(unsigned int nCategories);
+    int AfterSpawnEditedInstances();
+    unsigned int GetMainMusicRelVolume();
+    int MusicSwitchToSecondary(unsigned int nFileID, unsigned int nArg1, unsigned int nArg2, unsigned int nArg3);
+    unsigned int MakeSoundRef();
+    void SetAllowCallOneFrameHasElapsed(bool bAllow);
     void GetTrayRelated(int *pTrayOpen, int *pStatus, int *pReady, int *pType);
     void FadeMusicOnStream(unsigned int nStream, unsigned int nArg, unsigned int nFrames);
     void AmbientFadeToFree(AmbientChannelState *pState);
@@ -336,7 +343,8 @@ public:
     int m_unk0EC;          // 0x0EC
     int m_unk0F0;           // 0x0F0
     AmbientEntry *m_unkF4;  // 0x0F4, head of the ambient entry list (AddAEToFreeList passes &m_unkF4)
-    char m_unkF8[0x2E20 - 0x0F8];   // 0x0F8, AmbientChannelState array of stride 0x20, FindFadingAmbientChannel scans it
+    char m_unkF8[0x2220 - 0x0F8];   // 0x0F8, AmbientChannelState array of stride 0x20, FindFadingAmbientChannel scans it
+    OneShotChannelState m_aOneShot[0x30];   // 0x2220, StopOneShot and PSoundReInitRegularSounds index it
     unsigned int m_unk2E20; // 0x2E20, PSoundInit passes it to SOUND_SetChanUse
     int m_unk2E24;          // 0x2E24, PSound constructor stores 5
     unsigned int m_unk2E28; // 0x2E28, FindFadingAmbientChannel start index

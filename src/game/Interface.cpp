@@ -6,6 +6,7 @@
 #include "PArray.h"
 #include "PAnimFrame.h"
 #include "PGrimBarAura.h"
+#include "PSound.h"
 
 // TODO(header): foreign declarations
 extern "C" void *__nw__FUi(unsigned int nSize);
@@ -24,19 +25,6 @@ extern "C" int sprintf(char *buf, const char *fmt, ...);
 class Player {
 public:
     void SwapAbility(int arg0);
-};
-// PSound size is unknown; the placeholder member only keeps gSound out of small data (threshold 8 bytes).
-class PSound {
-public:
-    void StopStreamsAndRequestEEControl();
-    int GetEEControlStatus();
-    void SetAllowCallOneFrameHasElapsed(bool flag);
-    void AbilityScreenEnter();
-    void AbilityScreenLeave();
-    int PlaySoundUbiquitous(unsigned int id);
-    void RestartAndLoadInterfaceTypeBank(unsigned int id);
-    void StopSoundBySoundRef(unsigned int id);
-    char _pad000[0x10];
 };
 extern PSound gSound;
 extern float GAME_FPS;

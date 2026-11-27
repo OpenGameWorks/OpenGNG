@@ -54,7 +54,6 @@ extern "C" int SOUND_FindFreeSPUChannel(unsigned int, unsigned int, int, unsigne
 extern "C" void SOUND_CountFreeSPUChannels(unsigned int, unsigned int);
 extern "C" int FindASubTableRandomItem__16PTranslateATableFPUiUiPFUi_iPCUi(unsigned int *, unsigned int, int (*)(unsigned int), const unsigned int *);
 int SoundInBankStatus(unsigned int nBank);
-extern "C" unsigned int MakeSoundRef__6PSoundFv(PSound *pThis);
 extern int fst_PSWP_bUseDistCheck;
 extern float fst_PSWP_fDistCheckRadSq;
 extern int fst_ADSR_Msecs_Attack[16];
@@ -196,6 +195,7 @@ extern "C" int PlaySound__6PMNodeFUi(PMNode *pThis, unsigned int nSound);
 int SoundInBankStatus(unsigned int nBank);
 extern unsigned int gSndSetOfIDsTable[16];
 extern "C" void SOUND_SetPauseCategories(unsigned int);
+extern "C" void SOUND_Set_EE_Control(unsigned int);
 extern "C" void SOUND_LevelRestart();
 extern "C" void SOUND_SetMasterRegisterVolumeAbs(int);
 extern "C" void SOUND_EnableFeatures(int, int);
@@ -650,6 +650,11 @@ int PSound::PrepDialog(unsigned int nArg) {
     return 0;
 }
 
+// FUNCTION: 0x001A48C0 GetDialogPlayingStatus__6PSoundFv
+int PSound::GetDialogPlayingStatus() {
+    return 0;
+}
+
 // FUNCTION: 0x001A48D0 SendStops__6PSoundFv
 void PSound::SendStops() {
     if (m_unkB0 != 0 || m_unkB4 != 0) {
@@ -657,6 +662,17 @@ void PSound::SendStops() {
         m_unkB0 = 0;
         m_unkB4 = 0;
     }
+}
+
+// FUNCTION: 0x001A4920 GetPauseCategories__6PSoundFv
+unsigned int PSound::GetPauseCategories() {
+    return m_unk2E48;
+}
+
+// FUNCTION: 0x001A4930 SetPauseCategories__6PSoundFUi
+void PSound::SetPauseCategories(unsigned int nCategories) {
+    m_unk2E48 = nCategories;
+    SOUND_SetPauseCategories(nCategories);
 }
 
 // FUNCTION: 0x001A4940 PauseByCategories__6PSoundFUi
@@ -798,6 +814,11 @@ int PSound::EnableTrigletByInstanceID(unsigned int nInstanceID, bool bEnable) {
         }
     }
     return -1;
+}
+
+// FUNCTION: 0x001A4EC0 AfterSpawnEditedInstances__6PSoundFv
+int PSound::AfterSpawnEditedInstances() {
+    return 0;
 }
 
 // DRAFT: 0x001A4ED0 RegisterSoundTrigletPawn__6PSoundFP15EntityBaseClass24EnumSoundTrigletPawnType
@@ -1723,6 +1744,11 @@ int PSound::PlaySoundPMNode(unsigned int p0, unsigned int p1, const PMNode *pNod
     return 0;
 }
 
+// FUNCTION: 0x001A72C0 PlaySoundApparition__6PSoundFUiUi
+int PSound::PlaySoundApparition(unsigned int nSound, unsigned int nOriginator) {
+    return PlaySoundWPitch(nSound, nOriginator, 0, 0x10, 0);
+}
+
 // DRAFT: 0x001A72D0 PlaySoundWPitch__6PSoundFUiUiUiUiUi
 // note: 850 words; INCOMPLETE: the ambient channel-state search (spAC->unkC & 2) is missing and the distance check is simplified; frame 0x190 vs 0xE0. Needs the missing logic before tuning.
 int PSound::PlaySoundWPitch(unsigned int p0, unsigned int p1, unsigned int p2, unsigned int p3, unsigned int p4) {
@@ -1958,6 +1984,13 @@ int PSound::DebugStopAllSoundsBySoundID(unsigned int nArg) {
     }
     CheckAllChannelsMatch();
     return nCount;
+}
+
+// FUNCTION: 0x001A83A0 StopOneShot__6PSoundFUi
+void PSound::StopOneShot(unsigned int nIndex) {
+    OneShotChannelState *pShot = &m_aOneShot[nIndex];
+    pShot->m_unk2C = 0;
+    AddChanToMultipleStops(nIndex);
 }
 
 // FUNCTION: 0x001A83B0 DebugStopAmbientSoundsBySoundID__6PSoundFUi
@@ -2559,6 +2592,11 @@ void PSound::InternalUpdateRelVolumes() {
     SOUND_SetGlobalRelVols(m_unk34, m_unk38, m_unk3C, m_unk40, 1000, 1000, 1000, m_unk30);
 }
 
+// FUNCTION: 0x001A9430 GetMainMusicRelVolume__6PSoundFv
+unsigned int PSound::GetMainMusicRelVolume() {
+    return m_unk3C;
+}
+
 // FUNCTION: 0x001A9440 SetMainMusicRelVolume__6PSoundFUi
 void PSound::SetMainMusicRelVolume(unsigned int nVolume) {
     unsigned int nClamped = nVolume;
@@ -2606,6 +2644,11 @@ int PSound::MusicSwitchToPrimary(unsigned int nArg) {
         }
     }
     return -1;
+}
+
+// FUNCTION: 0x001A9590 MusicSwitchToSecondary__6PSoundFUiUiUiUi
+int PSound::MusicSwitchToSecondary(unsigned int nFileID, unsigned int nArg1, unsigned int nArg2, unsigned int nArg3) {
+    return 0;
 }
 
 // FUNCTION: 0x001A95A0 FadeMusicOnStream__6PSoundFUiUiUi
@@ -2749,9 +2792,24 @@ int PSound::LoadPrimarySoundBank(unsigned int nArg) {
     return 1;
 }
 
+// FUNCTION: 0x001A9AD0 MakeSoundRef__6PSoundFv
+unsigned int PSound::MakeSoundRef() {
+    return m_unk2E80++;
+}
+
 // FUNCTION: 0x001A9AE0 EnableLevelProcessing__6PSoundFb
 void PSound::EnableLevelProcessing(bool bEnable) {
     EnableProcessTriglets(bEnable);
+}
+
+// FUNCTION: 0x001A9AF0 EnableProcessTriglets__6PSoundFb
+void PSound::EnableProcessTriglets(bool bEnable) {
+    m_unkD0 = bEnable;
+}
+
+// FUNCTION: 0x001A9B00 SetAllowCallOneFrameHasElapsed__6PSoundFb
+void PSound::SetAllowCallOneFrameHasElapsed(bool bAllow) {
+    m_unkD1 = bAllow;
 }
 
 // FUNCTION: 0x001A9B10 GetEEControlStatus__6PSoundFv
@@ -2792,6 +2850,12 @@ void PSound::ReturnControlOfIOPToMjln() {
         LoadingDisplay__9InterfaceFUii(gInterface, 0, 0);
         GetEEControlStatus();
     } while (gSOUND_EEControl != 0);
+}
+
+// FUNCTION: 0x001A9C30 SetEEControlOfIOP__6PSoundFUi
+void PSound::SetEEControlOfIOP(unsigned int nMode) {
+    m_unk2E74 = 1;
+    SOUND_Set_EE_Control(nMode);
 }
 
 // FUNCTION: 0x001A9C40 PSoundShutdown__6PSoundFv
@@ -3031,7 +3095,7 @@ PSound::~PSound() {
 }
 
 // DRAFT: 0x001AA4E0 __ct__6PSoundFv
-// note: DIFF 131 words; loop 1 tail lacks the nop between sltu and bnez, loop 6 pointer register (s2 vs s1), m_unk79F8 store form; unsigned-cast loop end and float block tried, no change
+// note: DIFF 115 words; m_aOneShot is now a typed member the compiler constructs first, so the explicit 0x2220 loop runs twice (dropping it gives 143); every original array loop pads sltu/nop/bnez/nop (011126-style). Earlier at 131: loop 1 tail lacks the nop between sltu and bnez, loop 6 pointer register (s2 vs s1), m_unk79F8 store form; unsigned-cast loop end and float block tried, no change
 PSound::PSound() {
     char *pElem;
 
@@ -3105,6 +3169,11 @@ void PSound::MusicStreamState::ReInit() {
     m_unk04 = 0;
     m_unk0C = 1000;
     m_unk08 = 0;
+}
+
+// FUNCTION: 0x001AA740 Init__Q26PSound16MusicStreamStateFv
+void PSound::MusicStreamState::Init() {
+    ReInit();
 }
 
 // FUNCTION: 0x001AA750 __ct__Q26PSound16MusicStreamStateFv

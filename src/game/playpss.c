@@ -4,6 +4,7 @@
 
 #include "movie.h"
 #include "PMat4.h"
+#include "PSound.h"
 
 // TODO(header): foreign declarations
 extern "C" int sceCdStatus();
@@ -54,8 +55,7 @@ extern "C" void audioDecStart(void *);
 extern "C" void audioDecReset(void *);
 extern "C" void RemoteChangeMasterVolume(int);
 extern "C" void UpdatePad(void *);
-extern "C" float GetMainMusicRelVolume__6PSoundFv(void *);
-extern unsigned char gSound[0x18080];
+extern PSound gSound;
 extern unsigned char gPad[0x1C0];
 extern "C" void *memset(void *, int, unsigned int);
 
@@ -357,7 +357,7 @@ int playPss(int (*arg0)(void *, int), PlayPssRsrcs *arg1, int arg2, unsigned int
     if (gbNoMovieSound != 0) {
         vol = 0;
     } else {
-        vol = (int)GetMainMusicRelVolume__6PSoundFv(gSound);
+        vol = gSound.GetMainMusicRelVolume();
     }
     Movie::BeginFadeMusicVolume(100, (unsigned int)vol);
     isStarted = 0;
