@@ -630,13 +630,17 @@ void EntityManager::InitSwordBGAnimList(PMeshNode *pMesh) {
 }
 
 // DRAFT: 0x00146770 ExecuteApparitions__13EntityManagerFv
-// note: DIFF 146; prologue and pEntity load differ in register roles (orig s3 = i, s5 = byte offset, s4 = this, s0 = nTerminated, s2 = destroy index, s1 = pEntity). Tried byte-offset pointer walk (147), reverted to m_unk5080[i] (146, kept).
+// note: DIFF 71; prologue and pEntity load differ in register roles (orig s3 = i, s5 = byte offset, s4 = this, s0 = nTerminated, s2 = destroy index, s1 = pEntity). Hoisted pEntity and if-form load (146 -> 71); static ApparitionAt helper scored 146.
 void EntityManager::ExecuteApparitions() {
     EntityBaseClass *apTerminated[0x180];
     int nTerminated = 0;
+    EntityBaseClass *pEntity;
     ((Camera *)mCameraAPI)->SetEntityYOffset(0);
     for (unsigned int i = 0; i < m_unk5078; i++) {
-        EntityBaseClass *pEntity = (i < m_unk5078) ? (EntityBaseClass *)m_unk5080[i] : 0;
+        pEntity = 0;
+        if (i < m_unk5078) {
+            pEntity = (EntityBaseClass *)m_unk5080[i];
+        }
         if (pEntity == 0) {
             CdsAssert("EntityManager.cpp", 0x7CB, "pEntity");
         }
