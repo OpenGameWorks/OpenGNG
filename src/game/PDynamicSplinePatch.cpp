@@ -123,8 +123,7 @@ void PDynamicSplinePatch::InitMatrixCache() {
     }
 }
 
-// DRAFT: 0x001F3510 GenerateAndRenderVuSplinePatch__19PDynamicSplinePatchFv
-// note: 2 words differ, both vcallms immediates whose type-119 relocation names the original target: fncmp.py does not mask type 119 and link.py rejects it, so the code itself matches.
+// FUNCTION: 0x001F3510 GenerateAndRenderVuSplinePatch__19PDynamicSplinePatchFv
 void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
     tagLitF4 qCtl;
     float mtx[16];
@@ -269,7 +268,7 @@ void PDynamicSplinePatch::ApplyControlMatrices() {
 
 #pragma global_optimizer on
 // DRAFT: 0x001F39C0 InitSplineKeys__19PDynamicSplinePatchFPfPf
-// note: 6 words differ: the original's `= 1.0f` store address carries an extra `addiu v1,v1,0` between the row and column terms (this+0x1C+row*288+0+col*16); typed m_unk10[r].m_pt[c][3], PSplinePatchRow casts, offsetof-style and `+ 0` spellings fold it or CSE the slot address. One more word is the vcallms immediate (reloc type 119).
+// note: 5 words differ: the original's `= 1.0f` store address carries an extra `addiu v1,v1,0` between the row and column terms (this+0x1C+row*288+0+col*16); typed m_unk10[r].m_pt[c][3], PSplinePatchRow casts, offsetof-style and `+ 0` spellings fold it or CSE the slot address.
 void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {
     float diff[4];
     float cvec[4];

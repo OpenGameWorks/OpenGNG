@@ -39,7 +39,8 @@ import srcmeta  # noqa: E402
 
 ROOT = disasm.ROOT
 LOCAL_STATIC = re.compile(r"\$\d+$")
-MASK = {4: 0xFC000000, 5: 0xFFFF0000, 6: 0xFFFF0000, 7: 0xFFFF0000, 2: 0}
+MASK = {4: 0xFC000000, 5: 0xFFFF0000, 6: 0xFFFF0000, 7: 0xFFFF0000, 2: 0,
+        link.VCALLMS: ~link.VCALLMS_IMM & 0xFFFFFFFF}
 GP = 0x2CBF70  # .reginfo ri_gp_value
 
 

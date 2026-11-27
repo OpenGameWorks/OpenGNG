@@ -34,6 +34,9 @@ import srcmeta  # noqa: E402
 ROOT = disasm.ROOT
 BASE = 0x100000
 GP = 0x2CBF70  # .reginfo ri_gp_value
+# MW's vcallms relocation: a VU0 microprogram address in the instruction's imm15 field (bits 6..20).
+VCALLMS = 119
+VCALLMS_IMM = 0x7FFF << 6
 
 
 def symbol_table() -> tuple[dict[str, int], dict[int, tuple[int, int, str]]]:
@@ -157,6 +160,13 @@ def resolve(obj: Obj, code: bytearray, rels, addr: int, glob, byindex, orel, ima
         if o is None or o[0] != typ:
             return f"reloc {typ} at +{off:#x} absent in original"
         oaddr, osize, oname = byindex[o[1]]
+        if typ == VCALLMS:
+            # A VU0 microprogram address: the original's symbol is undefined (value 0), so
+            # the same target name proves it and the original word supplies the immediate.
+            if sym.name != oname:
+                return f"vcallms target {sym.name} is not the original {oname}"
+            targets.append((off, typ, None))
+            continue
         local = sym["st_info"]["bind"] == "STB_LOCAL" or sym.name.startswith("@")
         if sym["st_info"]["type"] == "STT_SECTION":
             return f"section-relative reloc at +{off:#x}"
@@ -200,6 +210,9 @@ def resolve(obj: Obj, code: bytearray, rels, addr: int, glob, byindex, orel, ima
             v = (w & 0xFFFF0000) | ((s + a - GP) & 0xFFFF)
         elif typ == 2:
             v = (w + s) & 0xFFFFFFFF
+        elif typ == VCALLMS:
+            o = struct.unpack_from("<I", image, addr + off - BASE)[0]
+            v = (w & ~VCALLMS_IMM & 0xFFFFFFFF) | (o & VCALLMS_IMM)
         else:
             return f"unsupported reloc type {typ}"
         struct.pack_into("<I", code, off, v)
