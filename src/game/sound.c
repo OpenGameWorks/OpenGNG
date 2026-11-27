@@ -312,42 +312,49 @@ test:
     return count;
 }
 
-// DRAFT: 0x001AE0D0 SOUND_FindFreeSPUChannel
-// note: 17 words differ: first compare in $at (orig $v0), base/var_a2 swapped between $a2/$a3, hoisted delay slot.
+// FUNCTION: 0x001AE0D0 SOUND_FindFreeSPUChannel
 int SOUND_FindFreeSPUChannel(unsigned int arg0, unsigned int arg1, unsigned int arg2) {
-    unsigned int var_a0;
-    unsigned int var_a2;
-    unsigned int var_v0;
-    unsigned char *temp_a1;
-    unsigned char *temp_t0;
+    unsigned char *base;
+    unsigned char *p;
+    unsigned int i;
 
-    var_a0 = arg0;
-    if (arg0 >= 0x30U) {
+    if (arg0 > 0x2FU) {
         return -2;
     }
-    if ((arg1 < var_a0) || (arg1 >= 0x30U)) {
+    if ((arg1 < arg0) || (arg1 > 0x2FU)) {
         return -3;
     }
-    var_a2 = arg2 + 1;
-    if ((var_a2 < var_a0) || (arg1 < var_a2)) {
-        var_a2 = var_a0;
+    arg2 += 1;
+    if ((arg2 < arg0) || (arg1 < arg2)) {
+        arg2 = arg0;
     }
-    var_v0 = var_a2;
-    while (var_v0 <= arg1) {
-        temp_t0 = (unsigned char *)&SOUND_SPUKeyStatus[var_v0];
-        if (*temp_t0 == 0) {
-            *temp_t0 = 3;
-            return var_v0;
-        }
-        var_v0 += 1;
+    base = (unsigned char *)SOUND_SPUKeyStatus;
+    i = arg2;
+    goto test1;
+loop1:
+    p = base + i;
+    if (*p == 0) {
+        *p = 3;
+        return i;
     }
-    while (var_a0 < var_a2) {
-        temp_a1 = (unsigned char *)&SOUND_SPUKeyStatus[var_a0];
-        if (*temp_a1 == 0) {
-            *temp_a1 = 3;
-            return var_a0;
-        }
-        var_a0 += 1;
+    i += 1;
+test1:
+    if (i <= arg1) {
+        goto loop1;
+    }
+    base = (unsigned char *)SOUND_SPUKeyStatus;
+    i = arg0;
+    goto test2;
+loop2:
+    p = base + i;
+    if (*p == 0) {
+        *p = 3;
+        return i;
+    }
+    i += 1;
+test2:
+    if (i < arg2) {
+        goto loop2;
     }
     return -1;
 }
