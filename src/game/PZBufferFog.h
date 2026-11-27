@@ -43,7 +43,7 @@ public:
 
     char _pad0000[0x12F0];                      // 0x0000
     char m_unk12F0[0x60];                       // 0x12F0 tagGsClut256
-    char m_unk1350[0x400];                      // 0x1350 GsRGBA clut table
+    unsigned char m_unk1350[0x400];                      // 0x1350 GsRGBA clut table
     int m_unk1750;                              // 0x1750
     float m_unk1754;                            // 0x1754
     float m_unk1758;                            // 0x1758

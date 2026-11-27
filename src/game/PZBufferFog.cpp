@@ -326,59 +326,26 @@ void PZBufferFog::Animate(float fDelta) {
     }
 }
 
-// DRAFT: 0x1CEC10 Init__11PZBufferFogFv
+// FUNCTION: 0x1CEC10 Init__11PZBufferFogFv
 void PZBufferFog::Init() {
     int nX = *(int *)(gGfxEng + 0x158E04);
-    int nA = (nX < 0 ? nX + 0x1FFF : nX) >> 13;
+    short nA = (nX * 0x2000) / 0x2000;
     int nY = *(int *)(gGfxEng + 0x158DF0);
-    int nB = (nY < 0 ? nY + 0x1FFF : nY) >> 13;
+    int nB = nY / 0x2000;
     GsInitMoveRG2BAPacket((tagMoveRgToBaPacket *)this, (short)(nA << 5), (short)nB, (short)nA, (short)(SCREEN_HEIGHT << 1));
     GsInitFogSprite((tagFogSpritePacket *)((char *)this + 0xAD0), 0, 0, 0, 0x7FFF);
     m_unk17AA = 0;
     GsInitClut256((tagGsClut256 *)m_unk12F0);
     GsInitTexturedFogSprite((tagTexturedFogSpritePacket *)((char *)this + 0xDA0), 0, 0, 0, 0x7FFF);
-    int nGroup = 0;
-    int nOff = 0;
-    do {
-        char *pRow = (char *)this + nOff;
-        pRow[0x1350] = (char)0x80;
-        pRow[0x1351] = (char)0x80;
-        pRow[0x1352] = (char)0x80;
-        pRow[0x1353] = (char)(0x81 - nGroup);
-        pRow[0x1354] = (char)0x80;
-        pRow[0x1355] = (char)0x80;
-        pRow[0x1356] = (char)0x80;
-        pRow[0x1357] = (char)(0x81 - (nGroup + 1));
-        pRow[0x1358] = (char)0x80;
-        pRow[0x1359] = (char)0x80;
-        pRow[0x135A] = (char)0x80;
-        pRow[0x135B] = (char)(0x81 - (nGroup + 2));
-        pRow[0x135C] = (char)0x80;
-        pRow[0x135D] = (char)0x80;
-        pRow[0x135E] = (char)0x80;
-        pRow[0x135F] = (char)(0x81 - (nGroup + 3));
-        pRow[0x1360] = (char)0x80;
-        pRow[0x1361] = (char)0x80;
-        pRow[0x1362] = (char)0x80;
-        pRow[0x1363] = (char)(0x81 - (nGroup + 4));
-        pRow[0x1364] = (char)0x80;
-        pRow[0x1365] = (char)0x80;
-        pRow[0x1366] = (char)0x80;
-        pRow[0x1367] = (char)(0x81 - (nGroup + 5));
-        pRow[0x1368] = (char)0x80;
-        pRow[0x1369] = (char)0x80;
-        pRow[0x136A] = (char)0x80;
-        pRow[0x136B] = (char)(0x81 - (nGroup + 6));
-        pRow[0x136C] = (char)0x80;
-        pRow[0x136D] = (char)0x80;
-        pRow[0x136E] = (char)0x80;
-        pRow[0x136F] = (char)(0x81 - (nGroup + 7));
-        nOff += 0x20;
-        nGroup += 8;
-    } while (nGroup < 0x80);
-    m_unk1350[0] = (char)0x80;
-    m_unk1350[1] = (char)0x80;
-    m_unk1350[2] = (char)0x80;
+    for (int i = 0; i < 0x80; i++) {
+        m_unk1350[i * 4 + 0] = 0x80;
+        m_unk1350[i * 4 + 1] = 0x80;
+        m_unk1350[i * 4 + 2] = 0x80;
+        m_unk1350[i * 4 + 3] = 0x81 - i;
+    }
+    m_unk1350[0] = 0x80;
+    m_unk1350[1] = 0x80;
+    m_unk1350[2] = 0x80;
     m_unk1350[3] = 0;
     GsSwizzleClut((tagGsClut256 *)m_unk12F0);
     *(long long *)((char *)this + 0xDC0) = 0x44;
@@ -389,10 +356,10 @@ void PZBufferFog::Init() {
     m_unk1770[1] = 0;
     m_unk1770[0] = 0;
     m_unk1770[3] = 0x3F800000;
-    m_unk1780[3] = 0x3F800000;
     m_unk1780[2] = 0;
     m_unk1780[1] = 0;
     m_unk1780[0] = 0;
+    m_unk1780[3] = 0x3F800000;
     m_unk17A9 = 0;
     m_unk17A4 = 0;
     m_unk17A0 = 0;
