@@ -21,45 +21,71 @@ extern "C" void *__nwa__FUi(unsigned int nSize);
 float FastMath_Fabs(float fVal);
 void FastMath_RotateMatrix(float (*pA)[4][4], float (*pB)[4][4], float (*pRot)[4], float (*pC)[4][4]);
 
-// DRAFT: 0x1FAC10 Render__15PScrollingTreesFv
-// note: 115 words; frame 0x90 vs 0x80; this in s7 vs s0; first-call args and gUnitMatrix load order; loop 1 offset reg s6 (addu s6,s7,s5). Tried: local class stubs, nCount removal, per-iter entry pointer (118), nTotal after first call (115, kept), this-derived loop 2 base (no change).
+// A level-of-detail list inside a scrolling-tree record: count at +8, entries at +0xC.
+struct PScrollingTreeLod {
+    int nSize;
+    void *pData;
+};
+struct PScrollingTreeLodList {
+    unsigned int n;
+    PScrollingTreeLod *p;
+    int Size(unsigned int i) { return (i < n) ? p[i].nSize : 0; }
+    void *Data(unsigned int i) { return (i < n) ? p[i].pData : 0; }
+};
+
+// The original strength-reduces the outer entry offset (written out as nOff) but indexes
+// the inner LOD entries with `sll j,3` on every access.
+#pragma opt_strength_reduction off
+// FUNCTION: 0x1FAC10 Render__15PScrollingTreesFv
 int PScrollingTrees::Render() {
-    ((PGfxEngine *)gGfxEng)->SetWorldMatrix((PMat4 *)gUnitMatrix);
     int nTotal = 0;
-    for (int i = 0; i < 3; i++) {
-        char *pRec = (char *)m_unk34[i].m_unk0;
+    int i;
+    char *pRec;
+    int nOff;
+    unsigned int j;
+    char *pE;
+    int k;
+    char *pRec2;
+    int nOff2;
+    unsigned int j2;
+    char *pE2;
+    ((PGfxEngine *)gGfxEng)->SetWorldMatrix((PMat4 *)gUnitMatrix);
+    for (i = 0, nOff = 0; i < 3; i++) {
+        pE = (char *)this + nOff;
+        pRec = *(char **)(pE + 0x34);
         if (pRec != 0) {
             ((PShader *)*(void **)pRec)->Render(0x80, false, 0);
-            for (int j = 0; j < *(int *)(pRec + 8); j++) {
-                int nCount = *(int *)(pRec + 8);
-                int nSize = (j < nCount) ? *(int *)(*(char **)(pRec + 0xC) + j * 8) : 0;
-                void *pData = (j < nCount) ? *(void **)(*(char **)(pRec + 0xC) + j * 8 + 4) : 0;
+            for (j = 0; j < *(unsigned int *)(pRec + 8); j++) {
+                int nSize = ((PScrollingTreeLodList *)(pRec + 8))->Size(j);
+                void *pData = ((PScrollingTreeLodList *)(pRec + 8))->Data(j);
                 ((PGfxEngine *)gGfxEng)->BeginStaticInstances(pData, nSize);
                 ((PDisplayList *)*(void **)(gGfxEng + 0x154C80))->DrawStaticInstances(
-                    (tagVuStaticInstance *)m_unk34[i].m_unk4, m_unk34[i].m_unk8, 0x28, 0, 1, true);
+                    (tagVuStaticInstance *)*(void **)(pE + 0x38), *(int *)(pE + 0x3C), 0x28, 0, 1, true);
             }
-            nTotal += *(int *)(pRec + 4) * m_unk34[i].m_unk8;
+            nTotal += *(int *)(pE + 0x3C) * *(int *)(pRec + 4);
         }
+        nOff += 0x10;
     }
-    for (int k = 0; k < 8; k++) {
-        char *pBase = m_unk70 + k * 0xC0;
-        char *pRec = *(char **)pBase;
-        if (pRec != 0) {
-            ((PShader *)*(void **)pRec)->Render(0x80, false, 0);
-            for (int j = 0; j < *(int *)(pRec + 8); j++) {
-                int nCount = *(int *)(pRec + 8);
-                int nSize = (j < nCount) ? *(int *)(*(char **)(pRec + 0xC) + j * 8) : 0;
-                void *pData = (j < nCount) ? *(void **)(*(char **)(pRec + 0xC) + j * 8 + 4) : 0;
+    for (k = 0, nOff2 = 0; k < 8; k++) {
+        pE2 = (char *)this + nOff2;
+        pRec2 = *(char **)(pE2 + 0x70);
+        if (pRec2 != 0) {
+            ((PShader *)*(void **)pRec2)->Render(0x80, false, 0);
+            for (j2 = 0; j2 < *(unsigned int *)(pRec2 + 8); j2++) {
+                int nSize = ((PScrollingTreeLodList *)(pRec2 + 8))->Size(j2);
+                void *pData = ((PScrollingTreeLodList *)(pRec2 + 8))->Data(j2);
                 ((PGfxEngine *)gGfxEng)->BeginStaticInstances(pData, nSize);
                 ((PDisplayList *)*(void **)(gGfxEng + 0x154C80))->DrawStaticInstances(
-                    (tagVuStaticInstance *)(pBase + 0x10), *(int *)(pBase + 0xB0), 0x28, 0, 1, true);
+                    (tagVuStaticInstance *)(pE2 + 0x80), *(int *)(pE2 + 0x120), 0x28, 0, 1, true);
             }
-            nTotal += *(int *)(pRec + 4) * *(int *)(pBase + 0xB0);
+            nTotal += *(int *)(pE2 + 0x120) * *(int *)(pRec2 + 4);
         }
+        nOff2 += 0xC0;
     }
     return nTotal;
 }
 
+#pragma opt_strength_reduction reset
 // FUNCTION: 0x1FAE50 Animate__15PScrollingTreesFf
 void PScrollingTrees::Animate(float fTime) {
     float fStep = m_unk30 * fTime;
