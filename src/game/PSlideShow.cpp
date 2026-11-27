@@ -483,42 +483,34 @@ void *PSlideShow::CreateImagePacket(int &nOffset, tagTile *pTile)
     return pPacket;
 }
 
+inline void SetGsRegPair(void *pEntry, long long data, long long reg) {
+    ((long long *)pEntry)[0] = data;
+    ((long long *)pEntry)[1] = reg;
+}
+
 // DRAFT: 0x00216000 Render__10PSlideShowFv
-// note: 80 differing words; quad stores and constant scheduling differ (original loads 0x18/0x1B and 0x44/0x42 into v0/v1 before storing and keeps sp+0x30 in a0). Tried: direct array stores (80), pointer cursor per quad (80).
+// note: 57 differing words; both blocks' GS pairs use SetGsRegPair, and the display-list pointer is `(char *)((int)&gGfxEng + 0x154C80)`. Still differs: pair 3 (0x30000/0x47) loads its constants into swapped registers, the second block's stores and address arithmetic are scheduled differently (addu operand order). Tried: direct array stores (80), pointer cursor per quad (80), plain stores for pair 3 (75), pair 2/3 swapped (61), pointer as `&gGfxEng + 0x154C80` (folds the base away), `0x154C80 + (int)&gGfxEng` (same 57), second-block zero/0x1A store swap (57).
 void PSlideShow::Render()
 {
     long long aGs[8];
-    long long *p;
 
     gGfxEng.SetZBufferUpdate(false, (eGsContext)0);
     if (m_nNextImage != 0) {
         aGs[0] = 0;
         aGs[1] = 0x1A;
-        p = &aGs[2];
-        p[0] = 0x18;
-        p[1] = 0x1B;
-        p = &aGs[4];
-        p[0] = 0x44;
-        p[1] = 0x42;
-        p = &aGs[6];
-        p[0] = 0x30000;
-        p[1] = 0x47;
-        gGfxEng.m_unk154C80->SetGsRegisters((u_long128 *)aGs, 4);
+        SetGsRegPair(&aGs[2], 0x18, 0x1B);
+        SetGsRegPair(&aGs[4], 0x44, 0x42);
+        SetGsRegPair(&aGs[6], 0x30000, 0x47);
+        ((PDisplayList *)*(void **)((char *)((int)&gGfxEng + 0x154C80)))->SetGsRegisters((u_long128 *)aGs, 4);
         gGfxEng.SetTexture(m_nNextImage);
         gUnk45B300.m_pdl->SendGsPacket(m_unk28, m_unk2C, false);
     }
     aGs[0] = 0;
     aGs[1] = 0x1A;
-    p = &aGs[2];
-    p[0] = ((long long)m_ucUnk42 << 6) | 0x18;
-    p[1] = 0x1B;
-    p = &aGs[4];
-    p[0] = 0x44;
-    p[1] = 0x42;
-    p = &aGs[6];
-    p[0] = 0x30000;
-    p[1] = 0x47;
-    gGfxEng.m_unk154C80->SetGsRegisters((u_long128 *)aGs, 4);
+    SetGsRegPair(&aGs[2], ((long long)m_ucUnk42 << 6) | 0x18, 0x1B);
+    SetGsRegPair(&aGs[4], 0x44, 0x42);
+    SetGsRegPair(&aGs[6], 0x30000, 0x47);
+    ((PDisplayList *)*(void **)((char *)&gGfxEng + 0x154C80))->SetGsRegisters((u_long128 *)aGs, 4);
     gGfxEng.SetTexture(m_unk04);
     gUnk45B300.m_pdl->SendGsPacket(m_unk24, m_unk2C, true);
     gGfxEng.SetZBufferUpdate(true, (eGsContext)0);
