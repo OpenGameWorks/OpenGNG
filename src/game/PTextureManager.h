@@ -58,6 +58,8 @@ public:
     int m_unkAC;               // 0x0AC
 };
 
+#define MAX_TEX_PER_BATCH 0x30
+
 // One of the two per-frame texture lists owned by PTextureManager.
 class PTextureBuffer {
 public:
@@ -67,8 +69,8 @@ public:
     int m_unkC;                 // 0x0C
     int m_unk10;                // 0x10
     int m_unk14;                // 0x14
-    PTexture *m_apTex[0x30];    // 0x18
-    int m_unkD8;                // 0xD8
+    PTexture *m_apTex[MAX_TEX_PER_BATCH]; // 0x18
+    int iCurEntry;              // 0xD8 next free m_apTex slot (assert "mpCurDynamicBuffer->iCurEntry")
 };
 
 class PTextureManager {
@@ -115,7 +117,7 @@ public:
     int m_unk10;                // 0x010
     PTextureBuffer m_aBuf0;     // 0x014
     PTextureBuffer m_aBuf1;     // 0x0F0
-    PTextureBuffer *m_pCurBuf;  // 0x1CC
+    PTextureBuffer *mpCurDynamicBuffer; // 0x1CC
     void *m_unk1D0;             // 0x1D0
     int m_unk1D4;               // 0x1D4
     int m_unk1D8;               // 0x1D8

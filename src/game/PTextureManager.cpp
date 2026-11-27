@@ -125,7 +125,7 @@ void PTextureManager::KickDmaChain(void *pBuf, bool bWait) {
 }
 
 // DRAFT: 0x00189590 PrepareStaticTextureForDma__15PTextureManagerFP1P19tagPs2TexDataHeaderPvPvP23tagGsTextureEnvironment
-// note: 5 words differ: nWidth goes to t1 in the original (ours t0) at 0x0F8/0x0FC and the 0x128 copy direction is reversed; lw a3,unk8 precedes lb t2,unk4 at 0x1A0/0x1A8; tried nWidth declared last and nWidth as a ternary, both still 5
+// note: 3 words: nWidth goes to t1 in the original (ours t0) at 0x0F8/0x0FC and the 0x128 copy direction is reversed. (unsigned int)unk8 fixed the lw a3/lb t2 order (5->3). Tried nWidth declared last, in the block, initialised, unsigned, as a ternary, separate width/height locals (70), casts on each clut argument (3).
 int PTextureManager::PrepareStaticTextureForDma(u_long128 *pDmaChain, tagPs2TexDataHeader *pTexHeader, void *pvTexClutPacket, void *pvTexImagePacket, tagGsTextureEnvironment *pTexEnv) {
     int nQwords = 0;
     int nWidth;
@@ -157,7 +157,7 @@ int PTextureManager::PrepareStaticTextureForDma(u_long128 *pDmaChain, tagPs2TexD
         nH = 1 << pTexHeader->unk7;
     }
     nBase = m_unk4 / 256 + pTexHeader->unk2A;
-    PrepareImageDmaPacket(pPacket, pvTexImagePacket, pTexHeader->unk8, nW, nH, pTexHeader->unk4, nBase);
+    PrepareImageDmaPacket(pPacket, pvTexImagePacket, (unsigned int)pTexHeader->unk8, nW, nH, pTexHeader->unk4, nBase);
     GsSetTexBaseAddr(pTexEnv, nBase << 8);
     m_unk10 += pTexHeader->unk26 << 8;
     return nQwords + 7;
@@ -315,7 +315,7 @@ int PTextureManager::AllocDynamicVramForTexture(tagPs2TexDataHeader *pHeader, in
         }
         return 0;
     }
-    pBuf = m_pCurBuf;
+    pBuf = mpCurDynamicBuffer;
     if (pBuf->m_unk4 < nSize) {
         return 0;
     }
@@ -328,22 +328,22 @@ flip:
         bOut = true;
         FlipTextureBuffers();
     }
-    nVram = m_pCurBuf->m_unk8;
-    nTmp = m_pCurBuf->m_unk14;
+    nVram = mpCurDynamicBuffer->m_unk8;
+    nTmp = mpCurDynamicBuffer->m_unk14;
     if (nSecond != 0) {
         nVram = nSecond * ((nVram + nSecond - 1) / nSecond);
     }
-    m_pCurBuf->m_unk8 = m_pCurBuf->m_unk8 + nSize;
-    m_pCurBuf->m_unk14 = m_pCurBuf->m_unk14 + nShift5;
+    mpCurDynamicBuffer->m_unk8 = mpCurDynamicBuffer->m_unk8 + nSize;
+    mpCurDynamicBuffer->m_unk14 = mpCurDynamicBuffer->m_unk14 + nShift5;
     return 1;
 }
 
 // FUNCTION: 0x00189F80 FlipTextureBuffers__15PTextureManagerFv
 void PTextureManager::FlipTextureBuffers() {
-    m_pCurBuf = (m_pCurBuf == &m_aBuf0) ? &m_aBuf1 : &m_aBuf0;
-    m_pCurBuf->m_unk8 = m_pCurBuf->m_unk0;
-    m_pCurBuf->m_unk14 = m_pCurBuf->m_unkC;
-    m_pCurBuf->m_unkD8 = 0;
+    mpCurDynamicBuffer = (mpCurDynamicBuffer == &m_aBuf0) ? &m_aBuf1 : &m_aBuf0;
+    mpCurDynamicBuffer->m_unk8 = mpCurDynamicBuffer->m_unk0;
+    mpCurDynamicBuffer->m_unk14 = mpCurDynamicBuffer->m_unkC;
+    mpCurDynamicBuffer->iCurEntry = 0;
     for (int i = 0; i < 0x30; i++) {
         if (m_aBuf0.m_apTex[i] != 0) {
             m_aBuf0.m_apTex[i]->m_unkA8 = 0;
@@ -421,8 +421,7 @@ void PTextureManager::UploadDynamicTexturesToVram(int *pArray, int nCount, int n
     MemMgr.DeAllocateAligned(pBuf);
 }
 
-// DRAFT: 0x0018A3C0 AllocRenderedTexture__15PTextureManagerFiiRbb
-// note: store block at 0x108-0x118 pairs base/index registers reversed (v1 base, v0 index in ours; v0 base, v1 index in original); 7 variants tried.
+// FUNCTION: 0x0018A3C0 AllocRenderedTexture__15PTextureManagerFiiRbb
 int PTextureManager::AllocRenderedTexture(int nHandle, int nSecond, bool &bOut, bool bFlag) {
     PTexture::eTextureType eType = (PTexture::eTextureType)0;
     bool bDecFlag = 0;
@@ -444,11 +443,9 @@ int PTextureManager::AllocRenderedTexture(int nHandle, int nSecond, bool &bOut, 
             CdsAssert("PTextureManager.cpp", 0x513, "0");
         }
         pTex->m_unkA8 = 1;
-        PTexture **ppSlot = m_pCurBuf->m_apTex;
-        ppSlot += m_pCurBuf->m_unkD8;
-        *ppSlot = pTex;
-        m_pCurBuf->m_unkD8++;
-        if (m_pCurBuf->m_unkD8 >= 0x30) {
+        *(PTexture **)((unsigned int)mpCurDynamicBuffer->m_apTex + (mpCurDynamicBuffer->iCurEntry << 2)) = pTex;
+        mpCurDynamicBuffer->iCurEntry++;
+        if (mpCurDynamicBuffer->iCurEntry >= MAX_TEX_PER_BATCH) {
             CdsAssert("PTextureManager.cpp", 0x520, "mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH");
         }
         GsSetTexBaseAddr((tagGsTextureEnvironment *)pTex->m_unk40, nVram);
@@ -826,13 +823,13 @@ void PTextureManager::ResetDynamicBuffers() {
     } while (i < 0x30);
     memset(m_aBuf0.m_apTex, 0, 0xC0);
     memset(m_aBuf1.m_apTex, 0, 0xC0);
-    m_aBuf0.m_unkD8 = 0;
-    m_aBuf1.m_unkD8 = 0;
+    m_aBuf0.iCurEntry = 0;
+    m_aBuf1.iCurEntry = 0;
     m_aBuf0.m_unk8 = m_aBuf0.m_unk0;
     m_aBuf0.m_unk14 = m_aBuf0.m_unkC;
     m_aBuf1.m_unk8 = m_aBuf1.m_unk0;
     m_aBuf1.m_unk14 = m_aBuf1.m_unkC;
-    m_pCurBuf = &m_aBuf0;
+    mpCurDynamicBuffer = &m_aBuf0;
 }
 
 // FUNCTION: 0x0018B4E0 PrepareDynamicClutPacket__15PTextureManagerFP12tagGsClut256P23tagGsTextureEnvironmentbP12PDisplayList
@@ -891,11 +888,11 @@ int PTextureManager::UploadTextures(int *pHandles, int nCount, PDisplayList *pDi
         }
     }
 
-    if (m_pCurBuf->m_unk4 < (nSum1 << 8) || m_pCurBuf->m_unk10 < (nSum2 << 8)) {
+    if (mpCurDynamicBuffer->m_unk4 < (nSum1 << 8) || mpCurDynamicBuffer->m_unk10 < (nSum2 << 8)) {
         return 0;
     }
-    if (!(m_pCurBuf->m_unk8 + (nSum1 << 8) < m_pCurBuf->m_unk0 + m_pCurBuf->m_unk4 &&
-          m_pCurBuf->m_unk14 + (nSum2 << 8) < m_pCurBuf->m_unkC + m_pCurBuf->m_unk10)) {
+    if (!(mpCurDynamicBuffer->m_unk8 + (nSum1 << 8) < mpCurDynamicBuffer->m_unk0 + mpCurDynamicBuffer->m_unk4 &&
+          mpCurDynamicBuffer->m_unk14 + (nSum2 << 8) < mpCurDynamicBuffer->m_unkC + mpCurDynamicBuffer->m_unk10)) {
         FlipTextureBuffers();
         ((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->NextBatch();
         SetTexSyncPacket__12PDisplayListFv(pDisplayList);
@@ -923,9 +920,9 @@ int PTextureManager::UploadTextures(int *pHandles, int nCount, PDisplayList *pDi
                 CDS_ASSERT_MSG(0x2FE, AllocDynamicVramForTexture(pHeader, 0, nVram, nTmp, bLocal, false), "0");
                 CDS_ASSERT_MSG(0x308, !bLocal, "abBufferFlipped == false");
                 pTex->m_unkA8 = 1;
-                m_pCurBuf->m_apTex[m_pCurBuf->m_unkD8] = pTex;
-                m_pCurBuf->m_unkD8++;
-                CDS_ASSERT_MSG(0x30F, m_pCurBuf->m_unkD8 < 0x30, "mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH");
+                mpCurDynamicBuffer->m_apTex[mpCurDynamicBuffer->iCurEntry] = pTex;
+                mpCurDynamicBuffer->iCurEntry++;
+                CDS_ASSERT_MSG(0x30F, mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH, "mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH");
 
                 if (pHeader->type == 0x14 || pHeader->type == 0x13) {
                     pClut = (tagImageDmaPacket *)((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->AllocEntries(0xE);
@@ -988,11 +985,11 @@ int PTextureManager::SetTextures(int *pHandles, int nCount, PDisplayList *pDispl
         }
     }
 
-    if (m_pCurBuf->m_unk4 < (nSum1 << 8) || m_pCurBuf->m_unk10 < (nSum2 << 8)) {
+    if (mpCurDynamicBuffer->m_unk4 < (nSum1 << 8) || mpCurDynamicBuffer->m_unk10 < (nSum2 << 8)) {
         return 0;
     }
-    if (!(m_pCurBuf->m_unk8 + (nSum1 << 8) < m_pCurBuf->m_unk0 + m_pCurBuf->m_unk4 &&
-          m_pCurBuf->m_unk14 + (nSum2 << 8) < m_pCurBuf->m_unkC + m_pCurBuf->m_unk10)) {
+    if (!(mpCurDynamicBuffer->m_unk8 + (nSum1 << 8) < mpCurDynamicBuffer->m_unk0 + mpCurDynamicBuffer->m_unk4 &&
+          mpCurDynamicBuffer->m_unk14 + (nSum2 << 8) < mpCurDynamicBuffer->m_unkC + mpCurDynamicBuffer->m_unk10)) {
         FlipTextureBuffers();
         ((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->NextBatch();
         bOut = true;
@@ -1023,9 +1020,9 @@ int PTextureManager::SetTextures(int *pHandles, int nCount, PDisplayList *pDispl
                         CDS_ASSERT_MSG(0x24B, AllocDynamicVramForTexture(pHeader, 0, nVram, nTmp, bLocal, false), "0");
                         CDS_ASSERT_MSG(0x24F, !bLocal, "abBufferFlipped == false");
                         pTex->m_unkA8 = 1;
-                        m_pCurBuf->m_apTex[m_pCurBuf->m_unkD8] = pTex;
-                        m_pCurBuf->m_unkD8++;
-                        CDS_ASSERT_MSG(0x256, m_pCurBuf->m_unkD8 < 0x30, "mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH");
+                        mpCurDynamicBuffer->m_apTex[mpCurDynamicBuffer->iCurEntry] = pTex;
+                        mpCurDynamicBuffer->iCurEntry++;
+                        CDS_ASSERT_MSG(0x256, mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH, "mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH");
 
                         if (pHeader->type == 0x14 || pHeader->type == 0x13) {
                             pClut = (tagImageDmaPacket *)((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->AllocEntries(0xE);
@@ -1091,9 +1088,9 @@ void PTextureManager::SetTexture(int nHandle, PDisplayList *pDisplayList, tagGsT
     CDS_ASSERT_MSG(0x172, eType == 1, "aeType == PTexture::TEXTURE_IMAGE");
     CDS_ASSERT_MSG(0x180, AllocDynamicVramForTexture(pHeader, 0, nVram, nTmp, bLocal, false), "0");
     pTex->m_unkA8 = 1;
-    m_pCurBuf->m_apTex[m_pCurBuf->m_unkD8] = pTex;
-    m_pCurBuf->m_unkD8++;
-    CDS_ASSERT_MSG(0x189, m_pCurBuf->m_unkD8 < 0x30, "mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH");
+    mpCurDynamicBuffer->m_apTex[mpCurDynamicBuffer->iCurEntry] = pTex;
+    mpCurDynamicBuffer->iCurEntry++;
+    CDS_ASSERT_MSG(0x189, mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH, "mpCurDynamicBuffer->iCurEntry < MAX_TEX_PER_BATCH");
     if (bLocal) {
         ((PTextureDmaChain *)((char *)pDisplayList + 0xA3380))->NextBatch();
     }
@@ -1188,7 +1185,7 @@ int PTextureManager::Init(int nTexMemStart, int nStaticSize, int nDynamicSize) {
     m_aBuf1.m_unkC = m_aBuf1.m_unk0 + m_aBuf1.m_unk4;
     m_aBuf1.m_unk14 = m_aBuf1.m_unkC;
     m_aBuf1.m_unk10 = 0x8000;
-    m_pCurBuf = &m_aBuf0;
+    mpCurDynamicBuffer = &m_aBuf0;
     UnloadStaticTextures();
     m_unk1D0 = 0;
     m_unk1D4 = 0;
@@ -1218,7 +1215,7 @@ extern "C" PTextureManager *__ct__15PTextureManagerFv(PTextureManager *volatile 
     pThis->m_unkC = 0;
     memset(&pThis->m_aBuf0, 0, 0xDC);
     memset(&pThis->m_aBuf1, 0, 0xDC);
-    pThis->m_pCurBuf = 0;
+    pThis->mpCurDynamicBuffer = 0;
     pThis->m_unk1D0 = 0;
     pThis->m_unk1D4 = 0;
     pThis->m_unk1D8 = 0;
