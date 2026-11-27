@@ -70,7 +70,7 @@ int PArray::Remove(void *pItem) {
 }
 
 // DRAFT: 0x0012EDA0 InsertBefore__6PArrayFPv
-// note: 34 words, size 0x148 vs 0x14c; grow path loads/loop registers differ (lw a0 vs a1 at 0x44, delay-slot a0 zeroing, slt vs sltu at 0xBC, loop uses v1 index); pFree=0 in else branch is best so far
+// note: 33 words; unsigned grow-copy index (sltu, was slt) fixed one diff. Remaining: a1/a0 temp for m_unkC (original zeroes pFree in the bnez delay slot, ours in the else arm); shift-loop and grow-loop layout differ. Tried: pFree=0 hoisted above the if (63 words, both void** and void*), pFree=0 in else (33), fresh nCap local (33), while-form shift loop (33)
 void PArray::InsertBefore(void *pItem) {
     if (m_unk4 < 0) {
         CdsAssert__FPciPc("PArray.cpp", 0x87, "miCurrent >= 0");
@@ -87,7 +87,7 @@ void PArray::InsertBefore(void *pItem) {
         m_unk8 = pNew;
         pFree = pSrc;
         pDst = pNew;
-        for (unsigned int i = 0; (int)i < m_unk4; i++) {
+        for (unsigned int i = 0; i < m_unk4; i++) {
             pDst[i] = pSrc[i];
         }
     } else {
@@ -135,17 +135,17 @@ void PArray::Add(void *pItem) {
 }
 
 // DRAFT: 0x0012EFE0 Allocate__6PArrayFUi
-// note: 51 words, size 0xdc vs 0xe4; prologue swaps this (s1 orig, s0 ours) and nAlloc (s0 orig, s1 ours); tried nAlloc copy, uninit decl, early return, nSize kept live, nested if
+// note: 4 words; original reuses the nSize register for the rounded size (nSize = (nSize+3)&~3u), which fixed the register swap. Remaining 4 words are the short-loop nop before the copy loop's bnez plus the one-word shift at its beqz: the padding idiom, matches under 011126 (not verifiable here)
 void PArray::Allocate(unsigned int nSize) {
     if (nSize != 0) {
-        unsigned int nAlloc = (nSize + 3) & ~3u;
-        void **pNew = (void **)__nwa__FUi(nAlloc * 4);
+        nSize = (nSize + 3) & ~3u;
+        void **pNew = (void **)__nwa__FUi(nSize * 4);
         if (pNew == 0) {
             CdsAssert__FPciPc("PArray.cpp", 0x2A, "pNew");
         }
         if (m_unk8 != 0) {
             if (m_unk0 != 0) {
-                if (nAlloc < m_unk0) {
+                if (nSize < m_unk0) {
                     CdsAssert__FPciPc("PArray.cpp", 0x2D, "iSize >= muNumArray");
                 }
                 unsigned int n = m_unk0;
@@ -163,7 +163,7 @@ void PArray::Allocate(unsigned int nSize) {
             __dla__FPv(m_unk8);
         }
         m_unk8 = pNew;
-        m_unkC = nAlloc;
+        m_unkC = nSize;
         m_unk4 = 0;
     }
 }
