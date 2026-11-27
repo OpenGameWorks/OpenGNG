@@ -3105,8 +3105,7 @@ void Player::GrimSlashMove() {
     }
 }
 
-// DRAFT: 0x0015EAC0 GrimAirSlashMove__6PlayerFv
-// note: 4 words differ: ComboTarget float literal loads in reverse order (f12 before f13); `temp > 6` fixed the $at compare (was 6); float locals and early-return form tried, same count.
+// FUNCTION: 0x0015EAC0 GrimAirSlashMove__6PlayerFv
 void Player::GrimAirSlashMove() {
     int temp = (int)m_unk3C[13];
     if (temp > 6) {
@@ -3114,7 +3113,8 @@ void Player::GrimAirSlashMove() {
             m_unk250 = 1;
         }
         if (temp >= 0xC && m_unk250 != 0) {
-            ComboTarget(-1.0f, 100.0f, true);
+            float fD = -1.0f;
+            ComboTarget(fD, 100.0f, true);
             SetAction(0x26);
         }
     }
