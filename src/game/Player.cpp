@@ -5848,17 +5848,20 @@ int Player::GameVarSet(unsigned int arg0, int arg1) {
 
 // note: 31 differing lines; original keeps the row base in a2 and counter in a0 with mbHard loaded first; ours uses a1/a0 and a different loop shape. Tried: first loop form (about 30), base pointer ComboLevel[mb*10] (32), mb/thr locals first (31, kept).
 // DRAFT: 0x00165B90 GetComboLevel__6PlayerFv
-// note: 29 differing words; original has mb in a2, thr in a1, off in a3, i in a0, and a different tail sum order (ComboLevel+4 then row then i*8). Tried: base pointer, unsigned i, decl orders, &ComboLevel[1] tail, explicit pointer walk, for-loop form.
+// note: 26 differing words with the goto-entered loop (was 29); original has mb in a2, thr in a1, off in a3, i in a0, and a different tail sum order (ComboLevel+4 then row then i*8). Tried: base pointer, unsigned i, decl orders, &ComboLevel[1] tail, explicit pointer walk, for-loop form.
 int Player::GetComboLevel() {
     unsigned int i = 0;
     int off = 0;
     int mb = mbHard__15EntityBaseClass;
     int thr = m_unk220;
     char *base = (char *)ComboLevel + mb * 0x28;
-    while (i < 10) {
-        if (*(int *)(base + off) >= thr) { break; }
-        off += 8;
-        i++;
-    }
+    goto test;
+loop:
+    if (*(int *)(base + off) >= thr) { goto done; }
+    off += 8;
+    i++;
+test:
+    if (i < 10) goto loop;
+done:
     return *(int *)((char *)&ComboLevel[1] + mb * 0x28 + i * 8);
 }
