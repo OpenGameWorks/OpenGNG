@@ -828,7 +828,7 @@ void PGfxEngine::SetDirLightColor(int nIndex, float fR, float fG, float fB) {
 }
 
 // DRAFT: 0x185F60 SetDirLight__10PGfxEngineFiPfPf
-// note: 38 diff lines; original builds this+0x158E30 with lui/ori before the index add and schedules the 0x3F80 constant between stores. Tried: plain array index, (char*)/(int) casts, unsigned consts, float/int split, local offset var, shared nOff (40), index-first sum (38), this+idx*16+0x158E70 for the scale call (38, kept).
+// note: 40 diff lines (38 before the address-order move); original builds this+0x158E30 with lui/ori before the index add and schedules the 0x3F80 constant between stores. Tried: plain array index, (char*)/(int) casts, unsigned consts, float/int split, local offset var, shared nOff (40), index-first sum (38), this+idx*16+0x158E70 for the scale call (38, kept).
 void PGfxEngine::SetDirLight(int nIndex, float *pDir, float *pScale) {
     if ((nIndex < 4) && (nIndex >= 0)) {
         *(float *)((int)this + 0x158E30 + nIndex * 4) = -pDir[0];
