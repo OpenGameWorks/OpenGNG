@@ -1028,8 +1028,7 @@ void MaximoMain::InitStaticDemo() {
     m_unkD8 = 0x42180000;
 }
 
-// DRAFT: 0x00137680 TitleDemo__10MaximoMainFv
-// note: 4 words differ: case 5 FadeScreen loads 4.25f into f13 before 255.0f into f12 in the original, as in ScreenAdjust and Controls; tried a local float, int 255, double literals, 17.0f / 4, a member call on class Interface, and inline FadeOut/FadeTo wrappers (all 4).
+// FUNCTION: 0x00137680 TitleDemo__10MaximoMainFv
 int MaximoMain::TitleDemo() {
     int state = 0;
     int result = 0;
@@ -1095,7 +1094,7 @@ int MaximoMain::TitleDemo() {
                 timer -= 1;
                 if (timer <= 0) {
                     state += 1;
-                    FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, 4.25f, true, 0);
+                    float fB = 4.25f; FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 255.0f, fB, true, 0);
                     if (gbMusic != 0) {
                         FadeOutAllMusic__6PSoundFUi(gSound, 0x1F4U);
                     }
@@ -2101,7 +2100,7 @@ void MaximoMain::MapscreenPrintInfo(FontManager *arg0, int arg1) {
 }
 
 // DRAFT: 0x0013C9F0 SetMarkerAsMastered__10MaximoMainFP6PMNodeP6PMNode
-// note: 7 words: PMNode vtable lui hoisted above the 0x58/0x5C spills in the original (same as PWorld LoadMeshNodeHierarchy). Tried: split decl/assign, vtable local, index store.
+// note: 7 words: PMNode vtable lui hoisted above the 0x58/0x5C spills in the original (same as PWorld LoadMeshNodeHierarchy). Tried: split decl/assign, vtable local (also for both vtables), raw-pointer local, index store, pNodeV from pMeshV (all 7 or worse).
 void MaximoMain::SetMarkerAsMastered(PMNode *arg0, PMNode *arg1) {
     if (arg1 != 0) {
         PMNode *found = arg0->Find(0xA5D4D353U);
