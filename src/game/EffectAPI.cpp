@@ -137,13 +137,12 @@ extern unsigned char __vt__11PlingEffect[0x20];
 extern "C" void __ct__6PArrayFv(void *);
 extern "C" void Allocate__6PArrayFUi(void *, unsigned int);
 extern "C" void Remove__6PArrayFPv(void *, void *);
-extern "C" void __dl__FPv(void *);
 extern "C" int Find__6PArrayFPv(void *pThis, void *pItem);
 extern "C" void RemoveAt__6PArrayFi(void *pThis, int nIndex);
 extern "C" void RemoveCurrent__6PArrayFv(void *pThis);
 extern "C" int printf(const char *fmt, ...);
 extern "C" void Add__6PArrayFPv(void *pThis, void *pItem);
-extern "C" void *__nw__FUi(unsigned int nSize);
+void *operator new(unsigned int nSize);
 extern "C" GhostEffect *__ct__11GhostEffectFP9PMeshNode(GhostEffect *pThis, PMeshNode *arg0);
 extern "C" OneshotEffect *__ct__13OneshotEffectFUiUiP5PMat4P15EntityBaseClassfib(OneshotEffect *pThis, unsigned int arg0, unsigned int arg1, PMat4 *arg2, EntityBaseClass *arg3, float arg4, int arg5, bool arg6);
 extern "C" OneshotEffect *__ct__13OneshotEffectFUiUiPA4_fPA4_fP15EntityBaseClassfbib(OneshotEffect *pThis, unsigned int arg0, unsigned int arg1, float (*arg2)[4], float (*arg3)[4], EntityBaseClass *arg4, float arg5, bool arg6, int arg7, bool arg8);
@@ -169,7 +168,7 @@ extern "C" void *__ct__11PMotionBlurFv(void *pThis);
 // FUNCTION: 0x155980 CreateMotionBlurEffect__9EffectAPIFP6PMNodeUii
 MotionBlurEffect *EffectAPI::CreateMotionBlurEffect(PMNode *arg0, unsigned int arg1, int arg2) {
     MotionBlurEffect *pEffect;
-    if ((pEffect = (MotionBlurEffect *)__nw__FUi(0xC0)) != 0) {
+    if ((pEffect = (MotionBlurEffect *)operator new(0xC0)) != 0) {
         MotionBlurEffect *volatile pThis = pEffect;
         *(void **)pEffect = __vt__10EffectNode;
         pThis->m_unk4 = 0;
@@ -296,8 +295,7 @@ PlingEffect::PlingEffect(EntityBaseClass *arg0, float (*arg1)[4], unsigned int a
     }
 }
 
-// DRAFT: 0x155F00 CreatePling__9EffectAPIFP15EntityBaseClassPA4_fUiUib
-// note: 20 differing words: this and the result swap s1/s0 (original this=s1, result=s0). Tried: direct cast init, separate pFound, cast at member access, pPling=0 then assign, pSelf=this local.
+// FUNCTION: 0x155F00 CreatePling__9EffectAPIFP15EntityBaseClassPA4_fUiUib
 PlingEffect *EffectAPI::CreatePling(EntityBaseClass *arg0, float (*arg1)[4], unsigned int arg2, unsigned int arg3, bool arg4) {
     PlingEffect *pPling = 0;
     pPling = (PlingEffect *)FindPling(arg0);
@@ -305,10 +303,7 @@ PlingEffect *EffectAPI::CreatePling(EntityBaseClass *arg0, float (*arg1)[4], uns
         pPling->m_unk14 = 0;
         *(int *)(pPling->m_unk4 + 0x2C) = 0x3F800000;
     } else {
-        pPling = (PlingEffect *)__nw__FUi(0x30);
-        if (pPling != 0) {
-            pPling = __ct__11PlingEffectFP15EntityBaseClassPA4_fUiUib(pPling, arg0, arg1, arg2, arg3, arg4);
-        }
+        pPling = new PlingEffect(arg0, arg1, arg2, arg3, arg4);
         if (pPling != 0) {
             int nId = m_unk10;
             m_unk10 = nId + 1;
@@ -436,10 +431,7 @@ extern "C" GhostEffect *__ct__11GhostEffectFP9PMeshNode(GhostEffect *volatile pT
 
 // FUNCTION: 0x156390 CreateGhost__9EffectAPIFP9PMeshNode
 GhostEffect *EffectAPI::CreateGhost(PMeshNode *arg0) {
-    GhostEffect *pGhost = (GhostEffect *)__nw__FUi(0xA0);
-    if (pGhost != 0) {
-        pGhost = __ct__11GhostEffectFP9PMeshNode(pGhost, arg0);
-    }
+    GhostEffect *pGhost = new GhostEffect(arg0);
     if (pGhost != 0) {
         if (m_unk0 >= 0x80) {
             CdsAssert("EffectAPI.cpp", 0x142, "mEffectList.GetCount() < MAX_EFFECTS");
@@ -515,10 +507,7 @@ int OneshotEffect::Update(float arg0) {
 // FUNCTION: 0x001565A0 CreateOneshot__9EffectAPIFUiUiP5PMat4P15EntityBaseClassfib
 int EffectAPI::CreateOneshot(unsigned int arg0, unsigned int arg1, PMat4 *arg2, EntityBaseClass *arg3, float arg4, int arg5, bool arg6) {
     int nId = 0;
-    OneshotEffect *pOneshot = (OneshotEffect *)__nw__FUi(0x20);
-    if (pOneshot != 0) {
-        pOneshot = __ct__13OneshotEffectFUiUiP5PMat4P15EntityBaseClassfib(pOneshot, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
-    }
+    OneshotEffect *pOneshot = new OneshotEffect(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
     if (pOneshot != 0) {
         if (m_unk0 >= 0x80) {
             CdsAssert("EffectAPI.cpp", 0x10E, "mEffectList.GetCount() < MAX_EFFECTS");
@@ -534,10 +523,7 @@ int EffectAPI::CreateOneshot(unsigned int arg0, unsigned int arg1, PMat4 *arg2, 
 // FUNCTION: 0x00156850 CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib
 int EffectAPI::CreateOneshot(unsigned int arg0, unsigned int arg1, float (*arg2)[4], float (*arg3)[4], EntityBaseClass *arg4, float arg5, bool arg6, int arg7, bool arg8) {
     int nId = 0;
-    OneshotEffect *pOneshot = (OneshotEffect *)__nw__FUi(0x20);
-    if (pOneshot != 0) {
-        pOneshot = __ct__13OneshotEffectFUiUiPA4_fPA4_fP15EntityBaseClassfbib(pOneshot, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-    }
+    OneshotEffect *pOneshot = new OneshotEffect(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
     if (pOneshot != 0) {
         if (m_unk0 >= 0x80) {
             CdsAssert("EffectAPI.cpp", 0xEC, "mEffectList.GetCount() < MAX_EFFECTS");
@@ -662,7 +648,7 @@ extern "C" void *__dt__10EffectNodeFv(void *pThis, short nFlag) {
         }
         Remove__6PArrayFPv(&mEffectAPI__13EntityManager, pThis);
         if (nFlag > 0) {
-            __dl__FPv(pThis);
+            ::operator delete(pThis);
         }
     }
     return pThis;
@@ -811,7 +797,7 @@ extern "C" void *__dt__11GhostEffectFv(void *pThis, short nFlag) {
         *(void **)pThis = __vt__11GhostEffect;
         __dt__10EffectNodeFv(pThis, 0);
         if (nFlag > 0) {
-            __dl__FPv(pThis);
+            ::operator delete(pThis);
         }
     }
     return pThis;
@@ -828,7 +814,7 @@ extern "C" void *__dt__13OneshotEffectFv(void *pThis, short nFlag) {
         *(void **)pThis = __vt__13OneshotEffect;
         __dt__10EffectNodeFv(pThis, 0);
         if (nFlag > 0) {
-            __dl__FPv(pThis);
+            ::operator delete(pThis);
         }
     }
     return pThis;
