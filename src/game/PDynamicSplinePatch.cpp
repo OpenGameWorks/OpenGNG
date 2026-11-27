@@ -147,9 +147,11 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
         char *p2 = (char *)this + 0x1FC0;
         char *pQC = (char *)&qC;
         asm {
+            .set noreorder
             lqc2 vf5, 0x0(p1)
             lqc2 vf6, 0x0(p2)
             lqc2 vf9, 0x0(pQC)
+            .set reorder
         }
     }
     gGfxEng[0x158E22] = 0;
@@ -160,8 +162,10 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
         char *pA = (char *)&qA;
         char *pB = (char *)&qB;
         asm {
+            .set noreorder
             lqc2 vf7, 0x0(pA)
             lqc2 vf8, 0x0(pB)
+            .set reorder
         }
         qCtl = 0;
         pRow = (char *)this + ((((i << 3) + i)) << 5);
@@ -170,12 +174,14 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
                 char *pSrc = pRow + (j << 4) + 0x10;
                 char *pCtl = (char *)&qCtl;
                 asm {
+                    .set noreorder
                     lqc2 vf1, 0x0(pSrc)
                     lqc2 vf2, 0x10(pSrc)
                     lqc2 vf3, 0x20(pSrc)
                     lqc2 vf4, 0x30(pSrc)
                     lqc2 vf10, 0x0(pCtl)
                     vcallms Vu0_Compute_Spline_Tangents
+                    .set reorder
                 }
             }
             {
@@ -183,6 +189,7 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
                 *(u_long128 *)pKey = *(u_long128 *)(pRow + (((j + 1) << 4)) + 0x10);
                 *(float *)&qCtl += fStepS;
                 asm {
+                    .set noreorder
                     qmtc2.i v0, vf0
                     vcallms Vu0_Compute_Spline_Patch_Color_ST
                     sqc2 vf28, 0x30(pKey)
@@ -190,6 +197,7 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
                     qmtc2.i v0, vf0
                     sqc2 vf30, 0x10(pKey)
                     sqc2 vf31, 0x20(pKey)
+                    .set reorder
                 }
             }
         }
@@ -260,20 +268,18 @@ void PDynamicSplinePatch::ApplyControlMatrices() {
 
 #pragma global_optimizer on
 // DRAFT: 0x001F39C0 InitSplineKeys__19PDynamicSplinePatchFPfPf
-// note: 129 words differ; @367 is the all-zero initializer of scale (.bss). Angle wrap and loop shape differ (gfAngleDiff index 210; size 0x3a0 vs 0x3c0).
+// note: 83 words differ: the `= 1.0f` arm builds this+0x1C+row+0+col itself where ours reuses the slot address (typed m_unk10[r].m_pt[c][3], inline helpers tried); the m_unk1F8C load and the zero constant load in the other order; s1 init scheduled later. Tried: fZero local, asm splits, scheduling off.
 void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {
     float diff[4];
     float cvec[4];
-    float vec[4];
     float *pM1F80;
     float *pCvec;
     float *pVec;
-    float fSum;
     float fAngle;
-    float fT;
     float fSin;
     float fCos;
     float fInv;
+    float fT;
     int nAngIdx;
     int nRow;
     int nCol;
@@ -284,35 +290,36 @@ void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {
     sceVu0SubVector(diff, pVecB, pVecA);
     FastMath_VectorFabs(diff, diff);
     float scale[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    float vec[4];
     scale[0] = diff[0] / (float)(m_unk00 - 1);
     scale[1] = diff[1] / (float)(m_unk00 - 1);
     scale[2] = diff[2] / (float)(m_unk08 - 1);
 
-    fSum = m_unk1F70 + m_unk1F74;
-    m_unk1F70 = fSum;
-    if (fSum > 360.0f) {
-        m_unk1F70 = fSum - 360.0f;
+    m_unk1F70 += m_unk1F74;
+    if (m_unk1F70 > 360.0f) {
+        m_unk1F70 -= 360.0f;
     }
-    fAngle = m_unk1F70 + gfAngleDiff[0];
+    fT = 0.0f;
     nAngIdx = 0;
+    fAngle = m_unk1F70 + gfAngleDiff[nAngIdx];
     if (fAngle >= 360.0f) {
         fAngle -= 360.0f;
     } else if (fAngle <= 0.0f) {
         fAngle += 360.0f;
     }
+    pVec = vec;
     nAngIdx++;
     if (nAngIdx >= 8) {
         nAngIdx = 0;
     }
 
-    sceVu0CopyVector(vec, pVecA);
+    sceVu0CopyVector(pVec, pVecA);
     pM1F80 = &m_unk1F80;
     asm {
         lqc2 vf12, 0x0(pM1F80)
     }
     vec[3] = 0.0f;
     fInv = 1.0f / (float)m_unk08;
-    fT = 0.0f;
 
     for (nRow = 0; nRow < m_unk00;) {
         for (nCol = 1; nCol < m_unk04 - 1; nCol++) {
@@ -325,9 +332,11 @@ void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {
             pCvec = cvec;
             pVec = vec;
             asm {
+                .set noreorder
                 lqc2 vf11, 0x0(pCvec)
                 lqc2 vf13, 0x0(pVec)
                 vcallms Vu0_Compute_Spline_Patch_Pos
+                .set reorder
             }
             vec[2] = vec[2] + scale[2];
             fT = (float)(nCol - 1) * fInv;
@@ -349,7 +358,7 @@ void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {
             }
             if (m_unk1F8C == 0.0f) {
                 *(float *)(pSlot + 0x1C) = 1.0f;
-            } else if (m_unk1F78 != 0.0f) {
+            } else if (m_unk1F78) {
                 *(float *)(pSlot + 0x1C) = m_unk1F78 + (1.0f - m_unk1F78) * *(float *)(pSlot + 0x1C);
             }
         }
@@ -444,7 +453,7 @@ PDynamicSplinePatch::PDynamicSplinePatch() {
     m_unk04 = 0;
     m_unk08 = 0;
     m_unk0C = 0;
-    QwordMemset__FP1Ui1((u_long128 *)_pad10, 0x120, 0);
+    QwordMemset__FP1Ui1((u_long128 *)m_unk10, 0x120, 0);
     QwordMemset__FP1Ui1((u_long128 *)m_unk1690, 0x80, 0);
     memset(m_unk1F20, 0, 0x48);
     m_unk1F68 = 0;

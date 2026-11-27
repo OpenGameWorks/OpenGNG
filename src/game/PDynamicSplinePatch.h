@@ -7,6 +7,10 @@ class PMNode;
 
 // Spline patch driven by a control node. Init stores three clamped counts at 0x00, 0x04, 0x08, 0x0C.
 // Animate and SetControlNode copy node quadwords into a ring of 32 matrix slots of 0x40 bytes at 0x1690.
+struct PSplinePatchRow {
+    float m_pt[18][4];
+};
+
 class PDynamicSplinePatch {
 public:
     PDynamicSplinePatch();
@@ -24,7 +28,7 @@ public:
     int m_unk04;                    // 0x04
     int m_unk08;                    // 0x08
     int m_unk0C;                    // 0x0C
-    char _pad10[0x1210 - 0x10];
+    PSplinePatchRow m_unk10[16];    // 0x10, spline control points: 16 rows of 18
     char m_unk1210[0x480];          // 18 matrices of 0x40 bytes
     char m_unk1690[0x800];          // 32 slots of 0x40 bytes
     float m_unk1E90[18];            // 0x1E90
