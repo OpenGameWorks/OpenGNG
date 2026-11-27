@@ -6,13 +6,10 @@
 #include "PDisplayList.h"
 
 // TODO(header): foreign declarations
-extern "C" void __dla__FPv(void *pMem);
-extern "C" void __dl__FPv(void *pMem);
 extern PGfxEngine gGfxEng;
 struct tagGdlGlobal { PDisplayList *m_pdl; char _pad004[0x10]; };
 extern tagGdlGlobal gUnk45B300;
 extern "C" void FastMath_ComputeMatrixLite__FPA4_A4_fPA4_fPA4_fPA4_fPA4_A4_f(void);
-extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" int rand(void);
 extern "C" float FastMath_Sin180__Ff(float fAngle);
 extern "C" float FastMath_Cos180__Ff(float fAngle);
@@ -430,7 +427,7 @@ void PSlideShow::InitTiles(tagTile *pTile)
 void *PSlideShow::CreateImagePacket(int &nOffset, tagTile *pTile)
 {
     int nQwc = (m_unk14 * m_unk18) * 9 + 1;
-    unsigned char *pPacket = (unsigned char *)__nwa__FUi(nQwc * 0x10);
+    unsigned char *pPacket = new unsigned char[nQwc * 0x10];
     if (pPacket == 0) {
         CdsAssert("PSlideShow.cpp", 0xC4, "apPacket");
     }
@@ -573,12 +570,12 @@ int PSlideShow::Create(int nWidth, int nHeight)
     m_unk18 = nCols;
     m_unk1C = nWidth;
     m_unk20 = nHeight;
-    m_unkC = __nwa__FUi(m_unk14 * m_unk18 * 0x30);
+    m_unkC = new unsigned char[m_unk14 * m_unk18 * 0x30];
     if (m_unkC == 0) {
         CdsAssert("PSlideShow.cpp", 0x4E, "mpImage1Tiles");
     }
     InitTiles((tagTile *)m_unkC);
-    m_unk10 = __nwa__FUi(m_unk14 * m_unk18 * 0x30);
+    m_unk10 = new unsigned char[m_unk14 * m_unk18 * 0x30];
     if (m_unk10 == 0) {
         CdsAssert("PSlideShow.cpp", 0x52, "mpImage2Tiles");
     }
@@ -594,19 +591,19 @@ int PSlideShow::Create(int nWidth, int nHeight)
 PSlideShow::~PSlideShow()
 {
     if (m_unkC != 0) {
-        __dla__FPv(m_unkC);
+        delete[] (unsigned char *)m_unkC;
         m_unkC = 0;
     }
     if (m_unk10 != 0) {
-        __dla__FPv(m_unk10);
+        delete[] (unsigned char *)m_unk10;
         m_unk10 = 0;
     }
     if (m_unk24 != 0) {
-        __dla__FPv(m_unk24);
+        delete[] (unsigned char *)m_unk24;
         m_unk24 = 0;
     }
     if (m_unk28 != 0) {
-        __dla__FPv(m_unk28);
+        delete[] (unsigned char *)m_unk28;
         m_unk28 = 0;
     }
 }

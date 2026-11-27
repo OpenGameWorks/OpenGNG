@@ -1,18 +1,13 @@
 // FLAGS: -str readonly
 #include "PSTAnim.h"
+#include "PSTAnimChannel.h"
 #include "Debug.h"
 #include "types.h"
 
 // TODO(header): foreign declarations
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void *__dt__14PSTAnimChannelFv(void *pThis, short nFlag);
-extern "C" void __dla__FPv(void *pBlock);
-extern "C" void __dl__FPv(void *pBlock);
 extern "C" int Read__7PCDFileFPvUi(void *pThis, void *pBuffer, unsigned int nSize);
-extern "C" void *__nwa__FUi(unsigned int nSize);
-extern "C" void *__nw__FUi(unsigned int nSize);
-extern "C" PSTAnimChannel *__ct__14PSTAnimChannelFv(PSTAnimChannel *pThis);
-extern "C" PSTAnimChannel *__ct__14PSTAnimChannelFR14PSTAnimChannel(PSTAnimChannel *pThis, PSTAnimChannel *pSrc);
 extern "C" int Load__14PSTAnimChannelFP8PPakFile(PSTAnimChannel *pThis, PPakFile *pFile);
 extern "C" float GetNumFrames__14PSTAnimChannelFv(PSTAnimChannel *pThis);
 extern "C" void EvaluateAnim__14PSTAnimChannelFfRf(PSTAnimChannel *pThis, float fTime, float *pOut);
@@ -81,16 +76,13 @@ int PSTAnim::Load(PPakFile *pFile) {
     m_unk8 = aHeader[0];
     m_unkC = 0.0f;
     m_unkA = 0;
-    m_unk4 = (PSTAnimChannel **)__nwa__FUi(m_unk8 * 4);
+    m_unk4 = new PSTAnimChannel *[m_unk8];
     if (m_unk4 == 0) {
         return 0;
     }
     memset(m_unk4, 0, m_unk8 * 4);
     for (i = 0; i < m_unk8; i++) {
-        PSTAnimChannel *pChannel = (PSTAnimChannel *)__nw__FUi(0xC);
-        if (pChannel != 0) {
-            pChannel = __ct__14PSTAnimChannelFv(pChannel);
-        }
+        PSTAnimChannel *pChannel = new PSTAnimChannel;
         m_unk4[i] = pChannel;
         if (m_unk4[i] == 0) {
             return 0;
@@ -123,7 +115,7 @@ void PSTAnim::Clone(PSTAnim *pSrc) {
     m_unk2 = 0;
     m_unk3 = 1;
     m_unk8 = pSrc->m_unk8;
-    m_unk4 = (PSTAnimChannel **)__nwa__FUi(m_unk8 * 4);
+    m_unk4 = new PSTAnimChannel *[m_unk8];
     unsigned int i = 0;
     if (m_unk4 == 0) {
         CdsAssert("PSTAnim.cpp", 0x58, "mpChannelTable");
@@ -134,10 +126,7 @@ void PSTAnim::Clone(PSTAnim *pSrc) {
         if (pSrcChannel == 0) {
             CdsAssert("PSTAnim.cpp", 0x5F, "apSrcChannel");
         }
-        PSTAnimChannel *pChannel = (PSTAnimChannel *)__nw__FUi(0xC);
-        if (pChannel != 0) {
-            pChannel = __ct__14PSTAnimChannelFR14PSTAnimChannel(pChannel, pSrcChannel);
-        }
+        PSTAnimChannel *pChannel = new PSTAnimChannel(*pSrcChannel);
         m_unk4[i] = pChannel;
         if (m_unk4[i] == 0) {
             CdsAssert("PSTAnim.cpp", 0x62, "mpChannelTable[auCount]");
@@ -167,13 +156,13 @@ extern "C" PSTAnim *__dt__7PSTAnimFv(PSTAnim *pThis, short nFlag) {
                         pThis->m_unk4[i] = 0;
                     }
                 }
-                __dla__FPv(pThis->m_unk4);
+                delete[] pThis->m_unk4;
                 pThis->m_unk4 = 0;
                 pThis->m_unk1 = 0;
             }
         }
         if (nFlag > 0) {
-            __dl__FPv(pThis);
+            delete pThis;
         }
     }
     return pThis;
