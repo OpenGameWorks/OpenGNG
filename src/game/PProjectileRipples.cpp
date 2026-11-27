@@ -37,7 +37,7 @@ extern "C" float FastMath_IntCos180__Fi(int);
 
 
 // DRAFT: 0x00217410 InitRingMeshPacket__18PProjectileRipplesFRiib
-// note: DIFF 9 in address order (5 when it sat after its callees); head and both CreateRingTriStrip calls match (hoisted fLo/fHi/fEnd locals, int n set to 0 in else, byte-offset pointers); only the p0/p1 base/offset register choice (a0/v1 swapped, addu operand order) differs; tried base-first/offset-first per pointer, char* base local, offset locals
+// note: DIFF 9 in address order (5 when it sat after its callees); head and both CreateRingTriStrip calls match (hoisted fLo/fHi/fEnd locals, int n set to 0 in else, byte-offset pointers); only the p0/p1 base/offset register choice (a0/v1 swapped, addu operand order) differs; tried base-first/offset-first per pointer, char* base local, offset locals; in address order also tried fLo/fHi/fEnd declaration orders, literal arguments for each, sp40[s0] indexing (52), base-first sums (10)
 void *PProjectileRipples::InitRingMeshPacket(int &arg0, int arg1, bool arg2) {
     float sp40[0x32][4];
     float sp360[0x32][4];
