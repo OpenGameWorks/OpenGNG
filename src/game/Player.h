@@ -182,7 +182,9 @@ public:
     signed char m_unkD0;    // 0x0D0 set to 1 by Render
     char _padD1[0xD4 - 0xD1];
     void *m_unkD4;          // 0x0D4 shadow object, byte 0 set by EnablePlayerShadow, +0xC holds a sub-object
-    char _padD8[0xE8 - 0xD8];
+    float m_unkD8;          // 0x0D8 knockback heading, Round180(180 + attacker angle), set by OnHitEvent
+    float m_unkDC;          // 0x0DC knockback strength, 0.014 * damage, set by OnHitEvent
+    char _padE0[0xE8 - 0xE0];
     signed char m_unkE8;    // 0x0E8 flag byte, OR-ed with 8 by OnAttackEvent
     char _padE9[0xEA - 0xE9];
     unsigned char m_unkEA;  // 0x0EA read by ComboTarget as the gate for its search
@@ -219,7 +221,9 @@ public:
     int m_unk1D4;           // 0x1D4 compared against m_unk1DC by GetAbility
     int m_unk1D8;           // 0x1D8 cleared by ForceDie
     int m_unk1DC;           // 0x1DC index into MaximoArmor, read by BackToMaximo
-    char _pad1E0[0x1F0 - 0x1E0];
+    int m_unk1E0;           // 0x1E0 cap on the hit count, read by OnHitEvent
+    int m_unk1E4;           // 0x1E4 read by OnHitEvent
+    char _pad1E8[0x1F0 - 0x1E8];
     int m_unk1F0;           // 0x1F0 count of key-slot meshes, read by UpdateKey
     int m_unk1F4;           // 0x1F4 flag, UpdateKey takes the first key mesh when set
     int m_unk1F8;           // 0x1F8 remaining-lives counter, decremented by SetDeath
@@ -248,7 +252,7 @@ public:
     int m_unk260;           // 0x260
     int m_unk264;           // 0x264
     signed char m_unk268;   // 0x268 cleared by GrimIdleMove
-    char _pad269[0x26A - 0x269];
+    unsigned char m_unk269; // 0x269 flag, set by AnimCheck, cleared by SetAction
     unsigned char m_unk26A; // 0x26A
     unsigned char m_unk26B; // 0x26B tested by DialogMove
     unsigned char m_unk26C; // 0x26C byte set by SetHeadCamera
@@ -289,7 +293,7 @@ public:
     int m_unk314;           // 0x314 int, set to 0x42A00000 by OnAttackEvent
     float m_unk318;
     FontNode *m_unk31C;     // 0x31C font node, passed to FontManager::RemoveText and cleared by ForceDie
-    char _pad320[0x324 - 0x320];
+    int m_unk320;           // 0x320 sound reference from PlaySound, stopped and cleared by AnimCheck
     int m_unk324;           // 0x324
     int m_unk328;           // 0x328 apparition id passed to GetPtrToApparition by OpenChestMove
     PlingEffect *m_unk32C;  // 0x32C pling effect object, Slot00(1) called by ResetPling

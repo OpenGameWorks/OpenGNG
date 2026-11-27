@@ -3642,7 +3642,7 @@ int Player::SetAction(int arg0) {
     if (!(*(int *)((char *)this + 0x1D0) & 1) && !(nFlags & 8)) {
         return 0;
     }
-    *(signed char *)((char *)this + 0x269) = 0;
+    m_unk269 = 0;
         *(unsigned char *)((char *)this + 0x163) = 0;
     nTmp = *(unsigned int *)((char *)this + 0x2B4);
     if (nTmp != 0) {
@@ -4401,8 +4401,8 @@ extern "C" int OnHitEvent__6PlayerFP15EntityBaseClassiUiUi(Player *pThis, HitEnt
                         *(u_long128 *)mHitPos__15EntityBaseClass = *(u_long128 *)pSrc;
                         mHitPos__15EntityBaseClass[1] = mHitPos__15EntityBaseClass[1] + 2.5f;
                     }
-                    *(float *)((char *)pThis + 0xD8) = Round180__Ff(180.0f + fAng);
-                    *(float *)((char *)pThis + 0xDC) = 0.014f * (float)nDamage;
+                    pThis->m_unkD8 = Round180__Ff(180.0f + fAng);
+                    pThis->m_unkDC = 0.014f * (float)nDamage;
                     gPad.SetVibrate((Pad::VibType)3, 10);
                 }
                 pThis->m_unk1C4 = fAng;
@@ -4525,8 +4525,8 @@ extern "C" int OnHitEvent__6PlayerFP15EntityBaseClassiUiUi(Player *pThis, HitEnt
         goto fin;
     case 0x100A:
         n = MathAPI::RandomIntRange(2, 3);
-        if (*(int *)((char *)pThis + 0x1E0) < n) {
-            n = *(int *)((char *)pThis + 0x1E0);
+        if (pThis->m_unk1E0 < n) {
+            n = pThis->m_unk1E0;
         }
         if (n != 0) {
             SpawnPickups__15EntityBaseClassFiiPA4_fb(pThis, 0, n, 0, false);
@@ -4536,7 +4536,7 @@ extern "C" int OnHitEvent__6PlayerFP15EntityBaseClassiUiUi(Player *pThis, HitEnt
         nAct = 0x13;
         goto fin;
     case 0x100E:
-        n = *(int *)((char *)pThis + 0x1E4);
+        n = pThis->m_unk1E4;
         if (n > 0) {
             n = 1;
         } else if (n > 0) {
@@ -4562,7 +4562,7 @@ extern "C" int OnHitEvent__6PlayerFP15EntityBaseClassiUiUi(Player *pThis, HitEnt
         }
         goto fin;
     case 0x100F:
-        n = *(int *)((char *)pThis + 0x1E4);
+        n = pThis->m_unk1E4;
         if (n >= 3) {
             n = 3;
         } else if (n > 0) {
@@ -4688,7 +4688,7 @@ tail:
 }
 
 // DRAFT: 0x00162200 AnimCheck__6PlayerFv
-// note: DIFF 728 words; first-pass translation of the m2c goto structure. Frame 0xD0 vs 0xB0 (extra locals/s-register), the original keeps &m_38->unkA0 in s2 (reads 0xC4 and 0xE8 through it) and holds bGround/bSlide/bFall in other s registers; not yet tuned. Needs m_unk269, m_unk320 (int sound ref) and m_unk308 as float in Player.h.
+// note: DIFF 761 words with the typed m_unk269/m_unk320 members (728 with raw offset casts, which alias every store); first-pass translation of the m2c goto structure. Frame 0xD0 vs 0xB0 (extra locals/s-register), the original keeps &m_38->unkA0 in s2 (reads 0xC4 and 0xE8 through it) and holds bGround/bSlide/bFall in other s registers; not yet tuned. m_unk308 is still read as float through a cast.
 void Player::AnimCheck() {
     PMNode *pNode;
     PMNode *pCarrier;
@@ -4772,7 +4772,7 @@ void Player::AnimCheck() {
             } else {
                 nSnd2 = 0xB7;
             }
-            *(int *)((char *)this + 0x320) = ((EntityBaseClass *)this)->PlaySound(nSnd2);
+            m_unk320 = ((EntityBaseClass *)this)->PlaySound(nSnd2);
             ((EntityBaseClass *)this)->PlaySound(nSnd);
         }
         m_unk1D0 |= 8;
@@ -4789,8 +4789,8 @@ void Player::AnimCheck() {
     } else {
         if (bGround != 0) {
             if (*(float *)&m_unk308 != 0.0f) {
-                ((EntityBaseClass *)this)->StopSoundBySoundRef(*(unsigned int *)((char *)this + 0x320));
-                *(int *)((char *)this + 0x320) = 0;
+                ((EntityBaseClass *)this)->StopSoundBySoundRef(m_unk320);
+                m_unk320 = 0;
             }
             m_unk308 = 0;
         }
@@ -4818,7 +4818,7 @@ void Player::AnimCheck() {
             pPhys->SetPhysicsType(0x800, 0);
             return;
         }
-        if (*(unsigned char *)((char *)this + 0x269) == 0) {
+        if (m_unk269 == 0) {
             if (nHit & 0x208000) {
                 if (m_unk26C != 0) {
                     SetHeadCamera__6PlayerFb(this, 0);
@@ -4875,7 +4875,7 @@ void Player::AnimCheck() {
                     nVal = nAct;
                 }
                 SetAction(nVal);
-                *(unsigned char *)((char *)this + 0x269) = 1;
+                m_unk269 = 1;
                 m_unk268 = 0;
                 m_unk314 = 0x3F800000;
                 return;
@@ -4887,10 +4887,10 @@ void Player::AnimCheck() {
     } else {
     notledge:
         if (bFall == 0) {
-            nSnd = *(unsigned int *)((char *)this + 0x320);
+            nSnd = m_unk320;
             if (nSnd != 0) {
                 ((EntityBaseClass *)this)->StopSoundBySoundRef(nSnd);
-                *(int *)((char *)this + 0x320) = 0;
+                m_unk320 = 0;
             }
             m_unk308 = 0;
         }
