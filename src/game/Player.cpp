@@ -52,6 +52,57 @@ extern "C" void PlaySoundApparition__6PSoundFUiUi(void *pThis, unsigned int nSou
 extern "C" void Add__16PParticleManagerFP15PParticleSystem(void *pThis, void *pSystem);
 extern "C" int GetFxTexture__16PParticleManagerFUi(void *pThis, unsigned int hFx);
 extern "C" int printf(const char *pFmt, ...);
+class HitEntity {
+public:
+    virtual void Slot08();
+    virtual void Slot0C();
+    virtual void Slot10();
+    virtual void Slot14();
+    virtual void Slot18();
+    virtual void Slot1C();
+    virtual void Slot20();
+    virtual void Slot24();
+    virtual void Slot28();
+    virtual void Slot2C();
+    virtual void Slot30();
+    virtual void Slot34();
+    virtual void Slot38();
+    virtual void Slot3C();
+    virtual void Slot40();
+    virtual void Slot44();
+    virtual void Slot48();
+    virtual void Slot4C();
+    virtual void Slot50();
+    virtual void Slot54();
+    virtual int Slot58(Player *pPlayer, int nA, int nB, int nC, int nD);
+    virtual void Slot5C(Player *pPlayer, int nA);
+    unsigned int m_unk4;
+    char _pad008[0x3C - 0x8];
+    float *m_unk3C;
+    char _pad040[0x15C - 0x40];
+    unsigned short m_unk15C;
+    char _pad15E[0x163 - 0x15E];
+    unsigned char m_unk163;
+    char _pad164[0x190 - 0x164];
+    float m_unk190[4];
+    float m_unk1A0[4];
+    char _pad1B0[0x2C0 - 0x1B0];
+    float m_unk2C0;
+};
+extern "C" void CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(void *pThis, float (*pPos)[4], int nObj, int nWeapon, bool bFlag);
+extern "C" void EndGrab__19ClockworkSoulsuckerFv(void *pThis);
+extern "C" void SetDrainHit__19ClockworkSoulsuckerFUi(void *pThis, unsigned int nHit);
+extern "C" void FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(void *pThis, void *pOther);
+extern "C" void SpawnPickups__15EntityBaseClassFiiPA4_fb(void *pThis, int nType, int nCount, float (*pPos)[4], bool bFlag);
+extern "C" void CreateFireDamageFx__15EntityBaseClassFf(void *pThis, float fTime);
+extern float DAMAGE_JUMP;
+extern "C" void CheckSwordBGAnim__13EntityManagerFP6PMNode(void *pMgr, PMNode *pNode);
+extern "C" void CreateOneShot__16PParticleManagerFUifff(void *pMgr, unsigned int nId, float fX, float fY, float fZ);
+extern "C" void UpdateAnimate__6PWorldFP6PMNode(void *pWorld, PMNode *pNode);
+extern unsigned int LandSound[8];
+extern float CWSS_X;
+extern float CWSS_Y;
+extern float CWSS_Z;
 struct PlingEntry {
     int unk0;
     int unk4;
@@ -320,21 +371,35 @@ public:
     unsigned char _pad05[3];
 };
 extern FreeJoint m_pFreeJoints[5];
+struct HitSurf {
+    char _pad000[0xC];
+    unsigned int m_unkC;
+    float m_unk10[4];
+};
 class Physics {
 public:
     Physics();
-    char _pad000[0xB4];
+    char _pad000[4];
+    float m_unk4;
+    char _pad008[0xA0 - 0x8];
+    char m_unkA0[0x14];
     float m_unkB4;
-    char _padB8[0xC8 - 0xB8];
+    char _padB8[0xC4 - 0xB8];
+    float m_unkC4;
     float m_unkC8;
     PMNode *m_unkCC;
-    char _padD0[0xEC - 0xD0];
+    char _padD0[0xE0 - 0xD0];
+    PMNode *m_unkE0;
+    HitSurf *m_unkE4;
+    unsigned int m_unkE8;
     unsigned int m_unkEC;
     char _padF0[0xF8 - 0xF0];
     float m_unkF8;
     char _pad0FC[0x100 - 0xFC];
     float m_unk100;
-    char _pad104[0x118 - 0x104];
+    char _pad104[0x108 - 0x104];
+    unsigned int m_unk108;
+    char _pad10C[0x118 - 0x10C];
     float m_unk118;
     float m_unk11C;
     void SetPhysicsType(unsigned int arg0, float (*arg1)[4]);
@@ -4258,6 +4323,272 @@ void Player::UpdateDisplayList() {
     }
 }
 
+// DRAFT: 0x001614C0 OnHitEvent__6PlayerFP15EntityBaseClassiUiUi
+// note: DIFF 652 words; frame 0xB0 and opcode sequence close but branch delay slots stay unfilled (nop where original hoists lui/lb) from the 0x229 test on, shifting every later word. Needs Player::OnHitEvent declared in Player.h (extern "C" stand-in here). Tried: nested-if/goto return-0 layout, ternary vs default-first 3C selects.
+extern "C" int OnHitEvent__6PlayerFP15EntityBaseClassiUiUi(Player *pThis, HitEntity *pAttacker, int nDamage, unsigned int nType, unsigned int nB) {
+    float spVel[4];
+    float spHit[4];
+    float *pSrc;
+    float *pDst;
+    float fAng;
+    int nAct;
+    int nSnd;
+    int nRet;
+    unsigned int nMasked;
+    int n;
+
+    if (!(pThis->m_unk1D0 & 1) || pThis->m_unk26B != 0 || pThis->m_unk20 != 0 || pAttacker->m_unk163 == 4 || gInterface.m_unk425) {
+        return 0;
+    }
+    {
+    if (pThis->m_unk229 == 4) {
+        pThis->m_unk310 = 1.0f;
+        ((EntityBaseClass *)pThis)->PlaySound(0x111);
+        return 5;
+    }
+    if (pThis->m_unk264 & 0x1000) {
+        if (nType != 0x3005) {
+            return 5;
+        }
+    }
+    if (nType == 0x100E) {
+        if (!(pThis->m_unk38[0x42] & 1)) {
+            return 5;
+        }
+        pSrc = pThis->m_unk3C != 0 ? pThis->m_unk3C + 0x20 : pThis->m_unk190;
+        if (!(pAttacker->m_unk2C0 - pSrc[1] <= 1.5f)) {
+            return 5;
+        }
+    }
+    if (pThis->m_unk26C != 0) {
+        SetHeadCamera__6PlayerFb(pThis, 0);
+    }
+    nRet = 1;
+    if (nType & 0x4000) {
+        pSrc = pAttacker->m_unk3C != 0 ? pAttacker->m_unk3C + 0x24 : pAttacker->m_unk1A0;
+        fAng = Round180__Ff(180.0f + pSrc[1]);
+    } else {
+        pDst = pAttacker->m_unk190;
+        if (pAttacker->m_unk3C != 0) {
+            pDst = pAttacker->m_unk3C + 0x20;
+        }
+        pSrc = pThis->m_unk190;
+        if (pThis->m_unk3C != 0) {
+            pSrc = pThis->m_unk3C + 0x20;
+        }
+        sceVu0SubVector(spVel, pSrc, pDst);
+        fAng = Round180__Ff(57.295776f * atan2f(spVel[0], spVel[2]));
+    }
+    nMasked = nType & 0xFFFF1F7F;
+    if (pThis->m_unk264 & 2) {
+        if (pThis->m_unk2A4 == 0) {
+            if ((pThis->m_unk1B0 & 0x200) && !(nType & 0x2000) && pThis->GuardCheck((EntityBaseClass *)pAttacker) != 0) {
+                nSnd = 0x1B;
+                if (pThis->m_unk2AC != 0 && pThis->m_unk210 == 2 && nMasked < 0x1010 && pThis->m_unk20C >= 0x6A && FastMath_Fabs__Ff(Round180__Ff(fAng - pThis->m_unk1C4)) < 45.0f) {
+                    pAttacker->Slot58(pThis, 0x32, 0x800, 0, 0);
+                    pThis->GameVarSub(0xE, 0x6A);
+                    nSnd = 0x1D;
+                } else {
+                    if (!(nDamage < 0x32)) {
+                        nDamage = 0x32;
+                    }
+                    if (nType == 0x100E) {
+                        nDamage = 0x32;
+                    }
+                    if (nType == 0x100F) {
+                        nDamage = 0x32;
+                        pSrc = pThis->m_unk3C != 0 ? pThis->m_unk3C + 0x20 : pThis->m_unk190;
+                        *(u_long128 *)mHitPos__15EntityBaseClass = *(u_long128 *)pSrc;
+                        mHitPos__15EntityBaseClass[1] = mHitPos__15EntityBaseClass[1] + 2.5f;
+                    }
+                    *(float *)((char *)pThis + 0xD8) = Round180__Ff(180.0f + fAng);
+                    *(float *)((char *)pThis + 0xDC) = 0.014f * (float)nDamage;
+                    gPad.SetVibrate((Pad::VibType)3, 10);
+                }
+                pThis->m_unk1C4 = fAng;
+                pThis->m_unk3C[0x25] = fAng;
+                ((unsigned char *)pThis->m_unk3C)[0x3E] |= 8;
+                ((EntityBaseClass *)pThis)->PlaySound(nSnd);
+                pThis->SetAction(0x28);
+                CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(pThis, 0, 1, 4, true);
+                return 3;
+            }
+        }
+    }
+    pThis->m_unk314 = 0x3F800000;
+    if (pThis->GameVarSub(1, nDamage) <= 0) {
+        nAct = 0x16;
+        nRet = 2;
+        if (nType == 0x100E) {
+            EndGrab__19ClockworkSoulsuckerFv(pAttacker);
+        }
+        if (nType == 0x100F) {
+            pSrc = pThis->m_unk3C != 0 ? pThis->m_unk3C + 0x20 : pThis->m_unk190;
+            *(u_long128 *)mHitPos__15EntityBaseClass = *(u_long128 *)pSrc;
+            mHitPos__15EntityBaseClass[1] = mHitPos__15EntityBaseClass[1] + 2.5f;
+        }
+        goto fire;
+    }
+    switch (nMasked) {
+    default:
+        if (!(pThis->m_unk38[0x42] & 1)) {
+            if (nType & 0x8000) {
+                goto sub;
+            }
+            spHit[1] = ((float *)pThis->m_unk38)[1];
+            if (spHit[1] < 0.0f) {
+                spHit[1] = DAMAGE_JUMP;
+            }
+            spHit[0] = 0.1f * sinf(0.017453292f * fAng);
+            nAct = 0x15;
+            spHit[2] = 0.1f * cosf(0.017453292f * fAng);
+            *(u_long128 *)pThis->m_unk38 = *(u_long128 *)spHit;
+        } else {
+        sub:
+            switch (nMasked) {
+            case 0x1000:
+                pThis->m_unk1C4 = fAng;
+                nAct = 0x1B;
+                break;
+            case 0x1007:
+            case 0x1014:
+                pThis->m_unk1C4 = fAng;
+                nAct = 0x1F;
+                break;
+            case 0x1008:
+            case 0x1011:
+                pThis->m_unk1C4 = fAng;
+                nAct = 0x20;
+                break;
+            case 0x1001:
+            case 0x1013:
+            case 0x1012:
+            case 0x1010:
+                pThis->m_unk1C4 = fAng;
+                nAct = 0x1C;
+                break;
+            case 0x1006:
+                nAct = 0x1D;
+                break;
+            case 0x100D:
+                nAct = 0x1F;
+                pSrc = pAttacker->m_unk3C != 0 ? pAttacker->m_unk3C + 0x24 : pAttacker->m_unk1A0;
+                pThis->m_unk1C4 = Round180__Ff(180.0f + pSrc[1]);
+                break;
+            default:
+                pThis->m_unk1C4 = fAng;
+                nAct = (*(unsigned int *)(gEng + 0x19A80) & 1) + 0x13;
+                break;
+            }
+        }
+    fin:
+        pThis->m_unk3C[0x25] = pThis->m_unk1C4;
+        ((unsigned char *)pThis->m_unk3C)[0x3E] |= 8;
+    fire:
+        if (nType & 0x80) {
+            CreateFireDamageFx__15EntityBaseClassFf(pThis, 120.0f);
+        } else {
+            nSnd = 0x2DA;
+            if (pThis->m_unk229 == 2) {
+                nSnd = 0x2DB;
+            }
+            ((EntityBaseClass *)pThis)->PlaySound(nSnd);
+        }
+        pThis->SetAction(nAct);
+        if (pThis->m_unk330 != 0) {
+            pThis->m_unk330->SetPlayerLeftDeck();
+            pThis->m_unk330 = 0;
+        }
+    case 0x100C:
+        CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(pThis, 0, 1, 0, false);
+        mEffectAPI__13EntityManager.CreateOneshot(0x81000055, 0x82000093, (float (*)[4])mHitPos__15EntityBaseClass, 0, 0, 0.5f, false, 0, false);
+        return nRet;
+    case 0x1005:
+        return 1;
+    case 0x1004:
+        if (!(((Physics *)pThis->m_unk38)->m_unkF8 <= 2.0f)) {
+            return 0;
+        }
+        nAct = 0x77;
+        pThis->m_unk1C4 = fAng;
+        pThis->AdjustPosition((EntityBaseClass *)pAttacker, (EntityBaseClass *)pThis, -4.0f, 0.0f, 0.0f);
+        pThis->m_unk2C0 = pAttacker->m_unk4;
+        pThis->m_unk2C4 = 0;
+        pThis->m_unk2C8 = CAUGHT_TIME;
+        pSrc = pAttacker->m_unk3C != 0 ? pAttacker->m_unk3C + 0x24 : pAttacker->m_unk1A0;
+        pThis->m_unk1C4 = Round180__Ff(180.0f + pSrc[1]);
+        goto fin;
+    case 0x100B:
+        nAct = 0x79;
+        pThis->m_unk1C4 = fAng;
+        pThis->AdjustPosition((EntityBaseClass *)pAttacker, (EntityBaseClass *)pThis, -9.5f, 0.0f, 0.0f);
+        goto fin;
+    case 0x100A:
+        n = MathAPI::RandomIntRange(2, 3);
+        if (*(int *)((char *)pThis + 0x1E0) < n) {
+            n = *(int *)((char *)pThis + 0x1E0);
+        }
+        if (n != 0) {
+            SpawnPickups__15EntityBaseClassFiiPA4_fb(pThis, 0, n, 0, false);
+        }
+        pThis->GameVarSub(3, n);
+        pThis->m_unk1C4 = fAng;
+        nAct = 0x13;
+        goto fin;
+    case 0x100E:
+        n = *(int *)((char *)pThis + 0x1E4);
+        if (n > 0) {
+            n = 1;
+        } else if (n > 0) {
+        } else {
+            n = 0;
+        }
+        if (n != 0) {
+            pThis->GameVarSub(4, n);
+        }
+        SetDrainHit__19ClockworkSoulsuckerFUi(pAttacker, n);
+        pThis->m_unk10C &= 0xFDFFFFFF;
+        FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(pThis, pAttacker);
+        pSrc = pThis->m_unk3C != 0 ? pThis->m_unk3C + 0x24 : (float *)&pThis->m_unk1A0;
+        pThis->m_unk1C4 = pSrc[1];
+        pThis->AdjustPositionOfAttacker((EntityBaseClass *)pThis, (EntityBaseClass *)pAttacker, CWSS_Z, CWSS_Y, CWSS_X);
+        nAct = 0x21;
+        gPad.SetVibrate((Pad::VibType)5, 0x46);
+        n = pThis->m_unk200;
+        if (n >= 2) {
+            pThis->GameVarSub(0xB, 2);
+        } else if (n > 0) {
+            pThis->GameVarSub(0xB, n);
+        }
+        goto fin;
+    case 0x100F:
+        n = *(int *)((char *)pThis + 0x1E4);
+        if (n >= 3) {
+            n = 3;
+        } else if (n > 0) {
+        } else {
+            n = 0;
+        }
+        pThis->GameVarSub(4, n);
+        SpawnPickups__15EntityBaseClassFiiPA4_fb(pThis, 0x26, n, 0, false);
+        FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(pThis, pAttacker);
+        pSrc = pThis->m_unk3C != 0 ? pThis->m_unk3C + 0x24 : (float *)&pThis->m_unk1A0;
+        pThis->m_unk1C4 = pSrc[1];
+        gPad.SetVibrate((Pad::VibType)5, 0x1E);
+        n = pThis->m_unk200;
+        if (n >= 3) {
+            pThis->GameVarSub(0xB, 3);
+        } else if (n > 0) {
+            pThis->GameVarSub(0xB, n);
+        }
+        nAct = 0x1C;
+        pSrc = pThis->m_unk3C != 0 ? pThis->m_unk3C + 0x20 : pThis->m_unk190;
+        *(u_long128 *)mHitPos__15EntityBaseClass = *(u_long128 *)pSrc;
+        goto fin;
+    }
+    }
+}
+
 // DRAFT: 0x00161F20 GuardCheck__6PlayerFP15EntityBaseClass
 // note: DIFF 11; differs at the early mbHard return branch (b +0x2C vs +0x2A), the bc1f/bc1t sense on the 0xC2B4 compare, and the v0 materialisation (addiu/daddu with b vs v1+xori). Tried: arg0 pointer join (44->13), return-form sense flip (11, kept), flipped inner compare (11), int ret variable (17, reverted), !mbHard (11, reverted).
 int Player::GuardCheck(EntityBaseClass *arg0) {
@@ -4354,6 +4685,367 @@ body:
 tail:
     arg0 += (s1 << 2);
     InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(proj, arg0, p80, p90, 0);
+}
+
+// DRAFT: 0x00162200 AnimCheck__6PlayerFv
+// note: DIFF 728 words; first-pass translation of the m2c goto structure. Frame 0xD0 vs 0xB0 (extra locals/s-register), the original keeps &m_38->unkA0 in s2 (reads 0xC4 and 0xE8 through it) and holds bGround/bSlide/bFall in other s registers; not yet tuned. Needs m_unk269, m_unk320 (int sound ref) and m_unk308 as float in Player.h.
+void Player::AnimCheck() {
+    PMNode *pNode;
+    PMNode *pCarrier;
+    Physics *pPhys;
+    float fY;
+    float spA0[4];
+    unsigned int nEFlags;
+    unsigned int nHit;
+    unsigned int nPFlags;
+    int bGround;
+    int nSwim;
+    int bFall;
+    int bSlide;
+    int nAct;
+    int nDmg;
+    int nGround;
+    int nPrev;
+    int nVal;
+    unsigned int nSnd;
+    unsigned int nSnd2;
+    HitEntity *pApp;
+    HitSurf *pSurf;
+
+    m_unk1D0 &= ~0xC;
+    nPFlags = m_unk264;
+    if (nPFlags & 8) {
+        m_unk1D0 |= 4;
+        return;
+    }
+    if (m_unk284 != 0 && (nPFlags & 1)) {
+        CheckSwordBGAnim__13EntityManagerFP6PMNode(mpEntMgr__15EntityBaseClass, (PMNode *)m_unk284);
+    }
+    SphereCheck();
+    pNode = (PMNode *)m_unk3C;
+    nVal = 0;
+    if (pNode->m_unk24 != 0) {
+        nVal = pNode->m_unk24->Slot18() != 0;
+    }
+    pPhys = (Physics *)m_unk38;
+    nSwim = nVal & 0xFF;
+    nEFlags = pPhys->m_unk108;
+    bGround = nEFlags & 1;
+    bSlide = nEFlags & 2;
+    if (m_unk229 == 4 && pPhys->m_unkF8 <= 1.0f) {
+        nVal = nSwim == 0;
+        bGround = 1;
+        if (nVal == 0) {
+            nVal = (((unsigned char *)m_unk254)[8] & 0x30) != 0;
+        }
+        bSlide = nVal & 0xFF;
+        if (nVal != 0) {
+            nVal = 1;
+            if (!(pPhys->m_unk4 < 0.0f)) {
+                nVal = 0;
+            }
+            bSlide = nVal & 0xFF;
+        }
+    }
+    if (bGround != 0) {
+        m_unk26A = 0;
+        m_unk1D0 |= 4;
+        OnTriggerCheck();
+    }
+    pPhys = (Physics *)m_unk38;
+    nHit = pPhys->m_unkE8;
+    nVal = (nHit & 0x100000) != 0;
+    fY = *(float *)((char *)pNode + 0x84);
+    if (nVal != 0) {
+        nVal = 1;
+        if (!((1.0f + fY) < pPhys->m_unkC4)) {
+            nVal = 0;
+        }
+    }
+    bFall = nVal & 0xFF;
+    if (bFall != 0) {
+        if (*(float *)&m_unk308 == 0.0f) {
+            nSnd = 0xB2;
+            if (nHit & 1) {
+                nSnd = 0x18B;
+                nSnd2 = 0x188;
+            } else {
+                nSnd2 = 0xB7;
+            }
+            *(int *)((char *)this + 0x320) = ((EntityBaseClass *)this)->PlaySound(nSnd2);
+            ((EntityBaseClass *)this)->PlaySound(nSnd);
+        }
+        m_unk1D0 |= 8;
+        if (*(float *)&m_unk308 == 0.0f) {
+            if (m_unk229 == 4) {
+                GameVarSub(0xB, 2);
+            } else if (GameVarSub(1, 0x32) == 0) {
+                SetAction(0x18);
+                pPhys->SetPhysicsType(0x800, 0);
+                return;
+            }
+            m_unk308 = 0x3F800000;
+        }
+    } else {
+        if (bGround != 0) {
+            if (*(float *)&m_unk308 != 0.0f) {
+                ((EntityBaseClass *)this)->StopSoundBySoundRef(*(unsigned int *)((char *)this + 0x320));
+                *(int *)((char *)this + 0x320) = 0;
+            }
+            m_unk308 = 0;
+        }
+    }
+    if (!(fY <= *(float *)((char *)mpEntMgr__15EntityBaseClass + 0x5074))) {
+        goto die;
+    }
+    nEFlags = pPhys->m_unkE8;
+    if ((nEFlags & 0x10000) && !(pPhys->m_unkC4 <= fY)) {
+        goto die;
+    }
+    if (nSwim == 0 && m_unk260 == 0x76) {
+        SetMaximo(4, false);
+        return;
+    }
+    nPFlags = m_unk264;
+    if (!(nPFlags & 0x1000) || m_unk260 == 0x29) {
+        pSurf = (HitSurf *)pPhys->m_unkE4;
+        nHit = 0;
+        if (pSurf != 0) {
+            nHit = pSurf->m_unkC;
+        }
+        if (bGround != 0 && (nEFlags & 4)) {
+            ForceDie(0x17);
+            pPhys->SetPhysicsType(0x800, 0);
+            return;
+        }
+        if (*(unsigned char *)((char *)this + 0x269) == 0) {
+            if (nHit & 0x208000) {
+                if (m_unk26C != 0) {
+                    SetHeadCamera__6PlayerFb(this, 0);
+                }
+                *(u_long128 *)spA0 = *(u_long128 *)pPhys->m_unkE4->m_unk10;
+                spA0[3] = 0.0f;
+                pCarrier = pPhys->m_unkE0;
+                if (pCarrier != 0) {
+                    sceVu0ApplyMatrix(spA0, (float *)((char *)pCarrier + 0x40), spA0);
+                }
+                nDmg = 0;
+                m_unk1C4 = Round180__Ff(57.295776f * atan2f(spA0[0], spA0[2]));
+                if (nHit & 0x200000) {
+                    nAct = 0x1C;
+                } else {
+                    nVal = nHit & 0x3800;
+                    if (nVal != 0) {
+                        if (nVal != 0x1800) {
+                            nAct = 0x1B;
+                            nDmg = 0x32;
+                        } else {
+                            ((EntityBaseClass *)this)->PlaySound(0x28E);
+                            CreateOneShot__16PParticleManagerFUifff(gGfxEng + 0x154F00, 0x83000371, *(float *)((char *)pNode + 0x80), 2.5f + *(float *)((char *)pNode + 0x84), *(float *)((char *)pNode + 0x88));
+                            goto fall;
+                        }
+                    } else {
+                    fall:
+                        nAct = 0x1C;
+                        nDmg = 0x19;
+                    }
+                }
+                if (pCarrier != 0) {
+                    unsigned short nApp = *(unsigned short *)((char *)pCarrier + 0x100);
+                    if (nApp != 0) {
+                        pApp = (HitEntity *)GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, nApp);
+                        if (pApp != 0) {
+                            pApp->Slot5C(this, 6);
+                            nDmg = pApp->m_unk15C;
+                            m_unk1C4 = Round180__Ff(180.0f + (pApp->m_unk3C != 0 ? pApp->m_unk3C + 0x24 : pApp->m_unk1A0)[1]);
+                        }
+                    } else {
+                        AnimStateObject *pA = ((PMNode *)pCarrier)->m_unk24;
+                        if (pA != 0 && pA->m_unk4 == 0x212 && pA->Slot18() == 0) {
+                            ((PMNode *)pCarrier)->Slot1C(0);
+                            UpdateAnimate__6PWorldFP6PMNode(gEng, (PMNode *)pCarrier);
+                        }
+                    }
+                }
+                nVal = nAct;
+                if (nDmg != 0) {
+                    if (GameVarSub(1, nDmg) == 0) {
+                        nAct = 0x16;
+                    }
+                    nVal = nAct;
+                }
+                SetAction(nVal);
+                *(unsigned char *)((char *)this + 0x269) = 1;
+                m_unk268 = 0;
+                m_unk314 = 0x3F800000;
+                return;
+            }
+        }
+        if ((nPFlags & 0x30) == 0 || !(nHit & 0x4000) || LedgeCheck((SurfaceInfo *)pPhys->m_unkA0) == 0) {
+            goto notledge;
+        }
+    } else {
+    notledge:
+        if (bFall == 0) {
+            nSnd = *(unsigned int *)((char *)this + 0x320);
+            if (nSnd != 0) {
+                ((EntityBaseClass *)this)->StopSoundBySoundRef(nSnd);
+                *(int *)((char *)this + 0x320) = 0;
+            }
+            m_unk308 = 0;
+        }
+        if (bGround != 0) {
+            if (bSlide != 0) {
+                switch (m_unk260) {
+                case 0x2C:
+                case 0x24:
+                case 0x7D:
+                case 0x15:
+                case 6:
+                case 5:
+                case 0x26:
+                case 0xD:
+                case 3:
+                case 4:
+                    nVal = GetGroundAction();
+                    switch (nVal) {
+                    case 10:
+                        nVal = 9;
+                        break;
+                    case 0:
+                        nVal = 7;
+                        break;
+                    case 2:
+                        nVal = !(m_unk1B0 & 0x200) ? 8 : 0x29;
+                        break;
+                    case 39:
+                        if (m_unk1BC >= 0x65) {
+                            nVal = 0x29;
+                        }
+                        break;
+                    }
+                    SetAction(nVal);
+                    ((EntityBaseClass *)this)->PlaySound(LandSound[(((Physics *)m_unk38)->m_unkE8 >> 0xB) & 7]);
+                    break;
+                case 0x71:
+                    m_unk1C4 = ((Physics *)m_unk38)->m_unk11C;
+                    SetShockwave(0xA);
+                    SetAction(0x3B);
+                    break;
+                case 0x10:
+                    FreeJoint(5);
+                case 0xF:
+                    if (m_unk1FC >= 2) {
+                        m_unk1C4 = ((Physics *)m_unk38)->m_unk11C;
+                        nVal = 0xA;
+                        if (m_unk268 >= 2) {
+                            nVal = 9;
+                        }
+                        SetShockwave(nVal);
+                        SetAction(0x3B);
+                    } else {
+                        unsigned char nLim = ((unsigned char *)m_unk254)[5];
+                        if ((int)pNode->m_unk34 < (int)nLim) {
+                            pNode->Slot10((float)nLim);
+                            pNode->SetAnimLoopCount(1, false);
+                            nVal = 9;
+                            if (m_unk260 == 0xF) {
+                                nVal = 0xA;
+                            }
+                            SetShockwave(nVal);
+                        }
+                    }
+                    break;
+                }
+                goto tail;
+            }
+            if (nSwim == 0) {
+                nGround = GetGroundAction();
+                if (m_unk335 & 6) {
+                    nGround = 0x3A;
+                }
+                nPrev = m_unk260;
+                if (nGround != nPrev) {
+                    switch (nPrev) {
+                    case 0x79:
+                        m_unk10C |= 0x01000000;
+                    case 0x1D:
+                    case 0x20:
+                    case 0x1B:
+                        nGround = 0x1E;
+                    again:
+                        if (m_unk260 == 0x21) {
+                    case 0x21:
+                            m_unk10C |= 0x071A1E01;
+                        }
+                    default:
+                        nPrev = m_unk260;
+                        SetAction(nGround);
+                        switch (nGround) {
+                        case 39:
+                            if (nPrev == 0x28) {
+                                pNode->Slot10((float)((unsigned char *)m_unk254)[4]);
+                                if (m_unk210 != 0 && m_unk2B4 == 0) {
+                                    m_unk2B4 = ((EntityBaseClass *)this)->PlaySound(ShieldPowerupTable[m_unk210 - 1].c);
+                                }
+                            }
+                            break;
+                        case 2:
+                        case 1:
+                            if (nPrev == 8) {
+                                pNode->Slot10((float)((unsigned char *)m_unk254)[4]);
+                            }
+                            break;
+                        }
+                        goto tail;
+                    case 0x28:
+                        if (nGround == 0) {
+                            nGround = 0x27;
+                        }
+                        goto again;
+                    }
+                } else {
+                    if (nGround == 0) {
+                        SetAction(0);
+                    }
+                    goto tail;
+                }
+            } else {
+            tail:
+                if (((Physics *)m_unk38)->m_unk4 <= 0.0f) {
+                    m_unk268 = 0;
+                }
+            }
+        } else {
+            if ((m_unk264 & 0x30) && (((Physics *)m_unk38)->m_unk108 & 4)) {
+                SetAction(6);
+                return;
+            }
+            if (nSwim == 0 && (nPrev = m_unk260, nPrev != 0x1B)) {
+                switch (nPrev) {
+                case 42:
+                    m_unk1C4 = ((Physics *)m_unk38)->m_unk11C;
+                    SetAction(0x2B);
+                    return;
+                case 21:
+                    SetAction(5);
+                    return;
+                default:
+                    if (!(((Physics *)m_unk38)->m_unkF8 <= 3.0f)) {
+                        SetAction(5);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    return;
+die:
+    ForceDie(0x19);
+    gSound.FadeOutAllMusic(0x1F4);
+    if (m_unk1F8 <= 0) {
+        gInterface.FadeScreen(255.0f, 8.5f, true, (Interface::eFadeColor)0);
+    }
 }
 
 // FUNCTION: 0x00162E50 ForceDie__6PlayerFi
