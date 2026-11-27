@@ -2016,27 +2016,29 @@ check:
     }
 }
 
-// DRAFT: 0x0014DC20 ReadApparitionData__15EntityBaseClassFiUi
-// note: 27 words differ (size 0xB8 vs 0xBC). Saved-register order swapped: compiler puts iOffset in s1, original in s0; pSlot in v1 vs orig v0. Tried: local index copy, local offset copy after first branch, pSlot declared first (45), inverted null test (28), offset copy at entry (27), flipped count compare (27), base-pointer local (27). Missing one instruction vs original.
+inline char *GetApparitionSlot(void *pMgr, unsigned int i) {
+    if (i < *(unsigned int *)((char *)pMgr + 0x5054)) {
+        return (char *)pMgr + 0x53A0 + i * 4;
+    }
+    return 0;
+}
+
+// FUNCTION: 0x0014DC20 ReadApparitionData__15EntityBaseClassFiUi
 char EntityBaseClass::ReadApparitionData(int iOffset, unsigned int uIndex) {
     if (m_unk18 == 0 && uIndex == 0) {
         return 0;
     }
-    int off = iOffset;
-    if (!(off < 4)) {
+    if (!(iOffset < 4)) {
         CdsAssert__FPciPc("EntityBaseClass.cpp", 0x398, "iOffset < STATIC_APPARITION_DATA_SIZE");
     }
     if (uIndex == 0) {
         uIndex = m_unk04;
     }
-    char *pSlot = 0;
-    if (uIndex < *(unsigned int *)((char *)mpEntMgr__15EntityBaseClass + 0x5054)) {
-        pSlot = (char *)mpEntMgr__15EntityBaseClass + 0x53A0 + uIndex * 4;
-    }
+    char *pSlot = GetApparitionSlot(mpEntMgr__15EntityBaseClass, uIndex);
     if (pSlot == 0) {
         return 0;
     }
-    return pSlot[off];
+    return pSlot[iOffset];
 }
 
 // DRAFT: 0x0014DCE0 ProcessSequence__15EntityBaseClassFv
