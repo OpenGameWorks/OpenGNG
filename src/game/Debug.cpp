@@ -275,7 +275,7 @@ void Debug::LineFeed(char *pStr) {
 }
 
 // DRAFT: 0x16ACE0 FrameEnd__5DebugFv
-// note: 42 differing words: prologue matches; this is in s0 vs s2 (original copies a0 to s2 first), so the loop pointer is in s2 vs s0 (index s1 matches); the asm mfpc counter needs a copy into a2 that the original does not. Tried: p/i decl order and for-header init (42 best, 44 others), while loop, Debug *self local, nCount at function top, index at function top (42 or 44).
+// note: 13 words; goto-entered loop fixes the shape, but this sits in s0 and the table pointer in s2 where the original swaps them. Tried p/i declaration and init order (13-16), increment order (14), indexed DebugTbl[i] (43), static inline loop helper (44), Debug *self copy (13).
 void Debug::FrameEnd() {
     char buf[0x20];
 
@@ -287,11 +287,17 @@ void Debug::FrameEnd() {
     if (this->m_unk2C == 0) {
         unsigned int i;
         DebugTblEntry *p;
-        for (i = 0, p = DebugTbl; i < 0x1A; i++, p++) {
+        i = 0;
+        p = DebugTbl;
+        goto test;
+    loop:
             if (p->pFn != 0) {
                 p->pFn();
             }
-        }
+        i++;
+        p++;
+    test:
+        if (i < 0x1A) goto loop;
     }
     if (mDebugTime != 0) {
         unsigned int nCount;
