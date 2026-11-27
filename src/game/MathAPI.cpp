@@ -119,7 +119,7 @@ int MathAPI::IsEBoxWithinEBox(tagBOX *arg0, tagBOX *arg1) {
 }
 
 // DRAFT: 0x1577A0 MakeVertexList__7MathAPIFP6tagBOXPA4_f
-// note: 28 differing words; this/arg0 registers s1/s0 vs s0/s5, packed 1.0f build (lui/dsll32/or/pcpyld/sq) vs four sw. Tried: local order (42->32), unsigned counters (->31), reversed counter order (->28), separate dst pointer (47, reverted), null guards swapped (32, reverted).
+// note: 28 differing words; this/arg0 registers s1/s0 vs s0/s5 (allocation only, arg0 loop pointer and this both copied at entry), packed 1.0f build (lui/dsll32/or/pcpyld/sq) vs four sw. Tried: local order (42->32), unsigned counters (->31), reversed counter order (->28), separate dst pointer (47, reverted), null guards swapped (32, reverted), u_long128 64-bit constant (62: no pcpyld emitted; 128-bit shift form does not compile), spD0 aggregate init mid-function (70: frame moves), char * source pointer for memcpy (34), static inline StepVertex or CopyBoxRow helpers (28, inlined identically).
 void MathAPI::MakeVertexList(tagBOX *arg0, float (*arg1)[4]) {
     float sp90[4][4];
     float spD0[4];
