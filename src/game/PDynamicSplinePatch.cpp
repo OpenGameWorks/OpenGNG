@@ -1,9 +1,11 @@
 // COMPILER: mwcps2-3.0-011126
 #include "types.h"
+#include "Debug.h"
 #include "PDynamicSplinePatch.h"
 #include "PGfxEngine.h"
 
 // TODO(header): foreign declarations
+extern "C" void sceVu0InterVectorXYZ(float *, float *, float *, float);
 extern "C" void sceVu0CopyVector(float *dst, float *src);
 extern "C" void sceVu0UnitMatrix(float *pMatrix);
 extern "C" void __dl__FPv(void *pData);
@@ -198,6 +200,65 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
     gGfxEng[0x158E22] = 1;
 }
 
+// DRAFT: 0x001F3770 ApplyControlMatrices__19PDynamicSplinePatchFv
+// note: 128 words differ; needs global_optimizer off to stop hoisting (registers then match), original keeps nop-free assert delay slot (full scheduling); tried opt_common_subs/strength_reduction/lifetimes off, typed members, local base pointers.
+#pragma global_optimizer off
+void PDynamicSplinePatch::ApplyControlMatrices() {
+    if (m_unk1F6C == 0) {
+        CdsAssert("PDynamicSplinePatch.cpp", 0x132, "mpoControlNode");
+    }
+    char *pBase = (char *)this;
+    int nIdx;
+    char *pT = (char *)m_unk1F6C + 0x40;
+    float *pNode = (float *)(pT + 0x30);
+    int i;
+    for (i = 0; i < m_unk04; i++) {
+        nIdx = m_unk1F68 - ((int *)(pBase + 0x1F20))[i] - 1;
+        if (nIdx < 0) {
+            nIdx += 0x20;
+        }
+        if (nIdx >= 0x20) {
+            CdsAssert("PDynamicSplinePatch.cpp", 0x140, "aiMatrixIndex < SPLINE_PATCH_MAX_MATRIX_CACHE_SIZE");
+        }
+        float *pA = (float *)(pBase + i * 0x40 + 0x1210);
+        sceVu0InterVectorXYZ(pA, (float *)(pBase + nIdx * 0x40 + 0x1690), pA, ((float *)(pBase + 0x1ED8))[i]);
+        float *pB = (float *)(pBase + i * 0x40 + 0x1220);
+        sceVu0InterVectorXYZ(pB, (float *)(pBase + nIdx * 0x40 + 0x16A0), pB, ((float *)(pBase + 0x1ED8))[i]);
+        float *pC = (float *)(pBase + i * 0x40 + 0x1230);
+        sceVu0InterVectorXYZ(pC, (float *)(pBase + nIdx * 0x40 + 0x16B0), pC, ((float *)(pBase + 0x1ED8))[i]);
+        float *pD = (float *)(pBase + i * 0x40 + 0x1240);
+        sceVu0InterVectorXYZ(pD, pNode, pD, ((float *)(pBase + 0x1E90))[i]);
+    }
+    for (i = 1; i < m_unk04 - 1; i++) {
+        u_long128 *pMat = (u_long128 *)(pBase + i * 0x40 + 0x1210);
+        asm {
+            lqc2 vf1, 0x0(pMat)
+            lqc2 vf2, 0x10(pMat)
+            lqc2 vf3, 0x20(pMat)
+            lqc2 vf4, 0x30(pMat)
+        }
+        int j;
+        for (j = 0; j < m_unk00; j++) {
+            u_long128 *pRow = (u_long128 *)(pBase + j * 0x120) + 1;
+            u_long128 *pVec = pRow + i;
+            asm {
+                lqc2 vf5, 0x0(pVec)
+                vmulax.xyz ACC, vf1, vf5x
+                vmadday.xyz ACC, vf2, vf5y
+                vmaddaz.xyz ACC, vf3, vf5z
+                vmaddw.xyz vf5, vf4, vf0w
+                vnop
+                vnop
+                vnop
+                sqc2 vf5, 0x0(pVec)
+            }
+            pRow[0] = pRow[1];
+            pRow[m_unk04 - 1] = pRow[m_unk04 - 2];
+        }
+    }
+}
+
+#pragma global_optimizer on
 // DRAFT: 0x001F39C0 InitSplineKeys__19PDynamicSplinePatchFPfPf
 // note: 129 words differ; @367 is the all-zero initializer of scale (.bss). Angle wrap and loop shape differ (gfAngleDiff index 210; size 0x3a0 vs 0x3c0).
 void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {

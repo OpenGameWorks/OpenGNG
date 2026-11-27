@@ -24,7 +24,8 @@ public:
     int m_unk04;                    // 0x04
     int m_unk08;                    // 0x08
     int m_unk0C;                    // 0x0C
-    char _pad10[0x1690 - 0x10];
+    char _pad10[0x1210 - 0x10];
+    char m_unk1210[0x480];          // 18 matrices of 0x40 bytes
     char m_unk1690[0x800];          // 32 slots of 0x40 bytes
     float m_unk1E90[18];            // 0x1E90
     float m_unk1ED8[18];            // 0x1ED8
