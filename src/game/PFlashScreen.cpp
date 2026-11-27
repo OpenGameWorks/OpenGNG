@@ -9,8 +9,12 @@ extern char gGfxEng[1504384];
 extern short gDebugExportVars;
 extern PSound gSound;
 
-// DRAFT: 0x001CFD60 Render__12PFlashScreenFv
-// note: DIFF 13 words; aRegs pointer allocation only: original holds &aRegs[2] in s0, &aRegs[1] in s1 and derives &aRegs[3] as s0+8 after the first call; a data/addr struct array gives the same 13. No 4-lwc1/4-swc1 copy in the original (its lwc1 run feeds colour packing); pointer-local aRegs variant gave 83 lines, reverted.
+inline void SetGsRegPair(void *pEntry, long long data, long long reg) {
+    ((long long *)pEntry)[0] = data;
+    ((long long *)pEntry)[1] = reg;
+}
+
+// FUNCTION: 0x001CFD60 Render__12PFlashScreenFv
 void PFlashScreen::Render() {
     if (gDebugExportVars != 0) {
         if (m_unk14 == 0) {
@@ -21,15 +25,13 @@ void PFlashScreen::Render() {
 
             aRegs[0] = 1;
             aRegs[1] = 0x1A;
-            aRegs[2] = 0;
-            aRegs[3] = 0x1B;
+            SetGsRegPair(&aRegs[2], 0, 0x1B);
             ((PDisplayList *)*(void **)(gGfxEng + 0x154C80))->SetGsRegisters((u_long128 *)aRegs, 2);
             ((PDisplayList *)*(void **)(gGfxEng + 0x154C80))->SendGsPacket(m_unk30, 0x2D0, true);
 
             aRegs[0] = 0;
             aRegs[1] = 0x1A;
-            aRegs[2] = 0x18;
-            aRegs[3] = 0x1B;
+            SetGsRegPair(&aRegs[2], 0x18, 0x1B);
             ((PDisplayList *)*(void **)(gGfxEng + 0x154C80))->SetGsRegisters((u_long128 *)aRegs, 2);
         }
     }
