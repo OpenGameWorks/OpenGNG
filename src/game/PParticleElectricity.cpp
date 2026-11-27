@@ -1,6 +1,7 @@
 #include "types.h"
 #include "Debug.h"
 #include "PParticleElectricity.h"
+#include "PRandom.h"
 
 // TODO(header): foreign declarations
 extern "C" void *__dt__15PParticleSystemFv(void *, short);
@@ -112,8 +113,7 @@ void PParticleElectricity::SetupGlowParticles(tagElectricityBranch *pBranch) {
         pDst[4] = 128.0f;
         pDst[5] = 128.0f;
         pDst[6] = 128.0f;
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        pDst[7] = 85.0f + 10.0f * (3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF));
+        pDst[7] = 85.0f + 10.0f * ParticleRand01(m_unkD0);
     }
 }
 
@@ -262,14 +262,10 @@ void PParticleElectricity::Animate(float fA) {
             pElem->m_unk10 = *(float *)(pSrc + nIdx);
             pElem->m_unk14 = *(float *)(pSrc + nIdx + 4);
             pElem->m_unk18 = *(float *)(pSrc + nIdx + 8);
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            pElem->m_unk20 = m_unk100[0] + (-0.5f + 1.0f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            pElem->m_unk24 = m_unk100[1] + (-0.5f + 1.0f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            pElem->m_unk28 = m_unk100[2] + (-0.5f + 1.0f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            pElem->m_unk30 = m_unk124 * (0.15f + 0.099999994f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+            pElem->m_unk20 = m_unk100[0] + (-0.5f + 1.0f * ParticleRand01(m_unkD0));
+            pElem->m_unk24 = m_unk100[1] + (-0.5f + 1.0f * ParticleRand01(m_unkD0));
+            pElem->m_unk28 = m_unk100[2] + (-0.5f + 1.0f * ParticleRand01(m_unkD0));
+            pElem->m_unk30 = m_unk124 * (0.15f + 0.099999994f * ParticleRand01(m_unkD0));
             unsigned int nCount = m_unk04 >> 2;
             if (nCount < 9U) {
                 nCount = 8;

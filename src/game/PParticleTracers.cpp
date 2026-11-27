@@ -2,6 +2,7 @@
 #include "types.h"
 #include "Debug.h"
 #include "PParticleTracers.h"
+#include "PRandom.h"
 #include "PMat4.h"
 
 // TODO(header): foreign declarations
@@ -105,8 +106,7 @@ void PParticleTracers::InitTracers() {
                 sqc2 vf1, 0x0(pT)
             }
         }
-        *(int *)((char *)this + 0xD0) = *(int *)((char *)this + 0xD0) * 0x343FD + 0x269EC3;
-        pT[3] = 0.0f + ((m_unk170 - 0.0f) * (0.000030517578f * (float)((*(int *)((char *)this + 0xD0) >> 16) & 0x7FFF)));
+        pT[3] = 0.0f + ((m_unk170 - 0.0f) * ParticleRand01(*(int *)((char *)this + 0xD0)));
         *(u_long128 *)(pT + 4) = *(u_long128 *)m_unkF0;
     }
 }
@@ -290,8 +290,7 @@ void PParticleTracers::Animate(float fA) {
                 vnop
                 sqc2 vf5, 0x0(pO)
             }
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            pO[3] = m_unk130 + (m_unk12C - m_unk130) * ((float)((m_unkD0 >> 16) & 0x7FFF) * 0.000030517578125f);
+            pO[3] = m_unk130 + (m_unk12C - m_unk130) * ParticleRand01(m_unkD0);
             if (t > 0.8) {
                 pO[7] = m_unk134 + (t - 0.8f) / (1.0f - 0.8f) * (m_unk138 - m_unk134);
             } else {

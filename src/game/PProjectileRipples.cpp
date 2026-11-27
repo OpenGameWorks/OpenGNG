@@ -2,6 +2,7 @@
 #include "types.h"
 #include "Debug.h"
 #include "PProjectileRipples.h"
+#include "PRandom.h"
 
 // TODO(header): foreign declarations
 extern "C" void FadeAndDie__15PParticleSystemFUi(void *, unsigned int);
@@ -156,14 +157,11 @@ void *PProjectileRipples::InitRingMeshPacket(int &arg0, int arg1, bool arg2) {
     return pkt;
 }
 
-// DRAFT: 0x00217900 CreateRing__18PProjectileRipplesFPfPf
-// note: DIFF 4; all words match except the FP register of the -0.02f and 0.04f literals (original loads -0.02f into f3 first, ours loads 0.04f into f2); tried inline literals, hoisted locals, swapped declaration order, split declarations (before/after the idx check and after pRing), reversed add operands
+// FUNCTION: 0x00217900 CreateRing__18PProjectileRipplesFPfPf
 void PProjectileRipples::CreateRing(float *arg0, float *arg1) {
     float sp40[4];
     float sp50[4];
     float sp60[4];
-    float fPos = 0.04f;
-    float fNeg = -0.02f;
     int idx = FindFreeRing();
     if (idx < 0) {
         return;
@@ -171,10 +169,8 @@ void PProjectileRipples::CreateRing(float *arg0, float *arg1) {
     PProjectileRing *pRing = m_unk120 + idx;
     pRing->m_unk40 = 0.0f;
     pRing->m_unk44 = 1.0f / m_unk108;
-    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-    pRing->m_unk48 = fNeg + fPos * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF));
-    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-    pRing->m_unk4C = fNeg + fPos * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF));
+    pRing->m_unk48 = -0.02f + 0.04f * ParticleRand01(m_unkD0);
+    pRing->m_unk4C = -0.02f + 0.04f * ParticleRand01(m_unkD0);
     pRing->m_unk50 = 1;
     ComputeAxes(arg1, sp40, sp50, sp60);
     *(u_long128 *)pRing->m_unk00 = *(u_long128 *)sp40;

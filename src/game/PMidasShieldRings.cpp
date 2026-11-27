@@ -1,6 +1,7 @@
 #include "types.h"
 #include "Debug.h"
 #include "PMidasShieldRings.h"
+#include "PRandom.h"
 
 // TODO(header): foreign declarations
 extern "C" void FadeAndDie__15PParticleSystemFUi(void *, unsigned int);
@@ -115,18 +116,15 @@ int PMidasShieldRings::FindFreeRing() {
     return -1;
 }
 
-// DRAFT: 0x001F8D50 Emit__17PMidasShieldRingsFv
-// note: 6 differing lines, constant registers swapped: orig loads -0.015 into f5 first, ours loads 0.03 there; tried local -0.015f (top of function, or before the store: same load), local 0.03f, split product into a temporary, reversed add operands, product with 0.03f on the right, -0.015f as right operand (all 6)
+// FUNCTION: 0x001F8D50 Emit__17PMidasShieldRingsFv
 int PMidasShieldRings::Emit() {
     int nIdx = FindFreeRing();
     if (nIdx >= 0) {
         char *pSlot = (char *)this + nIdx * 0x14;
         *(int *)(pSlot + 0x14C) = 0;
         *(float *)(pSlot + 0x150) = 1.0f / (120.0f + (15.0f * m_unk140));
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        *(float *)(pSlot + 0x154) = -0.015f + (0.03f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        *(float *)(pSlot + 0x158) = -0.015f + (0.03f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+        *(float *)(pSlot + 0x154) = -0.015f + 0.03f * ParticleRand01(m_unkD0);
+        *(float *)(pSlot + 0x158) = -0.015f + 0.03f * ParticleRand01(m_unkD0);
         pSlot[0x15C] = 1;
         m_unk1EC++;
         return 1;

@@ -2,6 +2,7 @@
 #include "types.h"
 #include "Debug.h"
 #include "PParticleSparks.h"
+#include "PRandom.h"
 
 // TODO(header): foreign declarations
 class PMat4;
@@ -146,8 +147,7 @@ void PParticleSparks::Animate(float fDelta) {
     for (int j = 0; j < m_unk04; j++) {
         float *pP = (float *)((char *)m_unk08 + (j << 5));
         float *pQ = (float *)((char *)m_unk140 + (j << 5));
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        float fScale = m_unk130 + (1.0f - m_unk130) * (3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF));
+        float fScale = m_unk130 + (1.0f - m_unk130) * ParticleRand01(m_unkD0);
         float fT = m_unk148 * fScale;
         if (!(fT < m_unk144)) {
             fT = m_unk144;
@@ -201,9 +201,7 @@ void PParticleSparks::Animate(float fDelta) {
             sqc2 vf5, 0x0(pP)
         }
         float s = 0.25f * m_unk120;
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        float u = 3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF);
-        pP[3] = fRatio * (m_unk120 + (-s + (s + s) * u));
+        pP[3] = fRatio * (m_unk120 + (-s + (s + s) * ParticleRand01(m_unkD0)));
         pP[7] = m_unk110 + fRatioSq * (m_unk114 - m_unk110);
     }
 }
