@@ -1,7 +1,10 @@
+// COMPILER: mwcps2-3.0-011126
 // FLAGS: -str readonly
 #include "types.h"
 #include "Debug.h"
 #include "Timing.h"
+#include "PGfxEngine.h"
+#include "PDisplayList.h"
 
 // TODO(header): foreign declarations
 extern "C" void __dl__FPv(void *pMem);
@@ -22,7 +25,7 @@ struct PGfxEngineRef {
     char *pDisplayList;
     char _pad04[0x10];
 };
-extern char gGfxEng[1504384];
+extern PGfxEngine gGfxEng;
 extern float GAME_FPS;
 extern "C" char *strcat(char *pDst, char *pSrc);
 extern "C" char *strcpy(char *pDst, const char *pSrc);
@@ -61,7 +64,7 @@ int ESubTimer::GenerateStringWSuffix(char *pOut, unsigned int nArg) {
 }
 
 // DRAFT: 0x00169640 GenerateString__9ESubTimerFPcUiUi
-// note: DIFF 110; beqz skip length, assert delay slot, float compare shape (c.le.s vs c.lt.s), nArg2==1 float scheduling, tail scheduling. Tried: nMask per-branch, fScaled condition reversed, aAcc[0x70] frame 0x100.
+// note: DIFF 113 under 011126 (110 under 3.0.3); beqz skip length, assert delay slot, float compare shape (c.le.s vs c.lt.s), nArg2==1 float scheduling, tail scheduling. Tried: nMask per-branch, fScaled condition reversed, aAcc[0x70] frame 0x100.
 void ESubTimer::GenerateString(char *pOut, unsigned int nArg, unsigned int nArg2) {
     char aTmp[0x20];
     char aAcc[0x70];
@@ -125,8 +128,7 @@ int ESubTimer::GetTime() {
     return *(int *)((char *)this + 0x4);
 }
 
-// DRAFT: 0x00169930 ZeroTimer__9ESubTimerFv
-// note: 8 differing words; the second loop's tail is `slti; nop; bnez; nop; nop` in the original (ours has no nop before bnez and one nop after it), and the skip branch targets a nop before sb 0x44. Tried unguarded for (12), top-tested while (14), guarded do-while (8, kept), store before increment (8), for-loop form (8), direct offset store (8). Matches under `// COMPILER: mwcps2-3.0-011126`, which also breaks PrintDisplayListStatusMeter, so the file keeps the default compiler.
+// FUNCTION: 0x00169930 ZeroTimer__9ESubTimerFv
 void ESubTimer::ZeroTimer() {
     m_unk000 = 0;
     m_unk004 = 0;
@@ -199,33 +201,20 @@ ESubTimer::ESubTimer() {
     m_unk045 = 1;
 }
 
-// DRAFT: 0x00169A00 PrintPerformanceMeter__7ETimingFUiP5PMat4
-// note: 96 differing words; frame and saved registers match, but the first gGfxEng load uses a0 not a1 and the 0x158E14 load is scheduled after the division; reorder variants raised it to 99.
+// FUNCTION: 0x00169A00 PrintPerformanceMeter__7ETimingFUiP5PMat4
 void ETiming::PrintPerformanceMeter(unsigned int nUnused, PMat4 *pMat) {
-    int nDelta = *(int *)((char *)gGfxEng + 0x158E18) - *(int *)((char *)gGfxEng + 0x158E14);
+    unsigned int nDelta = gGfxEng.m_unk158E18 - gGfxEng.m_unk158E14;
     float fFrame = (1000.0f / GAME_FPS) - 0.5f;
-    int nCount = *(int *)((char *)gGfxEng + 0x158E0C);
-    float fA;
-    if (nCount >= 0) {
-        fA = (float)nCount;
-    } else {
-        fA = 2.0f * (float)(((unsigned int)nCount >> 1) | (nCount & 1));
-    }
-    ((PProgressBar *)m_unk640)->SetReading(100.0f * ((((3.3333333f * fA) / 1000.0f) / 1000.0f) / fFrame));
-    float fB;
-    if (nDelta >= 0) {
-        fB = (float)nDelta;
-    } else {
-        fB = 2.0f * (float)(((unsigned int)nDelta >> 1) | (nDelta & 1));
-    }
-    ((PProgressBar *)m_unk890)->SetReading(100.0f * ((((3.3333333f * fB) / 1000.0f) / 1000.0f) / fFrame));
+    unsigned int nCount = gGfxEng.m_unk158E0C;
+    ((PProgressBar *)m_unk640)->SetReading(100.0f * ((((3.3333333f * (float)nCount) / 1000.0f) / 1000.0f) / fFrame));
+    ((PProgressBar *)m_unk890)->SetReading(100.0f * ((((3.3333333f * (float)nDelta) / 1000.0f) / 1000.0f) / fFrame));
     ((PProgressBar *)m_unk640)->Render();
     ((PProgressBar *)m_unk890)->Render();
 }
 
 // FUNCTION: 0x00169B70 PrintDisplayListStatusMeter__7ETimingFUiP5PMat4
 void ETiming::PrintDisplayListStatusMeter(unsigned int nUnused, PMat4 *pMat) {
-    int nCount = *(int *)(((PGfxEngineRef *)((char *)gGfxEng + 0x154C80))->pDisplayList + 0xA3340);
+    int nCount = gGfxEng.m_unk154C80->m_unkA3340;
     ((PProgressBar *)m_unkAE0)->SetReading(100.0f * ((float)nCount / 32768.0f));
     ((PProgressBar *)m_unkAE0)->Render();
 }
@@ -280,8 +269,7 @@ int ETiming::GenerateStringWSuffixAndCat(char *pDest, unsigned int nId) {
     return 1;
 }
 
-// DRAFT: 0x00169E30 ZeroAllOneFrameVals__7ETimingFv
-// note: 6 differing words; original has 2 extra nops (one before the loop bnez, one after its delay slot), so the join sits at +0x38. Tried prefix ++ (6), unsigned compare (6), pTimer = pTimer + 1 (6), end pointer declared first (12), store before increment (9), top-tested, counted, byte-step worse; four more pointer and increment-order variants (v6 to v9) also stayed at 6. Matches under `// COMPILER: mwcps2-3.0-011126` (see ZeroTimer).
+// FUNCTION: 0x00169E30 ZeroAllOneFrameVals__7ETimingFv
 void ETiming::ZeroAllOneFrameVals() {
     ESubTimer *pTimer = m_aTimers;
     ESubTimer *pEnd = (ESubTimer *)((char *)this + 0x634);
