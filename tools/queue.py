@@ -2,7 +2,7 @@
 """On-disk job queue for decomp workers; keeps the coordinator's context small.
 
 A job is one game source file plus up to MAXF of its unclaimed functions
-(mid-sized first, at most MAXB bytes; trivial ones go to tools/trivial.py). A file has at most one active job, so
+(mid-sized first, at most MAXB bytes; functions of TRIVIAL bytes or less stay with the coordinator). A file has at most one active job, so
 a worker owns `src/game/<File>.cpp` and `<File>.h` exclusively.
 
 Usage:
@@ -27,8 +27,8 @@ Q = ROOT / "build/queue"
 ACTIVE = Q / "active.json"
 RESULTS = ROOT / "build/results"
 MAXF, MAXB = 5, 0x600
-# Functions of TRIVIAL bytes or less (empty bodies, one-load getters) are generated
-# by tools/trivial.py, not by workers; mid-sized functions give the most matched
+# Functions of TRIVIAL bytes or less (empty bodies, one-load getters) are left out of
+# worker jobs, since the coordinator writes them faster; mid-sized functions give the most matched
 # bytes per worker token.
 TRIVIAL = 0x10
 SWEET = (0x20, 0x200)
