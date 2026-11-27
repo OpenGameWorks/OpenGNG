@@ -178,16 +178,15 @@ void PScreenBlurFx::InitBlurPacket(tagGsScreenBlurPacket *pPacket, int nWidth, i
     } while (i < 16);
 }
 
-struct GsAD {
-    unsigned long long lo;
-    unsigned long long hi;
-};
+inline void SetGsRegPair(void *pEntry, long long data, long long reg) {
+    ((long long *)pEntry)[0] = data;
+    ((long long *)pEntry)[1] = reg;
+}
 
 // DRAFT: 0x00216C00 Render__13PScreenBlurFxFv
-// note: 116 words; packet stores via aPkt[] (attempt 4 pointer form 126, worse); byte/branch order still differs
+// note: 103 words; SetGsRegPair packet idiom matched; still differs: float/const load order (lwc1 f0/f1 swapped), bc1t vs bc1f, early-return beq target 0x97 vs 0x9B, gGfxEng +0x154C80 addressing in tail. Tried: void**/offset pointer forms (126/159-161), swapped texture arms (103), flipped compare (103), per-block float scope (103)
 void PScreenBlurFx::Render() {
-    GsAD aPkt[5];
-    float f;
+    long long aPkt[10];
     int nByte;
 
     if (m_unk84A0 == 4) {
@@ -195,58 +194,61 @@ void PScreenBlurFx::Render() {
     }
     if (m_unk84A4) {
         SetPrevFrameBufferAsTexture__10PGfxEngineFv(gGfxEng);
-        aPkt[0].lo = 0;
     } else {
         UpdateHeatHazeBuffer__16PParticleManagerFv(gGfxEng + 0x154F00);
         SetTexture__10PGfxEngineFi(gGfxEng, *(int *)(gGfxEng + 0x155570));
-        aPkt[0].lo = 0;
     }
-    aPkt[0].hi = 0x1A;
-    aPkt[1].lo = 0x58;
-    aPkt[1].hi = 0x1B;
-    aPkt[2].lo = 0x44;
-    aPkt[2].hi = 0x42;
-    aPkt[3].lo = 0x30000;
-    aPkt[3].hi = 0x47;
-    aPkt[4].lo = 5;
-    aPkt[4].hi = 8;
+    aPkt[0] = 0;
+    aPkt[1] = 0x1A;
+    SetGsRegPair(&aPkt[2], 0x58, 0x1B);
+    SetGsRegPair(&aPkt[4], 0x44, 0x42);
+    SetGsRegPair(&aPkt[6], 0x30000, 0x47);
+    SetGsRegPair(&aPkt[8], 5, 8);
     SetGsRegisters__12PDisplayListFP1i((void *)*(int *)(gGfxEng + 0x154C80), (u_long128 *)aPkt, 5);
 
-    f = *(float *)&m_unk8480[0];
-    if (f >= 2147483648.0f) {
+    {
+        float f = *(float *)&m_unk8480[0];
+    if (2147483648.0f <= f) {
         nByte = ((int)(f - 2147483648.0f) | 0x80000000) & 0xFF;
     } else {
         nByte = (int)f & 0xFF;
     }
-    *(int *)((char *)this + 0x30) = nByte;
+        *(int *)((char *)this + 0x30) = nByte;
+    }
 
-    f = *(float *)&m_unk8480[1];
-    if (f >= 2147483648.0f) {
+    {
+        float f = *(float *)&m_unk8480[1];
+    if (2147483648.0f <= f) {
         nByte = ((int)(f - 2147483648.0f) | 0x80000000) & 0xFF;
     } else {
         nByte = (int)f & 0xFF;
     }
-    *(int *)((char *)this + 0x34) = nByte;
+        *(int *)((char *)this + 0x34) = nByte;
+    }
 
-    f = *(float *)&m_unk8480[2];
-    if (f >= 2147483648.0f) {
+    {
+        float f = *(float *)&m_unk8480[2];
+    if (2147483648.0f <= f) {
         nByte = ((int)(f - 2147483648.0f) | 0x80000000) & 0xFF;
     } else {
         nByte = (int)f & 0xFF;
     }
-    *(int *)((char *)this + 0x38) = nByte;
+        *(int *)((char *)this + 0x38) = nByte;
+    }
 
-    f = *(float *)&m_unk8480[3];
-    if (f >= 2147483648.0f) {
+    {
+        float f = *(float *)&m_unk8480[3];
+    if (2147483648.0f <= f) {
         nByte = ((int)(f - 2147483648.0f) | 0x80000000) & 0xFF;
     } else {
         nByte = (int)f & 0xFF;
     }
-    *(int *)((char *)this + 0x3C) = nByte;
+        *(int *)((char *)this + 0x3C) = nByte;
+    }
 
     SendGsPacket__12PDisplayListFPvib((void *)*(int *)(gGfxEng + 0x154C80), (char *)this + 0x10, 0x8440, true);
-    aPkt[0].lo = 0;
-    aPkt[0].hi = 8;
+    aPkt[0] = 0;
+    aPkt[1] = 8;
     SetGsRegisters__12PDisplayListFP1i((void *)*(int *)(gGfxEng + 0x154C80), (u_long128 *)aPkt, 1);
 }
 
