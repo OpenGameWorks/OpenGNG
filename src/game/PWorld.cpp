@@ -799,7 +799,7 @@ void PWorld::InitRenderFrame() {
 }
 
 // DRAFT: 0x19C060 InitMatrices__6PWorldFv
-// note: DIFF 4 words; float constants 128.0f and 1000.0f are loaded in swapped order (original 128 into v1 first, 1000 into v0). Holding FOV_Y in a local fixed the early order; 128.0f or 1000.0f as locals gave 16 and 10; a 0.1f local gives 6 alone and with any second local (1000, 128, 16777216, 2048); both 128 and 1000 locals give 10-16.
+// note: DIFF 4 words; float constants 128.0f and 1000.0f are loaded in swapped order (original 128 into v1 first, 1000 into v0). Holding FOV_Y in a local fixed the early order; 128.0f or 1000.0f as locals gave 16 and 10; a 0.1f local gives 6 alone and with any second local (1000, 128, 16777216, 2048); both 128 and 1000 locals give 10-16. Also tried: local for XY_ASPECT (21, 54 with fFov passed), FOV_Y read back from member (4), locals for 1000 (10), 128 (16), 2048 shared (10), 0.1f before store (6), 128+16777216 (15).
 void PWorld::InitMatrices() {
     float fFov = FOV_Y;
     m_13794 = fFov;

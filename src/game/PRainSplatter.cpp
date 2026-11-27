@@ -21,7 +21,7 @@ extern "C" void *AllocParticles__12PDisplayListFii(void *pThis, int nCount, int 
 extern "C" void sceVu0SubVector(float *pDst, float *pA, float *pB);
 
 // DRAFT: 0x001D00B0 Render__13PRainSplatterFv
-// note: 4 words; DrawParticles float constants: original materialises 1.0f (f13) before 0.5f (f12); literal {1,1,1,1} fixed. Tried locals in both orders, const locals, scaled and summed constants, PGfxEngine member calls (all 4).
+// note: 4 words; DrawParticles float constants: original materialises 1.0f (f13) before 0.5f (f12); literal {1,1,1,1} fixed. Tried locals in both orders (also declared at function top), direct literals, vec[0] as arg, const locals, scaled and summed constants, PGfxEngine member calls (all 4).
 void PRainSplatter::Render() {
     float vec[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     SetMaterial__10PGfxEngineFiPfbUlUl(gGfxEng, m_unk30, vec, 1, 0x48, 0x50000);
