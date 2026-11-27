@@ -24,6 +24,13 @@ public:
         char _pad000[0x7C];
     };
 
+    int GetHealth();
+    const char *GetClassName();
+    void ExtendCombo();
+    int NeedSuperMeter();
+    int OnGunDeck();
+    void SetEditableVars(char *pVars);
+    int CheckPlayerData(PlayerData *pData);
     int IsPauseDisabled();
     int IsPlayerOnAnimNode(unsigned int arg0);
     int ReleaseCheck();

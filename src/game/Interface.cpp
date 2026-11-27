@@ -22,10 +22,6 @@ extern char CursorPos[0x120];
 extern "C" void __dt__11FontManagerFv(void *pThis, short nFlag);
 extern "C" void __dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" int sprintf(char *buf, const char *fmt, ...);
-class Player {
-public:
-    void SwapAbility(int arg0);
-};
 extern PSound gSound;
 extern float GAME_FPS;
 extern "C" void InitRenderFrame__9MaxEngineFbUi(void *pThis, bool bFlag, unsigned int nFlags);
@@ -427,8 +423,6 @@ void Interface::HudUpdate(int arg0) {
     *(int *)(MemMgr + 0x18) = saved;
 }
 
-// TODO(header): mpPlayerData__7GameHud is a pointer-sized small-data global.
-extern GameHud *mpPlayerData__7GameHud;
 // TODO(header): IconTable is a 0x20-byte-stride table indexed by icon type; AbilityTable is shared with Player.cpp.
 extern char IconTable[0x1100];
 extern signed char AbilityTable[];
@@ -439,7 +433,7 @@ extern char ComboLevel[0x50];
 // note: DIFF 116; the +4 folds into lw 4(v0) where the original uses addiu before addu and lw 0(v0); prologue and register allocation also differ.
 void HudGrim::Update(int arg0) {
     int idx = m_unkE;
-    char *base = (char *)mpPlayerData__7GameHud + 4;
+    char *base = (char *)GameHud::mpPlayerData + 4;
     int target = *(int *)(base + (idx << 2));
     if (target > 0x28) {
         target = 0x28;
@@ -462,7 +456,7 @@ void HudGrim::Update(int arg0) {
                         ((PGrimBarAura *)m_unk20)->EnableParticle(i, true);
                     }
                 }
-                bEnable = (m_unkC < 10) ? (*(signed char *)((char *)mpPlayerData__7GameHud + 0x59) == 4) : true;
+                bEnable = (m_unkC < 10) ? (*(signed char *)((char *)GameHud::mpPlayerData + 0x59) == 4) : true;
             } else {
                 cur = cur - 1;
                 dir = 0;
@@ -497,7 +491,7 @@ void HudGrim::UpdateStatus(bool arg0) {
 // FUNCTION: 0x13FEE0 UpdateCover__7HudGrimFv
 void HudGrim::UpdateCover() {
     int threshold = 0x14;
-    int hp = *(int *)((char *)mpPlayerData__7GameHud + 0x34);
+    int hp = *(int *)((char *)GameHud::mpPlayerData + 0x34);
     int i = 0;
     int off = 0;
     do {
@@ -548,7 +542,7 @@ void HudGrim::Reset() {
 
     m_unkF = 0;
     off = (unsigned int)m_unkE << 2;
-    base = (char *)((unsigned int)mpPlayerData__7GameHud + 4);
+    base = (char *)((unsigned int)GameHud::mpPlayerData + 4);
     m_unkC = *(short *)(base + off);
     if (m_unkC > 0x28) {
         m_unkC = 0x28;
@@ -615,7 +609,7 @@ void HudGrim::Init(PMeshNode *meshNode, HudData *hud) {
 // FUNCTION: 0x140270 Update__8HudSuperFi
 void HudSuper::Update(int arg0) {
     short cur = m_unkC;
-    int target = *(int *)((char *)mpPlayerData__7GameHud + 0x3C);
+    int target = *(int *)((char *)GameHud::mpPlayerData + 0x3C);
     int diff = target - cur;
     if (diff != 0) {
         if (diff > 0) {
@@ -642,7 +636,7 @@ void HudSuper::UpdateMaxSuper() {
     PMNode *pCap;
     float fStep;
 
-    nTarget = *(unsigned int *)((char *)mpPlayerData__7GameHud + 0x38);
+    nTarget = *(unsigned int *)((char *)GameHud::mpPlayerData + 0x38);
     pList = (PArray *)((char *)m_unk4 + 0x14);
     ((nTarget != 0) ? (void)0 : CdsAssert("Interface.cpp", 0xA07, "iMeter"));
     if (pList->m_unk0 < nTarget) {
@@ -731,7 +725,7 @@ void HudSuper::Reset() {
     ((pLast != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x9CE, "pLast"));
     pCap = pLast->Find(0x8CF87F7E);
     ((pCap != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x9D0, "pCap"));
-    nTarget = *(unsigned int *)((char *)mpPlayerData__7GameHud + 0x38);
+    nTarget = *(unsigned int *)((char *)GameHud::mpPlayerData + 0x38);
     ((nTarget != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x9D3, "iMeter"));
     if (nTarget < pList->m_unk0) {
         ((PArray *)((char *)pLast + 0x14))->Remove(pCap);
@@ -767,7 +761,7 @@ void HudSuper::Reset() {
         pLast = (pList->m_unk0 != 0) ? (PMNode *)pList->m_unk8[pList->m_unk0 - 1] : 0;
         ((PArray *)((char *)pLast + 0x14))->Add(pCap);
     }
-    nValue = *(int *)((char *)mpPlayerData__7GameHud + 0x3C);
+    nValue = *(int *)((char *)GameHud::mpPlayerData + 0x3C);
     m_unkC = (short)nValue;
     UpdateBar(nValue);
 }
@@ -795,7 +789,7 @@ void HudHealth::Update(int arg0) {
     bDirty = false;
     pList = (PArray *)((char *)m_unk4 + 0x14);
     nCount = pList->m_unk0;
-    nTarget = *(int *)((char *)mpPlayerData__7GameHud + 8);
+    nTarget = *(int *)((char *)GameHud::mpPlayerData + 8);
     nDelta = m_unkC - nTarget;
     pCur = (nCount != 0) ? (PMNode *)pList->m_unk8[nCount - 1] : 0;
     if (nDelta != 0) {
@@ -904,9 +898,9 @@ void HudHealth::Reset() {
     ((pLast != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x8F1, "pLast"));
     pCap = pLast->Find(0x851A08AB);
     ((pCap != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x8F3, "pCap"));
-    nWanted = *(unsigned int *)((char *)mpPlayerData__7GameHud + 0xC);
+    nWanted = *(unsigned int *)((char *)GameHud::mpPlayerData + 0xC);
     ((nWanted != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x8FA, "iMeter"));
-    m_unkC = *(short *)((char *)mpPlayerData__7GameHud + 8);
+    m_unkC = *(short *)((char *)GameHud::mpPlayerData + 8);
     if (nWanted < nCount) {
         ((PArray *)((char *)pLast + 0x14))->Remove(pCap);
         while (nWanted < (unsigned int)pList->m_unk0) {
@@ -1188,7 +1182,7 @@ void HudCombo::Update(int arg0) {
 // DRAFT: 0x00141960 UpdateStatus__8HudComboFb
 // note: 54 words differ; original hoists the state constant 2 to entry, loads the mpPlayerData pointer and adds 4 before the index, and compares 2,1,3,0; ours folds +4 into lh offset. Tried: case orders 2,3,1,0 (69) and 2,1,3,0 (64); short-indexed global load (56); case blocks in source order 1,3,2,0 (64); if-chain testing 1,3,2,0 (61); +4 folded after index (54, asm identical). Entry constant in the original is 1 in a2, not 2.
 void HudCombo::UpdateStatus(bool flag) {
-    m_unkC = *(short *)((char *)mpPlayerData__7GameHud + 4 + (m_unkE * 4));
+    m_unkC = *(short *)((char *)GameHud::mpPlayerData + 4 + (m_unkE * 4));
     switch (m_unkF) {
     case 0:
         m_unkF = 1;
@@ -1285,7 +1279,7 @@ void HudCombo::ComboNumber() {
     *(int *)((char *)m_unk38 + 0x2C) = 0x3E99999A;
     int count = 0;
     do {
-        if (*(int *)((char *)mpPlayerData__7GameHud + 0x50) < *(int *)(ComboLevel + count * 8)) {
+        if (*(int *)((char *)GameHud::mpPlayerData + 0x50) < *(int *)(ComboLevel + count * 8)) {
             break;
         }
         count++;
@@ -1366,7 +1360,7 @@ void GameHud::Update(int arg0) {
     switch (m_unkF) {
     case 1:
         if (((*(signed char *)((char *)m_unk4 + 0x3F)) & 7) & 4) {
-            int table = *(int *)((char *)mpPlayerData__7GameHud + 4 + (m_unkE * 4));
+            int table = *(int *)((char *)GameHud::mpPlayerData + 4 + (m_unkE * 4));
             int d = table - m_unkC;
             if (d != 0) {
                 int snd = -1;
@@ -1520,7 +1514,7 @@ void PAnimFrame::SetFrameRate(float value) {
 void GameHud::Reset() {
     int idx = m_unkE;
     if (idx >= 0) {
-        char *base = (char *)mpPlayerData__7GameHud;
+        char *base = (char *)GameHud::mpPlayerData;
         int off = (idx & 0xFF) << 2;
         m_unkC = *(short *)(base + 4 + off);
         if (m_unkC == 0) {
@@ -1553,7 +1547,7 @@ void HudInventory::DisplayInfo(int arg0) {
         } else if (rem == 10) {
             strId = 0x11E;
         } else if (rem == 9 || rem == 8) {
-            GameHud *pMp = mpPlayerData__7GameHud;
+            Player::PlayerData *pMp = GameHud::mpPlayerData;
             int nVal = (*(int *)((char *)pMp + 0x28) < 0x63) ? *(int *)((char *)pMp + 0x1C) - *(int *)((char *)pMp + 0x14) : 0;
             char *pRec = *(char **)((char *)&gInterface + 0x180) + 0xD5C;
             unsigned short buf[0x20];
@@ -1580,7 +1574,7 @@ void HudInventory::DisplayInfo(int arg0) {
             group++;
             slot -= 7;
         }
-        signed char id = *((signed char *)mpPlayerData__7GameHud + 0x5B + (group << 3) + slot);
+        signed char id = *((signed char *)GameHud::mpPlayerData + 0x5B + (group << 3) + slot);
         if (id >= 0) {
             pFont->DisplayString(*(int *)((char *)AbilityTable + 0xC + (id << 4)), 0, 0x14, false);
         }
@@ -1606,7 +1600,7 @@ int HudInventory::SwapCheck(unsigned int arg0) {
         group++;
         slot -= 7;
     }
-    char *hud = (char *)mpPlayerData__7GameHud;
+    char *hud = (char *)GameHud::mpPlayerData;
     char *base = hud + 0x5B + (group << 3);
     char *cell = base + slot;
     int icon = *cell;
@@ -1674,7 +1668,7 @@ void HudInventory::InfoScreen() {
         }
         if (nPress & 0x800) {
             m_unk3C = 2;
-            ((HudHint *)((char *)&gInterface + 0x32C))->Init(*(unsigned int *)((char *)mpPlayerData__7GameHud + 0x54));
+            ((HudHint *)((char *)&gInterface + 0x32C))->Init(*(unsigned int *)((char *)GameHud::mpPlayerData + 0x54));
             return;
         }
         if (SwapCheck(nPress) != 0) {
@@ -1790,7 +1784,7 @@ void HudInventory::Update(int arg0) {
 }
 
 // FUNCTION: 0x00142FE0 IsAnimate__5PAnimFv
-int PAnim::IsAnimate() {
+signed char PAnim::IsAnimate() {
     return 0;
 }
 
@@ -1832,7 +1826,7 @@ void HudInventory::UpdateShieldIcon() {
     if (*(unsigned int *)pa != 0) {
         node = ((char **)*(char ***)(pa + 8))[0];
     }
-    int m44 = *(int *)((char *)mpPlayerData__7GameHud + 0x44);
+    int m44 = *(int *)((char *)GameHud::mpPlayerData + 0x44);
     int sel;
     int val;
     switch (m44) {
@@ -1858,7 +1852,7 @@ void HudInventory::UpdateShieldIcon() {
             *(int *)(e + 0xC) = (i == sel) ? 1 : 0;
         }
     }
-    char *p = (char *)mpPlayerData__7GameHud + 0x63;
+    char *p = (char *)GameHud::mpPlayerData + 0x63;
     for (int k = 0; k < 3; k++, p++) {
         signed char v = *p;
         if (v == 4 || v == 0x12 || v == 0x13) {
@@ -1891,7 +1885,7 @@ void HudInventory::AddIcon(int arg0) {
                 sp18[0] = arg0;
                 i = 0;
                 w = 1;
-                base = (signed char *)mpPlayerData__7GameHud + 0x5B + iconType * 8;
+                base = (signed char *)GameHud::mpPlayerData + 0x5B + iconType * 8;
                 for (; i < count; i++) {
                     c = base[i];
                     if (c != arg0) {
@@ -1905,7 +1899,7 @@ void HudInventory::AddIcon(int arg0) {
                     dst++;
                 }
             } else {
-                base = (signed char *)mpPlayerData__7GameHud + 0x5B + iconType * 8;
+                base = (signed char *)GameHud::mpPlayerData + 0x5B + iconType * 8;
                 base[count + slot] = arg0;
             }
             UpdateGroup(iconType);
@@ -1929,7 +1923,7 @@ void HudInventory::UpdateGroup(int arg0) {
 
     s6->SetAllFrustrumTest((eBoxIntersect)0);
     s0 = IconTable + (arg0 << 5);
-    s1 = (signed char *)mpPlayerData__7GameHud + a2 + 0x5B;
+    s1 = (signed char *)GameHud::mpPlayerData + a2 + 0x5B;
     if (s7 != 0) {
         s7->SetAllFrustrumTest((eBoxIntersect)0);
     }
@@ -2346,7 +2340,7 @@ void Interface::InitHud() {
     char *table;
 
     ((m_unk1C4 != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x35B, "mpInterface"));
-    ((mpPlayerData__7GameHud != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x35C, "GameHud::mpPlayerData"));
+    ((GameHud::mpPlayerData != 0) ? (void)0 : CdsAssert("Interface.cpp", 0x35C, "GameHud::mpPlayerData"));
     if (((PMNode *)m_unk1C4)->m_unk8 != 0xCF9EDC06) {
         pNode = (((PMNode *)m_unk1C4)->m_unk14 < 2) ? 0 : ((PMNode *)m_unk1C4)->m_unk1C[1];
         pNew = pNode->Find(0xCF9EDC06);
@@ -2391,7 +2385,12 @@ void Interface::InitHud() {
     ResetGameHud();
 }
 
-// FUNCTION: 0x144690 Init__7GameHudFP9PMeshNodeP7HudData
+// FUNCTION: 0x00144680 SetPlayerData__9InterfaceFPQ26Player10PlayerData
+void Interface::SetPlayerData(Player::PlayerData *pData) {
+    GameHud::mpPlayerData = pData;
+}
+
+// FUNCTION: 0x00144690 Init__7GameHudFP9PMeshNodeP7HudData
 void GameHud::Init(PMeshNode *meshNode, HudData *hud) {
     m_unk4 = ((PMNode *)meshNode)->Find(hud->m_unk0);
     m_unkF = hud->m_unk5;

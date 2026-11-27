@@ -3,6 +3,7 @@
 #include "Debug.h"
 #include "PResourceManager.h"
 #include "PArray.h"
+#include "PAnimFrame.h"
 
 // TODO(header): foreign declarations
 extern "C" void EnableFx__6PMNodeFbb(void *pNode, int a, int b);
@@ -259,14 +260,12 @@ class PlingEffect {
 public:
     virtual void Slot00(int arg0);
 };
-// Virtual slots 0..3 are the destructor, Load, Load and Animate; slot 4 (0x18) is IsAnimate.
-class PAnimFrame {
+// The first virtuals of __vt__6Player; Player.h does not declare its EntityBaseClass base yet.
+class PlayerVirtuals {
 public:
-    virtual void Slot00();
-    virtual void Slot04();
-    virtual void Slot08();
-    virtual void Slot0C();
-    virtual int IsAnimate();
+    virtual ~PlayerVirtuals();
+    virtual int GetTallyType();
+    virtual void Execute();
 };
 class PMat4;
 class AnimStateObject {
@@ -554,6 +553,16 @@ public:
     virtual int OnHitEvent(void *pSource, int nEvent, unsigned int nArg1, unsigned int nArg2);
 };
 
+// FUNCTION: 0x00158F40 GetHealth__6PlayerFv
+int Player::GetHealth() {
+    return m_unk1D8;
+}
+
+// FUNCTION: 0x00158F50 GetClassName__6PlayerFv
+const char *Player::GetClassName() {
+    return "Player";
+}
+
 // FUNCTION: 0x00158F60 Ready2Clear__6PlayerFv
 unsigned char Player::Ready2Clear() {
     if (m_unk264 & 0x32) {
@@ -584,6 +593,11 @@ int Player::IsPlayerOnAnimNode(unsigned int arg0) {
     return 0;
 }
 
+// FUNCTION: 0x00159020 ExtendCombo__6PlayerFv
+void Player::ExtendCombo() {
+    m_unk314 = 0x42A00000;
+}
+
 // FUNCTION: 0x00159030 IsPauseDisabled__6PlayerFv
 int Player::IsPauseDisabled() {
     int ret = (m_unk264 & 0x808) != 0;
@@ -594,6 +608,11 @@ int Player::IsPauseDisabled() {
         ret = gEng[0x19A18] != 0;
     }
     return ret;
+}
+
+// FUNCTION: 0x00159070 NeedSuperMeter__6PlayerFv
+int Player::NeedSuperMeter() {
+    return m_unk20C < m_unk214;
 }
 
 // DRAFT: 0x00159080 DetachJoint__6PlayerFi
@@ -1903,7 +1922,7 @@ void Player::DieMove() {
         PAnimFrame *pAnim = *(PAnimFrame **)((char *)m_unk3C + 0x24);
         bool animating = false;
         if (pAnim != 0) {
-            animating = pAnim->IsAnimate() != 0;
+            animating = pAnim->IsAnimate();
         }
         if (!animating) {
             m_unk250 = 1;
@@ -1923,6 +1942,11 @@ void Player::DieMove() {
         }
         break;
     }
+}
+
+// FUNCTION: 0x0015B5B0 OnGunDeck__6PlayerFv
+int Player::OnGunDeck() {
+    return m_unk260 == 0x3E;
 }
 
 // DRAFT: 0x0015B5C0 GunDeckMove__6PlayerFv
@@ -2194,6 +2218,16 @@ void Player::GuardMove() {
     pPhys->m_unk11C = Round180__Ff(m_unk1C4);
 }
 
+// FUNCTION: 0x0015C880 IsAnimate__10PAnimFrameFv
+signed char PAnimFrame::IsAnimate() {
+    return m_unk2A;
+}
+
+// FUNCTION: 0x0015C890 GetLoop__10PAnimFrameFv
+short PAnimFrame::GetLoop() {
+    return m_unk20;
+}
+
 // FUNCTION: 0x0015C8A0 MBlow2Move__6PlayerFv
 void Player::MBlow2Move() {
     static struct {
@@ -2292,6 +2326,11 @@ void Player::StabDownMove() {
     if (temp_f0 >= 0x4B) {
         CancelAttack(0x30);
     }
+}
+
+// FUNCTION: 0x0015CB50 GetLoop__5PAnimFv
+short PAnim::GetLoop() {
+    return 0;
 }
 
 // FUNCTION: 0x0015CB60 SpinSlashMove__6PlayerFv
@@ -4620,6 +4659,11 @@ int Player::GuardCheck(EntityBaseClass *arg0) {
     return 0;
 }
 
+// FUNCTION: 0x00162000 SetEditableVars__6PlayerFPc
+void Player::SetEditableVars(char *pVars) {
+    ((PlayerVirtuals *)this)->Execute();
+}
+
 // FUNCTION: 0x00162010 GetGroundAction__6PlayerFv
 int Player::GetGroundAction() {
     unsigned short flags = m_unk1B0;
@@ -5895,6 +5939,12 @@ void Player::ShowPlayer(bool arg0) {
     }
 }
 
+// FUNCTION: 0x00163FD0 ReleaseHeadCamera__6PlayerFv
+void Player::ReleaseHeadCamera() {
+    m_unk26C = 0;
+    ShowPlayer(true);
+}
+
 // FUNCTION: 0x00163FE0 SetHeadCamera__6PlayerFb
 void Player::SetHeadCamera(bool arg0) {
     if (((Camera *)(gEng + 0x19760))->SetHeadCam(arg0) != 0) {
@@ -6555,6 +6605,11 @@ void Player::PadUpdate(bool arg0) {
         f = *(float *)((char *)m_unk38 + 0x11C);
     }
     m_unk1C4 = f;
+}
+
+// FUNCTION: 0x00165920 CheckPlayerData__6PlayerFPQ26Player10PlayerData
+int Player::CheckPlayerData(PlayerData *pData) {
+    return 1;
 }
 
 // FUNCTION: 0x00165930 SavePlayerData__6PlayerFPQ26Player10PlayerData

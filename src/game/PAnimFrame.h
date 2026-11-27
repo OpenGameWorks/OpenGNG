@@ -4,7 +4,7 @@
 #include "PAnim.h"
 
 // Frame-based animation: the PAnim base (size 0x20) followed by frame range and enable fields. Size 0x34.
-// Only the virtuals defined in PAnimFrame.cpp are declared; the rest of the vtable is not recovered yet.
+// Virtuals are declared in __vt__10PAnimFrame slot order.
 class AnimData;
 
 class PAnimFrame : public PAnim {
@@ -13,22 +13,23 @@ public:
     PAnimFrame(PAnim *pSrc);
     virtual int Load(PPakFile *pFile);
     virtual int Load(PPakFile *pFile, tagMeshNodeAnimationHeader *pHeader);
-    void EnableAnim(bool bEnable);
-    void RestoreAnim(PAnimFrame *pSrc);
-    void SetAllAnimFlags(AnimData *pData);
     virtual float Animate(float fTime, float fUnused, float (*pMatrix)[4], float *pOut, bool bFlag);
+    virtual signed char IsAnimate();
+    virtual void SetFrameTime(float);
+    virtual short GetEndFrame();
+    virtual void SetEndFrame(short);
+    virtual short GetLoop();
+    virtual void SetAllAnimFlags(AnimData *pData);
+    virtual void SetAnimLoopCount(int);
+    virtual float GetFrameTime();
+    virtual void EnableAnim(bool bEnable);
+    virtual void SetLoopFrame(short);
+    virtual void SetLoopEndFrame(short);
+    virtual void SetFrameRate(float);
+    virtual float GetFrameRate();
+    virtual int IsPAnimFrame();
+    void RestoreAnim(PAnimFrame *pSrc);
     float AnimateFrame(float fTime);
-    void SetFrameTime(float);
-    float GetFrameTime();
-    void SetLoopEndFrame(short);
-    float GetFrameRate();
-    int IsPAnimFrame();
-
-    void SetEndFrame(short);
-    void SetLoopFrame(short);
-    void SetAnimLoopCount(int);
-    void SetFrameRate(float);
-    short GetEndFrame();
     short m_unk20;                   // 0x20
     short m_unk22;                   // 0x22
     short m_unk24;                   // 0x24

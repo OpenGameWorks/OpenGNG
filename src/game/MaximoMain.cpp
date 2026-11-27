@@ -2022,7 +2022,7 @@ void Camera::SetViewMatrix(PMat4 mat) {
 }
 
 // FUNCTION: 0x0013C710 GetEndFrame__5PAnimFv
-int PAnim::GetEndFrame() {
+short PAnim::GetEndFrame() {
     return 0;
 }
 

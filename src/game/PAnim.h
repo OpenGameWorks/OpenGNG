@@ -21,7 +21,7 @@ enum eAnimType {
 };
 
 // Animation holder: vptr at 0x00, a 4-byte field at 0x04, a s16 at 0x08, two bytes at 0x0A and 0x0B,
-// and five PChannel slots at 0x0C..0x1C. Size 0x20.
+// and five PChannel slots at 0x0C..0x1C. Size 0x20. Virtuals are declared in __vt__5PAnim slot order.
 class AnimData;
 class PAnim {
 public:
@@ -29,23 +29,23 @@ public:
     virtual ~PAnim();
     virtual int Load(PPakFile *pFile);
     virtual int Load(PPakFile *pFile, tagMeshNodeAnimationHeader *pHeader);
-    PChannel *FindChannel(eAnimType eType);
     virtual float Animate(float fTime, float fUnused, float (*pMatrix)[4], float *pOut, bool bFlag);
+    virtual signed char IsAnimate();
+    virtual void SetFrameTime(float);
+    virtual short GetEndFrame();
+    virtual void SetEndFrame(short);
+    virtual short GetLoop();
+    virtual void SetAllAnimFlags(AnimData *);
+    virtual void SetAnimLoopCount(int);
+    virtual float GetFrameTime();
+    virtual void EnableAnim(bool);
+    virtual void SetLoopFrame(short);
+    virtual void SetLoopEndFrame(short);
+    virtual void SetFrameRate(float);
+    virtual float GetFrameRate();
+    virtual int IsPAnimFrame();
+    PChannel *FindChannel(eAnimType eType);
     void Cleanup();
-    int IsPAnimFrame();
-    void SetFrameRate(float);
-    void SetLoopEndFrame(short);
-    void SetLoopFrame(short);
-    void EnableAnim(bool);
-    void SetAnimLoopCount(int);
-    void SetEndFrame(short);
-    void SetFrameTime(float);
-
-    void SetAllAnimFlags(AnimData *);
-    int IsAnimate();
-    int GetEndFrame();
-    float GetFrameTime();
-    float GetFrameRate();
     int m_unk4;                      // 0x04
     short m_unk8;                    // 0x08
     unsigned char m_unkA;            // 0x0A
