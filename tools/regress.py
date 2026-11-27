@@ -27,7 +27,7 @@ def main() -> int:
         status[int(p[0], 16)] = (p[2], p[4] if len(p) > 4 else "")
     only = {Path(a).resolve() for a in sys.argv[1:]}
     bad = 0
-    for src in sorted((ROOT / "src").rglob("*.c*")):
+    for src in sorted((p for p in (ROOT / "src").rglob("*.c*") if p.suffix in (".c", ".cpp"))):
         if "scratch" in src.relative_to(ROOT).parts or (only and src.resolve() not in only):
             continue
         for kind, addr, name, _ in srcmeta.tags(src):

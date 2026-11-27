@@ -62,7 +62,7 @@ def load():
             p = l.split("\t")
             status[int(p[0], 16)] = p[2]
     drafts = set()
-    for s in (ROOT / "src").rglob("*.c*"):
+    for s in (p for p in (ROOT / "src").rglob("*.c*") if p.suffix in (".c", ".cpp")):
         if "scratch" in s.relative_to(ROOT).parts:
             continue
         lines = s.read_text(errors="replace").splitlines()

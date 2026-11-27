@@ -46,7 +46,7 @@ def score(src: Path, obj: Path, addr: int) -> int:
 
 def main() -> int:
     rows = []
-    for src in sorted((ROOT / "src").rglob("*.c*")):
+    for src in sorted((p for p in (ROOT / "src").rglob("*.c*") if p.suffix in (".c", ".cpp"))):
         if "scratch" in src.relative_to(ROOT).parts:
             continue
         obj = ROOT / "build/obj" / src.relative_to(ROOT).with_suffix(".o")
