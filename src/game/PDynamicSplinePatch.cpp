@@ -124,22 +124,22 @@ void PDynamicSplinePatch::InitMatrixCache() {
 }
 
 // DRAFT: 0x001F3510 GenerateAndRenderVuSplinePatch__19PDynamicSplinePatchFv
-// note: ~100 words differ: frame, literals (@428 all-zero local in .bss, @429/@430 .rodata) and the SetMaterial bool arg match; the 0x70001000 key base lives in s0 and is set before the literal loads in the original, and the inner loop (j counter in v1, qCtl address hoisted) is scheduled differently.
+// note: 22 words differ: SetMaterial loads its two long long arguments before m_unk1FE0/m_unk2010 (raw reads tried); the key copy loads its source before computing pKey (qSrc temp and j + (j << 2) spellings compile the same or worse); i + (i << 3) operand order.
 void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
-    u_long128 qCtl;
+    tagLitF4 qCtl;
     float mtx[16];
     float fStepS;
     float fStepT;
-    int i;
-    int j;
     char *pKeyBase;
     char *pRow;
+    int i;
+    int j;
 
     sceVu0UnitMatrix(mtx);
+    pKeyBase = (char *)0x70001000;
     tagLitF4 qA = {{0.0f, 0.0f, 0.0f, 0.0f}};
     tagLitF4 qB = {{0.0f, 1.0f, 0.0f, 0.0f}};
     tagLitF4 qC = {{0.5f, 0.0f, 0.0f, 0.0f}};
-    pKeyBase = (char *)0x70001000;
     fStepT = 1.0f / (float)(m_unk00 - 1);
     fStepS = 1.0f / (float)(m_unk08 - 1);
     {
@@ -167,12 +167,12 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
             lqc2 vf8, 0x0(pB)
             .set reorder
         }
-        qCtl = 0;
+        qCtl.q = 0;
+        char *pCtl = (char *)&qCtl;
         pRow = (char *)this + ((((i << 3) + i)) << 5);
         for (j = 0; j < m_unk04 - 2; j++) {
             if (j <= m_unk08 - 1) {
                 char *pSrc = pRow + (j << 4) + 0x10;
-                char *pCtl = (char *)&qCtl;
                 asm {
                     .set noreorder
                     lqc2 vf1, 0x0(pSrc)
@@ -187,7 +187,7 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
             {
                 char *pKey = pKeyBase + ((((j << 2) + j)) << 4);
                 *(u_long128 *)pKey = *(u_long128 *)(pRow + (((j + 1) << 4)) + 0x10);
-                *(float *)&qCtl += fStepS;
+                qCtl.f[0] += fStepS;
                 asm {
                     .set noreorder
                     qmtc2.i v0, vf0
@@ -202,8 +202,8 @@ void PDynamicSplinePatch::GenerateAndRenderVuSplinePatch() {
             }
         }
         ((PGfxEngine *)gGfxEng)->DrawSplinePatch((struct tagVuSplinePatchKey *)pKeyBase, m_unk08, m_unk0C + 1, 1.0f / (float)m_unk0C, true);
-        *(float *)&qA += fStepT;
-        *(float *)&qB = *(float *)&qA;
+        qA.f[0] += fStepT;
+        qB.f[0] = qA.f[0];
     }
     gGfxEng[0x158E22] = 1;
 }
