@@ -113,54 +113,59 @@ void PScrollingTrees::Animate(float fTime) {
 }
 
 // DRAFT: 0x1FAF30 Create__15PScrollingTreesFiii
-// note: DIFF 199, size 0x3E0 vs 0x3E4; lit stand-ins replaced by brace-init locals and a union quad (216 to 199); this/nB register assignment, float save order, FastMath_RotateMatrix reloc differ. Tried: ids/rot hoisting, brace-init in loop, Z block first, field stores for rot, nOff/pNodes removal, ids load after assert.
+// note: 115 words differ: the ids read is built sp+0xD0 then +nType*4 in the original (ours folds the frame offset); fHalfStepX in f28 not f29; loop counters i/nRow/j/nOff/pCell take other s-registers; the rot reset sq is scheduled later. Entry fields are raw this+K+nType*16 reads because member indexing folds K into the index (207 words).
 int PScrollingTrees::Create(int nA, int nB, int nType) {
     PScrollingTreeTypeIds ids = {{0x0600000A, 0x06000009, 0x06000008, 0x00000000}};
     PScrollingTreeQuad pos;
-    PScrollingTreeQuad rot = (PScrollingTreeQuad){{0.0f, 0.0f, 0.0f, 1.0f}};
+    PScrollingTreeQuad rot;
+    float fStepX;
+    float fStepZ;
+    float fX;
+    float fY;
+    float fZ;
+    float fHalfX;
+    float fCenterX;
+    float fT;
+    float fS;
+    float fHalfStepX;
+    int nCount;
     if (m_unk670 == 0) {
         CdsAssert("PScrollingTrees.cpp", 0x6D, "mpResMgr");
     }
-    float fSpanX = m_unk20[0] - m_unk10[0];
-    float fStepX = fSpanX / (float)nB;
-    float fHalfX = 0.5f * fSpanX;
-    float fCenterX = 0.5f * (m_unk20[0] + m_unk10[0]);
-    float fSpanZ = m_unk20[2] - m_unk10[2];
-    float fStepZ = fSpanZ / (float)nA;
-    float fHalfStepX = 0.5f * fStepX;
-    float fHalfStepZ = 0.5f * fStepZ;
-    float fX = m_unk10[0] + fHalfStepX;
-    float fZ = m_unk10[2] + fHalfStepZ;
-    int nCount = nA * nB;
-    PScrollingTreeEntry *pEnt = &m_unk34[nType];
-    pEnt->m_unk8 = nCount;
-    pEnt->m_unk0 = (int)m_unk670->GetResource(*(unsigned int *)((char *)&ids + nType * 4), false);
-    if (pEnt->m_unk0 == 0) {
+    fStepZ = (m_unk20[2] - m_unk10[2]) / (float)nA;
+    fStepX = (m_unk20[0] - m_unk10[0]) / (float)nB;
+    fHalfX = 0.5f * (m_unk20[0] - m_unk10[0]);
+    fY = m_unk10[1];
+    nCount = nA * nB;
+    fCenterX = 0.5f * (m_unk20[0] + m_unk10[0]);
+    fHalfStepX = 0.5f * fStepX;
+    fX = m_unk10[0] + fHalfStepX;
+    fZ = m_unk10[2] + 0.5f * fStepZ;
+    *(int *)((unsigned int)this + 0x3C + nType * 16) = nCount;
+    *(int *)((unsigned int)this + 0x34 + nType * 16) = (int)m_unk670->GetResource(ids.v[nType], false);
+    if (*(int *)((unsigned int)this + 0x34 + nType * 16) == 0) {
         CdsAssert("PScrollingTrees.cpp", 0x7D, "mInstanceData[iType].pMasterMesh");
     }
-    pEnt->m_unk4 = __nwa__FUi(nCount * 0x50);
-    if (pEnt->m_unk4 == 0) {
+    *(void * *)((unsigned int)this + 0x38 + nType * 16) = __nwa__FUi(nCount * 0x50);
+    if (*(void * *)((unsigned int)this + 0x38 + nType * 16) == 0) {
         CdsAssert("PScrollingTrees.cpp", 0x80, "mInstanceData[iType].pInstanceData");
     }
-    char *pNodes = (char *)pEnt->m_unk4;
+    char *pNodes = (char *)*(void * *)((unsigned int)this + 0x38 + nType * 16);
     int nRow = 0;
     for (int i = 0; i < nA; i++) {
         int nOff = nRow;
         for (int j = 0; j < nB; j++) {
             char *pCell = pNodes + nOff;
-            float fA = 0.3f * fStepX;
-            float u1 = (float)rand() / 2147483648.0f;
-            pos.f[0] = fX + (fA + ((0.3f * -fStepX - fA) * u1));
-            pos.f[1] = m_unk10[1];
-            float fB = 0.3f * fStepZ;
-            float u2 = (float)rand() / 2147483648.0f;
-            pos.f[2] = fZ + (fB + ((0.3f * -fStepZ - fB) * u2));
+            fT = 0.3f * fStepX;
+            pos.f[0] = fX + (fT + ((0.3f * -fStepX - fT) * ((float)rand() / 2147483648.0f)));
+            pos.f[1] = fY;
+            fT = 0.3f * fStepZ;
+            pos.f[2] = fZ + (fT + ((0.3f * -fStepZ - fT) * ((float)rand() / 2147483648.0f)));
             pos.f[3] = 1.0f;
-            float u3 = (float)rand() / 2147483648.0f;
-            rot.f[1] = -180.0f + 360.0f * u3;
-            float fT = FastMath_Fabs(pos.f[0] - fCenterX) / fHalfX;
-            float u4 = (float)rand() / 2147483648.0f;
-            float fS = 1.0f + 0.5f * u4;
+            rot.q = (u_long128)0x3F80000000000000ULL;
+            rot.f[1] = -180.0f + 360.0f * ((float)rand() / 2147483648.0f);
+            fT = FastMath_Fabs(pos.f[0] - fCenterX) / fHalfX;
+            fS = 1.0f + 0.5f * ((float)rand() / 2147483648.0f);
             sceVu0UnitMatrix(pCell);
             *(float *)(pCell + 0x0) = fS;
             *(float *)(pCell + 0x14) = 1.0f + 0.5f * fT;
