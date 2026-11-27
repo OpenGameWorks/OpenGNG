@@ -138,6 +138,7 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 - An epilogue that restores `f20` before `s4` where ours restores `s4` first comes from an early return: `if (m_p == 0) { return; }` in place of wrapping the body in `if (m_p != 0) { ... }` (`PCutScenePlayer::SetBgNodesOpacity`).
 - A select laid out as `beqz a → L; lw default (delay slot); b M; nop; L: daddu a,default` is a call through an inline function `inline int Pick(int a, int b) { if (a != 0) { return a; } return b; }`; the same `if`, `?:` or `if (!a)` written in place gives a `bnez` with no `b` (`PParticleManager::InitHeatHazeBuffer`). Register choices that stay swapped (`v0`/`v1`) under every spelling are a sign of an inline helper in the original.
 - Bounds-checked element reads that each reload the count (`lw v0,8(v1); sltu; beqz` per read, the else arm reached by `b`) are separate inline accessors taking the container pointer: `inline int GetSize(T *p, unsigned int i) { if (i < p->m_nCount) { return p->m_aEntry[i].nSize; } return 0; }`, called as `GetSize((T *)m_p, i)`. Caching `p` in a local or writing `i < n ? a[i] : 0` in place CSEs the count (`PStaticInstanceGroup::Render`).
+- A clamp or update whose value lands in the wrong register (ours t2, original v1) while every spelling of the test leaves the swap is a fresh local that copies the value first: `signed char nC = nVal; if (nC > 100) nC = 100; nSum += nC;` (MemoryCard::UpdateHeader). The copy is what an inlined helper's parameter produces, so try it before writing the helper.
 
 ## Finishing
 
