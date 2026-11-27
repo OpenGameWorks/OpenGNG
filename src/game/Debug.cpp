@@ -17,6 +17,28 @@ extern short mDebugTime;
 extern short mSound;
 extern short gPlayerPos;
 extern "C" int sprintf(char *pBuf, const char *pFmt, ...);
+class EntityManager {
+public:
+    void *CalculateTallyData();
+};
+class MemoryManager {
+public:
+    void DisplayDebug();
+    char _pad000[0x20];
+};
+extern MemoryManager MemMgr;
+struct LoadEntry {
+    int m0;
+    unsigned int m4;
+    int m8;
+};
+extern LoadEntry mLoadTable__15EntityBaseClass[6];
+extern char *LoadClasses[7];
+extern char *TallyName[5];
+struct TallyEntry {
+    int m0;
+    int m4;
+};
 extern "C" void sceDevConsClose(char *pCons);
 extern "C" void __dl__FPv(void *pMem);
 extern short giRep;
@@ -74,7 +96,9 @@ class PGfxEngine {
 public:
     void UpdateLights(PMat4 *pA, PMat4 *pB, float (*pC)[4]);
     void RefreshDisplay();
-    char _pad000[0x158E22];
+    char _pad000[0x154F00];
+    int m_unk154F00;
+    char _pad154F04[0x158E22 - 0x154F04];
     unsigned char m_unk158E22;
 };
 
@@ -97,6 +121,8 @@ public:
     void ZeroAllOneFrameVals();
     void StopSubTimer(unsigned int nId);
     void StartSubTimer(unsigned int nId);
+    void PrintRenderTimings();
+    void PrintCalcTimings();
     void PrintPerformanceMeter(unsigned int nId, PMat4 *pMat);
     void PrintDisplayListStatusMeter(unsigned int nId, PMat4 *pMat);
 };
@@ -458,6 +484,59 @@ void Debug::StartTimer(unsigned int nId) {
     if (this->m_unk0C != 0) {
         this->m_unk0C->StartSubTimer(nId);
     }
+}
+
+// FUNCTION: 0x16B2C0 TimeDisplay__Fv
+static void TimeDisplay() {
+    char buf[0x40];
+
+    switch (mDebugTime) {
+    case 1:
+        gDebug.m_unk0C->PrintPerformanceMeter(1, (PMat4 *)(gEng + 0x10));
+        break;
+    case 2:
+        sprintf(buf, "%d Polys\n", *(int *)(gEng + 0x19AD8) + *(int *)(gEng + 0x8748));
+        gDebug.DebugDisp(buf);
+        gDebug.m_unk0C->PrintRenderTimings();
+        break;
+    case 3:
+        gDebug.m_unk0C->PrintCalcTimings();
+        break;
+    case 4:
+        {
+            char *pBase = (char *)mLoadTable__15EntityBaseClass;
+            int i;
+            int nOff;
+            int nIdx;
+            for (i = 1, nOff = 0xC, nIdx = 4; i < 7; i++, nOff += 0xC, nIdx += 4) {
+                LoadEntry *pE = (LoadEntry *)(pBase + nOff);
+                sprintf(buf, "%s %d / %d (%d)\n", *(char **)((char *)LoadClasses + nIdx), pE->m0, pE->m4, pE->m8);
+                gDebug.DebugDisp(buf);
+            }
+        }
+        return;
+    case 5: {
+        TallyEntry *pT = (TallyEntry *)((EntityManager *)(gEng + 0x137E0))->CalculateTallyData();
+        int i;
+        int nIdx;
+        i = 1;
+        pT++;
+        nIdx = 4;
+        for (; i < 5; i++, nIdx += 4, pT++) {
+            sprintf(buf, "%s %d / %d\n", *(char **)((char *)TallyName + nIdx), pT->m0, pT->m4);
+            gDebug.DebugDisp(buf);
+        }
+        return;
+    }
+    case 6:
+        MemMgr.DisplayDebug();
+        return;
+    case 0:
+        return;
+    }
+    gDebug.DispDebugTimer();
+    sprintf(buf, "Particle %d / 256\n", gGfxEng.m_unk154F00);
+    gDebug.DebugDisp(buf);
 }
 
 // FUNCTION: 0x16B4D0 InitDebug__5DebugFv
