@@ -82,7 +82,7 @@ public:
     PMNodeMatrix m_unk40;
     char _pad80[0xD8 - 0x80];
     PArray m_unkD8;
-    char _padE8[0x130 - 0xE8];
+    char _padE8[0x100 - 0xE8];
 };
 class PMeshNode : public PMNode {
 public:
@@ -90,6 +90,7 @@ public:
     virtual ~PMeshNode();
     void TestMeshNodeInFrustum(PFrustrum *pFrustrum);
     void InitMembers();
+    char _pad100[0x130 - 0x100];
     PArray m_unk130;
 };
 class PCDFile {

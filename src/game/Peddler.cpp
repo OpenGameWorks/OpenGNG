@@ -150,13 +150,14 @@ public:
     float m_unkA0[4];               // 0xA0 animated scale vector
     char _pad0B0[0xD8 - 0xB0];
     PArray m_unkD8;
-    char _pad0E8[0x130 - 0xE8];
+    char _pad0E8[0x100 - 0xE8];
 };
 class PMeshNode : public PMNode {
 public:
     PMeshNode() { InitMembers(); }
     virtual ~PMeshNode();
     void InitMembers();
+    char _pad100[0x130 - 0x100];
     PArray m_unk130;
 };
 
