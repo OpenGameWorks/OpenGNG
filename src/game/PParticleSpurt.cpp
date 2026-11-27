@@ -1,4 +1,5 @@
 #include "types.h"
+#include "PRandom.h"
 #include "Debug.h"
 #include "PParticleSpurt.h"
 
@@ -288,11 +289,9 @@ void PParticleSpurt::Animate(float fDt) {
                 pEl = pBuf + (i << 5);
                 pRnd = (float *)((char *)m_unkE0 + i * 4);
                 if (m_unk18 != 0) {
-                    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                    *pRnd = *pRnd + fDt * (m_unk180[2] + (1.0f - m_unk180[2]) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+                    *pRnd = *pRnd + fDt * (m_unk180[2] + (1.0f - m_unk180[2]) * ParticleRand01(m_unkD0));
                 } else {
-                    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                    *pRnd = *pRnd + fDt * (0.6f + 0.39999998f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+                    *pRnd = *pRnd + fDt * (0.6f + 0.39999998f * ParticleRand01(m_unkD0));
                 }
                 fTmp = m_unk1E0;
                 if (!(*pRnd < fTmp)) {
@@ -316,8 +315,7 @@ void PParticleSpurt::Animate(float fDt) {
                 if (!(f22 < 0.9999999f)) {
                     f22 = 0.9999999f;
                 }
-                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                fTmp = f22 * (0.5f + 3.5f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+                fTmp = f22 * (0.5f + 3.5f * ParticleRand01(m_unkD0));
                 fTmp2 = fTmp - (float)(int)fTmp;
                 if (fTmp2 <= 0.5f) {
                     fOut = 0.3f * (-1.0f + 4.0f * fTmp2) * m_unk190;
@@ -332,35 +330,26 @@ void PParticleSpurt::Animate(float fDt) {
                     if (nZero != 0) {
                         *(u_long128 *)spE0 = *(u_long128 *)((char *)m_unkE4 + (i << 4));
                     } else {
-                        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                        spE0[0] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
-                        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                        spE0[1] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
-                        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                        spE0[2] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
+                        spE0[0] = ParticleRand01(m_unkD0);
+                        spE0[1] = ParticleRand01(m_unkD0);
+                        spE0[2] = ParticleRand01(m_unkD0);
                     }
                     pVec = (float *)((char *)m_unkE8 + (i << 4));
                 } else {
                     if (nZero != 0) {
                         *(u_long128 *)spE0 = *(u_long128 *)m_unk1C0;
                     } else {
-                        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                        spE0[0] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
-                        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                        spE0[1] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
-                        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                        spE0[2] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
+                        spE0[0] = ParticleRand01(m_unkD0);
+                        spE0[1] = ParticleRand01(m_unkD0);
+                        spE0[2] = ParticleRand01(m_unkD0);
                     }
                     pVec = m_unk1B0;
                 }
                 *(u_long128 *)v100 = *(u_long128 *)pVec;
 
-                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                spF[0] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
-                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                spF[1] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
-                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                spF[2] = 0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF);
+                spF[0] = ParticleRand01(m_unkD0);
+                spF[1] = ParticleRand01(m_unkD0);
+                spF[2] = ParticleRand01(m_unkD0);
 
                 ((float *)pEl)[0] = v100[0] + (spE0[0] - v100[0]) * f22;
                 ((float *)pEl)[1] = v100[1] + (spE0[1] - v100[1]) * f22;

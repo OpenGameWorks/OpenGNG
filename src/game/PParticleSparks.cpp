@@ -47,22 +47,16 @@ void PParticleSparks::InitSparkDirections() {
         float *pA2 = (float *)&m_unk150;
         float fScale = m_unk128;
         if (bRandom) {
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            vec[0] = 2.0f * (3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF)) - 1.0f;
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            vec[1] = 2.0f * (3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF)) - 1.0f;
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            vec[2] = 2.0f * (3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF)) - 1.0f;
+            vec[0] = 2.0f * ParticleRand01(m_unkD0) - 1.0f;
+            vec[1] = 2.0f * ParticleRand01(m_unkD0) - 1.0f;
+            vec[2] = 2.0f * ParticleRand01(m_unkD0) - 1.0f;
         } else {
             float t = m_unk11C;
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            float u = 3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF);
+            float u = ParticleRand01(m_unkD0);
             vec[0] = m_unkF0 + (-t + (t + t) * u);
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            u = 3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF);
+            u = ParticleRand01(m_unkD0);
             vec[1] = m_unkF4 + (-t + (t + t) * u);
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            u = 3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF);
+            u = ParticleRand01(m_unkD0);
             vec[2] = m_unkF8 + (-t + (t + t) * u);
         }
         sceVu0Normalize(pS2, vec);

@@ -1,4 +1,5 @@
 #include "types.h"
+#include "PRandom.h"
 #include "Debug.h"
 #include "PParticleFire.h"
 #include "PMat4.h"
@@ -409,8 +410,7 @@ int PParticleFire::Create(tagParticleFireParams *pParams, float fX, float fY, fl
             *(float *)((char *)m_unkE4 + off + 4) = m_unk180[1];
             *(float *)((char *)m_unkE4 + off + 8) = m_unk180[2];
             off += 0x10;
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            ((float *)m_unkE0)[k] = 0.0f + (m_unk190 - 0.0f) * (0.000030517578f * (float)(((int)m_unkD0 >> 16) & 0x7FFF));
+            ((float *)m_unkE0)[k] = 0.0f + (m_unk190 - 0.0f) * ParticleRand01(m_unkD0);
             k++;
         }
         m_unk198 = 1;

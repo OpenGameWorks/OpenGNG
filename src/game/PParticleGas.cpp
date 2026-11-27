@@ -1,4 +1,5 @@
 #include "types.h"
+#include "PRandom.h"
 #include "Debug.h"
 #include "PParticleGas.h"
 
@@ -628,10 +629,8 @@ int PParticleGas::Create(tagParticleGasParams *pParams, float fA, float fB, floa
             sqc2 vf3, 0x0(pV)
         }
 
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        *(float *)(pElem + 0xC) = 0.0f + (*(float *)&m_unk154 - 0.0f) * (3.0517578125e-05f * (float)((m_unkD0 >> 16) & 0x7FFF));
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        *(float *)(pElem + 0x1C) = 1.0f + (m_unk110 - 1.0f) * (3.0517578125e-05f * (float)((m_unkD0 >> 16) & 0x7FFF));
+        *(float *)(pElem + 0xC) = 0.0f + (*(float *)&m_unk154 - 0.0f) * ParticleRand01(m_unkD0);
+        *(float *)(pElem + 0x1C) = 1.0f + (m_unk110 - 1.0f) * ParticleRand01(m_unkD0);
     }
 
     m_unkA0 = (m_unk11C <= m_unk120) ? m_unk120 : m_unk11C;

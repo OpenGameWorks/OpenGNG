@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "PRandom.h"
 #include "Debug.h"
 #include "PParticleEnergyStream.h"
 
@@ -220,8 +221,7 @@ void PParticleEnergyStream::Animate(float fDelta) {
                     vadd.xyz vf5, vf4, vf2
                     sqc2 vf5, 0x0(pP)
                 }
-                m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                float fU = (float)((m_unkD0 >> 16) & 0x7FFF) * 0.000030517578f;
+                float fU = ParticleRand01(m_unkD0);
                 fAngle += -60.0f + 120.0f * fU;
                 if (fAngle < 0.0f) {
                     fAngle += 360.0f;

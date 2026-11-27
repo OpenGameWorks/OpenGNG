@@ -49,22 +49,19 @@ void PParticleElectricity::CreateBranch(tagElectricityBranch *pBranch) {
         float *pDst = (float *)((char *)pBuf + off);
         float t = (float)i * fSeg;
         float fDx = pBranch->m_unk20 * t;
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        float r = 3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF);
+        float r = ParticleRand01(m_unkD0);
         float fJ2 = m_unk188 + m_unk188;
         float fJit = -m_unk188 + fJ2 * r;
         pDst[0] = (pBranch->m_unk10 + fDx) + fJit;
 
         float fDy = pBranch->m_unk24 * t;
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        r = 3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF);
+        r = ParticleRand01(m_unkD0);
         fJ2 = m_unk188 + m_unk188;
         fJit = -m_unk188 + fJ2 * r;
         pDst[1] = (pBranch->m_unk14 + fDy) + fJit;
 
         float fDz = pBranch->m_unk28 * t;
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        r = 3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF);
+        r = ParticleRand01(m_unkD0);
         fJ2 = m_unk188 + m_unk188;
         fJit = -m_unk188 + fJ2 * r;
         pDst[2] = (pBranch->m_unk18 + fDz) + fJit;

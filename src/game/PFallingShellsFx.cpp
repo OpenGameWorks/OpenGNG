@@ -1,4 +1,5 @@
 #include "types.h"
+#include "PRandom.h"
 #include "Debug.h"
 #include "PFallingShellsFx.h"
 #include "PMat4.h"
@@ -223,7 +224,7 @@ struct FallingShell {
 };
 
 // DRAFT: 0x0020D1E0 Animate__16PFallingShellsFxFf
-// note: DIFF 91; loop regs swapped (ours s1=offset, s2=pointer), c.eq.s operand order, literal 20.0f/10.0f load order swapped, kUnitW reloc at 0x280. Tried: nested guard (245), &&guard (245), decl swap (245/93), reversed compare (91), hoisted pointer (91).
+// note: DIFF 87 (ParticleRand01 reads); loop regs swapped (ours s1=offset, s2=pointer), c.eq.s operand order, literal 20.0f/10.0f load order swapped, kUnitW reloc at 0x280. Tried: nested guard (245), &&guard (245), decl swap (245/93), reversed compare (91), hoisted pointer (91).
 void PFallingShellsFx::Animate(float fStep) {
     if (m_unk15 == 0 || fStep == 0.0f) {
         return;
@@ -264,10 +265,8 @@ void PFallingShellsFx::Animate(float fStep) {
                             pShell->fRate = -pShell->fRate;
                             pShell->fTimer = pShell->fThreshold;
                             pShell->bBounce = 0;
-                            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                            pShell->fOffset[0] = 20.0f + 10.0f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF));
-                            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-                            pShell->fOffset[1] = 5.0f + 5.0f * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF));
+                            pShell->fOffset[0] = 20.0f + 10.0f * ParticleRand01(m_unkD0);
+                            pShell->fOffset[1] = 5.0f + 5.0f * ParticleRand01(m_unkD0);
                             if (pShell->fVel[1] <= 0.1f) {
                                 *(u_long128 *)pShell->fOffset = *(u_long128 *)kUnitW;
                                 *(u_long128 *)pShell->fVec10 = *(u_long128 *)kUnitW;

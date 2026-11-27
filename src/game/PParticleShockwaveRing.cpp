@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "PRandom.h"
 #include "Debug.h"
 #include "PParticleShockwaveRing.h"
 
@@ -90,16 +91,13 @@ int PParticleShockwaveRing::Create(tagParticleShockwaveRingParams *pParams, floa
     ((float *)&m_unk140)[3] = 1.0f;
 
     if (*(float *)((char *)pParams + 0x70) == -1.0f) {
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        m_unk1B0[0] = -180.0f + 360.0f * ((float)((m_unkD0 >> 16) & 0x7FFF) * 3.0517578125e-05f);
+        m_unk1B0[0] = -180.0f + 360.0f * ParticleRand01(m_unkD0);
     }
     if (*(float *)((char *)pParams + 0x74) == -1.0f) {
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        m_unk1B0[1] = -180.0f + 360.0f * ((float)((m_unkD0 >> 16) & 0x7FFF) * 3.0517578125e-05f);
+        m_unk1B0[1] = -180.0f + 360.0f * ParticleRand01(m_unkD0);
     }
     if (*(float *)((char *)pParams + 0x78) == -1.0f) {
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        m_unk1B0[2] = -180.0f + 360.0f * ((float)((m_unkD0 >> 16) & 0x7FFF) * 3.0517578125e-05f);
+        m_unk1B0[2] = -180.0f + 360.0f * ParticleRand01(m_unkD0);
     }
 
     {

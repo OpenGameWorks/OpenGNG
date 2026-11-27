@@ -2,6 +2,7 @@
 #include "PParticleRain.h"
 #include "PSound.h"
 #include "PMat4.h"
+#include "PRandom.h"
 
 // TODO(header): foreign declarations
 // Symbols at PGfxEngine's member addresses; gGfxEng is the engine block at 0x306680.
@@ -76,8 +77,7 @@ void PParticleRain::AnimateQuadrant(unsigned int nIndex) {
 
     for (; i < nEnd; i++) {
         pPos = (float *)&m_pParts[i];
-        PR_STEP();
-        fScale = 1.0f + 2.0f * PR_RND();
+        fScale = 1.0f + 2.0f * ParticleRand01(m_unkD0);
         asm {
             lqc2 vf1, 0x0(pVel)
             lqc2 vf2, 0x0(pPos)
@@ -98,20 +98,16 @@ void PParticleRain::AnimateQuadrant(unsigned int nIndex) {
         }
         if (pPos[1] < pBox[9]) {
             float fLo = pBox[8];
-            PR_STEP();
-            pPos[0] = fLo + (pBox[12] - fLo) * PR_RND();
+            pPos[0] = fLo + (pBox[12] - fLo) * ParticleRand01(m_unkD0);
             pPos[1] = pBox[13];
             fLo = pBox[10];
-            PR_STEP();
-            pPos[2] = fLo + (pBox[14] - fLo) * PR_RND();
+            pPos[2] = fLo + (pBox[14] - fLo) * ParticleRand01(m_unkD0);
         } else if (!(pPos[1] <= pBox[13])) {
             float fLo = pBox[8];
-            PR_STEP();
-            pPos[0] = fLo + (pBox[12] - fLo) * PR_RND();
+            pPos[0] = fLo + (pBox[12] - fLo) * ParticleRand01(m_unkD0);
             pPos[1] = pBox[13];
             fLo = pBox[10];
-            PR_STEP();
-            pPos[2] = fLo + (pBox[14] - fLo) * PR_RND();
+            pPos[2] = fLo + (pBox[14] - fLo) * ParticleRand01(m_unkD0);
         }
     }
 }
@@ -130,24 +126,20 @@ void PParticleRain::InitParticles() {
             float fHi = pBox->m_fMax[0];
             float fLo = pBox->m_fMin[0];
             float fRange = fHi - fLo;
-            PR_STEP();
-            m_pParts[i].m_fPos[0] = fLo + fRange * PR_RND();
+            m_pParts[i].m_fPos[0] = fLo + fRange * ParticleRand01(m_unkD0);
             m_pParts[i].m_fPos[1] = pBox->m_fMax[1];
             fHi = fMaxZ;
             fLo = fMinZ;
             fRange = fHi - fLo;
-            PR_STEP();
-            m_pParts[i].m_fPos[2] = fLo + fRange * PR_RND();
+            m_pParts[i].m_fPos[2] = fLo + fRange * ParticleRand01(m_unkD0);
             fHi = ((float *)m_unkE0)[6];
             fLo = ((float *)m_unkE0)[5];
             fRange = fHi - fLo;
-            PR_STEP();
-            m_pParts[i].m_fPos[3] = fLo + fRange * PR_RND();
+            m_pParts[i].m_fPos[3] = fLo + fRange * ParticleRand01(m_unkD0);
             m_pParts[i].m_fVel[0] = ((float *)m_unkE0)[0];
             m_pParts[i].m_fVel[1] = ((float *)m_unkE0)[1];
             m_pParts[i].m_fVel[2] = ((float *)m_unkE0)[2];
-            PR_STEP();
-            m_pParts[i].m_fVel[3] = 0.3f + 0.14999998f * PR_RND();
+            m_pParts[i].m_fVel[3] = 0.3f + 0.14999998f * ParticleRand01(m_unkD0);
         }
     }
 }
@@ -187,8 +179,7 @@ void PParticleRain::SetLightningDensity(float fDensity) {
         m_unk268 = nBase + 0xF0;
         fHi = (float)(unsigned int)m_unk268;
         fLo = (float)(unsigned int)m_unk264;
-        m_unkD0 = (m_unkD0 * 0x343FD) + 0x269EC3;
-        fRand = 0.000030517578f * (float)(((int)m_unkD0 >> 0x10) & 0x7FFF);
+        fRand = ParticleRand01(m_unkD0);
         fDiff = fHi - fLo;
         fScaled = fLo + (fDiff * fRand);
         m_unk26C = (unsigned int)fScaled;
@@ -282,7 +273,7 @@ void PParticleRain::Render() {
 }
 
 // DRAFT: 0x001CCB80 Animate__13PParticleRainFf
-// note: 277 words differ, size 0x4E4 vs 0x524; unsigned-to-float second cvt.s.w in f2 (original f3), lightning ladder compares c.lt.s where original has c.le.s, constant lui/ori hoisting and LCG mult/addu placement differ.
+// note: 274 words differ (ParticleRand01 for the LCG reads), size 0x4E4 vs 0x524; unsigned-to-float second cvt.s.w in f2 (original f3), lightning ladder compares c.lt.s where original has c.le.s, constant lui/ori hoisting and LCG mult/addu placement differ.
 void PParticleRain::Animate(float fDt)
 {
     if (fDt != 0.0f) {
@@ -292,8 +283,7 @@ void PParticleRain::Animate(float fDt)
             if (m_unk26C == 0) {
                 float fHi = (float)(unsigned int)m_unk268;
                 float fLo = (float)(unsigned int)m_unk264;
-                PR_STEP();
-                float fRnd = fLo + (fHi - fLo) * PR_RND();
+                float fRnd = fLo + (fHi - fLo) * ParticleRand01(m_unkD0);
                 if (!(fRnd >= 2.1474836e9f)) {
                     m_unk26C = (int)fRnd;
                 } else {

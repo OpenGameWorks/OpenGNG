@@ -1,4 +1,5 @@
 #include "types.h"
+#include "PRandom.h"
 #include "Debug.h"
 #include "PParticleBlowingLeaves.h"
 #include "PGfxEngine.h"
@@ -210,27 +211,22 @@ void PParticleBlowingLeaves::SpawnLeaf(tagLeaf *pLeaf) {
     pLeaf->m_unk28 = 0.6f;
     pLeaf->m_unk2C = 0;
 
-    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-    r = (float)((m_unkD0 >> 16) & 0x7FFF) * 3.0517578125e-5f;
+    r = ParticleRand01(m_unkD0);
     pLeaf->m_unk24 = r * 0.3f + 0.7f;
-    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-    r = (float)((m_unkD0 >> 16) & 0x7FFF) * 3.0517578125e-5f;
+    r = ParticleRand01(m_unkD0);
     pLeaf->m_unk20 = r * 0.25f + 0.8f;
-    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-    r = (float)((m_unkD0 >> 16) & 0x7FFF) * 3.0517578125e-5f;
+    r = ParticleRand01(m_unkD0);
     pLeaf->m_unk30 = r * 240.0f + 240.0f;
-    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-    r = (float)((m_unkD0 >> 16) & 0x7FFF) * 3.0517578125e-5f;
+    r = ParticleRand01(m_unkD0);
     pLeaf->m_unk34 = m_unk9F4 * (r * 0.3f + 0.2f);
     pLeaf->m_unk30 = 2.0f * m_unk9F0 / pLeaf->m_unk34;
     pLeaf->m_unk38 = 0;
-    m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-    r = (float)((m_unkD0 >> 16) & 0x7FFF) * 3.0517578125e-5f;
+    r = ParticleRand01(m_unkD0);
     pLeaf->m_unk3C = r * 0.05f + 0.05f;
 }
 
 // DRAFT: 0x001FD6F0 InitLeafRotations__22PParticleBlowingLeavesFv
-// note: 60 words; register allocation differs (original a2=count, a3=offset, constant in a1; ours offset in a1, pointer in a3); tried quad store as scalars (65), (u_long128)0x3F800000<<96 (compile error), 64-bit shifted quad (60), declaration order swap (60)
+// note: 58 words (ParticleRand01 reads); register allocation differs (original a2=count, a3=offset, constant in a1; ours offset in a1, pointer in a3); tried quad store as scalars (65), (u_long128)0x3F800000<<96 (compile error), 64-bit shifted quad (60), declaration order swap (60)
 void PParticleBlowingLeaves::InitLeafRotations() {
     int i = 0;
     int off = 0;
@@ -239,12 +235,9 @@ void PParticleBlowingLeaves::InitLeafRotations() {
         i++;
         *(u_long128 *)(pLeaf + 0xF0) = (u_long128)((unsigned long long)0x3F800000 << 32);
         off += 0x70;
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        *(float *)(pLeaf + 0x100) = 2.0f + 4.0f * (3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF));
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        *(float *)(pLeaf + 0x104) = 1.0f + 1.0f * (3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF));
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        float f = 0.5f + 1.5f * (3.0517578125e-5f * (float)((m_unkD0 >> 16) & 0x7FFF));
+        *(float *)(pLeaf + 0x100) = 2.0f + 4.0f * ParticleRand01(m_unkD0);
+        *(float *)(pLeaf + 0x104) = 1.0f + 1.0f * ParticleRand01(m_unkD0);
+        float f = 0.5f + 1.5f * ParticleRand01(m_unkD0);
         *(float *)(pLeaf + 0x110) = f;
         *(float *)(pLeaf + 0x114) = 1.0f;
         *(float *)(pLeaf + 0x118) = f;
@@ -341,10 +334,8 @@ void PParticleBlowingLeaves::Animate(float fDelta) {
     if (m_unkA5C) {
         m_unkA44 = m_unkA44 - fDelta;
         if (m_unkA44 <= 0.0f) {
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            m_unkA44 = 60.0f * (10.0f + 10.0f * (3.0517578125e-05f * (float)((m_unkD0 >> 16) & 0x7FFF)));
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            m_unkA48 = (-90.0f + 180.0f * (3.0517578125e-05f * (float)((m_unkD0 >> 16) & 0x7FFF))) / 600.0f;
+            m_unkA44 = 60.0f * (10.0f + 10.0f * ParticleRand01(m_unkD0));
+            m_unkA48 = (-90.0f + 180.0f * ParticleRand01(m_unkD0)) / 600.0f;
             m_unkA4C = 600.0f;
         }
         if (m_unkA4C > 0.0f) {

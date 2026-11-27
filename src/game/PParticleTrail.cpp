@@ -1,4 +1,5 @@
 #include "types.h"
+#include "PRandom.h"
 #include "PParticleTrail.h"
 #include "PMat4.h"
 
@@ -327,14 +328,11 @@ block_18:
             }
             pVec = (float *)((char *)m_unk184 + s4);
             fA = m_unk120;
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            pPart[0] = (pV[0] + (-fA + (fA + fA) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)))) + fRatio * pVec[0];
+            pPart[0] = (pV[0] + (-fA + (fA + fA) * ParticleRand01(m_unkD0))) + fRatio * pVec[0];
             fA = m_unk124;
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            pPart[1] = (pV[1] + (-fA + (fA + fA) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)))) + fRatio * pVec[1];
+            pPart[1] = (pV[1] + (-fA + (fA + fA) * ParticleRand01(m_unkD0))) + fRatio * pVec[1];
             fA = m_unk128;
-            m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-            pPart[2] = (pV[2] + (-fA + (fA + fA) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)))) + fRatio * pVec[2];
+            pPart[2] = (pV[2] + (-fA + (fA + fA) * ParticleRand01(m_unkD0))) + fRatio * pVec[2];
             fT = fRatio * m_unk148;
             m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
             fF5 = 0.75f * m_unk158;

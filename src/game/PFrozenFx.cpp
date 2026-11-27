@@ -280,8 +280,7 @@ int PFrozenFx::Create(PMNode *pNode, float *pVec, float fA, float fB, float fC) 
         if (*(void **)((char *)this + 0xE0 + nSrc) == 0) {
             CdsAssert("PFrozenFx.cpp", 0x60, "apNode");
         }
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        float fScale = 1.0f + (-fA + (fA + fA) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)));
+        float fScale = 1.0f + (-fA + (fA + fA) * ParticleRand01(m_unkD0));
         sceVu0ScaleVectorXYZ((float *)(pDst + 0x40), pVec, fScale);
         *(float *)(pDst + 0x4C) = pVec[3];
         asm {

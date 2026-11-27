@@ -1,6 +1,7 @@
 // FLAGS: -str readonly
 #pragma opt_strength_reduction off
 #include "types.h"
+#include "PRandom.h"
 #include "Debug.h"
 #include "PCrystalizeFx.h"
 #include "PGfxEngine.h"
@@ -219,8 +220,7 @@ int PCrystalizeFx::Create(PMNode *pNode, tagCrystalizeFxParams *pParams) {
         void *apNode = *(void **)(m_unkE0 + i * 4);
         char *pBlock = (char *)m_unk1E0 + i * 0x60;
         CDS_ASSERT(0x50, apNode);
-        m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3;
-        float fScale = (1.0f + (-pParams->m_unk10 + (pParams->m_unk10 + pParams->m_unk10) * (0.000030517578f * (float)((m_unkD0 >> 16) & 0x7FFF)))) * 0.003921569f;
+        float fScale = (1.0f + (-pParams->m_unk10 + (pParams->m_unk10 + pParams->m_unk10) * ParticleRand01(m_unkD0))) * 0.003921569f;
         sceVu0ScaleVectorXYZ(pBlock + 0x40, pParams, fScale);
         *(float *)(pBlock + 0x4C) = pParams->m_unk0C / 128.0f;
         *(u_long128 *)(pBlock + 0x50) = (u_long128)((unsigned long long)0x3F800000 << 32);

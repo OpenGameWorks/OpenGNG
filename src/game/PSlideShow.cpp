@@ -1,5 +1,6 @@
 // FLAGS: -str readonly
 #include "types.h"
+#include "PRandom.h"
 #include "Debug.h"
 #include "PSlideShow.h"
 #include "PGfxEngine.h"
@@ -73,12 +74,9 @@ void PSlideShow::AnimateVanishingTiles(float fTime)
             int nIdx = nCol + nRow * m_unk18;
             tagTile *pTile = (tagTile *)((char *)m_unkC + nIdx * 0x30);
             tagGsPoly *pPoly = (tagGsPoly *)(pPolyBase + nIdx * 0x90);
-            m_unk38 = m_unk38 * 0x343FD + 0x269EC3;
-            float fDraw1 = 0.000030517578f * (float)((m_unk38 >> 16) & 0x7FFF);
-            m_unk38 = m_unk38 * 0x343FD + 0x269EC3;
-            float fDraw2 = 0.000030517578f * (float)((m_unk38 >> 16) & 0x7FFF);
-            m_unk38 = m_unk38 * 0x343FD + 0x269EC3;
-            float fDraw3 = 0.000030517578f * (float)((m_unk38 >> 16) & 0x7FFF);
+            float fDraw1 = ParticleRand01(m_unk38);
+            float fDraw2 = ParticleRand01(m_unk38);
+            float fDraw3 = ParticleRand01(m_unk38);
             float fY = pTile->m_fUnk2C;
             if (!(fY <= 0.0f)) {
                 float fA = 1.5f + 1.0f * fDraw3;
