@@ -105,7 +105,7 @@ void EnemyGenerator::OnTimerEvent(unsigned int arg0) {
 }
 
 // DRAFT: 0x0020DE60 CheckGeneratedEnemies__14EnemyGeneratorFv
-// note: 14 words differ; loop-entry branch offset and the dead-branch reload of m_unk1E8 order are off.
+// note: 14 words differ; entry b lands on an extra nop at 0x9C (orig b goes straight to test), dead-block decrement temp is v1 not a0. Tried goto-entered loop with pArr, (char*)this+0x1DC base before/after decrement, block-scoped pF store, ++i, i = i + 1, swapped compare: all 14.
 void EnemyGenerator::CheckGeneratedEnemies() {
     for (int i = 0; i < m_unk1D8; i++) {
         if (m_unk1E8 != -1) {
