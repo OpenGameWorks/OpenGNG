@@ -225,7 +225,7 @@ bool PMeshNode::BuildCollisionArray(PArray *pArr, unsigned int flag) {
 }
 
 // DRAFT: 0x001906F0 LoadCollision__9PMeshNodeFP8PPakFile
-// note: 30 words differ (rechecked after job PMeshNode-73530); mask/tag constant in a0/v1 not v3/a1, tbase in a1 not t0, `or` store value duplicated into the bnez delay slot (orig computes it after sync+nop), count-- hoisted above sw. Tried a local tag constant, table store order, and hoisting the store (all 33).
+// note: 26 words differ; goto-entered loop gives right size/branches; remaining: constant 0x20000000 should live in a1 (reused as FlushCache arg), -4 mask in v1, tbase in t0; ours puts tag in v1, tbase in a1, and re-emits lui for FlushCache. Tried tag local at 5 positions, operand order, literal in FlushCache.
 void PMeshNode::LoadCollision(PPakFile *pPak) {
     unsigned int size;
     if (((PCDFile *)pPak)->Read(&size, 4) == 4) {
@@ -239,23 +239,28 @@ void PMeshNode::LoadCollision(PPakFile *pPak) {
         }
         m_unk104 = (void *)((unsigned int)block | 0x30000000);
         m_unk103 = 1;
+        unsigned int tag = 0x20000000;
         int *table = (int *)((char *)block + 0xC);
         int count = block[2];
         int *entry = (int *)((char *)block + (((count + 6) & ~3) * 4));
-        unsigned int tbase = ((unsigned int)entry + (count << 5)) | 0x20000000;
-        while (count != 0) {
+        unsigned int tbase = ((unsigned int)entry + (count << 5)) | tag;
+        goto test;
+    loop:
+        {
             int v = entry[0];
-            if (!(v & 0x20000000)) {
+            if (!(v & tag)) {
                 entry[0] = tbase + v * 16;
                 entry[1] = tbase + entry[1] * 16;
                 entry[2] = tbase + entry[2] * 16;
                 asm { sync }
             }
-            *table++ = (int)entry | 0x20000000;
+            *table++ = (int)entry | tag;
             count--;
             entry += 8;
         }
-        FlushCache(0, 0x20000000, table, count);
+    test:
+        if (count != 0) goto loop;
+        FlushCache(0, tag, table, count);
     }
 }
 
