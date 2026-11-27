@@ -360,7 +360,7 @@ asm void PSlideShow::ApplyTileOnGsPoly(tagGsPoly *pPoly, tagTile *pTile)
 }
 
 // DRAFT: 0x00215B10 SetGsPolyPos__10PSlideShowFPQ210PSlideShow9tagGsPolyPQ210PSlideShow7tagTilePfPf
-// note: 4 words; VU0 block and m_unkC store match. Flag updates: `unsigned long long nFlag = 0x80` gives the daddiu a3 load; remaining diff is an extra `andi 0xFF` after the first `and` and the 0x80 folded to `ori` for the second store. Tried: unsigned int pair (13), shift form (13), unsigned char (15), long pair (16), signed mask (worse), ull with (unsigned int) cast on the or (13, folds), ull with (unsigned char) cast store (4), ull with unsigned int temp (4), int nMask (13), ull nMask (22).
+// note: 4 words; VU0 block and m_unkC store match. Flag updates: `unsigned long long nFlag = 0x80` gives the daddiu a3 load; remaining diff is an extra `andi 0xFF` after the first `and` and the 0x80 folded to `ori` for the second store. Tried: unsigned int pair (13), shift form (13), unsigned char (15), long pair (16), signed mask (worse), ull with (unsigned int) cast on the or (13, folds), ull with (unsigned char) cast store (4), ull with unsigned int temp (4), int nMask (13), ull nMask (22); w-ss1 also tried long long with ~0x80 mask, int nMask = -0x81 first, ~(int)nFlag, unsigned char temp (13-19).
 void PSlideShow::SetGsPolyPos(tagGsPoly *pPoly, tagTile *pTile, float *pA, float *pB)
 {
     asm {
