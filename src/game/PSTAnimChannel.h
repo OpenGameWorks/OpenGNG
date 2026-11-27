@@ -7,21 +7,21 @@ class PPakFile;
 
 // One keyframe table entry: a time and a value.
 struct PSTAnimKeyFrame {
-    float m_unk0;
-    float m_unk4;
+    float mfTime;
+    float mfValue;
 };
 
 class PSTAnimChannel {
 public:
     PSTAnimChannel(PSTAnimChannel &other);
     ~PSTAnimChannel();
-    int Load(PPakFile *pFile);
+    int Load(PPakFile *poFile);
     float GetNumFrames();
     void EvaluateAnim(float fTime, float &fOut);
 
     PSTAnimChannel();
-    int m_unk0;
-    PSTAnimKeyFrame *m_unk4;
+    unsigned int muNumKeyFrames;
+    PSTAnimKeyFrame *mpKeyFrameTable;
     int m_unk8;
 };
 
