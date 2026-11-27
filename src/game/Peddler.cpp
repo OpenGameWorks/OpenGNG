@@ -105,9 +105,30 @@ struct PeddlerSeq {
 };
 extern PeddlerSeq PeddlerSeqData[2];
 
-// Only the PMNode fields used here; offsets follow PMNode.h.
-class PMNode {
+class PArray {
 public:
+    PArray();
+    unsigned int m_unk0;            // 0x0 count
+    unsigned int m_unk4;            // 0x4 cursor
+    void **m_unk8;                  // 0x8 entries
+    unsigned int m_unkC;
+};
+class PResource {
+public:
+    PResource() { m_unk04 = 0; }
+    virtual ~PResource();
+    int m_unk04;                    // 0x04 node type; 2 = list head
+};
+// The identity matrix PMNode's inline ctor builds at 0x40.
+struct PMNodeMatrix {
+    PMNodeMatrix() { sceVu0UnitMatrix(m); }
+    float m[4][4];
+};
+// Only the PMNode fields used here; offsets follow PMNode.h.
+class PMNode : public PResource {
+public:
+    PMNode() { InitMembers(); }
+    void InitMembers();
     // Virtual numbers follow the vtable slots: destructor 0 (0x08), Render 1 (0x0C), ... slot 0x20 is number 6.
     virtual ~PMNode();
     virtual void Render();
@@ -117,19 +138,26 @@ public:
     virtual void SetAllAnimFlags();
     virtual int Slot20(void *pNode);
     void ScaleSet(float a, float b, float c, float d);
-    int m_unk04;                    // 0x04 node type; 2 = list head
     char _pad008[0x0C];
-    int m_unk14;                    // 0x14 list count
-    int m_unk18;                    // 0x18 list index
-    PMNode **m_unk1C;               // 0x1C list entries
-    char _pad020[0x0C];
+    PArray m_unk14;                 // 0x14 child list
+    char _pad024[0x08];
     float m_unk2C;                  // 0x2C fade value
     char _pad030[0x3E - 0x30];
     unsigned char m_unk3E;          // 0x3E flags; 0x08 = scale set
     char _pad03F[0x40 - 0x3F];
-    char _pad040[0x40];
+    PMNodeMatrix m_unk40;
     char _pad080[0x20];
     float m_unkA0[4];               // 0xA0 animated scale vector
+    char _pad0B0[0xD8 - 0xB0];
+    PArray m_unkD8;
+    char _pad0E8[0x130 - 0xE8];
+};
+class PMeshNode : public PMNode {
+public:
+    PMeshNode() { InitMembers(); }
+    virtual ~PMeshNode();
+    void InitMembers();
+    PArray m_unk130;
 };
 
 // Engine size is unknown; the placeholder keeps gEng out of small data (threshold 8 bytes).
@@ -569,8 +597,8 @@ int PeddlerItems::Animate(float fA, float fB, float fC, float fD) {
     bDone3 = AnimateFloat(fScaleB, m_unkC, 0.1f);
     pNode = m_unk4;
     if (pNode->m_unk04 == 2) {
-        pNode->m_unk18 = 0;
-        pNode = (pNode->m_unk14 != 0) ? pNode->m_unk1C[0] : 0;
+        pNode->m_unk14.m_unk4 = 0;
+        pNode = (pNode->m_unk14.m_unk0 != 0) ? (PMNode *)pNode->m_unk14.m_unk8[0] : 0;
         pNode->m_unk2C = fScaleB;
     } else {
         pNode->m_unk2C = fScaleB;
@@ -588,34 +616,20 @@ PeddlerItems::~PeddlerItems() {
     }
 }
 
-// DRAFT: 0x001D1360 __ct__12PeddlerItemsFi
+// FUNCTION: 0x001D1360 __ct__12PeddlerItemsFi
 PeddlerItems::PeddlerItems(int nIndex) {
     ItemEntry entry = ItemTable[nIndex & 0x3F];
     *(u_long128 *)((char *)this + 0x10) = *(u_long128 *)&gUnitMatrix[12];
     *(u_long128 *)((char *)this + 0x20) = *(u_long128 *)&gUnitMatrix[12];
     m_unk8 = 0.0f;
     m_unkC = 0.0f;
-    char *volatile pMesh = (char *)__nw__FUi(0x140);
-    if (pMesh != 0) {
-        char *volatile pNode = pMesh;
-        *(void **)pNode = (void *)__vt__9PResource;
-        *(int *)(pNode + 4) = 0;
-        *(void **)pNode = (void *)__vt__6PMNode;
-        __ct__6PArrayFv(pNode + 0x14);
-        sceVu0UnitMatrix(pNode + 0x40);
-        __ct__6PArrayFv(pNode + 0xD8);
-        InitMembers__6PMNodeFv(pNode);
-        *(void **)pMesh = (void *)__vt__9PMeshNode;
-        __ct__6PArrayFv(pMesh + 0x130);
-        InitMembers__9PMeshNodeFv(pMesh);
-    }
-    m_unk0 = (PMNode *)pMesh;
+    m_unk0 = new PMeshNode;
     m_unk4 = (PMNode *)GetResource__16PResourceManagerFUib((void *)((char *)&gEng + 0x188A4), entry.m_unk8, false);
     if (m_unk4 == 0) {
         CdsAssert("Peddler.cpp", 0x60B, "m_pItemNode");
     }
-    if (m_unk4->Slot20(GetResource__16PResourceManagerFUib((void *)((char *)&gEng + 0x188A4), entry.m_unkC, false)) == 0 && "Couldn't add animation") {
-        CdsAssert("Peddler.cpp", 0x60F, "!\"Couldn't add animation\"");
+    if (m_unk4->Slot20(GetResource__16PResourceManagerFUib((void *)((char *)&gEng + 0x188A4), entry.m_unkC, false)) == 0) {
+        CDS_ASSERT(0x60F, !"Couldn't add animation");
     }
     SetAnimLoopCount__6PMNodeFib(m_unk4, 0, true);
     EnableAnim__6PMNodeFbb(m_unk4, true, true);
