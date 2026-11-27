@@ -1962,19 +1962,13 @@ void EntityBaseClass::RemoveFromBGAnimList() {
     }
 }
 
-// DRAFT: 0x0014DA30 AddToBGAnimList__15EntityBaseClassFv
-// note: 2 differing words (0x38/0x40): original loads a0=m_unk3C before a2=m_unk04, ours loads a2 first; the +0x70 addend is fixed (was 3 words). Tried: node-before-size locals (2), inline member-cast call with m_unk04 direct (2), direct m_unk04 arg with node-local null test (frame grows, worse), node local with direct m_unk04 size arg (ab_e, 2).
+// FUNCTION: 0x0014DA30 AddToBGAnimList__15EntityBaseClassFv
 void EntityBaseClass::AddToBGAnimList() {
-    PMeshNode *node;
-    unsigned int size;
-
     if (this->m_unk161 == 0) {
         if (this->m_unk3C == 0) {
             CdsAssert__FPciPc("EntityBaseClass.cpp", 0x41F, "mpMeshNode");
         }
-        size = this->m_unk04;
-        node = (PMeshNode *)this->m_unk3C;
-        if (node->BuildCollisionArray((PArray *)((char *)&mBGCollision__15EntityBaseClass + 0x70), size) != 0) {
+        if (((PMeshNode *)this->m_unk3C)->BuildCollisionArray((PArray *)((char *)&mBGCollision__15EntityBaseClass + 0x70), *(unsigned int *)((char *)this + 4)) != 0) {
             this->m_unk161 = 1;
         }
     }
@@ -1987,8 +1981,7 @@ inline char *GetApparitionSlot(void *pMgr, unsigned int i) {
     return 0;
 }
 
-// DRAFT: 0x0014DAA0 WriteApparitionData__15EntityBaseClassFicUi
-// note: 2 words after permuter (spelling from build/permuter/0014DAA0/best.cpp). Earlier: DIFF 8 words; 0x59A0 store folds arg2 first (addiu a0,s0) and the tally tail sign-extends arg1 before the arg1==0 test (orig beqz s1 raw). Gate as goto-check matches. Slot ternary now uses GetApparitionSlot (still 2 words: orig adds mgr+0x59A0 then arg2, ours arg2+0x59A0 then mgr; struct-array member, (base)[arg2], setter inline all same or worse). Tried pointer temp for store (worse), wrapped tail (worse), !arg1 (same), printf-first (same).
+// FUNCTION: 0x0014DAA0 WriteApparitionData__15EntityBaseClassFicUi
 void EntityBaseClass::WriteApparitionData(int arg0, char arg1, unsigned int arg2) {
     char *slot;
     if (m_unk18 == 0 && 0 == arg2) {
@@ -2017,7 +2010,7 @@ void EntityBaseClass::WriteApparitionData(int arg0, char arg1, unsigned int arg2
             goto check;
         }
     }
-    *((char *)mpEntMgr__15EntityBaseClass + 0x59A0 + arg2) = arg1;
+    *(char *)((unsigned int)mpEntMgr__15EntityBaseClass + 0x59A0 + arg2) = arg1;
 check:
     if (arg0 != 0) {
         return;
@@ -2306,8 +2299,7 @@ void EntityBaseClass::SetFreeze(float arg0) {
     }
 }
 
-// DRAFT: 0x0014E480 CreateFireDamageFx__15EntityBaseClassFf
-// note: 2 words differ: the call's a1/a2 loads are swapped (original loads m_unk3C into a1 before m_unk08 into a2; ours loads a2 first). Tried: pm local, unsigned cast, temp for m_unk08, node local, bare-truth test (c.eq.s fixed by it); no-temp form (2); unsigned size local assigned before the call (2); size loaded at function top (31, adds an s1 save); temp assigned in the if condition (2).
+// FUNCTION: 0x0014E480 CreateFireDamageFx__15EntityBaseClassFf
 void EntityBaseClass::CreateFireDamageFx(float arg0) {
     PMNode *temp_a0;
 
@@ -2315,7 +2307,7 @@ void EntityBaseClass::CreateFireDamageFx(float arg0) {
     if ((temp_a0 != 0) && arg0) {
         temp_a0->DestroyFxTriggersBySpawnFrame(25000.0f, true);
         this->m_unkF0 = arg0;
-        ((PParticleManager *)(gGfxEng + 0x154F00))->CreateFireDamageFx((PMNode *)this->m_unk3C, this->m_unk08);
+        ((PParticleManager *)(gGfxEng + 0x154F00))->CreateFireDamageFx((PMNode *)this->m_unk3C, *(unsigned int *)((char *)this + 8));
     }
 }
 
