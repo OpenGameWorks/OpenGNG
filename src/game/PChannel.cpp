@@ -10,7 +10,7 @@ struct tagAnimationKeyFrameSplineData;
 float GetSpline(float fDt, tagAnimationKeyFrameSplineData *pA, tagAnimationKeyFrameSplineData *pNext);
 
 // DRAFT: 0x0018D4E0 AnimateBox__8PChannelFfRUc
-// note: 4 diff lines; only the v0/v1 register swap of (nIndex-1)<<5 and this+0x10 remains. Kept (unsigned int)this + 0x10 + m_unkA*8 + ((nIndex-1)<<5) (6->4). Tried: int nCount (20->7), hoisted base (46), local offset, member array base, plain term reorders (7), signed int cast (4), unkA<<3 (4), (nIndex-1)*32 (5).
+// note: 4 diff lines; only the v0/v1 register swap of (nIndex-1)<<5 and this+0x10 remains. Kept (unsigned int)this + 0x10 + m_unkA*8 + ((nIndex-1)<<5) (6->4). Tried: int nCount (20->7), hoisted base (46), local offset, member array base, plain term reorders (7), signed int cast (4), unkA<<3 (4), (nIndex-1)*32 (5), a float (*)[2][4] box pointer indexed by nIndex-1 (5-7), reversed sum (4), nIndex-1 or the shifted offset in a local (4).
 void *PChannel::AnimateBox(float fTime, unsigned char &ucMask) {
     void *pResult = 0;
     int nCount = m_unk6;
