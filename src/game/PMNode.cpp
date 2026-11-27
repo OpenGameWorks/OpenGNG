@@ -577,7 +577,7 @@ void PMNode::ProcessFxTriggers(float fTime, PMat4 *pMat, bool bA, bool bB) {
 }
 
 // DRAFT: 0x00192520 DestroyFxTriggersBySpawnFrame__6PMNodeFfb
-// note: DIFF 99 words. Original enters the while with a b to the bottom test and keeps a 0x80 frame with s5; ours tests at the top (blez) and uses a 0x90 frame. Tried: while(idx-- > 0) (104), baseline only.
+// note: 51 lines differ. Original enters the while with a b to the bottom test and keeps a 0x80 frame with s5; ours tests at the top (blez) and uses a 0x90 frame. Tried: while(idx-- > 0) (104), count-down for loop (67, worse than the current 51), index compare without unsigned cast (67).
 void PMNode::DestroyFxTriggersBySpawnFrame(float fFrame, bool bFlag) {
     PParticleManager *pMgr = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
     if (pMgr == 0) {
@@ -758,11 +758,12 @@ void PMNode::DestroyFxTriggers(bool bA, bool bB, bool bC) {
 }
 
 // DRAFT: 0x00192CC0 CopyFxTriggers__6PMNodeFR6PMNode
-// note: 32 lines differ in the current form (count>0 guard, do-while). Earlier 26 for for/while/do-while variants not reproduced; count!=0 guard also 32.
+// note: 30 lines differ. Uses bool bAny = (count > 0) ? true : false. Remaining: constant addiu v1,zero,1 hoisted to the function top; the original does not hoist it.
 void PMNode::CopyFxTriggers(PMNode &src) {
     unsigned int count = src.m_unkD8;
     unsigned int idx = 0;
-    if (count > 0) {
+    bool bAny = (count > 0) ? true : false;
+    if (bAny) {
         do {
             tagParticleFxTrigger *pTrig = 0;
             if (idx < src.m_unkD8) {
