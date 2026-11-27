@@ -285,8 +285,7 @@ int FlushIOPCommand(int arg0, unsigned int arg1, unsigned int arg2) {
     return oldcnt;
 }
 
-// DRAFT: 0x001AE060 SOUND_CountFreeSPUChannels
-// note: 10 differing lines; base pointer local and split early returns. Still differs in loop-join nop and count/base placement. Tried: split returns (12), while(i <= arg1) (12), count-first (12), for/while forms (19-23).
+// FUNCTION: 0x001AE060 SOUND_CountFreeSPUChannels
 int SOUND_CountFreeSPUChannels(unsigned int arg0, unsigned int arg1) {
     int count;
     unsigned int i;
@@ -300,12 +299,16 @@ int SOUND_CountFreeSPUChannels(unsigned int arg0, unsigned int arg1) {
     }
     count = 0;
     base = (unsigned char *)SOUND_SPUKeyStatus;
-    do {
-        if (base[i] == 0) {
-            count += 1;
-        }
-        i++;
-    } while (arg1 >= i);
+    goto test;
+loop:
+    if (base[i] == 0) {
+        count += 1;
+    }
+    i++;
+test:
+    if (arg1 >= i) {
+        goto loop;
+    }
     return count;
 }
 
