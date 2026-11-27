@@ -10,7 +10,6 @@
 extern "C" void FlushCache(int nMode);
 extern "C" void sceDmaSend(int nChannel, void *pBuf);
 extern "C" void DmaWaitForCompletion__Fib(int nChannel, bool bFlag);
-extern "C" void __dla__FPv(void *pMem);
 extern "C" void __dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" void SetTexSyncPacket__12PDisplayListFv(PDisplayList *pThis);
 // The game's assert evaluates the condition at runtime, so assert(!"msg") keeps the literal-address test.
@@ -27,8 +26,6 @@ extern MemoryManager MemMgr;
 void GsSetTexBaseAddr(tagGsTextureEnvironment *pEnv, unsigned int nBase);
 void GsSetClutBaseAddr(tagGsTextureEnvironment *pEnv, unsigned int nBase);
 extern "C" int sceDmaGetChan(int nChannel);
-extern "C" void *__nwa__FUi(unsigned int nSize);
-extern "C" void __dl__FPv(void *pMem);
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" char __vt__8PTexture[0x10];
 extern "C" int Read__7PCDFileFPvUi(void *pThis, void *pBuf, unsigned int nSize);
@@ -226,14 +223,14 @@ int PTextureManager::LoadTexture(PPakFile *poFile, tagPs2TexDataHeader *pTexHead
         return 0;
     }
     CDS_ASSERT(0x688, pTexHeader->cNumMipMaps == 0);
-    *ppvTexImagePacket = __nwa__FUi(pTexHeader->unk8);
+    *ppvTexImagePacket = new unsigned char[pTexHeader->unk8];
     CDS_ASSERT(0x692, *ppvTexImagePacket);
     if (pTexHeader->unk24 != 0) {
-        *ppvTexClutPacket = __nwa__FUi(pTexHeader->unk24);
+        *ppvTexClutPacket = new unsigned char[pTexHeader->unk24];
         CDS_ASSERT(0x699, *ppvTexClutPacket);
         if (poFile->Read(*ppvTexClutPacket, pTexHeader->unk24) != pTexHeader->unk24) {
-            __dl__FPv(*ppvTexClutPacket);
-            __dl__FPv(*ppvTexImagePacket);
+            delete (unsigned char *)*ppvTexClutPacket;
+            delete (unsigned char *)*ppvTexImagePacket;
             *ppvTexClutPacket = 0;
             *ppvTexImagePacket = 0;
             CDS_ASSERT(0x6A1, 0);
@@ -241,8 +238,8 @@ int PTextureManager::LoadTexture(PPakFile *poFile, tagPs2TexDataHeader *pTexHead
         }
     }
     if (poFile->Read(*ppvTexImagePacket, pTexHeader->unk8) != pTexHeader->unk8) {
-        __dl__FPv(*ppvTexClutPacket);
-        __dl__FPv(*ppvTexImagePacket);
+        delete (unsigned char *)*ppvTexClutPacket;
+        delete (unsigned char *)*ppvTexImagePacket;
         *ppvTexClutPacket = 0;
         *ppvTexImagePacket = 0;
         CDS_ASSERT(0x6AC, 0);
@@ -516,11 +513,11 @@ int PTextureManager::CreateRenderedTexture(short nWidth, short nHeight, short nD
 // FUNCTION: 0x0018A850 __dt__8PTextureFv
 PTexture::~PTexture() {
     if (m_unk34 != 0) {
-        __dla__FPv(m_unk34);
+        delete[] (unsigned char *)m_unk34;
         m_unk34 = 0;
     }
     if (m_unk30 != 0) {
-        __dla__FPv(m_unk30);
+        delete[] (unsigned char *)m_unk30;
         m_unk30 = 0;
     }
 }
@@ -713,7 +710,7 @@ int PTextureManager::LoadDynamicTextures(PPakFile *poFile, eTextureGroup eGroup,
 // FUNCTION: 0x0018AFE0 UnloadStaticTextures__15PTextureManagerFv
 void PTextureManager::UnloadStaticTextures() {
     if (m_unk1D0 != 0) {
-        __dla__FPv(m_unk1D0);
+        delete[] (unsigned char *)m_unk1D0;
         m_unk1D0 = 0;
     }
     m_unk1D4 = 0;
@@ -751,9 +748,9 @@ int PTextureManager::LoadStaticTextures(PPakFile *poFile, eTextureGroup eGroup, 
         CDS_ASSERT_MSG(0x3C6, pBuf, "apDmaChain");
         nQw = 0;
         if (m_unk1D0 != 0) {
-            __dla__FPv(m_unk1D0);
+            delete[] (unsigned char *)m_unk1D0;
         }
-        m_unk1D0 = __nwa__FUi((aFileHeader.iNumTextures * 3) << 5);
+        m_unk1D0 = new unsigned char[(aFileHeader.iNumTextures * 3) << 5];
         CDS_ASSERT_MSG(0x3CE, m_unk1D0, "mpStaticTexEnvTable");
         if (pArray->m_apItems != 0) {
             pArray->m_nCount = 0;
@@ -791,7 +788,7 @@ int PTextureManager::LoadStaticTextures(PPakFile *poFile, eTextureGroup eGroup, 
         for (i = 0; i < aList.m_nCount; i++) {
             pItem = aList.m_apItems[i];
             if (pItem != 0) {
-                __dla__FPv(pItem);
+                delete[] (unsigned char *)pItem;
             }
         }
         if (aList.m_apItems != 0) {

@@ -30,8 +30,6 @@ public:
 
 extern PMovieOverlayEngine gOverlayEng;
 extern unsigned char FontColors[176];
-extern "C" void __dl__FPv(void *pMem);
-extern "C" void __dla__FPv(void *pMem);
 extern "C" int printf(const char *fmt, ...);
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 class Innocent {
@@ -73,7 +71,6 @@ extern "C" void SetMaterial__10PGfxEngineFiPfbUlUl(void *pThis, int nTexture, fl
 extern "C" void SetMaterial__10PGfxEngineFPfbUlUl(void *pThis, float *pColor, bool bFlag, unsigned long nArg4, unsigned long nArg5);
 extern "C" void DrawSprites__10PGfxEngineFP11tagVuSpriteib(void *pThis, tagVuSprite *pSprite, int nCount, bool bFlag);
 extern "C" int Find__6PArrayFPv(void *pThis, void *pItem);
-extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" unsigned int strlen(const char *pStr);
 extern unsigned char FontStyles[96];
 extern "C" void sceVu0ScaleVectorXYZ(float *pDst, float *pSrc, float fScale);
@@ -491,7 +488,7 @@ extern "C" FontNode *__ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(
     nFirst = *(unsigned short *)(pEntry + 0x108);
     nLen = *(unsigned short *)(pEntry + 0x10A) - nFirst;
     nN = strlen(pStr);
-    pBlk = (char *)__nwa__FUi(nN << 6);
+    pBlk = new char[nN << 6];
     ((pBlk != 0) ? (void)0 : CdsAssert("Font.cpp", 0x215, "pSprite"));
     pThis->m_unk0 = pBlk;
     nState = nColor;
@@ -570,11 +567,11 @@ extern "C" FontNode *__ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(
 extern "C" void *__dt__8FontNodeFv(FontNode *pThis, short nFlag) {
     if (pThis != 0) {
         if (pThis->m_unk0 != 0) {
-            __dla__FPv(pThis->m_unk0);
+            delete[] pThis->m_unk0;
             pThis->m_unk0 = 0;
         }
         if (nFlag > 0) {
-            __dl__FPv(pThis);
+            delete pThis;
         }
     }
     return pThis;
@@ -822,7 +819,7 @@ extern "C" void *__dt__11FontManagerFv(FontManager *pThis, short nFlag) {
         __dt__6PArrayFv((char *)pThis + 0x1C, -1);
         __dt__6PArrayFv(pThis, -1);
         if (nFlag > 0) {
-            __dl__FPv(pThis);
+            delete pThis;
         }
     }
     return pThis;
