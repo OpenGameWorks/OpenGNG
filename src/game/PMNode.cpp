@@ -1,4 +1,5 @@
 // FLAGS: -str readonly
+#pragma opt_strength_reduction off
 #include "types.h"
 #include "PMNode.h"
 #include "PLightManager.h"
@@ -578,7 +579,7 @@ void PMNode::ProcessFxTriggers(float fTime, PMat4 *pMat, bool bA, bool bB) {
 // DRAFT: 0x00192520 DestroyFxTriggersBySpawnFrame__6PMNodeFfb
 // note: DIFF 99 words. Original enters the while with a b to the bottom test and keeps a 0x80 frame with s5; ours tests at the top (blez) and uses a 0x90 frame. Tried: while(idx-- > 0) (104), baseline only.
 void PMNode::DestroyFxTriggersBySpawnFrame(float fFrame, bool bFlag) {
-    PParticleManager *pMgr = (PParticleManager *)&gGfxEng;
+    PParticleManager *pMgr = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
     if (pMgr == 0) {
         CdsAssert__FPciPc("PMNode.cpp", 0x80C, "apParticleMgr");
     }
@@ -617,16 +618,15 @@ void PMNode::DestroyFxTriggersBySpawnFrame(float fFrame, bool bFlag) {
     }
 }
 
-// DRAFT: 0x001926C0 SetFxColorMultiplier__6PMNodeFPfb
-// note: 75 words differ; the original keeps a 0x70 frame with 6 saved regs and recomputes idx*4 in the body, ours hoists sll idx,4 into s3 (0x80 frame). Tried: for/while, if/else vs ternary, struct tagParticleFxTrigger with m_unk20, pTrig in loop.
+// FUNCTION: 0x001926C0 SetFxColorMultiplier__6PMNodeFPfb
 void PMNode::SetFxColorMultiplier(float *pColor, bool bFlag) {
-    PParticleManager *pMgr = (PParticleManager *)&gGfxEng;
+    PParticleManager *pMgr = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
     if (pMgr == 0) {
         CdsAssert__FPciPc("PMNode.cpp", 0x7EE, "apParticleMgr");
     }
     tagParticleFxTrigger *pTrig;
-    for (int idx = (int)m_unkD8 - 1; idx >= 0; idx--) {
-        pTrig = ((unsigned int)idx < m_unkD8) ? m_unkE0[idx] : 0;
+    for (unsigned int idx = m_unkD8 - 1; (int)idx >= 0; idx--) {
+        pTrig = (idx < m_unkD8) ? m_unkE0[idx] : 0;
         if (pMgr->IsValid((PParticleSystem *)pTrig->m_unk20) != 0) {
             *(char *)(pTrig->m_unk20 + 0x1C) = 0;
             sceVu0CopyVector((float *)(pTrig->m_unk20 + 0xC0), pColor);
@@ -634,19 +634,9 @@ void PMNode::SetFxColorMultiplier(float *pColor, bool bFlag) {
     }
     if (bFlag) {
         m_unk18 = 0;
-        PMNode *pChild = 0;
-        if (m_unk14 != 0) {
-            pChild = m_unk1C[0];
-        }
-        if (pChild != 0) {
-            do {
-                pChild->SetFxColorMultiplier(pColor, bFlag);
-                m_unk18++;
-                pChild = 0;
-                if (m_unk18 < m_unk14) {
-                    pChild = m_unk1C[m_unk18];
-                }
-            } while (pChild != 0);
+        PMNode *pChild;
+        for (pChild = (m_unk14 != 0) ? m_unk1C[0] : 0; pChild != 0; pChild = (++m_unk18 < m_unk14) ? m_unk1C[m_unk18] : 0) {
+            pChild->SetFxColorMultiplier(pColor, bFlag);
         }
     }
 }
@@ -736,12 +726,12 @@ void PMNode::DestroyFxTriggers(bool bA, bool bB, bool bC) {
     while (pTrig != 0) {
         if (!bA || (pTrig->m_unk24 & 4)) {
             PParticleSystem *pSys = (PParticleSystem *)pTrig->m_unk20;
-            unsigned char ok = (pSys != 0 && ((PParticleManager *)&gGfxEng)->IsValid(pSys) != 0) ? pSys->m_unk15 : 0;
+            unsigned char ok = (pSys != 0 && ((PParticleManager *)((char *)&gGfxEng + 0x154F00))->IsValid(pSys) != 0) ? pSys->m_unk15 : 0;
             if (ok == 0 || bB) {
-                ((PParticleManager *)&gGfxEng)->Destroy((unsigned int)pTrig->m_unk20);
+                ((PParticleManager *)((char *)&gGfxEng + 0x154F00))->Destroy((unsigned int)pTrig->m_unk20);
             } else {
                 pSys = (PParticleSystem *)pTrig->m_unk20;
-                if (pSys != 0 && ((PParticleManager *)&gGfxEng)->IsValid(pSys) != 0) {
+                if (pSys != 0 && ((PParticleManager *)((char *)&gGfxEng + 0x154F00))->IsValid(pSys) != 0) {
                     pSys->Slot5(false);
                 }
             }
@@ -786,8 +776,7 @@ void PMNode::CopyFxTriggers(PMNode &src) {
     }
 }
 
-// DRAFT: 0x00192D70 AddFxTriggers__6PMNodeFP6PArrayb
-// note: 49 words differ: frame 0x70 saving s5 instead of 0x60/s4..s0; the element index gets a strength-reduced induction register (addiu s2,s2,4) in place of the original's sll/addu per iteration, which shifts this/pArr/bFlag to s5/s4/s3. Tried: typed-member if form, void** slot local, for loop, idx++ in body, explicit idx*4 byte offset (49), ternary element select (51), while/signed idx.
+// FUNCTION: 0x00192D70 AddFxTriggers__6PMNodeFP6PArrayb
 void PMNode::AddFxTriggers(PArray *pArr, bool bFlag) {
     tagParticleFxTrigger *pTrig;
     unsigned int count;

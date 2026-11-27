@@ -91,7 +91,7 @@ int PropellerPowerSource::OnHitEvent(EntityBaseClass *pOther, int nA, unsigned i
             ((CameraAPI *)&mCameraAPI__13EntityManager)->ShakeScreen(0.0f, 0.5f, fShake, 0);
         }
         FlashTexture(0x84000008, 10);
-        PParticleManager *pParticleMgr = (PParticleManager *)gGfxEng;
+        PParticleManager *pParticleMgr = (PParticleManager *)(gGfxEng + 0x154F00);
         CDS_ASSERT(0xC8, pParticleMgr);
         char *pBase = m_unk3C;
         float *pSrc = (pBase != 0) ? (float *)(pBase + 0x80) : &m_unk190;
