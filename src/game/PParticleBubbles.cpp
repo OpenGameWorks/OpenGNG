@@ -2,6 +2,7 @@
 #include "types.h"
 #include "Debug.h"
 #include "PParticleBubbles.h"
+#include "PRandom.h"
 
 // TODO(header): foreign declarations
 extern "C" void *__dt__15PParticleSystemFv(void *, short);
@@ -25,6 +26,35 @@ extern "C" void BeginFxInstances__10PGfxEngineFPvib(void *pThis, void *pData, in
 extern "C" void DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib(void *pThis, void *pData, int nCount, bool bFlag);
 extern "C" void FastMath_ComputeMatrixLite__FPA4_A4_fPA4_fPA4_fPA4_fPA4_A4_f(void *pOut, void *pA, void *pB, void *pC, int nFlag);
 extern float gUnitMatrix[16];
+
+// DRAFT: 0x00201E60 SpawnBubble__16PParticleBubblesFPQ216PParticleBubbles9tagBubble
+// note: DIFF 130 words, size 0x284 vs 0x280: constant-load/seed register scheduling in the first third (mult operand order a3,a2 vs ours); tried float locals for 1-m15C and rand, operand swaps, 0.5 order.
+void PParticleBubbles::SpawnBubble(tagBubble *pBubble) {
+    pBubble->m_unk24 = m_unk154;
+    float fT = 1.0f - m_unk15C;
+    pBubble->m_unk28 = 5.0f + 240.0f * fT + (-5.0f + 10.0f * ParticleRand01(m_unkD0));
+    float fH = (float)((double)m_unk158 * 0.5);
+    pBubble->m_unk20 = ((m_unk158 - m_unk154) + (-fH + 2.0f * fH * ParticleRand01(m_unkD0))) / pBubble->m_unk28;
+    pBubble->m_unk00 = (float)((m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3) >> 16 & 0x7FFF);
+    pBubble->m_unk04 = (float)((m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3) >> 16 & 0x7FFF);
+    pBubble->m_unk08 = (float)((m_unkD0 = m_unkD0 * 0x343FD + 0x269EC3) >> 16 & 0x7FFF);
+    sceVu0ScaleVectorXYZ(&pBubble->m_unk00, &pBubble->m_unk00, 0.000030517578f);
+    float *pO = (float *)&m_unkE0;
+    float *pT = m_unkF0;
+    asm {
+        lqc2 vf1, 0x0(pO)
+        lqc2 vf2, 0x0(pT)
+        lqc2 vf3, 0x0(pBubble)
+        vsub.xyz vf4, vf2, vf1
+        vmul.xyz vf5, vf4, vf3
+        vadd.xyz vf3, vf5, vf1
+        sqc2 vf3, 0x0(pBubble)
+    }
+    pBubble->m_unk0C = 0x3F800000;
+    *(u_long128 *)&pBubble->m_unk10 = *(u_long128 *)m_unk140;
+    float fV = m_unk160;
+    sceVu0ScaleVectorXYZ((float *)&pBubble->m_unk10, (float *)&pBubble->m_unk10, 1.0f + (-fV + 2.0f * fV * ParticleRand01(m_unkD0)));
+}
 
 // DRAFT: 0x002020E0 Render__16PParticleBubblesFv
 // note: DIFF 156 words, size 0x2a0 vs 0x2b8: nBatches magic-divide order, spill at 0xA0 and vConst copy from 0x4D18B0 (zero-fill, value guessed) differ; tried vConst before/after nBatches (172/158), signed counters (172), hoisted k-loop bounds (156).

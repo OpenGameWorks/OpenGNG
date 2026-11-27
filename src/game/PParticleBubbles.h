@@ -62,7 +62,12 @@ public:
     float m_unk120[4];          // emitter origin, copied from the parameter block
     float m_unk130[4];          // second parameter vector
     float m_unk140[4];          // third parameter vector; w is scaled by Create
-    char _pad150[0x18];
+    char _pad150[4];
+    float m_unk154;
+    float m_unk158;
+    float m_unk15C;
+    float m_unk160;
+    char _pad164[4];
     unsigned char m_unk168;     // Render negates m_unk114 into a vector lane when set
     char _pad169[0x17];
     char _pad180[4];
