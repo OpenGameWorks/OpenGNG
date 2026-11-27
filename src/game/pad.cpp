@@ -154,17 +154,15 @@ void Pad::SetVibrate(VibType type, unsigned char value) {
     sceVibSetActParam(m_unk100, 1, m_unk140, m_unk148, &m_unk16C);
 }
 
-// DRAFT: 0x0012D0A0 RemapButton__3PadFUs
-// note: 2 words; addiu i and andi bit swap at 0x44/0x48. bit += bit and `entry && !(mask & entry)` fixed the rest; tried (unsigned short) cast on the sum (9), int entry (16), outer i, ++i, inline loads (2).
+// FUNCTION: 0x0012D0A0 RemapButton__3PadFUs
 unsigned short Pad::RemapButton(unsigned short mask) {
     unsigned short result = 0;
     unsigned short bit = 1;
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < 16; i++, bit += bit) {
         unsigned short entry = m_unk118[i];
         if (entry && !(mask & entry)) {
             result |= bit;
         }
-        bit += bit;
     }
     return result;
 }
