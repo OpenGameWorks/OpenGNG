@@ -240,7 +240,7 @@ void PWorld::InitFrustrum(PMat4 *pMat, float (*pVec)[4]) {
 }
 
 // DRAFT: 0x19A7B0 LoadMeshNodeHierarchy__6PWorldFP8PPakFileP6PArray16ePsx2FileVersion
-// note: 7 words: PMNode vtable lui hoisted above the pMeshV/pNodeV spills in the original. Tried: store via apMeshNode, unsigned char locals, flat volatile decls.
+// note: 7 words: PMNode vtable lui hoisted above the pMeshV/pNodeV spills in the original; ours places it after the __vt__9PResource store. Tried: store via apMeshNode, unsigned char locals, flat volatile decls, (char *)__vt__6PMNode cast (7), (char *)__vt__9PResource cast (7).
 PMeshNode *PWorld::LoadMeshNodeHierarchy(PPakFile *pFile, PArray *pArr, ePsx2FileVersion nVersion) {
     int nTop;
     PMeshNode *apMeshNode;
@@ -303,7 +303,7 @@ int PWorld::LoadEditedInstanceData(PPakFile *pFile) {
 }
 
 // DRAFT: 0x19AA20 AttachFxTriggersToNodes__6PWorldFP9PMeshNodeP24tagParticleFxTriggerDataUi
-// note: DIFF 2 words, both in the loop-guard delay slot: original fills it with i = 0 (counter in s0, offset in s1), ours with nOffset = 0. Tried for/while, do-while, combined and swapped declarations (6), comma-init (5).
+// note: DIFF 2 words, both in the loop-guard delay slot: original fills it with i = 0 (counter in s0, offset in s1), ours with nOffset = 0. Tried for/while, do-while, combined and swapped declarations, comma-init, int nOffset (2 words), for-scoped unsigned i (6), unsigned int i as int (33), swapped decl order (6).
 void PWorld::AttachFxTriggersToNodes(PMeshNode *pNode, tagParticleFxTriggerData *pData, unsigned int nCount) {
     if (pData == 0) {
         CdsAssert("PWorld.cpp", 0x341, "pTriggerTable");
@@ -466,18 +466,14 @@ void PWorld::Render() {
     RenderWorld();
 }
 
-// DRAFT: 0x19B130 UpdateAnimate__6PWorldFP6PMNode
-// note: DIFF 11 words; pNode/pCur saved registers swapped (original pNode s1, pCur s2, pList s0; ours pCur s1, pNode s2). Tried pCur/pList declaration orders and a merged pList init (11 each).
+// FUNCTION: 0x19B130 UpdateAnimate__6PWorldFP6PMNode
 void PWorld::UpdateAnimate(PMNode *pNode) {
     PNodeTable *pTable = (PNodeTable *)m_pMeshNode;
     if (pTable != 0) {
         PNodeList *pList;
-        PMNode *pCur = 0;
         pTable->m_list.m_nIndex = 0;
         pList = &pTable->m_list;
-        if (pList->m_nCount != 0) {
-            pCur = pList->m_ppNodes[0];
-        }
+        PMNode *pCur = (pList->m_nCount != 0) ? pList->m_ppNodes[0] : 0;
         while (pCur != 0) {
             if ((signed char)(pCur->m_3F & 7) == 0 && pCur->Find(pNode) != 0) {
                 pCur->m_3F = 2;
@@ -792,7 +788,7 @@ void PWorld::UpdateTimer() {
 }
 
 // DRAFT: 0x19BFA0 InitRenderFrame__6PWorldFv
-// note: DIFF 12 words; float constant load order differs (original loads 0.1f into v1 first, then 1000.0f into f19, then m_13794 into f12, 128.0f into f16). Tried named 0.1f/1000.0f locals (12).
+// note: DIFF 12 words; float constant load order differs (original loads 2048.0f into f14 first, then 0.1f, 1000.0f into f19, m_13794 into f12, 128.0f into f16). Tried named 0.1f/1000.0f locals (12), and all four float constants as locals declared in original load order (12).
 void PWorld::InitRenderFrame() {
     gGfxEng.RefreshDisplay();
     UpdateTimer();
