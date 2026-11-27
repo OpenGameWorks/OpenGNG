@@ -134,6 +134,8 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 - A float stored as a byte through `c.le.s` against 2^31, `sub.s`, `or 0x80000000`, `sb` is `(unsigned char)(unsigned int)f` (`PZBufferFog::Render`). A float passed straight to a `char` parameter converts with no `dsll32/dsra32` sign extension; an explicit `(char)(int)f` adds one (`Interface::DisplayFadeRectangle`).
 - `sll v1,x,13; dsll32/dsra32 v0,x,13` before the `bgez` division sequence is `short n = (x * 0x2000) / 0x2000;` (`PZBufferFog::Init`).
 - A byte store whose constant is materialized as `addiu t,zero,0x80` (not `-0x80`) writes an `unsigned char` member; retype the member in the header rather than casting at the store, because the cast changes the loop's addressing (`PZBufferFog::m_unk1350`).
+- A loop guard whose delay slot holds the counter init while the byte-offset init sits on the fall-through path is `unsigned int i = 0; if (i < n) { unsigned int nOffset = 0; do { ... nOffset += SIZE; } while (++i < n); }` (`PWorld::AttachFxTriggersToNodes`).
+- An epilogue that restores `f20` before `s4` where ours restores `s4` first comes from an early return: `if (m_p == 0) { return; }` in place of wrapping the body in `if (m_p != 0) { ... }` (`PCutScenePlayer::SetBgNodesOpacity`).
 
 ## Finishing
 
