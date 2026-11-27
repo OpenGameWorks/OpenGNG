@@ -58,6 +58,11 @@ public:
     void Remove(void *pItem);
     void RemoveCurrent();
     void Allocate(unsigned int nSize);
+
+    unsigned int m_unk0;
+    int m_unk4;
+    void **m_unk8;
+    unsigned int m_unkC;
 };
 class PCDFile {
 public:
@@ -412,45 +417,39 @@ void PCutScenePlayer::ResetAnimations() {
     m_unk213D &= 0x7F;
 }
 
-// DRAFT: 0x001BCB60 Render__15PCutScenePlayerFP13PLightManager
-// note: DIFF 55; frame 0x70 vs 0x60, this in s5 not s3, pItem in s2 not s4; same strength-reduced i*4 offset as KillActorFx (extra saved reg). Tried: pItem hoist/in-loop, i init placement, void** items, explicit i*4 byte offset (55), statement item read (99).
+// FUNCTION: 0x001BCB60 Render__15PCutScenePlayerFP13PLightManager
 void PCutScenePlayer::Render(PLightManager *pLightMgr) {
     if (m_unk40 != 0) {
         m_unk40->Render(0, 0x80, 0);
     }
     gGfxEng[0x158E22] = 1;
     unsigned int n = m_unkB0;
-    unsigned int i;
-    if (n != 0) {
-        i = 0;
-        do {
-            void **pItem = (i < m_unkB0) ? (void **)m_unkB8[i] : 0;
-            if (pItem == 0) {
-                CdsAssert("PCutScenePlayer.cpp", 0x24E, "apData");
+    for (unsigned int i = 0; i < n; i++) {
+        void **pItem = (void **)((i < m_unkB0) ? m_unkB8[i] : 0);
+        if (pItem == 0) {
+            CdsAssert("PCutScenePlayer.cpp", 0x24E, "apData");
+        }
+        if (pItem[12] == 0) {
+            CdsAssert("PCutScenePlayer.cpp", 0x24F, "apData->poTransform");
+        }
+        char *pObj34 = (char *)pItem[13];
+        if (pObj34 == 0 || *(int *)(pObj34 + 0xC) != 0) {
+            if (pLightMgr != 0) {
+                pLightMgr->ComputeLights((float *)(pObj34 + 0x70), 1, 1, 1, 0, 0, *(float *)((char *)this + 0xF4));
             }
-            if (pItem[12] == 0) {
-                CdsAssert("PCutScenePlayer.cpp", 0x24F, "apData->poTransform");
+            Player *p = (Player *)pItem[14];
+            if (p != 0) {
+                p->RenderCutScene();
             }
-            char *pObj34 = (char *)pItem[13];
-            if (pObj34 == 0 || *(int *)(pObj34 + 0xC) != 0) {
-                if (pLightMgr != 0) {
-                    pLightMgr->ComputeLights((float *)(pObj34 + 0x70), 1, 1, 1, 0, 0, *(float *)((char *)this + 0xF4));
-                }
-                Player *p = (Player *)pItem[14];
-                if (p != 0) {
-                    p->RenderCutScene();
-                }
-                ((PCutSceneXform *)pItem[12])->V1(0, 0x80, 0);
-            }
-            i++;
-        } while (i < n);
+            ((PCutSceneXform *)pItem[12])->V1(0, 0x80, 0);
+        }
     }
     ((PDynamicSplinePatch *)m_unk100)->Render();
     gGfxEng[0x158E22] = 0;
 }
 
 // DRAFT: 0x001BCCF0 CullTest__15PCutScenePlayerFP9PFrustrum
-// note: 49 differing words, register permutation: original this=$s4, frustum=$s3, element/node=$s2, nCount=$s0; ours this=$s3, frustum=$s2, element/node=$s4, nCount=$s0 with a different save order. Tried: char* element local (permutation remains), hoisted pNode (still 49), reverted.
+// note: 17 words differ, all register permutation: original this=s4, frustum=s3, element/node=s2; ours this=s3, frustum=s2, element/node=s4. The box read is the inline PArray read at node+0x14. Tried all 24 declaration orders of nCount/i/pElem/pNode (17), both reads as if-blocks (23).
 void PCutScenePlayer::CullTest(PFrustrum *pFrustrum) {
     if (m_unk40 != 0) {
         ((PMeshNode *)m_unk40)->TestMeshNodeInFrustum(pFrustrum);
@@ -459,10 +458,7 @@ void PCutScenePlayer::CullTest(PFrustrum *pFrustrum) {
     unsigned int i = 0;
     if (i < nCount) {
         do {
-            char *pElem = 0;
-            if (i < m_unkB0) {
-                pElem = (char *)m_unkB8[i];
-            }
+            char *pElem = (char *)((i < m_unkB0) ? m_unkB8[i] : 0);
             if (pElem == 0) {
                 CdsAssert("PCutScenePlayer.cpp", 0x21F, "apData");
             }
@@ -470,10 +466,8 @@ void PCutScenePlayer::CullTest(PFrustrum *pFrustrum) {
             if (pNode != 0) {
                 *(int *)(pNode + 0x18) = 0;
                 int nMode = 2;
-                void *pBox = 0;
-                if (*(void **)(pNode + 0x14) != 0) {
-                    pBox = **(void ***)(pNode + 0x1C);
-                }
+                PArray *pArr = (PArray *)(pNode + 0x14);
+                void *pBox = (0 < pArr->m_unk0) ? pArr->m_unk8[0] : 0;
                 if (pBox != 0) {
                     nMode = pFrustrum->IntersectBox((float (*)[2][4])(pNode + 0x110), (PMat4 *)((char *)pBox + 0x40));
                 }
