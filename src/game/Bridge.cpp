@@ -375,7 +375,7 @@ void Bridge::PushPlank(int arg0, float arg1, float arg2) {
 }
 
 // DRAFT: 0x001DD830 Clamp__6BridgeFRf
-// note: 9 words: original keeps v in f0 and 1.0f/-1.0f in f1, ours uses f1/f2 and one extra mov.s; volatile reload of arg0 in the second compare is the best form (store/reload, volatile first load, volatile pointer reload 18 all worse).
+// note: 9 words: original keeps v in f0 and 1.0f/-1.0f in f1, ours uses f1/f2 and one extra mov.s; volatile reload of arg0 in the second compare is the best form (store/reload, volatile first load, volatile pointer reload 18 all worse); also direct arg0 compare-and-assign (12), second local w (13), ternary form (16).
 void Bridge::Clamp(float &arg0) {
     float v = arg0;
     if (1.0f < v) {

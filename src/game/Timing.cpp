@@ -124,7 +124,7 @@ void ESubTimer::GenerateString(char *pOut, unsigned int nArg, unsigned int nArg2
 }
 
 // DRAFT: 0x00169890 StopTimer__9ESubTimerFv
-// note: 8 differing words; the compare loads m_unk008 into a1 first and m_unk004 into v1, while ours loads m_unk004 first, so the two compares differ in operand registers. Tried <, > (8), explicit sum temp (8), hoisted declarations (8), nElapsed local, nMax local loaded before the compare, swapped local order, `!(m_unk004 <= m_unk008)`, unsigned casts, expanded sum, `this->` prefix, sum through nCounter (10); all keep the swapped a1/v1 operands. Also tried: inline max-update helpers (8, 17), separate asm statements, int counters, swapped asm locals, > compares (all 8).
+// note: 8 differing words; the compare loads m_unk008 into a1 first and m_unk004 into v1, while ours loads m_unk004 first, so the two compares differ in operand registers. Tried <, > (8), explicit sum temp (8), hoisted declarations (8), nElapsed local, nMax local loaded before the compare, swapped local order, `!(m_unk004 <= m_unk008)`, unsigned casts, expanded sum, `this->` prefix, sum through nCounter (10); all keep the swapped a1/v1 operands. Also tried: inline max-update helpers (8, 17), separate asm statements, int counters, swapped asm locals, > compares (all 8). Also tried: two sequential ifs (9), inner compare against m_unk008 (8), `m_unk004 > m_unk0xx` (8).
 void ESubTimer::StopTimer() {
     if (m_unk044 != 0) {
         unsigned int nDummy;

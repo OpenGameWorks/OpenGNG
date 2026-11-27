@@ -455,7 +455,7 @@ struct ParticleNode {
 };
 
 // DRAFT: 0x00146180 EnableParticleFx__13EntityManagerFb
-// note: 5 words; the key load (orig a2, `lw a2,8(a3)` before the inits) lands after the keys base in ours, and the loop top sits one word later (blez target). Best: `int *pKeys = keys;` in the do body (16 -> 5). Tried nKey local before the inits (7-11), pKeys/nKey placement among the locals (5-11), 12 statement orders (9-11)
+// note: 5 words; the key load (orig a2, `lw a2,8(a3)` before the inits) lands after the keys base in ours, and the loop top sits one word later (blez target). Best: `int *pKeys = keys;` in the do body (16 -> 5). Also tried do-while (5), while (5), pointer-increment for (10). Tried nKey local before the inits (7-11), pKeys/nKey placement among the locals (5-11), 12 statement orders (9-11)
 void EntityManager::EnableParticleFx(bool arg0) {
     int keys[1] = { 3 };
     ParticleSubList *pList;

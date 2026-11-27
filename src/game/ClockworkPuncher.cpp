@@ -640,7 +640,7 @@ void ClockworkPuncher::SetEditableVars(char *arg0) {
 }
 
 // DRAFT: 0x001DEF60 OnTimerEvent__16ClockworkPuncherFUi
-// note: 5 lines differ; original hoists mtc1 $zero,$f12 and mov.s f13 above the m_unk38 null test (mov.s in the beqz delay slot), ours keeps them in the body. Tried local pointer, local float zero (also as call args), literal zeros, if (m_unk38) truthiness: all 5 lines.
+// note: 5 lines differ; original hoists mtc1 $zero,$f12 and mov.s f13 above the m_unk38 null test (mov.s in the beqz delay slot), ours keeps them in the body. Tried local pointer, local float zero (also as call args, declared before/after the m_unkDC store), literal zeros, if (m_unk38) truthiness, static inline StopVel(p,a,b) helper: all 5 lines.
 void ClockworkPuncher::OnTimerEvent(unsigned int nHandle) {
     if (nHandle == m_unk214) {
         m_unk272 = 1;

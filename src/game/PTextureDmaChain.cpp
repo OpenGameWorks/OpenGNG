@@ -9,7 +9,7 @@ extern "C" void iFlushCache(int nMode);
 extern "C" void __dl__FPv(void *pMem);
 
 // DRAFT: 0x00189080 Kick__16PTextureDmaChainFb
-// note: 6 words differ. Original hoists the index shift and 0x7088 base into beqz delay slot; ours folds 0x7088 into the lw offset. Tried hoisted nIdx local and pTable pointer variants, no gain.
+// note: 6 words differ. Original hoists the index shift and 0x7088 base into beqz delay slot; ours folds 0x7088 into the lw offset. Tried hoisted nIdx local and pTable pointer variants, no gain. Also tried nIdx local, int* offset pointer, byte-offset table read, reversed compare (8), pointer to entry (all 6).
 void PTextureDmaChain::Kick(bool bFlag) {
     NextBatch();
     if (m_unk7288 < m_unk728C) {

@@ -295,7 +295,7 @@ void ClockworkStalker::KillTimers() {
 }
 
 // DRAFT: 0x001E2BE0 LoadCorrectMesh__16ClockworkStalkerFb
-// note: 8 words differ: f20/f21 swapped for fFrameTime/fAlpha; tried decl order swap, split init, -1.0f/0.0f on the left of the test, store/Find order swap (92), hoisted fAlpha (107), temp for m_unk38 (8, no change)
+// note: 8 words differ: f20/f21 swapped for fFrameTime/fAlpha; tried decl order swap, split init, -1.0f/0.0f on the left of the test, store/Find order swap (92), hoisted fAlpha (107), temp for m_unk38 (8, no change), separate decls fAlpha-first with either init order (8), permute.py 90s (8)
 void ClockworkStalker::LoadCorrectMesh(bool arg0) {
     if ((m_unk2B0 == 0 || arg0) && (m_unk20 != 9 || m_unk20 != 0x18)) {
         float fFrameTime = -1.0f;

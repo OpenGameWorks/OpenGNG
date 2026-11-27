@@ -125,7 +125,7 @@ void PTextureManager::KickDmaChain(void *pBuf, bool bWait) {
 }
 
 // DRAFT: 0x00189590 PrepareStaticTextureForDma__15PTextureManagerFP1P19tagPs2TexDataHeaderPvPvP23tagGsTextureEnvironment
-// note: 3 words: nWidth goes to t1 in the original (ours t0) at 0x0F8/0x0FC and the 0x128 copy direction is reversed. (unsigned int)unk8 fixed the lw a3/lb t2 order (5->3). Tried nWidth declared last, in the block, initialised, unsigned, as a ternary, separate width/height locals (70), casts on each clut argument (3).
+// note: 3 words: nWidth goes to t1 in the original (ours t0) at 0x0F8/0x0FC and the 0x128 copy direction is reversed. (unsigned int)unk8 fixed the lw a3/lb t2 order (5->3). Tried nWidth declared last, in the block, initialised, unsigned, as a ternary, separate width/height locals (70), casts on each clut argument (3). Also tried reusing nW or nH as the clut width and a block-local nWidth, all 3.
 int PTextureManager::PrepareStaticTextureForDma(u_long128 *pDmaChain, tagPs2TexDataHeader *pTexHeader, void *pvTexClutPacket, void *pvTexImagePacket, tagGsTextureEnvironment *pTexEnv) {
     int nQwords = 0;
     int nWidth;

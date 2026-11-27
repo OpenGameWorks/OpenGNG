@@ -400,7 +400,7 @@ void PMidasShieldRings::Create(float fA, float fB, float fC, float *pA, float *p
 }
 
 // DRAFT: 0x001F9670 Create__17PMidasShieldRingsFb
-// note: 4 differing words, float constant loads: ours -4,8 vs orig 8,-4 (f12/f15 pair, 5 and 2 match); tried fB as local (4), fB+fD locals (6), fA+fB locals (6), fC local (4), fD local before/after call (6), literal -4 with fB local (best)
+// note: 4 differing words, float constant loads: ours -4,8 vs orig 8,-4 (f12/f15 pair, 5 and 2 match); tried fB as local (4), fB+fD locals (6), fA+fB locals (6), fC local (4), fD local before/after call (6), literal -4 with fB local (best); fA local (6), fE=-4 local (6)
 void PMidasShieldRings::Create(bool bFlag) {
     float fB = 5.0f;
     float a[4];

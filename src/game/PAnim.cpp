@@ -64,7 +64,7 @@ void PAnim::SetFrameTime(float) {
 }
 
 // DRAFT: 0x0018C8B0 FindChannel__5PAnimF9eAnimType
-// note: DIFF 7; original has two nops after the lw (ours one) and a nop after the loop (011126 loop padding), and its null test branches to the shared `return 0`. Tried: else-branch (11), single-exit break (16), pointer-walk loop (20), `||` guard (16), break in for (16), pFound search (20), while with returns (7), while with break (16), 011126 compiler with draft (7) and with break (15).
+// note: DIFF 7; original has two nops after the lw (ours one) and a nop after the loop (011126 loop padding), and its null test branches to the shared `return 0`. Tried: else-branch (11), single-exit break (16), pointer-walk loop (20), `||` guard (16), break in for (16), pFound search (20), while with returns (7), while with break (16), 011126 compiler with draft (7) and with break (15); if-else with return 0 (11), compare reversed (9), m_unkC[i] direct (19).
 PChannel *PAnim::FindChannel(eAnimType eType)
 {
     int i;

@@ -35,7 +35,7 @@ extern "C" int rand(void);
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("PParticleSplineTrail.cpp", line, #cond))
 
 // DRAFT: 0x001F0E20 Start__20PParticleSplineTrailFv
-// note: 7 words differ; the nOffset and nVal registers still swap (orig offset a3, const a1). Tried (8 attempts): nOffset-before-nVal, unsigned nVal, unsigned nOffset, nOffset/i/nVal order, split nVal assignment, nVal in the for-init (7), inline literal (7).
+// note: 7 words differ; the nOffset and nVal registers still swap (orig offset a3, const a1). Tried (8 attempts): nOffset-before-nVal, unsigned nVal, unsigned nOffset, nOffset/i/nVal order, split nVal assignment, nVal in the for-init (7), inline literal (7). Also tried: i,nOffset,nVal split-declared with later nVal (10), initialised decls with for(;;) (8), all three inits in for header (10), while loop (10).
 void PParticleSplineTrail::Start() {
     m_unk160 = 1.0f;
     int nVal = 0xC9742400;

@@ -629,7 +629,7 @@ int Tinker::IsStalled(float fDist, float (*arg1)[4]) {
 }
 
 // DRAFT: 0x002099C0 MoveTo__6TinkerFPA4_ff
-// note: 5 differing words; the flag select is a branch (`bnez`/`b`), not the original `movz`. m_unk250 store moved inside `if (c & 4)`. Tried ternary local (6), nCond local (5), bool bSet (6), default-8-then-override (5, kept), ternaries on the mask, a bool, != 0 (6 each, all branch), mask or nAlt locals (5), inline helpers (5-6), bit-7 bitfield struct (6 or 93).
+// note: 5 differing words; the flag select is a branch (`bnez`/`b`), not the original `movz`. m_unk250 store moved inside `if (c & 4)`. Tried ternary local (6), nCond local (5), bool bSet (6), default-8-then-override (5, kept), ternaries on the mask, a bool, != 0 (6 each, all branch), mask or nAlt locals (5), inline helpers (5-6), bit-7 bitfield struct (6 or 93), int/unsigned local of the word then ternary (6), byte read (6), default-4-then-override (5).
 int Tinker::MoveTo(float (*arg0)[4], float arg1) {
     int nFlags;
     char *pPath;
