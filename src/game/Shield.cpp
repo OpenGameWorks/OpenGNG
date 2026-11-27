@@ -48,6 +48,21 @@ extern "C" void *CreateGhost__9EffectAPIFP9PMeshNode(void *pThis, void *node);
 extern "C" float sqrtf(float fX);
 extern "C" void ResetCollisions__15EntityBaseClassFv(void *pThis);
 
+extern "C" void *__nw__FUi(unsigned int);
+extern "C" void *__ct__7PhysicsFv(void *pThis);
+extern "C" void *__ct__16PParticleRipplesFv(void *pThis);
+extern "C" void Init__16PParticleRipplesFibb(void *pThis, int a, bool b, bool c);
+extern "C" void AutoEmit__16PParticleRipplesFfPfffff(void *pThis, float a, float *pArr, float b, float c, float d, float e);
+extern "C" void Add__16PParticleManagerFP15PParticleSystem(void *pThis, void *pSys);
+extern "C" void AttachFx__6PMNodeFUiffffb(void *pThis, unsigned int id, float a, float b, float c, float d, bool e);
+extern "C" int GetFxTexture__16PParticleManagerFUi(void *pThis, unsigned int id);
+extern "C" void *Create__16PParticleManagerFUifffP6PMNodeb(void *pThis, unsigned int id, float a, float b, float c, void *pNode, bool flag);
+extern "C" void *EffectValid__9EffectAPIFUi(void *pThis, unsigned int handle);
+extern "C" void SetAnimLoopCount__6PMNodeFib(void *pThis, int nCount, bool bFlag);
+extern "C" void *GetFirstMesh__6PMNodeFv(void *pThis);
+extern "C" void SetRenderPassStatus__6PMNodeFbbbb(void *pThis, bool a, bool b, bool c, bool d);
+extern "C" int mbHard__15EntityBaseClass;
+
 // Leading virtuals of PParticleSystem's vtable (__vt__15PParticleSystem); a call
 // through this view loads the slot into $t9 as the original's virtual calls do.
 class PParticleSystemVirtuals {
@@ -61,6 +76,15 @@ public:
     virtual void Start();
     virtual void Stop();
     virtual void SetPosition(float *a, float *b);
+};
+
+// Leading virtuals of PMNode's vtable; slot 0x14 is the third virtual.
+class PMNodeVirtuals {
+public:
+    virtual ~PMNodeVirtuals();
+    virtual void Slot0C();
+    virtual void Slot10();
+    virtual void Slot14();
 };
 
 // FUNCTION: 0x001681A0 GetClassName__6ShieldFv
@@ -364,6 +388,167 @@ int Shield::HoverCheck() {
         }
     }
     return 0;
+}
+
+// FUNCTION: 0x00168C60 InitShield__6ShieldFP15EntityBaseClassfPA4_fPA4_fUiPbi
+void Shield::InitShield(EntityBaseClass *arg0, float arg1, float (*arg2)[4], float (*arg3)[4], unsigned int arg4, bool *arg5, int arg6) {
+    static unsigned char ShieldAnim[16] = {0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x80, 0x3F};
+    static float ShieldBox[8] = {0.0f, 0.0f, 0.0f, 1.0f, 1.4f, 1.0f, 1.4f, 2.22f};
+    static float SparkBox[8] = {0.0f, -10.0f, 0.0f, 1.0f, 3.0f, 10.0f, 3.0f, 15.0f};
+    float *pBox;
+    unsigned int nId;
+    unsigned int nId2;
+    int nRadius;
+    char *pNode;
+
+    m_unk1B8 = arg0;
+    m_unk1BC = (EntityBaseClass *)((EntityBaseClass *)m_unk1B8)->m_unk04;
+    if (arg0->m_unk08 == 3) {
+        m_unk1DB = 1;
+        SetFlyingShield__6PlayerFP6Shield(m_unk1B8, this);
+        m_unkE8 = 3;
+        m_unk10C |= 0x021A1E01;
+        LoadMesh__15EntityBaseClassFUibb(this, 0x81000003, 0, 1);
+    } else {
+        m_unkE8 = 0xB;
+        m_unk10C |= 0x021B1902;
+        switch (((EntityBaseClass *)m_unk1B8)->m_unk08) {
+        case 0x72:
+            break;
+        default:
+            CdsAssert("Shield.cpp", 0x8F, "mpParent->GetClassID() == ENT_CLOCKWORKMAXIMO");
+        }
+        switch (arg4) {
+        case 0:
+            break;
+        default:
+            CdsAssert("Shield.cpp", 0x90, "bHover == false");
+        }
+        UpdateShieldStatus__15ClockworkMaximoFP6Shield(m_unk1B8, this);
+        LoadMesh__15EntityBaseClassFUibb(this, 0x0100043D, 0, 1);
+    }
+    m_unk1B4 = arg1;
+    LoadAnim(0x8200001F, 1);
+    SetAnimData((AnimData *)ShieldAnim);
+    pNode = m_unk3C;
+    if (arg5 != 0) {
+        SetRenderPassStatus__6PMNodeFbbbb(pNode, arg5[0], arg5[1], arg5[2], 0);
+    }
+    ((PMNodeVirtuals *)pNode)->Slot14();
+    m_unk1B0 = arg6;
+    *(u_long128 *)(pNode + 0x80) = *(u_long128 *)arg2;
+    *(unsigned char *)(pNode + 0x3E) |= 8;
+    {
+        void *p = __nw__FUi(0x120);
+        if (p != 0) {
+            p = __ct__7PhysicsFv(p);
+        }
+        m_unk38 = (Physics *)p;
+    }
+    if (m_unk38 == 0) {
+        CdsAssert("Shield.cpp", 0xAB, "mpPhysics");
+    }
+    SetPhysicsType__7PhysicsFUiPA4_f(m_unk38, 0x94, 0);
+    pBox = ShieldBox;
+    *(u_long128 *)m_unk38 = *(u_long128 *)arg3;
+    *(int *)((char *)m_unk38 + 0xEC) = 0x58;
+    {
+        char *pPhys = (char *)m_unk38;
+        *(u_long128 *)(pPhys + 0x80) = *(u_long128 *)ShieldBox;
+        *(u_long128 *)(pPhys + 0x90) = *(u_long128 *)(ShieldBox + 4);
+    }
+    m_unk1D9 = (arg4 & 0x10) != 0;
+    m_unk1D8 = (arg4 & 0x20) != 0;
+    m_unk1C0 = CreateGhost__9EffectAPIFP9PMeshNode(mEffectAPI__13EntityManager, pNode);
+    nRadius = 0x4B;
+    if (arg6 != 2) {
+        if (arg6 != 1) {
+            nId = 0;
+        } else {
+            nId = 0x8100023E;
+            nId2 = 0x820003EB;
+        }
+    } else {
+        nId = 0x8100023C;
+        nId2 = 0x820003F3;
+        nRadius = nRadius * 2;
+        pBox = SparkBox;
+    }
+    if (m_unk1DB != 0 && mbHard__15EntityBaseClass == 0) {
+        nRadius += 0x19;
+    }
+    m_unk15C = nRadius;
+    m_unk15E = 0x800;
+    {
+        char *pMesh = (char *)GetFirstMesh__6PMNodeFv(pNode);
+        *(unsigned char *)(pMesh + 0xE) = 0xA0;
+        *(u_long128 *)(pMesh + 0x10) = *(u_long128 *)pBox;
+        *(u_long128 *)(pMesh + 0x20) = *(u_long128 *)(pBox + 4);
+        *(u_long128 *)(pNode + 0x110) = *(u_long128 *)pBox;
+        *(u_long128 *)(pNode + 0x120) = *(u_long128 *)(pBox + 4);
+    }
+    if (nId != 0) {
+        char *pFx;
+        m_unk1C4 = CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib(mEffectAPI__13EntityManager, nId, nId2, 0, 0, this, 0.5f, false, 0, false);
+        if (m_unk1C4 == 0) {
+            CdsAssert("Shield.cpp", 0xDC, "mSpark");
+        }
+        pFx = (char *)EffectValid__9EffectAPIFUi(mEffectAPI__13EntityManager, m_unk1C4);
+        if (pFx == 0) {
+            CdsAssert("Shield.cpp", 0xDE, "pSpark");
+        }
+        SetAnimLoopCount__6PMNodeFib(*(void **)(pFx + 4), 0, true);
+        if (arg6 == 1) {
+            float vA[4] = {1.15f, 1.15f, 1.15f, 1.0f};
+            float vB[4] = {1.5f, 1.5f, 1.5f, 1.0f};
+            char *pRip = (char *)__nw__FUi(0x8C0);
+            if (pRip != 0) {
+                pRip = (char *)__ct__16PParticleRipplesFv(pRip);
+            }
+            if (pRip == 0) {
+                CdsAssert("Shield.cpp", 0xE7, "apFx");
+            }
+            Init__16PParticleRipplesFibb(pRip, 8, true, true);
+            AutoEmit__16PParticleRipplesFfPfffff(pRip, 5.0f, vA, 1.0f, 11.0f, 0.0f, 40.0f);
+            pRip[0x19] = 1;
+            *(int *)(pRip + 0x28) = 0;
+            *(int *)(pRip + 0x2C) = 0;
+            Add__16PParticleManagerFP15PParticleSystem(gGfxEng + 0x154F00, pRip);
+            AttachFx__6PMNodeFUiffffb(*(void **)(pFx + 4), (unsigned int)pRip, 0.0f, 0.0f, -1.0f, -1.0f, true);
+            pRip = (char *)__nw__FUi(0x8C0);
+            if (pRip != 0) {
+                pRip = (char *)__ct__16PParticleRipplesFv(pRip);
+            }
+            if (pRip == 0) {
+                CdsAssert("Shield.cpp", 0xEF, "apFx");
+            }
+            Init__16PParticleRipplesFibb(pRip, 8, false, false);
+            *(int *)(pRip + 0x10) = GetFxTexture__16PParticleManagerFUi(gGfxEng + 0x154F00, 0x8400000D);
+            *(long long *)(pRip + 0x30) = 0x48;
+            AutoEmit__16PParticleRipplesFfPfffff(pRip, 5.0f, vB, 1.0f, 11.0f, 0.0f, 40.0f);
+            Add__16PParticleManagerFP15PParticleSystem(gGfxEng + 0x154F00, pRip);
+            AttachFx__6PMNodeFUiffffb(*(void **)(pFx + 4), (unsigned int)pRip, 0.0f, 0.0f, -1.0f, -1.0f, true);
+            return;
+        }
+        if (arg6 == 2) {
+            m_unk1C8 = (unsigned int)Create__16PParticleManagerFUifffP6PMNodeb(gGfxEng + 0x154F00, 0x830001E7, 0.0f, 0.0f, 0.0f, 0, true);
+            {
+                void *pSys = (void *)m_unk1C8;
+                char *pMgr = gGfxEng + 0x154F00;
+                if (pSys != 0 && IsValid__16PParticleManagerFP15PParticleSystem(pMgr, pSys) != 0) {
+                    ((PParticleSystemVirtuals *)pSys)->Start();
+                }
+            }
+            m_unk1CC = (unsigned int)Create__16PParticleManagerFUifffP6PMNodeb(gGfxEng + 0x154F00, 0x830001E8, 0.0f, 0.0f, 0.0f, 0, true);
+            {
+                void *pSys = (void *)m_unk1CC;
+                char *pMgr = gGfxEng + 0x154F00;
+                if (pSys != 0 && IsValid__16PParticleManagerFP15PParticleSystem(pMgr, pSys) != 0) {
+                    ((PParticleSystemVirtuals *)pSys)->Start();
+                }
+            }
+        }
+    }
 }
 
 // FUNCTION: 0x00169300 DeleteShield__6ShieldFv
