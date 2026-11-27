@@ -1794,25 +1794,31 @@ void EntityBaseClass::RadiusAdjust(float arg0, float (*arg1)[4]) {
 }
 
 // DRAFT: 0x0014D6D0 AddCollision__15EntityBaseClassFP15EntityBaseClass
-// note: loop shape and store addressing differ (34 words); tried explicit this+0x110 base and post-loop store (35 words), 25 brute variants over for/while, array/pointer/flat/offset stores, value local vs direct, unsigned vs int: none below 34.
+// note: 22 words; goto-entered loop applied (loop shape now matches); store still folds 0x110 into sw (orig: sll a0; addiu v1,s3,0x110; addu; sw a1,0(v1), value loaded first into a1). Tried: m_unk110[i], char-offset, pointer local, array-pointer, inline setter, value local.
 void EntityBaseClass::AddCollision(EntityBaseClass *arg0) {
     unsigned int i;
     unsigned int off;
     unsigned int target;
     void *pEnt;
 
-    for (i = 0, off = 0; i < 10; i++, off += 4) {
-        target = *(unsigned int *)((char *)this + off + 0x110);
-        if (target == 0) {
-            *(this->m_unk110 + i) = arg0->m_unk04;
-            return;
-        }
-        pEnt = ((EntityManager *)mpEntMgr__15EntityBaseClass)->GetPtrToApparition(target);
-        if (pEnt == 0 || ((unsigned char *)pEnt)[0x163] == 6) {
-            *(this->m_unk110 + i) = arg0->m_unk04;
-            return;
-        }
+    i = 0;
+    off = 0;
+    goto test;
+loop:
+    target = *(unsigned int *)((char *)this + off + 0x110);
+    if (target == 0) {
+        this->m_unk110[i] = arg0->m_unk04;
+        return;
     }
+    pEnt = ((EntityManager *)mpEntMgr__15EntityBaseClass)->GetPtrToApparition(target);
+    if (pEnt == 0 || ((unsigned char *)pEnt)[0x163] == 6) {
+        this->m_unk110[i] = arg0->m_unk04;
+        return;
+    }
+    i++;
+    off += 4;
+test:
+    if (i < 10) goto loop;
 }
 
 // DRAFT: 0x0014D680 RemoveCollision__15EntityBaseClassFP15EntityBaseClass
