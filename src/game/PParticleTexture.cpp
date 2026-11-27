@@ -94,7 +94,7 @@ void PParticleTexture::Reset() {
 }
 
 // DRAFT: 0x001EFD40 Update__16PParticleTextureFf
-// note: DIFF 180 words; first diff at 0x28-0x40 (early-branch layout), folded vs unfolded gGfxEng+0x154C80 loads and aPacket build unresolved; tried || wrapper and goto layout, both 180.
+// note: DIFF 180 words; only 18 of 198 words match. MWCC hoists the BeginFxRender `lui a0` into the first bnez delay slot (original keeps a nop there). Tried: runtime gGfxEng+0x154C80 for the first SetGsRegisters (197, worse); goto body with one or two early-return branches (180, size 0x2F4 vs 0x318); plain early return (180). aPacket table copy (original ld/sd through t2..t7) not matched.
 void PParticleTexture::Update(float fStep) {
     PParticleMatrix sp50;
     PParticleMatrix sp90;
