@@ -1,4 +1,5 @@
 // FLAGS: -str readonly
+#pragma opt_strength_reduction off
 #include "PWorld.h"
 #include "PArray.h"
 
@@ -354,8 +355,7 @@ int PWorld::LoadFxTriggerData(PPakFile *pFile, tagParticleFxTriggerData **ppData
     return 1;
 }
 
-// DRAFT: 0x19AC40 CleanupStaticInstanceMeshes__6PWorldFv
-// note: 56 differing lines; loop guard shape (original sltu/beqz entry + bottom test) and second gGfxEng block gp-relative (original lui 0x46/addiu absolute). Tried: for-loop 58, do-while 59, pointer for first block 56
+// FUNCTION: 0x19AC40 CleanupStaticInstanceMeshes__6PWorldFv
 void PWorld::CleanupStaticInstanceMeshes() {
     unsigned int n;
     unsigned int i;
@@ -364,10 +364,7 @@ void PWorld::CleanupStaticInstanceMeshes() {
 
     n = m_9FB0;
     for (i = 0; i < n; i++) {
-        p = 0;
-        if (i < m_9FB0) {
-            p = m_9FB8[i];
-        }
+        p = (PStaticInstanceMesh *)((i < m_9FB0) ? m_9FB8[i] : 0);
         if (p) {
             __dt__19PStaticInstanceMeshFv(p, 1);
         }
@@ -376,14 +373,15 @@ void PWorld::CleanupStaticInstanceMeshes() {
         m_9FB0 = 0;
         m_9FB4 = 0;
     }
-    pGfx = (char *)&gGfxEng + 0x154F00;
+    pGfx = (char *)((int)&gGfxEng + 0x154F00);
     if (*(int *)(pGfx + 0x2070)) {
         *(int *)(pGfx + 0x2068) = 0;
         *(int *)(pGfx + 0x206C) = 0;
     }
-    if (*(int *)((char *)&gGfxEng + 0x154F00 + 0x2080)) {
-        *(int *)((char *)&gGfxEng + 0x154F00 + 0x2078) = 0;
-        *(int *)((char *)&gGfxEng + 0x154F00 + 0x207C) = 0;
+    pGfx = (char *)&gGfxEng + 0x154F00;
+    if (*(int *)(pGfx + 0x2080)) {
+        *(int *)(pGfx + 0x2078) = 0;
+        *(int *)(pGfx + 0x207C) = 0;
     }
 }
 

@@ -1,4 +1,5 @@
 // FLAGS: -str readonly
+#pragma opt_strength_reduction off
 #include "types.h"
 #include "PCrystalizeFx.h"
 #include "PGfxEngine.h"
