@@ -4528,15 +4528,13 @@ void Player::UpdateDisplayList() {
 // TODO(header): foreign declarations
 extern "C" void FreezeCheck__15EntityBaseClassFP15EntityBaseClassi(void *pThis, void *pOther, int nType);
 
-// DRAFT: 0x001610E0 OnAttackEvent__6PlayerFP15EntityBaseClassi
-// note: 7 words differ; case 3 vibrate arm: original sets a1=1 after lbu a2 and shares one b to the join (ours hoists a1 and duplicates daddiu s4 into the b delay slot); tried nVib local, goto setFx/done label shapes
+// FUNCTION: 0x001610E0 OnAttackEvent__6PlayerFP15EntityBaseClassi
 void Player::OnAttackEvent(EntityBaseClass *arg0, int arg1) {
     char *pEnt = (char *)arg0;
     int nHit;
     int nBase;
     static int EffectTypes[8] = {0, 2, 1, 0, 3, 3, 3, 3};
     bool bFx;
-    unsigned char nVib;
 
     m_unk336 = 0;
     FreezeCheck__15EntityBaseClassFP15EntityBaseClassi(this, arg0, arg1);
@@ -4557,13 +4555,10 @@ void Player::OnAttackEvent(EntityBaseClass *arg0, int arg1) {
                 m_unkE8 |= 8;
                 *(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) = 8;
             }
-            nVib = ((unsigned char *)m_unk258)[0xB];
-            bFx = true;
-            if (nVib != 0) {
-                gPad.SetVibrate((Pad::VibType)1, nVib);
-                goto setFx;
+            if (((unsigned char *)m_unk258)[0xB] != 0) {
+                gPad.SetVibrate((Pad::VibType)1, ((unsigned char *)m_unk258)[0xB]);
             }
-            break;
+            goto setFx;
         case 4:
             m_unk314 = 0x42A00000;
             if (m_unk1D0 & 2) {
