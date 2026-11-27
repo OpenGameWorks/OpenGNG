@@ -1368,18 +1368,16 @@ PMNode *PMNode::FindAnimNode(unsigned int uID) {
 
 
 // DRAFT: 0x00194650 EnableOneRenderPassOnly__6PMNodeFi
-// note: 4 words differ (0x3C,0x44,0x4C,0x54): original keeps the D4 pointer in v1 and the constant 1 in a0; ours puts the pointer in a1 and the 1 in v1. Tried: pointer declared before its first assignment, bool local holding true, char* pointer store (all still 4).
+// note: 3 words (0x44, 0x4C, 0x54): the four flags are cleared through a bool* loop over &m_unkD4; the original materializes the constant 1 in a0 before adding nPass, ours adds first and uses a1. A bool m_abPass[4] member may be the cause but m_unkD4..D7 have users in 23 files. Tried: ab[nPass] = 1, *(ab + nPass), ab += nPass, bool local, i outside the for, (&m_unkD4)[i] in the loop (3-4), indexed stores without the loop (4-36).
 void PMNode::EnableOneRenderPassOnly(int nPass) {
     if (nPass >= 4) {
         CdsAssert__FPciPc("PMNode.cpp", 0x446, "iPassIndex < MAX_PASSES_PER_SHADER");
     }
-    m_unkD4 = false;
-    bool *pSel = &m_unkD4;
-    m_unkD5 = 0;
-    m_unkD6 = 0;
-    pSel += nPass;
-    m_unkD7 = 0;
-    *pSel = true;
+    bool *ab = &m_unkD4;
+    for (int i = 0; i < 4; i++) {
+        ab[i] = false;
+    }
+    ab[nPass] = true;
     m_unk3E |= 0x80;
     m_unk18 = 0;
     PMNode *pChild = 0;
