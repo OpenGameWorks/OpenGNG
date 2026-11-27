@@ -1230,6 +1230,202 @@ int PMNode::CalculateMatrix(float fA, PMNode *pNode, float (*pOut)[4][4]) {
     return 0;
 }
 
+// Views of the vtables Animate calls through: the object at PMNode+0x24 (PAnim layout) and each child PMNode (slot 0x18 is Animate).
+class PAnimVirt {
+public:
+    virtual ~PAnimVirt();
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual float Animate(float fTime, float fUnused, float *pOut, float *pOut2, int nA);
+    virtual int IsAnimate();
+    virtual void Slot05();
+    virtual void Slot06();
+    virtual void Slot07();
+    virtual void Slot08();
+    virtual void Slot09();
+    virtual void Slot10();
+    virtual float GetFrameTime();
+    virtual void Slot12();
+    virtual void Slot13();
+    virtual void Slot14();
+    virtual void Slot15();
+    virtual void Slot16();
+    virtual int IsPAnimFrame();
+    int m_unk04;
+    short m_unk08;
+    unsigned char m_unk0A;
+};
+class PNodeAnimVirt {
+public:
+    virtual ~PNodeAnimVirt();
+    virtual void Slot01();
+    virtual void Slot02();
+    virtual void Slot03();
+    virtual int Animate(float fA, float fB, PMat4 *pMat, int nMode, bool bFlag);
+};
+
+// DRAFT: 0x00193D80 Animate__6PMNodeFffP5PMat4ib
+// note: DIFF 332 words, mostly a 1-word shift: original loads m_unk24 into v1 then daddu a0,v1 before the 0x4C virtual call, ours loads straight into a0; tried a pAnim local, repeated (PAnimVirt *)m_unk24 casts, bool flags, IsAnimate as int + signed char cast.
+int PMNode::Animate(float fA, float fB, PMat4 *pMat, int nMode, bool bFlag) {
+    float spA0[4];
+    float spB0[4];
+    float spC0[4];
+    int nOld;
+    bool bPlay = false;
+    int nCur;
+    bool nStop = false;
+    unsigned char bAnim;
+    int nFrames = 0;
+    bool bMoved = false;
+    float *pScale;
+    float fPrev;
+    PNodeAnimVirt *pChild;
+    int nRet;
+    PAnimVirt *pAnim;
+    float fT;
+    int nChildRet;
+    bool bClear;
+
+    nFrames = 0;
+    bPlay = false;
+    nStop = false;
+    fT = fA;
+    if ((pAnim = (PAnimVirt *)m_unk24) != 0) {
+        if (pAnim->m_unk08 != 0) {
+            bPlay = true;
+            if (pAnim->IsPAnimFrame() != 0) {
+                fT = ((PAnimVirt *)m_unk24)->GetFrameTime();
+            }
+        }
+        if (((PAnimVirt *)m_unk24)->IsAnimate() != 0) {
+            nStop = true;
+        }
+        nFrames = ((PAnimVirt *)m_unk24)->m_unk04;
+    }
+    nRet = nMode;
+    if (nRet == 0 && !nStop && (m_unk3E & 8) == 0) {
+        if (m_unk3E & 4) {
+            bFlag = true;
+        }
+    } else {
+        nRet |= 8;
+        if (bPlay) {
+            nOld = (int)(0.5 + m_unk30);
+            fPrev = fT;
+            fT = ((PAnimVirt *)m_unk24)->Animate(fT, fB, spA0, &m_unk2C, 1);
+            if (!(fB <= 0.0f) && fT < fPrev) {
+                m_unk30 = 0.0f;
+            }
+            nRet |= (signed char)((PAnimVirt *)m_unk24)->IsAnimate();
+            bAnim = ((PAnimVirt *)m_unk24)->m_unk0A;
+            if (bAnim & 1) {
+                if (m_unk04 == 3) {
+                    if (!(m_unk3D & 1)) {
+                        *(u_long128 *)mvTrans__6PMNode = *(u_long128 *)spA0;
+                        spA0[0] = 0.0f;
+                        spA0[2] = 0.0f;
+                    }
+                    if (!(m_unk3D & 2)) {
+                        spA0[1] = 0.0f;
+                    }
+                } else {
+                    AddVectorXYZ__FPfPf(spA0, m_unk80);
+                }
+            } else {
+                *(u_long128 *)spA0 = *(u_long128 *)m_unk80;
+            }
+            if (!(bAnim & 2)) {
+                *(u_long128 *)spB0 = *(u_long128 *)m_unk90;
+            } else {
+                AddVectorXYZ__FPfPf(spB0, m_unk90);
+            }
+            pScale = (bAnim & 4) ? spC0 : m_unkA0;
+            FastMath_ComputeMatrix__FPA4_A4_fPA4_fPA4_fPA4_fPA4_fPA4_fPA4_A4_f((float (*)[4][4])m_unk40, spA0, spB0, pScale, m_unkB0, m_unkC0, (float (*)[4][4])pMat);
+            bMoved = true;
+            nCur = (int)(0.5f + m_unk30);
+            bClear = false;
+            if (nCur != nOld) {
+                switch (nCur) {
+                case 0x7F00:
+                    StopAllSoundsByObject();
+                    bClear = true;
+                    break;
+                case 0x7F01:
+                    StopAmbientSoundsByObject();
+                    bClear = true;
+                    break;
+                case 0x7F03:
+                    StopSoundBySoundRefIfAmbient(m_unkEC);
+                    bClear = true;
+                    break;
+                case 0x7F02:
+                    StopSoundBySoundRef(m_unkEC);
+                    bClear = true;
+                    break;
+                case 0:
+                    StopAllSoundsByObject();
+                    bClear = true;
+                    break;
+                }
+                if (bClear) {
+                    m_unkEC = 0;
+                } else if (nCur != 0x7F04) {
+                    m_unkEC = PlaySound(nCur);
+                }
+            }
+        } else {
+            pScale = m_unkA0;
+            FastMath_ComputeMatrix__FPA4_A4_fPA4_fPA4_fPA4_fPA4_fPA4_fPA4_A4_f((float (*)[4][4])m_unk40, m_unk80, m_unk90, pScale, m_unkB0, m_unkC0, (float (*)[4][4])pMat);
+            bMoved = true;
+        }
+        if (!bFlag && (pScale[0] != 1.0f || pScale[1] != 1.0f || pScale[2] != 1.0f)) {
+            bFlag = true;
+        }
+        if (bFlag) {
+            m_unk3E = m_unk3E | 4;
+        } else {
+            m_unk3E = m_unk3E & 0xFB;
+        }
+        AnimateBox(fT);
+        m_unk3E = m_unk3E & 0xF7;
+    }
+    if (m_unk10 != 0 && (m_unk3E & 0x10)) {
+        if (nFrames >= 2) {
+            ((PMesh *)m_unk10)->AnimateShaders(fT, true);
+        } else {
+            ((PMesh *)m_unk10)->AnimateShaders(0.5f * fB, false);
+        }
+    }
+    m_unk38 = m_unk34;
+    m_unk34 = fT;
+    if (m_unk24 != 0) {
+        ProcessFxTriggers(m_unk34, (PMat4 *)m_unk40, false, bMoved);
+    }
+    if (m_unk2C < 1.0f) {
+        nRet |= 0x10;
+    }
+    m_unk18 = 0;
+    pChild = (PNodeAnimVirt *)((m_unk14 != 0) ? m_unk1C[0] : 0);
+    while (pChild != 0) {
+        nChildRet = pChild->Animate(fT, fB, (PMat4 *)m_unk40, nRet & 9, bFlag);
+        if (nChildRet & 7) {
+            nRet |= 2;
+            if (nChildRet & 4) {
+                nRet |= 4;
+            }
+        }
+        nRet |= nChildRet & 0x10;
+        pChild = (PNodeAnimVirt *)((++m_unk18 < m_unk14) ? m_unk1C[m_unk18] : 0);
+    }
+    m_unk3F = nRet & ~8;
+    if (m_unkF4 != 0) {
+        if (!(m_unk3F & 7)) {
+            StopAmbientSoundsByObject();
+        }
+    }
+    return nRet;
+}
+
 // FUNCTION: 0x00194340 DisableAllHitBox__6PMNodeFv
 void PMNode::DisableAllHitBox() {
     PMNode *pChild;
