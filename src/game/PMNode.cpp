@@ -1072,31 +1072,23 @@ void PMNode::SetFrameTime(float fTime) {
 }
 
 // DRAFT: 0x00193790 CheckAnimated__6PMNodeFv
-// note: DIFF 50 words; original keeps this in s0 with no frame locals and one shared epilogue (b end, li v0,1), ours uses a 0x30 frame and s1; tried nRet exit (50), early returns (53), nState local (53), reversed float compare (50/53).
+// note: DIFF 48 words; nRet (48) is best; the prologue saves s1 and uses a 0x30 frame because nRet lives across the recursive call, while the original keeps no frame locals; early returns (53), ternary init (53).
 int PMNode::CheckAnimated() {
-    PMNode *pChild;
-    PFrameSource *pObj;
-    int nRet;
-    nRet = 0;
-    pObj = (PFrameSource *)m_unk24;
+    int nRet = 0;
+    PFrameSource *pObj = (PFrameSource *)m_unk24;
     if (pObj != 0 && pObj->m_unk04 != 0x3E8 && pObj->m_unk04 != 1 && 0.0f != pObj->Slot12()) {
         nRet = 1;
     } else {
         m_unk18 = 0;
-        pChild = 0;
-        if (m_unk14 != 0) {
-            pChild = m_unk1C[0];
-        }
+        PMNode *pChild = (m_unk14 != 0) ? m_unk1C[0] : 0;
         if (pChild != 0) {
             do {
-                unsigned int uNext;
                 if (pChild->CheckAnimated() != 0) {
                     nRet = 1;
                     break;
                 }
-                uNext = m_unk18 + 1;
-                m_unk18 = uNext;
-                pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+                m_unk18++;
+                pChild = (m_unk18 < m_unk14) ? m_unk1C[m_unk18] : 0;
             } while (pChild != 0);
         }
     }
