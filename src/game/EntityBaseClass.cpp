@@ -295,7 +295,7 @@ extern "C" void sceVu0Normalize(float *dst, float *src);
 extern float mHitPos__15EntityBaseClass[4];
 extern "C" unsigned char PlayingCutCamera__6CameraFv(void *pCam);
 extern "C" void GetForwardVector__6CameraFRA4_f(void *pCam, float *pOut);
-extern float mfSleepDistance__15EntityBaseClass;
+extern float mfSleepDistance__15EntityBaseClass[2];
 extern float BEHIND_WAKE;
 extern float BEHIND_SLEEP;
 extern unsigned char mbGlobalSleep__15EntityBaseClass;
@@ -866,8 +866,7 @@ void EntityBaseClass::RestoreOnWake() {
     ((EntityBaseClassVirtuals *)this)->OnWakeEvent();
 }
 
-// DRAFT: 0x0014B490 WantsToWake__15EntityBaseClassFv
-// note: 64 words; original shares one epilogue (v0=0 on the early path) and keeps the this+0x190 pointer uncached; the mula.s/madd.s dot product is not expressible in C++. Tried: if/else result variable (73), early return (64, kept)
+// FUNCTION: 0x0014B490 WantsToWake__15EntityBaseClassFv
 int EntityBaseClass::WantsToWake() {
     float sp50[4];
     float sp60[4];
@@ -883,8 +882,8 @@ int EntityBaseClass::WantsToWake() {
     }
     obj = mpEntMgr__15EntityBaseClass->m_unk505C;
     objPos = obj->m_unk3C ? obj->m_unk3C + 0x80 : (char *)obj + 0x190;
-    cam = (char *)&gEng + 0x19760;
-    if (PlayingCutCamera__6CameraFv(cam)) {
+    cam = (char *)((int)&gEng + 0x19760);
+    if (PlayingCutCamera__6CameraFv((char *)&gEng + 0x19760)) {
         sceVu0SubVector(sp50, (float *)cam,
                         (float *)(this->m_unk3C ? this->m_unk3C + 0x80 : (char *)this + 0x190));
     } else {
@@ -895,11 +894,14 @@ int EntityBaseClass::WantsToWake() {
     GetForwardVector__6CameraFRA4_f(cam, sp70);
     sceVu0SubVector(sp60, (float *)(this->m_unk3C ? this->m_unk3C + 0x80 : (char *)this + 0x190),
                     (float *)cam);
-    range = mfSleepDistance__15EntityBaseClass;
+    range = mfSleepDistance__15EntityBaseClass[1];
     if (sp70[0] * sp60[0] + sp70[2] * sp60[2] < 0.0f) {
         range = BEHIND_WAKE;
     }
-    return f20 < range ? 1 : 0;
+    if (f20 < range) {
+        return 1;
+    }
+    return 0;
 }
 
 // DRAFT: 0x0014B5E0 CheckSleep__15EntityBaseClassFb
@@ -931,7 +933,7 @@ int EntityBaseClass::CheckSleep(bool arg0) {
         GetForwardVector__6CameraFRA4_f(cam, sp90);
         sceVu0SubVector(sp80, (float *)(this->m_unk3C ? this->m_unk3C + 0x80 : (char *)this + 0x190),
                         (float *)cam);
-        range = mfSleepDistance__15EntityBaseClass;
+        range = mfSleepDistance__15EntityBaseClass[0];
         if (sp90[0] * sp80[0] + sp90[2] * sp80[2] < 0.0f) {
             range = BEHIND_SLEEP;
         }
