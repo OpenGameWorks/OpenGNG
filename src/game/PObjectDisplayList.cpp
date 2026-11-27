@@ -562,13 +562,13 @@ void PObjectDisplayList::SetupNodeInfo(PArray *pArray) {
 }
 
 // DRAFT: 0x1D4D60 RenderBlendedFragments__18PObjectDisplayListF13eBoxIntersect
-// note: 28 words differ, all saved-register allocation (original this=s5, eBox=s4, pNode=s3, offset=s2, index=s1; ours this=s4, eBox=s3). Tried: 12 orders of the pMesh/pNode/pInfo/i declarations (all 28), nTotal=0 before/after pNode init (28), i-first (35), reversed decls (35), cached count (91).
+// note: 19 words differ, all saved-register allocation (original this=s4, eBox=s3, pInfo=s5; ours this=s5, eBox=s4, pInfo=s3). Best with int loop index (unsigned compare kept); 24 declaration orders all give 19. Tried: inline if/ternary helper with int index (19), PArray pointer local (91), cached count (91), i-first (35), nTotal reorder (28). Pending: eBox/this first-use order, split first block into its own scope.
 int PObjectDisplayList::RenderBlendedFragments(eBoxIntersect eBox) {
     int nTotal;
     PMesh *pMesh;
     PMNode *pNode;
     void *pInfo;
-    unsigned int i;
+    int i;
 
     nTotal = 0;
     pNode = (PMNode *)m_unk8;
