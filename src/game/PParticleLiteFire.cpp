@@ -2,12 +2,22 @@
 #include "Debug.h"
 #include "PParticleLiteFire.h"
 #include "PMat4.h"
+#include "PRandom.h"
 
 // TODO(header): foreign declarations
 extern "C" void *__ct__15PParticleSystemFv(void *);
 extern "C" void *__dt__15PParticleSystemFv(void *, short);
 extern "C" void __dl__FPv(void *);
 extern "C" void __dla__FPv(void *);
+extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
+extern "C" void *memset(void *pDst, int nValue, unsigned int nSize);
+extern "C" int rand(void);
+extern "C" float sqrtf(float);
+extern "C" void *__nwa__FUi(unsigned int);
+struct tagParticleLiteFireParams {
+    char _pad00[0x50];
+    unsigned int m_unk50;
+};
 extern "C" void sceVu0CopyVector(float *pDst, float *pSrc);
 extern unsigned char __vt__17PParticleLiteFire[];
 extern char gGfxEng[1504384];
@@ -401,6 +411,58 @@ void PParticleLiteFire::Animate(float fDt) {
     if (((int)pOut & 0x70000000) == 0x70000000) {
         DmaScratchPadToMainMem__FPvPvsbb(pOut, m_unk08, (short)(m_unk04 * 2), false, false);
     }
+}
+
+// FUNCTION: 0x001CAAA0 Create__17PParticleLiteFireFP25tagParticleLiteFireParamsfff
+int PParticleLiteFire::Create(tagParticleLiteFireParams *pParams, float fX, float fY, float fZ) {
+    if (PParticleSystem::Create(pParams->m_unk50, false) == 0) {
+        return 0;
+    }
+    m_unk180 = (float *)__nwa__FUi(pParams->m_unk50 * 4);
+    if (m_unk180 == 0) {
+        return 0;
+    }
+    memset(m_unk180, 0, pParams->m_unk50 * 4);
+    m_unk0C = 6;
+    m_unk30 = 0x48;
+    memcpy(_pad0E0, pParams, 0x80);
+    ((float *)_pad0E0)[0] = ((float *)_pad0E0)[0] + fX;
+    ((float *)_pad0E0)[1] = ((float *)_pad0E0)[1] + fY;
+    ((float *)_pad0E0)[2] = ((float *)_pad0E0)[2] + fZ;
+    *(u_long128 *)m_unk170 = *(u_long128 *)_pad0E0;
+    *(int *)&m_unk170[3] = 0x3F800000;
+    *(int *)(_pad0E0 + 0xC) = 0x3F800000;
+    m_unk184 = 10.0f + (290.0f * (1.0f - m_unk144));
+    float fZero = 0.0f;
+    m_unk188 = (int)(0.5f + (23456.0f + (41976.0f * ((float)rand() / 2.1474836e9f))));
+    m_unk14C = 1.0f - m_unk14C;
+    if (fZero == m_unk150) {
+        m_unk150 = 0.2f;
+    }
+    if (m_unk154 != 0) {
+        m_unk160 = __nwa__FUi(pParams->m_unk50 * 0x10);
+        if (m_unk160 == 0) {
+            return 0;
+        }
+        for (unsigned int i = 0; i < m_unk04; i++) {
+            ((u_long128 *)m_unk160)[i] = *(u_long128 *)m_unk170;
+            float fMax = m_unk184;
+            m_unk180[i] = fZero + ((fMax - fZero) * ParticleRand01(m_unkD0));
+        }
+        m_unk191 = 1;
+    }
+    float fLo = m_unk134;
+    float fHi = m_unk13C;
+    m_unkA0 = (fLo > fHi) ? fLo : fHi;
+    m_unk80 = m_unk170[0];
+    m_unk84 = m_unk170[1] + (0.5f * m_unk140);
+    m_unk88 = m_unk170[2];
+    m_unk8C = 0x3F800000;
+    m_unk90 = m_unkA0 + m_unk120;
+    m_unk94 = (0.5f * m_unk140) + m_unkA0;
+    m_unk98 = m_unkA0 + m_unk128;
+    m_unk9C = sqrtf(m_unk90 * m_unk90 + m_unk94 * m_unk94 + m_unk98 * m_unk98);
+    return 1;
 }
 
 // FUNCTION: 0x001CADE0 __dt__17PParticleLiteFireFv

@@ -5,6 +5,7 @@
 #include "PParticleSystem.h"
 
 class PMat4;
+struct tagParticleLiteFireParams;
 
 // Lite fire emitter. The PParticleSystem base occupies the first 0xE0 bytes;
 // the members below start at 0xE0. The vtable (__vt__17PParticleLiteFire) is
@@ -20,6 +21,7 @@ public:
     void AnimateRotatableParticles(float fDt);
     void Animate(float fDt);
 
+    int Create(tagParticleLiteFireParams *pParams, float fX, float fY, float fZ);
     void Stop();
     char _pad0E0[0x40];         // 0x0E0 MulVector output written by ModifyPosition; vector slots to 0x120
     float m_unk120;             // 0x120
@@ -31,7 +33,7 @@ public:
     float m_unk138;             // 0x138
     float m_unk13C;             // 0x13C
     float m_unk140;             // 0x140 scales the y offset in SetPosition
-    char _pad144[0x04];         // 0x144
+    float m_unk144;             // 0x144
     float m_unk148;             // 0x148
     float m_unk14C;             // 0x14C
     float m_unk150;             // 0x150
