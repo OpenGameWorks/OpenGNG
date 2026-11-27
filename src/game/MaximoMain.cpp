@@ -2100,7 +2100,7 @@ void MaximoMain::MapscreenPrintInfo(FontManager *arg0, int arg1) {
 }
 
 // DRAFT: 0x0013C9F0 SetMarkerAsMastered__10MaximoMainFP6PMNodeP6PMNode
-// note: 7 words: PMNode vtable lui hoisted above the 0x58/0x5C spills in the original (same as PWorld LoadMeshNodeHierarchy). Tried: split decl/assign, vtable local (also for both vtables), raw-pointer local, index store, pNodeV from pMeshV (all 7 or worse).
+// note: 7 words: PMNode vtable lui hoisted above the 0x58/0x5C spills in the original (same as PWorld LoadMeshNodeHierarchy). Tried: split decl/assign, vtable local (also for both vtables), raw-pointer local, index store, pNodeV from pMeshV (all 7 or worse). Real inline-ctor chain (PResource/PMNode/PMeshNode shells, `PMeshNode *node = new PMeshNode;`, PArray members) MATCHES this function (as in PWorld LoadMeshNodeHierarchy) but changes the shared PMNode class and regresses Controls 0x1357C0 (2 words) and TitleDemo 0x137680 (4 words: 255.0f/4.25f constant order at the timer fade); needs coordinator-level PMNode header work.
 void MaximoMain::SetMarkerAsMastered(PMNode *arg0, PMNode *arg1) {
     if (arg1 != 0) {
         PMNode *found = arg0->Find(0xA5D4D353U);

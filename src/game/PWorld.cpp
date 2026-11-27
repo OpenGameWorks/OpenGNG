@@ -20,11 +20,6 @@ public:
     int Render(PLightManager *pLight, PMat4 *pMat, bool bFlag);
 };
 
-class PMeshNode {
-public:
-    void TestMeshNodeInFrustum(PFrustrum *pFrustrum);
-};
-
 class PCutScenePlayer {
 public:
     void CullTest(PFrustrum *pFrustrum);
@@ -73,20 +68,52 @@ struct PNodeAnim {
     int m_04;
 };
 
-class PMNode {
+extern "C" void sceVu0UnitMatrix(void *pMat);
+class PResource {
 public:
-    char _pad00[0x0C];
+    PResource() { m_unk4 = 0; }
+    virtual ~PResource();
+    int m_unk4;
+};
+struct PMNodeMatrix {
+    PMNodeMatrix() { sceVu0UnitMatrix(m); }
+    float m[4][4];
+};
+class PMNode : public PResource {
+public:
+    PMNode() { InitMembers(); }
+    virtual ~PMNode();
+    virtual void Vt1();
+    virtual void Vt2();
+    virtual void Vt3();
+    virtual void Vt4();
+    void InitMembers();
+    char _pad08[4];
     void *m_0C;             // 0x0C
-    char _pad10[0x24 - 0x10];
+    char _pad10[4];
+    PArray m_unk14;
     PNodeAnim *m_24;        // 0x24
     char _pad28[0x2C - 0x28];
     float m_2C;             // 0x2C
     char _pad30[0x3E - 0x30];
     unsigned char m_3E;     // 0x3E
     signed char m_3F;       // 0x3F
+    PMNodeMatrix m_unk40;
+    char _pad80[0xD8 - 0x80];
+    PArray m_unkD8;
+    char _padE8[0x100 - 0xE8];
     int Find(PMNode *pNode);
     PMNode *Find(unsigned int nId);
     int AddFxTrigger(tagParticleFxTrigger *pTrigger, bool bFlag);
+};
+class PMeshNode : public PMNode {
+public:
+    PMeshNode() { InitMembers(); }
+    virtual ~PMeshNode();
+    void TestMeshNodeInFrustum(PFrustrum *pFrustrum);
+    void InitMembers();
+    char _pad100[0x130 - 0x100];
+    PArray m_unk130;
 };
 
 struct PNodeList {
@@ -238,8 +265,7 @@ void PWorld::InitFrustrum(PMat4 *pMat, float (*pVec)[4]) {
     m_bCulled = 0;
 }
 
-// DRAFT: 0x19A7B0 LoadMeshNodeHierarchy__6PWorldFP8PPakFileP6PArray16ePsx2FileVersion
-// note: 7 words: PMNode vtable lui hoisted above the pMeshV/pNodeV spills in the original; ours places it after the __vt__9PResource store. Tried: store via apMeshNode, unsigned char locals, flat volatile decls, (char *)__vt__6PMNode cast (7), (char *)__vt__9PResource cast (7).
+// FUNCTION: 0x19A7B0 LoadMeshNodeHierarchy__6PWorldFP8PPakFileP6PArray16ePsx2FileVersion
 PMeshNode *PWorld::LoadMeshNodeHierarchy(PPakFile *pFile, PArray *pArr, ePsx2FileVersion nVersion) {
     int nTop;
     PMeshNode *apMeshNode;
@@ -250,24 +276,7 @@ PMeshNode *PWorld::LoadMeshNodeHierarchy(PPakFile *pFile, PArray *pArr, ePsx2Fil
     (void)((pFile != 0) ? (void)0 : CdsAssert("PWorld.cpp", 0x390, (char *)"poFile"));
     (void)((pArr != 0) ? (void)0 : CdsAssert("PWorld.cpp", 0x391, (char *)"poTextureHandles"));
     nTop = 1;
-    if ((apMeshNode = (PMeshNode *)__nw__FUi(0x140)) != 0) {
-        pRaw = (char *)apMeshNode;
-        char *volatile pMeshV = pRaw;
-        {
-            char *volatile pNodeV = pRaw;
-            *(char **)pRaw = __vt__9PResource;
-            *(int *)(pNodeV + 4) = 0;
-            *(char **)pNodeV = __vt__6PMNode;
-            __ct__6PArrayFv(pNodeV + 0x14);
-            sceVu0UnitMatrix((float (*)[4])(pNodeV + 0x40));
-            __ct__6PArrayFv(pNodeV + 0xD8);
-            InitMembers__6PMNodeFv(pNodeV);
-        }
-        *(char **)pMeshV = __vt__9PMeshNode;
-        __ct__6PArrayFv(pMeshV + 0x130);
-        InitMembers__9PMeshNodeFv((PMeshNode *)pMeshV);
-        apMeshNode = (PMeshNode *)pMeshV;
-    }
+    apMeshNode = new PMeshNode;
     if (apMeshNode == 0) {
         CdsAssert("PWorld.cpp", 0x397, "apMeshNode");
     }
