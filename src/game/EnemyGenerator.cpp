@@ -223,8 +223,7 @@ void EnemyGenerator::GenerateEnemy() {
     }
 }
 
-// DRAFT: 0x0020E380 Execute__14EnemyGeneratorFv
-// note: 4 words differ: both CreateTimer calls load m_unk1BC/m_unk1C0 into a2 before m_unk4 into a1 (original loads a1 first). Tried member vs extern call, nID/nTime locals, an inline id accessor, a cast arg (all 4).
+// FUNCTION: 0x0020E380 Execute__14EnemyGeneratorFv
 void EnemyGenerator::Execute() {
     switch (m_unk20) {
     case -1:
@@ -249,7 +248,7 @@ void EnemyGenerator::Execute() {
         m_unk1E8 = -1;
         if (m_unk1BC != 0) {
             m_unk1B0 = 0;
-            m_unk1B4 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, m_unk1BC, true);
+            m_unk1B4 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, *(unsigned int *)((char *)this + 0x1BC), true);
             SetState__15EntityBaseClassFi(this, 0);
             break;
         }
@@ -282,7 +281,7 @@ void EnemyGenerator::Execute() {
             GenerateEnemy();
             m_unk1C4++;
             m_unk1B0 = 0;
-            m_unk1B4 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, m_unk1C0, true);
+            m_unk1B4 = mTimerAPI__13EntityManager.CreateTimer(m_unk4, *(unsigned int *)((char *)this + 0x1C0), true);
             SetState__15EntityBaseClassFi(this, 0);
         }
         break;
