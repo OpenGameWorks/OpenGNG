@@ -237,6 +237,8 @@ public:
     void RemoveText(FontNode *pNode);
 };
 extern float GRIM_G;
+extern float GRIM_DROP;
+extern unsigned short EASY_POWER;
 extern float gUnitMatrix[16];
 extern float LEye[4];
 extern float REye[4];
@@ -3361,6 +3363,49 @@ void Player::GrimJumpMove() {
     phys->m_unk11C = Round180__Ff(m_unk1C4);
 }
 
+// DRAFT: 0x0015EF90 GrimMove__6PlayerFv
+// note: 21 words differ; tail float regs swapped (0.5f in f3/zero in f2 vs original f2/f3), branch layout one word. Tried: zero/half locals in both orders, step hoisting.
+void Player::GrimMove() {
+    int tier;
+    if (m_unk1BC < 0x32) {
+        tier = 0;
+    } else if (m_unk1BC < 0x4B) {
+        tier = 1;
+    } else if (m_unk1BC < 0x64) {
+        tier = 2;
+    } else {
+        tier = 3;
+    }
+    float *pt = (float *)((char *)m_unk25C + tier * 8);
+    float fCur = m_unk1C8;
+    float fStep = pt[7];
+    if (!(fCur <= pt[6])) {
+        m_unk1C8 = fCur - fStep;
+    } else {
+        m_unk1C8 = fCur + fStep;
+    }
+    Physics *phys = (Physics *)m_unk38;
+    phys->m_unk11C = Round180__Ff(m_unk1C4);
+    float *p = m_unk3C ? (float *)((char *)m_unk3C + 0x90) : (float *)((char *)this + 0x1A0);
+    ((Physics *)m_unk38)->SetVelocity(p[1], m_unk1C8);
+    Physics *ph = (Physics *)m_unk38;
+    float fHalf = 0.5f;
+    float f = ph->m_unkF8 - fHalf;
+    float v = 0.0f;
+    if (f < 0.0f) {
+        v = GRIM_G;
+    } else if (!(f <= fHalf)) {
+        if (f < GRIM_DROP) {
+            v = -GRIM_G;
+        } else {
+            v = ph->m_unk4 - *(float *)((char *)m_unk25C + 0x38);
+        }
+    } else {
+        m_unk268 = 0;
+    }
+    ((Physics *)m_unk38)->m_unk4 = v;
+}
+
 // FUNCTION: 0x0015F0E0 GrimRunMove__6PlayerFv
 void Player::GrimRunMove() {
     float *fp = m_unk3C;
@@ -3645,6 +3690,39 @@ int Player::EndAction() {
         return 1;
     }
     return 0;
+}
+
+// DRAFT: 0x0015F9F0 SetPlayerAttack__6PlayerFUsUs
+// note: 66 words differ; ours copies arg0 to t1 with andi at entry and sign-extends (lh/dsll32) the EASY_POWER add where original works in a1 with lhu. Tried: case order, narrowing casts (70), local copy (more).
+void Player::SetPlayerAttack(unsigned short arg0, unsigned short arg1) {
+    if (arg0 != 0) {
+        switch (m_unk229) {
+        case 2:
+            if (m_unk218 == 2) {
+                arg0 = arg0 + 0x19;
+            }
+        default:
+            if (mbHard__15EntityBaseClass == 0) {
+                arg0 = arg0 + EASY_POWER;
+            }
+            break;
+        case 4:
+            switch (m_unk204) {
+            case 20:
+                arg0 = (arg0 * 14) / 10;
+                break;
+            case 30:
+                arg0 = (arg0 * 21) / 10;
+                break;
+            case 40:
+                arg0 = (arg0 * 336) / 100;
+                break;
+            }
+            break;
+        }
+    }
+    m_unk15C = arg0;
+    m_unk15E = arg1;
 }
 
 // DRAFT: 0x0015FB40 SetAction__6PlayerFi
