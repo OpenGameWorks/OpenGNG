@@ -8,6 +8,7 @@
 #include "PGfxEngine.h"
 #include "PDisplayList.h"
 #include "PShader.h"
+#include "PRandom.h"
 
 // TODO(header): foreign declarations
 extern "C" void *__dt__15PParticleSystemFv(void *, short);
@@ -20,6 +21,8 @@ extern char gGfxEng[1504384];
 extern unsigned char gInterface[0xA60];
 extern float gUnitMatrix[16];
 extern "C" int rand(void);
+extern "C" void Vu0_Set_Identity_Matrix(void);
+void FastMath_RotateMatrix(float (*)[4][4], float (*)[4][4], float (*)[4], float (*)[4][4]);
 extern "C" void sceVu0ScaleVectorXYZ(float *dst, float *src, float fScale);
 extern "C" void *__nwa__FUi(unsigned int nSize);
 extern "C" void *memcpy(void *pDst, const void *pSrc, unsigned int nSize);
@@ -77,6 +80,44 @@ void PFrozenFx::UpdateFxInstances() {
         *(u_long128 *)(pDst + 0x10) = *(u_long128 *)(pNode + 0x50);
         *(u_long128 *)(pDst + 0x20) = *(u_long128 *)(pNode + 0x60);
         *(u_long128 *)(pDst + 0x30) = *(u_long128 *)(pNode + 0x70);
+    }
+}
+
+// DRAFT: 0x001F9EE0 UpdateMeshInstances__9PFrozenFxFv
+// note: 115 words (loop head: addiu this+0xE0 scheduled before the 0x1E0 load; assert string pool order). Tried: apNode/pBlock order, raw cast reads, pTab local.
+void PFrozenFx::UpdateMeshInstances() {
+    float vec[4];
+    int i;
+
+    for (i = 0; i < m_unk1E8; i++) {
+        PMNode *apNode;
+        float (*pBlock)[4][4];
+        pBlock = (float (*)[4][4])((char *)m_unk1E0 + i * 0x60);
+        char *pTab = (char *)this + 0xE0;
+        apNode = *(PMNode **)(pTab + i * 4);
+        if (apNode == 0) {
+            CdsAssert("PFrozenFx.cpp", 0x12B, "apNode");
+        }
+        asm {
+            vcallms Vu0_Set_Identity_Matrix
+        }
+        vec[0] = -20.0f + 40.0f * ParticleRand01(m_unkD0);
+        vec[2] = 0.0f;
+        vec[1] = -20.0f + 40.0f * ParticleRand01(m_unkD0);
+        asm {
+            qmtc2.i v0, vf0
+            sqc2 vf1, 0x0(pBlock)
+            sqc2 vf2, 0x10(pBlock)
+            sqc2 vf3, 0x20(pBlock)
+            sqc2 vf4, 0x30(pBlock)
+        }
+        pBlock[0][0][0] = m_unk1FC + (m_unk200 - m_unk1FC) * ParticleRand01(m_unkD0);
+        pBlock[0][1][1] = m_unk1FC + (m_unk200 - m_unk1FC) * ParticleRand01(m_unkD0);
+        pBlock[0][2][2] = m_unk1FC + (m_unk200 - m_unk1FC) * ParticleRand01(m_unkD0);
+        FastMath_RotateMatrix(pBlock, pBlock, (float (*)[4])vec, (float (*)[4][4])((char *)apNode + 0x40));
+    }
+    if (m_unkE0[0] != 0) {
+        ((PFrozenFxView *)this)->Slot3((char *)m_unkE0[0] + 0x40);
     }
 }
 
