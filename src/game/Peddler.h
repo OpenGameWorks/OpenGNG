@@ -4,6 +4,9 @@
 #include "EntityBaseClass.h"
 
 class PeddlerItems;
+
+// Item slot count; the assert "i < PEDDLER_MAX_ITEMS" names it.
+#define PEDDLER_MAX_ITEMS 5
 struct tagWaypointGroup;
 
 class Peddler : public EntityBaseClass {
@@ -18,7 +21,7 @@ public:
     int EnemiesInCheckRadius();
     int ActivatedEnemiesDead();
     void ActivateAttackingEnemies();
-    int HideItems();
+    bool HideItems();
     void InitItems();
     void ValidateItems();
     int GetNextPosition(float (&afPos)[4]);
@@ -52,7 +55,7 @@ public:
     EntityBaseClass *m_unk200;      // 0x200
     char _pad204[0x214 - 0x204];
     int m_unk214;                   // 0x214 nonzero when the look target is set
-    PeddlerItems *m_unk218[5];      // 0x218 cleared by constructor
+    PeddlerItems *m_pItems[PEDDLER_MAX_ITEMS];      // 0x218 cleared by constructor (assert "m_pItems[iItem]")
     int m_unk22C;                   // 0x22C
     char _pad230[0x244 - 0x230];
     unsigned char m_unk244;         // 0x244
@@ -98,10 +101,11 @@ public:
     int AnimateFloat(float &fVal, float fTarget, float fStep);
     int AnimateVector(float (&afVec)[4], float (&afTarget)[4], float fStep);
     int Animate(float fA, float fB, float fC, float fD);
-    int Hide();
+    bool Hide();
     void Reset(float fAngle);
     PMNode *CopyItemMesh(int nIndex);
     void ReplaceItem(int nItem);
+    bool IsValid() { return m_unk4 != 0; }
 
     PMNode *m_unk0;                 // 0x000 rotate node (PArray at +0x14)
     PMNode *m_unk4;                 // 0x004 item node

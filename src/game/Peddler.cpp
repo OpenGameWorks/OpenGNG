@@ -344,8 +344,8 @@ int Peddler::IsAlive() {
 }
 
 // DRAFT: 0x001D08C0 Hide__12PeddlerItemsFv
-// note: 48 diff lines; original keeps this in s1 and the 0x3DAAAAAB literal in f13, ours uses s2 and spills the literal to the stack; FloatBits literal and early hoist tried.
-int PeddlerItems::Hide() {
+// note: 49 words (48 before the bool return, which the callers' & 0xFF and HideItems' match require); original keeps this in s1 and the 0x3DAAAAAB literal in f13, ours uses s2 and spills the literal to the stack; FloatBits literal and early hoist tried.
+bool PeddlerItems::Hide() {
     float fStepScale = FloatBits(0x3DAAAAAB);
     float fScale;
     float fFade;
@@ -672,17 +672,17 @@ int Peddler::AnimateItems() {
     nStep = 0;
     bDone = 1;
     do {
-        if (!(nSlot < 5 && m_unk218[nSlot]->m_unk4)) {
+        if (!(nSlot < 5 && m_pItems[nSlot]->m_unk4)) {
             CdsAssert("Peddler.cpp", 0x59F, "iItem < PEDDLER_MAX_ITEMS && m_pItems[iItem]->IsValid()");
         }
-        bDone = bDone & m_unk218[nSlot]->Animate(
+        bDone = bDone & m_pItems[nSlot]->Animate(
             (nSlot == m_unk248) ? -16.5f : -14.0f,
             90.0f + 360.0f * (float)nStep / 5.0f,
             (nSlot == m_unk248) ? 6.0f : 2.5f,
             (nSlot == m_unk248) ? 1.0f : 0.5f) & 0xFF;
         nSlot = (nSlot + 1) % 5;
         nStep++;
-        if (m_unk218[nSlot] == 0) {
+        if (m_pItems[nSlot] == 0) {
             break;
         }
         if (nSlot >= 5) {
@@ -712,38 +712,22 @@ int Peddler::AnimateItems() {
     return bDone;
 }
 
-// DRAFT: 0x001D18A0 HideItems__7PeddlerFv
-// note: 6 diff lines; this and slot pointer swap s3/s4 (orig this=s4, slot=s3); prologue copies a0 after sq s2 in ours. Tried 10 local orders (best 6: ppSlot,bAll,i,nOff; others 11-13), bool bAll (23), Peddler *pSelf = this copy (6, pSelf takes s3), block-scoped ppSlot (13), signed nOff (6), char* base local (6), int bAll=true (6).
-int Peddler::HideItems() {
-    PeddlerItems **ppSlot;
-    int bAll;
-    int i;
-    unsigned int nOff;
-
-    nOff = 0;
-    i = 0;
-    bAll = 1;
-    do {
-        ppSlot = (PeddlerItems **)((char *)this + nOff + 0x218);
-        if (*ppSlot != 0) {
-            if ((*ppSlot)->m_unk4 == 0) {
+// FUNCTION: 0x001D18A0 HideItems__7PeddlerFv
+bool Peddler::HideItems() {
+    bool bAll = true;
+    for (int iItem = 0; iItem < PEDDLER_MAX_ITEMS; iItem++) {
+        if (m_pItems[iItem] != 0) {
+            if (!m_pItems[iItem]->IsValid()) {
                 CdsAssert("Peddler.cpp", 0x58E, "m_pItems[iItem]->IsValid()");
             }
-            bAll = bAll & (*ppSlot)->Hide() & 0xFF;
+            bAll &= m_pItems[iItem]->Hide();
         }
-        i++;
-        nOff += 4;
-    } while (i < 5);
+    }
     return bAll;
 }
 
-// DRAFT: 0x001D1950 ExitPeddlerView__7PeddlerFv
-// note: DIFF 24 words with the plain 0.85f literal and gInterface[0x287]; remaining: register allocation (orig this in s3, i in s0, nOff in s1, ppSlot in s2; ours this in s0) and loop rotation (orig bottom test reloads *(this+nOff+0x218), ours tests the ppSlot local). Tried: 3 declaration orders, reloaded slot in the while condition (39), gInterface[0x1997] (25).
+// FUNCTION: 0x001D1950 ExitPeddlerView__7PeddlerFv
 void Peddler::ExitPeddlerView() {
-    int i;
-    unsigned int nOff;
-    PeddlerItems **ppSlot;
-
     if (m_unk22C != 0) {
         Remove__6PArrayFPv((char *)m_unk24C + 0x14, (void *)m_unk22C);
         BuildDispList__9PSkeletonFv(m_unk3C);
@@ -755,17 +739,9 @@ void Peddler::ExitPeddlerView() {
     FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 0.85f, 1, 0);
     ReleaseControlOfCamera__9CameraAPIFP15EntityBaseClassb(&mCameraAPI__13EntityManager, this, 1);
 
-    i = 0;
-    nOff = 0;
-    ppSlot = (PeddlerItems **)((char *)this + nOff + 0x218);
-    while (*ppSlot != 0 && i < 5) {
-        if (!(i < 5 && (*ppSlot)->m_unk4 != 0)) {
-            CdsAssert("Peddler.cpp", 0x57F, "i < PEDDLER_MAX_ITEMS && m_pItems[i]->IsValid()");
-        }
-        (*ppSlot)->EnableDisplay(0);
-        nOff += 4;
-        i++;
-        ppSlot = (PeddlerItems **)((char *)this + nOff + 0x218);
+    for (int i = 0; m_pItems[i] != 0 && i < PEDDLER_MAX_ITEMS; i++) {
+        (i < PEDDLER_MAX_ITEMS && m_pItems[i]->IsValid()) ? (void)0 : CdsAssert("Peddler.cpp", 0x57F, "i < PEDDLER_MAX_ITEMS && m_pItems[i]->IsValid()");
+        m_pItems[i]->EnableDisplay(false);
     }
     gInterface[0x287] = 1;
 }
@@ -1118,7 +1094,7 @@ Peddler::Peddler() : EntityBaseClass((LoadClass)6, 0) {
     m_unkD4 = 0;
     m_unk2B4 = 0;
     m_unk2A8 = 0;
-    memset(m_unk218, 0, 0x14);
+    memset(m_pItems, 0, 0x14);
 }
 
 // FUNCTION: 0x001D39F0 GetItemID__FUi
