@@ -69,6 +69,7 @@ public:
         int m_unk24;        // 0x24
         int m_unk28;        // 0x28
         int m_unk2C;        // 0x2C
+        char _pad30[0x40 - 0x30];
     };
 
     class AmbientEntry {
