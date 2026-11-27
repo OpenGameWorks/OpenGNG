@@ -136,6 +136,7 @@ You turn Maximo `// DRAFT:` functions, written for Metrowerks CodeWarrior PS2 (`
 - A byte store whose constant is materialized as `addiu t,zero,0x80` (not `-0x80`) writes an `unsigned char` member; retype the member in the header rather than casting at the store, because the cast changes the loop's addressing (`PZBufferFog::m_unk1350`).
 - A loop guard whose delay slot holds the counter init while the byte-offset init sits on the fall-through path is `unsigned int i = 0; if (i < n) { unsigned int nOffset = 0; do { ... nOffset += SIZE; } while (++i < n); }` (`PWorld::AttachFxTriggersToNodes`).
 - An epilogue that restores `f20` before `s4` where ours restores `s4` first comes from an early return: `if (m_p == 0) { return; }` in place of wrapping the body in `if (m_p != 0) { ... }` (`PCutScenePlayer::SetBgNodesOpacity`).
+- A select laid out as `beqz a → L; lw default (delay slot); b M; nop; L: daddu a,default` is a call through an inline function `inline int Pick(int a, int b) { if (a != 0) { return a; } return b; }`; the same `if`, `?:` or `if (!a)` written in place gives a `bnez` with no `b` (`PParticleManager::InitHeatHazeBuffer`). Register choices that stay swapped (`v0`/`v1`) under every spelling are a sign of an inline helper in the original.
 
 ## Finishing
 
