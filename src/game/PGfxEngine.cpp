@@ -249,7 +249,7 @@ int ZCompareFragments(void *pIdx0, void *pIdx1)
 }
 
 // DRAFT: 0x184800 VBlankEndInterruptHandler__Fi
-// note: 2 words differ: the original places daddu v1,zero,zero before sd ra; ours emits sd ra first. Tried: scalar/array counter, consolidated/split COP0 asm, lui/sync as .word, nop, daddu in its own asm, unused and used zero local (X2: 29 words; X3 asm block with zero local: 5 words), mfpc reads with named local (29 words, wrong v0/a0 allocation), mtc0 with named C operands (assembler rejects the mnemonic, so the COP0 writes stay .word).
+// note: 2 words differ: the original places daddu v1,zero,zero before sd ra; ours emits sd ra first. Tried: scalar/array counter, consolidated/split COP0 asm, lui/sync as .word, nop, daddu in its own asm, unused and used zero local (X2: 29 words; X3 asm block with zero local: 5 words), mfpc reads with named local (29 words, wrong v0/a0 allocation), mtc0 with named C operands (assembler rejects the mnemonic, so the COP0 writes stay .word). Also (w-gfx3): register int z + asm daddu mnemonic (2 words), daddu merged into the big asm block (5 words), duplicated daddu asm (30 words).
 static int VBlankEndInterruptHandler(int nIrq) {
     asm { .word 0x0000182D }
     gCDSVBlankCount[0]++;

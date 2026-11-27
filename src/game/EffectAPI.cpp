@@ -582,7 +582,7 @@ OneshotEffect::OneshotEffect(unsigned int arg0, unsigned int arg1, float (*arg2)
 }
 
 // DRAFT: 0x156BB0 Update__10EffectNodeFf
-// note: 2 words, a2/a1 addiu order (original computes a2 first). Tried: inline args, pMat local, PMNode struct fields, int base local, frustum local, inline wrapper with swapped params, declare-then-assign in both orders.
+// note: 2 words, a2/a1 addiu order (original computes a2 first). Tried: inline args, pMat local, PMNode struct fields, int base local, frustum local, inline wrapper with swapped params, declare-then-assign in both orders, (PMat4 *)mpMeshNode + 1 (incomplete type, no compile).
 int EffectNode::Update(float arg0) {
     if (mpMeshNode != 0) {
         if (((EffectDrawable *)mpMeshNode)->Slot4(0, 0, 0, 0.0f, arg0) & 7) {
