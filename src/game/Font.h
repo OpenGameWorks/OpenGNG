@@ -34,9 +34,11 @@ struct FontSubtitle {
 };
 
 class FontTable;
+class FontManager;
 
 class FontNode {
 public:
+    FontNode(FontManager *pMgr, char *pStr, float fX, float fY, unsigned short nArg4, int nZ, FontColor nColor, FontAlign nAlign, bool bFlag);
     void SetColor(FontColor arg0);
     int Scroll(float arg0);
     int AdvanceText();

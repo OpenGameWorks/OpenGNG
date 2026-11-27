@@ -44,8 +44,6 @@ extern "C" void *__dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" void *__dt__16PResourceManagerFv(void *pThis, short nFlag);
 extern "C" float FastMath_Fabs__Ff(float f);
 extern "C" void *__dt__8FontNodeFv(FontNode *pThis, short nFlag);
-extern "C" void *__nw__FUi(unsigned int nSize);
-extern "C" FontNode *__ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(FontNode *pThis, FontManager *pMgr, char *pStr, float fX, float fY, unsigned short nArg4, int nZ, FontColor nColor, FontAlign nAlign, bool bFlag);
 extern unsigned char mbFadeOut__8FontNode;
 extern char *mpTextBox__8FontNode;
 extern int mbEnableBox__8FontNode;
@@ -353,10 +351,7 @@ FontNode *FontManager::DisplayString(char *pStr, float fX, float fY, int nZ, Fon
     if ((unsigned int)m_unk0 >= 0x30) {
         CdsAssert("Font.cpp", 0x317, "mFontList.GetCount() < MAX_TEXT");
     }
-    pNode = (FontNode *)__nw__FUi(0x10);
-    if (pNode != 0) {
-        pNode = __ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(pNode, this, pStr, fX, fY, 0, nZ, nColor, nAlign, false);
-    }
+    pNode = new FontNode(this, pStr, fX, fY, 0, nZ, nColor, nAlign, false);
     if (pNode == 0) {
         CdsAssert("Font.cpp", 0x319, "pNode");
     }
@@ -402,10 +397,7 @@ FontNode *FontManager::DisplayString(int nX, int nY, int nZ, bool bFlag) {
                 CdsAssert("Font.cpp", 0x2A8, "pString->iID == DIALOG_ID");
             }
         }
-        pNode = (FontNode *)__nw__FUi(0x10);
-        if (pNode != 0) {
-            pNode = __ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(pNode, this, pEntry->m_unk0, (float)pEntry->m_unk4, (float)(pEntry->m_unk6 + nZ), pEntry->m_unkB, pEntry->m_unkA, (FontColor)pEntry->m_unk8, (FontAlign)(pEntry->m_unk4 == 0 ? 1 : 0), bNonZero);
-        }
+        pNode = new FontNode(this, pEntry->m_unk0, (float)pEntry->m_unk4, (float)(pEntry->m_unk6 + nZ), pEntry->m_unkB, pEntry->m_unkA, (FontColor)pEntry->m_unk8, (FontAlign)(pEntry->m_unk4 == 0 ? 1 : 0), bNonZero);
         if (pNode == 0) {
             CdsAssert("Font.cpp", 0x2AB, "pNode");
         }
@@ -453,7 +445,7 @@ FontNode *FontManager::DisplayString(int nX, int nY, int nZ, bool bFlag) {
 
 // DRAFT: 0x00133960 __ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb
 // note: 215 words, size 0x480 vs 0x4A0; zero-store order, lbu at 0xC0, m_unkE reload, dispatch order differ. Tried: while loop (248), vCur[3] first (216), unsigned char temp (215).
-extern "C" FontNode *__ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(FontNode *pThis, FontManager *pMgr, char *pStr, float fX, float fY, unsigned short nArg4, int nZ, FontColor nColor, FontAlign nAlign, bool bFlag) {
+FontNode::FontNode(FontManager *pMgr, char *pStr, float fX, float fY, unsigned short nArg4, int nZ, FontColor nColor, FontAlign nAlign, bool bFlag) {
     float vCur[4];
     float fMaxW;
     float fScale;
@@ -471,9 +463,9 @@ extern "C" FontNode *__ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(
     int nState;
     unsigned char c;
 
-    pThis->m_unk4 = 0;
-    pThis->m_unk8 = 1.0f;
-    pThis->m_unk6 = nArg4;
+    m_unk4 = 0;
+    m_unk8 = 1.0f;
+    m_unk6 = nArg4;
     vCur[0] = 0.0f;
     vCur[1] = 0.0f;
     vCur[2] = 10.0f;
@@ -481,16 +473,16 @@ extern "C" FontNode *__ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(
     fMaxW = 0.0f;
     ((nZ < 0xC) ? (void)0 : CdsAssert("Font.cpp", 0x1C8, "iFontStyle < MAX_FONT_STYLE"));
     fScale = *(float *)(FontStyles + nZ * 8 + 4);
-    pThis->m_unkE = FontStyles[nZ * 8];
-    ((pThis->m_unkE <= 0) ? (void)0 : CdsAssert("Font.h", 0x9A, "iFontSet < MaxFontSet"));
-    pEntry = (char *)pMgr + 12 * pThis->m_unkE;
+    m_unkE = FontStyles[nZ * 8];
+    ((m_unkE <= 0) ? (void)0 : CdsAssert("Font.h", 0x9A, "iFontSet < MaxFontSet"));
+    pEntry = (char *)pMgr + 12 * m_unkE;
     pTable = *(char **)(pEntry + 0x104);
     nFirst = *(unsigned short *)(pEntry + 0x108);
     nLen = *(unsigned short *)(pEntry + 0x10A) - nFirst;
     nN = strlen(pStr);
     pBlk = new char[nN << 6];
     ((pBlk != 0) ? (void)0 : CdsAssert("Font.cpp", 0x215, "pSprite"));
-    pThis->m_unk0 = pBlk;
+    m_unk0 = pBlk;
     nState = nColor;
     if (*pStr) {
         do {
@@ -533,7 +525,7 @@ extern "C" FontNode *__ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(
                         *(u_long128 *)(pBlk + 0x10) = *(u_long128 *)(pEnt + 0x10);
                         *(u_long128 *)(pBlk + 0x20) = *(u_long128 *)(FontColors + nState * 16);
                         pBlk += 0x40;
-                        pThis->m_unk4++;
+                        m_unk4++;
                     }
                 }
             }
@@ -547,20 +539,19 @@ extern "C" FontNode *__ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb(
     } else if (nAlign == 1) {
         vCur[0] -= 0.5f * fW;
     }
-    pRun = pThis->m_unk0;
-    for (nCnt = pThis->m_unk4; nCnt != 0; nCnt--) {
+    pRun = m_unk0;
+    for (nCnt = m_unk4; nCnt != 0; nCnt--) {
         sceVu0ScaleVectorXYZ((float *)pRun, (float *)pRun, fScale);
         sceVu0AddVector((float *)pRun, (float *)pRun, vCur);
         sceVu0ScaleVectorXYZ((float *)(pRun + 0x30), (float *)(pRun + 0x30), fScale);
         pRun += 0x40;
     }
-    mTextBox__8FontNode[0] = *(float *)pThis->m_unk0 - *(float *)(pThis->m_unk0 + 0x30);
-    mTextBox__8FontNode[1] = *(float *)(pThis->m_unk0 + 4) - *(float *)(pThis->m_unk0 + 0x34);
-    mTextBox__8FontNode[3] = *(float *)(pThis->m_unk0 + 4) + *(float *)(pThis->m_unk0 + 0x34);
-    pEnt = pThis->m_unk0 + (pThis->m_unk4 << 6);
+    mTextBox__8FontNode[0] = *(float *)m_unk0 - *(float *)(m_unk0 + 0x30);
+    mTextBox__8FontNode[1] = *(float *)(m_unk0 + 4) - *(float *)(m_unk0 + 0x34);
+    mTextBox__8FontNode[3] = *(float *)(m_unk0 + 4) + *(float *)(m_unk0 + 0x34);
+    pEnt = m_unk0 + (m_unk4 << 6);
     mTextBox__8FontNode[2] = *(float *)(pEnt - 0x40) + *(float *)(pEnt - 0x10);
-    pThis->m_unkC = bFlag ? 0 : pThis->m_unk4;
-    return pThis;
+    m_unkC = bFlag ? 0 : m_unk4;
 }
 
 // FUNCTION: 0x133E00 __dt__8FontNodeFv
