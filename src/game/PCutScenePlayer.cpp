@@ -23,10 +23,6 @@ class PFrustrum {
 public:
     int IntersectBox(float (*pBox)[2][4], PMat4 *pMat);
 };
-class PMeshNode {
-public:
-    void TestMeshNodeInFrustum(PFrustrum *pFrustrum);
-};
 enum eBoxIntersect { eBoxIntersect_Unused };
 class PLightManager;
 struct tagComputedLightCache;
@@ -39,8 +35,36 @@ public:
     void Render();
     void Animate(float fTime);
 };
-class PMNode {
+class PArray;
+class PResource {
 public:
+    PResource() { m_unk4 = 0; }
+    virtual ~PResource();
+    int m_unk4;
+};
+class PMNode;
+class PArray {
+public:
+    void Add(void *pItem);
+    void Remove(void *pItem);
+    void RemoveCurrent();
+    void Allocate(unsigned int nSize);
+    PArray();
+
+    unsigned int m_unk0;
+    int m_unk4;
+    void **m_unk8;
+    unsigned int m_unkC;
+};
+extern "C" void sceVu0UnitMatrix(void *pMat);
+// The identity matrix PMNode's inline ctor builds at 0x40.
+struct PMNodeMatrix {
+    PMNodeMatrix() { sceVu0UnitMatrix(m); }
+    float m[4][4];
+};
+class PMNode : public PResource {
+public:
+    PMNode() { InitMembers(); }
     virtual ~PMNode();
     virtual void Render(PLightManager *pLightMgr, int nA, int nB);
     virtual void Vt2();
@@ -51,18 +75,22 @@ public:
     PMNode *Find(unsigned int nId);
     void RecurseSetFade(float fFade);
     void SetAllFrustrumTest(eBoxIntersect eMode);
+    void InitMembers();
+    char _pad08[0x14 - 0x08];
+    PArray m_unk14;
+    char _pad24[0x40 - 0x24];
+    PMNodeMatrix m_unk40;
+    char _pad80[0xD8 - 0x80];
+    PArray m_unkD8;
+    char _padE8[0x130 - 0xE8];
 };
-class PArray {
+class PMeshNode : public PMNode {
 public:
-    void Add(void *pItem);
-    void Remove(void *pItem);
-    void RemoveCurrent();
-    void Allocate(unsigned int nSize);
-
-    unsigned int m_unk0;
-    int m_unk4;
-    void **m_unk8;
-    unsigned int m_unkC;
+    PMeshNode() { InitMembers(); }
+    virtual ~PMeshNode();
+    void TestMeshNodeInFrustum(PFrustrum *pFrustrum);
+    void InitMembers();
+    PArray m_unk130;
 };
 class PCDFile {
 public:
@@ -157,6 +185,34 @@ public:
     virtual void V3();
     virtual void V4();
     virtual void V5(void *pArg);
+};
+
+extern "C" char __vt__9PResource[];
+extern "C" char __vt__6PMNode[];
+extern "C" char __vt__9PMeshNode[];
+extern "C" void InitMembers__6PMNodeFv(void *pThis);
+extern "C" void InitMembers__9PMeshNodeFv(void *pThis);
+extern "C" void InitCutScene__6PlayerFv(void *pThis);
+extern "C" void *GetResource__16PResourceManagerFUib(void *pThis, unsigned int nId, bool bFlag);
+extern "C" void *GetFirstMesh__6PMNodeFv(void *pThis);
+extern "C" void BuildDispList__9PSkeletonFv(void *pThis);
+extern "C" void ScaleSet__6PMNodeFffff(void *pThis, float fA, float fB, float fC, float fD);
+extern "C" void EnableAnim__6PMNodeFbb(void *pThis, bool bA, bool bB);
+extern "C" void SetAllFrustrumTest__6PMNodeF13eBoxIntersect(void *pThis, eBoxIntersect eMode);
+extern unsigned char gEng[0x19B90];
+extern float gUnitMatrix[16];
+struct PActorVec {
+    float x, y, z, w;
+};
+class PActorSlots {
+public:
+    virtual ~PActorSlots();
+    virtual void V1();
+    virtual void V2();
+    virtual void V3();
+    virtual void V4();
+    virtual void V5();
+    virtual void V6(void *pData);
 };
 
 #define CDS_ASSERT(line, cond, msg) ((cond) ? (void)0 : CdsAssert("PCutScenePlayer.cpp", line, msg))
@@ -266,6 +322,152 @@ bool PCutScenePlayer::LoadBgAnims(PPakFile *pFile, unsigned int nFlag) {
             ((PArray *)&m_unkA0)->Add(pObj);
             i++;
         } while (i < nFlag);
+    }
+    return true;
+}
+
+// FUNCTION: 0x001BC030 AttachActors__15PCutScenePlayerFv
+bool PCutScenePlayer::AttachActors() {
+    if (m_unk44 == 0) {
+        CdsAssert("PCutScenePlayer.cpp", 0x343, "mpoResMgr");
+    }
+    m_unkB4 = 0;
+    bool bNew;
+    PMNode *pRoot;
+    char *pA;
+    char *pData = 0;
+    if (m_unkB0 != 0) {
+        pData = (char *)*m_unkB8;
+    }
+    if (pData != 0) {
+        do {
+            if (pData == 0) {
+                CdsAssert("PCutScenePlayer.cpp", 0x346, "apData");
+            }
+            bNew = false;
+            if (*(char **)(pData + 0x30) == 0) {
+                *(PMeshNode **)(pData + 0x30) = new PMeshNode;
+                if (*(char **)(pData + 0x30) == 0) {
+                    CdsAssert("PCutScenePlayer.cpp", 0x34C, "apData->poTransform");
+                }
+                bNew = true;
+            }
+            unsigned int nId = *(unsigned int *)(pData + 0xD0);
+            switch (nId) {
+            case 0x81000018: {
+                char *pPlayer = (char *)*(char **)(gEng + 0x1883C);
+                *(char **)(pData + 0x38) = pPlayer;
+                InitCutScene__6PlayerFv(pPlayer);
+                char *pNode = *(char **)(pPlayer + 0x3C);
+                *(char **)(pData + 0x34) = pNode;
+                *(u_long128 *)(pNode + 0x80) = *(u_long128 *)&gUnitMatrix[12];
+                *(unsigned char *)(pNode + 0x3E) |= 8;
+                *(u_long128 *)(pNode + 0x90) = *(u_long128 *)&gUnitMatrix[12];
+                *(unsigned char *)(pNode + 0x3E) |= 8;
+                *(int *)(pNode + 0x18) = 0;
+                char *pChild;
+                PArray *pKids = (PArray *)(pNode + 0x14);
+                if (pKids->m_unk0 != 0) {
+                    pChild = (char *)pKids->m_unk8[0];
+                } else {
+                    pChild = 0;
+                }
+                *(signed char *)(pChild + 0x3D) = 3;
+                bNew = true;
+                break;
+            }
+            case 0x10003C5:
+                if (*(char **)(pData + 0x34) == 0) {
+                    pRoot = (PMNode *)GetResource__16PResourceManagerFUib((char *)m_unk44, nId, false);
+                    if (pRoot == 0) {
+                        CdsAssert("PCutScenePlayer.cpp", 0x360, "pRoot");
+                    }
+                    *(PMNode **)(pData + 0x34) = pRoot;
+                    pA = (char *)pRoot->Find(0xB5714B5A);
+                    if (pA != 0) {
+                        char *pRes = (char *)GetResource__16PResourceManagerFUib((char *)m_unk44, 0x10003C8, true);
+                        if (pRes != 0) {
+                            char *pMesh = (char *)GetFirstMesh__6PMNodeFv(pRes);
+                            *(char **)(pA + 0x10) = pMesh;
+                            *(unsigned char *)(pA + 0x3E) &= 0xEF;
+                            if (pMesh != 0 && *(unsigned char *)(pMesh + 0xC) != 0) {
+                                *(unsigned char *)(pA + 0x3E) |= 0x10;
+                            }
+                        }
+                    }
+                    pA = (char *)pRoot->Find(0x6499DC24);
+                    if (pA != 0) {
+                        char *pRes = (char *)GetResource__16PResourceManagerFUib((char *)m_unk44, 0x10003C7, true);
+                        if (pRes != 0) {
+                            char *pMesh = (char *)GetFirstMesh__6PMNodeFv(pRes);
+                            *(char **)(pA + 0x10) = pMesh;
+                            *(unsigned char *)(pA + 0x3E) &= 0xEF;
+                            if (pMesh != 0 && *(unsigned char *)(pMesh + 0xC) != 0) {
+                                *(unsigned char *)(pA + 0x3E) |= 0x10;
+                            }
+                        }
+                    }
+                    BuildDispList__9PSkeletonFv(pRoot);
+                }
+                break;
+            default:
+                if (*(char **)(pData + 0x34) == 0) {
+                    *(char **)(pData + 0x34) = (char *)GetResource__16PResourceManagerFUib((char *)m_unk44, nId, false);
+                    if (*(char **)(pData + 0x34) == 0) {
+                        printf("\nUnable to load actor resource, ID = %d\n", *(unsigned int *)(pData + 0xD0));
+                        ((PArray *)&m_unkB0)->RemoveCurrent();
+                        if (pData != 0) {
+                            __dt__22PMeshNodeAnimDataTableFv((PMeshNodeAnimDataTable *)pData, -1);
+                            __dl__FPv(pData);
+                        }
+                        CdsAssert("PCutScenePlayer.cpp", 0x380, "0");
+                    }
+                }
+                break;
+            }
+            *(int *)(*(char **)(pData + 0x30) + 8) = *(int *)(pData + 0x3C);
+            {
+                float v[4];
+                float *pS = (float *)(pData + 0x40);
+                float f0, f1, f2, f3;
+                f3 = pS[3]; f2 = pS[2]; f1 = pS[1]; f0 = pS[0];
+                v[0] = f0; v[1] = f1; v[2] = f2; v[3] = f3;
+                char *pT = *(char **)(pData + 0x30);
+                *(u_long128 *)(pT + 0x80) = *(u_long128 *)v;
+                *(unsigned char *)(pT + 0x3E) |= 8;
+                float *pS2 = (float *)(pData + 0x50);
+                float g0, g1, g2, g3;
+                g3 = pS2[3]; g2 = pS2[2]; g1 = pS2[1]; g0 = pS2[0];
+                v[0] = g0; v[1] = g1; v[2] = g2; v[3] = g3;
+                pT = *(char **)(pData + 0x30);
+                *(u_long128 *)(pT + 0x90) = *(u_long128 *)v;
+                *(unsigned char *)(pT + 0x3E) |= 8;
+            }
+            ScaleSet__6PMNodeFffff(*(char **)(pData + 0x30), *(float *)(pData + 0x60), *(float *)(pData + 0x64), *(float *)(pData + 0x68), *(float *)(pData + 0x6C));
+            ((PActorSlots *)*(char **)(pData + 0x30))->V6(pData);
+            {
+                PActorSlots *pSrc = (PActorSlots *)*(char **)(pData + 0x34);
+                if (*(int *)((char *)pSrc + 4) == 2) {
+                    pSrc->V6(pData);
+                } else {
+                    pSrc->V6(pData);
+                }
+            }
+            EnableAnim__6PMNodeFbb(*(char **)(pData + 0x30), true, true);
+            if (bNew) {
+                ((PArray *)(*(char **)(pData + 0x30) + 0x14))->Add(*(void **)(pData + 0x34));
+            }
+            SetAllFrustrumTest__6PMNodeF13eBoxIntersect(*(char **)(pData + 0x30), (eBoxIntersect)2);
+            if ((unsigned long long)*(unsigned int *)(pData + 0xD0) == 0x81000162ULL) {
+                char *pFound = (char *)((PMNode *)*(char **)(pData + 0x34))->Find(0x9980D6C3);
+                if (pFound != 0) {
+                    ((PGrimReaperCape *)m_unk100)->Enable(true, (PMNode *)pFound);
+                }
+            }
+            unsigned int nNext = m_unkB4 + 1;
+            m_unkB4 = nNext;
+            pData = (nNext < m_unkB0) ? (char *)m_unkB8[m_unkB4] : 0;
+        } while (pData != 0);
     }
     return true;
 }
