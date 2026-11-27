@@ -269,7 +269,7 @@ void PDynamicSplinePatch::ApplyControlMatrices() {
 
 #pragma global_optimizer on
 // DRAFT: 0x001F39C0 InitSplineKeys__19PDynamicSplinePatchFPfPf
-// note: 83 words differ: the `= 1.0f` arm builds this+0x1C+row+0+col itself where ours reuses the slot address (typed m_unk10[r].m_pt[c][3], inline helpers tried); the m_unk1F8C load and the zero constant load in the other order; s1 init scheduled later. Tried: fZero local, asm splits, scheduling off.
+// note: 6 words differ: the original's `= 1.0f` store address carries an extra `addiu v1,v1,0` between the row and column terms (this+0x1C+row*288+0+col*16); typed m_unk10[r].m_pt[c][3], PSplinePatchRow casts, offsetof-style and `+ 0` spellings fold it or CSE the slot address. One more word is the vcallms immediate (reloc type 119).
 void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {
     float diff[4];
     float cvec[4];
@@ -317,7 +317,9 @@ void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {
     sceVu0CopyVector(pVec, pVecA);
     pM1F80 = &m_unk1F80;
     asm {
+        .set noreorder
         lqc2 vf12, 0x0(pM1F80)
+        .set reorder
     }
     vec[3] = 0.0f;
     fInv = 1.0f / (float)m_unk08;
@@ -354,11 +356,13 @@ void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {
             pSlot = (char *)this + nRow * 288 + nCol * 16;
             pDst = (u_long128 *)(pSlot + 0x10);
             asm {
+                .set noreorder
                 qmtc2.i v0, vf0
                 sqc2 vf14, 0x0(pDst)
+                .set reorder
             }
             if (m_unk1F8C == 0.0f) {
-                *(float *)(pSlot + 0x1C) = 1.0f;
+                *(float *)((unsigned int)this + 0x1C + nRow * 288 + nCol * 16) = 1.0f;
             } else if (m_unk1F78) {
                 *(float *)(pSlot + 0x1C) = m_unk1F78 + (1.0f - m_unk1F78) * *(float *)(pSlot + 0x1C);
             }
@@ -368,7 +372,7 @@ void PDynamicSplinePatch::InitSplineKeys(float *pVecA, float *pVecB) {
         pRow = (u_long128 *)((char *)this + nRow * 288);
         nRow++;
         pRow[1] = pRow[2];
-        pRow[m_unk04] = pRow[m_unk04 - 1];
+        *(u_long128 *)((unsigned int)pRow + (m_unk04 - 1) * 16 + 0x10) = *(u_long128 *)((unsigned int)pRow + (m_unk04 - 2) * 16 + 0x10);
         vec[0] = vec[0] + scale[0];
         vec[2] = pVecA[2];
     }
