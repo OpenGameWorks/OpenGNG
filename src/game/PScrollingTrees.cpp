@@ -156,7 +156,7 @@ int PScrollingTrees::Create(int nA, int nB, int nType) {
 }
 
 // DRAFT: 0x1FB320 CreateFloor__15PScrollingTreesFv
-// note: DIFF 56, frame 0xA0 vs 0xB0; the 1.0 quad is a union of two 64-bit halves (75 to 56); original keeps it in a register and splats with pcpyld, ours spills to stack and reloads with lq; reloc positions for GetResource, CdsAssert and sceVu0UnitMatrix sit 4 bytes early; literal names @177/@152 vs @569/@590. Tried: u_long128 shift build (compile error), unsigned long long local splat (56, equal), union hoisted out of loop (87).
+// note: DIFF 56, frame 0xA0 vs 0xB0; the 1.0 quad is a union of two 64-bit halves (75 to 56); original keeps it in a register and splats with pcpyld, ours spills to stack and reloads with lq; reloc positions for GetResource, CdsAssert and sceVu0UnitMatrix sit 4 bytes early; literal names @177/@152 vs @569/@590. Tried: u_long128 shift build (compile error), unsigned long long local splat (56, equal), union hoisted out of loop (87). A 128-bit literal `(u_long128)0x3F8000003F8000003F8000003F800000` gives the original lui/dsll32/or/pcpyld v,v,v and frame 0xA0, and indexing by i (`m_unk70 + i * 0xC0`, `((unsigned int *)&ids)[i]`) puts this in s0; together 69 words because MWCC then folds rec+0x60 into store offsets where the original bumps s2 by 0x60 and keeps pMat in s3 (src/scratch/solo/cf5.py).
 int PScrollingTrees::CreateFloor() {
     PScrollingTreeIds ids = {{0x0600001A, 0x06000014, 0x06000015, 0x06000016, 0x06000017, 0x06000018, 0x06000019, 0x06000013}};
     PScrollingTreeQuad quad = {{0.0f, -140.0f, 170.0f, 1.0f}};

@@ -412,36 +412,13 @@ void PDynamicSplinePatch::SetControlNode(PMNode *pNode) {
     }
 }
 
-// DRAFT: 0x001F3EC0 Init__19PDynamicSplinePatchFiiiPfPf
-// note: 59 words differ; original is 0x120 bytes, ours 0xF8. Clamp branch polarity and delay-slot scheduling differ. Tried: ternary-in-if (at vs v0 compare), nested ternary, sequential ifs, v-less compare; none reduced below 59.
+// FUNCTION: 0x001F3EC0 Init__19PDynamicSplinePatchFiiiPfPf
 int PDynamicSplinePatch::Init(int nA, int nB, int nC, float *pVecA, float *pVecB) {
-    int v = (nA < 16) ? nA : 16;
-    if (v < 3) {
-        nA = 2;
-    }
-    if (nA > 16) {
-        nA = 16;
-    }
-    m_unk00 = nA;
-
-    v = (nB < 16) ? nB : 16;
-    if (v < 3) {
-        nB = 2;
-    }
-    if (nB > 16) {
-        nB = 16;
-    }
-    m_unk08 = nB;
+    // MAX(MIN(n, hi), 2): the original re-evaluates the MIN in the taken arm, as a macro expansion does.
+    m_unk00 = (((nA < 16) ? nA : 16) > 2) ? ((nA < 16) ? nA : 16) : 2;
+    m_unk08 = (((nB < 16) ? nB : 16) > 2) ? ((nB < 16) ? nB : 16) : 2;
     m_unk04 = m_unk08 + 2;
-
-    v = (nC < 10) ? nC : 10;
-    if (v < 3) {
-        nC = 2;
-    }
-    if (nC > 10) {
-        nC = 10;
-    }
-    m_unk0C = nC;
+    m_unk0C = (((nC < 10) ? nC : 10) > 2) ? ((nC < 10) ? nC : 10) : 2;
 
     sceVu0CopyVector(m_unk1F90, pVecA);
     sceVu0CopyVector(m_unk1FA0, pVecB);
