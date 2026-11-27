@@ -547,7 +547,7 @@ static float GrimFxPos[80] = {
 static float GrimFxSpawn[4] = {90.0f, 160.0f, 250.0f, 120.0f};
 
 // DRAFT: 0x13FF40 Reset__7HudGrimFv
-// note: DIFF 119 words; register assignment for the flag/branch sequence and the order of later loads differ. Tried asm-order variants (122, 129), kept the 119 form.
+// note: DIFF 91 words; the IsValid manager address is (int)gGfxEng + 0x154F00 (119 before). Original keeps the flag as a byte (xori; andi; movz) and hoists the manager address above the ring store; bool/uchar flag gave 102-104, int-cast Add address 118. Earlier: register assignment for the flag/branch sequence and the order of later loads differ. Tried asm-order variants (122, 129), kept the 119 form.
 void HudGrim::Reset() {
     float aSpawn[4];
     float aPos[4];
@@ -572,7 +572,7 @@ void HudGrim::Reset() {
         *(int *)((char *)ring + 0xC) = flag;
     }
     *(int *)((char *)m_unk4 + 0xC) = 1;
-    if (m_unk20 != 0 && ((PParticleManager *)(gGfxEng + 0x154F00))->IsValid(m_unk20) == 0) {
+    if (m_unk20 != 0 && ((PParticleManager *)((int)gGfxEng + 0x154F00))->IsValid(m_unk20) == 0) {
         m_unk20 = 0;
     }
     if (m_unk20 == 0) {
