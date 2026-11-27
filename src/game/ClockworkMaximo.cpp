@@ -59,6 +59,9 @@ extern "C" void *Spawn__13EntityManagerFUibi(void *, unsigned int, bool, int);
 extern "C" void InitProjectile__10ProjectileFQ210Projectile14ProjectileTypePA4_fPA4_fPA4_f(void *, int, float (*)[4], float (*)[4], float (*)[4]);
 extern void *mpEntMgr__15EntityBaseClass;
 extern "C" void *Find__6PMNodeFUi(void *, unsigned int);
+extern "C" void *GetResource__16PResourceManagerFUib(void *, unsigned int, bool);
+extern "C" void *GetFirstMesh__6PMNodeFv(void *);
+extern void *mpResMgr__15EntityBaseClass;
 extern "C" void BuildDispList__9PSkeletonFv(void *);
 extern "C" void memcpy(void *, const void *, unsigned int);
 extern "C" void GetForwardVector__7MathAPIFP15EntityBaseClassRA4_f(void *, float *);
@@ -178,7 +181,7 @@ public:
     virtual void Slot8();
     virtual void Slot9();
     virtual void Slot10();
-    virtual void Slot11();
+    virtual int Slot11();
     virtual void Slot12();
     virtual int Slot13();
 };
@@ -412,6 +415,54 @@ void ClockworkMaximo::DetachWeapon(WEAPON_TYPE arg0) {
     BuildDispList__9PSkeletonFv((void *)pNode);
 }
 
+// DRAFT: 0x00210BE0 AttachWeapon__15ClockworkMaximoFQ215ClockworkMaximo11WEAPON_TYPE
+// note: 21 words; second 0x3E flag access folds into an addiu v1,s1,0x3E (original reloads from s1); tried struct, &&, volatile, plain
+void ClockworkMaximo::AttachWeapon(WEAPON_TYPE arg0) {
+    int pNode = m_unk3C;
+    unsigned int var;
+    unsigned int res;
+    if (pNode == 0) {
+        CdsAssert("ClockworkMaximo.cpp", 0xA04, "apSkeleton");
+    }
+    switch (arg0) {
+    case WEAPON_TYPE_0:
+        var = 0xB5714B5A;
+        res = 0x010003C8;
+        break;
+    case WEAPON_TYPE_2:
+        var = 0xB5714B5A;
+        res = 0x010003C6;
+        break;
+    case WEAPON_TYPE_1:
+        var = 0x6499DC24;
+        res = 0x010003C7;
+        break;
+    default:
+        CdsAssert("ClockworkMaximo.cpp", 0xA18, "FALSE");
+        break;
+    }
+    void *pBone = Find__6PMNodeFUi((void *)pNode, var);
+    if (pBone == 0) {
+        CdsAssert("ClockworkMaximo.cpp", 0xA20, "apBone");
+    }
+    void *pRes = GetResource__16PResourceManagerFUib(mpResMgr__15EntityBaseClass, res, true);
+    if (pRes == 0) {
+        CdsAssert("ClockworkMaximo.cpp", 0xA26, "apResource");
+    }
+    void *pMesh = GetFirstMesh__6PMNodeFv(pRes);
+    if (pMesh == 0) {
+        CdsAssert("ClockworkMaximo.cpp", 0xA29, "apMesh");
+    }
+    *(void **)((char *)pBone + 0x10) = pMesh;
+    *(unsigned char *)((char *)pBone + 0x3E) &= 0xEF;
+    if (pMesh != 0) {
+        if (*(unsigned char *)((char *)pMesh + 0xC) != 0) {
+            *(unsigned char *)((char *)pBone + 0x3E) |= 0x10;
+        }
+    }
+    BuildDispList__9PSkeletonFv((void *)pNode);
+}
+
 // FUNCTION: 0x00210D70 TargetFacingUs__15ClockworkMaximoFv
 bool ClockworkMaximo::TargetFacingUs() {
     ClockworkMaximo *target = GetTarget();
@@ -613,6 +664,52 @@ ClockworkMaximo *ClockworkMaximo::GetTarget() {
         }
     }
     return (ClockworkMaximo *)target;
+}
+
+// DRAFT: 0x00211350 DetermineNewState__15ClockworkMaximoFv
+// note: 21 words; st!=0 flag lands in a0 not v0/v1 and andi is dropped; tried bool/uint/int ok, ternary return forms
+int ClockworkMaximo::DetermineNewState() {
+    m_unk38->m_unkEC = 0x80113FD5;
+    float (*a0)[4] = m_unk3C ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190);
+    if (!(Distance__7MathAPIFPA4_fPA4_f(a0, (float (*)[4])&m_unk1F0) <= CMF(m_unk1D4))) {
+        VirtualSlots *t = (VirtualSlots *)GetTarget();
+        if (t->Slot11() > 0) {
+            int t3C = *(int *)((char *)t + 0x3C);
+            float (*b0)[4] = t3C ? (float (*)[4])(t3C + 0x80) : (float (*)[4])((char *)t + 0x190);
+            if (Distance__7MathAPIFPA4_fPA4_f(b0, (float (*)[4])&m_unk1F0) < CMF(m_unk1D4)) {
+                return 8;
+            }
+        }
+        return DetermineIdleState();
+    }
+    float (*pSelf)[4] = m_unk3C ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190);
+    ClockworkMaximo *tgt = GetTarget();
+    int tt = *(int *)((char *)tgt + 0x3C);
+    float (*pT)[4] = tt ? (float (*)[4])(tt + 0x80) : (float (*)[4])((char *)tgt + 0x190);
+    float fD = Distance__7MathAPIFPA4_fPA4_f(pT, pSelf);
+    int nNear = 1;
+    if (!(fD < 10.0f)) {
+        nNear = 0;
+    }
+    int bFlag = nNear & 0xFF;
+    if (bFlag != 0) {
+        if (!(fD <= 8.0f)) {
+            ClockworkMaximo *tg = GetTarget();
+            if (tg == 0) {
+                CdsAssert("ClockworkMaximo.cpp", 0x8F2, "apTarget");
+            }
+            bFlag = TargetFacingUs() & 0xFF;
+            if (bFlag == 0) {
+                ClockworkMaximoState *st = tg->m_unk38;
+                int ok = st != 0;
+                bFlag = ok & 0xFF;
+                if (ok != 0) {
+                    bFlag = ((st->m_unk108 & 0x40) == 0) & 0xFF;
+                }
+            }
+        }
+    }
+    return bFlag != 0 ? 2 : 8;
 }
 
 // FUNCTION: 0x00211510 DetermineIdleState__15ClockworkMaximoFv
