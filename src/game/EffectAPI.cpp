@@ -596,7 +596,7 @@ OneshotEffect::OneshotEffect(unsigned int arg0, unsigned int arg1, float (*arg2)
 }
 
 // DRAFT: 0x00156E00 Animate__9EffectAPIFf
-// note: frame and saves match; loop rotation differs (original enters with `b` to a bottom test at 0x44, ours tests at top), and the dead-entry store folds the sp+0x60 offset where the original computes sp+0x60 then adds s1. Tried: byte offset nOff, for-loop form, nDead++ before store (no change).
+// note: 28 words (was 34): pre-increment m_unk4 ternary, (&aDead[0])[nOff / 4] store, no nDead>0 guard on the second loop (original tests 0 < nDead in the for header). Remaining: the dead-entry store still folds sp+0x60 (original computes the array base then adds the offset) and the GetNext reload order. A goto-entered loop is wrong here: the original tests pNode at the loop top (beqz at 0x44).
 void EffectAPI::Animate(float arg0) {
     EffectAnimNode *aDead[64];
     int nDead = 0;
@@ -611,25 +611,16 @@ void EffectAPI::Animate(float arg0) {
     while (pNode != 0) {
         if (pNode->Slot1(arg0) == 0) {
             nDead++;
-            *(EffectAnimNode **)((char *)aDead + nOff) = pNode;
+            (&aDead[0])[nOff / 4] = pNode;
             RemoveCurrent__6PArrayFv(this);
             nOff += 4;
         }
-        m_unk4++;
-        if (m_unk4 < m_unk0) {
-            pNode = (EffectAnimNode *)m_ppEntries[m_unk4];
-        } else {
-            pNode = 0;
-        }
+        pNode = (++m_unk4 < m_unk0) ? (EffectAnimNode *)m_ppEntries[m_unk4] : 0;
     }
-    if (nDead > 0) {
-        int nOff2 = 0;
-        for (int i = 0; i < nDead; i++) {
-            EffectAnimNode *pDead = *(EffectAnimNode **)((char *)aDead + nOff2);
-            if (pDead != 0) {
-                pDead->Slot0(1);
-            }
-            nOff2 += 4;
+    for (int i = 0; i < nDead; i++) {
+        EffectAnimNode *pDead = aDead[i];
+        if (pDead != 0) {
+            pDead->Slot0(1);
         }
     }
 }
