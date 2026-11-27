@@ -7,6 +7,7 @@
 
 class MemoryManager {
 public:
+    MemoryManager();
     ~MemoryManager();
     void DisplayDebug();
     void DeletePoolContents(int nPool);
@@ -15,7 +16,11 @@ public:
     void *AllocateAligned(int nSize, unsigned int nAlign);
     void *New(unsigned int nSize);
 
-    char _pad000[0x18];         // 0x000
+    unsigned int m_unk0;        // 0x000 bytes left for the pools (2 MB-aligned top minus the heap)
+    char *pStartFreeMemory;     // 0x004 cursor the pools are carved from
+    int m_unk8;                 // 0x008
+    int m_unkC;                 // 0x00C
+    char _pad010[0x8];          // 0x010
     int m_unk18;                // 0x018 pool index for New
     unsigned char m_unk1C;      // 0x01C enables DisplayDebug
     unsigned char m_unk1D;      // 0x01D checked by New

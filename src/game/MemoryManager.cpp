@@ -1,3 +1,4 @@
+// COMPILER: mwcps2-3.0-011126
 // FLAGS: -str readonly
 #include "MemoryManager.h"
 #include "Debug.h"
@@ -8,6 +9,9 @@ extern "C" void __dl__FPv(void *pMem);
 extern "C" void DeAllocate__10MemoryPoolFPvi(void *pPool, void *pMem, int nPool);
 extern "C" int sprintf(char *pDst, const char *pFmt, ...);
 extern "C" void Add__10PHashTableFPvPv(void *pThis, void *pKey, void *pValue);
+extern "C" void *malloc(unsigned int nSize);
+extern "C" int printf(const char *pFmt, ...);
+extern int HeapTbl[2];
 
 // FUNCTION: 0x0012AA40 __dt__13MemoryManagerFv
 MemoryManager::~MemoryManager() {
@@ -83,4 +87,33 @@ void *MemoryManager::New(unsigned int nSize) {
         CdsAssert("MemoryManager.cpp", 0x76, "(unsigned int)iPoolID < MAX_MEMORY_POOL");
     }
     return m_aoPool[m_unk18].Allocate(nSize, m_unk18);
+}
+
+// FUNCTION: 0x0012AE10 __ct__13MemoryManagerFv
+MemoryManager::MemoryManager() {
+    m_unk8 = 0;
+    m_unkC = 0;
+    m_unk1D = 0;
+    m_unk0 = 0x2000000 - HeapTbl[1] - HeapTbl[0];
+    m_unk0 = m_unk0 - 0x8000 - 0x4800;
+    unsigned int nFree = m_unk0 - 0x10;
+    pStartFreeMemory = (char *)malloc(nFree);
+    if (!pStartFreeMemory) {
+        CdsAssert("MemoryManager.cpp", 0x36, "pStartFreeMemory");
+    }
+    unsigned int nMain = nFree - (0x700000 + 0x200000 + 0x30);
+    unsigned int nNeed = nMain + 0x700000 + 0x200000 + 0x30;
+    if (nFree < nNeed) {
+        printf("(Memory Manager) : Not enough memory to run. Need <%d> bytes, only <%d> available\n", nNeed, m_unk0);
+        CdsAssert("MemoryManager.cpp", 0x41, "0");
+    }
+    m_unk1D = 1;
+    pStartFreeMemory = (char *)m_aoPool[0].Init(pStartFreeMemory, nMain);
+    pStartFreeMemory = (char *)m_aoPool[2].Init(pStartFreeMemory, 0x700000);
+    m_aoPool[1].Init(pStartFreeMemory, 0x200000);
+    m_unk1C = 0;
+    m_unk18 = 0;
+    if (!m_oAlignedTable.Create(0x11)) {
+        CdsAssert("MemoryManager.cpp", 0x68, "0");
+    }
 }

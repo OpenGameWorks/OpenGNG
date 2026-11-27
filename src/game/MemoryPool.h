@@ -14,6 +14,7 @@ public:
         Block *m_unk8;       // 0x08 free-list next
         Block *m_unkC;       // 0x0C free-list prev
     };
+    MemoryPool() {}
 
     void AddToLength(Block *block, unsigned int len);
     void SetStatus(Block *block, Status status);
