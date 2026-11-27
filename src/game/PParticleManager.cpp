@@ -892,8 +892,7 @@ int PParticleManager::GetFxTexture(unsigned int value) {
     return (int)GetResource__16PResourceManagerFUib(m_unk40, value, false);
 }
 
-// DRAFT: 0x001B8FE0 LoadFogObjects__16PParticleManagerFP8PPakFile16ePsx2FileVersion
-// note: DIFF 32; original keeps this in s2, pFile in s1, index in s0 (ours this s1, pFile s0, index s2); prologue saves and frame -0xB0 vs -0xC0 differ. Tried: header struct instead of count, header/record/index declaration orders.
+// FUNCTION: 0x001B8FE0 LoadFogObjects__16PParticleManagerFP8PPakFile16ePsx2FileVersion
 int PParticleManager::LoadFogObjects(PPakFile *pFile, ePsx2FileVersion nVersion) {
     struct {
         unsigned int nCount;
@@ -905,19 +904,21 @@ int PParticleManager::LoadFogObjects(PPakFile *pFile, ePsx2FileVersion nVersion)
     if (pFile == 0) {
         CdsAssert("PParticleManager.cpp", 0x3DF, "poFile");
     }
-    nIndex = 0;
     if (((PCDFile *)pFile)->Read(&hdr, 0x20) != 0x20) {
         return 0;
     }
-    while (nIndex < hdr.nCount) {
-        if (((PCDFile *)pFile)->Read(&rec, 0x60) != 0x60) {
-            return 0;
-        }
-        if (CreateFog(&rec) == 0) {
-            return 0;
-        }
-        nIndex++;
+    nIndex = 0;
+    goto test;
+loop:
+    if (((PCDFile *)pFile)->Read(&rec, 0x60) != 0x60) {
+        return 0;
     }
+    if (CreateFog(&rec) == 0) {
+        return 0;
+    }
+    nIndex++;
+test:
+    if (nIndex < hdr.nCount) goto loop;
     return 1;
 }
 
