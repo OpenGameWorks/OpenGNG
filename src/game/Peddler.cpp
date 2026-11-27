@@ -911,16 +911,23 @@ int Peddler::OnHitEvent(EntityBaseClass *pEntity, int nArg1, unsigned int nEvent
     return nResult;
 }
 
-// DRAFT: 0x001D1F90 FindItem__7PeddlerFi
-// note: 15 diff words. Original enters the loop with an entry b to the test and keeps the ItemTable lo16 in the delay slot; ours folds the first test away. Tried: index loop (large diff), p++ in body (15), while form (15), i++ in header with p++ in body (15), init split (15), p-first init (15), p = p + 1 (15), i declared after p (15).
+// FUNCTION: 0x001D1F90 FindItem__7PeddlerFi
 unsigned int Peddler::FindItem(int arg0) {
     unsigned int i;
     ItemEntry *p;
 
-    for (i = 0, p = ItemTable; i < 0x3C; i++, p++) {
-        if (p->m_unk4 == arg0) {
-            return i;
-        }
+    i = 0;
+    p = ItemTable;
+    goto test;
+loop:
+    if (p->m_unk4 == arg0) {
+        return i;
+    }
+    i++;
+    p++;
+test:
+    if (i < 0x3C) {
+        goto loop;
     }
     return 0;
 }
