@@ -1544,6 +1544,59 @@ void MemoryCard::InitSaveGame(Player::PlayerData *pData, int nVal, bool bFlag) {
     DisplayString__11FontManagerFPcffi9FontColor9FontAlign(pFont, *(char **)(pInfo + 0x90), 0.0f, 175.0f, *(signed char *)(pInfo + 0x9A), 4, 1);
 }
 
+// DRAFT: 0x001521B0 DisplaySlot__10MemoryCardFb
+// note: 8 words; only s4/s6 swapped (orig pData in s4, SlotPos ptr in s6). Tried decl order of locals, pSecond local, SlotPosition ptr local, pData hoist.
+void MemoryCard::DisplaySlot(bool bFlag) {
+    int nSel = m_unk214;
+    if (nSel >= 0) {
+        char *pEnt = (char *)this + (m_unk1FF << 6);
+        if (m_unk208 != *(int *)pEnt || m_unk20C != *(int *)(pEnt + 4)) {
+            nSel = -1;
+        }
+    }
+    unsigned char *pFont = gInterface + 0x80;
+    int nI;
+    int nUsed;
+    int nOff;
+    FontNode **pFirst;
+    char *pText = *(char **)(pFont + 0x100) + 0x3FC;
+    for (nI = 0, nOff = 0; nI < 6; nI++) {
+        pFirst = &m_unk3F88[nI][0];
+        if (m_unk3F88[nI][0] != 0) RemoveText__11FontManagerFP8FontNode(pFont, m_unk3F88[nI][0]);
+        if (m_unk3F88[nI][1] != 0) RemoveText__11FontManagerFP8FontNode(pFont, m_unk3F88[nI][1]);
+        if (bFlag) {
+            *pFirst = 0;
+            m_unk3F88[nI][1] = 0;
+            SetAnimLoopCount__6PMNodeFib(m_unk3F70[nI], 1, 0);
+        } else {
+            char *pData = (char *)this + nOff;
+            nUsed = *(int *)(pData + 0x2338);
+            char *pStr;
+            if (nUsed != 0) {
+                pStr = (nI == nSel) ? *(char **)pText : *(char **)(pText + 0xC);
+            } else {
+                pStr = *(char **)(pText + 0x18);
+            }
+            float fY = SlotPos[nI].fY;
+            *pFirst = DisplayString__11FontManagerFPcffi9FontColor9FontAlign(pFont, pStr, SlotPos[nI].fX, fY, 3, (m_unk210 == nI) ? 4 : 7, 0);
+            if (nUsed != 0) {
+                char buf[32];
+                char *pBase = *(char **)(pFont + 0x100) + 0x9C;
+                sprintf(buf, "%d%s %s", *(unsigned char *)(pData + 0x2335), "%", (*(signed char *)(pData + 0x2337) != 0) ? *(char **)(pBase + 0xC) : *(char **)pBase);
+                m_unk3F88[nI][1] = DisplayString__11FontManagerFPcffi9FontColor9FontAlign(pFont, buf, SlotPos[nI].fX, fY - 25.0f, 3, (m_unk210 == nI) ? 4 : 7, 0);
+            } else if (m_unk3F88[nI][1] != 0) {
+                m_unk3F88[nI][1] = 0;
+            }
+            if (nI == m_unk210) {
+                ((PMNodeView *)m_unk3F70[nI])->SetAllAnimFlags(DefaultLoopAnim);
+            } else {
+                SetAnimLoopCount__6PMNodeFib(m_unk3F70[nI], 1, 0);
+            }
+        }
+        nOff += 0x4B4;
+    }
+}
+
 // FUNCTION: 0x00152490 DeleteScreen__10MemoryCardFv
 void MemoryCard::DeleteScreen() {
     RemoveMCText();
