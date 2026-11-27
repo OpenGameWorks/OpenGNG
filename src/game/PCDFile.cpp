@@ -221,8 +221,7 @@ int PCDFile::Close() {
     return 1;
 }
 
-// DRAFT: 0x0012C8D0 OpenEx__7PCDFileFPCc
-// note: 8 words differ; branch at 0xB8 is bne (orig beq) and lui is hoisted above the store. Tried else-form (37), single return (37), early return (33).
+// FUNCTION: 0x0012C8D0 OpenEx__7PCDFileFPCc
 int PCDFile::OpenEx(const char *arg0) {
     if (sceCdSync(1) != 0) {
         do {
@@ -232,9 +231,10 @@ int PCDFile::OpenEx(const char *arg0) {
     if (sceCdSearchFile((char *)this + 0x10000, arg0) != 1) {
         printf("Cannot open %s\n", arg0);
         ErrorCheck();
-        if (m_unk10054 == 2) {
+        switch (m_unk10054) {
+        case 2:
             m_unk10054 = 1;
-            return 0;
+            break;
         }
         return 0;
     }

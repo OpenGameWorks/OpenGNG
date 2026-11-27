@@ -2463,7 +2463,7 @@ void Player::CSliceMove() {
 }
 
 // DRAFT: 0x0015CD50 SliceMove__6PlayerFv
-// note: 5 words differ (since CSliceMove matched): CancelAttack branch form; also tried fR local with -1.0f literal (9) and one-case switch guards (42-46); earlier: (inverted test gives 27, a v1-first else gives 32), the ComboTarget literal order (a local float gives 9), and the t!=0 block placement.
+// note: 5 words differ (since CSliceMove matched; also tried !CancelAttack else-return (27), v1=0 first (9), else form (9)): CancelAttack branch form; also tried fR local with -1.0f literal (9) and one-case switch guards (42-46); earlier: (inverted test gives 27, a v1-first else gives 32), the ComboTarget literal order (a local float gives 9), and the t!=0 block placement.
 void Player::SliceMove() {
     static unsigned char SliceMoves[2] = {0x00, 0x73};
     int v1;
@@ -2653,12 +2653,11 @@ void Player::HSpinMove() {
     MultipleAttack(attack);
 }
 
-// DRAFT: 0x0015D3C0 Spin360Move__6PlayerFv
-// note: 49 words; branch layout differs (original places the 720 and 360 blocks out of line), and the Spin360Attack address is hoisted before the compares; tried reordered store, folded index
+// FUNCTION: 0x0015D3C0 Spin360Move__6PlayerFv
 void Player::Spin360Move() {
     static unsigned short Spin360Attack[3] = {0x10, 0x08, 0xFFFF};
-    static unsigned short Spin720Attack[8] = {0x10, 0x08, 0x1E, 0x08, 0xFFFF, 0, 0, 0};
-    static unsigned int SpinEffect[9] = {0x8100020C, 0x82000367, 0x81000201, 0x820003B1, 0x81000337, 0x8200057F, 0, 0, 0x8100006B};
+    static unsigned short Spin720Attack[5] = {0x10, 0x08, 0x1E, 0x08, 0xFFFF};
+    static unsigned int SpinEffect[6] = {0x8100020C, 0x82000367, 0x81000201, 0x820003B1, 0x81000337, 0x8200057F};
     unsigned short *attack;
     switch (m_unk250) {
     case 0: {
@@ -3671,13 +3670,13 @@ block_27:
     }
 }
 
-// DRAFT: 0x0015F5E0 FootStepSound__6PlayerFPUs
-// note: 6 words differ: addu index temp goes to a0 not a1, lhu/cvt order and mfc1 register swapped, slt sense inverted. Tried negated compare (31), index local (29), else-if sound chain (6, kept), flipped compare (7), temp local before index (6), temp local with flipped compare (7).
+// FUNCTION: 0x0015F5E0 FootStepSound__6PlayerFPUs
 void Player::FootStepSound(unsigned short *arg0) {
     if ((signed char)(((signed char *)m_unk3C)[0x3F] & 4)) {
         m_unk27C = 0;
     }
-    if (arg0[m_unk27C] <= (int)m_unk3C[13]) {
+    arg0 += m_unk27C;
+    if ((int)m_unk3C[13] >= *arg0) {
         unsigned int sound;
         if (m_unk38[0x42] & 0x200) {
             sound = 0x4E25;

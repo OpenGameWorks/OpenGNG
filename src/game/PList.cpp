@@ -1,3 +1,4 @@
+// COMPILER: mwcps2-3.0-011126
 // FLAGS: -str readonly
 #include "types.h"
 #include "Debug.h"
@@ -7,15 +8,14 @@
 extern "C" void __dl__FPv(void *pMem);
 extern "C" void *__nw__FUi(unsigned int nSize);
 
-// DRAFT: 0x00131990 RemoveAll__5PListFv
-// note: 7 words differ; original keeps head in s0 and loads next into s0 in the jal delay slot, ours keeps node in a0. Tried pDead temp (14), while loop (14), pNext outside if (7), pNext in block (7).
+// FUNCTION: 0x00131990 RemoveAll__5PListFv
 void PList::RemoveAll() {
     PListNode *pNode = m_unk4;
     if (pNode != 0) {
         do {
-            PListNode *pNext = pNode->m_unk4;
-            __dl__FPv(pNode);
-            pNode = pNext;
+            PListNode *pDead = pNode;
+            pNode = pNode->m_unk4;
+            __dl__FPv(pDead);
         } while (pNode != 0);
     }
     m_unk0 = 0;

@@ -162,15 +162,15 @@ void MathAPI::MakeVertexList(tagBOX *arg0, float (*arg1)[4]) {
     }
 }
 
-// DRAFT: 0x157900 SetE_BOX_Radius__7MathAPIFP6tagBOX
-// note: 7 differing words (was 16; static since PSound and MakeMatrixBox pass the box in a0): x/y/z named locals. Left: x load in f1 and eps const in f0 (orig f0/f1), so the mtc1 has no nop after it. Tried: load-order permutations (7-12), sum/eps as separate locals, zero as separate local, reversed eps add: none lower.
+// FUNCTION: 0x157900 SetE_BOX_Radius__7MathAPIFP6tagBOX
 float MathAPI::SetE_BOX_Radius(tagBOX *pBox) {
     float r = 0.0f;
     if (pBox != 0) {
-        float x = pBox->m_unk10[0];
+        r = pBox->m_unk10[0];
         float y = pBox->m_unk10[1];
         float z = pBox->m_unk10[2];
-        r = sqrtf(x * x + y * y + z * z) + 0.000001f;
+        r = sqrtf(r * r + y * y + z * z);
+        r += 0.000001f;
         pBox->m_unk10[3] = r;
     }
     return r;

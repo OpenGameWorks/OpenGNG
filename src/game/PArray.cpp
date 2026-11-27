@@ -1,3 +1,4 @@
+// COMPILER: mwcps2-3.0-011126
 // FLAGS: -str readonly
 #include "PArray.h"
 #include "Debug.h"
@@ -134,8 +135,7 @@ void PArray::Add(void *pItem) {
     m_unk0++;
 }
 
-// DRAFT: 0x0012EFE0 Allocate__6PArrayFUi
-// note: 4 words; original reuses the nSize register for the rounded size (nSize = (nSize+3)&~3u), which fixed the register swap. Remaining 4 words are the short-loop nop before the copy loop's bnez plus the one-word shift at its beqz: the padding idiom, matches under 011126 (not verifiable here)
+// FUNCTION: 0x0012EFE0 Allocate__6PArrayFUi
 void PArray::Allocate(unsigned int nSize) {
     if (nSize != 0) {
         nSize = (nSize + 3) & ~3u;

@@ -437,23 +437,21 @@ void PSound::WaitOnVSync() {
     fst_lastVSyncWaitCount = nSpins;
 }
 
-// DRAFT: 0x001A4200 PlayMultipleAtOnce__6PSoundFUi
-// note: 6 words differ (pSpot <= pEnd fixed the $at compares; natural for-loop forms give 11): pEnd lands in s2 and nPlayed in s1 (original s1/s2 swapped); tried declaration order (7), unsigned nEnd cursor (12), pEnd from m_unk2EB4 (9), pointer compares with >= break (7), signed nPlayed (7), unsigned pEnd and nPlayed scoped in the guard (7), nPlayed declared before pSpot (12), pEnd declared before nPlayed (7, same registers).
+// FUNCTION: 0x001A4200 PlayMultipleAtOnce__6PSoundFUi
 int PSound::PlayMultipleAtOnce(unsigned int nSound) {
     SpotInfo *pSpot = (SpotInfo *)m_unk2EB4;
-    unsigned int nPlayed = 0;
     SpotInfo *pEnd = (SpotInfo *)((char *)pSpot + 0x2580);
-    if ((unsigned int)pSpot <= (unsigned int)pEnd) {
+    unsigned int nPlayed = 0;
+    if (pSpot <= pEnd) {
         do {
             if (!(pSpot->m_unk0C & 2)) {
                 PlaySoundUbiquitous(pSpot->m_unk00);
-                nPlayed++;
-                if (!(nPlayed < nSound)) {
+                if (++nPlayed >= nSound) {
                     break;
                 }
             }
             pSpot++;
-        } while ((unsigned int)pSpot <= (unsigned int)pEnd);
+        } while (pSpot <= pEnd);
     }
     return 0;
 }
@@ -3460,7 +3458,7 @@ int PSound::UsageAdd(unsigned int nID) {
 }
 
 // DRAFT: 0x001AAF20 UsageInit__6PSoundFv
-// note: DIFF 6 words; original has three scheduling nops between the loop sltu and bnez and the guard beqz targets one slot further; tried int*, char*, unsigned cursors (15), int stride 5 (6), for-loop (11), while form (6), end as int* + 6000 (6), end declared before cursor (12)
+// note: DIFF 6 words; original has three scheduling nops between the loop sltu and bnez and the guard beqz targets one slot further; tried int*, char*, unsigned cursors (15), int stride 5 (6), for-loop (11), while form (6), end as int* + 6000 (6), end declared before cursor (12); remaining diff is the 011126 short-loop padding (one extra nop, size 0x48 vs 0x40), file-wide compiler choice for the coordinator
 void PSound::UsageInit() {
     int *p = (int *)fst_Usage;
     int *end = (int *)(fst_Usage + 24000);
