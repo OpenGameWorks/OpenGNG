@@ -224,20 +224,24 @@ void PZBufferFog::SetColor(float *pColor, bool bFlag, float fTime) {
     m_unk17A0 = 0;
 }
 
-#define PZ_FLOAT_TO_S8(v) ((unsigned char)(((v) < 2147483648.0f) ? (int)(v) : ((int)((v) - 2147483648.0f) | 0x80000000)))
+#define PZ_FLOAT_TO_S8(v) ((unsigned char)(unsigned int)(v))
 
-// DRAFT: 0x1CE630 Render__11PZBufferFogFv
+inline void SetGsRegPair(void *pEntry, long long data, long long reg) {
+    ((long long *)pEntry)[0] = data;
+    ((long long *)pEntry)[1] = reg;
+}
+
+// FUNCTION: 0x1CE630 Render__11PZBufferFogFv
 void PZBufferFog::Render() {
     unsigned long long aRegs[4];
-    if (m_unk17A9 != 0 && m_unk1754 != 0.0f) {
+    if (m_unk17A9 != 0 && m_unk1754) {
         aRegs[0] = 1;
         aRegs[1] = 0x1A;
-        aRegs[2] = 0;
-        aRegs[3] = 0x1B;
+        SetGsRegPair(&aRegs[2], 0, 0x1B);
         (*(PDisplayList **)(gGfxEng + 0x154C80))->SetGsRegisters((u_long128 *)aRegs, 2);
         int nX = *(int *)(gGfxEng + 0x158DF0);
-        int nA = (nX < 0 ? nX + 0x1FFF : nX) >> 13;
-        int nW = (SCREEN_WIDTH < 0 ? SCREEN_WIDTH + 0x3F : SCREEN_WIDTH) >> 6;
+        int nA = nX / 0x2000;
+        int nW = SCREEN_WIDTH / 64;
         *(long long *)((char *)this + 0x10) = (long long)(short)nA | ((long long)nW << 16) | 0x3FFF00000000LL | 0x02000000LL;
         (*(PDisplayList **)(gGfxEng + 0x154C80))->SendGsPacket((void *)this, 0xAD0, true);
         (*(PDisplayList **)(gGfxEng + 0x154C80))->SetVifCodes(0x13000000U, 0x13000000U);
@@ -262,8 +266,7 @@ void PZBufferFog::Render() {
         ((PGfxEngine *)gGfxEng)->SetZBufferUpdate(true, (eGsContext)0);
         aRegs[0] = 0;
         aRegs[1] = 0x1A;
-        aRegs[2] = 0x18;
-        aRegs[3] = 0x1B;
+        SetGsRegPair(&aRegs[2], 0x18, 0x1B);
         (*(PDisplayList **)(gGfxEng + 0x154C80))->SetGsRegisters((u_long128 *)aRegs, 2);
     }
 }
