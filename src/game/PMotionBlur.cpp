@@ -252,10 +252,12 @@ bool PMotionBlur::Create(PMNode *poSourceObj, PMNode *poBlurObj, int nCount) {
 }
 
 // DRAFT: 0x001C9340 SetData__11PMotionBlurFP19tagMotionBlurParams
-// note: 20 words differ, all register allocation (original i=t0 j=t1 k=t2 pSrc=a3 pEntry=a2; ours i=a2 j=a3 k=t0 pSrc=t1 pEntry=t2). Outer guard fixed by `0 < nCount` (was 45 words). Tried 8 variants: local declaration orders, scoping pSrc/pEntry, pDst placement.
+// note: 12 words differ, all register allocation (original i=t0 j=t1 k=t2 pSrc=a3 pEntry=a2; ours i=a2 pEntry=t2 k=t0 j=t1). Best order: nCount, i, pEntry, pSrc, k, j, pDst with pEntry/pSrc hoisted. Tried ~14 variants: declaration orders (14, 15, 20 words), block scoping, pDst placement, and a file-local GetMotionBlurEntry inline accessor (45 words, worse).
 void PMotionBlur::SetData(tagMotionBlurParams *pParams) {
     int nCount;
     int i;
+    PMotionBlurEntry *pEntry;
+    char *pSrc;
     int k;
     int j;
     char *pDst;
@@ -274,9 +276,9 @@ void PMotionBlur::SetData(tagMotionBlurParams *pParams) {
     if (0 < nCount) {
         i = 0;
         do {
-            PMotionBlurEntry *pEntry = (i < m_unk90.m_unk0) ? (PMotionBlurEntry *)m_unk90.m_unk8[i] : 0;
+            pEntry = (i < m_unk90.m_unk0) ? (PMotionBlurEntry *)m_unk90.m_unk8[i] : 0;
             if (pEntry != 0) {
-                char *pSrc = (char *)pEntry->m_pSource + 0x40;
+                pSrc = (char *)pEntry->m_pSource + 0x40;
                 j = 0;
                 k = 0;
                 while (j < m_unk88) {
