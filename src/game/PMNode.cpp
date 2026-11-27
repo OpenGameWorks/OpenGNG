@@ -577,19 +577,15 @@ void PMNode::ProcessFxTriggers(float fTime, PMat4 *pMat, bool bA, bool bB) {
 }
 
 // DRAFT: 0x00192520 DestroyFxTriggersBySpawnFrame__6PMNodeFfb
-// note: 51 lines differ. Original enters the while with a b to the bottom test and keeps a 0x80 frame with s5; ours tests at the top (blez) and uses a 0x90 frame. Tried: while(idx-- > 0) (104), count-down for loop (67, worse than the current 51), index compare without unsigned cast (67).
+// note: 11 words differ: pTrig/pSystem swap s4/s5 only. Loop now for (unsigned idx = n - 1; (int)idx >= 0; idx--) like SetFxColorMultiplier. Tried: pSystem declared before/after pTrig, function-scope vs loop-scope, nested ifs, if-form pTrig load (68), initialised locals.
 void PMNode::DestroyFxTriggersBySpawnFrame(float fFrame, bool bFlag) {
     PParticleManager *pMgr = (PParticleManager *)((char *)&gGfxEng + 0x154F00);
     if (pMgr == 0) {
         CdsAssert__FPciPc("PMNode.cpp", 0x80C, "apParticleMgr");
     }
-    int idx = (int)m_unkD8;
-    while (idx > 0) {
-        idx--;
-        tagParticleFxTrigger *pTrig = 0;
-        if ((unsigned int)idx < m_unkD8) {
-            pTrig = m_unkE0[idx];
-        }
+    tagParticleFxTrigger *pTrig;
+    for (unsigned int idx = m_unkD8 - 1; (int)idx >= 0; idx--) {
+        pTrig = (idx < m_unkD8) ? m_unkE0[idx] : 0;
         if (pTrig != 0 && *(float *)&pTrig->m_unk10 == fFrame) {
             PParticleSystem *pSystem = (PParticleSystem *)pTrig->m_unk20;
             if (pSystem != 0 && pMgr->IsValid(pSystem) != 0) {
@@ -601,19 +597,9 @@ void PMNode::DestroyFxTriggersBySpawnFrame(float fFrame, bool bFlag) {
     }
     if (bFlag) {
         m_unk18 = 0;
-        PMNode *pChild = 0;
-        if (m_unk14 != 0) {
-            pChild = m_unk1C[0];
-        }
-        if (pChild != 0) {
-            do {
-                pChild->DestroyFxTriggersBySpawnFrame(fFrame, bFlag);
-                m_unk18++;
-                pChild = 0;
-                if (m_unk18 < m_unk14) {
-                    pChild = m_unk1C[m_unk18];
-                }
-            } while (pChild != 0);
+        PMNode *pChild;
+        for (pChild = (m_unk14 != 0) ? m_unk1C[0] : 0; pChild != 0; pChild = (++m_unk18 < m_unk14) ? m_unk1C[m_unk18] : 0) {
+            pChild->DestroyFxTriggersBySpawnFrame(fFrame, bFlag);
         }
     }
 }
