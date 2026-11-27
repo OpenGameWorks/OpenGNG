@@ -1060,6 +1060,50 @@ int Player::ReleaseCheck() {
     return 1;
 }
 
+// DRAFT: 0x0015A1A0 CatchUpMove__6PlayerFv
+// note: 42 words (one shifted word); beqz after the m_unk3F test has nop in the slot where the original has addiu a1,a0,0x40; tried hoisted pMat, nested ifs, ptr-arith, ternary pos, bitfield forms
+void Player::CatchUpMove() {
+    switch (m_unk250) {
+    case 0:
+        m_unk250 = 1;
+        CatchLedgeMove();
+        return;
+    case 1:
+        if ((int)((PMNode *)m_unk3C)->m_unk34 >= 0x11) {
+            m_unk250 = 2;
+            m_unk264 |= 0x30;
+            ((Physics *)m_unk38)->SetPhysicsType(0x1032, 0);
+            Physics *pPhys = (Physics *)m_unk38;
+            pPhys->m_unk4 = 0.5f;
+            *(float *)((char *)pPhys + 0x110) = 0.02f;
+            PMNode *pTarget = (PMNode *)m_unk2F0;
+            if (pTarget != 0 && ((signed char)(signed char)(pTarget->m_unk3F & 7) & 1)) {
+                float sp30[4];
+                float *pMat = (float *)((char *)pTarget + 0x40);
+                sceVu0ApplyMatrix(sp30, pMat, m_unk2D0);
+                float *pPos = m_unk190;
+                if (m_unk3C != 0) {
+                    pPos = (float *)((char *)m_unk3C + 0x80);
+                }
+                sceVu0SubVector(sp30, sp30, pPos);
+                sceVu0ScaleVector(sp30, sp30, 0.5f);
+                sp30[1] = 0.5f;
+                sp30[3] = 1.0f;
+                *(u_long128 *)m_unk38 = *(u_long128 *)sp30;
+            }
+            return;
+        }
+        CatchLedgeMove();
+        return;
+    case 2:
+        {
+            Physics *pPhys = (Physics *)m_unk38;
+            pPhys->m_unk11C = Round180__Ff(m_unk1C4);
+        }
+        break;
+    }
+}
+
 // FUNCTION: 0x0015A300 CatchIdleMove__6PlayerFv
 void Player::CatchIdleMove() {
     CatchLedgeMove();
@@ -1775,6 +1819,47 @@ void Player::AlignPosition(EntityBaseClass *arg0) {
             }
             *(u_long128 *)m_unk190 = *(u_long128 *)sp40;
         }
+    }
+}
+
+// FUNCTION: 0x0015B850 OpenDoorMove__6PlayerFv
+void Player::OpenDoorMove() {
+    void *pApparition = GetPtrToApparition__13EntityManagerFUi(mpEntMgr__15EntityBaseClass, *(unsigned int *)((char *)this + 0x328));
+    if (pApparition != 0) {
+        int state = m_unk250;
+        int h = (int)m_unk3C[13];
+        switch (state) {
+        case 0:
+            ((ApparitionVirtuals *)pApparition)->OnHitEvent(this, 0, 0x1FF, 0);
+            m_unk250 = 1;
+            break;
+        case 1:
+            if (h >= 0xD) {
+                m_unk250 = 2;
+                GameVarSub(8, 1);
+                UpdateKey();
+            }
+            break;
+        case 2:
+            if (h >= 0x23) {
+                m_unk250 = (m_unk1D0 & 2) ? 3 : 4;
+                ((EntityBaseClass *)this)->PlaySound(0x99);
+            }
+            break;
+        case 3:
+            if (h >= 0x75) {
+                m_unk250 = 4;
+                ((EntityBaseClass *)this)->PlaySound(0x2D5);
+            }
+            break;
+        case 4:
+            if (h >= 0x7D) {
+                m_unk250 = 5;
+                ((EntityBaseClass *)this)->PlaySound(0x26E);
+            }
+            break;
+        }
+        AlignPosition((EntityBaseClass *)pApparition);
     }
 }
 
