@@ -667,10 +667,12 @@ int Player::GetAttachableJoint(int arg0) {
 }
 
 // DRAFT: 0x001595F0 RefreshAttachableJoints__6PlayerFv
-// note: 32 diff words; original keeps loop counter in s2 with two strided pointers (s0 by 8, s1 by 0x14) and enters via b; ours keeps i in s0. Tried unsigned i (32, no gain) and local pointers (70).
+// note: 9 diff words; goto-entered unsigned loop matches the shape, but the counter takes s0 where the original has s2 (strided offsets s0/s1). Tried int i, late init, uID at top, 4 == i, switch (63), FreeJoint pointer local (72).
 void Player::RefreshAttachableJoints() {
-    int i;
-    for (i = 0; i < 5; i++) {
+    unsigned int i = 0;
+    goto test;
+loop:
+    {
         if (m_pFreeJoints[i].m_unk04 == 0) {
             unsigned int uID;
             if (i == 4) {
@@ -687,6 +689,9 @@ void Player::RefreshAttachableJoints() {
             }
         }
     }
+    i++;
+test:
+    if (i < 5) goto loop;
     m_unk2FC = AttachedTimer[5 - m_unk23D4];
 }
 
@@ -1345,27 +1350,32 @@ int Player::FindCurrentItem(int arg0, bool arg1) {
 }
 
 // DRAFT: 0x0015ACE0 GetAbility__6PlayerFv
-// note: 69 words differ; prologue schedules BonusTable load before sq s0, mbHard loaded at 0x18 not 0x10, value reg t5 vs t6, slti/bnez form in cases 30/31, loop-tail store order.
+// note: 47 words; goto-entered unsigned loop, case 32 first and > tests fix the shape; buf is addressed through sp+N where the original keeps a base register (t4/a0) and the table row pointer in t5. Tried buf pointer local (67-70), row pointer (48), for second loop (48), (int)i > 0 guard (49).
 signed char Player::GetAbility() {
     static signed char BonusTable[16] = {
         32, 30, 30, 20, 31, 30, 26, 15, 32, 30, 30, 15, 31, 30, 26, 10
     };
     signed char buf[32];
     int sum = 0;
-    int i;
+    unsigned int i;
     int row = mbHard__15EntityBaseClass * 8;
-    for (i = 0; i < 16; i += 2) {
+    i = 0;
+    goto test;
+loop:
+    {
         signed char type = BonusTable[row + i];
         signed char value = BonusTable[row + i + 1];
         buf[i + 1] = type;
         switch (type) {
+        case 32:
+            break;
         case 30:
-            if (m_unk1D8 % 200 >= 0x65) {
+            if (m_unk1D8 % 200 > 100) {
                 value = 1;
             }
             break;
         case 31:
-            if (m_unk20C >= 0x301) {
+            if (m_unk20C > 0x300) {
                 value = 1;
             }
             break;
@@ -1374,14 +1384,15 @@ signed char Player::GetAbility() {
                 value = 0;
             }
             break;
-        case 32:
-            break;
         }
         buf[i] = value;
         sum += value;
     }
+    i += 2;
+test:
+    if (i < 16) goto loop;
     int r = MathAPI::RandomIntRange(0, sum);
-    if (i > 0) {
+    if (0 < (int)i) {
         int j = 0;
         do {
             if (buf[j] != 0) {
@@ -1391,7 +1402,7 @@ signed char Player::GetAbility() {
                 }
             }
             j += 2;
-        } while (j < i);
+        } while (j < (int)i);
     }
     CdsAssert__FPciPc("Player.cpp", 0x1D82, "0");
     return 0;
