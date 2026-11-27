@@ -695,7 +695,7 @@ void HudSuper::UpdateMaxSuper() {
 }
 
 // DRAFT: 0x140550 UpdateBar__8HudSuperFi
-// note: 29 words differ; the outer gate is slti into $v0 and bnez into the body in the original (ours uses $at and beqz), and the original fills the else-branch b's slot with the 1.0f lui; inner arg0 > 0 test falls through to the zero arm in the original (ours branches to it). Tried: nested-if, empty-then, swapped-inner (all worse, earlier); int bLess local for the gate (29, kept); inner arg0 <= 0 zero-first (55). Also tried: inverted if/else and else-if chains (53-56; an inner `arg0 <= 0` gives the bgtz layout but the compiler drops an empty outer arm), redundant else fScale = 1.0f (29), bool bLess (56), goto (55), ternary chains (42-56; `bLess ? (...) : fScale` matches the tail from 0xC0), inline fraction helper (57).
+// note: 29 words differ; the outer gate is slti into $v0 and bnez into the body in the original (ours uses $at and beqz), and the original fills the else-branch b's slot with the 1.0f lui; inner arg0 > 0 test falls through to the zero arm in the original (ours branches to it). Tried: nested-if, empty-then, swapped-inner (all worse, earlier); int bLess local for the gate (29, kept); inner arg0 <= 0 zero-first (55). Also tried: inverted if/else and else-if chains (53-56; an inner `arg0 <= 0` gives the bgtz layout but the compiler drops an empty outer arm), redundant else fScale = 1.0f (29), bool bLess (56), goto (55), ternary chains (42-56; `bLess ? (...) : fScale` matches the tail from 0xC0), inline fraction helper (57). Worker w-if1: direct `arg0 < 640` gate (30), `bLess != 0` (29, same), else `fScale = 1.0f` arm (57), pre-computed `bPos = arg0 > 0` (31).
 void HudSuper::UpdateBar(int arg0) {
     void *pBase = m_unk4;
     PArray *pWalk;
@@ -2148,8 +2148,7 @@ int HudHint::HintScreen() {
     }
 }
 
-// DRAFT: 0x143BC0 EnableBG__7HudHintFb
-// note: DIFF 53; ours is 0x170 bytes vs 0x180. Dispatch and loop-entry branches differ (original enters the for loop with a b to its test, ours falls in), and the Find call has no reloc. Tried: static initialiser, member Find call, extern "C" Find, while loop.
+// FUNCTION: 0x00143BC0 EnableBG__7HudHintFb
 void HudHint::EnableBG(bool arg0) {
     static unsigned int InventoryNames[4] = {0x4781EFDE, 0x59DDFCBB, 0xFCFE9AB1, 0xBBCD34F9};
     unsigned int i;
@@ -2169,16 +2168,21 @@ void HudHint::EnableBG(bool arg0) {
         do {
             switch (*(unsigned int *)((char *)pNode + 0x8)) {
             case 0x2BA0F70C:
-                for (i = 0; i < 4; i++) {
-                    pFound = pNode->Find(InventoryNames[i]);
-                    if (pFound == 0) { continue; }
-                    if (pFound != 0) {
-                        *(float *)((char *)pFound + 0x2C) = fValue;
-                    }
+                i = 0;
+                goto itest;
+iloop:
+                pFound = pNode->Find(InventoryNames[i]);
+                if (pFound != 0) {
+                    *(float *)((char *)pFound + 0x2C) = fValue;
+                }
+                i++;
+itest:
+                if (i < 4) {
+                    goto iloop;
                 }
                 break;
             case 0xFBD2D937:
-                *(int *)((char *)m_unkB4 + 0xC) = arg0 ? 0 : 1;
+                { void *pB = m_unkB4; *(int *)((char *)pB + 0xC) = arg0 ? 0 : 1; }
                 break;
             default:
                 *(float *)((char *)pNode + 0x2C) = fValue;
