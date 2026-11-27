@@ -112,8 +112,21 @@ unsigned int PStaticInstanceGroup::RenderParticleInstances(bool bFlag) {
 }
 
 
-// DRAFT: 0x001D7160 Render__20PStaticInstanceGroupFv
-// note: DIFF 10 (was 39); guard is `if (nRet < cnt) do {...} while (nRet < cnt)` with nSize ternary before pData (orig loads offset 0 first). Left: second ternary's count not reloaded (ours CSEs a0, orig lw v0,8(v1) at 0x00A8), extra nop in its arm, so exit branch is one word short. Tried: `> 0` guard (folds to beqz), bool guard, while form (57), pMaster in pData ternary (83), operand-flipped pData compare (10).
+inline int GetStaticEntrySize(StaticMasterMesh *pM, unsigned int i) {
+    if (i < pM->m_unk8) {
+        return pM->m_unkC[i].nSize;
+    }
+    return 0;
+}
+
+inline void *GetStaticEntryData(StaticMasterMesh *pM, unsigned int i) {
+    if (i < pM->m_unk8) {
+        return pM->m_unkC[i].pData;
+    }
+    return 0;
+}
+
+// FUNCTION: 0x001D7160 Render__20PStaticInstanceGroupFv
 unsigned int PStaticInstanceGroup::Render() {
     unsigned int nRet = 0;
     StaticMasterMesh *pMaster = (StaticMasterMesh *)m_unk8;
@@ -124,8 +137,8 @@ unsigned int PStaticInstanceGroup::Render() {
             pMaster->m_unk0->Render(0x80, false, 0);
             if (nRet < ((StaticMasterMesh *)m_unk8)->m_unk8) {
                 do {
-                    int nSize = (nRet < ((StaticMasterMesh *)m_unk8)->m_unk8) ? ((StaticMasterMesh *)m_unk8)->m_unkC[nRet].nSize : 0;
-                    void *pData = (nRet < ((StaticMasterMesh *)m_unk8)->m_unk8) ? ((StaticMasterMesh *)m_unk8)->m_unkC[nRet].pData : 0;
+                    int nSize = GetStaticEntrySize((StaticMasterMesh *)m_unk8, nRet);
+                    void *pData = GetStaticEntryData((StaticMasterMesh *)m_unk8, nRet);
                     gGfxEng.BeginStaticInstances(pData, nSize);
                     gGfxEng.m_unk154C80->DrawStaticInstances(m_unk0, m_unk4, 0x28, 0, 1, false);
                     nRet++;
