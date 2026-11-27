@@ -43,14 +43,14 @@ public:
 
 class EffectNode {
 public:
-    EffectNode() { m_unk4 = 0; m_unkC = 0; }
+    EffectNode() { mpMeshNode = 0; m_unkC = 0; }
     virtual ~EffectNode();
     void SendDeleteEvent(int arg0);
     int Update(float arg0);
     int Render(PLightManager *arg0);
     int GetType();
 
-    int m_unk4;                 // 0x004 object whose virtual slot 3 draws the node
+    int mpMeshNode;                 // 0x004 PMNode the effect draws (assert "mpMeshNode")
     int m_unk8;                 // 0x008 argument forwarded to SendDeleteEvent
     unsigned char m_unkC;       // 0x00C flag; gates the light pointer in Render
 };
@@ -81,7 +81,7 @@ public:
 
     u_long128 m_unk10[8];       // 0x010 per-slot matrix rows (world translation in row 3)
     unsigned char m_unk90[8];   // 0x090 per-slot visibility flags
-    void *m_unk98;              // 0x098 PMesh pointer
+    void *mpMesh;              // 0x098 first mesh of the node (assert "mpMesh")
     short m_unk9C;              // 0x09C slot count
     unsigned char m_unk9E;      // 0x09E parity byte
     unsigned char m_unk9F;      // 0x09F wrap flag

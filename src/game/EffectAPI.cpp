@@ -171,11 +171,11 @@ MotionBlurEffect *EffectAPI::CreateMotionBlurEffect(PMNode *arg0, unsigned int a
     if ((pEffect = (MotionBlurEffect *)operator new(0xC0)) != 0) {
         MotionBlurEffect *volatile pThis = pEffect;
         *(void **)pEffect = __vt__10EffectNode;
-        pThis->m_unk4 = 0;
+        pThis->mpMeshNode = 0;
         *(unsigned char *)&pThis->m_unkC = 0;
         *(void **)pThis = __vt__16MotionBlurEffect;
         __ct__11PMotionBlurFv(&pThis->m_unk10);
-        pThis->m_unk4 = 0;
+        pThis->mpMeshNode = 0;
         pEffect = pThis;
     }
     if (pEffect != 0) {
@@ -198,7 +198,7 @@ MotionBlurEffect *EffectAPI::CreateMotionBlurEffect(PMNode *arg0, unsigned int a
 // note: 81 words differ; float reg for t/m14, lq/lw order in owner copy, one-word shift before jal (also tried: swapped float compare operands, local m14 variant, no change)
 int PlingEffect::Update(float arg0) {
     float f20 = arg0;
-    if (m_unk4 != 0) {
+    if (mpMeshNode != 0) {
         if (m_unk10 != 0 && m_unk20[0] == 0.0f) {
             EntityBaseClass *owner = m_unk10;
             u_long128 *src;
@@ -209,26 +209,26 @@ int PlingEffect::Update(float arg0) {
             }
             u_long128 tmp = *src;
             ((float *)&tmp)[1] += m_unk20[1];
-            *(u_long128 *)(m_unk4 + 0x80) = tmp;
-            ((unsigned char *)m_unk4)[0x3E] |= 8;
+            *(u_long128 *)(mpMeshNode + 0x80) = tmp;
+            ((unsigned char *)mpMeshNode)[0x3E] |= 8;
         }
         if (*(float *)&m_unk14 != 0.0f) {
-            float t = *(float *)(m_unk4 + 0x2C) - *(float *)&m_unk14;
+            float t = *(float *)(mpMeshNode + 0x2C) - *(float *)&m_unk14;
             if (t <= 0.0f) {
                 SendDeleteEvent(m_unk18);
                 return 0;
             }
-            *(float *)(m_unk4 + 0x2C) = t;
+            *(float *)(mpMeshNode + 0x2C) = t;
         }
-        float *pSlot = (float *)(m_unk4 + 0x90);
+        float *pSlot = (float *)(mpMeshNode + 0x90);
         pSlot[1] = Round180(180.0f + *(float *)(gEng + 0x19784));
         if (m_unk10->m_unk167 == 0) {
             f20 = 0.0f;
         }
-        ((PMNode *)m_unk4)->Unk18(0.0f, f20, 0, 0, 0);
-        int test = mpFrustum__15EntityBaseClass->IntersectBox((float (*)[2][4])(m_unk4 + 0x110), (PMat4 *)(m_unk4 + 0x40));
-        ((PMNode *)m_unk4)->SetAllFrustrumTest((eBoxIntersect)test);
-        if ((signed char)(((signed char *)m_unk4)[0x3F] & 7) != 0) {
+        ((PMNode *)mpMeshNode)->Unk18(0.0f, f20, 0, 0, 0);
+        int test = mpFrustum__15EntityBaseClass->IntersectBox((float (*)[2][4])(mpMeshNode + 0x110), (PMat4 *)(mpMeshNode + 0x40));
+        ((PMNode *)mpMeshNode)->SetAllFrustrumTest((eBoxIntersect)test);
+        if ((signed char)(((signed char *)mpMeshNode)[0x3F] & 7) != 0) {
             return 1;
         }
     }
@@ -272,8 +272,8 @@ PlingEffect::PlingEffect(EntityBaseClass *arg0, float (*arg1)[4], unsigned int a
     m_unk10 = arg0;
     m_unk18 = (arg0 != 0) ? arg0->m_unk4 : 0;
     m_unk14 = 0;
-    m_unk4 = (int)mpResMgr__15EntityBaseClass->GetResource(arg2, 0);
-    if (m_unk4 == 0) {
+    mpMeshNode = (int)mpResMgr__15EntityBaseClass->GetResource(arg2, 0);
+    if (mpMeshNode == 0) {
         CdsAssert("EffectAPI.cpp", 0x1BC, "mpMeshNode");
     }
     if (arg3 != 0) {
@@ -281,15 +281,15 @@ PlingEffect::PlingEffect(EntityBaseClass *arg0, float (*arg1)[4], unsigned int a
         if (pAnim == 0) {
             CdsAssert("EffectAPI.cpp", 0x1BF, "pAnim");
         }
-        ((PMNode *)m_unk4)->Unk20(pAnim);
-        ((PMNode *)m_unk4)->SetAnimLoopCount(0, true);
-        ((PMNode *)m_unk4)->EnableAnim(true, true);
+        ((PMNode *)mpMeshNode)->Unk20(pAnim);
+        ((PMNode *)mpMeshNode)->SetAnimLoopCount(0, true);
+        ((PMNode *)mpMeshNode)->EnableAnim(true, true);
     }
     *(u_long128 *)m_unk20 = *(u_long128 *)arg1;
     float fZero = 0.0f;
     *(float *)&m_unk2C = fZero;
     if (m_unk20[0] != fZero) {
-        PMNode *pNode = (PMNode *)m_unk4;
+        PMNode *pNode = (PMNode *)mpMeshNode;
         *(u_long128 *)&pNode->m_unk80 = *(u_long128 *)m_unk20;
         pNode->m_unk3E |= 8;
     }
@@ -301,7 +301,7 @@ PlingEffect *EffectAPI::CreatePling(EntityBaseClass *arg0, float (*arg1)[4], uns
     pPling = (PlingEffect *)FindPling(arg0);
     if (pPling != 0) {
         pPling->m_unk14 = 0;
-        *(int *)(pPling->m_unk4 + 0x2C) = 0x3F800000;
+        *(int *)(pPling->mpMeshNode + 0x2C) = 0x3F800000;
     } else {
         pPling = new PlingEffect(arg0, arg1, arg2, arg3, arg4);
         if (pPling != 0) {
@@ -346,7 +346,7 @@ int GhostEffect::Render(PLightManager *arg0) {
             mat[3] = *pVec;
             vu1SetWorldMatrix((PMat4 *)mat);
             vu1BeginMesh((eBoxIntersect)4);
-            total += ((PMesh *)m_unk98)->Render(size, 0, 0);
+            total += ((PMesh *)mpMesh)->Render(size, 0, 0);
             vu1EndMesh();
         }
     }
@@ -372,8 +372,8 @@ int GhostEffect::Update(float arg0) {
         return 1;
     }
     sceVu0UnitMatrix((PMat4 *)mat);
-    sp50 = *(u_long128 *)&((PMNode *)m_unk4)->m_unk80;
-    int var = ((PMNode *)m_unk4)->m_unkC;
+    sp50 = *(u_long128 *)&((PMNode *)mpMeshNode)->m_unk80;
+    int var = ((PMNode *)mpMeshNode)->m_unkC;
     if (var == 4) {
         var = 0;
     }
@@ -407,12 +407,12 @@ int GhostEffect::Update(float arg0) {
 extern "C" GhostEffect *__ct__11GhostEffectFP9PMeshNode(GhostEffect *volatile pThis, PMeshNode *arg0)
 {
     *(void **)pThis = __vt__10EffectNode;
-    pThis->m_unk4 = 0;
+    pThis->mpMeshNode = 0;
     *(unsigned char *)&pThis->m_unkC = 0;
     *(void **)pThis = __vt__11GhostEffect;
-    pThis->m_unk4 = (int)arg0;
-    pThis->m_unk98 = ((PMNode *)arg0)->GetFirstMesh();
-    if (pThis->m_unk98 == 0) {
+    pThis->mpMeshNode = (int)arg0;
+    pThis->mpMesh = ((PMNode *)arg0)->GetFirstMesh();
+    if (pThis->mpMesh == 0) {
         CdsAssert("EffectAPI.cpp", 0x14D, "mpMesh");
     }
     pThis->m_unk9C = 0;
@@ -462,27 +462,27 @@ OneshotEffect::OneshotEffect(unsigned int arg0, unsigned int arg1, PMat4 *arg2, 
     m_unk14 = arg3;
     m_unk18 = (arg3 != 0) ? arg3->m_unk4 : 0;
     m_unk10 = (int)arg2;
-    m_unk4 = (int)mpResMgr__15EntityBaseClass->GetResource(arg0, 0);
-    if (m_unk4 == 0) {
+    mpMeshNode = (int)mpResMgr__15EntityBaseClass->GetResource(arg0, 0);
+    if (mpMeshNode == 0) {
         CdsAssert("EffectAPI.cpp", 0xFC, "mpMeshNode");
     }
     PMNode *pAnim = mpResMgr__15EntityBaseClass->GetResource(arg1, 0);
     if (pAnim == 0) {
         CdsAssert("EffectAPI.cpp", 0xFE, "pAnim");
     }
-    ((PMNode *)m_unk4)->Unk20(pAnim);
-    ((PMNode *)m_unk4)->EnableAnim(true, true);
+    ((PMNode *)mpMeshNode)->Unk20(pAnim);
+    ((PMNode *)mpMeshNode)->EnableAnim(true, true);
     if (arg4 != 0.5f) {
-        ((PMNode *)m_unk4)->SetFrameRate(arg4, true);
+        ((PMNode *)mpMeshNode)->SetFrameRate(arg4, true);
     }
-    ((PMNode *)m_unk4)->EnableOneRenderPassOnly(arg5);
-    ((PMNode *)m_unk4)->Unk14();
+    ((PMNode *)mpMeshNode)->EnableOneRenderPassOnly(arg5);
+    ((PMNode *)mpMeshNode)->Unk14();
 }
 
 // FUNCTION: 0x00156490 Update__13OneshotEffectFf
 int OneshotEffect::Update(float arg0) {
     bool bVisible;
-    if (m_unk4 != 0) {
+    if (mpMeshNode != 0) {
         bVisible = true;
         if (m_unk18 != 0) {
             void *pApp = ((EntityManager *)(gEng + 0x137E0))->GetPtrToApparition(m_unk18);
@@ -490,13 +490,13 @@ int OneshotEffect::Update(float arg0) {
                 bVisible = false;
             }
         }
-        if (!bVisible ||(((EffectUpdateNode *)m_unk4)->Slot4(m_unk10, 8, 0, 0.0f, arg0) & 7) != 0) {
+        if (!bVisible ||(((EffectUpdateNode *)mpMeshNode)->Slot4(m_unk10, 8, 0, 0.0f, arg0) & 7) != 0) {
             if (m_unk1C != 0) {
-                float *pSlot = (float *)(m_unk4 + 0x90);
+                float *pSlot = (float *)(mpMeshNode + 0x90);
                 pSlot[1] = Round180(180.0f + *(float *)(gEng + 0x19784));
             }
-            int test = mpFrustum__15EntityBaseClass->IntersectBox((float (*)[2][4])(*(char **)((char *)this + 4) + 0x110), (PMat4 *)(m_unk4 + 0x40));
-            ((PMNode *)m_unk4)->SetAllFrustrumTest((eBoxIntersect)test);
+            int test = mpFrustum__15EntityBaseClass->IntersectBox((float (*)[2][4])(*(char **)((char *)this + 4) + 0x110), (PMat4 *)(mpMeshNode + 0x40));
+            ((PMNode *)mpMeshNode)->SetAllFrustrumTest((eBoxIntersect)test);
             return 1;
         }
     }
@@ -540,8 +540,8 @@ int EffectAPI::CreateOneshot(unsigned int arg0, unsigned int arg1, float (*arg2)
 OneshotEffect::OneshotEffect(unsigned int arg0, unsigned int arg1, float (*arg2)[4], float (*arg3)[4], EntityBaseClass *arg4, float arg5, bool arg6, int arg7, bool arg8) {
     m_unkC = arg6;
     m_unk1C = arg8;
-    m_unk4 = (int)mpResMgr__15EntityBaseClass->GetResource(arg0, 0);
-    if (m_unk4 == 0) {
+    mpMeshNode = (int)mpResMgr__15EntityBaseClass->GetResource(arg0, 0);
+    if (mpMeshNode == 0) {
         CdsAssert("EffectAPI.cpp", 0xC9, "mpMeshNode");
     }
     m_unk14 = arg4;
@@ -549,12 +549,12 @@ OneshotEffect::OneshotEffect(unsigned int arg0, unsigned int arg1, float (*arg2)
         m_unk10 = 0;
         m_unk18 = 0;
         {
-            char *node = (char *)m_unk4;
+            char *node = (char *)mpMeshNode;
             *(u_long128 *)(node + 0x80) = *(u_long128 *)arg2;
             ((unsigned char *)node)[0x3E] |= 8;
         }
         if (arg3 != 0) {
-            char *node = (char *)m_unk4;
+            char *node = (char *)mpMeshNode;
             *(u_long128 *)(node + 0x90) = *(u_long128 *)arg3;
             ((unsigned char *)node)[0x3E] |= 8;
         }
@@ -571,14 +571,14 @@ OneshotEffect::OneshotEffect(unsigned int arg0, unsigned int arg1, float (*arg2)
         if (pAnim == 0) {
             CdsAssert("EffectAPI.cpp", 0xDB, "pAnim");
         }
-        ((PMNode *)m_unk4)->Unk20(pAnim);
-        ((PMNode *)m_unk4)->EnableAnim(true, true);
+        ((PMNode *)mpMeshNode)->Unk20(pAnim);
+        ((PMNode *)mpMeshNode)->EnableAnim(true, true);
         if (arg5 != 0.5f) {
-            ((PMNode *)m_unk4)->SetFrameRate(arg5, true);
+            ((PMNode *)mpMeshNode)->SetFrameRate(arg5, true);
         }
     }
-    ((PMNode *)m_unk4)->EnableOneRenderPassOnly(arg7);
-    ((PMNode *)m_unk4)->Unk14();
+    ((PMNode *)mpMeshNode)->EnableOneRenderPassOnly(arg7);
+    ((PMNode *)mpMeshNode)->Unk14();
 }
 
 // DRAFT: 0x00156E00 Animate__9EffectAPIFf
@@ -614,11 +614,11 @@ void EffectAPI::Animate(float arg0) {
 // DRAFT: 0x156BB0 Update__10EffectNodeFf
 // note: 2 words, a2/a1 addiu order (original computes a2 first). Tried: inline args, pMat local, PMNode struct fields, int base local, frustum local, inline wrapper with swapped params, declare-then-assign in both orders.
 int EffectNode::Update(float arg0) {
-    if (m_unk4 != 0) {
-        if (((EffectDrawable *)m_unk4)->Slot4(0, 0, 0, 0.0f, arg0) & 7) {
-            PMat4 *pMat = (PMat4 *)(m_unk4 + 0x40);
-            int test = mpFrustum__15EntityBaseClass->IntersectBox((float (*)[2][4])(m_unk4 + 0x110), pMat);
-            ((PMNode *)m_unk4)->SetAllFrustrumTest((eBoxIntersect)test);
+    if (mpMeshNode != 0) {
+        if (((EffectDrawable *)mpMeshNode)->Slot4(0, 0, 0, 0.0f, arg0) & 7) {
+            PMat4 *pMat = (PMat4 *)(mpMeshNode + 0x40);
+            int test = mpFrustum__15EntityBaseClass->IntersectBox((float (*)[2][4])(mpMeshNode + 0x110), pMat);
+            ((PMNode *)mpMeshNode)->SetAllFrustrumTest((eBoxIntersect)test);
             return 1;
         }
     }
@@ -627,9 +627,9 @@ int EffectNode::Update(float arg0) {
 
 // FUNCTION: 0x156C30 Render__10EffectNodeFP13PLightManager
 int EffectNode::Render(PLightManager *arg0) {
-    if (m_unk4 != 0) {
+    if (mpMeshNode != 0) {
         *(unsigned char *)(gGfxEng + 0x158E22) = m_unkC;
-        return ((EffectDrawable *)m_unk4)->Draw(m_unkC ? arg0 : 0, 0x80, 0);
+        return ((EffectDrawable *)mpMeshNode)->Draw(m_unkC ? arg0 : 0, 0x80, 0);
     }
     return 0;
 }
@@ -639,12 +639,12 @@ extern "C" void *__dt__10EffectNodeFv(void *pThis, short nFlag) {
     if (pThis != 0) {
         *(void **)pThis = __vt__10EffectNode;
         EffectNode *pNode = (EffectNode *)pThis;
-        EffectDrawable *pDrawable = (EffectDrawable *)pNode->m_unk4;
+        EffectDrawable *pDrawable = (EffectDrawable *)pNode->mpMeshNode;
         if (pDrawable != 0) {
             if (pDrawable != 0) {
                 pDrawable->Slot0(1);
             }
-            pNode->m_unk4 = 0;
+            pNode->mpMeshNode = 0;
         }
         Remove__6PArrayFPv(&mEffectAPI__13EntityManager, pThis);
         if (nFlag > 0) {
@@ -661,7 +661,7 @@ void EffectAPI::EnableParticleFx(bool arg0) {
     while (pNode != 0) {
         switch (((EffectEntry *)pNode)->Slot3()) {
         case 1:
-            PMNode *pMesh = (PMNode *)((EffectNode *)pNode)->m_unk4;
+            PMNode *pMesh = (PMNode *)((EffectNode *)pNode)->mpMeshNode;
             if (pMesh != 0) {
                 pMesh->EnableFx(arg0, 1);
             }
