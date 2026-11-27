@@ -96,7 +96,11 @@ extern unsigned char gInterface[];
 extern char gGfxEng[1504384];
 extern "C" void __dt__6PArrayFv(void *pThis, short nFlag);
 extern "C" void __dt__15PGrimReaperCapeFv(void *pThis, short nFlag);
-class PMeshNodeAnimDataTable;
+class PMeshNodeAnimDataTable {
+public:
+    virtual ~PMeshNodeAnimDataTable();
+    char _pad[0x30];
+};
 extern "C" void *__nw__FUi(unsigned int nSize);
 extern "C" PMeshNodeAnimDataTable *__ct__22PMeshNodeAnimDataTableFv(PMeshNodeAnimDataTable *pThis);
 extern "C" int Load__22PMeshNodeAnimDataTableFP8PPakFile16ePsx2FileVersion(PMeshNodeAnimDataTable *pThis, PPakFile *pFile, int nVersion);
@@ -193,27 +197,27 @@ bool PCutScenePlayer::LoadNodeNameTable(PPakFile *pFile, unsigned int nCount, PA
     return true;
 }
 
-// DRAFT: 0x001BBD10 GetViewMatrix__15PCutScenePlayerFP5PMat4
-// note: 122 differing words; original frame 0x90 (s0..s2 saves, vDelta at 0x70, operator- temp at 0x80), ours frame 0xC0 (s0..s5 saves, this copied to s4, pMat to s3, vDelta at 0xA0, temp at 0xB0); sqrt sequence (c1 0x10344) order not reproduced. VU0/COP0 premise false: no VU0/COP0 instructions here. Tried: vTmp/vDelta split (139), element c-arrays (129), c-arrays first (122), direct member access (122), swapped sqrt sum (122), pMat cast at top (122); in-class operator= copy is the 122 best
+// FUNCTION: 0x001BBD10 GetViewMatrix__15PCutScenePlayerFP5PMat4
 void PCutScenePlayer::GetViewMatrix(PMat4 *pMat) {
     float *m = (float *)pMat;
     float c0[4];
     float c1[4];
     float c2[4];
     PVec3 vDelta;
-    vDelta = *(PVec3 *)((char *)this + 0xE0) - *(PVec3 *)((char *)this + 0xC0);
-    float fLen = sqrtf(vDelta.m_fZ * vDelta.m_fZ + vDelta.m_fX * vDelta.m_fX);
-    float fPitch = atan2f(-vDelta.m_fY, fLen) * 57.29578f;
-    *(float *)((char *)this + 0xD0) = fPitch;
-    fPitch += 180.0f;
-    *(float *)((char *)this + 0xD0) = fPitch;
-    Round180__Ff(fPitch);
-    *(float *)((char *)this + 0xD4) = atan2f(vDelta.m_fX, -vDelta.m_fZ) * 57.29578f;
-    *(float *)((char *)this + 0xD8) = *(float *)((char *)this + 0xF0);
+    vDelta = *(PVec3 *)m_unkE0 - *(PVec3 *)m_unkC0;
+    float fLen = sqrtf(vDelta.m_fX * vDelta.m_fX + vDelta.m_fZ * vDelta.m_fZ);
+    float fPitch = atan2f(-vDelta.m_fY, fLen) * 57.295776f;
+    *(float *)(m_unkD0 + 0) = fPitch;
+    float fK = 180.0f;
+    float fSum = fPitch + fK;
+    *(float *)(m_unkD0 + 0) = fSum;
+    Round180__Ff(fSum);
+    *(float *)(m_unkD0 + 4) = atan2f(vDelta.m_fX, -vDelta.m_fZ) * 57.295776f;
+    *(float *)(m_unkD0 + 8) = m_unkF0;
     sceVu0UnitMatrix(pMat);
-    pMat->RotateY(*(float *)((char *)this + 0xD4));
-    pMat->RotateX(*(float *)((char *)this + 0xD0));
-    pMat->RotateZ(*(float *)((char *)this + 0xD8));
+    pMat->RotateY(*(float *)(m_unkD0 + 4));
+    pMat->RotateX(*(float *)(m_unkD0 + 0));
+    pMat->RotateZ(*(float *)(m_unkD0 + 8));
     c0[0] = m[0];
     c0[1] = m[4];
     c0[2] = m[8];
@@ -226,14 +230,13 @@ void PCutScenePlayer::GetViewMatrix(PMat4 *pMat) {
     c2[1] = m[6];
     c2[2] = m[10];
     c2[3] = 1.0f;
-    m[12] = -sceVu0InnerProduct(c0, (float *)((char *)this + 0xC0));
-    m[13] = -sceVu0InnerProduct(c1, (float *)((char *)this + 0xC0));
-    m[14] = -sceVu0InnerProduct(c2, (float *)((char *)this + 0xC0));
-    *(float *)((char *)this + 0xD4) = atan2f(-m[2], -m[10]) * 57.29578f;
+    m[12] = -sceVu0InnerProduct(c0, m_unkC0);
+    m[13] = -sceVu0InnerProduct(c1, m_unkC0);
+    m[14] = -sceVu0InnerProduct(c2, m_unkC0);
+    *(float *)(m_unkD0 + 4) = atan2f(-m[2], -m[10]) * 57.295776f;
 }
 
-// DRAFT: 0x001BBEE0 LoadBgAnims__15PCutScenePlayerFP8PPakFileUi
-// note: 25 differing words; ours lacks the join nop after the __ct result move (original 0x1BBF8C), so every later word shifts by one. Vtable release call uses $v0 where original uses $t9. Tried: function-scope pObj, temp for __ct result, ternary (49), else-form guard (37), typed fn-pointer release (25), direct `(void (*)(...))(*(void ***)pObj)[2](pObj,1)` release (25), `(*(void (***)(...))pObj)[2](pObj,1)` (25), `if (pObj != 0) pObj = __ct(pObj)` guard (25).
+// FUNCTION: 0x001BBEE0 LoadBgAnims__15PCutScenePlayerFP8PPakFileUi
 bool PCutScenePlayer::LoadBgAnims(PPakFile *pFile, unsigned int nFlag) {
     if (pFile == 0) {
         CdsAssert("PCutScenePlayer.cpp", 0x3C9, "poFile");
@@ -250,21 +253,17 @@ bool PCutScenePlayer::LoadBgAnims(PPakFile *pFile, unsigned int nFlag) {
     if (i < nFlag) {
         do {
             pObj = (PMeshNodeAnimDataTable *)__nw__FUi(0x30);
-            if (pObj == 0) {
-            } else {
+            if (pObj != 0) {
                 pObj = __ct__22PMeshNodeAnimDataTableFv(pObj);
             }
             if (pObj == 0) {
                 CdsAssert("PCutScenePlayer.cpp", 0x3D9, "apoAnimData");
             }
             if (Load__22PMeshNodeAnimDataTableFP8PPakFile16ePsx2FileVersion(pObj, pFile, 0x20000) == 0) {
-                if (pObj != 0) {
-                    void (*pfnRelease)(PMeshNodeAnimDataTable *, int) = (void (*)(PMeshNodeAnimDataTable *, int))(*(void ***)pObj)[2];
-                    pfnRelease(pObj, 1);
-                }
+                delete pObj;
                 return false;
             }
-            ((PArray *)m_unkA0)->Add(pObj);
+            ((PArray *)&m_unkA0)->Add(pObj);
             i++;
         } while (i < nFlag);
     }
@@ -482,10 +481,10 @@ void PCutScenePlayer::CullTest(PFrustrum *pFrustrum) {
 }
 
 // DRAFT: 0x001BCE10 Animate__15PCutScenePlayerFf
-// note: 206 words; frame 0xB0 vs 0xC0 with extra s6 spill (nCount), s1/s4 map differs, gGfxEng store reloc differs; decl order and block scope tried.
+// note: 106 differing lines (base 113); frame 0xC0 matches. First diff at 0x198: s1 vs s2 for the lw of 0xB0(s5) feeding the nCount/nIdx loop. Tried: aVec[12], aInt[2] aligned(16), if (m_unk2138) truth test, nCount > 0, nIdx declared before nCount (register moves, count unchanged).
 bool PCutScenePlayer::Animate(float fTime) {
-    float aVec[4];
-    int aInt[2];
+    float aVec[12];
+    int aInt[2] __attribute__((aligned(16)));
     float fRes;
     char *pElem;
     PMNode *pFind;
@@ -502,7 +501,7 @@ bool PCutScenePlayer::Animate(float fTime) {
         m_unk213C = m_unk48->V4();
         *(int *)&aVec[3] = 0x3F800000;
         ((PMat4 *)this)->MulVector(m_unkC0, aVec);
-        if (m_unk2138 != 0.0f) {
+        if (m_unk2138) {
             if (!(fRes <= (float)m_unk48->V6() - 30.0f * m_unk2138)) {
                 m_unk213D |= ~0x7F;
             }
