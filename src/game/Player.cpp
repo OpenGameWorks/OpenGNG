@@ -4525,6 +4525,122 @@ void Player::UpdateDisplayList() {
     }
 }
 
+// TODO(header): foreign declarations
+extern "C" void FreezeCheck__15EntityBaseClassFP15EntityBaseClassi(void *pThis, void *pOther, int nType);
+
+// DRAFT: 0x001610E0 OnAttackEvent__6PlayerFP15EntityBaseClassi
+// note: 7 words differ; case 3 vibrate arm: original sets a1=1 after lbu a2 and shares one b to the join (ours hoists a1 and duplicates daddiu s4 into the b delay slot); tried nVib local, goto setFx/done label shapes
+void Player::OnAttackEvent(EntityBaseClass *arg0, int arg1) {
+    char *pEnt = (char *)arg0;
+    int nHit;
+    int nBase;
+    static int EffectTypes[8] = {0, 2, 1, 0, 3, 3, 3, 3};
+    bool bFx;
+    unsigned char nVib;
+
+    m_unk336 = 0;
+    FreezeCheck__15EntityBaseClassFP15EntityBaseClassi(this, arg0, arg1);
+    bFx = false;
+    if (*(int *)(pEnt + 0x10) == 3) {
+        nBase = (int)m_unk15C >> 3;
+        switch (arg1) {
+        case 1:
+            if (m_unk15E & 0x80) {
+                CreateFireDamageFx__15EntityBaseClassFf(arg0, 120.0f);
+            }
+        case 2:
+            GameVarAdd(0x12, 1, 0);
+        case 3:
+            m_unk314 = 0x42A00000;
+            if (((unsigned char *)m_unk258)[9] != 0) {
+                m_unk304 = (float)((unsigned char *)m_unk258)[9];
+                m_unkE8 |= 8;
+                *(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) = 8;
+            }
+            nVib = ((unsigned char *)m_unk258)[0xB];
+            bFx = true;
+            if (nVib != 0) {
+                gPad.SetVibrate((Pad::VibType)1, nVib);
+                goto setFx;
+            }
+            break;
+        case 4:
+            m_unk314 = 0x42A00000;
+            if (m_unk1D0 & 2) {
+                m_unk304 = HAMMER_REBOUND_TIME;
+                arg1 = 1;
+                *(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) = 0x10;
+            } else {
+                int nAction;
+                switch (m_unk260) {
+                default:
+                    nAction = 0x7B;
+                    break;
+                case 0xE:
+                    nAction = 0x7A;
+                    break;
+                case 0x11:
+                    nAction = 0x7C;
+                    break;
+                case 0xD:
+                    nAction = 0x7D;
+                    break;
+                }
+                float sp70[4];
+                float *pA = (*(int *)(pEnt + 0x3C) != 0) ? (float *)(*(int *)(pEnt + 0x3C) + 0x80) : (float *)(pEnt + 0x190);
+                float *pB = (m_unk3C != 0) ? (float *)((char *)m_unk3C + 0x80) : (float *)((char *)this + 0x190);
+                sceVu0SubVector(sp70, pB, pA);
+                m_unk1C4 = Round180__Ff(57.295776f * atan2f(sp70[0], sp70[2]));
+                SetAction(nAction);
+            }
+            goto setFx;
+        default:
+            arg1 = 0;
+        setFx:
+            bFx = true;
+            break;
+        }
+    } else {
+        bFx = false;
+        nBase = 1;
+    }
+    if (m_unk218 == 2) {
+        nBase = nBase + (nBase >> 1);
+    }
+    GameVarAdd(0xE, nBase, 0);
+    bool bHeavy = arg1 >= 3;
+    switch (*(int *)(pEnt + 0x10)) {
+    case 3:
+        nHit = (*(unsigned char *)(pEnt + 0x166) != 0) ? 2 : 4;
+        break;
+    case 6:
+        nHit = 3;
+        break;
+    default:
+        nHit = 5;
+        break;
+    }
+    CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(this, 0, nHit, EffectTypes[(m_unk15E >> 6) & 7], bHeavy);
+    if (bFx) {
+        float sp80[4];
+        sp80[0] = 0.0f;
+        sp80[1] = *(float *)(gEng + 0x19784);
+        sp80[2] = 0.0f;
+        sp80[3] = 1.0f;
+        int nFx = mEffectAPI__13EntityManager.CreateOneshot(0x81000029, 0x82000022, (float (*)[4])mHitPos__15EntityBaseClass, (float (*)[4])sp80, 0, 0.5f, false, 0, false);
+        if (nFx != 0) {
+            EffectNode *pNode = mEffectAPI__13EntityManager.EffectValid(nFx);
+            if (pNode == 0) {
+                CdsAssert("Player.cpp", 0xE9D, "pMark");
+            }
+            char *pMark = (char *)((PMNode *)pNode->m_unk4)->Find(0xA15B1BDC);
+            if (pMark != 0) {
+                *(float *)(pMark + 0x98) = (float)*(short *)((char *)m_unk258 + 4);
+            }
+        }
+    }
+}
+
 // DRAFT: 0x001614C0 OnHitEvent__6PlayerFP15EntityBaseClassiUiUi
 // note: DIFF 652 words; frame 0xB0 and opcode sequence close but branch delay slots stay unfilled (nop where original hoists lui/lb) from the 0x229 test on, shifting every later word. Needs Player::OnHitEvent declared in Player.h (extern "C" stand-in here). Tried: nested-if/goto return-0 layout, ternary vs default-first 3C selects.
 extern "C" int OnHitEvent__6PlayerFP15EntityBaseClassiUiUi(Player *pThis, HitEntity *pAttacker, int nDamage, unsigned int nType, unsigned int nB) {
