@@ -380,7 +380,7 @@ void PCutScenePlayer::ResetCutScene() {
 }
 
 // DRAFT: 0x001BC9C0 ResetAnimations__15PCutScenePlayerFv
-// note: 64 differing words; frame 0x80 vs 0x60 (ours saves s1..s5, original s0..s3), this in s4 vs s2, i/pItem registers permuted, constant copied via temp at sp+0x70 vs direct to sp+0x50. Tried: hoisting i (no change), direct pItem+0x30 reloads (88->64), non-static int[4] local (107).
+// note: 104 differing words under opt_strength_reduction off (64 before); frame 0x70 vs 0x60, original builds &sp50 in a1 before the lq/sq copy; tried split decl/assign, pointer dst, struct-typed constant (104-108). Earlier: frame 0x80 vs 0x60 (ours saves s1..s5, original s0..s3), this in s4 vs s2, i/pItem registers permuted, constant copied via temp at sp+0x70 vs direct to sp+0x50. Tried: hoisting i (no change), direct pItem+0x30 reloads (88->64), non-static int[4] local (107).
 void PCutScenePlayer::ResetAnimations() {
     static const int kParams[4] = {0x0000ffff, 0x0000ffff, 0x00030001, 0x3f000000};
     u_long128 sp50 = *(u_long128 *)kParams;
@@ -600,15 +600,12 @@ void PCutScenePlayer::UpdatePlayer() {
     ((FontManager *)(gInterface + 0x80))->RemoveAll(true);
 }
 
-// DRAFT: 0x001BD340 Unload__15PCutScenePlayerFb
-// note: 153 lines differ; frame 0x70 with six saved regs vs 0x60 with five; this/bFlag/count/index in s1/s0/s3/s1 vs s3/s2/s0/s1; tried signed loop locals (153), swapped declaration order (154)
+// FUNCTION: 0x001BD340 Unload__15PCutScenePlayerFb
 void PCutScenePlayer::Unload(bool bFlag) {
-    unsigned int nIdx;
-    unsigned int nCount;
     m_unk40 = 0;
-    nCount = m_unkA0;
-    for (nIdx = 0; nIdx < nCount; nIdx++) {
-        PCutSceneAnim *pAnim = (nIdx < m_unkA0) ? (PCutSceneAnim *)m_unkA8[nIdx] : 0;
+    unsigned int nCount = m_unkA0;
+    for (unsigned int nIdx = 0; nIdx < nCount; nIdx++) {
+        PCutSceneAnim *pAnim = (PCutSceneAnim *)((nIdx < m_unkA0) ? m_unkA8[nIdx] : 0);
         if (pAnim != 0) {
             delete pAnim;
         }
@@ -617,9 +614,9 @@ void PCutScenePlayer::Unload(bool bFlag) {
         m_unkA0 = 0;
         m_unkA4 = 0;
     }
-    nCount = m_unkB0;
-    for (nIdx = 0; nIdx < nCount; nIdx++) {
-        char *pElem = (nIdx < m_unkB0) ? (char *)m_unkB8[nIdx] : 0;
+    unsigned int nCount2 = m_unkB0;
+    for (unsigned int nIdx2 = 0; nIdx2 < nCount2; nIdx2++) {
+        char *pElem = (char *)((nIdx2 < m_unkB0) ? m_unkB8[nIdx2] : 0);
         if (pElem != 0) {
             if (*(void **)(pElem + 0x30) != 0) {
                 if (bFlag) {
@@ -628,12 +625,12 @@ void PCutScenePlayer::Unload(bool bFlag) {
                         ((PArray *)(*(char **)(pElem + 0x30) + 0x14))->Remove(*(void **)(pElem + 0x34));
                     }
                 }
-                if (*(void **)(pElem + 0x30) != 0) {
-                    delete (PMNode *)*(void **)(pElem + 0x30);
-                }
+                delete (PMNode *)*(void **)(pElem + 0x30);
             }
-            __dt__22PMeshNodeAnimDataTableFv((PMeshNodeAnimDataTable *)pElem, -1);
-            __dl__FPv(pElem);
+            if (pElem != 0) {
+                __dt__22PMeshNodeAnimDataTableFv((PMeshNodeAnimDataTable *)pElem, -1);
+                __dl__FPv(pElem);
+            }
         }
     }
     if (m_unkB8 != 0) {
@@ -642,20 +639,20 @@ void PCutScenePlayer::Unload(bool bFlag) {
     }
     if (m_unk48 != 0) {
         delete m_unk48;
+        m_unk48 = 0;
     }
-    m_unk48 = 0;
     if (m_unk4C != 0) {
         delete m_unk4C;
+        m_unk4C = 0;
     }
-    m_unk4C = 0;
     if (m_unk50 != 0) {
         delete m_unk50;
+        m_unk50 = 0;
     }
-    m_unk50 = 0;
     if (m_unk54 != 0) {
         delete m_unk54;
+        m_unk54 = 0;
     }
-    m_unk54 = 0;
     if (*(void **)(m_unk60 + 8) != 0) {
         *(unsigned int *)m_unk60 = 0;
         *(int *)(m_unk60 + 4) = 0;
