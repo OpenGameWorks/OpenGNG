@@ -320,13 +320,15 @@ bool PCutScenePlayer::LoadActors(PPakFile *pFile, unsigned int nFlag) {
     return true;
 }
 
-// DRAFT: 0x001BC770 SetBgNodesOpacity__15PCutScenePlayerFP6PArrayf
-// note: 2 words differ: the epilogue restores f20 before s4 (original) vs after (ours); the loop matches under the file-wide opt_strength_reduction off. Tried fOpacity == 0.0f (3), for over the count with ternary read (69), fZero at function scope (2), copied fOpacity (2), negated compare (2).
+// FUNCTION: 0x001BC770 SetBgNodesOpacity__15PCutScenePlayerFP6PArrayf
 void PCutScenePlayer::SetBgNodesOpacity(PArray *pArray, float fOpacity) {
     if (pArray == 0) {
         CdsAssert("PCutScenePlayer.cpp", 0x2E1, "poNodeTable");
     }
-    if (m_unk40 != 0) {
+    if (m_unk40 == 0) {
+        return;
+    }
+    {
         unsigned int nCount = *(unsigned int *)pArray;
         unsigned int i = 0;
         if (i < nCount) {
