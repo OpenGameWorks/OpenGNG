@@ -1833,8 +1833,7 @@ void EntityBaseClass::RemoveCollision(EntityBaseClass *arg0) {
     }
 }
 
-// DRAFT: 0x0014D790 FindCollision__15EntityBaseClassFP15EntityBaseClass
-// note: 12 differing lines; original enters the loop with a `b` to the bottom test and keeps `addu v0,a0,a2` in the bnez delay slot; ours has no entry branch and places the i++ before off+=4. Tried: indexed m_unk110[i], byte-offset loop, hoisted target, decl reorder, operand swap, for-header off+=4, break/result variable, while-loop with element local (best, 12), for-loop with element local (12).
+// FUNCTION: 0x0014D790 FindCollision__15EntityBaseClassFP15EntityBaseClass
 int EntityBaseClass::FindCollision(EntityBaseClass *arg0) {
     int target;
     unsigned int i;
@@ -1843,19 +1842,25 @@ int EntityBaseClass::FindCollision(EntityBaseClass *arg0) {
     target = arg0->m_unk04;
     i = 0;
     off = 0;
-    while (i < 10) {
+    goto test;
+loop:
+    {
         int elem = *(int *)((char *)this + off + 0x110);
         if (elem == target) {
             return 1;
         }
-        off += 4;
-        i++;
+    }
+    off += 4;
+    i++;
+test:
+    if (i < 10) {
+        goto loop;
     }
     return 0;
 }
 
 // DRAFT: 0x0014D7E0 ResetCollisions__15EntityBaseClassFv
-// note: DIFF 11 words, size 0x70 vs 0x6c; original keeps a carried byte offset in the remainder loop and has an extra nop before its loop test. Tried: simple loop, unroll-by-8 with i<10 loop, separate offset, unsigned counter, while and for remainder forms, goto orderings C/D/E, pointer temp, for-increment, int offset, COMPILER mwcps2-3.0-011126 (size 0x70, delay slot differs).
+// note: DIFF 11 words, size 0x70 vs 0x6c; original keeps a carried byte offset in the remainder loop and has an extra nop before its loop test. Tried: simple loop, unroll-by-8 with i<10 loop, separate offset, unsigned counter, while and for remainder forms, goto orderings C/D/E, pointer temp, for-increment, int offset, COMPILER mwcps2-3.0-011126 (size 0x70, delay slot differs). Goto-entered remainder loop: store-first orders give 10 (the addu moves into the bnez delay slot); off+=4 before the store gives 3 but stores the wrong slot.
 void EntityBaseClass::ResetCollisions() {
     unsigned int i;
     unsigned int off;
