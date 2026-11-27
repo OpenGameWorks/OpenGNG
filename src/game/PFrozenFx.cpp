@@ -1,4 +1,5 @@
 // FLAGS: -str readonly
+#pragma opt_strength_reduction off
 #include "types.h"
 #include "PFrozenFx.h"
 #include "PMNode.h"
@@ -52,17 +53,21 @@ public:
     virtual void Stop();
 };
 
-// DRAFT: 0x001F9DF0 UpdateFxInstances__9PFrozenFxFv
-// note: original recomputes nSrc*4 with sll each pass and keeps 7 saved regs, frame 0x70; MW strength-reduces the index (DIFF 57). Tried array-index form, decl reorder, -str readonly (61).
+// FUNCTION: 0x001F9DF0 UpdateFxInstances__9PFrozenFxFv
 void PFrozenFx::UpdateFxInstances() {
-    int nSrc = 0;
-    int nDst = 0;
-    for (int i = 0; i < m_unk1F8; i++) {
-        char *pDst = (char *)m_unk1F4 + nDst;
+    int i;
+    char *pNode;
+    char *pDst;
+    int nDst;
+    int nSrc;
+    nSrc = 0;
+    nDst = 0;
+    for (i = 0; i < m_unk1F8; i++) {
+        pDst = (char *)m_unk1F4 + nDst;
         if (!(nSrc < m_unk1E8)) {
             CdsAssert__FPciPc("PFrozenFx.cpp", 0x16A, "aiNode < miNumInstances");
         }
-        char *pNode = ((char **)((char *)this + 0xE0))[nSrc];
+        pNode = (char *)m_unkE0[nSrc];
         if (pNode == 0) {
             CdsAssert__FPciPc("PFrozenFx.cpp", 0x16D, "apNode");
         }
@@ -143,7 +148,7 @@ struct PFrozenFxFxList {
 };
 
 // DRAFT: 0x001FA320 Render__9PFrozenFxFv
-// note: DIFF 85; original keeps this in s2 and i in s0 and reloads the list from m_unk1EC at the loop bottom, ours keeps this in s0; frame 0x264 vs 0x26c. Tried: decl order, pList local (DIFF 122 without, 85 with), pList inside loop (120), signed index (85), -str readonly not needed.
+// note: DIFF 87 under opt_strength_reduction off (85 before; i*0x500 and pList-bound loops 123-152); original keeps this in s2 and i in s0 and reloads the list from m_unk1EC at the loop bottom, ours keeps this in s0; frame 0x264 vs 0x26c. Tried: decl order, pList local (DIFF 122 without, 85 with), pList inside loop (120), signed index (85), -str readonly not needed.
 void PFrozenFx::Render() {
     if (m_unk1EC != 0 && m_unk15 != 0 && m_unkA4 != 0) {
         ((PGfxEngine *)gGfxEng)->SetZBufferUpdate(true, (eGsContext)0);

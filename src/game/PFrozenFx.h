@@ -22,7 +22,7 @@ public:
     void Animate(float fArg);
     void Render();
 
-    char m_unkE0[0x100];        // 0x0E0 cleared by the constructor (memset)
+    PMNode *m_unkE0[0x40];      // 0x0E0 cleared by the constructor (memset)
     void *m_unk1E0;             // 0x1E0 freed with __dla__ by the destructor
     int m_unk1E4;               // 0x1E4 cleared by Start and Stop
     int m_unk1E8;               // 0x1E8
