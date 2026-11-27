@@ -167,7 +167,7 @@ void SOUND_MusicAddExciteHits(short arg0) {
 }
 
 // DRAFT: 0x001ADC60 SOUND_LevelRestart
-// note: short-loop nop padding differs by 3 words; matches under mwcps2-3.0-011126 and 3.0.1-020123, which lose 0x1ADEC0
+// note: short-loop nop padding differs by 3 words; matches under mwcps2-3.0-011126 and 3.0.1-020123, which lose 0x1ADEC0, 0x1AE060 and 0x1AE0D0 (loop padding in their goto loops; for/while spellings under 011126 give 23)
 void SOUND_LevelRestart(void) {
     int i;
     SetIOPCommand(0x24, 0);
@@ -177,7 +177,7 @@ void SOUND_LevelRestart(void) {
 }
 
 // DRAFT: 0x001ADCF0 SOUND_StopAllSounds
-// note: short-loop nop padding differs by 3 words; matches under mwcps2-3.0-011126 and 3.0.1-020123, which lose 0x1ADEC0
+// note: short-loop nop padding differs by 3 words; matches under mwcps2-3.0-011126 and 3.0.1-020123, which lose 0x1ADEC0, 0x1AE060 and 0x1AE0D0 (loop padding in their goto loops; for/while spellings under 011126 give 23)
 void SOUND_StopAllSounds(void) {
     int i;
     SetIOPCommand(0x1E, 0);

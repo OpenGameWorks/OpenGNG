@@ -779,7 +779,7 @@ int PSound::ProcessTriglets() {
 }
 
 // DRAFT: 0x001A4D80 PointInEnclosure__6PSoundFPfP16tagBOX_OR_SPHEREP14tagVuMatrixBox17EnumEnclosureType
-// note: DIFF 2; bool return (callers mask it with & 0xFF) fixed the daddiu 1. Argument setup for the matrix call places the this adjust before jal, original in its delay slot. Tried: bool nRet with direct return (DIFF 4), function-scope bool and masked bool (4+), bool bIn inside sphere branch with unmasked else (DIFF 14), bool temporary and local MathAPI receiver (no change). Under bool: member-array, & member, uint this, MathAPI local, arg locals and casts (2), direct return in the else (13).
+// note: DIFF 2; bool return (callers mask it with & 0xFF) fixed the daddiu 1. Argument setup for the matrix call places the this adjust before jal, original in its delay slot. Tried: bool nRet with direct return (DIFF 4), function-scope bool and masked bool (4+), bool bIn inside sphere branch with unmasked else (DIFF 14), bool temporary and local MathAPI receiver (no change). Under bool: member-array, & member, uint this, MathAPI local, arg locals and casts (2), direct return in the else (13).; also tried & 0xFF on the call, float*/tagFLOAT3D*/tagVuMatrixBox* locals, third-arg cast (2-13)
 bool PSound::PointInEnclosure(float *pPoint, tagBOX_OR_SPHERE *pBox, tagVuMatrixBox *pMatrix, EnumEnclosureType eType) {
     float vDiff[4];
     float vCenter[4];
@@ -2610,7 +2610,7 @@ void PSound::SetMainMusicRelVolume(unsigned int nVolume) {
 }
 
 // DRAFT: 0x001A9470 StopMusic__6PSoundFv
-// note: 3 words after permuter (spelling from build/permuter/001A9470/best.cpp). Earlier: DIFF 12; the second loop increment (addiu s1) lands in the bnez delay slot, original keeps slti/bnez/nop. Tried for-loop, offset-bounded while, reordered increments, unsigned counters; none closed the gap.
+// note: 3 words after permuter (spelling from build/permuter/001A9470/best.cpp). Earlier: DIFF 12; the second loop increment (addiu s1) lands in the bnez delay slot, original keeps slti/bnez/nop. Tried for-loop, offset-bounded while, reordered increments, unsigned counters; none closed the gap.; int counters in four loop spellings give 12 (second increment fills the bnez slot); the nop before bnez is 011126 short-loop padding
 void PSound::StopMusic() {
     SOUND_StopAllMusic();
     unsigned char i = 0;

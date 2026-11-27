@@ -1813,7 +1813,7 @@ void EntityManager::SetItemCounter(ItemCounterType theType, float value) {
 }
 
 // DRAFT: 0x00149160 GetItemCounter__13EntityManagerFQ213EntityManager15ItemCounterType
-// note: 1 word differs: addu operand order (0040 original `addu v0,v0,v1`, ours `addu v0,v1,v0`); the sll-first schedule and the 0x5F74 addiu now match. Tried: m_unk5F74[i], float* and char* bases (8), base-first, constant-first base, pointer index (3 or 1), signed index, multiply index (1 each). Also tried: m_unk5F74 + theType, &m_unk5F74[0], a reference, a float* local, a struct with an inline Get (all 8, they fold 0x5F74 into lwc1); int shift-plus-cast sums (1), unsigned pointer sums (3).
+// note: 1 word differs: addu operand order (0040 original `addu v0,v0,v1`, ours `addu v0,v1,v0`); the sll-first schedule and the 0x5F74 addiu now match. Tried: m_unk5F74[i], float* and char* bases (8), base-first, constant-first base, pointer index (3 or 1), signed index, multiply index (1 each). Also tried: m_unk5F74 + theType, &m_unk5F74[0], a reference, a float* local, a struct with an inline Get (all 8, they fold 0x5F74 into lwc1); int shift-plus-cast sums (1), unsigned pointer sums (3).; also tried base-first decl, char*/float* bases, theType*4, int/unsigned long sums, float* local (3-15)
 float EntityManager::GetItemCounter(ItemCounterType theType) {
     if (theType >= ITEM_COUNTER_MAX) {
         CdsAssert("EntityManager.cpp", 0x18A, "theType < ITEM_COUNTER_MAX");
@@ -2372,7 +2372,7 @@ void EntityBaseClass::OutputDebug() {
 }
 
 // DRAFT: 0x0014A220 CameraLookingAtMe__15EntityBaseClassFv
-// note: 2 words; lui for 0x420C lands in v1, original uses v0 (0x38 lui, 0x3C mtc1); tried reversed compare (4), if-return (3), direct m_unk20[1] (23), inline fabs, if/else pointer, float local, p before pf, bool temp (all 2, pf and fabs locals kept).
+// note: 2 words; lui for 0x420C lands in v1, original uses v0 (0x38 lui, 0x3C mtc1); tried reversed compare (4), if-return (3), direct m_unk20[1] (23), inline fabs, if/else pointer, float local, p before pf, bool temp (all 2, pf and fabs locals kept).; also tried !(a > 35.0f), fMax local, bool temp, ternary (2-6)
 bool EntityBaseClass::CameraLookingAtMe() {
     MathAPI *pCam = (MathAPI *)EntityManager::mCameraAPI;
     float *pf = pCam->m_unk20;
