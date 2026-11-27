@@ -94,17 +94,22 @@ int Pickup::SoulSuckerInRange() {
     return 0;
 }
 
-// DRAFT: 0x0019D0D0 AdjustPickupBox__6PickupFv
-// note: 21-word diff; original enters the loop with a `b` to the bottom test (s0 = 0 in the delay slot) and bumps the offset s1 before the count s0; ours puts the s1 add in the bottom branch's delay slot. Tried: signed/unsigned i (unsigned matches beqz), byte-offset induction in header or body end, for-header increment order; all 21.
+// FUNCTION: 0x0019D0D0 AdjustPickupBox__6PickupFv
 void Pickup::AdjustPickupBox() {
     static unsigned int MeshTable[1] = { 0x810000A2 };
     PMNode *pNode;
     unsigned int i;
-    for (i = 0; i < 1; i++) {
-        pNode = mpResMgr__15EntityBaseClass->GetResource(MeshTable[i], true);
-        if (pNode != 0) {
-            ((PMeshNode *)pNode)->AdjustPickup();
-        }
+    i = 0;
+    goto test;
+loop:
+    pNode = mpResMgr__15EntityBaseClass->GetResource(MeshTable[i], true);
+    if (pNode != 0) {
+        ((PMeshNode *)pNode)->AdjustPickup();
+    }
+    i++;
+test:
+    if (i < 1) {
+        goto loop;
     }
 }
 
