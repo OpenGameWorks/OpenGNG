@@ -16,6 +16,12 @@ extern int SCREEN_OFFSET_X;
 extern int SCREEN_OFFSET_Y;
 extern int SCREEN_HEIGHT;
 extern unsigned char MODE_PAL;
+unsigned int GsGetBufferWidth(unsigned int nWidth, unsigned int nDepth);
+struct GsGfxEng {
+    char _pad000[0x158E02];
+    short m_unk158E02;
+};
+extern GsGfxEng gGfxEng;
 void FTOI4(float *pDst, float *pSrc);
 struct sceGifPacket {
     unsigned int m_unk0;
@@ -830,6 +836,93 @@ void GsSetFrameBufferCopyInfo(tagGsFrameBufferCopy *pInfo, int nX, int nY) {
         nH = (nX + 0xFF) >> 8;
     }
     pInfo->m_unk40 |= (long long)nH & 0x3FFF;
+}
+
+// DRAFT: 0x0017FB70 GsInitFrameBufferCopyInfo__FP20tagGsFrameBufferCopyiiiiiiiiiis
+// note: 97 diff words; header part and loop body match, short temps (nTX/nStepY/nHalfX) take other registers; tried int vs short locals, nSH local, bw shift order, /2 vs >>1
+void GsInitFrameBufferCopyInfo(tagGsFrameBufferCopy *pInfo, int nA1, int nA2, int nA3, int nA4, int nA5, int nA6, int nA7, int nA8, int nA9, int nA10, short nA11) {
+    *(u_long128 *)&pInfo->m_tag0 = 0;
+    pInfo->m_tag0.NLOOP = 0x10;
+    pInfo->m_tag0.EOP = 0;
+    pInfo->m_tag0.NREG = 1;
+    pInfo->m_tag0.REGS0 = 0xE;
+    int nV = nA6 / 0x2000;
+    int nW = nA9 / 64;
+    pInfo->m_unkC0 = ((long long)nA11 << 24) | ((long long)nV | ((long long)nW << 16));
+    pInfo->m_unkC8[0] = 0x4D;
+    pInfo->m_unkC8[1] = ((0x800 - (nA9 >> 1)) * 0x10) | ((long long)((0x800 - (nA10 >> 1)) * 0x10) << 32);
+    pInfo->m_unkC8[2] = 0x19;
+    pInfo->m_unkC8[3] = ((long long)(nA9 - 1) << 16) | ((long long)(nA10 - 1) << 48);
+    pInfo->m_unkC8[4] = 0x41;
+    pInfo->m_unkC8[5] = ((long long)gGfxEng.m_unk158E02 << 24) | ((long long)1 << 32);
+    pInfo->m_unkC8[6] = 0x4F;
+    pInfo->m_unkC8[7] = 0;
+    pInfo->m_unkC8[8] = 0x4B;
+    pInfo->m_unk80[0] = 0x44;
+    pInfo->m_unk80[1] = 0x43;
+    pInfo->m_unk80[2] = 0x30000;
+    pInfo->m_unk80[3] = 0x48;
+    pInfo->m_unk80[4] = 0;
+    pInfo->m_unk80[5] = 0x1A;
+    pInfo->m_unk80[6] = 0x310;
+    pInfo->m_unk80[7] = 0x1B;
+    pInfo->m_unk10[0] = 1;
+    pInfo->m_unk10[1] = 0x3F;
+    pInfo->m_unk10[2] = 5;
+    pInfo->m_unk10[3] = 9;
+    pInfo->m_unk10[4] = 0x60;
+    pInfo->m_unk10[5] = 0x15;
+    unsigned long long nBW = (unsigned long long)GsGetBufferWidth(nA4, 0) << 14;
+    pInfo->m_unk40 = (long long)(nA1 / 256) | nBW | (0x28000000 | ((long long)2 << 32));
+    pInfo->m_unk48[0] = 7;
+    pInfo->m_unk48[1] = 0;
+    pInfo->m_unk48[2] = 0x17;
+    pInfo->m_unk48[3] = 0;
+    pInfo->m_unk48[4] = 0x35;
+    pInfo->m_unk48[5] = 0;
+    pInfo->m_unk48[6] = 0x37;
+    *(u_long128 *)&pInfo->m_tag110 = 0;
+    pInfo->m_tag110.PRIM = 6;
+    pInfo->m_tag110.PRE = 1;
+    pInfo->m_tag110.NLOOP = 0x10;
+    pInfo->m_tag110.EOP = 1;
+    pInfo->m_tag110.NREG = 5;
+    pInfo->m_tag110.FLG = 0;
+    pInfo->m_tag110.REGS0 = 3;
+    pInfo->m_tag110.REGS1 = 1;
+    pInfo->m_tag110.REGS2 = 5;
+    pInfo->m_tag110.REGS3 = 3;
+    pInfo->m_tag110.REGS4 = 5;
+    short nTX = nA9 / 16;
+    short nHalfX = (0x800 - nA9 / 2) + nA7;
+    short nHalfY = (0x800 - nA10 / 2) + nA8;
+    short nStepY = nA4 / 16;
+    int nX = nA2;
+    int nOffX = nA2 * 0x10;
+    int nOffY = nHalfX * 0x10;
+    for (int i = 0; i < 16; i++) {
+        tagGsFbcStrip *pS = &pInfo->m_aStrip[i];
+        pS->m_unk00 = nOffX;
+        pS->m_unk04 = nA3 * 0x10;
+        pS->m_unk10 = 0x80;
+        pS->m_unk14 = 0x80;
+        pS->m_unk18 = 0x80;
+        pS->m_unk1C = 0x80;
+        pS->m_unk20 = nOffY;
+        pS->m_unk24 = nHalfY * 0x10;
+        if (i == 15) {
+            pS->m_unk30 = ((nX + nStepY) - 1) * 0x10;
+        } else {
+            pS->m_unk30 = (nX + nStepY) * 0x10;
+        }
+        pS->m_unk34 = ((nA3 + nA5) - 1) * 0x10;
+        pS->m_unk40 = (nHalfX + nTX) * 0x10;
+        pS->m_unk44 = (nHalfY + (short)nA10) * 0x10;
+        nOffY += nTX * 0x10;
+        nHalfX = nHalfX + nTX;
+        nOffX += nStepY * 0x10;
+        nX += nStepY;
+    }
 }
 
 // FUNCTION: 0x001800A0 GsSetTCC__FP23tagGsTextureEnvironmentb

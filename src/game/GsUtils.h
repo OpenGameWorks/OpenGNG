@@ -38,12 +38,36 @@ typedef struct tagGsClut256 {
     char m_unk60[0x400];        // 0x060 256 CLUT entries, 4 bytes each
 } tagGsClut256;                 // size 0x460
 
+typedef struct tagGsFbcStrip {
+    int m_unk00;                // 0x00 x0, shifted by 4
+    int m_unk04;                // 0x04 y0, shifted by 4
+    char _pad08[0x8];
+    int m_unk10;                // 0x10 colour, 0x80
+    int m_unk14;                // 0x14 colour, 0x80
+    int m_unk18;                // 0x18 colour, 0x80
+    int m_unk1C;                // 0x1C colour, 0x80
+    int m_unk20;                // 0x20 u, shifted by 4
+    int m_unk24;                // 0x24 v, shifted by 4
+    char _pad28[0x8];
+    int m_unk30;                // 0x30 x1, shifted by 4
+    int m_unk34;                // 0x34 y1, shifted by 4
+    char _pad38[0x8];
+    int m_unk40;                // 0x40 u1, shifted by 4
+    int m_unk44;                // 0x44 v1, shifted by 4
+    char _pad48[0x8];
+} tagGsFbcStrip;                // size 0x50
+
 typedef struct tagGsFrameBufferCopy {
-    char _pad000[0x40];
+    GifTag m_tag0;              // 0x000 GIF tag, 16 registers
+    long long m_unk10[6];       // 0x010 register data/address pairs
     long long m_unk40;          // 0x040 frame buffer copy info, low half
-    char _pad048[0x78];
+    long long m_unk48[7];       // 0x048
+    long long m_unk80[8];       // 0x080
     long long m_unkC0;          // 0x0C0 frame buffer copy info, high half
-} tagGsFrameBufferCopy;         // size >= 0xC8
+    long long m_unkC8[9];       // 0x0C8
+    GifTag m_tag110;            // 0x110 GIF tag, 5 registers
+    tagGsFbcStrip m_aStrip[16]; // 0x120
+} tagGsFrameBufferCopy;         // size 0x620
 
 typedef struct tagGsTextureEnvironment {
     char _pad000[0x34];
@@ -103,6 +127,7 @@ typedef struct tagTexturedFogSpritePacket {
 
 void GsInitClut256(tagGsClut256 *pClut);
 int GsSwapDBuff(sceGsDBuff *pDBuff, int nIdx);
+void GsInitFrameBufferCopyInfo(tagGsFrameBufferCopy *pInfo, int nA1, int nA2, int nA3, int nA4, int nA5, int nA6, int nA7, int nA8, int nA9, int nA10, short nA11);
 void GsSetFrameBufferCopyInfo(tagGsFrameBufferCopy *pInfo, int nX, int nY);
 void GsSetTCC(tagGsTextureEnvironment *pTexEnv, bool bFlag);
 void GsSetSpriteCoords(sprite_tag *pSprite, short nX0, short nX1, short nX2, short nX3, int nOffX, int nOffY, int nW, int nH, short nFlag);
