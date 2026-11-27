@@ -39,16 +39,13 @@ public:
 
 #define CDS_ASSERT(line, cond) ((cond) ? (void)0 : CdsAssert("HolyGround.cpp", line, #cond))
 
+
+// FUNCTION: 0x001A32C0 __dt__10HolyGroundFv
+HolyGround::~HolyGround() {}
 // FUNCTION: 0x001A3320 GetClassName__10HolyGroundFv
 const char *HolyGround::GetClassName() {
     return "Holy Ground";
 }
-
-// FUNCTION: 0x001A3A20 __ct__10HolyGroundFv
-HolyGround::HolyGround() : EntityBaseClass((LoadClass)5, 0U) {}
-
-// FUNCTION: 0x001A32C0 __dt__10HolyGroundFv
-HolyGround::~HolyGround() {}
 
 // FUNCTION: 0x001A3330 CreateRipplesFx__10HolyGroundFv
 void HolyGround::CreateRipplesFx() {
@@ -199,3 +196,6 @@ void HolyGround::Execute() {
         break;
     }
 }
+
+// FUNCTION: 0x001A3A20 __ct__10HolyGroundFv
+HolyGround::HolyGround() : EntityBaseClass((LoadClass)5, 0U) {}

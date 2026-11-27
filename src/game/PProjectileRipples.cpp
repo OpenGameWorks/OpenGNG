@@ -35,6 +35,49 @@ extern "C" void *AllocParticles__12PDisplayListFii(void *, int, int);
 extern "C" float FastMath_IntSin180__Fi(int);
 extern "C" float FastMath_IntCos180__Fi(int);
 
+
+// DRAFT: 0x00217410 InitRingMeshPacket__18PProjectileRipplesFRiib
+// note: DIFF 5; head and both CreateRingTriStrip calls match (hoisted fLo/fHi/fEnd locals, int n set to 0 in else, byte-offset pointers); only the p0/p1 base/offset register choice (a0/v1 swapped, addu operand order) differs; tried base-first/offset-first per pointer, char* base local, offset locals
+void *PProjectileRipples::InitRingMeshPacket(int &arg0, int arg1, bool arg2) {
+    float sp40[0x32][4];
+    float sp360[0x32][4];
+    float sp680[0x32][4];
+    int s0;
+    int s1;
+    int n;
+    float fHi = 0.375f;
+    float fLo = 0.25f;
+    float fEnd = 0.5f;
+    if (arg2) {
+        s0 = CreateRingTriStrip(arg1, fLo, fHi, 0, 0xFF, sp40, sp360, sp680);
+        unsigned int off = s0 << 4;
+        n = CreateRingTriStrip(arg1, fHi, fEnd, 0xFF, 0, (float(*)[4])((unsigned int)sp40 + off), (float(*)[4])((unsigned int)sp360 + off), (float(*)[4])((unsigned int)sp680 + off));
+    } else {
+        s0 = CreateRingTriStrip(arg1, 0.0f, 0.5f, 0x80, 0x80, sp40, sp360, sp680);
+        n = 0;
+    }
+    s1 = s0 + n;
+    if (s1 >= 0x32) {
+        CdsAssert("PProjectileRipples.cpp", 0x18A, "iNumVerts < fx_i_instance_max_vertices");
+    }
+    unsigned int *p0 = (unsigned int *)((s0 << 4) + (unsigned int)sp40);
+    unsigned int *p1 = (unsigned int *)(((s0 + 1) << 4) + (unsigned int)sp40);
+    p0[3] |= 0x8000;
+    p1[3] |= 0x8000;
+    int *pkt = (int *)__nwa__FUi(0x970);
+    if (pkt == 0) {
+        CdsAssert("PProjectileRipples.cpp", 0x192, "apPacket");
+    }
+    pkt[0] = s1;
+    pkt[1] = 0;
+    pkt[2] = 0;
+    pkt[3] = 0;
+    QwordCopy__FP1P1Ui((u_long128 *)(pkt + 4), (u_long128 *)sp360, 0x32);
+    QwordCopy__FP1P1Ui((u_long128 *)(pkt + 0xCC), (u_long128 *)sp680, 0x32);
+    QwordCopy__FP1P1Ui((u_long128 *)(pkt + 0x194), (u_long128 *)sp40, 0x32);
+    arg0 = 0x970;
+    return pkt;
+}
 // FUNCTION: 0x002175C0 CreateRingTriStrip__18PProjectileRipplesFiffiiPA4_fPA4_fPA4_f
 int PProjectileRipples::CreateRingTriStrip(int arg0, float arg1, float arg2, int arg3, int arg4, float (*arg5)[4], float (*arg6)[4], float (*arg7)[4]) {
     int count = arg0 * 2 + 2;
@@ -112,49 +155,6 @@ void PProjectileRipples::ComputeAxes(float *pSrc, float *pAxis0, float *pAxis1, 
     pAxis0[3] = 0.0f;
     pAxis1[3] = 0.0f;
     pVec[3] = 0.0f;
-}
-
-// DRAFT: 0x00217410 InitRingMeshPacket__18PProjectileRipplesFRiib
-// note: DIFF 5; head and both CreateRingTriStrip calls match (hoisted fLo/fHi/fEnd locals, int n set to 0 in else, byte-offset pointers); only the p0/p1 base/offset register choice (a0/v1 swapped, addu operand order) differs; tried base-first/offset-first per pointer, char* base local, offset locals
-void *PProjectileRipples::InitRingMeshPacket(int &arg0, int arg1, bool arg2) {
-    float sp40[0x32][4];
-    float sp360[0x32][4];
-    float sp680[0x32][4];
-    int s0;
-    int s1;
-    int n;
-    float fHi = 0.375f;
-    float fLo = 0.25f;
-    float fEnd = 0.5f;
-    if (arg2) {
-        s0 = CreateRingTriStrip(arg1, fLo, fHi, 0, 0xFF, sp40, sp360, sp680);
-        unsigned int off = s0 << 4;
-        n = CreateRingTriStrip(arg1, fHi, fEnd, 0xFF, 0, (float(*)[4])((unsigned int)sp40 + off), (float(*)[4])((unsigned int)sp360 + off), (float(*)[4])((unsigned int)sp680 + off));
-    } else {
-        s0 = CreateRingTriStrip(arg1, 0.0f, 0.5f, 0x80, 0x80, sp40, sp360, sp680);
-        n = 0;
-    }
-    s1 = s0 + n;
-    if (s1 >= 0x32) {
-        CdsAssert("PProjectileRipples.cpp", 0x18A, "iNumVerts < fx_i_instance_max_vertices");
-    }
-    unsigned int *p0 = (unsigned int *)((s0 << 4) + (unsigned int)sp40);
-    unsigned int *p1 = (unsigned int *)(((s0 + 1) << 4) + (unsigned int)sp40);
-    p0[3] |= 0x8000;
-    p1[3] |= 0x8000;
-    int *pkt = (int *)__nwa__FUi(0x970);
-    if (pkt == 0) {
-        CdsAssert("PProjectileRipples.cpp", 0x192, "apPacket");
-    }
-    pkt[0] = s1;
-    pkt[1] = 0;
-    pkt[2] = 0;
-    pkt[3] = 0;
-    QwordCopy__FP1P1Ui((u_long128 *)(pkt + 4), (u_long128 *)sp360, 0x32);
-    QwordCopy__FP1P1Ui((u_long128 *)(pkt + 0xCC), (u_long128 *)sp680, 0x32);
-    QwordCopy__FP1P1Ui((u_long128 *)(pkt + 0x194), (u_long128 *)sp40, 0x32);
-    arg0 = 0x970;
-    return pkt;
 }
 
 // FUNCTION: 0x00217900 CreateRing__18PProjectileRipplesFPfPf

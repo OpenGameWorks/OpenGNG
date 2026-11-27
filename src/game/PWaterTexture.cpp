@@ -240,6 +240,17 @@ void PWaterTexture::WobbleSTGrids(tagGsWobbleCopyStrips *pStrips, float fScale) 
     }
 }
 
+// FUNCTION: 0x001EECE0 Reset__13PWaterTextureFv
+void PWaterTexture::Reset() {
+    m_unk0 = 0;
+    m_unk8 = 0;
+    m_unk4 = 0;
+    m_unk86A0 = 0;
+    m_unk86A4 = 0x40A00000;
+    m_unk86A8 = 0;
+    m_unk86AC = 0x40000000;
+}
+
 // DRAFT: 0x001EED30 Update__13PWaterTextureFv
 // note: DIFF 92; early-exit epilogue at 0x5C words not 0x62, and lui $at,1 address folding for m_unk86A0/86A4 differs; 8 attempts (flat/nested if, early return, local fStep, || guard, inverted range).
 void PWaterTexture::Update() {
@@ -261,17 +272,6 @@ void PWaterTexture::Update() {
             (*(PDisplayList **)(gGfxEng + 0x154C80))->SetVifCodes(0x11000000, 0);
         }
     }
-}
-
-// FUNCTION: 0x001EECE0 Reset__13PWaterTextureFv
-void PWaterTexture::Reset() {
-    m_unk0 = 0;
-    m_unk8 = 0;
-    m_unk4 = 0;
-    m_unk86A0 = 0;
-    m_unk86A4 = 0x40A00000;
-    m_unk86A8 = 0;
-    m_unk86AC = 0x40000000;
 }
 
 // FUNCTION: 0x001EEEE0 Init__13PWaterTextureFiii

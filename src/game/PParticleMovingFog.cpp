@@ -67,6 +67,13 @@ void PParticleMovingFog::Render() {
     }
 }
 
+// FUNCTION: 0x001D6460 FrustrumTest__18PParticleMovingFogFP9PFrustrumPfff
+void PParticleMovingFog::FrustrumTest(PFrustrum *pFrustum, float *pPos, float fNear, float fFar) {
+    for (unsigned int i = 0; i < m_unk4A0; i++) {
+        m_unk60[i].FrustrumTest(pFrustum, pPos, fNear, fFar, &m_unk320[i]);
+    }
+}
+
 // DRAFT: 0x001D6520 Animate__18PParticleMovingFogFf
 // note: 127 words differ; the frame is 0xC0 (original 0x80) because the loop keeps s2-s5 live across the rand/FastMath calls (strength-reduced i*4, i*0x40, m_unk2A0 pointer), the original recomputes them; tried loop scoping, signed index, scoped VU0 block, address-expression operands, all 127.
 void PParticleMovingFog::Animate(float fDelta) {
@@ -109,13 +116,6 @@ void PParticleMovingFog::Animate(float fDelta) {
         }
         b[1] = m_unk300[i];
         FastMath_ComputeMatrixLite((float (*)[4][4])&m_unk320[i], (float (*)[4])a, (float (*)[4])b, (float (*)[4])m_unk2A0[i], 0);
-    }
-}
-
-// FUNCTION: 0x001D6460 FrustrumTest__18PParticleMovingFogFP9PFrustrumPfff
-void PParticleMovingFog::FrustrumTest(PFrustrum *pFrustum, float *pPos, float fNear, float fFar) {
-    for (unsigned int i = 0; i < m_unk4A0; i++) {
-        m_unk60[i].FrustrumTest(pFrustum, pPos, fNear, fFar, &m_unk320[i]);
     }
 }
 

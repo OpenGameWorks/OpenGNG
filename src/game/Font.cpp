@@ -326,24 +326,6 @@ unsigned short *FontManager::JapanAddNumber(unsigned short *pStr, unsigned short
     return pDst;
 }
 
-// DRAFT: 0x1338A0 AdjustTextBox__8FontNodeFPf
-// note: our code is 0xC0 bytes vs 0xB8; BOXX/BOXY gp offsets and the mpTextBox reload pattern differ, 32 words.
-void FontNode::AdjustTextBox(float *arg0) {
-    char *pMesh;
-    float *pBox;
-
-    pBox = (float *)this;
-    if (mpTextBox__8FontNode != 0) {
-        pMesh = *(char **)(mpTextBox__8FontNode + 0x10);
-        if (pMesh == 0) {
-            CdsAssert("Font.cpp", 0x282, "pMesh");
-        }
-        *(float *)(mpTextBox__8FontNode + 0x40) = ((BOXX + (pBox[2] - pBox[0])) * 0.5f) / *(float *)(pMesh + 0x20);
-        *(float *)(mpTextBox__8FontNode + 0x54) = ((BOXY + (pBox[3] - pBox[1])) * 0.5f) / *(float *)(pMesh + 0x24);
-        *(float *)(mpTextBox__8FontNode + 0x74) = 0.5f * (pBox[3] + pBox[1]);
-    }
-}
-
 // FUNCTION: 0x1334A0 DisplayString__11FontManagerFPcffi9FontColor9FontAlign
 FontNode *FontManager::DisplayString(char *pStr, float fX, float fY, int nZ, FontColor nColor, FontAlign nAlign) {
     FontNode *pNode;
@@ -441,6 +423,24 @@ FontNode *FontManager::DisplayString(int nX, int nY, int nZ, bool bFlag) {
         m_unk12 = 0;
     }
     return pFirst;
+}
+
+// DRAFT: 0x1338A0 AdjustTextBox__8FontNodeFPf
+// note: our code is 0xC0 bytes vs 0xB8; BOXX/BOXY gp offsets and the mpTextBox reload pattern differ, 32 words.
+void FontNode::AdjustTextBox(float *arg0) {
+    char *pMesh;
+    float *pBox;
+
+    pBox = (float *)this;
+    if (mpTextBox__8FontNode != 0) {
+        pMesh = *(char **)(mpTextBox__8FontNode + 0x10);
+        if (pMesh == 0) {
+            CdsAssert("Font.cpp", 0x282, "pMesh");
+        }
+        *(float *)(mpTextBox__8FontNode + 0x40) = ((BOXX + (pBox[2] - pBox[0])) * 0.5f) / *(float *)(pMesh + 0x20);
+        *(float *)(mpTextBox__8FontNode + 0x54) = ((BOXY + (pBox[3] - pBox[1])) * 0.5f) / *(float *)(pMesh + 0x24);
+        *(float *)(mpTextBox__8FontNode + 0x74) = 0.5f * (pBox[3] + pBox[1]);
+    }
 }
 
 // DRAFT: 0x00133960 __ct__8FontNodeFP11FontManagerPcffUsi9FontColor9FontAlignb

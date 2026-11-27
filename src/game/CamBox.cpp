@@ -104,6 +104,15 @@ int CamBox::PointInsideTriggerArea(float (*pPoint)[4], float (*pOther)[4]) {
     return 0;
 }
 
+// FUNCTION: 0x0019C7E0 OnSleepEvent__6CamBoxFv
+void CamBox::OnSleepEvent() {
+    Camera *pCam = (Camera *)(gEng + 0x19760);
+    CDS_ASSERT(0x127, pCam);
+    if (pCam->m_unk2BC != 0 && pCam->m_unk2BC == (int)this) {
+        pCam->m_unk2BC = 0;
+    }
+}
+
 #define CAMBOX_PIT(pt, other) PointInsideTriggerArea((float (*)[4])(pt), (float (*)[4])(other))
 
 // FUNCTION: 0x0019C850 SetEditableVars__6CamBoxFPc
@@ -277,13 +286,4 @@ block48:
 CamBox::CamBox() : EntityBaseClass((EntityBaseClass::LoadClass)4, 0) {
     EnableSleep(false, false);
     m_unk2A4 = 0;
-}
-
-// FUNCTION: 0x0019C7E0 OnSleepEvent__6CamBoxFv
-void CamBox::OnSleepEvent() {
-    Camera *pCam = (Camera *)(gEng + 0x19760);
-    CDS_ASSERT(0x127, pCam);
-    if (pCam->m_unk2BC != 0 && pCam->m_unk2BC == (int)this) {
-        pCam->m_unk2BC = 0;
-    }
 }

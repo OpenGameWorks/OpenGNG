@@ -141,68 +141,6 @@ void PParticleElectricity::Render() {
     EndParticles__10PGfxEngineFv(gGfxEng);
 }
 
-// DRAFT: 0x001F5230 Create__20PParticleElectricityFP28tagParticleElectricityParamsfff
-// note: 68 words; early 0.5f/255.0f literals in f2/f3 swapped (orig f3=0.5f); late 0x118-0x128 v0/v1 order and 0xA0 store order differ; VU0 block loads fLen via lw not lwc1+mfc1; tail 0.5f constant loads after orig. Tried: pDir/fLen reorder (68), mean swap (68), 0.3f store moved after divides (91, reverted)
-int PParticleElectricity::Create(tagParticleElectricityParams *pParams, float fA, float fB, float fC) {
-    float tmp[4];
-    float *pDir;
-    float *pFrom;
-    float *pTmp;
-    float fLen;
-    int nLenBits;
-
-    memcpy(m_unkF0, pParams, 0x70);
-    m_unk184 = 0x89A9;
-    m_unkF0[0] += fA;
-    m_unkF0[1] += fB;
-    m_unkF0[2] += fC;
-    m_unk14 = 1;
-    m_unk30 = 0x48;
-    m_unk04 = m_unk120;
-    m_unk188 = 0.3f * m_unk128;
-    m_unkC0 = m_unk110 / 255.0f;
-    m_unkC4 = m_unk114 / 255.0f;
-    m_unkC8 = m_unk118 / 255.0f;
-    m_unkCC = m_unk11C / 128.0f;
-    m_unkE0 = __nwa__FUi(m_unk130 << 6);
-    if (m_unkE0 == 0) {
-        CdsAssert("PParticleElectricity.cpp", 0x2F, "mpBranches");
-    }
-    memset(m_unkE0, 0, m_unk130 << 6);
-    m_unk18C = 2;
-    m_unkA0 = 1.0f;
-
-    fLen = m_unk124;
-    asm { mfc1 nLenBits, fLen }
-    pDir = m_unk100;
-    pFrom = m_unkF0;
-    pTmp = tmp;
-    asm {
-        lqc2 vf1, 0x0(pDir)
-        lqc2 vf2, 0x0(pFrom)
-        qmtc2.i nLenBits, vf3
-        vmulx.xyzw vf4, vf1, vf3x
-        vnop
-        vnop
-        vnop
-        vadd.xyzw vf5, vf4, vf2
-        vnop
-        vnop
-        vnop
-        sqc2 vf5, 0x0(pTmp)
-    }
-
-    m_unk80 = (tmp[0] + m_unkF0[0]) * 0.5f;
-    m_unk84 = (tmp[1] + m_unkF0[1]) * 0.5f;
-    m_unk88 = (tmp[2] + m_unkF0[2]) * 0.5f;
-    *(float *)&m_unk8C = 1.0f;
-    m_unk90 = m_unk124 * 0.5f;
-    m_unk94 = m_unk124 * 0.5f;
-    m_unk98 = m_unk124 * 0.5f;
-    m_unk9C = sqrtf(m_unk90 * m_unk90 + m_unk94 * m_unk94 + m_unk98 * m_unk98);
-    return 1;
-}
-
 // FUNCTION: 0x001F4D30 SetPosition__20PParticleElectricityFPfPf
 void PParticleElectricity::SetPosition(float *pFrom, float *pTo) {
     float vec[4];
@@ -273,6 +211,68 @@ void PParticleElectricity::Animate(float fA) {
             nBranch += 1;
         }
     }
+}
+
+// DRAFT: 0x001F5230 Create__20PParticleElectricityFP28tagParticleElectricityParamsfff
+// note: 68 words; early 0.5f/255.0f literals in f2/f3 swapped (orig f3=0.5f); late 0x118-0x128 v0/v1 order and 0xA0 store order differ; VU0 block loads fLen via lw not lwc1+mfc1; tail 0.5f constant loads after orig. Tried: pDir/fLen reorder (68), mean swap (68), 0.3f store moved after divides (91, reverted)
+int PParticleElectricity::Create(tagParticleElectricityParams *pParams, float fA, float fB, float fC) {
+    float tmp[4];
+    float *pDir;
+    float *pFrom;
+    float *pTmp;
+    float fLen;
+    int nLenBits;
+
+    memcpy(m_unkF0, pParams, 0x70);
+    m_unk184 = 0x89A9;
+    m_unkF0[0] += fA;
+    m_unkF0[1] += fB;
+    m_unkF0[2] += fC;
+    m_unk14 = 1;
+    m_unk30 = 0x48;
+    m_unk04 = m_unk120;
+    m_unk188 = 0.3f * m_unk128;
+    m_unkC0 = m_unk110 / 255.0f;
+    m_unkC4 = m_unk114 / 255.0f;
+    m_unkC8 = m_unk118 / 255.0f;
+    m_unkCC = m_unk11C / 128.0f;
+    m_unkE0 = __nwa__FUi(m_unk130 << 6);
+    if (m_unkE0 == 0) {
+        CdsAssert("PParticleElectricity.cpp", 0x2F, "mpBranches");
+    }
+    memset(m_unkE0, 0, m_unk130 << 6);
+    m_unk18C = 2;
+    m_unkA0 = 1.0f;
+
+    fLen = m_unk124;
+    asm { mfc1 nLenBits, fLen }
+    pDir = m_unk100;
+    pFrom = m_unkF0;
+    pTmp = tmp;
+    asm {
+        lqc2 vf1, 0x0(pDir)
+        lqc2 vf2, 0x0(pFrom)
+        qmtc2.i nLenBits, vf3
+        vmulx.xyzw vf4, vf1, vf3x
+        vnop
+        vnop
+        vnop
+        vadd.xyzw vf5, vf4, vf2
+        vnop
+        vnop
+        vnop
+        sqc2 vf5, 0x0(pTmp)
+    }
+
+    m_unk80 = (tmp[0] + m_unkF0[0]) * 0.5f;
+    m_unk84 = (tmp[1] + m_unkF0[1]) * 0.5f;
+    m_unk88 = (tmp[2] + m_unkF0[2]) * 0.5f;
+    *(float *)&m_unk8C = 1.0f;
+    m_unk90 = m_unk124 * 0.5f;
+    m_unk94 = m_unk124 * 0.5f;
+    m_unk98 = m_unk124 * 0.5f;
+    m_unk9C = sqrtf(m_unk90 * m_unk90 + m_unk94 * m_unk94 + m_unk98 * m_unk98);
+    return 1;
 }
 
 // FUNCTION: 0x001F5450 __dt__20PParticleElectricityFv

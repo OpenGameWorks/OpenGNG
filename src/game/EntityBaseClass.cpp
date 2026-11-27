@@ -554,6 +554,23 @@ done:
     return 0;
 }
 
+// DRAFT: 0x0014A8F0 OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi
+// note: 21 differing lines; original keeps a2=3 default in a delay slot and compares m_unk10 against a separate v0 literal, ours reuses a2 and uses branch-form select where original uses movz. Tried: nested if/else with ternary, pre-assigned default, nested plain assignment, if/else-if chain, switch on m_unk10 (23 lines), inverted ternary (21), flipped `!= 3` test (21). The `== 3` test reuses a2 (the hitType 3) where the original loads a separate v0 literal, and no variant produced the movz select.
+void EntityBaseClass::OnInnocentAttack(EntityBaseClass *arg0, int arg1) {
+    int hitType;
+
+    this->FreezeCheck(arg0, arg1);
+    hitType = 3;
+    if (arg0->m_unk10 != 6) {
+        if (arg0->m_unk10 == 3) {
+            hitType = (arg0->m_unk166 == 0) ? 4 : 2;
+        } else {
+            hitType = 5;
+        }
+    }
+    this->CreateHitMarkFx(0, (eHitObjectType)hitType, (eHitWeaponType)0, false);
+}
+
 // FUNCTION: 0x0014A970 DestroyDamageFx__15EntityBaseClassFUi
 void EntityBaseClass::DestroyDamageFx(unsigned int arg0) {
     if (arg0 != 0) {
@@ -581,23 +598,6 @@ block_6:
         ret = 1;
     }
     return ret;
-}
-
-// DRAFT: 0x0014A8F0 OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi
-// note: 21 differing lines; original keeps a2=3 default in a delay slot and compares m_unk10 against a separate v0 literal, ours reuses a2 and uses branch-form select where original uses movz. Tried: nested if/else with ternary, pre-assigned default, nested plain assignment, if/else-if chain, switch on m_unk10 (23 lines), inverted ternary (21), flipped `!= 3` test (21). The `== 3` test reuses a2 (the hitType 3) where the original loads a separate v0 literal, and no variant produced the movz select.
-void EntityBaseClass::OnInnocentAttack(EntityBaseClass *arg0, int arg1) {
-    int hitType;
-
-    this->FreezeCheck(arg0, arg1);
-    hitType = 3;
-    if (arg0->m_unk10 != 6) {
-        if (arg0->m_unk10 == 3) {
-            hitType = (arg0->m_unk166 == 0) ? 4 : 2;
-        } else {
-            hitType = 5;
-        }
-    }
-    this->CreateHitMarkFx(0, (eHitObjectType)hitType, (eHitWeaponType)0, false);
 }
 
 // FUNCTION: 0x0014AA40 CreateDamageFx__15EntityBaseClassFfUi
@@ -1793,6 +1793,24 @@ void EntityBaseClass::RadiusAdjust(float arg0, float (*arg1)[4]) {
     this->m_unkD0 = 0;
 }
 
+// DRAFT: 0x0014D680 RemoveCollision__15EntityBaseClassFP15EntityBaseClass
+// note: 15 differing lines (0x48 vs 0x50 bytes); original is loop-rotated (entry `b` to the bottom test, `addu v1,a0,a3` in the bnez delay slot), stores through `sll a1; addiu v1,a0,0x110; addu` and compares `bne v1,a1` with the loaded value first. Tried: return vs break, index init order, char-pointer and local-pointer store, compare operand swap (MWCC keeps bne a1,v1), element local, while-loop form, pSlot[i] base-pointer store.
+void EntityBaseClass::RemoveCollision(EntityBaseClass *arg0) {
+    int target;
+    unsigned int i;
+    unsigned int off;
+
+    target = arg0->m_unk04;
+    i = 0;
+    off = 0;
+    for (; i < 10; off += 4, i++) {
+        if (*(int *)((char *)this + off + 0x110) == target) {
+            this->m_unk110[i] = 0;
+            break;
+        }
+    }
+}
+
 // DRAFT: 0x0014D6D0 AddCollision__15EntityBaseClassFP15EntityBaseClass
 // note: 22 words; goto-entered loop applied (loop shape now matches); store still folds 0x110 into sw (orig: sll a0; addiu v1,s3,0x110; addu; sw a1,0(v1), value loaded first into a1). Tried: m_unk110[i], char-offset, pointer local, array-pointer, inline setter, value local.
 void EntityBaseClass::AddCollision(EntityBaseClass *arg0) {
@@ -1819,24 +1837,6 @@ loop:
     off += 4;
 test:
     if (i < 10) goto loop;
-}
-
-// DRAFT: 0x0014D680 RemoveCollision__15EntityBaseClassFP15EntityBaseClass
-// note: 15 differing lines (0x48 vs 0x50 bytes); original is loop-rotated (entry `b` to the bottom test, `addu v1,a0,a3` in the bnez delay slot), stores through `sll a1; addiu v1,a0,0x110; addu` and compares `bne v1,a1` with the loaded value first. Tried: return vs break, index init order, char-pointer and local-pointer store, compare operand swap (MWCC keeps bne a1,v1), element local, while-loop form, pSlot[i] base-pointer store.
-void EntityBaseClass::RemoveCollision(EntityBaseClass *arg0) {
-    int target;
-    unsigned int i;
-    unsigned int off;
-
-    target = arg0->m_unk04;
-    i = 0;
-    off = 0;
-    for (; i < 10; off += 4, i++) {
-        if (*(int *)((char *)this + off + 0x110) == target) {
-            this->m_unk110[i] = 0;
-            break;
-        }
-    }
 }
 
 // FUNCTION: 0x0014D790 FindCollision__15EntityBaseClassFP15EntityBaseClass

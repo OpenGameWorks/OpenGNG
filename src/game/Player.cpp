@@ -1753,6 +1753,43 @@ void Player::GrabObjectMove() {
     }
 }
 
+// FUNCTION: 0x0015B5B0 OnGunDeck__6PlayerFv
+int Player::OnGunDeck() {
+    return m_unk260 == 0x3E;
+}
+
+// DRAFT: 0x0015B5C0 GunDeckMove__6PlayerFv
+// note: DIFF 32 words; original hoists first-arg moves into beqz delay slots (ours nop), and ours sign-extends m_unk3F (dsll32/dsra32). Tried !(m_unk3F&7) (32), local fx ptr (32), int local for m_unk3F (45), direct m_unk3C casts without s0 (54), nested if for s1 (32), &0x7 spelling (32).
+void Player::GunDeckMove() {
+    PMNode *s0 = (PMNode *)m_unk3C;
+    switch (m_unk250) {
+    case 0:
+        m_unk250 = 1;
+        m_unk330->Slot58(this, 0, 0x1FB, 0);
+        if (m_unk288 != 0) {
+            ((PMNode *)m_unk288)->EnableFx(false, true);
+        }
+        s0->EnableAnim(false, false);
+    case 1:
+        if (m_unk1B2 & 0x4000) {
+            SetAction(3);
+            m_unk330->SetPlayerLeftDeck();
+            m_unk330 = 0;
+            return;
+        }
+        {
+            bool s1 = (m_unk1B0 & 0x8000) != 0;
+            m_unk330->SetGunParams(m_unk1B4, s1);
+            if (s1 && (s0->m_unk3F & 7) == 0) {
+                s0->Slot1C(0);
+            }
+        }
+        return;
+    default:
+        return;
+    }
+}
+
 // DRAFT: 0x0015B6D0 AlignPosition__6PlayerFP15EntityBaseClass
 // note: 93 words; the literal copy is a static (reloc kIdentity$458) not the rodata at 0x244220, and the frame keeps an extra s2 save
 void Player::AlignPosition(EntityBaseClass *arg0) {
@@ -2028,43 +2065,6 @@ void Player::DieMove() {
             SetDeath();
         }
         break;
-    }
-}
-
-// FUNCTION: 0x0015B5B0 OnGunDeck__6PlayerFv
-int Player::OnGunDeck() {
-    return m_unk260 == 0x3E;
-}
-
-// DRAFT: 0x0015B5C0 GunDeckMove__6PlayerFv
-// note: DIFF 32 words; original hoists first-arg moves into beqz delay slots (ours nop), and ours sign-extends m_unk3F (dsll32/dsra32). Tried !(m_unk3F&7) (32), local fx ptr (32), int local for m_unk3F (45), direct m_unk3C casts without s0 (54), nested if for s1 (32), &0x7 spelling (32).
-void Player::GunDeckMove() {
-    PMNode *s0 = (PMNode *)m_unk3C;
-    switch (m_unk250) {
-    case 0:
-        m_unk250 = 1;
-        m_unk330->Slot58(this, 0, 0x1FB, 0);
-        if (m_unk288 != 0) {
-            ((PMNode *)m_unk288)->EnableFx(false, true);
-        }
-        s0->EnableAnim(false, false);
-    case 1:
-        if (m_unk1B2 & 0x4000) {
-            SetAction(3);
-            m_unk330->SetPlayerLeftDeck();
-            m_unk330 = 0;
-            return;
-        }
-        {
-            bool s1 = (m_unk1B0 & 0x8000) != 0;
-            m_unk330->SetGunParams(m_unk1B4, s1);
-            if (s1 && (s0->m_unk3F & 7) == 0) {
-                s0->Slot1C(0);
-            }
-        }
-        return;
-    default:
-        return;
     }
 }
 
@@ -3573,26 +3573,6 @@ block_19:
     }
 }
 
-// DRAFT: 0x0015F5E0 FootStepSound__6PlayerFPUs
-// note: 6 words differ: addu index temp goes to a0 not a1, lhu/cvt order and mfc1 register swapped, slt sense inverted. Tried negated compare (31), index local (29), else-if sound chain (6, kept), flipped compare (7), temp local before index (6), temp local with flipped compare (7).
-void Player::FootStepSound(unsigned short *arg0) {
-    if ((signed char)(((signed char *)m_unk3C)[0x3F] & 4)) {
-        m_unk27C = 0;
-    }
-    if (arg0[m_unk27C] <= (int)m_unk3C[13]) {
-        unsigned int sound;
-        if (m_unk38[0x42] & 0x200) {
-            sound = 0x4E25;
-        } else if (m_unk229 == 2) {
-            sound = 0x4E20;
-        } else {
-            sound = FootSound[((unsigned int)m_unk38[0x3A] >> 11) & 7];
-        }
-        ((EntityBaseClass *)this)->PlaySound(sound);
-        m_unk27C += 1;
-    }
-}
-
 static float SLOW_RATE = 0.8f;
 
 // DRAFT: 0x0015F330 RunMove__6PlayerFv
@@ -3689,6 +3669,26 @@ block_27:
         SetFrameRate__6PMNodeFfb(node, f12, false);
         break;
     }
+    }
+}
+
+// DRAFT: 0x0015F5E0 FootStepSound__6PlayerFPUs
+// note: 6 words differ: addu index temp goes to a0 not a1, lhu/cvt order and mfc1 register swapped, slt sense inverted. Tried negated compare (31), index local (29), else-if sound chain (6, kept), flipped compare (7), temp local before index (6), temp local with flipped compare (7).
+void Player::FootStepSound(unsigned short *arg0) {
+    if ((signed char)(((signed char *)m_unk3C)[0x3F] & 4)) {
+        m_unk27C = 0;
+    }
+    if (arg0[m_unk27C] <= (int)m_unk3C[13]) {
+        unsigned int sound;
+        if (m_unk38[0x42] & 0x200) {
+            sound = 0x4E25;
+        } else if (m_unk229 == 2) {
+            sound = 0x4E20;
+        } else {
+            sound = FootSound[((unsigned int)m_unk38[0x3A] >> 11) & 7];
+        }
+        ((EntityBaseClass *)this)->PlaySound(sound);
+        m_unk27C += 1;
     }
 }
 
@@ -5840,372 +5840,6 @@ int Player::MightyBlowCheck(unsigned int arg0) {
     return 0;
 }
 
-// DRAFT: 0x00165E60 GameVarAdd__6PlayerFUiii
-// note: arg0/arg1 swapped vs original (arg0 s0 not s3, nVal shares arg1 reg), frame 0x70 vs 0x60 (extra s5 save); tried locals order, short/int nCap, bool bAt (best), slot spelling, switch order (already matches chain)
-int Player::GameVarAdd(unsigned int arg0, int arg1, int arg2) {
-    unsigned char *pTbl;
-    int *pSlot;
-    int nVal;
-    short nCap;
-    int nStep;
-    int nTmp;
-    int nArg;
-    int nCost;
-    bool bAt;
-
-    ((arg0 < 0x14) ? (void)0 : CdsAssert("Player.cpp", 0x45E, "iVar < GameVarMax"));
-    ((arg1 >= 0) ? (void)0 : CdsAssert("Player.cpp", 0x45F, "iValue >= 0"));
-
-    pTbl = GameVarTbl + arg0 * 6;
-    if (pTbl[4] != 0 && !(m_unk1D0 & 1)) {
-        return 0;
-    }
-    if (pTbl[5] != 0 && m_unk229 >= 4) {
-        return 0;
-    }
-    nCap = *(short *)(pTbl + 2);
-    pSlot = (int *)((char *)this + 0x1D4) + arg0;
-    nVal = arg1 + *pSlot;
-    if (nCap < nVal) {
-        nVal = nCap;
-    }
-    switch (arg0) {
-    case 1:
-        nStep = m_unk1DC * 0xC8;
-        bAt = nStep < nVal;
-        if (nStep < m_unk1D8) {
-            nStep += 0xC8;
-            bAt = nStep < nVal;
-        }
-        if (bAt) {
-            nVal = nStep;
-        }
-        if (arg2 < 2 && SetPowerupMotion(0x32) != 0 && arg2 != 0) {
-            m_unk335 |= 2;
-        }
-    default:
-    block_64:
-        *pSlot = nVal;
-        ((Interface *)((char *)&gInterface + 0x1710))->UpdateStatus(arg0, false);
-        return 1;
-    case 2:
-        nTmp = m_unk1D4;
-        if (nTmp < nVal) {
-            nVal = nTmp;
-            if (nTmp * 0xC8 < m_unk1D8) {
-                nVal = nTmp + 1;
-            }
-        }
-        if (m_unk229 != 4) {
-            if (MaximoArmor[nVal] != m_unk229) {
-                SetMaximo(MaximoArmor[nVal], false);
-                bAt = arg2 < 2;
-                if (m_unk33B != 0) {
-                    ShowPlayer(false);
-                }
-                if (bAt != 0 && SetPowerupMotion(0x31) != 0 && arg2 != 0) {
-                    m_unk335 |= 2;
-                }
-            }
-        }
-        ((EntityBaseClass *)this)->PlaySound(8U);
-        m_unk1DC = nVal;
-        GameVarAdd(1, 0x190, arg2);
-        goto block_64;
-    case 14:
-        nTmp = m_unk208 * 0x280;
-        if (nTmp < nVal) {
-            nVal = nTmp;
-        }
-        goto block_64;
-    case 4:
-        nArg = 0xA;
-        if (m_unk218 == 2) {
-            nArg = 0xF;
-        }
-        GameVarAdd(0xE, nArg, 0);
-        GameVarAdd(0xB, 1, 0);
-        nCost = *(int *)((char *)this + 0x1EC);
-        if (nVal >= nCost && m_unk1F8 < 0x63) {
-            GameVarAdd(9, 1, 0);
-            nVal -= nCost;
-            if (nCost < 0x96) {
-                *(int *)((char *)this + 0x1EC) += 0x14;
-            }
-        }
-        goto block_64;
-    case 7:
-    case 8:
-        *pSlot = nVal;
-        switch (arg2) {
-        case 1:
-            SetAction(0x3C);
-            m_unk335 |= 2;
-            break;
-        default:
-            if (SetPowerupMotion(0x3C) == 0) {
-            case 2:
-                UpdateKey();
-                ((EntityBaseClass *)this)->PlaySound(0x1A);
-            }
-            break;
-        }
-        goto block_64;
-    case 18:
-        m_unk314 = 0x42A00000;
-        m_unk220 += *(unsigned char *)((char *)m_unk258 + 0xA);
-        if (m_unk220 >= 0x64) {
-            m_unk220 = 0x63;
-        }
-        goto block_64;
-    case 11:
-        if (m_unk229 == 4) {
-            return 1;
-        }
-        nTmp = m_unk204;
-        if (nTmp < nVal) {
-            nVal = nTmp;
-        }
-        goto block_64;
-    }
-}
-
-// DRAFT: 0x001662B0 GameVarSub__6PlayerFUii
-// note: 190 diff words; original computes the GameVarTbl entry pointer before the slot load and keeps arg1 in s3, slot (this+0x1D4 unfolded) in s4. Tried decl order, byte-offset/indexed slot spellings, value copy, pTbl local.
-int Player::GameVarSub(unsigned int arg0, int arg1) {
-    int nRem;
-    int *pSlot;
-    int nVal;
-    int nStep;
-    int nAdd;
-    float *pA;
-    float *pB;
-    float *pTemp;
-    FontNode *pFont;
-    unsigned char *pTbl;
-
-    ((arg0 < 0x14) ? (void)0 : CdsAssert("Player.cpp", 0x3FB, "iVar < GameVarMax"));
-    ((arg1 >= 0) ? (void)0 : CdsAssert("Player.cpp", 0x3FC, "iValue >= 0"));
-
-    pTbl = GameVarTbl + arg0 * 6;
-    pSlot = ((int *)((char *)this + 0x1D0) + 1) + arg0;
-    nVal = *pSlot;
-    if (nVal <= 0) {
-        return nVal;
-    }
-    nRem = nVal - arg1;
-    if (pTbl[4] != 0) {
-        if (!(m_unk1D0 & 1)) {
-            return nVal;
-        }
-    }
-    if (nRem < 0) {
-        nRem = 0;
-    }
-    switch (arg0) {
-    case 1:
-        if (m_unk20 != 0) {
-            return nVal;
-        }
-        nAdd = arg1 >> 2;
-        if (m_unk218 == 2) {
-            nAdd += nAdd >> 1;
-        }
-        GameVarAdd(0xE, nAdd, 0);
-        if (IsNoDamage__5DebugFv(&gDebug)) {
-            return 1;
-        }
-        if ((m_unk1DC - 1) * 200 >= nRem) {
-            nStep = (nRem + 0xC7) / 200;
-            if (nStep != 0) {
-                ((EntityBaseClass *)this)->PlaySound(4);
-                ((EntityBaseClass *)this)->PlaySound(0xC3);
-            }
-            switch (nStep) {
-            case 0:
-                nStep = 1;
-                break;
-            case 1:
-                SetMaximo(2, false);
-                if (m_unk218 == 3) {
-                    GameVarAdd(0xE, 0xA00, 0);
-                }
-                pTemp = m_unk3C;
-                pA = (pTemp != 0) ? (float *)((char *)pTemp + 0x80) : m_unk190;
-                pB = (pTemp != 0) ? (float *)((char *)pTemp + 0x90) : (float *)((char *)this + 0x1A0);
-                mEffectAPI__13EntityManager.CreateOneshot(0x8100045A, 0x82000070, (float (*)[4])pA, (float (*)[4])pB, 0, 0.5f, false, 0, false);
-                break;
-            case 2:
-                SetMaximo(0, false);
-                break;
-            default:
-                if (m_unk229 == 3) {
-                    SetMaximo(1, false);
-                    pTemp = m_unk3C;
-                    pA = (pTemp != 0) ? (float *)((char *)pTemp + 0x80) : m_unk190;
-                    pB = (pTemp != 0) ? (float *)((char *)pTemp + 0x90) : (float *)((char *)this + 0x1A0);
-                    mEffectAPI__13EntityManager.CreateOneshot(0x81000459, 0x82000754, (float (*)[4])pA, (float (*)[4])pB, 0, 0.5f, false, 0, false);
-                }
-                break;
-            }
-            m_unk1DC = nStep;
-        }
-        if (nRem == 0) {
-            if (m_unk229 == 4) {
-                SetMaximo(MaximoArmor[m_unk1DC], false);
-            }
-            m_unk1D0 &= ~1;
-            m_unk103 = 0xFE;
-            pFont = m_unk31C;
-            if (pFont != 0) {
-                ((FontManager *)((char *)&gInterface + 0x1790))->RemoveText(pFont);
-                m_unk31C = 0;
-            }
-        }
-        break;
-    case 0xB:
-        if (nRem <= 0) {
-            SetMaximo(MaximoArmor[m_unk1DC], false);
-        }
-        break;
-    default:
-        break;
-    }
-    *pSlot = nRem;
-    ((Interface *)((char *)&gInterface + 0x1710))->UpdateStatus(arg0, false);
-    return nRem;
-}
-
-// FUNCTION: 0x00166690 __dt__6PlayerFv
-extern "C" void *__dt__6PlayerFv(void *pThis, short nFlag) {
-    if (pThis != 0) {
-        Player *self = (Player *)pThis;
-        *(unsigned char **)pThis = __vt__6Player;
-        if (self->m_unk2B8 != 0) {
-            ((EntityBaseClass *)self)->StopSoundBySoundRef((unsigned int)self->m_unk2B8);
-            self->m_unk2B8 = 0;
-        }
-        if (self->m_unk229 == 4) {
-            self->m_unk229 = MaximoArmor[self->m_unk1DC];
-        }
-        self->SavePlayerData((Player::PlayerData *)(gMC + 0x234));
-        self->ResetPling();
-        EnableFullScreenFx__10PGfxEngineFb(gGfxEng, 0);
-        if (self->m_unk2AC != 0) {
-            mEffectAPI__13EntityManager.DeleteEffect(self->m_unk2AC);
-            self->m_unk2AC = 0;
-        }
-        if (self->m_unk288 != 0) {
-            if (self->m_unk288 != 0) {
-                ((VirtualSlot08Object *)self->m_unk288)->Slot08(1);
-            }
-            self->m_unk288 = 0;
-        }
-        if (self->m_unk23CC != 0) {
-            __dt__6ShadowFv(self->m_unk23CC, 1);
-            self->m_unk23CC = 0;
-        }
-        if (self->m_unk23C8 != 0) {
-            __dt__6ShadowFv(self->m_unk23C8, 1);
-            self->m_unk23C8 = 0;
-        }
-        miRandom__7MathAPI = (int)(0.5f + (12345.0f + (41976.0f * ((float)rand() / 2.1474836e9f))));
-        __dt__15PGrimReaperCapeFv((char *)self + 0x390, -1);
-        __dt__15EntityBaseClassFv(self, 0);
-        if (nFlag > 0) {
-            __dl__FPv(pThis);
-        }
-    }
-    return pThis;
-}
-
-#define PL_AT(T, off) (*(T *)((char *)this + (off)))
-
-// FUNCTION: 0x00166830 __ct__6PlayerFv
-extern "C" Player *__ct__6PlayerFv(Player *volatile pThis)
-{
-    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(pThis, 5, 1);
-    *(unsigned char **)pThis = __vt__6Player;
-    __ct__15PGrimReaperCapeFv((char *)pThis + 0x390);
-    (*(unsigned char *)((char *)pThis + (0xE8))) = 0x13;
-    ((EntityBaseClass *)pThis)->EnableSleep(false, false);
-    (*(unsigned char *)((char *)pThis + (0x103))) = 0x20;
-    (*(unsigned char *)((char *)pThis + (0xEA))) = 1;
-    (*(unsigned char *)((char *)pThis + (0x1B6))) = 0;
-    (*(unsigned char *)((char *)pThis + (0x1B7))) = 0;
-    (*(unsigned char *)((char *)pThis + (0x1B4))) = 0;
-    (*(unsigned char *)((char *)pThis + (0x1B5))) = 0;
-    (*(int *)((char *)pThis + (0x25C))) = 0;
-    (*(int *)((char *)pThis + (0x260))) = 0;
-    (*(unsigned char *)((char *)pThis + (0x33A))) = 0;
-    (*(int *)((char *)pThis + (0x2A4))) = 0;
-    (*(int *)((char *)pThis + (0x284))) = 0;
-    (*(int *)((char *)pThis + (0x28C))) = 0;
-    (*(int *)((char *)pThis + (0x2A8))) = 0;
-    (*(int *)((char *)pThis + (0x2B0))) = 0;
-    (*(int *)((char *)pThis + (0x2AC))) = 0;
-    (*(int *)((char *)pThis + (0x2B4))) = 0;
-    (*(int *)((char *)pThis + (0x2B8))) = 0;
-    (*(int *)((char *)pThis + (0x320))) = 0;
-    (*(int *)((char *)pThis + (0x308))) = 0;
-    (*(int *)((char *)pThis + (0x314))) = 0;
-    (*(int *)((char *)pThis + (0x2F8))) = 0;
-    (*(int *)((char *)pThis + (0x324))) = 0;
-    (*(int *)((char *)pThis + (0x32C))) = 0;
-    pThis->m_unk339 = -1;
-    (*(int *)((char *)pThis + (0x330))) = 0;
-    (*(unsigned char *)((char *)pThis + (0x335))) = 0;
-    (*(unsigned char *)((char *)pThis + (0x337))) = 0;
-    (*(int *)((char *)pThis + (0x318))) = 0;
-    (*(int *)((char *)pThis + (0x31C))) = 0;
-    (*(int *)((char *)pThis + (0x288))) = 0;
-    (*(int *)((char *)pThis + (0x1CC))) = 0;
-    (*(int *)((char *)pThis + (0x2BC))) = 0;
-    (*(unsigned char *)((char *)pThis + (0x338))) = 0;
-    (*(int *)((char *)pThis + (0x23C4))) = 3;
-    pThis->m_unk38 = (int *)(new Physics);
-    if (pThis->m_unk38 == 0) {
-        CdsAssert("Player.cpp", 0x358, "mpPhysics");
-    }
-    ((Physics *)pThis->m_unk38)->m_unk118 = 0.2f;
-    ((Physics *)pThis->m_unk38)->m_unkEC = 0x8019FF55;
-    pThis->m_unkD4 = new Shadow(Shadow::eShadowParticle, 0x8700000B);
-    (*(void * *)((char *)pThis + (0x23CC))) = new Shadow(Shadow::eShadowParticle, 0x87000009);
-    (*(void * *)((char *)pThis + (0x23C8))) = new Shadow(Shadow::eShadowParticle, 0x87000004);
-    if (pThis->m_unkD4 == 0) {
-        CdsAssert("Player.cpp", 0x36B, "mpShadow");
-    }
-    {
-        Shadow *pShadow = (Shadow *)pThis->m_unkD4;
-        if (pShadow != 0) {
-            pShadow->m_unk0 = 1;
-            char *pPart = (char *)pShadow->m_unkC;
-            if (pPart != 0) {
-                *(unsigned char *)(pPart + 0x18) = 1;
-            }
-        }
-    }
-    (*(float *)((char *)pThis + (0x104))) = 1.0f;
-    (*(float *)((char *)pThis + (0x108))) = 4.0f;
-    (*(float *)((char *)pThis + (0xE4))) = 1.0f;
-    pThis->m_unk10C |= 0x071A1E01;
-    (*(int *)((char *)pThis + (0x344))) = 0;
-    (*(int *)((char *)pThis + (0x360))) = 0;
-    (*(int *)((char *)pThis + (0x368))) = 0;
-    (*(int *)((char *)pThis + (0x370))) = 0;
-    (*(int *)((char *)pThis + (0x378))) = 0;
-    pThis->LoadPlayerData((Player::PlayerData *)(gMC + 0x234));
-    gInterface.SetPlayerData((Player::PlayerData *)((char *)pThis + 0x1D0));
-    (*(float *)((char *)pThis + (0x380))) = 128.0f;
-    (*(float *)((char *)pThis + (0x384))) = 10.0f;
-    (*(int *)((char *)pThis + (0x388))) = 0;
-    (*(int *)((char *)pThis + (0x38C))) = 0;
-    (*(float *)((char *)pThis + (0x23C0))) = -2.5f;
-    ((PGrimReaperCape *)((char *)pThis + 0x390))->Init();
-    pThis->InitAttachableJoints();
-    return pThis;
-}
-
 #undef PL_AT
 
 // FUNCTION: 0x00163F80 ShowPlayer__6PlayerFb
@@ -6960,6 +6594,26 @@ void Player::Kill() {
     }
 }
 
+// note: 31 differing lines; original keeps the row base in a2 and counter in a0 with mbHard loaded first; ours uses a1/a0 and a different loop shape. Tried: first loop form (about 30), base pointer ComboLevel[mb*10] (32), mb/thr locals first (31, kept).
+// DRAFT: 0x00165B90 GetComboLevel__6PlayerFv
+// note: 26 differing words with the goto-entered loop (was 29); original has mb in a2, thr in a1, off in a3, i in a0, and a different tail sum order (ComboLevel+4 then row then i*8). Tried: base pointer, unsigned i, decl orders, &ComboLevel[1] tail, explicit pointer walk, for-loop form.
+int Player::GetComboLevel() {
+    unsigned int i = 0;
+    int off = 0;
+    int mb = mbHard__15EntityBaseClass;
+    int thr = m_unk220;
+    char *base = (char *)ComboLevel + mb * 0x28;
+    goto test;
+loop:
+    if (*(int *)(base + off) >= thr) { goto done; }
+    off += 8;
+    i++;
+test:
+    if (i < 10) goto loop;
+done:
+    return *(int *)((char *)&ComboLevel[1] + mb * 0x28 + i * 8);
+}
+
 // DRAFT: 0x00165C20 GameVarSet__6PlayerFUii
 // note: 95 words; returns int (0 on the GameVarTbl gates, 1 otherwise); tried &GameVarTbl[i], (T*)(GameVarTbl+i) pointer forms, no gain.
 int Player::GameVarSet(unsigned int arg0, int arg1) {
@@ -7008,22 +6662,368 @@ int Player::GameVarSet(unsigned int arg0, int arg1) {
     return 1;
 }
 
-// note: 31 differing lines; original keeps the row base in a2 and counter in a0 with mbHard loaded first; ours uses a1/a0 and a different loop shape. Tried: first loop form (about 30), base pointer ComboLevel[mb*10] (32), mb/thr locals first (31, kept).
-// DRAFT: 0x00165B90 GetComboLevel__6PlayerFv
-// note: 26 differing words with the goto-entered loop (was 29); original has mb in a2, thr in a1, off in a3, i in a0, and a different tail sum order (ComboLevel+4 then row then i*8). Tried: base pointer, unsigned i, decl orders, &ComboLevel[1] tail, explicit pointer walk, for-loop form.
-int Player::GetComboLevel() {
-    unsigned int i = 0;
-    int off = 0;
-    int mb = mbHard__15EntityBaseClass;
-    int thr = m_unk220;
-    char *base = (char *)ComboLevel + mb * 0x28;
-    goto test;
-loop:
-    if (*(int *)(base + off) >= thr) { goto done; }
-    off += 8;
-    i++;
-test:
-    if (i < 10) goto loop;
-done:
-    return *(int *)((char *)&ComboLevel[1] + mb * 0x28 + i * 8);
+// DRAFT: 0x00165E60 GameVarAdd__6PlayerFUiii
+// note: arg0/arg1 swapped vs original (arg0 s0 not s3, nVal shares arg1 reg), frame 0x70 vs 0x60 (extra s5 save); tried locals order, short/int nCap, bool bAt (best), slot spelling, switch order (already matches chain)
+int Player::GameVarAdd(unsigned int arg0, int arg1, int arg2) {
+    unsigned char *pTbl;
+    int *pSlot;
+    int nVal;
+    short nCap;
+    int nStep;
+    int nTmp;
+    int nArg;
+    int nCost;
+    bool bAt;
+
+    ((arg0 < 0x14) ? (void)0 : CdsAssert("Player.cpp", 0x45E, "iVar < GameVarMax"));
+    ((arg1 >= 0) ? (void)0 : CdsAssert("Player.cpp", 0x45F, "iValue >= 0"));
+
+    pTbl = GameVarTbl + arg0 * 6;
+    if (pTbl[4] != 0 && !(m_unk1D0 & 1)) {
+        return 0;
+    }
+    if (pTbl[5] != 0 && m_unk229 >= 4) {
+        return 0;
+    }
+    nCap = *(short *)(pTbl + 2);
+    pSlot = (int *)((char *)this + 0x1D4) + arg0;
+    nVal = arg1 + *pSlot;
+    if (nCap < nVal) {
+        nVal = nCap;
+    }
+    switch (arg0) {
+    case 1:
+        nStep = m_unk1DC * 0xC8;
+        bAt = nStep < nVal;
+        if (nStep < m_unk1D8) {
+            nStep += 0xC8;
+            bAt = nStep < nVal;
+        }
+        if (bAt) {
+            nVal = nStep;
+        }
+        if (arg2 < 2 && SetPowerupMotion(0x32) != 0 && arg2 != 0) {
+            m_unk335 |= 2;
+        }
+    default:
+    block_64:
+        *pSlot = nVal;
+        ((Interface *)((char *)&gInterface + 0x1710))->UpdateStatus(arg0, false);
+        return 1;
+    case 2:
+        nTmp = m_unk1D4;
+        if (nTmp < nVal) {
+            nVal = nTmp;
+            if (nTmp * 0xC8 < m_unk1D8) {
+                nVal = nTmp + 1;
+            }
+        }
+        if (m_unk229 != 4) {
+            if (MaximoArmor[nVal] != m_unk229) {
+                SetMaximo(MaximoArmor[nVal], false);
+                bAt = arg2 < 2;
+                if (m_unk33B != 0) {
+                    ShowPlayer(false);
+                }
+                if (bAt != 0 && SetPowerupMotion(0x31) != 0 && arg2 != 0) {
+                    m_unk335 |= 2;
+                }
+            }
+        }
+        ((EntityBaseClass *)this)->PlaySound(8U);
+        m_unk1DC = nVal;
+        GameVarAdd(1, 0x190, arg2);
+        goto block_64;
+    case 14:
+        nTmp = m_unk208 * 0x280;
+        if (nTmp < nVal) {
+            nVal = nTmp;
+        }
+        goto block_64;
+    case 4:
+        nArg = 0xA;
+        if (m_unk218 == 2) {
+            nArg = 0xF;
+        }
+        GameVarAdd(0xE, nArg, 0);
+        GameVarAdd(0xB, 1, 0);
+        nCost = *(int *)((char *)this + 0x1EC);
+        if (nVal >= nCost && m_unk1F8 < 0x63) {
+            GameVarAdd(9, 1, 0);
+            nVal -= nCost;
+            if (nCost < 0x96) {
+                *(int *)((char *)this + 0x1EC) += 0x14;
+            }
+        }
+        goto block_64;
+    case 7:
+    case 8:
+        *pSlot = nVal;
+        switch (arg2) {
+        case 1:
+            SetAction(0x3C);
+            m_unk335 |= 2;
+            break;
+        default:
+            if (SetPowerupMotion(0x3C) == 0) {
+            case 2:
+                UpdateKey();
+                ((EntityBaseClass *)this)->PlaySound(0x1A);
+            }
+            break;
+        }
+        goto block_64;
+    case 18:
+        m_unk314 = 0x42A00000;
+        m_unk220 += *(unsigned char *)((char *)m_unk258 + 0xA);
+        if (m_unk220 >= 0x64) {
+            m_unk220 = 0x63;
+        }
+        goto block_64;
+    case 11:
+        if (m_unk229 == 4) {
+            return 1;
+        }
+        nTmp = m_unk204;
+        if (nTmp < nVal) {
+            nVal = nTmp;
+        }
+        goto block_64;
+    }
+}
+
+// DRAFT: 0x001662B0 GameVarSub__6PlayerFUii
+// note: 190 diff words; original computes the GameVarTbl entry pointer before the slot load and keeps arg1 in s3, slot (this+0x1D4 unfolded) in s4. Tried decl order, byte-offset/indexed slot spellings, value copy, pTbl local.
+int Player::GameVarSub(unsigned int arg0, int arg1) {
+    int nRem;
+    int *pSlot;
+    int nVal;
+    int nStep;
+    int nAdd;
+    float *pA;
+    float *pB;
+    float *pTemp;
+    FontNode *pFont;
+    unsigned char *pTbl;
+
+    ((arg0 < 0x14) ? (void)0 : CdsAssert("Player.cpp", 0x3FB, "iVar < GameVarMax"));
+    ((arg1 >= 0) ? (void)0 : CdsAssert("Player.cpp", 0x3FC, "iValue >= 0"));
+
+    pTbl = GameVarTbl + arg0 * 6;
+    pSlot = ((int *)((char *)this + 0x1D0) + 1) + arg0;
+    nVal = *pSlot;
+    if (nVal <= 0) {
+        return nVal;
+    }
+    nRem = nVal - arg1;
+    if (pTbl[4] != 0) {
+        if (!(m_unk1D0 & 1)) {
+            return nVal;
+        }
+    }
+    if (nRem < 0) {
+        nRem = 0;
+    }
+    switch (arg0) {
+    case 1:
+        if (m_unk20 != 0) {
+            return nVal;
+        }
+        nAdd = arg1 >> 2;
+        if (m_unk218 == 2) {
+            nAdd += nAdd >> 1;
+        }
+        GameVarAdd(0xE, nAdd, 0);
+        if (IsNoDamage__5DebugFv(&gDebug)) {
+            return 1;
+        }
+        if ((m_unk1DC - 1) * 200 >= nRem) {
+            nStep = (nRem + 0xC7) / 200;
+            if (nStep != 0) {
+                ((EntityBaseClass *)this)->PlaySound(4);
+                ((EntityBaseClass *)this)->PlaySound(0xC3);
+            }
+            switch (nStep) {
+            case 0:
+                nStep = 1;
+                break;
+            case 1:
+                SetMaximo(2, false);
+                if (m_unk218 == 3) {
+                    GameVarAdd(0xE, 0xA00, 0);
+                }
+                pTemp = m_unk3C;
+                pA = (pTemp != 0) ? (float *)((char *)pTemp + 0x80) : m_unk190;
+                pB = (pTemp != 0) ? (float *)((char *)pTemp + 0x90) : (float *)((char *)this + 0x1A0);
+                mEffectAPI__13EntityManager.CreateOneshot(0x8100045A, 0x82000070, (float (*)[4])pA, (float (*)[4])pB, 0, 0.5f, false, 0, false);
+                break;
+            case 2:
+                SetMaximo(0, false);
+                break;
+            default:
+                if (m_unk229 == 3) {
+                    SetMaximo(1, false);
+                    pTemp = m_unk3C;
+                    pA = (pTemp != 0) ? (float *)((char *)pTemp + 0x80) : m_unk190;
+                    pB = (pTemp != 0) ? (float *)((char *)pTemp + 0x90) : (float *)((char *)this + 0x1A0);
+                    mEffectAPI__13EntityManager.CreateOneshot(0x81000459, 0x82000754, (float (*)[4])pA, (float (*)[4])pB, 0, 0.5f, false, 0, false);
+                }
+                break;
+            }
+            m_unk1DC = nStep;
+        }
+        if (nRem == 0) {
+            if (m_unk229 == 4) {
+                SetMaximo(MaximoArmor[m_unk1DC], false);
+            }
+            m_unk1D0 &= ~1;
+            m_unk103 = 0xFE;
+            pFont = m_unk31C;
+            if (pFont != 0) {
+                ((FontManager *)((char *)&gInterface + 0x1790))->RemoveText(pFont);
+                m_unk31C = 0;
+            }
+        }
+        break;
+    case 0xB:
+        if (nRem <= 0) {
+            SetMaximo(MaximoArmor[m_unk1DC], false);
+        }
+        break;
+    default:
+        break;
+    }
+    *pSlot = nRem;
+    ((Interface *)((char *)&gInterface + 0x1710))->UpdateStatus(arg0, false);
+    return nRem;
+}
+
+// FUNCTION: 0x00166690 __dt__6PlayerFv
+extern "C" void *__dt__6PlayerFv(void *pThis, short nFlag) {
+    if (pThis != 0) {
+        Player *self = (Player *)pThis;
+        *(unsigned char **)pThis = __vt__6Player;
+        if (self->m_unk2B8 != 0) {
+            ((EntityBaseClass *)self)->StopSoundBySoundRef((unsigned int)self->m_unk2B8);
+            self->m_unk2B8 = 0;
+        }
+        if (self->m_unk229 == 4) {
+            self->m_unk229 = MaximoArmor[self->m_unk1DC];
+        }
+        self->SavePlayerData((Player::PlayerData *)(gMC + 0x234));
+        self->ResetPling();
+        EnableFullScreenFx__10PGfxEngineFb(gGfxEng, 0);
+        if (self->m_unk2AC != 0) {
+            mEffectAPI__13EntityManager.DeleteEffect(self->m_unk2AC);
+            self->m_unk2AC = 0;
+        }
+        if (self->m_unk288 != 0) {
+            if (self->m_unk288 != 0) {
+                ((VirtualSlot08Object *)self->m_unk288)->Slot08(1);
+            }
+            self->m_unk288 = 0;
+        }
+        if (self->m_unk23CC != 0) {
+            __dt__6ShadowFv(self->m_unk23CC, 1);
+            self->m_unk23CC = 0;
+        }
+        if (self->m_unk23C8 != 0) {
+            __dt__6ShadowFv(self->m_unk23C8, 1);
+            self->m_unk23C8 = 0;
+        }
+        miRandom__7MathAPI = (int)(0.5f + (12345.0f + (41976.0f * ((float)rand() / 2.1474836e9f))));
+        __dt__15PGrimReaperCapeFv((char *)self + 0x390, -1);
+        __dt__15EntityBaseClassFv(self, 0);
+        if (nFlag > 0) {
+            __dl__FPv(pThis);
+        }
+    }
+    return pThis;
+}
+
+#define PL_AT(T, off) (*(T *)((char *)this + (off)))
+
+// FUNCTION: 0x00166830 __ct__6PlayerFv
+extern "C" Player *__ct__6PlayerFv(Player *volatile pThis)
+{
+    __ct__15EntityBaseClassFQ215EntityBaseClass9LoadClassUi(pThis, 5, 1);
+    *(unsigned char **)pThis = __vt__6Player;
+    __ct__15PGrimReaperCapeFv((char *)pThis + 0x390);
+    (*(unsigned char *)((char *)pThis + (0xE8))) = 0x13;
+    ((EntityBaseClass *)pThis)->EnableSleep(false, false);
+    (*(unsigned char *)((char *)pThis + (0x103))) = 0x20;
+    (*(unsigned char *)((char *)pThis + (0xEA))) = 1;
+    (*(unsigned char *)((char *)pThis + (0x1B6))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x1B7))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x1B4))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x1B5))) = 0;
+    (*(int *)((char *)pThis + (0x25C))) = 0;
+    (*(int *)((char *)pThis + (0x260))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x33A))) = 0;
+    (*(int *)((char *)pThis + (0x2A4))) = 0;
+    (*(int *)((char *)pThis + (0x284))) = 0;
+    (*(int *)((char *)pThis + (0x28C))) = 0;
+    (*(int *)((char *)pThis + (0x2A8))) = 0;
+    (*(int *)((char *)pThis + (0x2B0))) = 0;
+    (*(int *)((char *)pThis + (0x2AC))) = 0;
+    (*(int *)((char *)pThis + (0x2B4))) = 0;
+    (*(int *)((char *)pThis + (0x2B8))) = 0;
+    (*(int *)((char *)pThis + (0x320))) = 0;
+    (*(int *)((char *)pThis + (0x308))) = 0;
+    (*(int *)((char *)pThis + (0x314))) = 0;
+    (*(int *)((char *)pThis + (0x2F8))) = 0;
+    (*(int *)((char *)pThis + (0x324))) = 0;
+    (*(int *)((char *)pThis + (0x32C))) = 0;
+    pThis->m_unk339 = -1;
+    (*(int *)((char *)pThis + (0x330))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x335))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x337))) = 0;
+    (*(int *)((char *)pThis + (0x318))) = 0;
+    (*(int *)((char *)pThis + (0x31C))) = 0;
+    (*(int *)((char *)pThis + (0x288))) = 0;
+    (*(int *)((char *)pThis + (0x1CC))) = 0;
+    (*(int *)((char *)pThis + (0x2BC))) = 0;
+    (*(unsigned char *)((char *)pThis + (0x338))) = 0;
+    (*(int *)((char *)pThis + (0x23C4))) = 3;
+    pThis->m_unk38 = (int *)(new Physics);
+    if (pThis->m_unk38 == 0) {
+        CdsAssert("Player.cpp", 0x358, "mpPhysics");
+    }
+    ((Physics *)pThis->m_unk38)->m_unk118 = 0.2f;
+    ((Physics *)pThis->m_unk38)->m_unkEC = 0x8019FF55;
+    pThis->m_unkD4 = new Shadow(Shadow::eShadowParticle, 0x8700000B);
+    (*(void * *)((char *)pThis + (0x23CC))) = new Shadow(Shadow::eShadowParticle, 0x87000009);
+    (*(void * *)((char *)pThis + (0x23C8))) = new Shadow(Shadow::eShadowParticle, 0x87000004);
+    if (pThis->m_unkD4 == 0) {
+        CdsAssert("Player.cpp", 0x36B, "mpShadow");
+    }
+    {
+        Shadow *pShadow = (Shadow *)pThis->m_unkD4;
+        if (pShadow != 0) {
+            pShadow->m_unk0 = 1;
+            char *pPart = (char *)pShadow->m_unkC;
+            if (pPart != 0) {
+                *(unsigned char *)(pPart + 0x18) = 1;
+            }
+        }
+    }
+    (*(float *)((char *)pThis + (0x104))) = 1.0f;
+    (*(float *)((char *)pThis + (0x108))) = 4.0f;
+    (*(float *)((char *)pThis + (0xE4))) = 1.0f;
+    pThis->m_unk10C |= 0x071A1E01;
+    (*(int *)((char *)pThis + (0x344))) = 0;
+    (*(int *)((char *)pThis + (0x360))) = 0;
+    (*(int *)((char *)pThis + (0x368))) = 0;
+    (*(int *)((char *)pThis + (0x370))) = 0;
+    (*(int *)((char *)pThis + (0x378))) = 0;
+    pThis->LoadPlayerData((Player::PlayerData *)(gMC + 0x234));
+    gInterface.SetPlayerData((Player::PlayerData *)((char *)pThis + 0x1D0));
+    (*(float *)((char *)pThis + (0x380))) = 128.0f;
+    (*(float *)((char *)pThis + (0x384))) = 10.0f;
+    (*(int *)((char *)pThis + (0x388))) = 0;
+    (*(int *)((char *)pThis + (0x38C))) = 0;
+    (*(float *)((char *)pThis + (0x23C0))) = -2.5f;
+    ((PGrimReaperCape *)((char *)pThis + 0x390))->Init();
+    pThis->InitAttachableJoints();
+    return pThis;
 }

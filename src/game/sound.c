@@ -464,6 +464,33 @@ void SOUND_GetStatus(int arg0, int arg1) {
     SetIOPCommand(0x9, 2);
 }
 
+// FUNCTION: 0x001AE4B0 SOUND_ResumeMultipleSounds
+void SOUND_ResumeMultipleSounds(unsigned int arg0, unsigned int arg1) {
+    IOPCommandData[3] = arg1;
+    IOPCommandData[0] = (short)(arg0 >> 16);
+    IOPCommandData[1] = arg0 & 0xFFFF;
+    IOPCommandData[2] = (arg1 >> 16) & 0xFFFF;
+    SetIOPCommand(0x45, 4);
+}
+
+// FUNCTION: 0x001AE4F0 SOUND_PauseMultipleSounds
+void SOUND_PauseMultipleSounds(unsigned int arg0, unsigned int arg1) {
+    IOPCommandData[3] = arg1;
+    IOPCommandData[0] = (short)(arg0 >> 16);
+    IOPCommandData[1] = arg0 & 0xFFFF;
+    IOPCommandData[2] = (arg1 >> 16) & 0xFFFF;
+    SetIOPCommand(0x44, 4);
+}
+
+// FUNCTION: 0x001AE530 SOUND_StopMultipleSounds
+void SOUND_StopMultipleSounds(unsigned int arg0, unsigned int arg1) {
+    IOPCommandData[3] = arg1;
+    IOPCommandData[0] = (short)(arg0 >> 16);
+    IOPCommandData[1] = arg0 & 0xFFFF;
+    IOPCommandData[2] = (arg1 >> 16) & 0xFFFF;
+    SetIOPCommand(0x1F, 4);
+}
+
 // FUNCTION: 0x001AE570 SOUND_StopAllStreams
 void SOUND_StopAllStreams(void) {
     SetIOPCommand(0x43, 0);
@@ -477,6 +504,16 @@ void SOUND_StopAllRegularSounds(void) {
 // FUNCTION: 0x001AE590 SOUND_StopAllMusic
 void SOUND_StopAllMusic(void) {
     SetIOPCommand(0x26, 0);
+}
+
+// FUNCTION: 0x001AE5A0 SOUND_StopStream
+int SOUND_StopStream(unsigned int arg0) {
+    if (arg0 >= 4) {
+        return -1;
+    }
+    IOPCommandData[0] = (short)arg0;
+    SetIOPCommand(5, 1);
+    return 0;
 }
 
 // FUNCTION: 0x001AE5E0 SOUND_SetChannelPitch
@@ -515,43 +552,6 @@ int SOUND_PlaySFXRelVol(short arg0, unsigned int arg1, short arg2, short arg3, u
     IOPCommandData[0] = arg0;
     IOPCommandData[1] = arg1;
     SetIOPCommand(0x3C, 6);
-    return 0;
-}
-
-// FUNCTION: 0x001AE4B0 SOUND_ResumeMultipleSounds
-void SOUND_ResumeMultipleSounds(unsigned int arg0, unsigned int arg1) {
-    IOPCommandData[3] = arg1;
-    IOPCommandData[0] = (short)(arg0 >> 16);
-    IOPCommandData[1] = arg0 & 0xFFFF;
-    IOPCommandData[2] = (arg1 >> 16) & 0xFFFF;
-    SetIOPCommand(0x45, 4);
-}
-
-// FUNCTION: 0x001AE4F0 SOUND_PauseMultipleSounds
-void SOUND_PauseMultipleSounds(unsigned int arg0, unsigned int arg1) {
-    IOPCommandData[3] = arg1;
-    IOPCommandData[0] = (short)(arg0 >> 16);
-    IOPCommandData[1] = arg0 & 0xFFFF;
-    IOPCommandData[2] = (arg1 >> 16) & 0xFFFF;
-    SetIOPCommand(0x44, 4);
-}
-
-// FUNCTION: 0x001AE530 SOUND_StopMultipleSounds
-void SOUND_StopMultipleSounds(unsigned int arg0, unsigned int arg1) {
-    IOPCommandData[3] = arg1;
-    IOPCommandData[0] = (short)(arg0 >> 16);
-    IOPCommandData[1] = arg0 & 0xFFFF;
-    IOPCommandData[2] = (arg1 >> 16) & 0xFFFF;
-    SetIOPCommand(0x1F, 4);
-}
-
-// FUNCTION: 0x001AE5A0 SOUND_StopStream
-int SOUND_StopStream(unsigned int arg0) {
-    if (arg0 >= 4) {
-        return -1;
-    }
-    IOPCommandData[0] = (short)arg0;
-    SetIOPCommand(5, 1);
     return 0;
 }
 

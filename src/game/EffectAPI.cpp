@@ -455,30 +455,6 @@ void EffectNode::SendDeleteEvent(int arg0) {
     }
 }
 
-// FUNCTION: 0x001566B0 __ct__13OneshotEffectFUiUiP5PMat4P15EntityBaseClassfib
-OneshotEffect::OneshotEffect(unsigned int arg0, unsigned int arg1, PMat4 *arg2, EntityBaseClass *arg3, float arg4, int arg5, bool arg6) {
-    m_unkC = 0;
-    m_unk1C = arg6;
-    m_unk14 = arg3;
-    m_unk18 = (arg3 != 0) ? arg3->m_unk4 : 0;
-    m_unk10 = (int)arg2;
-    mpMeshNode = (int)mpResMgr__15EntityBaseClass->GetResource(arg0, 0);
-    if (mpMeshNode == 0) {
-        CdsAssert("EffectAPI.cpp", 0xFC, "mpMeshNode");
-    }
-    PMNode *pAnim = mpResMgr__15EntityBaseClass->GetResource(arg1, 0);
-    if (pAnim == 0) {
-        CdsAssert("EffectAPI.cpp", 0xFE, "pAnim");
-    }
-    ((PMNode *)mpMeshNode)->Unk20(pAnim);
-    ((PMNode *)mpMeshNode)->EnableAnim(true, true);
-    if (arg4 != 0.5f) {
-        ((PMNode *)mpMeshNode)->SetFrameRate(arg4, true);
-    }
-    ((PMNode *)mpMeshNode)->EnableOneRenderPassOnly(arg5);
-    ((PMNode *)mpMeshNode)->Unk14();
-}
-
 // FUNCTION: 0x00156490 Update__13OneshotEffectFf
 int OneshotEffect::Update(float arg0) {
     bool bVisible;
@@ -518,6 +494,30 @@ int EffectAPI::CreateOneshot(unsigned int arg0, unsigned int arg1, PMat4 *arg2, 
         pOneshot->m_unk8 = nId;
     }
     return nId;
+}
+
+// FUNCTION: 0x001566B0 __ct__13OneshotEffectFUiUiP5PMat4P15EntityBaseClassfib
+OneshotEffect::OneshotEffect(unsigned int arg0, unsigned int arg1, PMat4 *arg2, EntityBaseClass *arg3, float arg4, int arg5, bool arg6) {
+    m_unkC = 0;
+    m_unk1C = arg6;
+    m_unk14 = arg3;
+    m_unk18 = (arg3 != 0) ? arg3->m_unk4 : 0;
+    m_unk10 = (int)arg2;
+    mpMeshNode = (int)mpResMgr__15EntityBaseClass->GetResource(arg0, 0);
+    if (mpMeshNode == 0) {
+        CdsAssert("EffectAPI.cpp", 0xFC, "mpMeshNode");
+    }
+    PMNode *pAnim = mpResMgr__15EntityBaseClass->GetResource(arg1, 0);
+    if (pAnim == 0) {
+        CdsAssert("EffectAPI.cpp", 0xFE, "pAnim");
+    }
+    ((PMNode *)mpMeshNode)->Unk20(pAnim);
+    ((PMNode *)mpMeshNode)->EnableAnim(true, true);
+    if (arg4 != 0.5f) {
+        ((PMNode *)mpMeshNode)->SetFrameRate(arg4, true);
+    }
+    ((PMNode *)mpMeshNode)->EnableOneRenderPassOnly(arg5);
+    ((PMNode *)mpMeshNode)->Unk14();
 }
 
 // FUNCTION: 0x00156850 CreateOneshot__9EffectAPIFUiUiPA4_fPA4_fP15EntityBaseClassfbib
@@ -581,36 +581,6 @@ OneshotEffect::OneshotEffect(unsigned int arg0, unsigned int arg1, float (*arg2)
     ((PMNode *)mpMeshNode)->Unk14();
 }
 
-// DRAFT: 0x00156E00 Animate__9EffectAPIFf
-// note: 28 words (was 34): pre-increment m_unk4 ternary, (&aDead[0])[nOff / 4] store, no nDead>0 guard on the second loop (original tests 0 < nDead in the for header). Remaining: the dead-entry store still folds sp+0x60 (original computes the array base then adds the offset) and the GetNext reload order. A goto-entered loop is wrong here: the original tests pNode at the loop top (beqz at 0x44).
-void EffectAPI::Animate(float arg0) {
-    EffectAnimNode *aDead[64];
-    int nDead = 0;
-    EffectAnimNode *pNode;
-    m_unk4 = 0;
-    if (m_unk0 != 0) {
-        pNode = (EffectAnimNode *)m_ppEntries[0];
-    } else {
-        pNode = 0;
-    }
-    int nOff = 0;
-    while (pNode != 0) {
-        if (pNode->Slot1(arg0) == 0) {
-            nDead++;
-            (&aDead[0])[nOff / 4] = pNode;
-            RemoveCurrent__6PArrayFv(this);
-            nOff += 4;
-        }
-        pNode = (++m_unk4 < m_unk0) ? (EffectAnimNode *)m_ppEntries[m_unk4] : 0;
-    }
-    for (int i = 0; i < nDead; i++) {
-        EffectAnimNode *pDead = aDead[i];
-        if (pDead != 0) {
-            pDead->Slot0(1);
-        }
-    }
-}
-
 // DRAFT: 0x156BB0 Update__10EffectNodeFf
 // note: 2 words, a2/a1 addiu order (original computes a2 first). Tried: inline args, pMat local, PMNode struct fields, int base local, frustum local, inline wrapper with swapped params, declare-then-assign in both orders.
 int EffectNode::Update(float arg0) {
@@ -670,6 +640,36 @@ void EffectAPI::EnableParticleFx(bool arg0) {
         unsigned int nIndex = m_unk4 + 1;
         m_unk4 = nIndex;
         pNode = (nIndex < m_unk0) ? m_ppEntries[m_unk4] : 0;
+    }
+}
+
+// DRAFT: 0x00156E00 Animate__9EffectAPIFf
+// note: 28 words (was 34): pre-increment m_unk4 ternary, (&aDead[0])[nOff / 4] store, no nDead>0 guard on the second loop (original tests 0 < nDead in the for header). Remaining: the dead-entry store still folds sp+0x60 (original computes the array base then adds the offset) and the GetNext reload order. A goto-entered loop is wrong here: the original tests pNode at the loop top (beqz at 0x44).
+void EffectAPI::Animate(float arg0) {
+    EffectAnimNode *aDead[64];
+    int nDead = 0;
+    EffectAnimNode *pNode;
+    m_unk4 = 0;
+    if (m_unk0 != 0) {
+        pNode = (EffectAnimNode *)m_ppEntries[0];
+    } else {
+        pNode = 0;
+    }
+    int nOff = 0;
+    while (pNode != 0) {
+        if (pNode->Slot1(arg0) == 0) {
+            nDead++;
+            (&aDead[0])[nOff / 4] = pNode;
+            RemoveCurrent__6PArrayFv(this);
+            nOff += 4;
+        }
+        pNode = (++m_unk4 < m_unk0) ? (EffectAnimNode *)m_ppEntries[m_unk4] : 0;
+    }
+    for (int i = 0; i < nDead; i++) {
+        EffectAnimNode *pDead = aDead[i];
+        if (pDead != 0) {
+            pDead->Slot0(1);
+        }
     }
 }
 

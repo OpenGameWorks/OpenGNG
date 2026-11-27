@@ -554,75 +554,6 @@ void PDisplayList::SetMaterials(struct tagGsMaterial *pMat, int nCount, bool bA,
     }
 }
 
-
-// DRAFT: 0x001826F0 DrawSplineParticles__12PDisplayListFP14tagVuSplineKeyiifbi
-// note: 167 words differ, size 0x368 vs 0x36C; frame 0xC0 vs 0xB0 (pChunk spilled to 0xA0, original keeps it in s1); nCount/this/bFlag registers differ; declaring n per loop changed nothing
-void PDisplayList::DrawSplineParticles(struct tagVuSplineKey *pKeys, int nCount, int nTag, float fA, bool bFlag, int nChunk) {
-    if (pKeys == 0) { CdsAssert("PDisplayList.cpp", 0x38F, "pKeys"); }
-    if (nCount == 0) { CdsAssert("PDisplayList.cpp", 0x390, "iNumKeys"); }
-    if (nCount >= 4) {
-        int nLoops = nCount / nChunk;
-        if (nCount % nChunk) { nLoops++; }
-        int nIdx = 0;
-        int n;
-        if (bFlag) {
-            while (nIdx < nLoops) {
-                n = (nCount < nChunk) ? nCount : nChunk;
-                nCount -= n;
-                char *pChunk = (char *)pKeys + nIdx * nChunk * 64;
-                if (n < 5) { break; }
-                char *pPkt = (char *)AllocEntries(4 * n + 3);
-                if (pPkt == 0) { CdsAssert("PDisplayList.cpp", 0x3B1, "0"); }
-                int nQw = 4 * n + 2;
-                *(long long *)pPkt = (long long)nQw | 0x10000000;
-                *(unsigned int *)(pPkt + 8) = 0x10000000;
-                *(unsigned int *)(pPkt + 0xC) = ((nQw - 1) << 16) | 0x6C000000;
-                pPkt += 0x10;
-                *(int *)pPkt = n;
-                *(int *)(pPkt + 4) = nTag;
-                *(unsigned int *)(pPkt + 8) = *(unsigned int *)&fA;
-                *(unsigned int *)(pPkt + 0xC) = 0;
-                pPkt += 0x10;
-                QwordCopy((u_long128 *)pPkt, (u_long128 *)pChunk, nQw - 2);
-                nIdx++;
-                pPkt += (nQw - 2) << 4;
-                *(unsigned int *)pPkt = 0x11000000;
-                *(unsigned int *)(pPkt + 4) = 0x17000000;
-                *(unsigned int *)(pPkt + 8) = 0;
-                *(unsigned int *)(pPkt + 0xC) = 0;
-            }
-        } else {
-            while (nIdx < nLoops) {
-                n = (nCount < nChunk) ? nCount : nChunk;
-                nCount -= n;
-                char *pChunk = (char *)pKeys + nIdx * nChunk * 64;
-                if (n < 5) { break; }
-                char *pPkt = (char *)AllocEntries(2);
-                if (pPkt == 0) { CdsAssert("PDisplayList.cpp", 0x3DC, "0"); }
-                *(long long *)pPkt = 0x10000001;
-                *(unsigned int *)(pPkt + 8) = 0x10000000;
-                *(unsigned int *)(pPkt + 0xC) = 0x6C010000;
-                pPkt += 0x10;
-                *(int *)pPkt = n;
-                *(int *)(pPkt + 4) = nTag;
-                *(unsigned int *)(pPkt + 8) = *(unsigned int *)&fA;
-                *(unsigned int *)(pPkt + 0xC) = 0;
-                pPkt = (char *)AllocEntries(1);
-                if (pPkt == 0) { CdsAssert("PDisplayList.cpp", 0x3EC, "0"); }
-                *(unsigned long long *)pPkt = ((unsigned long long)(unsigned int)pChunk << 32) | 0x30000000 | (unsigned int)(n << 2);
-                *(unsigned int *)(pPkt + 8) = 0;
-                *(unsigned int *)(pPkt + 0xC) = ((unsigned int)(n << 2) << 16) | 0x6C000001;
-                pPkt = (char *)AllocEntries(1);
-                if (pPkt == 0) { CdsAssert("PDisplayList.cpp", 0x3F8, "0"); }
-                *(long long *)pPkt = 0x10000000;
-                nIdx++;
-                *(unsigned int *)(pPkt + 8) = 0x11000000;
-                *(unsigned int *)(pPkt + 0xC) = 0x17000000;
-            }
-        }
-    }
-}
-
 // DRAFT: 0x181AB0 DrawFxInstances__12PDisplayListFP15tagVuFxInstanceib
 // note: 180 words differ; frame 0xB0 vs 0xA0 (this spilled to 0xAC(sp), fp not used), arg registers a1..a3 not s7/s1/s0, packet store order
 void PDisplayList::DrawFxInstances(struct tagVuFxInstance *pInstances, int nNum, bool bFlag) {
@@ -885,6 +816,75 @@ void PDisplayList::DrawSplinePatch(struct tagVuSplinePatchKey *pKeys, int nCount
             nIdx++;
             *(unsigned int *)(pPkt + 8) = 0x11000000;
             *(unsigned int *)(pPkt + 0xC) = 0x17000000;
+        }
+    }
+}
+
+
+// DRAFT: 0x001826F0 DrawSplineParticles__12PDisplayListFP14tagVuSplineKeyiifbi
+// note: 167 words differ, size 0x368 vs 0x36C; frame 0xC0 vs 0xB0 (pChunk spilled to 0xA0, original keeps it in s1); nCount/this/bFlag registers differ; declaring n per loop changed nothing
+void PDisplayList::DrawSplineParticles(struct tagVuSplineKey *pKeys, int nCount, int nTag, float fA, bool bFlag, int nChunk) {
+    if (pKeys == 0) { CdsAssert("PDisplayList.cpp", 0x38F, "pKeys"); }
+    if (nCount == 0) { CdsAssert("PDisplayList.cpp", 0x390, "iNumKeys"); }
+    if (nCount >= 4) {
+        int nLoops = nCount / nChunk;
+        if (nCount % nChunk) { nLoops++; }
+        int nIdx = 0;
+        int n;
+        if (bFlag) {
+            while (nIdx < nLoops) {
+                n = (nCount < nChunk) ? nCount : nChunk;
+                nCount -= n;
+                char *pChunk = (char *)pKeys + nIdx * nChunk * 64;
+                if (n < 5) { break; }
+                char *pPkt = (char *)AllocEntries(4 * n + 3);
+                if (pPkt == 0) { CdsAssert("PDisplayList.cpp", 0x3B1, "0"); }
+                int nQw = 4 * n + 2;
+                *(long long *)pPkt = (long long)nQw | 0x10000000;
+                *(unsigned int *)(pPkt + 8) = 0x10000000;
+                *(unsigned int *)(pPkt + 0xC) = ((nQw - 1) << 16) | 0x6C000000;
+                pPkt += 0x10;
+                *(int *)pPkt = n;
+                *(int *)(pPkt + 4) = nTag;
+                *(unsigned int *)(pPkt + 8) = *(unsigned int *)&fA;
+                *(unsigned int *)(pPkt + 0xC) = 0;
+                pPkt += 0x10;
+                QwordCopy((u_long128 *)pPkt, (u_long128 *)pChunk, nQw - 2);
+                nIdx++;
+                pPkt += (nQw - 2) << 4;
+                *(unsigned int *)pPkt = 0x11000000;
+                *(unsigned int *)(pPkt + 4) = 0x17000000;
+                *(unsigned int *)(pPkt + 8) = 0;
+                *(unsigned int *)(pPkt + 0xC) = 0;
+            }
+        } else {
+            while (nIdx < nLoops) {
+                n = (nCount < nChunk) ? nCount : nChunk;
+                nCount -= n;
+                char *pChunk = (char *)pKeys + nIdx * nChunk * 64;
+                if (n < 5) { break; }
+                char *pPkt = (char *)AllocEntries(2);
+                if (pPkt == 0) { CdsAssert("PDisplayList.cpp", 0x3DC, "0"); }
+                *(long long *)pPkt = 0x10000001;
+                *(unsigned int *)(pPkt + 8) = 0x10000000;
+                *(unsigned int *)(pPkt + 0xC) = 0x6C010000;
+                pPkt += 0x10;
+                *(int *)pPkt = n;
+                *(int *)(pPkt + 4) = nTag;
+                *(unsigned int *)(pPkt + 8) = *(unsigned int *)&fA;
+                *(unsigned int *)(pPkt + 0xC) = 0;
+                pPkt = (char *)AllocEntries(1);
+                if (pPkt == 0) { CdsAssert("PDisplayList.cpp", 0x3EC, "0"); }
+                *(unsigned long long *)pPkt = ((unsigned long long)(unsigned int)pChunk << 32) | 0x30000000 | (unsigned int)(n << 2);
+                *(unsigned int *)(pPkt + 8) = 0;
+                *(unsigned int *)(pPkt + 0xC) = ((unsigned int)(n << 2) << 16) | 0x6C000001;
+                pPkt = (char *)AllocEntries(1);
+                if (pPkt == 0) { CdsAssert("PDisplayList.cpp", 0x3F8, "0"); }
+                *(long long *)pPkt = 0x10000000;
+                nIdx++;
+                *(unsigned int *)(pPkt + 8) = 0x11000000;
+                *(unsigned int *)(pPkt + 0xC) = 0x17000000;
+            }
         }
     }
 }

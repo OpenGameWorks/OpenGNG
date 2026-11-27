@@ -990,6 +990,14 @@ int MaximoMain::LoadGame() {
     }
 }
 
+// FUNCTION: 0x00137540 InitStaticDemo__10MaximoMainFv
+void MaximoMain::InitStaticDemo() {
+    m_unk19784 = 0;
+    m_unkD0 = 0;
+    m_unkD4 = 0;
+    m_unkD8 = 0x42180000;
+}
+
 // FUNCTION: 0x00137560 LoadTitleMesh__10MaximoMainFv
 void MaximoMain::LoadTitleMesh() {
     static char TITLE[] = "PSXDATA\\GAME\\TITLE.PAK";
@@ -1018,14 +1026,6 @@ void MaximoMain::LoadTitleMesh() {
         off += 4;
     } while (i < 2);
     m_unk19AC8->EnableAnim(true, true);
-}
-
-// FUNCTION: 0x00137540 InitStaticDemo__10MaximoMainFv
-void MaximoMain::InitStaticDemo() {
-    m_unk19784 = 0;
-    m_unkD0 = 0;
-    m_unkD4 = 0;
-    m_unkD8 = 0x42180000;
 }
 
 // FUNCTION: 0x00137680 TitleDemo__10MaximoMainFv
@@ -1273,29 +1273,6 @@ void MaximoMain::PressStart(int arg0) {
         m_unk19AD4 = nState + 1;
     }
     *(float *)((char *)m_unk19AC4 + 8) = fAlpha;
-}
-
-// DRAFT: 0x00139AB0 SetMarker__10MaximoMainFP6PMNodeiP6PMNode
-// note: 33 words differ (was 34). The PMChildList pointer local fixed one word; the rest is register choice: original keeps count in v1 and children in v0 via addiu v0,s0,0x14 + lw 8(v0), ours count in a0 and children in v1. Tried: children[count], -4 cast, local count, &m_unk14+8 base, else-branch, inline index (all 33)
-PMNode *MaximoMain::SetMarker(PMNode *arg0, int arg1, PMNode *arg2) {
-    PMNode *node = arg0->Find(*(unsigned int *)(LevelTable + (arg1 << 7)));
-
-    if (node != 0) {
-        PMNode *child;
-        PMChildList *list = &node->m_unk14;
-        if (list->count != 0) {
-            PMNode **children = (PMNode **)((char *)list->children - 4);
-            child = children[list->count];
-        } else {
-            child = 0;
-        }
-        if (child != 0) {
-            *(u_long128 *)((char *)arg2 + 0x80) = *(u_long128 *)((char *)child + 0x80);
-            arg2->m_unk3E |= 8;
-            arg2->Slot4(0, 0.0f, 0.0f, 0, 0);
-        }
-    }
-    return node;
 }
 
 // DRAFT: 0x00138110 GameSelect__10MaximoMainFv
@@ -2014,6 +1991,29 @@ block_55:
     } while (var_s1_4 < 0x15);
     ((FontManager *)(gInterface + 0x80))->InitFrame();
     FadeScreen__9InterfaceFffbQ29Interface10eFadeColor(gInterface, 0.0f, 4.25f, true, 0);
+}
+
+// DRAFT: 0x00139AB0 SetMarker__10MaximoMainFP6PMNodeiP6PMNode
+// note: 33 words differ (was 34). The PMChildList pointer local fixed one word; the rest is register choice: original keeps count in v1 and children in v0 via addiu v0,s0,0x14 + lw 8(v0), ours count in a0 and children in v1. Tried: children[count], -4 cast, local count, &m_unk14+8 base, else-branch, inline index (all 33)
+PMNode *MaximoMain::SetMarker(PMNode *arg0, int arg1, PMNode *arg2) {
+    PMNode *node = arg0->Find(*(unsigned int *)(LevelTable + (arg1 << 7)));
+
+    if (node != 0) {
+        PMNode *child;
+        PMChildList *list = &node->m_unk14;
+        if (list->count != 0) {
+            PMNode **children = (PMNode **)((char *)list->children - 4);
+            child = children[list->count];
+        } else {
+            child = 0;
+        }
+        if (child != 0) {
+            *(u_long128 *)((char *)arg2 + 0x80) = *(u_long128 *)((char *)child + 0x80);
+            arg2->m_unk3E |= 8;
+            arg2->Slot4(0, 0.0f, 0.0f, 0, 0);
+        }
+    }
+    return node;
 }
 
 // FUNCTION: 0x0013C700 SetViewMatrix__6CameraF5PMat4

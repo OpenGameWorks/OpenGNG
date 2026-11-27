@@ -123,9 +123,38 @@ void ESubTimer::GenerateString(char *pOut, unsigned int nArg, unsigned int nArg2
     strcat(pOut, aAcc);
 }
 
+// DRAFT: 0x00169890 StopTimer__9ESubTimerFv
+// note: 8 differing words; the compare loads m_unk008 into a1 first and m_unk004 into v1, while ours loads m_unk004 first, so the two compares differ in operand registers. Tried <, > (8), explicit sum temp (8), hoisted declarations (8), nElapsed local, nMax local loaded before the compare, swapped local order, `!(m_unk004 <= m_unk008)`, unsigned casts, expanded sum, `this->` prefix, sum through nCounter (10); all keep the swapped a1/v1 operands. Also tried: inline max-update helpers (8, 17), separate asm statements, int counters, swapped asm locals, > compares (all 8).
+void ESubTimer::StopTimer() {
+    if (m_unk044 != 0) {
+        unsigned int nDummy;
+        unsigned int nCounter;
+        asm {
+            mfpc nDummy, 0
+            mfpc nCounter, 0
+        }
+        m_unk004 += nCounter - m_unk000;
+        m_unk044 = 0;
+        if (m_unk008 < m_unk004) {
+            m_unk008 = m_unk004;
+            if (m_unk014 < m_unk004) {
+                m_unk014 = m_unk004;
+            }
+        }
+    }
+}
+
 // FUNCTION: 0x00169900 GetTime__9ESubTimerFv
 int ESubTimer::GetTime() {
     return *(int *)((char *)this + 0x4);
+}
+
+// FUNCTION: 0x00169910 StartTimer__9ESubTimerFv
+void ESubTimer::StartTimer() {
+    unsigned int nCounter;
+    m_unk044 = 1;
+    asm { mfpc nCounter, 0 }
+    m_unk000 = nCounter;
 }
 
 // FUNCTION: 0x00169930 ZeroTimer__9ESubTimerFv
@@ -162,35 +191,6 @@ void ESubTimer::ZeroTimer() {
     }
     m_unk044 = 0;
     m_unk046 = 0;
-}
-
-// DRAFT: 0x00169890 StopTimer__9ESubTimerFv
-// note: 8 differing words; the compare loads m_unk008 into a1 first and m_unk004 into v1, while ours loads m_unk004 first, so the two compares differ in operand registers. Tried <, > (8), explicit sum temp (8), hoisted declarations (8), nElapsed local, nMax local loaded before the compare, swapped local order, `!(m_unk004 <= m_unk008)`, unsigned casts, expanded sum, `this->` prefix, sum through nCounter (10); all keep the swapped a1/v1 operands. Also tried: inline max-update helpers (8, 17), separate asm statements, int counters, swapped asm locals, > compares (all 8).
-void ESubTimer::StopTimer() {
-    if (m_unk044 != 0) {
-        unsigned int nDummy;
-        unsigned int nCounter;
-        asm {
-            mfpc nDummy, 0
-            mfpc nCounter, 0
-        }
-        m_unk004 += nCounter - m_unk000;
-        m_unk044 = 0;
-        if (m_unk008 < m_unk004) {
-            m_unk008 = m_unk004;
-            if (m_unk014 < m_unk004) {
-                m_unk014 = m_unk004;
-            }
-        }
-    }
-}
-
-// FUNCTION: 0x00169910 StartTimer__9ESubTimerFv
-void ESubTimer::StartTimer() {
-    unsigned int nCounter;
-    m_unk044 = 1;
-    asm { mfpc nCounter, 0 }
-    m_unk000 = nCounter;
 }
 
 // FUNCTION: 0x001699C0 __ct__9ESubTimerFv

@@ -848,6 +848,66 @@ void *EntityManager::CalculateTallyData() {
     return m_unk5B24;
 }
 
+struct IconEntry {
+    PMNode *m_unk00;            // 0x00 icon mesh node
+    char _pad04[8];
+    unsigned char m_unk0C;      // 0x0C active flag, gates the countdown
+    unsigned char m_unk0D;      // 0x0D live flag, clear means release the mesh
+    char _pad0E[2];
+    int m_unk10;                // 0x10 countdown
+    int m_unk14;                // 0x14 countdown total
+    unsigned char m_unk18;      // 0x18 scale-by-progress flag
+};
+
+// DRAFT: 0x00147040 ProcessIcons__13EntityManagerFv
+// note: 65 diffs; m_unk3F test lacks the original's sign-extend, release/countdown order, float-store reload and cursor-advance order differ; int cast on m_unk3F test did not change count
+void EntityManager::ProcessIcons() {
+    IconEntry *pEntry;
+    PMNode *pNode;
+
+    m_unk5F5C = m_unk5F54;
+    pEntry = m_unk5F54 ? (IconEntry *)*m_unk5F54 : 0;
+    if (pEntry != 0) {
+        do {
+            if (pEntry->m_unk0D != 0) {
+                pNode = pEntry->m_unk00;
+                pNode->Animate(0.0f, 1.0f, 0, 0, false);
+                if (pEntry->m_unk0C != 0) {
+                    if ((pNode->m_unk3F & 7) == 0) {
+                        if (pEntry->m_unk10 == 0) {
+                            DeleteMeshLayer__9InterfaceFP6PMNode(gInterface, pEntry->m_unk00);
+                            pEntry->m_unk00 = 0;
+                            pEntry->m_unk0D = 0;
+                        } else {
+                            pEntry->m_unk10 = pEntry->m_unk10 - 1;
+                            if (pEntry->m_unk18 != 0) {
+                                pEntry->m_unk00->m_unk2C = (float)pEntry->m_unk10 / (float)pEntry->m_unk14;
+                            }
+                        }
+                    }
+                }
+            } else {
+                pNode = pEntry->m_unk00;
+                if (pNode != 0) {
+                    DeleteMeshLayer__9InterfaceFP6PMNode(gInterface, pNode);
+                    pEntry->m_unk00 = 0;
+                }
+            }
+            if (m_unk5F5C == 0) {
+                m_unk5F5C = m_unk5F54;
+                pEntry = m_unk5F54 ? (IconEntry *)*m_unk5F54 : 0;
+            } else {
+                if (((void **)m_unk5F5C)[1] != 0) {
+                    m_unk5F5C = (void **)((void **)m_unk5F5C)[1];
+                    pEntry = (IconEntry *)((void **)m_unk5F5C)[0];
+                } else {
+                    pEntry = 0;
+                }
+            }
+        } while (pEntry != 0);
+    }
+}
+
 // FUNCTION: 0x001471D0 Reset__4IconFv
 void Icon::Reset() {
     m_unk0 = 0;
@@ -964,66 +1024,6 @@ void EntityManager::RestoreHolyGround() {
     pMC[9] = *(signed char *)((char *)this + 0x5B21);
     if (pNode != 0) {
         ((PMNode *)pNode)->ProcessFxTriggers(-2.0f, 0, true, false);
-    }
-}
-
-struct IconEntry {
-    PMNode *m_unk00;            // 0x00 icon mesh node
-    char _pad04[8];
-    unsigned char m_unk0C;      // 0x0C active flag, gates the countdown
-    unsigned char m_unk0D;      // 0x0D live flag, clear means release the mesh
-    char _pad0E[2];
-    int m_unk10;                // 0x10 countdown
-    int m_unk14;                // 0x14 countdown total
-    unsigned char m_unk18;      // 0x18 scale-by-progress flag
-};
-
-// DRAFT: 0x00147040 ProcessIcons__13EntityManagerFv
-// note: 65 diffs; m_unk3F test lacks the original's sign-extend, release/countdown order, float-store reload and cursor-advance order differ; int cast on m_unk3F test did not change count
-void EntityManager::ProcessIcons() {
-    IconEntry *pEntry;
-    PMNode *pNode;
-
-    m_unk5F5C = m_unk5F54;
-    pEntry = m_unk5F54 ? (IconEntry *)*m_unk5F54 : 0;
-    if (pEntry != 0) {
-        do {
-            if (pEntry->m_unk0D != 0) {
-                pNode = pEntry->m_unk00;
-                pNode->Animate(0.0f, 1.0f, 0, 0, false);
-                if (pEntry->m_unk0C != 0) {
-                    if ((pNode->m_unk3F & 7) == 0) {
-                        if (pEntry->m_unk10 == 0) {
-                            DeleteMeshLayer__9InterfaceFP6PMNode(gInterface, pEntry->m_unk00);
-                            pEntry->m_unk00 = 0;
-                            pEntry->m_unk0D = 0;
-                        } else {
-                            pEntry->m_unk10 = pEntry->m_unk10 - 1;
-                            if (pEntry->m_unk18 != 0) {
-                                pEntry->m_unk00->m_unk2C = (float)pEntry->m_unk10 / (float)pEntry->m_unk14;
-                            }
-                        }
-                    }
-                }
-            } else {
-                pNode = pEntry->m_unk00;
-                if (pNode != 0) {
-                    DeleteMeshLayer__9InterfaceFP6PMNode(gInterface, pNode);
-                    pEntry->m_unk00 = 0;
-                }
-            }
-            if (m_unk5F5C == 0) {
-                m_unk5F5C = m_unk5F54;
-                pEntry = m_unk5F54 ? (IconEntry *)*m_unk5F54 : 0;
-            } else {
-                if (((void **)m_unk5F5C)[1] != 0) {
-                    m_unk5F5C = (void **)((void **)m_unk5F5C)[1];
-                    pEntry = (IconEntry *)((void **)m_unk5F5C)[0];
-                } else {
-                    pEntry = 0;
-                }
-            }
-        } while (pEntry != 0);
     }
 }
 

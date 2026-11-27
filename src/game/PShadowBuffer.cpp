@@ -210,21 +210,6 @@ void PShadowBuffer::Render() {
     ((PGfxEngine *)gGfxEng)->EndShadowRender();
 }
 
-// FUNCTION: 0x001D8530 SetZBufferRange__13PShadowBufferFff
-void PShadowBuffer::SetZBufferRange(float fNear, float fFar) {
-    float fH = (float)(SCREEN_HEIGHT / 2);
-    m_unk1AC0[0] = (float)(SCREEN_WIDTH / 2);
-    m_unk1AC0[1] = fH;
-    m_unk1AC0[2] = -(0.5f * (fFar - fNear));
-    *(int *)&m_unk1AC0[3] = 0;
-    *(int *)&m_unk1AD0[0] = 0x45000000;
-    *(int *)&m_unk1AD0[1] = 0x45000000;
-    m_unk1AD0[2] = 0.5f * (fFar + fNear);
-    *(int *)&m_unk1AD0[3] = 0;
-    m_unk1AD0[2] += 256.0f;
-    *(int *)&m_unk1AD0[3] = 0xBF800000;
-}
-
 // FUNCTION: 0x001D8460 RemoveShadowVolume__13PShadowBufferFP13PShadowVolume
 void PShadowBuffer::RemoveShadowVolume(PShadowVolume *pVolume) {
     int nIndex = Find__6PArrayFPv(&m_array, pVolume);
@@ -244,6 +229,21 @@ void PShadowBuffer::AddShadowVolume(PShadowVolume *pVolume) {
         }
         m_array.Add(pVolume);
     }
+}
+
+// FUNCTION: 0x001D8530 SetZBufferRange__13PShadowBufferFff
+void PShadowBuffer::SetZBufferRange(float fNear, float fFar) {
+    float fH = (float)(SCREEN_HEIGHT / 2);
+    m_unk1AC0[0] = (float)(SCREEN_WIDTH / 2);
+    m_unk1AC0[1] = fH;
+    m_unk1AC0[2] = -(0.5f * (fFar - fNear));
+    *(int *)&m_unk1AC0[3] = 0;
+    *(int *)&m_unk1AD0[0] = 0x45000000;
+    *(int *)&m_unk1AD0[1] = 0x45000000;
+    m_unk1AD0[2] = 0.5f * (fFar + fNear);
+    *(int *)&m_unk1AD0[3] = 0;
+    m_unk1AD0[2] += 256.0f;
+    *(int *)&m_unk1AD0[3] = 0xBF800000;
 }
 
 // FUNCTION: 0x001D85D0 Destroy__13PShadowBufferFv

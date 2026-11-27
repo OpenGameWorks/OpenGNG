@@ -109,6 +109,43 @@ void PParticleBubbles::Render() {
     }
 }
 
+// FUNCTION: 0x002023A0 Animate__16PParticleBubblesFf
+void PParticleBubbles::Animate(float fDelta) {
+    if (m_unk15 == 0 || m_unk16 != 0) {
+        return;
+    }
+    if (m_unk18C < m_unk04 && fDelta) {
+        m_unk190 -= 1;
+        if (m_unk190 <= 0) {
+            SpawnBubble(m_unk188 + m_unk18C);
+            m_unk18C += 1;
+            m_unk190 = 0x14;
+        }
+    }
+    unsigned int nAlive = m_unk04;
+    unsigned int i = 0;
+    int offset = 0;
+    while (i < m_unk04) {
+        tagBubble *pBubble = (tagBubble *)((char *)m_unk188 + offset);
+        pBubble->m_unk24 += fDelta * pBubble->m_unk20;
+        float fLife = pBubble->m_unk28 - fDelta;
+        pBubble->m_unk28 = fLife;
+        if (fLife <= 0.0f && m_unk18 != 0) {
+            nAlive -= 1;
+            if ((int)nAlive <= 0) {
+                m_unk16 = m_unk17;
+            }
+            if (m_unk18 != 0) {
+                SpawnBubble(pBubble);
+            } else {
+                pBubble->m_unk24 = 0.0f;
+            }
+        }
+        offset += 0x30;
+        i += 1;
+    }
+}
+
 // FUNCTION: 0x00202520 Create__16PParticleBubblesFP24tagParticleBubblesParamsfff
 int PParticleBubbles::Create(tagParticleBubblesParams *pParams, float fX, float fY, float fZ) {
     ((pParams != 0) ? (void)0 : CdsAssert("PParticleBubbles.cpp", 0x27, "pParams"));
@@ -148,43 +185,6 @@ int PParticleBubbles::Create(tagParticleBubblesParams *pParams, float fX, float 
     m_unk18C = 1;
     m_unk190 = 0x14;
     return 1;
-}
-
-// FUNCTION: 0x002023A0 Animate__16PParticleBubblesFf
-void PParticleBubbles::Animate(float fDelta) {
-    if (m_unk15 == 0 || m_unk16 != 0) {
-        return;
-    }
-    if (m_unk18C < m_unk04 && fDelta) {
-        m_unk190 -= 1;
-        if (m_unk190 <= 0) {
-            SpawnBubble(m_unk188 + m_unk18C);
-            m_unk18C += 1;
-            m_unk190 = 0x14;
-        }
-    }
-    unsigned int nAlive = m_unk04;
-    unsigned int i = 0;
-    int offset = 0;
-    while (i < m_unk04) {
-        tagBubble *pBubble = (tagBubble *)((char *)m_unk188 + offset);
-        pBubble->m_unk24 += fDelta * pBubble->m_unk20;
-        float fLife = pBubble->m_unk28 - fDelta;
-        pBubble->m_unk28 = fLife;
-        if (fLife <= 0.0f && m_unk18 != 0) {
-            nAlive -= 1;
-            if ((int)nAlive <= 0) {
-                m_unk16 = m_unk17;
-            }
-            if (m_unk18 != 0) {
-                SpawnBubble(pBubble);
-            } else {
-                pBubble->m_unk24 = 0.0f;
-            }
-        }
-        offset += 0x30;
-        i += 1;
-    }
 }
 
 // FUNCTION: 0x002027E0 __dt__16PParticleBubblesFv

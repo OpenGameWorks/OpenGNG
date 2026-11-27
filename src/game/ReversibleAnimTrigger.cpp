@@ -112,6 +112,29 @@ int ReversibleAnimTrigger::OnHitEvent(EntityBaseClass *arg0, int arg1, unsigned 
     return 1;
 }
 
+// FUNCTION: 0x001EB760 OnTimerEvent__21ReversibleAnimTriggerFUi
+void ReversibleAnimTrigger::OnTimerEvent(unsigned int arg0) {
+    if (arg0 == m_unk1E0) {
+        m_unk1E5 = 1;
+    }
+}
+
+// FUNCTION: 0x001EB780 SetEditableVars__21ReversibleAnimTriggerFPc
+void ReversibleAnimTrigger::SetEditableVars(char *pVars) {
+    memcpy(&m_unk1B0, pVars, 0x24);
+    if (*(PMNode **)gEng != 0) {
+        m_unk1D4 = (*(PMNode **)gEng)->FindAnimNode(m_unk1BC);
+        if (m_unk1D4 == 0) {
+            CdsAssert("ReversibleAnimTrigger.cpp", 0x14C, "m_pLinkedNode");
+        }
+        ((PMNodeVirtuals *)m_unk1D4)->SetFrameTime(0.0f);
+        ((PMNodeVirtuals *)m_unk1D4)->Animate(0.0f, 0.0f, 0, 0, false);
+        m_unk1D4->SetFrameRate(0.5f, true);
+        ((PMNodeVirtuals *)m_unk1D4)->SetAllAnimFlags(0);
+        m_unk1D4->EnableAnim(false, true);
+    }
+}
+
 static unsigned int ReversibleAnimTriggerStoneSeq[14] = {0x1, 0x100010a, 0x8, 0x2, 0x2000239, 0x3, 0x0, 0xffffffff, 0x0, 0xffffffff, 0x1, 0x3, 0x80, 0xff};
 static unsigned int *AnimTable[6] = {ReversibleAnimTriggerStoneSeq, ReversibleAnimTriggerStoneSeq, ReversibleAnimTriggerStoneSeq, ReversibleAnimTriggerStoneSeq, ReversibleAnimTriggerStoneSeq, ReversibleAnimTriggerStoneSeq};
 // DRAFT: 0x001EB860 Execute__21ReversibleAnimTriggerFv
@@ -260,29 +283,6 @@ void ReversibleAnimTrigger::Execute() {
             SetState__15EntityBaseClassFi(this, 0);
         }
         break;
-    }
-}
-
-// FUNCTION: 0x001EB760 OnTimerEvent__21ReversibleAnimTriggerFUi
-void ReversibleAnimTrigger::OnTimerEvent(unsigned int arg0) {
-    if (arg0 == m_unk1E0) {
-        m_unk1E5 = 1;
-    }
-}
-
-// FUNCTION: 0x001EB780 SetEditableVars__21ReversibleAnimTriggerFPc
-void ReversibleAnimTrigger::SetEditableVars(char *pVars) {
-    memcpy(&m_unk1B0, pVars, 0x24);
-    if (*(PMNode **)gEng != 0) {
-        m_unk1D4 = (*(PMNode **)gEng)->FindAnimNode(m_unk1BC);
-        if (m_unk1D4 == 0) {
-            CdsAssert("ReversibleAnimTrigger.cpp", 0x14C, "m_pLinkedNode");
-        }
-        ((PMNodeVirtuals *)m_unk1D4)->SetFrameTime(0.0f);
-        ((PMNodeVirtuals *)m_unk1D4)->Animate(0.0f, 0.0f, 0, 0, false);
-        m_unk1D4->SetFrameRate(0.5f, true);
-        ((PMNodeVirtuals *)m_unk1D4)->SetAllAnimFlags(0);
-        m_unk1D4->EnableAnim(false, true);
     }
 }
 

@@ -473,20 +473,6 @@ void Tinker::SetAsEnemyTarget(unsigned int arg0, bool arg1) {
     }
 }
 
-// FUNCTION: 0x00209E40 TrappedEntityRemoved__6TinkerFv
-bool Tinker::TrappedEntityRemoved() {
-    EntityBaseClass **pEnt = m_unk1F0;
-    int i = 0;
-    do {
-        if (*pEnt != 0 && InstanceIsValid__15EntityBaseClassFUi(*pEnt)) {
-            return false;
-        }
-        i++;
-        pEnt++;
-    } while (i < 4);
-    return true;
-}
-
 // FUNCTION: 0x00209540 IsBadWaypoint__6TinkerFUi
 unsigned int Tinker::IsBadWaypoint(unsigned int arg0) {
     int off;
@@ -758,6 +744,20 @@ void *Tinker::FindClosestEnemy(float (*pBox)[4], EntityBaseClass::LoadClass eLoa
     return pNearestApparition;
 }
 
+// FUNCTION: 0x00209E40 TrappedEntityRemoved__6TinkerFv
+bool Tinker::TrappedEntityRemoved() {
+    EntityBaseClass **pEnt = m_unk1F0;
+    int i = 0;
+    do {
+        if (*pEnt != 0 && InstanceIsValid__15EntityBaseClassFUi(*pEnt)) {
+            return false;
+        }
+        i++;
+        pEnt++;
+    } while (i < 4);
+    return true;
+}
+
 // FUNCTION: 0x00209EB0 EnemiesInCheckRadius__6TinkerFv
 int Tinker::EnemiesInCheckRadius() {
     float box[4];
@@ -924,6 +924,87 @@ void Tinker::OnTimerEvent(unsigned int arg0) {
 // FUNCTION: 0x0020A3D0 OnAttackEvent__6TinkerFP15EntityBaseClassi
 void Tinker::OnAttackEvent(EntityBaseClass *pAttacker, int nDamage) {
     OnInnocentAttack__15EntityBaseClassFP15EntityBaseClassi(this, pAttacker, nDamage);
+}
+
+// DRAFT: 0x0020A3E0 OnHitEvent__6TinkerFP15EntityBaseClassiUiUi
+// note: 96 words differ; the 0x1FE block is 27 words in the original and 23 here, so the branch offsets and the shared jal/delay-slot placement shift. Tried: flat else-if (99), switch with fall-through (103), 6 tested before 16 (98).
+int Tinker::OnHitEvent(EntityBaseClass *pOther, int arg1, unsigned int arg2, unsigned int arg3) {
+    if (arg2 == 0x1FE) {
+        if (m_unk20 != 10) {
+            if (m_unk20 == 16 || m_unk20 == 6) {
+                SetState__15EntityBaseClassFi(this, 0xD);
+            } else {
+                return 5;
+            }
+        } else {
+            SetState__15EntityBaseClassFi(this, 0x14);
+        }
+        m_unkE8 = 3;
+        return 1;
+    }
+    int nPrevState = m_unk20;
+    if ((*(unsigned int *)((char *)pOther + 0x10C) & 1) != 0) {
+        return (*(int *)((char *)pOther + 0x8) == 3) ? 5 : 4;
+    }
+    if (nPrevState == 3 || nPrevState == 4) {
+        return 5;
+    }
+    if (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) != 0) {
+        return 5;
+    }
+    FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(this, pOther);
+    CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(this, 0, 3, 0, false);
+    m_unk1B8 -= arg1;
+    if (m_unk1B8 < 0) {
+        m_unk1B8 = 0;
+    }
+    bool bFlag = (m_unk1B0 == 0 || m_unk1B0 == 1);
+    if (bFlag) {
+        SetValue__12HudBossMeterFs(gInterface + 0x270, (short)m_unk1B8);
+    }
+    if (m_unk1B8 > 0) {
+        m_unk29C = nPrevState;
+        SetState__15EntityBaseClassFi(this, 3);
+    } else {
+        SetState__15EntityBaseClassFi(this, 4);
+        if (bFlag) {
+            *(unsigned char *)(*(char **)((char *)mpEntMgr__15EntityBaseClass + 0x505C) + 0x26D) = 1;
+        }
+    }
+    return 1;
+}
+
+// FUNCTION: 0x0020A5A0 OnTouchEvent__6TinkerFP15EntityBaseClass
+void Tinker::OnTouchEvent(EntityBaseClass *pOther) {
+    if (((TinkerVirtual *)this)->Slot13() == 0) {
+        return;
+    }
+    switch (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058)) {
+    case 0:
+        switch (m_unk1B4) {
+        case 0:
+            if (pOther != 0 && (*(unsigned int *)((char *)pOther + 0x10C) & 1) == 0 && m_unk2E4 != *(unsigned int *)((char *)pOther + 0x4) && m_unk20 != 8) {
+                SetState__15EntityBaseClassFi(this, 7);
+                return;
+            }
+            break;
+        }
+        break;
+    }
+}
+
+// FUNCTION: 0x0020A660 OnDestroyEvent__6TinkerFv
+void Tinker::OnDestroyEvent() {
+    bool r = (m_unk1B0 == 0) || (m_unk1B0 == 1);
+    if (r) {
+        char *pSub = *(char **)(gInterface + 0x274);
+        if (pSub != 0) {
+            *(int *)(pSub + 0xC) = 0;
+        }
+        if (m_unk1B0 == 0) {
+            WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0);
+        }
+    }
 }
 
 // DRAFT: 0x0020A6C0 Execute__6TinkerFv
@@ -1594,87 +1675,6 @@ void Tinker::Execute() {
         }
         break;
     }
-    }
-}
-
-// DRAFT: 0x0020A3E0 OnHitEvent__6TinkerFP15EntityBaseClassiUiUi
-// note: 96 words differ; the 0x1FE block is 27 words in the original and 23 here, so the branch offsets and the shared jal/delay-slot placement shift. Tried: flat else-if (99), switch with fall-through (103), 6 tested before 16 (98).
-int Tinker::OnHitEvent(EntityBaseClass *pOther, int arg1, unsigned int arg2, unsigned int arg3) {
-    if (arg2 == 0x1FE) {
-        if (m_unk20 != 10) {
-            if (m_unk20 == 16 || m_unk20 == 6) {
-                SetState__15EntityBaseClassFi(this, 0xD);
-            } else {
-                return 5;
-            }
-        } else {
-            SetState__15EntityBaseClassFi(this, 0x14);
-        }
-        m_unkE8 = 3;
-        return 1;
-    }
-    int nPrevState = m_unk20;
-    if ((*(unsigned int *)((char *)pOther + 0x10C) & 1) != 0) {
-        return (*(int *)((char *)pOther + 0x8) == 3) ? 5 : 4;
-    }
-    if (nPrevState == 3 || nPrevState == 4) {
-        return 5;
-    }
-    if (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) != 0) {
-        return 5;
-    }
-    FaceHitDirection__15EntityBaseClassFP15EntityBaseClass(this, pOther);
-    CreateHitMarkFx__15EntityBaseClassFPA4_fQ215EntityBaseClass14eHitObjectTypeQ215EntityBaseClass14eHitWeaponTypeb(this, 0, 3, 0, false);
-    m_unk1B8 -= arg1;
-    if (m_unk1B8 < 0) {
-        m_unk1B8 = 0;
-    }
-    bool bFlag = (m_unk1B0 == 0 || m_unk1B0 == 1);
-    if (bFlag) {
-        SetValue__12HudBossMeterFs(gInterface + 0x270, (short)m_unk1B8);
-    }
-    if (m_unk1B8 > 0) {
-        m_unk29C = nPrevState;
-        SetState__15EntityBaseClassFi(this, 3);
-    } else {
-        SetState__15EntityBaseClassFi(this, 4);
-        if (bFlag) {
-            *(unsigned char *)(*(char **)((char *)mpEntMgr__15EntityBaseClass + 0x505C) + 0x26D) = 1;
-        }
-    }
-    return 1;
-}
-
-// FUNCTION: 0x0020A5A0 OnTouchEvent__6TinkerFP15EntityBaseClass
-void Tinker::OnTouchEvent(EntityBaseClass *pOther) {
-    if (((TinkerVirtual *)this)->Slot13() == 0) {
-        return;
-    }
-    switch (*(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058)) {
-    case 0:
-        switch (m_unk1B4) {
-        case 0:
-            if (pOther != 0 && (*(unsigned int *)((char *)pOther + 0x10C) & 1) == 0 && m_unk2E4 != *(unsigned int *)((char *)pOther + 0x4) && m_unk20 != 8) {
-                SetState__15EntityBaseClassFi(this, 7);
-                return;
-            }
-            break;
-        }
-        break;
-    }
-}
-
-// FUNCTION: 0x0020A660 OnDestroyEvent__6TinkerFv
-void Tinker::OnDestroyEvent() {
-    bool r = (m_unk1B0 == 0) || (m_unk1B0 == 1);
-    if (r) {
-        char *pSub = *(char **)(gInterface + 0x274);
-        if (pSub != 0) {
-            *(int *)(pSub + 0xC) = 0;
-        }
-        if (m_unk1B0 == 0) {
-            WriteApparitionData__15EntityBaseClassFicUi(this, 1, -3, 0);
-        }
     }
 }
 

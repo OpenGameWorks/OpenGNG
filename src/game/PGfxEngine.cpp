@@ -561,14 +561,14 @@ void PGfxEngine::BeginFogParticles(eBoxIntersect eBox) {
     m_unk154C80->BeginFxLoop(((unsigned int)(fx_fog_particle_clip_init + 0x1030)) >> 3);
 }
 
-// FUNCTION: 0x1853B0 BeginRotatableParticles__10PGfxEngineFv
-void PGfxEngine::BeginRotatableParticles() {
-    m_unk154C80->BeginFxLoop(((unsigned int)(fx_rot_particle_clip_init + 0xBA8)) >> 3);
-}
-
 // FUNCTION: 0x185390 DrawRotatableParticles__10PGfxEngineFP22tagVuRotatableParticleiffb
 void PGfxEngine::DrawRotatableParticles(struct tagVuRotatableParticle *pParticles, int nCount, float fA, float fB, bool bFlag) {
     m_unk154C80->DrawRotatableParticles(pParticles, nCount, fA, fB, bFlag, 0x1E);
+}
+
+// FUNCTION: 0x1853B0 BeginRotatableParticles__10PGfxEngineFv
+void PGfxEngine::BeginRotatableParticles() {
+    m_unk154C80->BeginFxLoop(((unsigned int)(fx_rot_particle_clip_init + 0xBA8)) >> 3);
 }
 
 // FUNCTION: 0x001853D0 EndParticles__10PGfxEngineFv
@@ -814,18 +814,6 @@ void PGfxEngine::SetAmbientLight(float *pVec) {
     m_unk158EB0[3] = 0.0f;
 }
 
-// DRAFT: 0x185F60 SetDirLight__10PGfxEngineFiPfPf
-// note: 38 diff lines; original builds this+0x158E30 with lui/ori before the index add and schedules the 0x3F80 constant between stores. Tried: plain array index, (char*)/(int) casts, unsigned consts, float/int split, local offset var, shared nOff (40), index-first sum (38), this+idx*16+0x158E70 for the scale call (38, kept).
-void PGfxEngine::SetDirLight(int nIndex, float *pDir, float *pScale) {
-    if ((nIndex < 4) && (nIndex >= 0)) {
-        *(float *)((int)this + 0x158E30 + nIndex * 4) = -pDir[0];
-        *(float *)((int)this + 0x158E40 + nIndex * 4) = -pDir[1];
-        *(float *)((int)this + 0x158E50 + nIndex * 4) = -pDir[2];
-        *(int *)((int)this + 0x158E60 + nIndex * 4) = 0x3F800000;
-        sceVu0ScaleVector((float *)((int)this + nIndex * 16 + 0x158E70), pScale, 128.0f);
-    }
-}
-
 // DRAFT: 0x185EE0 SetDirLightColor__10PGfxEngineFifff
 // note: 25 words differ (was 29). Per-field (int)this+K+nOff stores with a shared nOff and a float fK = 128.0f local; the remaining diffs are register naming and where sll and the constant lui are placed. Tried: swapped range test, local pointer, pointer+index, operand swap, index-first pointer math.
 void PGfxEngine::SetDirLightColor(int nIndex, float fR, float fG, float fB) {
@@ -836,6 +824,18 @@ void PGfxEngine::SetDirLightColor(int nIndex, float fR, float fG, float fB) {
         *(float *)((int)this + 0x158E74 + nOff) = fK * fG;
         *(float *)((int)this + 0x158E78 + nOff) = fK * fB;
         *(int *)((int)this + 0x158E7C + nOff) = 0;
+    }
+}
+
+// DRAFT: 0x185F60 SetDirLight__10PGfxEngineFiPfPf
+// note: 38 diff lines; original builds this+0x158E30 with lui/ori before the index add and schedules the 0x3F80 constant between stores. Tried: plain array index, (char*)/(int) casts, unsigned consts, float/int split, local offset var, shared nOff (40), index-first sum (38), this+idx*16+0x158E70 for the scale call (38, kept).
+void PGfxEngine::SetDirLight(int nIndex, float *pDir, float *pScale) {
+    if ((nIndex < 4) && (nIndex >= 0)) {
+        *(float *)((int)this + 0x158E30 + nIndex * 4) = -pDir[0];
+        *(float *)((int)this + 0x158E40 + nIndex * 4) = -pDir[1];
+        *(float *)((int)this + 0x158E50 + nIndex * 4) = -pDir[2];
+        *(int *)((int)this + 0x158E60 + nIndex * 4) = 0x3F800000;
+        sceVu0ScaleVector((float *)((int)this + nIndex * 16 + 0x158E70), pScale, 128.0f);
     }
 }
 
@@ -1350,6 +1350,21 @@ void PGfxEngine::SetOverrideTexture(int nIndex) {
     }
 }
 
+// FUNCTION: 0x001876F0 SetTvOffset__10PGfxEngineFii
+void PGfxEngine::SetTvOffset(int nX, int nY) {
+    // m_unk158BE8 is the DISPFB2 register of the second display environment (sceGsDispfb layout).
+    struct Dispfb { unsigned long FBP : 9; unsigned long FBW : 6; unsigned long PSM : 5; unsigned long p0 : 12; unsigned long DBX : 11; unsigned long DBY : 11; unsigned long p1 : 10; };
+    m_unk158DE4 = nX;
+    m_unk158DE8 = nY;
+    if (MODE_PAL != 0) {
+        m_unk158DE4 += 8;
+        m_unk158DE8 -= 8;
+    }
+    sceGsSetDefDispEnv(m_unk158BB0, m_unk158DFE, m_unk158E08, m_unk158E0A, m_unk158DE4, m_unk158DE8);
+    sceGsSetDefDispEnv(m_unk158BB0 + 0x28, m_unk158DFE, m_unk158E08, m_unk158E0A, m_unk158DE4, m_unk158DE8);
+    ((Dispfb *)&m_unk158BE8)->FBP = ((m_unk158E08 + 0x3F) / 64) * ((m_unk158E0A + 0x1F) / 32);
+}
+
 // FUNCTION: 0x187880 EnableFullScreenFx__10PGfxEngineFb
 void PGfxEngine::EnableFullScreenFx(bool bEnable) {
     ((PGrid *)m_unk16D410)->Enable(bEnable);
@@ -1425,21 +1440,6 @@ void PGfxEngine::FadeFullScreenMotionBlur(char cTarget, int nFrames) {
         return;
     }
     m_unk16D404 = cTarget;
-}
-
-// FUNCTION: 0x001876F0 SetTvOffset__10PGfxEngineFii
-void PGfxEngine::SetTvOffset(int nX, int nY) {
-    // m_unk158BE8 is the DISPFB2 register of the second display environment (sceGsDispfb layout).
-    struct Dispfb { unsigned long FBP : 9; unsigned long FBW : 6; unsigned long PSM : 5; unsigned long p0 : 12; unsigned long DBX : 11; unsigned long DBY : 11; unsigned long p1 : 10; };
-    m_unk158DE4 = nX;
-    m_unk158DE8 = nY;
-    if (MODE_PAL != 0) {
-        m_unk158DE4 += 8;
-        m_unk158DE8 -= 8;
-    }
-    sceGsSetDefDispEnv(m_unk158BB0, m_unk158DFE, m_unk158E08, m_unk158E0A, m_unk158DE4, m_unk158DE8);
-    sceGsSetDefDispEnv(m_unk158BB0 + 0x28, m_unk158DFE, m_unk158E08, m_unk158E0A, m_unk158DE4, m_unk158DE8);
-    ((Dispfb *)&m_unk158BE8)->FBP = ((m_unk158E08 + 0x3F) / 64) * ((m_unk158E0A + 0x1F) / 32);
 }
 
 // DRAFT: 0x00187C10 RefreshDisplay__10PGfxEngineFv

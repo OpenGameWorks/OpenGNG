@@ -170,13 +170,13 @@ void PSeaSerpentTeeth::Create(PMNode *pLowerJaw1, PMNode *pLowerJaw2, PMNode *pU
     m_unk3C20 = 1;
 }
 
+// FUNCTION: 0x0020EF90 __dt__16PSeaSerpentTeethFv
+PSeaSerpentTeeth::~PSeaSerpentTeeth() {
+}
+
 // FUNCTION: 0x0020EFE0 __ct__16PSeaSerpentTeethFv
 PSeaSerpentTeeth::PSeaSerpentTeeth() {
     memset(m_unk10, 0, 0x1680);
     memset(this, 0, 0x10);
     m_unk3C20 = 0;
-}
-
-// FUNCTION: 0x0020EF90 __dt__16PSeaSerpentTeethFv
-PSeaSerpentTeeth::~PSeaSerpentTeeth() {
 }

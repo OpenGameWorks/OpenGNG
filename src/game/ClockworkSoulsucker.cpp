@@ -449,31 +449,6 @@ int ClockworkSoulsucker::InJuggleAirspace() {
     return 0;
 }
 
-// FUNCTION: 0x00204EA0 SoulsInRange__19ClockworkSoulsuckerFv
-int ClockworkSoulsucker::SoulsInRange() {
-    unsigned int off;
-    unsigned int i;
-    float (*pBox)[4];
-    if (mTempArray__15EntityBaseClass.m_pData != 0) {
-        mTempArray__15EntityBaseClass.m_count = 0;
-        mTempArray__15EntityBaseClass.m_unk04 = 0;
-    }
-    pBox = (float (*)[4])((char *)this + 0x190);
-    if (m_unk3C != 0) {
-        pBox = (float (*)[4])(m_unk3C + 0x80);
-    }
-    GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 1, &mTempArray__15EntityBaseClass, pBox, 30.0f, 8, true, false);
-    for (i = 0, off = 0; i < (unsigned int)mTempArray__15EntityBaseClass.m_count; i++) {
-        ApparitionState *p = ApparitionIsValid__15EntityBaseClassFUi(i < (unsigned int)mTempArray__15EntityBaseClass.m_count ? *(unsigned int *)((char *)mTempArray__15EntityBaseClass.m_pData + off) : 0);
-        unsigned int st = p->m_unk1B0;
-        if (st == 4 || (st - 0x14) <= 1U || st == 0x16) {
-            return 1;
-        }
-        off += 4;
-    }
-    return 0;
-}
-
 // FUNCTION: 0x00204AF0 SetupType__19ClockworkSoulsuckerFv
 void ClockworkSoulsucker::SetupType() {
     if (m_unk3C == 0) {
@@ -568,6 +543,31 @@ void ClockworkSoulsucker::CheckBlockAttack() {
             }
         }
     }
+}
+
+// FUNCTION: 0x00204EA0 SoulsInRange__19ClockworkSoulsuckerFv
+int ClockworkSoulsucker::SoulsInRange() {
+    unsigned int off;
+    unsigned int i;
+    float (*pBox)[4];
+    if (mTempArray__15EntityBaseClass.m_pData != 0) {
+        mTempArray__15EntityBaseClass.m_count = 0;
+        mTempArray__15EntityBaseClass.m_unk04 = 0;
+    }
+    pBox = (float (*)[4])((char *)this + 0x190);
+    if (m_unk3C != 0) {
+        pBox = (float (*)[4])(m_unk3C + 0x80);
+    }
+    GetAllActiveApparitionsInRadius__13EntityManagerFQ215EntityBaseClass9LoadClassP6PArrayPA4_ffibb(mpEntMgr__15EntityBaseClass, 1, &mTempArray__15EntityBaseClass, pBox, 30.0f, 8, true, false);
+    for (i = 0, off = 0; i < (unsigned int)mTempArray__15EntityBaseClass.m_count; i++) {
+        ApparitionState *p = ApparitionIsValid__15EntityBaseClassFUi(i < (unsigned int)mTempArray__15EntityBaseClass.m_count ? *(unsigned int *)((char *)mTempArray__15EntityBaseClass.m_pData + off) : 0);
+        unsigned int st = p->m_unk1B0;
+        if (st == 4 || (st - 0x14) <= 1U || st == 0x16) {
+            return 1;
+        }
+        off += 4;
+    }
+    return 0;
 }
 
 // FUNCTION: 0x00204FA0 DetermineIdleState__19ClockworkSoulsuckerFv

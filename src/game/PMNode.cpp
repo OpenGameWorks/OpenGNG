@@ -334,6 +334,29 @@ void PMNode::UpdateCameraFade(bool bFlag) {
     }
 }
 
+// FUNCTION: 0x001919E0 CreateObjectDisplayList__6PMNodeFv
+int PMNode::CreateObjectDisplayList() {
+    PObjectDisplayList *p = m_pObjDisplayList;
+    if (p != 0) {
+        __dt__18PObjectDisplayListFv(p, 1);
+        m_pObjDisplayList = 0;
+    }
+    p = (PObjectDisplayList *)__nw__FUi(0x1F0);
+    if (p != 0) {
+        p = __ct__18PObjectDisplayListFv(p);
+    }
+    m_pObjDisplayList = p;
+    if (m_pObjDisplayList == 0) {
+        CdsAssert("PMNode.cpp", 0x99E, "mpObjDisplayList");
+    }
+    if (Create__18PObjectDisplayListFP6PMNodePb(m_pObjDisplayList, this, &m_unkD4) == 0) {
+        __dt__18PObjectDisplayListFv(m_pObjDisplayList, 1);
+        m_pObjDisplayList = 0;
+        return 0;
+    }
+    return 1;
+}
+
 // DRAFT: 0x00191A90 DebugDrawBox__6PMNodeFi
 // note: DIFF 68 words; original keeps this in a0 and reloads m_unk04 into a1, zero-inits sit after the bFlags test; tried 3/2 order, zero-init placement, pBox placement.
 void PMNode::DebugDrawBox(int nMode) {
@@ -375,29 +398,6 @@ void PMNode::DebugDrawBox(int nMode) {
     ((PGfxEngine *)&gGfxEng)->BeginDebugRender();
     ((PGfxEngine *)&gGfxEng)->DrawBox(pBox, (float)nA, (float)nB, (float)nC);
     ((PGfxEngine *)&gGfxEng)->EndDebugRender();
-}
-
-// FUNCTION: 0x001919E0 CreateObjectDisplayList__6PMNodeFv
-int PMNode::CreateObjectDisplayList() {
-    PObjectDisplayList *p = m_pObjDisplayList;
-    if (p != 0) {
-        __dt__18PObjectDisplayListFv(p, 1);
-        m_pObjDisplayList = 0;
-    }
-    p = (PObjectDisplayList *)__nw__FUi(0x1F0);
-    if (p != 0) {
-        p = __ct__18PObjectDisplayListFv(p);
-    }
-    m_pObjDisplayList = p;
-    if (m_pObjDisplayList == 0) {
-        CdsAssert("PMNode.cpp", 0x99E, "mpObjDisplayList");
-    }
-    if (Create__18PObjectDisplayListFP6PMNodePb(m_pObjDisplayList, this, &m_unkD4) == 0) {
-        __dt__18PObjectDisplayListFv(m_pObjDisplayList, 1);
-        m_pObjDisplayList = 0;
-        return 0;
-    }
-    return 1;
 }
 
 // DRAFT: 0x00191BD0 Render__6PMNodeFP13PLightManagerii
@@ -1858,30 +1858,6 @@ void PMNode::DestroyChildren() {
     }
 }
 
-// FUNCTION: 0x00195480 SetAllLoopCountByID__6PMNodeFUii
-void PMNode::SetAllLoopCountByID(unsigned int uID, int nCount) {
-    PMNode *pChild;
-    void *pObj = m_unk24;
-    if (pObj != 0 && (uID == 0 || uID == *(unsigned int *)((char *)pObj + 4))) {
-        uID = 0;
-        ((PFrameSource *)pObj)->Slot11(nCount);
-    }
-    m_unk18 = 0;
-    pChild = 0;
-    if (m_unk14 != 0) {
-        pChild = m_unk1C[0];
-    }
-    if (pChild != 0) {
-        do {
-            unsigned int uNext;
-            pChild->SetAllLoopCountByID(uID, nCount);
-            uNext = m_unk18 + 1;
-            m_unk18 = uNext;
-            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
-        } while (pChild != 0);
-    }
-}
-
 // FUNCTION: 0x00195240 DestroyMesh__6PMNodeFv
 void PMNode::DestroyMesh() {
     void *pMesh = m_unk10;
@@ -1939,6 +1915,30 @@ int PMNode::RecurseSetLoopRateByID(unsigned int uID, int nCount, float fRate) {
         } while (pChild != 0);
     }
     return m_unk3F;
+}
+
+// FUNCTION: 0x00195480 SetAllLoopCountByID__6PMNodeFUii
+void PMNode::SetAllLoopCountByID(unsigned int uID, int nCount) {
+    PMNode *pChild;
+    void *pObj = m_unk24;
+    if (pObj != 0 && (uID == 0 || uID == *(unsigned int *)((char *)pObj + 4))) {
+        uID = 0;
+        ((PFrameSource *)pObj)->Slot11(nCount);
+    }
+    m_unk18 = 0;
+    pChild = 0;
+    if (m_unk14 != 0) {
+        pChild = m_unk1C[0];
+    }
+    if (pChild != 0) {
+        do {
+            unsigned int uNext;
+            pChild->SetAllLoopCountByID(uID, nCount);
+            uNext = m_unk18 + 1;
+            m_unk18 = uNext;
+            pChild = (uNext < m_unk14) ? m_unk1C[m_unk18] : 0;
+        } while (pChild != 0);
+    }
 }
 
 // FUNCTION: 0x00195560 RecurseResetAnimByID__6PMNodeFUi

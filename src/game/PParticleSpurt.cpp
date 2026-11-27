@@ -109,101 +109,6 @@ void PParticleSpurt::SetupBoundingBox() {
     m_unk9C = sqrtf(m_unk90 * m_unk90 + m_unk94 * m_unk94 + m_unk98 * m_unk98);
 }
 
-// FUNCTION: 0x001CB120 SetPosition__14PParticleSpurtFPfPf
-void PParticleSpurt::SetPosition(float *, float *) {
-}
-
-// DRAFT: 0x001CBCD0 Create__14PParticleSpurtFP22tagParticleSpurtParamsfff
-// note: 125 differing words, size 0x340 vs 0x33C; the rand() float-to-int cast spills through the stack (C emits no mfc1); the m_unk1D0 selector store order and early-return epilogue differ. Tried: if/else min tail (126), positive-comparison selector (125).
-int PParticleSpurt::Create(tagParticleSpurtParams *pParams, float fX, float fY, float fZ) {
-    unsigned int i;
-    int off;
-    float f1;
-    float f2;
-    float f3;
-    float v0;
-
-    if (PParticleSystem::Create(pParams->m_unk80, 0) == 0) {
-        return 0;
-    }
-    m_unkE0 = __nwa__FUi(pParams->m_unk80 * 4);
-    if (m_unkE0 == 0) {
-        return 0;
-    }
-    m_unk30 = 0x48;
-    memcpy(m_unkF0, pParams, 0xC0);
-    m_unkF0[0] += fX;
-    m_unkF0[1] += fY;
-    m_unkF0[2] += fZ;
-    *(u_long128 *)m_unk1C0 = *(u_long128 *)m_unkF0;
-    *(u_long128 *)m_unk1B0 = *(u_long128 *)m_unk140;
-    m_unk1D0[0] = FastMath_Fabs__Ff(m_unk1B0[0]);
-    m_unk1D0[1] = FastMath_Fabs__Ff(m_unk1B0[1]);
-    m_unk1D0[2] = FastMath_Fabs__Ff(m_unk1B0[2]);
-    f1 = m_unk1D0[0];
-    f2 = m_unk1D0[1];
-    if (!(f1 <= f2) && !(f1 <= m_unk1D0[2])) {
-        m_unk1D0[0] = 0.0f;
-        m_unk1D0[1] = 1.0f;
-        m_unk1D0[2] = 1.0f;
-    } else if (!(f2 <= f1)) {
-        if (!(f2 <= m_unk1D0[2])) {
-            m_unk1D0[0] = 1.0f;
-            m_unk1D0[1] = 0.0f;
-            m_unk1D0[2] = 1.0f;
-        } else {
-            m_unk1D0[0] = 1.0f;
-            m_unk1D0[1] = 1.0f;
-            m_unk1D0[2] = 0.0f;
-        }
-    } else {
-        m_unk1D0[0] = 1.0f;
-        m_unk1D0[1] = 1.0f;
-        m_unk1D0[2] = 0.0f;
-    }
-    m_unk1E0 = 10.0f + (140.0f * (1.0f - m_unk180[1]));
-    m_unk1E4 = (int)(0.5f + (24684.0f + (23958.0f * ((float)rand() / 2.1474836e9f))));
-    m_unk0C = 7;
-    if (m_unk19C != 0) {
-        m_unkE8 = __nwa__FUi(pParams->m_unk80 * 0x10);
-        if (m_unkE8 == 0) {
-            return 0;
-        }
-        m_unkE4 = __nwa__FUi(pParams->m_unk80 * 0x10);
-        if (m_unkE4 == 0) {
-            return 0;
-        }
-        i = 0;
-        off = 0;
-        while (i < m_unk04) {
-            i++;
-            *(float *)((char *)m_unkE0 + off) = m_unk1E0;
-            off += 4;
-        }
-    } else {
-        memset(m_unkE0, 0, m_unk04 * 4);
-    }
-    m_unk180[3] = 1.0f - m_unk180[3];
-    f1 = m_unk174;
-    f2 = m_unk178;
-    v0 = f2;
-    if (!(f1 <= f2)) {
-        v0 = f1;
-    }
-    f3 = m_unk17C;
-    if (!(v0 <= f3)) {
-        if (!(f1 <= f2)) {
-        } else {
-            f1 = f2;
-        }
-    } else {
-        f1 = f3;
-    }
-    m_unkA0 = f1;
-    SetupBoundingBox();
-    return 1;
-}
-
 // FUNCTION: 0x001CB080 ModifyPosition__14PParticleSpurtFP5PMat4
 void PParticleSpurt::ModifyPosition(PMat4 *pMat) {
     if (m_unk19C != 0) {
@@ -220,6 +125,10 @@ void PParticleSpurt::ModifyPosition(PMat4 *pMat) {
     } else {
         sceVu0CopyMatrix((float (*)[4])&m_unk40, (float (*)[4])pMat);
     }
+}
+
+// FUNCTION: 0x001CB120 SetPosition__14PParticleSpurtFPfPf
+void PParticleSpurt::SetPosition(float *, float *) {
 }
 
 // DRAFT: 0x001CB130 Animate__14PParticleSpurtFf
@@ -389,6 +298,97 @@ void PParticleSpurt::Animate(float fDt) {
             }
         }
     }
+}
+
+// DRAFT: 0x001CBCD0 Create__14PParticleSpurtFP22tagParticleSpurtParamsfff
+// note: 125 differing words, size 0x340 vs 0x33C; the rand() float-to-int cast spills through the stack (C emits no mfc1); the m_unk1D0 selector store order and early-return epilogue differ. Tried: if/else min tail (126), positive-comparison selector (125).
+int PParticleSpurt::Create(tagParticleSpurtParams *pParams, float fX, float fY, float fZ) {
+    unsigned int i;
+    int off;
+    float f1;
+    float f2;
+    float f3;
+    float v0;
+
+    if (PParticleSystem::Create(pParams->m_unk80, 0) == 0) {
+        return 0;
+    }
+    m_unkE0 = __nwa__FUi(pParams->m_unk80 * 4);
+    if (m_unkE0 == 0) {
+        return 0;
+    }
+    m_unk30 = 0x48;
+    memcpy(m_unkF0, pParams, 0xC0);
+    m_unkF0[0] += fX;
+    m_unkF0[1] += fY;
+    m_unkF0[2] += fZ;
+    *(u_long128 *)m_unk1C0 = *(u_long128 *)m_unkF0;
+    *(u_long128 *)m_unk1B0 = *(u_long128 *)m_unk140;
+    m_unk1D0[0] = FastMath_Fabs__Ff(m_unk1B0[0]);
+    m_unk1D0[1] = FastMath_Fabs__Ff(m_unk1B0[1]);
+    m_unk1D0[2] = FastMath_Fabs__Ff(m_unk1B0[2]);
+    f1 = m_unk1D0[0];
+    f2 = m_unk1D0[1];
+    if (!(f1 <= f2) && !(f1 <= m_unk1D0[2])) {
+        m_unk1D0[0] = 0.0f;
+        m_unk1D0[1] = 1.0f;
+        m_unk1D0[2] = 1.0f;
+    } else if (!(f2 <= f1)) {
+        if (!(f2 <= m_unk1D0[2])) {
+            m_unk1D0[0] = 1.0f;
+            m_unk1D0[1] = 0.0f;
+            m_unk1D0[2] = 1.0f;
+        } else {
+            m_unk1D0[0] = 1.0f;
+            m_unk1D0[1] = 1.0f;
+            m_unk1D0[2] = 0.0f;
+        }
+    } else {
+        m_unk1D0[0] = 1.0f;
+        m_unk1D0[1] = 1.0f;
+        m_unk1D0[2] = 0.0f;
+    }
+    m_unk1E0 = 10.0f + (140.0f * (1.0f - m_unk180[1]));
+    m_unk1E4 = (int)(0.5f + (24684.0f + (23958.0f * ((float)rand() / 2.1474836e9f))));
+    m_unk0C = 7;
+    if (m_unk19C != 0) {
+        m_unkE8 = __nwa__FUi(pParams->m_unk80 * 0x10);
+        if (m_unkE8 == 0) {
+            return 0;
+        }
+        m_unkE4 = __nwa__FUi(pParams->m_unk80 * 0x10);
+        if (m_unkE4 == 0) {
+            return 0;
+        }
+        i = 0;
+        off = 0;
+        while (i < m_unk04) {
+            i++;
+            *(float *)((char *)m_unkE0 + off) = m_unk1E0;
+            off += 4;
+        }
+    } else {
+        memset(m_unkE0, 0, m_unk04 * 4);
+    }
+    m_unk180[3] = 1.0f - m_unk180[3];
+    f1 = m_unk174;
+    f2 = m_unk178;
+    v0 = f2;
+    if (!(f1 <= f2)) {
+        v0 = f1;
+    }
+    f3 = m_unk17C;
+    if (!(v0 <= f3)) {
+        if (!(f1 <= f2)) {
+        } else {
+            f1 = f2;
+        }
+    } else {
+        f1 = f3;
+    }
+    m_unkA0 = f1;
+    SetupBoundingBox();
+    return 1;
 }
 
 // FUNCTION: 0x001CC010 __dt__14PParticleSpurtFv

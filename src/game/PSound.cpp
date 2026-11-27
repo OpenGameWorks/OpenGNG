@@ -201,6 +201,12 @@ extern "C" void SOUND_SetMasterRegisterVolumeAbs(int);
 extern "C" void SOUND_EnableFeatures(int, int);
 extern "C" void SOUND_StreamAfterFlags(int, int, int, int, int, int);
 
+
+// FUNCTION: 0x001A3C70 AddAEToFreeList__6PSoundFPQ26PSound12AmbientEntry
+void PSound::AddAEToFreeList(AmbientEntry *pEntry) {
+    pEntry->Init();
+    InsertAEAtHead(&m_unkF4, pEntry);
+}
 // FUNCTION: 0x001A3CC0 VerifyAmbientEntryList__6PSoundFPQ26PSound12AmbientEntry
 unsigned int PSound::VerifyAmbientEntryList(AmbientEntry *pHead) {
     static int st_Calls;
@@ -224,6 +230,20 @@ unsigned int PSound::VerifyAmbientEntryList(AmbientEntry *pHead) {
     return nCount;
 }
 
+// FUNCTION: 0x001A3D80 InsertAEAtHead__6PSoundFPPQ26PSound12AmbientEntryPQ26PSound12AmbientEntry
+void PSound::InsertAEAtHead(AmbientEntry **ppHead, AmbientEntry *pEntry) {
+    if (ppHead != 0 && pEntry != 0) {
+        AmbientEntry *pTemp = *ppHead;
+        pEntry->m_unk50 = pTemp;
+        if (pTemp != 0) {
+            pTemp->m_unk54 = pEntry;
+        }
+        *ppHead = pEntry;
+        return;
+    }
+    CdsAssert("PSound.cpp", 0x2562, "0");
+}
+
 // FUNCTION: 0x001A3DD0 SwapLinksAmbientEntry__6PSoundFPQ26PSound12AmbientEntryPQ26PSound12AmbientEntry
 void PSound::SwapLinksAmbientEntry(AmbientEntry *pA, AmbientEntry *pB) {
     if (pA != 0 && pB != 0) {
@@ -239,26 +259,6 @@ void PSound::SwapLinksAmbientEntry(AmbientEntry *pA, AmbientEntry *pB) {
         pA->m_unk54 = pB;
         pB->m_unk50 = pA;
     }
-}
-
-// FUNCTION: 0x001A3C70 AddAEToFreeList__6PSoundFPQ26PSound12AmbientEntry
-void PSound::AddAEToFreeList(AmbientEntry *pEntry) {
-    pEntry->Init();
-    InsertAEAtHead(&m_unkF4, pEntry);
-}
-
-// FUNCTION: 0x001A3D80 InsertAEAtHead__6PSoundFPPQ26PSound12AmbientEntryPQ26PSound12AmbientEntry
-void PSound::InsertAEAtHead(AmbientEntry **ppHead, AmbientEntry *pEntry) {
-    if (ppHead != 0 && pEntry != 0) {
-        AmbientEntry *pTemp = *ppHead;
-        pEntry->m_unk50 = pTemp;
-        if (pTemp != 0) {
-            pTemp->m_unk54 = pEntry;
-        }
-        *ppHead = pEntry;
-        return;
-    }
-    CdsAssert("PSound.cpp", 0x2562, "0");
 }
 
 // FUNCTION: 0x001A3E60 LinkAmbientEntry__6PSoundFPQ26PSound12AmbientEntryPQ26PSound12AmbientEntry
@@ -2934,6 +2934,31 @@ unsigned char PSound::PSoundRestart() {
     return RestartSuffix();
 }
 
+// FUNCTION: 0x001A9F10 PSoundInit__6PSoundFUi
+int PSound::PSoundInit(unsigned int nFlag) {
+    if (m_unk00 != 0) {
+        return 0;
+    }
+    if (SOUND_InitIOP() < 0) {
+        return 0;
+    }
+    SOUND_InitSPU();
+    SOUND_ReverbSetAdrs(0x1FFFFF, 0x1DFFFF);
+    SOUND_ClearReverbWorkArea(0, 5);
+    SOUND_ClearReverbWorkArea(1, 5);
+    SOUND_SetEETransferNotifyAdrs(gSOUND_EETransferStart, gSOUND_EETransferFinish);
+    SOUND_SetChanUse(0, m_unk2E20, m_unk2E28, m_unk2E30, m_unk2E38);
+    SOUND_InitStreamData(0);
+    SOUND_SetLanguage(nFlag);
+    SOUND_AllocateStreamBuffer(0, 0x5010, 0x19000);
+    SOUND_AllocateStreamBuffer(1, 0x1E010, 0x19000);
+    SOUND_AllocateStreamBuffer(2, 0x37010, 0x10000);
+    PSoundFlushIOPCommandsWaitFinish();
+    PSoundReInitSubWSoundCalls();
+    m_unk00 = 2;
+    return 1;
+}
+
 // FUNCTION: 0x001AA030 PSoundReInitSubWSoundCalls__6PSoundFv
 void PSound::PSoundReInitSubWSoundCalls() {
     PSoundReInitSub(0);
@@ -3397,19 +3422,6 @@ int PSound::UsageFindNextHigherID(PSound::PSoundUsage **ppUsage) {
     return -1;
 }
 
-// DRAFT: 0x001AAF20 UsageInit__6PSoundFv
-// note: DIFF 6 words; original has three scheduling nops between the loop sltu and bnez and the guard beqz targets one slot further; tried int*, char*, unsigned cursors (15), int stride 5 (6), for-loop (11), while form (6), end as int* + 6000 (6), end declared before cursor (12)
-void PSound::UsageInit() {
-    int *p = (int *)fst_Usage;
-    int *end = (int *)(fst_Usage + 24000);
-    if (p < end) {
-        do {
-            *p = -1;
-            p += 5;
-        } while (p < end);
-    }
-}
-
 // FUNCTION: 0x001AAE50 UsageFind__6PSoundFUi
 int *PSound::UsageFind(unsigned int nID) {
     int *p = (int *)fst_Usage;
@@ -3445,6 +3457,19 @@ int PSound::UsageAdd(unsigned int nID) {
         } while (p < end);
     }
     return -1;
+}
+
+// DRAFT: 0x001AAF20 UsageInit__6PSoundFv
+// note: DIFF 6 words; original has three scheduling nops between the loop sltu and bnez and the guard beqz targets one slot further; tried int*, char*, unsigned cursors (15), int stride 5 (6), for-loop (11), while form (6), end as int* + 6000 (6), end declared before cursor (12)
+void PSound::UsageInit() {
+    int *p = (int *)fst_Usage;
+    int *end = (int *)(fst_Usage + 24000);
+    if (p < end) {
+        do {
+            *p = -1;
+            p += 5;
+        } while (p < end);
+    }
 }
 
 // FUNCTION: 0x001AAF70 Test2__6PSoundFv
@@ -4549,29 +4574,4 @@ void PSound::DebugInterface(unsigned int nArg) {
             DebugInterfaceEditASound(nPad);
         }
     }
-}
-
-// FUNCTION: 0x001A9F10 PSoundInit__6PSoundFUi
-int PSound::PSoundInit(unsigned int nFlag) {
-    if (m_unk00 != 0) {
-        return 0;
-    }
-    if (SOUND_InitIOP() < 0) {
-        return 0;
-    }
-    SOUND_InitSPU();
-    SOUND_ReverbSetAdrs(0x1FFFFF, 0x1DFFFF);
-    SOUND_ClearReverbWorkArea(0, 5);
-    SOUND_ClearReverbWorkArea(1, 5);
-    SOUND_SetEETransferNotifyAdrs(gSOUND_EETransferStart, gSOUND_EETransferFinish);
-    SOUND_SetChanUse(0, m_unk2E20, m_unk2E28, m_unk2E30, m_unk2E38);
-    SOUND_InitStreamData(0);
-    SOUND_SetLanguage(nFlag);
-    SOUND_AllocateStreamBuffer(0, 0x5010, 0x19000);
-    SOUND_AllocateStreamBuffer(1, 0x1E010, 0x19000);
-    SOUND_AllocateStreamBuffer(2, 0x37010, 0x10000);
-    PSoundFlushIOPCommandsWaitFinish();
-    PSoundReInitSubWSoundCalls();
-    m_unk00 = 2;
-    return 1;
 }

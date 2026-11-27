@@ -1548,6 +1548,53 @@ void PParticleManager::RemoveAllFogObjects() {
     }
 }
 
+// FUNCTION: 0x001BA690 RemoveAllParticleSystems__16PParticleManagerF8ePSLayer
+void PParticleManager::RemoveAllParticleSystems(ePSLayer eLayer) {
+    PParticleSystem *pSystem;
+    unsigned int nIdx;
+    m_unk4 = 0;
+    if (m_unk0 != 0) {
+        pSystem = (PParticleSystem *)m_unk8[0];
+    } else {
+        pSystem = 0;
+    }
+    if (pSystem != 0) {
+        do {
+            if ((int)eLayer == *(int *)((char *)pSystem + 0xD4)) {
+                ((PArray *)this)->Remove(pSystem);
+                if (pSystem != 0) {
+                    pSystem->Slot00(1);
+                }
+                if (pSystem == m_unk20FC) {
+                    m_unk20FC = 0;
+                }
+            }
+            nIdx = m_unk4 + 1;
+            m_unk4 = nIdx;
+            pSystem = (nIdx < m_unk0) ? (PParticleSystem *)m_unk8[m_unk4] : 0;
+        } while (pSystem != 0);
+    }
+    m_unk14 = 0;
+    void *pEntry = 0;
+    if (m_unk10 != 0) {
+        pEntry = *m_unk18;
+    }
+    if (pEntry != 0) {
+        do {
+            if (pEntry != 0) {
+                ((PParticleSystem *)pEntry)->Slot00(1);
+            }
+            unsigned int nSlot = m_unk14 + 1;
+            m_unk14 = nSlot;
+            pEntry = (nSlot < m_unk10) ? m_unk18[m_unk14] : 0;
+        } while (pEntry != 0);
+    }
+    if (m_unk18 != 0) {
+        m_unk10 = 0;
+        m_unk14 = 0;
+    }
+}
+
 // FUNCTION: 0x001BA800 RemoveAllParticleSystems__16PParticleManagerFv
 void PParticleManager::RemoveAllParticleSystems() {
     PParticleSystem *pSystem;
@@ -1606,53 +1653,6 @@ void PParticleManager::RemoveAllParticleSystems() {
         m_unk207C = 0;
     }
     m_unk20FC = 0;
-}
-
-// FUNCTION: 0x001BA690 RemoveAllParticleSystems__16PParticleManagerF8ePSLayer
-void PParticleManager::RemoveAllParticleSystems(ePSLayer eLayer) {
-    PParticleSystem *pSystem;
-    unsigned int nIdx;
-    m_unk4 = 0;
-    if (m_unk0 != 0) {
-        pSystem = (PParticleSystem *)m_unk8[0];
-    } else {
-        pSystem = 0;
-    }
-    if (pSystem != 0) {
-        do {
-            if ((int)eLayer == *(int *)((char *)pSystem + 0xD4)) {
-                ((PArray *)this)->Remove(pSystem);
-                if (pSystem != 0) {
-                    pSystem->Slot00(1);
-                }
-                if (pSystem == m_unk20FC) {
-                    m_unk20FC = 0;
-                }
-            }
-            nIdx = m_unk4 + 1;
-            m_unk4 = nIdx;
-            pSystem = (nIdx < m_unk0) ? (PParticleSystem *)m_unk8[m_unk4] : 0;
-        } while (pSystem != 0);
-    }
-    m_unk14 = 0;
-    void *pEntry = 0;
-    if (m_unk10 != 0) {
-        pEntry = *m_unk18;
-    }
-    if (pEntry != 0) {
-        do {
-            if (pEntry != 0) {
-                ((PParticleSystem *)pEntry)->Slot00(1);
-            }
-            unsigned int nSlot = m_unk14 + 1;
-            m_unk14 = nSlot;
-            pEntry = (nSlot < m_unk10) ? m_unk18[m_unk14] : 0;
-        } while (pEntry != 0);
-    }
-    if (m_unk18 != 0) {
-        m_unk10 = 0;
-        m_unk14 = 0;
-    }
 }
 
 // FUNCTION: 0x001BA9B0 RemoveAll__16PParticleManagerFv

@@ -101,6 +101,22 @@ int Bridge::Render(PLightManager *arg0) {
     return s0;
 }
 
+// DRAFT: 0x001DC850 UpdateBridgeRope__6BridgeFv
+// note: 42 words differ; original ternary has nops at 0x34/0x3C (ours none), which shifts everything after; if-override form gives 46; split temp still 42; aAddHeight gp load is -0x7E38 in original vs 0 in ours.
+void Bridge::UpdateBridgeRope() {
+    for (int i = 0, off = 0; i < m_unk330; i++) {
+        float *v = m_unk3C ? (float *)((char *)m_unk3C + 0x80) : (float *)((char *)this + 0x190);
+        char *t = (char *)this + off;
+        float f = *(float *)((char *)*(void **)(t + 0x1E4) + 0x84) + v[1] - *(float *)((char *)m_unk34C + 0x84);
+        if (m_unk1B0 == 1) {
+            *(float *)((char *)*(void **)(t + 0x350) + 0x84) = aAddHeight + (*(float *)(t + 0x374) + f);
+        }
+        off += 4;
+    }
+    Animate__6PMNodeFffP5PMat4ib(m_unk34C, 0.0f, 0.0f, 0, 0, false);
+    ((PMNode *)m_unk34C)->m_unk3E |= 8;
+}
+
 // FUNCTION: 0x001DC930 LoadBridgeRope__6BridgeFv
 void Bridge::LoadBridgeRope() {
     if (m_unk1B0 == 1) {
@@ -172,22 +188,6 @@ void Bridge::LoadBridgeParts() {
         off += 4;
         off2 += 0x20;
     } while (i < 10);
-}
-
-// DRAFT: 0x001DC850 UpdateBridgeRope__6BridgeFv
-// note: 42 words differ; original ternary has nops at 0x34/0x3C (ours none), which shifts everything after; if-override form gives 46; split temp still 42; aAddHeight gp load is -0x7E38 in original vs 0 in ours.
-void Bridge::UpdateBridgeRope() {
-    for (int i = 0, off = 0; i < m_unk330; i++) {
-        float *v = m_unk3C ? (float *)((char *)m_unk3C + 0x80) : (float *)((char *)this + 0x190);
-        char *t = (char *)this + off;
-        float f = *(float *)((char *)*(void **)(t + 0x1E4) + 0x84) + v[1] - *(float *)((char *)m_unk34C + 0x84);
-        if (m_unk1B0 == 1) {
-            *(float *)((char *)*(void **)(t + 0x350) + 0x84) = aAddHeight + (*(float *)(t + 0x374) + f);
-        }
-        off += 4;
-    }
-    Animate__6PMNodeFffP5PMat4ib(m_unk34C, 0.0f, 0.0f, 0, 0, false);
-    ((PMNode *)m_unk34C)->m_unk3E |= 8;
 }
 
 // FUNCTION: 0x001DCCA0 LeanOnSides__6BridgeFv

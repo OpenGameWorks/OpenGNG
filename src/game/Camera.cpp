@@ -207,12 +207,6 @@ void Camera::SetEntityYOffset(unsigned short arg0) {
     }
 }
 
-// FUNCTION: 0x001788E0 SetSourceTarget__6CameraFPfPf
-void Camera::SetSourceTarget(float *arg0, float *arg1) {
-    sceVu0CopyVector(m_unk00, arg0);
-    sceVu0CopyVector(m_unk10, arg1);
-}
-
 // FUNCTION: 0x00178410 PlayingCutCamera__6CameraFv
 unsigned char Camera::PlayingCutCamera() {
     CameraCutManager *temp_v0 = (CameraCutManager *)m_unkC0;
@@ -283,6 +277,12 @@ void Camera::SetupCutCamera_Fixed(unsigned int arg0, unsigned int arg1, float ar
     if (m_unkC0) {
         ((CameraCutManager *)m_unkC0)->SetupCutCamera_Fixed(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
     }
+}
+
+// FUNCTION: 0x001788E0 SetSourceTarget__6CameraFPfPf
+void Camera::SetSourceTarget(float *arg0, float *arg1) {
+    sceVu0CopyVector(m_unk00, arg0);
+    sceVu0CopyVector(m_unk10, arg1);
 }
 
 // FUNCTION: 0x00178920 ControlledByApp__6CameraFUi
