@@ -11,7 +11,7 @@ public:
 };
 
 // DRAFT: 0x0019A2D0 GetNumFrames__14PSTAnimChannelFv
-// note: 3 words: mpKeyFrameTable[muNumKeyFrames - 1] with an unsigned index local; the original folds the -1 into the table base (addiu -8 on the table) where ours subtracts 1 from the count. Tried direct, pointer, base-minus-one, p--, (q-1)->, char* arithmetic and int-arithmetic indexing (5-8; every -1-on-base form folds -8 into the lwc1 offset), raw member reads (4-5), local declaration order (3).
+// note: 3 words: mpKeyFrameTable[muNumKeyFrames - 1] with an unsigned index local; the original folds the -1 into the table base (addiu -8 on the table) where ours subtracts 1 from the count. Tried direct, pointer, base-minus-one, p--, (q-1)->, char* arithmetic and int-arithmetic indexing (5-8; every -1-on-base form folds -8 into the lwc1 offset), raw member reads (4-5), local declaration order (3), table-first local (3-8), inline accessors taking this/table with the -1 inside or outside (3-8), Prev() helper (8), raw unsigned arithmetic (5).
 float PSTAnimChannel::GetNumFrames() {
     if (mpKeyFrameTable == 0) {
         CdsAssert("PSTAnimChannel.cpp", 0x8E, "mpKeyFrameTable");

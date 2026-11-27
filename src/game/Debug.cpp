@@ -301,7 +301,7 @@ void Debug::LineFeed(char *pStr) {
 }
 
 // DRAFT: 0x16ACE0 FrameEnd__5DebugFv
-// note: 13 words; goto-entered loop fixes the shape, but this sits in s0 and the table pointer in s2 where the original swaps them. Tried p/i declaration and init order (13-16), increment order (14), indexed DebugTbl[i] (43), static inline loop helper (44), Debug *self copy (13).
+// note: 13 words; goto-entered loop fixes the shape, but this sits in s0 and the table pointer in s2 where the original swaps them. Tried p/i declaration and init order (13-16), increment order (14), indexed DebugTbl[i] (43), static inline loop helper (44), Debug *self copy (13), p/i declared at function scope in 3 orders (13-16), goto-skip form (14), for loop (44).
 void Debug::FrameEnd() {
     char buf[0x20];
 
@@ -406,7 +406,7 @@ void RenderAnimation() {
 }
 
 // DRAFT: 0x0016B010 ApparitionDisplay__Fv
-// note: 13 differing words: gbApparition read as lbu from gp (-0x7C28) in the original, ours uses 0x0($gp) with a reloc; gPad lhu uses -0x40F0 in the original, ours 0x110 from $at; nA in a2 (original) vs a0 and bDirty in a3 vs a1. bool bDirty matches the daddiu flag but does not change the count. Tried decl orders (bDirty first 66, bDirty before nA 69, nB before nA 63, nRep first 13); kept nA, nB, nRep, bDirty.
+// note: 11 words: only nA lands in a0 (original a2) and bDirty in a1 (original a3); gp/gPad addressing differences are relocations. The `if (!gbApparition) return;` early exit fixed the branch. Tried decl orders (bDirty first 66, bDirty before nA 69, nB before nA, nRep first/last, nA/nB swapped), signed nA/nB, unsigned short nA/nB (93), no nRep local (99), aBuf first.
 static void ApparitionDisplay() {
     float *pPos;
     unsigned int nA;
@@ -423,9 +423,10 @@ static void ApparitionDisplay() {
         gApparition = 0;
         return;
     }
-    if (gbApparition) {
-        gpApparition->Slot3();
+    if (!gbApparition) {
+        return;
     }
+    gpApparition->Slot3();
     gbApparition = 0;
     if (gpApparition->m_unk3C) {
         pPos = (float *)(gpApparition->m_unk3C + 0x80);

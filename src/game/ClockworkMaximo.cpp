@@ -415,8 +415,7 @@ void ClockworkMaximo::DetachWeapon(WEAPON_TYPE arg0) {
     BuildDispList__9PSkeletonFv((void *)pNode);
 }
 
-// DRAFT: 0x00210BE0 AttachWeapon__15ClockworkMaximoFQ215ClockworkMaximo11WEAPON_TYPE
-// note: 21 words; second 0x3E flag access folds into an addiu v1,s1,0x3E (original reloads from s1); tried struct, &&, volatile, plain
+// FUNCTION: 0x00210BE0 AttachWeapon__15ClockworkMaximoFQ215ClockworkMaximo11WEAPON_TYPE
 void ClockworkMaximo::AttachWeapon(WEAPON_TYPE arg0) {
     int pNode = m_unk3C;
     unsigned int var;
@@ -457,7 +456,7 @@ void ClockworkMaximo::AttachWeapon(WEAPON_TYPE arg0) {
     *(unsigned char *)((char *)pBone + 0x3E) &= 0xEF;
     if (pMesh != 0) {
         if (*(unsigned char *)((char *)pMesh + 0xC) != 0) {
-            *(unsigned char *)((char *)pBone + 0x3E) |= 0x10;
+            *(unsigned char *)((unsigned int)pBone + 0x3E) |= 0x10;
         }
     }
     BuildDispList__9PSkeletonFv((void *)pNode);
@@ -666,8 +665,7 @@ ClockworkMaximo *ClockworkMaximo::GetTarget() {
     return (ClockworkMaximo *)target;
 }
 
-// DRAFT: 0x00211350 DetermineNewState__15ClockworkMaximoFv
-// note: 21 words; st!=0 flag lands in a0 not v0/v1 and andi is dropped; tried bool/uint/int ok, ternary return forms
+// FUNCTION: 0x00211350 DetermineNewState__15ClockworkMaximoFv
 int ClockworkMaximo::DetermineNewState() {
     m_unk38->m_unkEC = 0x80113FD5;
     float (*a0)[4] = m_unk3C ? (float (*)[4])(m_unk3C + 0x80) : (float (*)[4])((char *)this + 0x190);
@@ -687,29 +685,22 @@ int ClockworkMaximo::DetermineNewState() {
     int tt = *(int *)((char *)tgt + 0x3C);
     float (*pT)[4] = tt ? (float (*)[4])(tt + 0x80) : (float (*)[4])((char *)tgt + 0x190);
     float fD = Distance__7MathAPIFPA4_fPA4_f(pT, pSelf);
-    int nNear = 1;
-    if (!(fD < 10.0f)) {
-        nNear = 0;
-    }
-    int bFlag = nNear & 0xFF;
-    if (bFlag != 0) {
+    bool bFlag;
+    bFlag = fD < 10.0f;
+    if (bFlag) {
         if (!(fD <= 8.0f)) {
             ClockworkMaximo *tg = GetTarget();
             if (tg == 0) {
                 CdsAssert("ClockworkMaximo.cpp", 0x8F2, "apTarget");
             }
-            bFlag = TargetFacingUs() & 0xFF;
-            if (bFlag == 0) {
+            bFlag = TargetFacingUs();
+            if (!bFlag) {
                 ClockworkMaximoState *st = tg->m_unk38;
-                int ok = st != 0;
-                bFlag = ok & 0xFF;
-                if (ok != 0) {
-                    bFlag = ((st->m_unk108 & 0x40) == 0) & 0xFF;
-                }
+                bFlag = st != 0 && (st->m_unk108 & 0x40) == 0;
             }
         }
     }
-    return bFlag != 0 ? 2 : 8;
+    return bFlag ? 2 : 8;
 }
 
 // FUNCTION: 0x00211510 DetermineIdleState__15ClockworkMaximoFv
