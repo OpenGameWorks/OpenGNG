@@ -323,7 +323,12 @@ extern FreeJoint m_pFreeJoints[5];
 class Physics {
 public:
     Physics();
-    char _pad000[0xEC];
+    char _pad000[0xB4];
+    float m_unkB4;
+    char _padB8[0xC8 - 0xB8];
+    float m_unkC8;
+    PMNode *m_unkCC;
+    char _padD0[0xEC - 0xD0];
     unsigned int m_unkEC;
     char _padF0[0xF8 - 0xF0];
     float m_unkF8;
@@ -387,6 +392,7 @@ extern unsigned char GameVarTbl[0x78];
 extern int CAUGHT_TIME;
 extern int LEDGE_UP_TIME;
 extern int UP_TIME;
+extern float GRIM_AIR_POS;
 extern int TAP_COUNT;
 extern int TAP_TIMER;
 extern float AttachedTimer[5];
@@ -4672,6 +4678,135 @@ void Player::BackToMaximo() {
     }
 }
 
+// DRAFT: 0x00163980 ButtonCheck__6PlayerFv
+// note: DIFF 223 words (most are shifted branch offsets). Differs: ComboTarget float arg load order (v1=100.0f first), 0x69/0xC SetAction arg (original keeps one shared jal with a1 set in delay slots; ours s0/duplicated), 0x264 and 0x1D0 guard layout matches. Tried fNeg/fHund locals, if/else and comma forms, switch(0x20), sltu spellings for SetHeadCamera. Best copies in src/scratch/Player-51556/.
+int Player::ButtonCheck() {
+    if ((m_unk264 & 0x30) == 0 || (m_unk264 & 4)) {
+        return 0;
+    }
+    int nBit4 = m_unk1D0 & 4;
+    if (nBit4 != 0) {
+        signed char nVar = m_unk339;
+        if (nVar >= 0 && m_unk229 != 4) {
+            GameVarSet(0xA, nVar);
+            m_unk339 = -1;
+            return 1;
+        }
+    }
+    unsigned short nPad = m_unk1B2;
+    if ((nPad & 4) && (m_unk264 & 0x4000) && !*(float *)&m_unk2F8) {
+        PMNode *pNode = ((Physics *)m_unk38)->m_unkCC;
+        unsigned int nHead = m_unk26C;
+        if (nHead != 0 || pNode == 0 || !(((signed char)(pNode->m_unk3F & 7)) & 1)) {
+            SetHeadCamera(!(nHead > 0));
+        }
+    }
+    if (m_unk26C != 0) {
+        return 1;
+    }
+    if (nPad & 0x4000) {
+        signed char nSub = m_unk268;
+        if (nSub < 2) {
+            Physics *pPhys = (Physics *)m_unk38;
+            float fDiff = pPhys->m_unkC8 - pPhys->m_unkB4;
+            if (nSub == 0 || fDiff <= 0.0f || !(fDiff <= 6.0f)) {
+                SetAction(nSub + 3);
+                return 1;
+            }
+        }
+    }
+    if (!(m_unk264 & 0x20) || (m_unk1D0 & 8)) {
+        return 0;
+    }
+    {
+    float fNeg = -1.0f;
+    if (nPad & 0x8000) {
+        ComboTarget(fNeg, 100.0f, true);
+        if (nBit4 == 0) {
+            return SetAction(0xD);
+        }
+        return SetAction(((m_unk1D0 & 2) && m_unk1C0 != 0 && (short)m_unk1C0 < UP_TIME && FastMath_Fabs__Ff(Round180__Ff(m_unk1C4 - ((float *)m_unk3C)[0x94 / 4])) < 55.0f) ? 0x69 : 0xC);
+    }
+    if (nPad & 0x2000) {
+        if (m_unk2A4 == 0) {
+            int nFlag = 1;
+            if (m_unk229 != 4 && m_unk20C < m_unk214) {
+                nFlag = 0;
+            }
+            if (nBit4 == 0) {
+                if (nFlag != 0) {
+                    return SetAction(0x24);
+                }
+            } else {
+                return SetAction(nFlag ? 0x22 : 0x25);
+            }
+        }
+    }
+    if (nPad & 0x1000) {
+        ComboTarget(fNeg, 100.0f, true);
+        if (nBit4 != 0) {
+            short nT = m_unk1C0;
+            int nAct = 0xE;
+            if (nT != 0 && nT < UP_TIME && FastMath_Fabs__Ff(Round180__Ff(m_unk1C4 - ((float *)m_unk3C)[0x94 / 4])) < 55.0f) {
+                nAct = 0x12;
+            } else if (m_unk229 < 4) {
+                unsigned int nFl = m_unk1D0;
+                if (m_unk1FC >= 2) {
+                    nFl = nFl >> 5;
+                }
+                if ((nFl & 0x300) && m_unk1BC >= 0x65 && MightyBlowCheck(nFl) != 0) {
+                    nAct = !(nFl & 0x200) ? 0x11 : 0x35;
+                } else {
+                    nAct = 0xE;
+                }
+            }
+            return SetAction(nAct);
+        }
+        if (m_unk229 != 4) {
+            int nAct = 0xF;
+            if (m_unk268 >= 2) {
+                nAct = 0x10;
+            }
+            return SetAction(nAct);
+        }
+        int nAct = 0xF;
+        if (!(((Physics *)m_unk38)->m_unkF8 < GRIM_AIR_POS)) {
+            nAct = 0x10;
+        }
+        return SetAction(nAct);
+    }
+    if (nPad & 0x800) {
+        if (m_unk229 == 4) {
+            SetMaximo(MaximoArmor[m_unk1DC], false);
+            ((EntityBaseClass *)this)->PlaySound(0x119);
+            return 1;
+        }
+        if (m_unk200 >= 0xA) {
+            SetAction(0x76);
+            m_unk2A8 = mEffectAPI__13EntityManager.CreateOneshot(0x810002CF, 0x820004AE, 0, 0, (EntityBaseClass *)this, 0.5f, false, 0, false);
+            return 1;
+        }
+    }
+    if (nBit4 != 0) {
+    if (nPad & 0x100) {
+        signed char nPrev = m_unk22A;
+        if (nPrev >= 0) {
+            GameVarSet(0xA, nPrev);
+            *(int *)((char *)mpEntMgr__15EntityBaseClass + 0x5058) = 0;
+            m_unk264 &= ~0x1000;
+            return 1;
+        }
+    }
+    if (nPad & 0x200) {
+        if (m_unk2A4 == 0) {
+            return SetAction(0x27);
+        }
+    }
+    }
+    }
+    return 0;
+}
+
 // FUNCTION: 0x00163F10 MightyBlowCheck__6PlayerFUi
 int Player::MightyBlowCheck(unsigned int arg0) {
     static const int MightyCost[4] = {128, 128, 192, 192};
@@ -5002,7 +5137,7 @@ extern "C" Player *__ct__6PlayerFv(Player *volatile pThis)
     (*(int *)((char *)pThis + (0x2F8))) = 0;
     (*(int *)((char *)pThis + (0x324))) = 0;
     (*(int *)((char *)pThis + (0x32C))) = 0;
-    (*(signed char *)((char *)pThis + (0x339))) = -1;
+    pThis->m_unk339 = -1;
     (*(int *)((char *)pThis + (0x330))) = 0;
     (*(unsigned char *)((char *)pThis + (0x335))) = 0;
     (*(unsigned char *)((char *)pThis + (0x337))) = 0;
@@ -5822,7 +5957,7 @@ int Player::GameVarSet(unsigned int arg0, int arg1) {
             if (old == arg1) return 1;
             if (((old ^ arg1) & 2) != 0) {
                 if (m_unk229 != 4 && (*(int *)((char *)m_unk38 + 0x108) & 1) == 0) {
-                    *((char *)this + 0x339) = (char)arg1;
+                    m_unk339 = (signed char)arg1;
                     return 1;
                 }
                 *((char *)this + 0x22A) = (char)old;

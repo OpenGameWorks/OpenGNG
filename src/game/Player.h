@@ -298,7 +298,9 @@ public:
     signed char m_unk335;   // 0x335 flag, tested by SetPowerupMotion
     signed char m_unk336;   // 0x336 cleared by OnAttackEvent
     signed char m_unk337;   // 0x337 treasure proximity level (1 near, 2 far), set by NotifyTreasure
-    char _pad338[0x33B - 0x338];
+    char _pad338[0x339 - 0x338];
+    signed char m_unk339;   // 0x339 pending game variable value for GameVarSet(0xA), -1 when none; read by ButtonCheck
+    char _pad33A[0x33B - 0x33A];
     unsigned char m_unk33B; // 0x33B set to (arg0 == 0) by ShowPlayer
     char _pad33C[0x340 - 0x33C];
     int m_unk340;           // 0x340 idle timer, set and decremented by StandMove
